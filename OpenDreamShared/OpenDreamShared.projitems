@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>06092635-1e20-4f0e-9969-b2efbe53e200</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>OpenDreamShared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\ATOMBase.cs" />
+    <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamFullState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamPath.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\IconVisualProperties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interface\InterfaceDescriptor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\IPacket.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketATOMTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketClickATOM.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketConnectionResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketDeltaGameState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketFullGameState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketInterfaceData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketKeyboardInput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketOutput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketRequestConnect.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketRequestResource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketResource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketStream.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Resources\DMIParser.cs" />
+  </ItemGroup>
+</Project>

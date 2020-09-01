@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "OpenDreamServer": {
+      "commandName": "Project",
+      "commandLineArgs": "TestGame ObjectTree.json map.dmm",
+      "workingDirectory": ".."
+    }
+  }
+}

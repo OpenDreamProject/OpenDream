@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29920.165
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDreamClient", "OpenDreamClient\OpenDreamClient.csproj", "{7C10496A-8FE6-4341-9725-18282CB14AD3}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenDreamShared", "OpenDreamShared\OpenDreamShared.shproj", "{06092635-1E20-4F0E-9969-B2EFBE53E200}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDreamServer", "OpenDreamServer\OpenDreamServer.csproj", "{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{723B93CA-7EDC-46CB-93DD-983F2061B14D}"
+	ProjectSection(SolutionItems) = preProject
+		TestGame\code.dm = TestGame\code.dm
+		TestGame\map.dmm = TestGame\map.dmm
+		TestGame\ObjectTree.json = TestGame\ObjectTree.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68-4117-4ECC-8174-D399C1D6C409}"
+	ProjectSection(SolutionItems) = preProject
+		TestGame\icons\mob.dmi = TestGame\icons\mob.dmi
+		TestGame\icons\turf.dmi = TestGame\icons\turf.dmi
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		OpenDreamShared\OpenDreamShared.projitems*{06092635-1e20-4f0e-9969-b2efbe53e200}*SharedItemsImports = 13
+		OpenDreamShared\OpenDreamShared.projitems*{7c10496a-8fe6-4341-9725-18282cb14ad3}*SharedItemsImports = 5
+		OpenDreamShared\OpenDreamShared.projitems*{d4c253e8-22ab-47a4-b0a7-7963cf0d253b}*SharedItemsImports = 5
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Debug|x64.ActiveCfg = Debug|x64
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Debug|x64.Build.0 = Debug|x64
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Release|x64.ActiveCfg = Release|x64
+		{7C10496A-8FE6-4341-9725-18282CB14AD3}.Release|x64.Build.0 = Release|x64
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4F1F4C68-4117-4ECC-8174-D399C1D6C409} = {723B93CA-7EDC-46CB-93DD-983F2061B14D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {970174FD-D22D-44D9-A410-F82A015E6F74}
+	EndGlobalSection
+EndGlobal

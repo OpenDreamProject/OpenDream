@@ -36,9 +36,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             Console.WriteLine("WORLD OUTPUT: " + b);
-            if (b.Type == DreamValue.DreamValueType.DreamObject && b.Value != null && ((DreamObject)b.Value).IsSubtypeOf(DreamPath.List)) {
-                DreamList c = DreamMetaObjectList.DreamLists[b.GetValueAsDreamObject()];
-            }
 
             foreach (DreamConnection connection in Program.DreamServer.DreamConnections) {
                 connection.OutputDreamValue(b);

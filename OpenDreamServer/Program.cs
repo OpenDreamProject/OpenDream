@@ -199,7 +199,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("prob", new DreamProc(DreamProcNativeRoot.NativeProc_prob, new List<string>() { "P" }));
             DreamObjectTree.RegisterNativeProc("rand", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>()));
             DreamObjectTree.RegisterNativeProc("replacetext", new DreamProc(DreamProcNativeRoot.NativeProc_replacetext, new List<string>() { "Haystack", "Needle", "Replacement", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
-            DreamObjectTree.RegisterNativeProc("round", new DreamProc(DreamProcNativeRoot.NativeProc_round, new List<string>() { "A" }));
+            DreamObjectTree.RegisterNativeProc("round", new DreamProc(DreamProcNativeRoot.NativeProc_round, new List<string>() { "A", "B" }));
             DreamObjectTree.RegisterNativeProc("sleep", new DreamProc(DreamProcNativeRoot.NativeProc_sleep, new List<string>() { "Delay" }));
             DreamObjectTree.RegisterNativeProc("sound", new DreamProc(DreamProcNativeRoot.NativeProc_sound, new List<string>() { "file", "repeat", "wait", "channel", "volume" }, new Dictionary<string, DreamValue>() { { "repeat", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("splittext", new DreamProc(DreamProcNativeRoot.NativeProc_splittext, new List<string>() { "Text", "Delimiter", "Start", "End", "include_delimiters" }));
@@ -215,6 +215,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("list_Copy", new DreamProc(DreamProcNativeList.NativeProc_Copy, new List<string>() { "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Cut", new DreamProc(DreamProcNativeList.NativeProc_Cut, new List<string>() { "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Find", new DreamProc(DreamProcNativeList.NativeProc_Find, new List<string>() { "Elem", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
+            DreamObjectTree.RegisterNativeProc("list_Join", new DreamProc(DreamProcNativeList.NativeProc_Join, new List<string>() { "Glue", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Remove", new DreamProc(DreamProcNativeList.NativeProc_Remove, new List<string>() { "Item1" }));
         }
 

@@ -59,6 +59,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(list.FindValue(element));
         }
 
+        public static DreamValue NativeProc_Join(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue glue = scope.GetValue("Glue");
+            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
+            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+            DreamObject listObject = scope.DreamObject;
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+
+            string glueValue = (glue.Type == DreamValue.DreamValueType.String) ? glue.GetValueAsString() : "";
+            return new DreamValue(list.Join(glueValue, start, end));
+        }
+
         public static DreamValue NativeProc_Remove(DreamProcScope scope, DreamProcArguments arguments) {
             DreamList list = DreamMetaObjectList.DreamLists[scope.DreamObject];
             List<DreamValue> argumentValues = arguments.GetAllArguments();

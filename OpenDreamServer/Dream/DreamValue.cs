@@ -148,6 +148,18 @@ namespace OpenDreamServer.Dream {
             return (DreamProc)GetValueExpectingType(DreamValueType.DreamProc);
         }
 
+        public string Stringify() {
+            if (Type == DreamValue.DreamValueType.String) {
+                return GetValueAsString();
+            } else if (Type == DreamValue.DreamValueType.Integer) {
+                return GetValueAsInteger().ToString();
+            } else if (Type == DreamValue.DreamValueType.DreamPath) {
+                return GetValueAsPath().PathString;
+            } else {
+                throw new NotImplementedException("Cannot stringify " + this);
+            }
+        }
+
         public override bool Equals(object obj) {
             if (obj is DreamValue) {
                 DreamValue b = (DreamValue)obj;

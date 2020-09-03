@@ -132,7 +132,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                             stringResult = stringResult.Substring(0, stringResult.Length - 4) + DreamObject.CreateReferenceID(dreamObject);
                         } else {
-                            stringResult += Stringify(value);
+                            stringResult += value.Stringify();
                         }
                     }
                 }
@@ -870,18 +870,6 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsDouble() > second.GetValueAsInteger();
             } else {
                 throw new Exception("Invalid greater than comparison on " + first + " and " + second);
-            }
-        }
-
-        private string Stringify(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.String) {
-                return value.GetValueAsString();
-            } else if (value.Type == DreamValue.DreamValueType.Integer) {
-                return value.GetValueAsInteger().ToString();
-            } else if (value.Type == DreamValue.DreamValueType.DreamPath) {
-                return value.GetValueAsPath().PathString;
-            } else {
-                throw new NotImplementedException("Cannot stringify " + value);
             }
         }
 

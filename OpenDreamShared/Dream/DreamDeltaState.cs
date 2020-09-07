@@ -53,12 +53,17 @@ namespace OpenDreamShared.Dream {
             }
         }
 
+        public struct ClientDelta {
+            public UInt16? NewEyeID;
+        }
+
         public UInt32 ID;
         public List<AtomCreation> AtomCreations = new List<AtomCreation>();
         public List<UInt16> AtomDeletions = new List<UInt16>();
         public List<AtomLocationDelta> AtomLocationDeltas = new List<AtomLocationDelta>();
         public List<AtomDelta> AtomDeltas = new List<AtomDelta>();
         public List<TurfDelta> TurfDeltas = new List<TurfDelta>();
+        public Dictionary<string, ClientDelta> ClientDeltas = new Dictionary<string, ClientDelta>(); //TODO: Create a separate "Client Delta" system?
 
         public DreamDeltaState(UInt32 id) {
             ID = id;
@@ -127,8 +132,19 @@ namespace OpenDreamShared.Dream {
             TurfDeltas.Add(turfDelta);
         }
 
+        public void AddClient(string ckey) {
+            ClientDeltas[ckey] = new ClientDelta();
+        }
+
+        public void AddClientEyeIDDelta(string ckey, UInt16 newClientEyeID) {
+            ClientDelta clientDelta = GetClientDelta(ckey);
+
+            clientDelta.NewEyeID = newClientEyeID;
+            ClientDeltas[ckey] = clientDelta;
+        }
+
         public bool ContainsChanges() {
-            return (AtomCreations.Count > 0) || (AtomLocationDeltas.Count > 0) || (TurfDeltas.Count > 0);
+            return (AtomCreations.Count > 0) || (AtomLocationDeltas.Count > 0) || (TurfDeltas.Count > 0) || (ClientDeltas.Count > 0);
         }
 
         private int GetExistingAtomCreationIndex(UInt16 atomID) {
@@ -168,6 +184,14 @@ namespace OpenDreamShared.Dream {
 
                     return;
                 }
+            }
+        }
+
+        private ClientDelta GetClientDelta(string ckey) {
+            if (ClientDeltas.TryGetValue(ckey, out ClientDelta clientDelta)) {
+                return clientDelta;
+            } else {
+                return new ClientDelta();
             }
         }
     }

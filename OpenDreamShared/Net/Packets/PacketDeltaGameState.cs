@@ -29,23 +29,17 @@ namespace OpenDreamShared.Net.Packets {
             ScreenObjectRemovals = 0x3
         }
 
-        public struct PacketDeltaGameStateTurfDelta {
-            public UInt16 X, Y;
-            public UInt16 AtomID;
-        }
-
         public PacketID PacketID => PacketID.DeltaGameState;
         public DreamDeltaState DeltaState;
-        public PacketDeltaGameStateTurfDelta[] TurfDeltas = null;
-        public bool HasNewEye = false;
-        public UInt16 NewEyeAtomID = 0xFFFF;
+        public DreamDeltaState.ClientDelta ClientDelta;
         public UInt16[] ScreenObjectAdditions;
         public UInt16[] ScreenObjectRemovals;
 
         public PacketDeltaGameState() { }
 
-        public PacketDeltaGameState(DreamDeltaState deltaState) {
+        public PacketDeltaGameState(DreamDeltaState deltaState, string targetCKey) {
             DeltaState = deltaState;
+            ClientDelta = deltaState.ClientDeltas.ContainsKey(targetCKey) ? deltaState.ClientDeltas[targetCKey] : new DreamDeltaState.ClientDelta();
         }
 
         public void ReadFromStream(PacketStream stream) {
@@ -61,7 +55,7 @@ namespace OpenDreamShared.Net.Packets {
                     case PacketDeltaGameStateSectionID.AtomLocationDeltas: ReadAtomLocationDeltasSection(stream); break;
                     case PacketDeltaGameStateSectionID.TurfDeltas: ReadTurfDeltasSection(stream); break;
                     case PacketDeltaGameStateSectionID.Client: ReadClientSection(stream); break;
-                    default: throw new Exception("Invalid section ID in delta game state packet (" + sectionID.ToString() + ")");
+                    default: throw new Exception("Invalid section ID in delta game state packet (" + sectionID + ")");
                 }
             }
         }
@@ -73,6 +67,7 @@ namespace OpenDreamShared.Net.Packets {
             if (DeltaState.AtomDeletions.Count > 0) WriteAtomDeletionsSection(stream);
             if (DeltaState.AtomDeltas.Count > 0) WriteAtomDeltasSection(stream);
             if (DeltaState.AtomLocationDeltas.Count > 0) WriteAtomLocationDeltasSection(stream);
+            WriteClientSection(stream);
         }
 
         private void ReadAtomCreationsSection(PacketStream stream) {
@@ -120,6 +115,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteAtomDeletionsSection(PacketStream stream) {
+            stream.WriteByte((byte)PacketDeltaGameStateSectionID.AtomDeletions);
             stream.WriteUInt16((UInt16)DeltaState.AtomDeletions.Count);
 
             foreach (UInt16 atomDeletion in DeltaState.AtomDeletions) {
@@ -206,26 +202,25 @@ namespace OpenDreamShared.Net.Packets {
         private void ReadTurfDeltasSection(PacketStream stream) {
             UInt16 turfDeltasCount = stream.ReadUInt16();
 
-            TurfDeltas = new PacketDeltaGameStateTurfDelta[turfDeltasCount];
             for (int i = 0; i < turfDeltasCount; i++) {
-                PacketDeltaGameStateTurfDelta turfDelta = new PacketDeltaGameStateTurfDelta();
+                DreamDeltaState.TurfDelta turfDelta = new DreamDeltaState.TurfDelta();
                 turfDelta.X = stream.ReadUInt16();
                 turfDelta.Y = stream.ReadUInt16();
-                turfDelta.AtomID = stream.ReadUInt16();
+                turfDelta.TurfAtomID = stream.ReadUInt16();
 
-                TurfDeltas[i] = turfDelta;
+                DeltaState.TurfDeltas.Add(turfDelta);
             }
         }
 
         private void ReadClientSection(PacketStream stream) {
             PacketDeltaGameStateClientValueID valueID;
+            ClientDelta = new DreamDeltaState.ClientDelta();
 
             do {
                 valueID = (PacketDeltaGameStateClientValueID)stream.ReadByte();
 
                 if (valueID == PacketDeltaGameStateClientValueID.Eye) {
-                    HasNewEye = true;
-                    NewEyeAtomID = stream.ReadUInt16();
+                    ClientDelta.NewEyeID = stream.ReadUInt16();
                 } else if (valueID == PacketDeltaGameStateClientValueID.ScreenObjectAdditions) {
                     UInt16 screenObjectAdditionCount = stream.ReadUInt16();
 
@@ -244,6 +239,19 @@ namespace OpenDreamShared.Net.Packets {
                     throw new Exception("Invalid client value ID in delta game state packet (" + valueID.ToString() + ")");
                 }
             } while (valueID != PacketDeltaGameStateClientValueID.End);
+        }
+
+        private void WriteClientSection(PacketStream stream) {
+            bool newEye = ClientDelta.NewEyeID != null;
+
+            if (newEye) {
+                stream.WriteByte((byte)PacketDeltaGameStateSectionID.Client);
+
+                stream.WriteByte((byte)PacketDeltaGameStateClientValueID.Eye);
+                stream.WriteUInt16(ClientDelta.NewEyeID.Value);
+
+                stream.WriteByte((byte)PacketDeltaGameStateClientValueID.End);
+            }
         }
     }
 }

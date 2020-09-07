@@ -260,24 +260,22 @@ namespace OpenDreamClient {
                 }
             }
 
-            if (pDeltaGameState.TurfDeltas != null) {
-                foreach (PacketDeltaGameState.PacketDeltaGameStateTurfDelta turfDelta in pDeltaGameState.TurfDeltas) {
-                    if (ATOMs.ContainsKey(turfDelta.AtomID)) {
-                        Map.Turfs[turfDelta.X, turfDelta.Y] = ATOMs[turfDelta.AtomID];
-                    } else {
-                        Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfDelta.AtomID + ")(Location " + turfDelta.X + ", " + turfDelta.Y + ")");
-                    }
+            foreach (DreamDeltaState.TurfDelta turfDelta in deltaState.TurfDeltas) {
+                if (ATOMs.ContainsKey(turfDelta.TurfAtomID)) {
+                    Map.Turfs[turfDelta.X, turfDelta.Y] = ATOMs[turfDelta.TurfAtomID];
+                } else {
+                    Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfDelta.TurfAtomID + ")(Location " + turfDelta.X + ", " + turfDelta.Y + ")");
                 }
             }
 
-            if (pDeltaGameState.HasNewEye) {
+            if (pDeltaGameState.ClientDelta.NewEyeID != null) {
                 ATOM newEye = null;
 
-                if (pDeltaGameState.NewEyeAtomID != 0xFFFF) {
-                    if (ATOMs.ContainsKey(pDeltaGameState.NewEyeAtomID)) {
-                        newEye = ATOMs[pDeltaGameState.NewEyeAtomID];
+                if (pDeltaGameState.ClientDelta.NewEyeID.Value != 0xFFFF) {
+                    if (ATOMs.ContainsKey(pDeltaGameState.ClientDelta.NewEyeID.Value)) {
+                        newEye = ATOMs[pDeltaGameState.ClientDelta.NewEyeID.Value];
                     } else {
-                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM, and was ignored (ID " + pDeltaGameState.NewEyeAtomID + ")");
+                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM, and was ignored (ID " + pDeltaGameState.ClientDelta.NewEyeID.Value + ")");
                     }
                 }
 

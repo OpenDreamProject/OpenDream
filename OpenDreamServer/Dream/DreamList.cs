@@ -128,7 +128,7 @@ namespace OpenDreamServer.Dream {
             string result = String.Empty;
             for (int i = start; i < end; i++) {
                 result += _values[i - 1].Stringify();
-                if (i != end) result += glue;
+                if (i != end - 1) result += glue;
             }
 
             return result;

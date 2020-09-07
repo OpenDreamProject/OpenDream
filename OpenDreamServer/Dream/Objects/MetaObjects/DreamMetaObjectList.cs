@@ -32,6 +32,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
+            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            
             if (variableName == "len") {
                 DreamList list = DreamLists[dreamObject];
                 int newLen = variableValue.GetValueAsInteger();
@@ -43,8 +45,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 } else {
                     list.Cut(newLen + 1, list.GetLength() + 1);
                 }
-            } else {
-                base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
             }
         }
 

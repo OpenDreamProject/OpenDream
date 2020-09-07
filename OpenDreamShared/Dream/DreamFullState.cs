@@ -14,8 +14,17 @@ namespace OpenDreamShared.Dream {
             public Dictionary<UInt16, IconVisualProperties> Overlays;
         }
 
+        public struct Client {
+            public UInt16 EyeID;
+
+            public Client(UInt16 eyeID) {
+                EyeID = eyeID;
+            }
+        }
+
         public UInt32 ID;
         public Dictionary<UInt16, Atom> Atoms = new Dictionary<UInt16, Atom>();
+        public Dictionary<string, Client> Clients = new Dictionary<string, Client>();
         public UInt16[,] Turfs = new UInt16[0, 0];
 
         public DreamFullState(UInt32 id) {
@@ -25,6 +34,10 @@ namespace OpenDreamShared.Dream {
         public void SetFromFullState(DreamFullState fullState) {
             foreach (KeyValuePair<UInt16, Atom> atom in fullState.Atoms) {
                 Atoms.Add(atom.Key, atom.Value);
+            }
+
+            foreach (KeyValuePair<string, Client> client in fullState.Clients) {
+                Clients.Add(client.Key, client.Value);
             }
 
             Turfs = fullState.Turfs;
@@ -66,6 +79,20 @@ namespace OpenDreamShared.Dream {
 
                 foreach (DreamDeltaState.TurfDelta turfDelta in deltaState.TurfDeltas) {
                     Turfs[turfDelta.X, turfDelta.Y] = turfDelta.TurfAtomID;
+                }
+
+                foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {
+                    if (!Clients.ContainsKey(clientDelta.Key)) {
+                        Clients[clientDelta.Key] = new Client(0xFFFF);
+                    }
+
+                    Client client = Clients[clientDelta.Key];
+
+                    if (clientDelta.Value.NewEyeID != null) {
+                        client.EyeID = clientDelta.Value.NewEyeID.Value;
+                    }
+
+                    Clients[clientDelta.Key] = client;
                 }
             }
         }

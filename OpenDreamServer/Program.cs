@@ -253,7 +253,7 @@ namespace OpenDreamServer {
 
         private static void OnDeltaStateFinalized(DreamDeltaState deltaState) {
             foreach (DreamConnection dreamConnection in DreamServer.DreamConnections) {
-                dreamConnection.SendPacket(new PacketDeltaGameState(deltaState));
+                dreamConnection.SendPacket(new PacketDeltaGameState(deltaState, dreamConnection.CKey));
             }
         }
 
@@ -266,6 +266,8 @@ namespace OpenDreamServer {
             DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
 
             if (clientMob.Value != null) {
+                DreamStateManager.AddClient(connection.CKey);
+
                 connection.SendPacket(new PacketConnectionResult(true, ""));
                 connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
                 connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));

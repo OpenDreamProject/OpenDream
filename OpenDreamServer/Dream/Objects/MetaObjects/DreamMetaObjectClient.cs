@@ -13,6 +13,18 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             //New() is not called here
         }
 
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
+            if (variableName == "eye") {
+                string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
+                DreamObject eye = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
+                UInt16 eyeID = DreamMetaObjectAtom.AtomIDs[eye];
+
+                Program.DreamStateManager.AddClientEyeIDDelta(ckey, eyeID);
+            }
+
+            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        }
+
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "key" || variableName == "ckey") {
                 return new DreamValue(Program.ClientToConnection[dreamObject].CKey);

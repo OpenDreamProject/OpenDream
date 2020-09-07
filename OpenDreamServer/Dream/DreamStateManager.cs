@@ -91,6 +91,18 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public void AddClient(string ckey) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddClient(ckey);
+            }
+        }
+
+        public void AddClientEyeIDDelta(string ckey, UInt16 newEyeID) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddClientEyeIDDelta(ckey, newEyeID);
+            }
+        }
+
         private void CreateNewDeltaState() {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState = new DreamDeltaState(_stateIDCounter++);

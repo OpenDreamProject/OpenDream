@@ -27,6 +27,7 @@ namespace OpenDreamClient.Interface.Elements {
             _image.Width = 480;
             _image.Height = 480;
             this.Children.Add(_image);
+            this.UseLayoutRounding = true;
             this.Background = Brushes.Black;
 
             this.Loaded += OnLoaded;

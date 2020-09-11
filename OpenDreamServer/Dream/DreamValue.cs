@@ -149,12 +149,14 @@ namespace OpenDreamServer.Dream {
         }
 
         public string Stringify() {
-            if (Type == DreamValue.DreamValueType.String) {
+            if (Type == DreamValueType.String) {
                 return GetValueAsString();
-            } else if (Type == DreamValue.DreamValueType.Integer) {
+            } else if (Type == DreamValueType.Integer) {
                 return GetValueAsInteger().ToString();
-            } else if (Type == DreamValue.DreamValueType.DreamPath) {
+            } else if (Type == DreamValueType.DreamPath) {
                 return GetValueAsPath().PathString;
+            } else if (Type == DreamValueType.DreamObject) {
+                return GetValueAsDreamObject().ObjectDefinition.Type.ToString();
             } else {
                 throw new NotImplementedException("Cannot stringify " + this);
             }

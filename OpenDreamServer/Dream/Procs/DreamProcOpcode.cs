@@ -16,7 +16,7 @@ namespace OpenDreamServer.Dream.Procs {
         Call = 0xA,
         Dereference = 0xB,
         JumpIfFalse = 0xC,
-        //0xD
+        JumpIfTrue = 0xD,
         Jump = 0xE,
         CompareEquals = 0xF,
         Return = 0x10,
@@ -36,12 +36,12 @@ namespace OpenDreamServer.Dream.Procs {
         IndexList = 0x1E,
         Remove = 0x1F,
         DeleteObject = 0x20,
-        ForLoopList = 0x21,
-        ForLoopEnd = 0x22,
+        //0x21
+        //0x22
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        Continue = 0x26,
+        //0x26
         Divide = 0x27,
         Multiply = 0x28,
         PushSelf = 0x29,
@@ -55,12 +55,15 @@ namespace OpenDreamServer.Dream.Procs {
         CompareGreaterThanOrEqual = 0x31,
         BranchSwitch = 0x32,
         Mask = 0x33,
-        Break = 0x34,
+        //0x34
         Ternary = 0x35,
         IsInList = 0x36,
         PushArguments = 0x37,
         PushDouble = 0x38,
         PushSrc = 0x39,
+        CreateListEnumerator = 0x3A,
+        EnumerateList = 0x3B,
+        DestroyListEnumerator = 0x3C,
 
         BranchSwitchCaseEnd = 0xF5,
         BranchSwitchCaseExpressionEnd = 0xF6,

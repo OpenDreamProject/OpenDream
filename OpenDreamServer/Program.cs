@@ -168,6 +168,7 @@ namespace OpenDreamServer {
 
         private static void RegisterNativeProcs() {
             DreamObjectTree.RegisterNativeProc("abs", new DreamProc(DreamProcNativeRoot.NativeProc_abs, new List<string>() { "A" }));
+            DreamObjectTree.RegisterNativeProc("ascii2text", new DreamProc(DreamProcNativeRoot.NativeProc_ascii2text, new List<string>() { "N" }));
             DreamObjectTree.RegisterNativeProc("block", new DreamProc(DreamProcNativeRoot.NativeProc_block, new List<string>() { "Start", "End" }));
             DreamObjectTree.RegisterNativeProc("browse", new DreamProc(DreamProcNativeRoot.NativeProc_browse, new List<string>() { "Body", "Options" }));
             DreamObjectTree.RegisterNativeProc("ckey", new DreamProc(DreamProcNativeRoot.NativeProc_ckey, new List<string>() { "Key" }));
@@ -176,7 +177,9 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("fexists", new DreamProc(DreamProcNativeRoot.NativeProc_fexists, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("file2text", new DreamProc(DreamProcNativeRoot.NativeProc_file2text, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("findtext", new DreamProc(DreamProcNativeRoot.NativeProc_findtext, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
+            DreamObjectTree.RegisterNativeProc("findtextEx", new DreamProc(DreamProcNativeRoot.NativeProc_findtextEx, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("findlasttext", new DreamProc(DreamProcNativeRoot.NativeProc_findlasttext, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
+            DreamObjectTree.RegisterNativeProc("get_dir", new DreamProc(DreamProcNativeRoot.NativeProc_get_dir, new List<string>() { "Loc1", "Loc2" }));
             DreamObjectTree.RegisterNativeProc("get_dist", new DreamProc(DreamProcNativeRoot.NativeProc_get_dist, new List<string>() { "Loc1", "Loc2" }));
             DreamObjectTree.RegisterNativeProc("image", new DreamProc(DreamProcNativeRoot.NativeProc_image, new List<string>() { "icon", "loc", "icon_state", "layer", "dir" }));
             DreamObjectTree.RegisterNativeProc("isloc", new DreamProc(DreamProcNativeRoot.NativeProc_isloc, new List<string>() { "Loc1" }));
@@ -210,6 +213,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("uppertext", new DreamProc(DreamProcNativeRoot.NativeProc_uppertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("view", new DreamProc(DreamProcNativeRoot.NativeProc_view, new List<string>() { "Dist", "Center" }, new Dictionary<string, DreamValue>() { { "Dist", new DreamValue(4) } }));
             DreamObjectTree.RegisterNativeProc("walk", new DreamProc(DreamProcNativeRoot.NativeProc_walk, new List<string>() { "Ref", "Dir", "Lag", "Speed" }, new Dictionary<string, DreamValue>() { { "Lag", new DreamValue(0) }, { "Speed", new DreamValue(0) } }));
+            DreamObjectTree.RegisterNativeProc("walk_to", new DreamProc(DreamProcNativeRoot.NativeProc_walk_to, new List<string>() { "Ref", "Trg", "Min", "Lag", "Speed" }, new Dictionary<string, DreamValue>() { { "Min", new DreamValue(0) }, { "Lag", new DreamValue(0) }, { "Speed", new DreamValue(0) } }));
 
             DreamObjectTree.RegisterNativeProc("list_Add", new DreamProc(DreamProcNativeList.NativeProc_Add, new List<string>() { "Item1" }));
             DreamObjectTree.RegisterNativeProc("list_Copy", new DreamProc(DreamProcNativeList.NativeProc_Copy, new List<string>() { "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));

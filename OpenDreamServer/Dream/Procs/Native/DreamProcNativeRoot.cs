@@ -18,6 +18,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(Math.Abs(number));
         }
 
+        public static DreamValue NativeProc_ascii2text(DreamProcScope scope, DreamProcArguments arguments) {
+            int ascii = scope.GetValue("N").GetValueAsInteger();
+
+            return new DreamValue(Convert.ToChar(ascii).ToString());
+        }
+
         public static DreamValue NativeProc_block(DreamProcScope scope, DreamProcArguments arguments) {
             DreamObject start = scope.GetValue("Start").GetValueAsDreamObjectOfType(DreamPath.Atom);
             DreamObject end = scope.GetValue("End").GetValueAsDreamObjectOfType(DreamPath.Atom);
@@ -99,6 +105,24 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
+        public static DreamValue NativeProc_findtextEx(DreamProcScope scope, DreamProcArguments arguments) {
+            string text = scope.GetValue("Haystack").GetValueAsString();
+            string needle = scope.GetValue("Needle").GetValueAsString();
+            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
+            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+
+            if (end == 0) {
+                end = text.Length + 1;
+            }
+
+            int needleIndex = text.Substring(start - 1, end - start).IndexOf(needle);
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
         public static DreamValue NativeProc_findlasttext(DreamProcScope scope, DreamProcArguments arguments) {
             string text = scope.GetValue("Haystack").GetValueAsString().ToLower();
             string needle = scope.GetValue("Needle").GetValueAsString().ToLower();
@@ -116,16 +140,38 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return new DreamValue(0);
             }
         }
-        
+
+        public static DreamValue NativeProc_get_dir(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamObject loc1 = scope.GetValue("Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            DreamObject loc2 = scope.GetValue("Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            int loc1X = loc1.GetVariable("x").GetValueAsInteger();
+            int loc2X = loc2.GetVariable("x").GetValueAsInteger();
+            int loc1Y = loc1.GetVariable("y").GetValueAsInteger();
+            int loc2Y = loc2.GetVariable("y").GetValueAsInteger();
+            AtomDirection direction = AtomDirection.South;
+
+            if (loc2X < loc1X) {
+                if (loc2Y == loc1Y) direction = AtomDirection.West;
+                else direction = (loc2Y > loc1Y) ? AtomDirection.Northwest : AtomDirection.Southwest;
+            } else if (loc2X > loc1X) {
+                if (loc2Y == loc1Y) direction = AtomDirection.East;
+                else direction = (loc2Y > loc1Y) ? AtomDirection.Northeast : AtomDirection.Southeast;
+            } else if (loc2Y > loc1Y) {
+                direction = AtomDirection.North;
+            }
+
+            return new DreamValue((int)direction);
+        }
+
         public static DreamValue NativeProc_get_dist(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject Loc1 = scope.GetValue("Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamObject Loc2 = scope.GetValue("Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            DreamObject loc1 = scope.GetValue("Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            DreamObject loc2 = scope.GetValue("Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
             
-            if (Loc1 != Loc2) {
-                int x1 = Loc1.GetVariable("x").GetValueAsInteger();
-                int x2 = Loc2.GetVariable("x").GetValueAsInteger();
-                int y1 = Loc1.GetVariable("y").GetValueAsInteger();
-                int y2 = Loc2.GetVariable("y").GetValueAsInteger();
+            if (loc1 != loc2) {
+                int x1 = loc1.GetVariable("x").GetValueAsInteger();
+                int x2 = loc2.GetVariable("x").GetValueAsInteger();
+                int y1 = loc1.GetVariable("y").GetValueAsInteger();
+                int y2 = loc2.GetVariable("y").GetValueAsInteger();
                 int dist = (int)Math.Floor(Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2)));
 
                 return new DreamValue(dist);
@@ -593,6 +639,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         public static DreamValue NativeProc_walk(DreamProcScope scope, DreamProcArguments arguments) {
             //TODO: Implement walk()
+
+            return new DreamValue((DreamObject)null);
+        }
+
+        public static DreamValue NativeProc_walk_to(DreamProcScope scope, DreamProcArguments arguments) {
+            //TODO: Implement walk_to()
 
             return new DreamValue((DreamObject)null);
         }

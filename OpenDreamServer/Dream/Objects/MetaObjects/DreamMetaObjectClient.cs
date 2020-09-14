@@ -14,20 +14,26 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
+            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+
             if (variableName == "eye") {
                 string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-                DreamObject eye = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                UInt16 eyeID = DreamMetaObjectAtom.AtomIDs[eye];
+                DreamObject eye = variableValue.GetValueAsDreamObject();
+                UInt16 eyeID = (eye != null) ? DreamMetaObjectAtom.AtomIDs[eye] : (UInt16)0xFFFF;
 
                 Program.DreamStateManager.AddClientEyeIDDelta(ckey, eyeID);
-            }
+            } else if (variableName == "mob") {
+                DreamConnection connection = Program.ClientToConnection[dreamObject];
 
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+                connection.MobDreamObject = variableValue.GetValueAsDreamObject();
+            }
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "key" || variableName == "ckey") {
                 return new DreamValue(Program.ClientToConnection[dreamObject].CKey);
+            } else if (variableName == "mob") {
+                return new DreamValue(Program.ClientToConnection[dreamObject].MobDreamObject);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

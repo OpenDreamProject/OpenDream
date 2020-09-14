@@ -3,12 +3,8 @@ using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Xml;
 
+//TODO: Parse DMM maps properly
 namespace OpenDreamServer.Resources {
     static class DMMParser {
         public struct ParsedDMMMap {
@@ -47,11 +43,18 @@ namespace OpenDreamServer.Resources {
                         lineIndex++;
                         dmmLine += lines[lineIndex].Trim();
                     }
-                } else if (dmmLine.EndsWith("{") || dmmLine.EndsWith("{\"")) {
+                } else if (dmmLine.EndsWith("{")) {
                     while (lines[lineIndex].IndexOf("}") == -1 && lineIndex < lines.Length) {
                         lineIndex++;
                         dmmLine += lines[lineIndex].Trim();
                     }
+                } else if (dmmLine.EndsWith("{\"")) {
+                    while (lines[lineIndex].IndexOf("}") == -1 && lineIndex < lines.Length) {
+                        lineIndex++;
+                        dmmLine += lines[lineIndex].Trim() + " ";
+                    }
+
+                    dmmLine = dmmLine.Remove(dmmLine.Length - 1);
                 }
 
                 dmmLines.Add(dmmLine);
@@ -130,21 +133,23 @@ namespace OpenDreamServer.Resources {
 
                         if (value.StartsWith("{\"") && value.EndsWith("\"}")) {
                             string coordinateDefinition = value.Substring(2, value.Length - 4);
+                            coordinateDefinition = coordinateDefinition.Remove(coordinateDefinition.Length - 1);
 
-                            if (coordinateDefinition.Length % parsedDMMMap.TypeNameWidth == 0) {
-                                int mapSize = (int)Math.Ceiling(Math.Sqrt(coordinateDefinition.Length / parsedDMMMap.TypeNameWidth));
+                            string[] yBreaks = coordinateDefinition.Split(" ");
+                            int definitionWidth = yBreaks[0].Length / parsedDMMMap.TypeNameWidth;
+                            int definitionHeight = yBreaks.Length;
 
-                                parsedDMMMap.CoordinateAssignments[(x, y, z)] = new string[mapSize, mapSize];
-                                if (parsedDMMMap.Width < x + mapSize) parsedDMMMap.Width = x + mapSize;
-                                if (parsedDMMMap.Height < y + mapSize) parsedDMMMap.Height = y + mapSize;
+                            if (parsedDMMMap.Width < x + definitionWidth) parsedDMMMap.Width = x + definitionWidth;
+                            if (parsedDMMMap.Height < y + definitionHeight) parsedDMMMap.Height = y + definitionHeight;
+                            parsedDMMMap.CoordinateAssignments[(x, y, z)] = new string[definitionWidth, definitionHeight];
+                            for (int definitionY = 0; definitionY < definitionHeight; definitionY++) {
+                                string definitionLine = yBreaks[definitionY];
 
-                                for (int i = 0; i < coordinateDefinition.Length / parsedDMMMap.TypeNameWidth; i++) {
-                                    string typeName = coordinateDefinition.Substring((i * parsedDMMMap.TypeNameWidth), parsedDMMMap.TypeNameWidth);
+                                for (int definitionX = 0; definitionX < definitionWidth; definitionX++) {
+                                    string typeName = definitionLine.Substring((definitionX * parsedDMMMap.TypeNameWidth), parsedDMMMap.TypeNameWidth);
 
-                                    parsedDMMMap.CoordinateAssignments[(x, y, z)][i % mapSize, i / mapSize] = typeName;
+                                    parsedDMMMap.CoordinateAssignments[(x, y, z)][definitionX, definitionY] = typeName;
                                 }
-                            } else {
-                                throw new Exception("Invalid coordinate definition length");
                             }
                         } else {
                             throw new Exception("Invalid value \"" + value + "\"");

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenDreamServer.Dream.Procs {
+﻿namespace OpenDreamServer.Dream.Procs {
     enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,

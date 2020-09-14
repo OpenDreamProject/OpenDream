@@ -8,14 +8,35 @@ using System.Net.Sockets;
 
 namespace OpenDreamServer.Net {
     class DreamConnection {
-        public DreamObject ClientDreamObject = null;
         public string CKey = null;
+        public DreamObject ClientDreamObject = null;
+        public DreamObject MobDreamObject {
+            get => _mobDreamObject;
+            set {
+                if (_mobDreamObject != value) {
+                    if (_mobDreamObject != null) _mobDreamObject.CallProc("Logout");
+
+                    if (value != null && value.IsSubtypeOf(DreamPath.Mob)) {
+                        DreamConnection oldMobConnection = Program.DreamServer.GetConnectionFromMob(value);
+                        if (oldMobConnection != null) oldMobConnection.MobDreamObject = null;
+
+                        _mobDreamObject = value;
+                        ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
+                        _mobDreamObject.CallProc("Login");
+                    } else {
+                        _mobDreamObject = null;
+                    }
+                }
+            }
+        }
+
+        private DreamObject _mobDreamObject = null;
 
         private TcpClient _tcpClient;
         private NetworkStream _tcpStream;
         private BinaryReader _tcpStreamBinaryReader;
         private BinaryWriter _tcpStreamBinaryWriter;
-        private object netLock = new object();
+        private object _netLock = new object();
 
         public DreamConnection(TcpClient tcpClient) {
             _tcpClient = tcpClient;
@@ -25,7 +46,7 @@ namespace OpenDreamServer.Net {
         }
 
         public byte[] ReadPacketData() {
-            lock (netLock) {
+            lock (_netLock) {
                 if (_tcpClient.Connected && _tcpStream.DataAvailable) {
                     UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
                     byte[] packetData = new byte[packetDataLength];
@@ -48,7 +69,7 @@ namespace OpenDreamServer.Net {
             stream.WriteByte((byte)packet.PacketID);
             packet.WriteToStream(stream);
 
-            lock (netLock) {
+            lock (_netLock) {
                 _tcpStreamBinaryWriter.Write((UInt32)stream.Length);
                 _tcpStream.Write(stream.ToArray());
             }

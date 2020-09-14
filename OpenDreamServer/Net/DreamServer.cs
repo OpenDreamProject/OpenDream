@@ -1,14 +1,13 @@
-﻿using OpenDreamShared.Net.Packets;
+﻿using OpenDreamServer.Dream.Objects;
+using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 namespace OpenDreamServer.Net {
     delegate void DreamConnectionReadyEventHandler(DreamConnection connection);
 
     class DreamServer {
-
         public List<DreamConnection> DreamConnections = new List<DreamConnection>();
         public event DreamConnectionReadyEventHandler DreamConnectionRequest;
 
@@ -42,6 +41,14 @@ namespace OpenDreamServer.Net {
         public DreamConnection GetConnectionFromCKey(string cKey) {
             foreach (DreamConnection connection in DreamConnections) {
                 if (connection.CKey == cKey) return connection;
+            }
+
+            return null;
+        }
+
+        public DreamConnection GetConnectionFromMob(DreamObject mobObject) {
+            foreach (DreamConnection connection in DreamConnections) {
+                if (connection.MobDreamObject == mobObject) return connection;
             }
 
             return null;

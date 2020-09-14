@@ -186,6 +186,22 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(imageObject);
         }
 
+        public static DreamValue NativeProc_isarea(DreamProcScope scope, DreamProcArguments arguments) {
+            List<DreamValue> locs = arguments.GetAllArguments();
+
+            foreach (DreamValue loc in locs) {
+                if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
+                    if (!locObject.IsSubtypeOf(DreamPath.Area)) {
+                        return new DreamValue(0);
+                    }
+                } else {
+                    return new DreamValue(0);
+                }
+            }
+
+            return new DreamValue(1);
+        }
+
         public static DreamValue NativeProc_isloc(DreamProcScope scope, DreamProcArguments arguments) {
             List<DreamValue> locs = arguments.GetAllArguments();
 
@@ -196,8 +212,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     if (!isLoc) {
                         return new DreamValue(0);
                     }
+                } else {
+                    return new DreamValue(0);
                 }
-                
             }
 
             return new DreamValue(1);

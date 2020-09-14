@@ -182,6 +182,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("get_dir", new DreamProc(DreamProcNativeRoot.NativeProc_get_dir, new List<string>() { "Loc1", "Loc2" }));
             DreamObjectTree.RegisterNativeProc("get_dist", new DreamProc(DreamProcNativeRoot.NativeProc_get_dist, new List<string>() { "Loc1", "Loc2" }));
             DreamObjectTree.RegisterNativeProc("image", new DreamProc(DreamProcNativeRoot.NativeProc_image, new List<string>() { "icon", "loc", "icon_state", "layer", "dir" }));
+            DreamObjectTree.RegisterNativeProc("isarea", new DreamProc(DreamProcNativeRoot.NativeProc_isarea, new List<string>() { "Loc1" }));
             DreamObjectTree.RegisterNativeProc("isloc", new DreamProc(DreamProcNativeRoot.NativeProc_isloc, new List<string>() { "Loc1" }));
             DreamObjectTree.RegisterNativeProc("ismob", new DreamProc(DreamProcNativeRoot.NativeProc_ismob, new List<string>() { "Loc1" }));
             DreamObjectTree.RegisterNativeProc("isnull", new DreamProc(DreamProcNativeRoot.NativeProc_isnull, new List<string>() { "Val" }));
@@ -263,6 +264,7 @@ namespace OpenDreamServer {
 
         private static void OnDreamConnectionRequest(DreamConnection connection) {
             Console.WriteLine("Connection request from '" + connection.CKey + "'");
+            DreamStateManager.AddClient(connection.CKey);
 
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
@@ -270,7 +272,6 @@ namespace OpenDreamServer {
             DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
 
             if (clientMob.Value != null) {
-                DreamStateManager.AddClient(connection.CKey);
 
                 connection.SendPacket(new PacketConnectionResult(true, ""));
                 connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));

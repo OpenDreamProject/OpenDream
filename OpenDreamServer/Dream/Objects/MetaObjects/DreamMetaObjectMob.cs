@@ -1,9 +1,5 @@
 ﻿using OpenDreamServer.Net;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Net.Packets;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectMob : DreamMetaObjectMovable {
@@ -13,9 +9,16 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (variableName == "key" || variableName == "ckey") {
                 DreamConnection newClientConnection = Program.DreamServer.GetConnectionFromCKey(variableValue.GetValueAsString());
 
-                TransferClient(dreamObject, newClientConnection.ClientDreamObject);
+                newClientConnection.MobDreamObject = dreamObject;
             } else if (variableName == "client" && variableValue != oldVariableValue) {
-                TransferClient(dreamObject, variableValue.GetValueAsDreamObjectOfType(DreamPath.Client));
+                DreamObject newClient = variableValue.GetValueAsDreamObject();
+                DreamObject oldClient = oldVariableValue.GetValueAsDreamObject();
+
+                if (newClient != null) {
+                    Program.ClientToConnection[newClient].MobDreamObject = dreamObject;
+                } else if (oldClient != null) {
+                    Program.ClientToConnection[oldClient].MobDreamObject = null;
+                }
             }
         }
 
@@ -25,6 +28,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 if (clientObject != null && clientObject.IsSubtypeOf(DreamPath.Client)) {
                     return clientObject.GetVariable(variableName);
+                } else {
+                    return new DreamValue((DreamObject)null);
+                }
+            } else if (variableName == "client") {
+                DreamConnection connection = Program.DreamServer.GetConnectionFromMob(dreamObject);
+
+                if (connection != null && connection.ClientDreamObject != null) {
+                    return new DreamValue(connection.ClientDreamObject);
                 } else {
                     return new DreamValue((DreamObject)null);
                 }
@@ -39,17 +50,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
             connection.OutputDreamValue(b);
             return new DreamValue(0);
-        }
-
-        private void TransferClient(DreamObject mobObject, DreamObject clientObject) {
-            if (mobObject.GetVariable("client").Value != null) {
-                mobObject.CallProc("Logout");
-            }
-
-            mobObject.SetVariable("client", new DreamValue(clientObject));
-            clientObject.SetVariable("mob", new DreamValue(mobObject));
-            clientObject.SetVariable("eye", new DreamValue(mobObject));
-            mobObject.CallProc("Login");
         }
     }
 }

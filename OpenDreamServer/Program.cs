@@ -10,9 +10,7 @@ using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +27,7 @@ namespace OpenDreamServer {
         public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new Dictionary<DreamObject, DreamConnection>();
         public static int TickCount = 0;
 
-        private static InterfaceDescriptor clientInterface = null;
+        private static InterfaceDescriptor _clientInterface = null;
 
         static void Main(string[] args) {
             if (args.Length < 3) {
@@ -49,7 +47,7 @@ namespace OpenDreamServer {
             string mapFile = args[2];
 
             DreamResourceManager = new DreamResourceManager(resourceLocation);
-            clientInterface = CreateClientInterface();
+            _clientInterface = CreateClientInterface();
 
             DreamStateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             DreamServer.DreamConnectionRequest += OnDreamConnectionRequest;
@@ -268,11 +266,10 @@ namespace OpenDreamServer {
 
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
-            connection.SendPacket(new PacketInterfaceData(clientInterface));
+            connection.SendPacket(new PacketInterfaceData(_clientInterface));
             DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
 
             if (clientMob.Value != null) {
-
                 connection.SendPacket(new PacketConnectionResult(true, ""));
                 connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
                 connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));

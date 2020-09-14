@@ -156,6 +156,8 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
                     Push(new DreamValue(first.GetValueAsInteger() + second.GetValueAsDouble()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
+                    Push(new DreamValue(first.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                     Push(new DreamValue(first.GetValueAsDouble() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
@@ -544,28 +546,31 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(rightValue);
                 }
             } else if (opcode == DreamProcOpcode.PushArgumentList) {
-                DreamObject argListObject = PopDreamValue().GetValueAsDreamObjectOfType(DreamPath.List);
-                DreamList argList = DreamMetaObjectList.DreamLists[argListObject];
-                List<DreamValue> argListValues = argList.GetValues();
-                Dictionary<object, DreamValue> argListNamedValues = argList.GetAssociativeValues();
                 DreamProcInterpreterArguments arguments = new DreamProcInterpreterArguments(new List<object>(), new Dictionary<string, object>());
+                DreamValue argListValue = PopDreamValue();
 
-                foreach (DreamValue value in argListValues) {
-                    if (!argListNamedValues.ContainsKey(value.Value)) {
-                        arguments.OrderedArguments.Add(value);
+                if (argListValue.Value != null) {
+                    DreamList argList = DreamMetaObjectList.DreamLists[argListValue.GetValueAsDreamObjectOfType(DreamPath.List)];
+                    List<DreamValue> argListValues = argList.GetValues();
+                    Dictionary<object, DreamValue> argListNamedValues = argList.GetAssociativeValues();
+
+                    foreach (DreamValue value in argListValues) {
+                        if (!argListNamedValues.ContainsKey(value.Value)) {
+                            arguments.OrderedArguments.Add(value);
+                        }
+                    }
+
+                    foreach (KeyValuePair<object, DreamValue> namedValue in argListNamedValues) {
+                        string name = namedValue.Key as string;
+
+                        if (name != null) {
+                            arguments.NamedArguments.Add(name, namedValue.Value);
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
                     }
                 }
-
-                foreach (KeyValuePair<object, DreamValue> namedValue in argListNamedValues) {
-                    string name = namedValue.Key as string;
-
-                    if (name != null) {
-                        arguments.NamedArguments.Add(name, namedValue.Value);
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-                    }
-                }
-
+                
                 Push(arguments);
             } else if (opcode == DreamProcOpcode.CompareGreaterThanOrEqual) {
                 DreamValue second = PopDreamValue();

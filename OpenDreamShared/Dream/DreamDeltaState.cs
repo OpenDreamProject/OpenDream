@@ -133,7 +133,9 @@ namespace OpenDreamShared.Dream {
         }
 
         public void AddClient(string ckey) {
-            ClientDeltas[ckey] = new ClientDelta();
+            if (!ClientDeltas.ContainsKey(ckey)) {
+                ClientDeltas[ckey] = new ClientDelta();
+            }
         }
 
         public void AddClientEyeIDDelta(string ckey, UInt16 newClientEyeID) {

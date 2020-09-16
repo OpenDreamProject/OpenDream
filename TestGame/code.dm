@@ -12,7 +12,7 @@
 
 	Move(NewLoc, Dir)
 		..()
-		world << "You are now at (" + loc.x + ", " + loc.y + ")"
+		client << "You are now at (" + loc.x + ", " + loc.y + ")"
 
 /world/New()
 	..()

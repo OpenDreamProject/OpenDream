@@ -4,11 +4,11 @@ using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Security;
+using System.Collections.Specialized;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Web;
 
 namespace OpenDreamServer.Dream.Procs.Native {
     static class DreamProcNativeRoot {
@@ -462,6 +462,24 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(orangeList);
+        }
+
+        public static DreamValue NativeProc_params2list(DreamProcScope scope, DreamProcArguments arguments) {
+            string paramsString = scope.GetValue("Params").GetValueAsString();
+            NameValueCollection query = HttpUtility.ParseQueryString(paramsString);
+            DreamProcArguments listCreationArguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
+
+            foreach (string queryKey in query.AllKeys) {
+                string queryValue = query.Get(queryKey);
+
+                if (Int32.TryParse(queryValue, out int queryValueInt)) {
+                    listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValueInt));
+                } else {
+                    listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValue));
+                }
+            }
+
+            return new DreamValue(Program.DreamObjectTree.CreateObject(DreamPath.List, listCreationArguments));
         }
 
         public static DreamValue NativeProc_pick(DreamProcScope scope, DreamProcArguments arguments) {

@@ -10,10 +10,12 @@ using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenDreamServer {
     class Program {
@@ -62,6 +64,24 @@ namespace OpenDreamServer {
                     connection.ClientDreamObject?.CallProc("South");
                 } else if (pKeyboardInput.KeysDown.Contains(37)) {
                     connection.ClientDreamObject?.CallProc("West");
+                }
+            });
+            DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
+                if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
+                    NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
+                    paramsBuilder.Add("shift", "0");
+                    paramsBuilder.Add("ctrl", "0");
+                    paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
+                    paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
+
+                    DreamProcArguments clickArguments = new DreamProcArguments(new List<DreamValue>() {
+                        new DreamValue(atom),
+                        new DreamValue((DreamObject)null),
+                        new DreamValue((DreamObject)null),
+                        new DreamValue(paramsBuilder.ToString())
+                    });
+                    
+                    connection.ClientDreamObject?.CallProc("Click", clickArguments);
                 }
             });
 

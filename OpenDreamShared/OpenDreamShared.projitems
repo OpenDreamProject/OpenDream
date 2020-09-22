@@ -18,7 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Interface\InterfaceDescriptor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\IPacket.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketATOMTypes.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketClickATOM.cs" />
+    <Compile Include="..\OpenDreamShared\Net\Packets\PacketClickAtom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketConnectionResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketDeltaGameState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketFullGameState.cs" />

@@ -76,7 +76,7 @@ namespace OpenDreamClient.Interface.Elements {
                 }
 
                 if (clickedATOM == null) clickedATOM = turf;
-                Program.OpenDream.Connection.SendPacket(new PacketClickATOM(clickedATOM.ID, iconX, iconY));
+                Program.OpenDream.Connection.SendPacket(new PacketClickAtom(clickedATOM.ID, iconX, iconY));
             }
         }
 

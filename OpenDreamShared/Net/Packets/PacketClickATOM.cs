@@ -1,14 +1,14 @@
 ﻿using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketClickATOM : IPacket {
+    class PacketClickAtom : IPacket {
         public PacketID PacketID => PacketID.ClickAtom;
         public UInt16 AtomID;
         public int IconX, IconY;
 
-        public PacketClickATOM() { }
+        public PacketClickAtom() { }
 
-        public PacketClickATOM(UInt16 atomID, int iconX, int iconY) {
+        public PacketClickAtom(UInt16 atomID, int iconX, int iconY) {
             AtomID = atomID;
             IconX = iconX;
             IconY = iconY;

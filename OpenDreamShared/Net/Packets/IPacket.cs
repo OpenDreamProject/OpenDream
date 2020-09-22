@@ -21,6 +21,7 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketFullGameState>(PacketID.FullGameState);
             RegisterPacket<PacketDeltaGameState>(PacketID.DeltaGameState);
             RegisterPacket<PacketKeyboardInput>(PacketID.KeyboardInput);
+            RegisterPacket<PacketClickAtom>(PacketID.ClickAtom);
         }
 
         public static IPacket CreatePacketFromData(byte[] packetData) {

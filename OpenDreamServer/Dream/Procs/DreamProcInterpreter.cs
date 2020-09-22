@@ -214,14 +214,14 @@ namespace OpenDreamServer.Dream.Procs {
                         if (identifier.IdentifierName == ".." && procArguments.ArgumentCount == 0) procArguments = _arguments;
 
                         try {
-                            Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments));
+                            Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments, _topScope.GetValue("usr").GetValueAsDreamObject()));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc '" + identifier.IdentifierName + "' on object of type '" + identifier.HoldingScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
                     }
                 } else if (procIdentifier is DreamProcIdentifierSelfProc) {
                     try {
-                        Push(_selfProc.Run(currentScope.DreamObject, arguments.CreateProcArguments()));
+                        Push(_selfProc.Run(currentScope.DreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
                     } catch (Exception e) {
                         throw new Exception("Exception while running proc '.' on object of type '" + currentScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
@@ -433,7 +433,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                     if (proc != null) {
                         try {
-                            Push(proc.Run(dreamObject, arguments.CreateProcArguments()));
+                            Push(proc.Run(dreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc " + procId + " on object of type '" + dreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
@@ -858,6 +858,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsInteger() > second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsDouble() > second.GetValueAsInteger();
+            } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value == null) {
+                return false;
             } else {
                 throw new Exception("Invalid greater than comparison on " + first + " and " + second);
             }

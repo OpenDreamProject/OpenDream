@@ -25,7 +25,7 @@ namespace OpenDreamServer.Dream.Procs {
             _defaultArgumentValues = defaultArgumentValues;
         }
 
-        public DreamValue Run(DreamObject instance, DreamProcArguments arguments) {
+        public DreamValue Run(DreamObject instance, DreamProcArguments arguments, DreamObject usr = null) {
             DreamProcScope scope = new DreamProcScope(instance);
 
             for (int i = 0; i < _argumentNames.Count; i++) {
@@ -43,6 +43,7 @@ namespace OpenDreamServer.Dream.Procs {
             }
 
             scope.CreateVariable("..", new DreamValue(SuperProc));
+            scope.CreateVariable("usr", new DreamValue(usr));
 
             return _runAction(scope, arguments);
         }

@@ -81,7 +81,7 @@ namespace OpenDreamServer {
                         new DreamValue(paramsBuilder.ToString())
                     });
                     
-                    connection.ClientDreamObject?.CallProc("Click", clickArguments);
+                    connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject);
                 }
             });
 
@@ -217,6 +217,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("max", new DreamProc(DreamProcNativeRoot.NativeProc_max, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("min", new DreamProc(DreamProcNativeRoot.NativeProc_min, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("orange", new DreamProc(DreamProcNativeRoot.NativeProc_orange, new List<string>() { "Dist", "Center" }));
+            DreamObjectTree.RegisterNativeProc("params2list", new DreamProc(DreamProcNativeRoot.NativeProc_params2list, new List<string>() { "Params" }));
             DreamObjectTree.RegisterNativeProc("pick", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>() { "Val1" }));
             DreamObjectTree.RegisterNativeProc("prob", new DreamProc(DreamProcNativeRoot.NativeProc_prob, new List<string>() { "P" }));
             DreamObjectTree.RegisterNativeProc("rand", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>()));

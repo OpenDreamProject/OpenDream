@@ -84,11 +84,11 @@ namespace OpenDreamServer.Dream.Objects {
             return ObjectDefinition.GetProc(procName);
         }
 
-        public DreamValue CallProc(string procName, DreamProcArguments arguments) {
+        public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
             try {
                 DreamProc proc = GetProc(procName);
 
-                return proc.Run(this, arguments);
+                return proc.Run(this, arguments, usr);
             } catch (Exception e) {
                 Console.WriteLine("Exception while running proc '" + procName + "' on object of type '" + ObjectDefinition.Type + "': " + e.Message);
             }

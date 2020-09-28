@@ -2,7 +2,6 @@
 using OpenDreamClient.Audio.NAudio;
 using OpenDreamClient.Dream;
 using OpenDreamClient.Renderer;
-using OpenDreamClient.Renderer.DirectX;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
@@ -14,12 +13,12 @@ using System.Collections.Generic;
 
 namespace OpenDreamClient {
     class OpenDream : System.Windows.Application {
-        public IDreamRenderer DreamRenderer = null;
         public IDreamSoundEngine DreamSoundEngine = null;
         public DreamResourceManager DreamResourceManager = null;
         public ClientConnection Connection = new ClientConnection();
         public GameWindow GameWindow;
         public Map Map;
+        public ATOM Eye;
         public Dictionary<UInt16, ATOM> ATOMs { get; private set; } = null;
         public List<ATOM> ScreenObjects = null;
 
@@ -37,7 +36,6 @@ namespace OpenDreamClient {
             GameWindow = new GameWindow();
             GameWindow.Show();
 
-            DreamRenderer = new DirectXDreamRenderer(GameWindow);
             DreamSoundEngine = new NAudioSoundEngine();
             DreamResourceManager = new DreamResourceManager();
 
@@ -53,7 +51,6 @@ namespace OpenDreamClient {
             DreamSoundEngine.StopAllChannels();
             Connection.Close();
 
-            DreamRenderer = null;
             DreamSoundEngine = null;
             DreamResourceManager = null;
 
@@ -156,13 +153,13 @@ namespace OpenDreamClient {
 
             if (pFullGameState.EyeID != 0xFFFF) {
                 if (ATOMs.ContainsKey(pFullGameState.EyeID)) {
-                    DreamRenderer.SetEye(ATOMs[pFullGameState.EyeID]);
+                    Eye = ATOMs[pFullGameState.EyeID];
                 } else {
                     Console.WriteLine("Full game state packet gives an invalid atom for the eye (ID " + pFullGameState.EyeID + ")");
-                    DreamRenderer.SetEye(null);
+                    Eye = null;
                 }
             } else {
-                DreamRenderer.SetEye(null);
+                Eye = null;
             }
 
             ScreenObjects.Clear();
@@ -279,7 +276,7 @@ namespace OpenDreamClient {
                     }
                 }
 
-                DreamRenderer.SetEye(newEye);
+                Eye = newEye;
             }
 
             if (pDeltaGameState.ScreenObjectAdditions != null) {

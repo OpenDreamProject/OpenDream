@@ -3,9 +3,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
+using OpenDreamShared.Interface;
+using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
-using OpenDreamShared.Interface;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementMap : Grid, IElement {
@@ -18,15 +19,12 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private InterfaceElementDescriptor _elementDescriptor;
-        private Image _image;
+        private DreamRenderer _dreamRenderer;
 
         public ElementMap() {
-            _image = new Image();
-            _image.HorizontalAlignment = HorizontalAlignment.Center;
-            _image.VerticalAlignment = VerticalAlignment.Center;
-            _image.Width = 480;
-            _image.Height = 480;
-            this.Children.Add(_image);
+            _dreamRenderer = new DreamRenderer();
+            this.Children.Add(_dreamRenderer.OpenGLViewControl);
+            
             this.UseLayoutRounding = true;
             this.Background = Brushes.Black;
 
@@ -40,27 +38,25 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
-            Program.OpenDream.DreamRenderer.UpdateViewportSize(480, 480);
-            _image.Source = Program.OpenDream.DreamRenderer.GetImageSource();
-            CompositionTarget.Rendering += this.OnCompositionTargetRendering;
+            _dreamRenderer.SetViewportSize(480, 480);
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e) {
-            CompositionTarget.Rendering -= this.OnCompositionTargetRendering;
+            
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e) {
-            Point mousePosition = e.GetPosition(_image);
-            System.Drawing.Point cameraPosition = Program.OpenDream.DreamRenderer.GetCameraPosition();
+            Point mousePosition = e.GetPosition(_dreamRenderer.OpenGLViewControl);
+            (int, int) cameraPosition = _dreamRenderer.GetCameraPosition();
             mousePosition.X = Math.Floor(mousePosition.X);
-            mousePosition.Y = _image.Height - Math.Floor(mousePosition.Y);
+            mousePosition.Y = _dreamRenderer.OpenGLViewControl.Height - Math.Floor(mousePosition.Y);
 
-            if (mousePosition.X < 0 || mousePosition.X > _image.Width || mousePosition.Y < 0 || mousePosition.Y > _image.Height) return;
+            if (mousePosition.X < 0 || mousePosition.X > _dreamRenderer.OpenGLViewControl.Width || mousePosition.Y < 0 || mousePosition.Y > _dreamRenderer.OpenGLViewControl.Height) return;
 
             int viewATOMX = (int)(mousePosition.X / 32);
             int viewATOMY = (int)(mousePosition.Y / 32);
-            int atomX = (cameraPosition.X - 7) + viewATOMX;
-            int atomY = (cameraPosition.Y - 7) + viewATOMY;
+            int atomX = (cameraPosition.Item1 - 7) + viewATOMX;
+            int atomY = (cameraPosition.Item2 - 7) + viewATOMY;
             int iconX = (int)mousePosition.X - (viewATOMX * 32);
             int iconY = (int)mousePosition.Y - (viewATOMY * 32);
             ATOM turf = Program.OpenDream.Map.Turfs[atomX, atomY];
@@ -78,10 +74,6 @@ namespace OpenDreamClient.Interface.Elements {
                 if (clickedATOM == null) clickedATOM = turf;
                 Program.OpenDream.Connection.SendPacket(new PacketClickAtom(clickedATOM.ID, iconX, iconY));
             }
-        }
-
-        private void OnCompositionTargetRendering(object sender, EventArgs e) {
-            Program.OpenDream.DreamRenderer.RenderFrame();
         }
     }
 }

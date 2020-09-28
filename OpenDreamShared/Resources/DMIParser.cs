@@ -1,6 +1,7 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenDreamShared.Resources {
     static class DMIParser {
@@ -21,6 +22,18 @@ namespace OpenDreamShared.Resources {
             public int Width, Height;
             public string DefaultStateName;
             public Dictionary<string, ParsedDMIState> States;
+
+            public bool HasState(string stateName = null) {
+                if (stateName == null) stateName = DefaultStateName;
+
+                return States.ContainsKey(stateName);
+            }
+
+            public ParsedDMIState GetState(string stateName = null) {
+                if (stateName == null) stateName = DefaultStateName;
+
+                return States[stateName];
+            }
         }
 
         public class ParsedDMIState {
@@ -28,6 +41,12 @@ namespace OpenDreamShared.Resources {
             public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new Dictionary<AtomDirection, ParsedDMIFrame[]>();
             public bool Loop = true;
             public bool Rewind = true;
+
+            public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
+                if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();
+
+                return Directions[direction];
+            }
         }
 
         public class ParsedDMIFrame {

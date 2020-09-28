@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
@@ -21,6 +22,13 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         ~ResourceDMI() {
             ImageBitmap.Dispose();
+        }
+
+        public Rectangle GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
+            DMIParser.ParsedDMIState state = Description.GetState(stateName);
+            DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
+
+            return new Rectangle(frame.X, frame.Y, Description.Width, Description.Height);
         }
 
         private bool IsValidPNG() {

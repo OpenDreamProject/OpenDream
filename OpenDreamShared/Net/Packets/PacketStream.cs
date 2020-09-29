@@ -155,8 +155,17 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void WriteOverlays(Dictionary<UInt16, IconVisualProperties> overlays) {
-            if (overlays != null && overlays.Count > 0) {
-                throw new NotImplementedException();
+            if (overlays != null) {
+                WriteByte((byte)overlays.Count);
+
+                foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in overlays) {
+                    WriteByte((byte)overlay.Key);
+
+                    WriteString(overlay.Value.Icon);
+                    WriteString(overlay.Value.IconState);
+                    WriteString("#FFFFFF");
+                    _binaryWriter.Write(overlay.Value.Layer);
+                }
             } else {
                 WriteByte(0);
             }

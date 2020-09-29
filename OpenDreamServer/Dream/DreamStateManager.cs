@@ -79,6 +79,18 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public void AddAtomOverlay(DreamObject atom, UInt16 overlayID, IconVisualProperties overlay) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID, overlay);
+            }
+        }
+
+        public void RemoveAtomOverlay(DreamObject atom, UInt16 overlayID) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.RemoveAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID);
+            }
+        }
+
         public void AddAtomLocationDelta(DreamObject atom, DreamObject newLocation) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddAtomLocationDelta(DreamMetaObjectAtom.AtomIDs[atom], (newLocation != null) ? DreamMetaObjectAtom.AtomIDs[newLocation] : (UInt16)0xFFFF);

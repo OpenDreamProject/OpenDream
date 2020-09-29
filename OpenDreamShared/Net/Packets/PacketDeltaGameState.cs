@@ -172,6 +172,20 @@ namespace OpenDreamShared.Net.Packets {
                     stream.WriteIconVisualProperties(atomDelta.ChangedVisualProperties);
                 }
 
+                if (atomDelta.OverlayAdditions.Count > 0) {
+                    stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.OverlayAdditions);
+                    stream.WriteOverlays(atomDelta.OverlayAdditions);
+                }
+
+                if (atomDelta.OverlayRemovals.Count > 0) {
+                    stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.OverlayRemovals);
+
+                    stream.WriteByte((byte)atomDelta.OverlayRemovals.Count);
+                    foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
+                        stream.WriteByte((byte)overlayID);
+                    }
+                }
+
                 stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.End);
             }
         }

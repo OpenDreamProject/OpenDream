@@ -66,7 +66,19 @@ namespace OpenDreamShared.Dream {
                     Atom atom = Atoms[atomDelta.AtomID];
 
                     if (!atomDelta.ChangedVisualProperties.IsDefault()) atom.VisualProperties = atom.VisualProperties.Merge(atomDelta.ChangedVisualProperties);
-                    
+
+                    if (atomDelta.OverlayRemovals.Count > 0) {
+                        foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
+                            atom.Overlays.Remove(overlayID);
+                        }
+                    }
+
+                    if (atomDelta.OverlayAdditions.Count > 0) {
+                        foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomDelta.OverlayAdditions) {
+                            atom.Overlays.Add(overlay.Key, overlay.Value);
+                        }
+                    }
+
                     Atoms[atomDelta.AtomID] = atom;
                 }
 

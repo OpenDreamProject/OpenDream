@@ -1,7 +1,6 @@
 ﻿using OpenDreamClient.Audio;
 using OpenDreamClient.Audio.NAudio;
 using OpenDreamClient.Dream;
-using OpenDreamClient.Renderer;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
@@ -42,7 +41,7 @@ namespace OpenDreamClient {
             ATOMs = new Dictionary<UInt16, ATOM>();
             ScreenObjects = new List<ATOM>();
 
-            this.MainWindow.Hide();
+            MainWindow.Hide();
         }
 
         public void DisconnectFromServer() {
@@ -59,7 +58,7 @@ namespace OpenDreamClient {
             ScreenObjects = null;
 
             GameWindow.Close();
-            this.MainWindow.Show();
+            MainWindow.Show();
         }
 
         public void AddATOM(ATOM atom) {
@@ -219,15 +218,15 @@ namespace OpenDreamClient {
 
                     atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomDelta.ChangedVisualProperties);
 
-                    if (atomDelta.OverlayAdditions != null) {
-                        foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomDelta.OverlayAdditions) {
-                            atom.Icon.AddOverlay(overlay.Key, overlay.Value);
-                        }
-                    }
-
                     if (atomDelta.OverlayRemovals != null) {
                         foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
                             atom.Icon.RemoveOverlay(overlayID);
+                        }
+                    }
+
+                    if (atomDelta.OverlayAdditions != null) {
+                        foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomDelta.OverlayAdditions) {
+                            atom.Icon.AddOverlay(overlay.Key, overlay.Value);
                         }
                     }
 

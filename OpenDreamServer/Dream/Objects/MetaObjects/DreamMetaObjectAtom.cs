@@ -93,6 +93,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         private void OverlayValueAssigned(DreamList overlayList, DreamValue overlayKey, DreamValue overlayValue) {
+            if (overlayValue.Value == null) return;
+
             DreamObject atom = _overlaysListToAtom[overlayList];
             Dictionary<DreamValue, (UInt16, IconVisualProperties)> overlays = GetAtomOverlays(atom);
             (UInt16, IconVisualProperties) overlay = overlays.GetValueOrDefault(overlayValue);
@@ -105,8 +107,31 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 } else {
                     overlay.Item2.Icon = icon.GetValueAsString();
                 }
-                
+
                 overlay.Item2.IconState = overlayValue.GetValueAsString();
+            } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
+                DreamValue icon = mutableAppearance.GetVariable("icon");
+                if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
+                    overlay.Item2.Icon = icon.GetValueAsDreamResource().ResourcePath;
+                } else {
+                    overlay.Item2.Icon = icon.GetValueAsString();
+                }
+
+                overlay.Item2.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
+                overlay.Item2.Layer = (float)mutableAppearance.GetVariable("layer").GetValueAsNumber();
+            } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.Image, out DreamObject image)) {
+                DreamValue icon = image.GetVariable("icon");
+                DreamValue iconState = image.GetVariable("icon_state");
+
+                if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
+                    overlay.Item2.Icon = icon.GetValueAsDreamResource().ResourcePath;
+                } else {
+                    overlay.Item2.Icon = icon.GetValueAsString();
+                }
+
+                if (iconState.IsType(DreamValue.DreamValueType.String)) overlay.Item2.IconState = iconState.GetValueAsString();
+                overlay.Item2.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
+                overlay.Item2.Layer = (float)image.GetVariable("layer").GetValueAsNumber();
             } else {
                 return;
             }
@@ -116,6 +141,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
         
         private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue overlayKey, DreamValue overlayValue) {
+            if (overlayValue.Value == null) return;
+
             DreamObject atom = _overlaysListToAtom[overlayList];
             Dictionary<DreamValue, (UInt16, IconVisualProperties)> overlays = GetAtomOverlays(atom);
 

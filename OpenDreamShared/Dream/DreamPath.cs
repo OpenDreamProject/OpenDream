@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace OpenDreamShared.Dream {
     struct DreamPath {
@@ -9,6 +8,7 @@ namespace OpenDreamShared.Dream {
         public static DreamPath List = new DreamPath("/list");
         public static DreamPath Sound = new DreamPath("/sound");
         public static DreamPath Image = new DreamPath("/image");
+        public static DreamPath MutableAppearance = new DreamPath("/mutable_appearance");
         public static DreamPath World = new DreamPath("/world");
         public static DreamPath Client = new DreamPath("/client");
         public static DreamPath Datum = new DreamPath("/datum");

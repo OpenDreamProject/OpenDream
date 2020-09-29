@@ -147,7 +147,7 @@ namespace OpenDreamShared.Net.Packets {
                 overlayVisualProperties.Icon = ReadString();
                 overlayVisualProperties.IconState = ReadString();
                 ReadString(); //TODO: Color
-                overlayVisualProperties.Layer = _binaryReader.ReadSingle();
+                overlayVisualProperties.Layer = ReadFloat();
                 overlays[overlayID] = overlayVisualProperties;
             }
 
@@ -164,7 +164,7 @@ namespace OpenDreamShared.Net.Packets {
                     WriteString(overlay.Value.Icon);
                     WriteString(overlay.Value.IconState);
                     WriteString("#FFFFFF");
-                    _binaryWriter.Write(overlay.Value.Layer);
+                    WriteFloat(overlay.Value.Layer);
                 }
             } else {
                 WriteByte(0);

@@ -55,6 +55,7 @@ namespace OpenDreamClient.Renderer {
             _gl.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             _gl.BlendFunc(OpenGL.GL_SRC_ALPHA, OpenGL.GL_ONE_MINUS_SRC_ALPHA);
             _gl.Enable(OpenGL.GL_BLEND);
+            _gl.Enable(OpenGL.GL_DEPTH_TEST);
             _gl.UseProgram(_shader.ShaderProgram);
 
             uint[] buffers = new uint[] { 0, 0 };
@@ -85,6 +86,8 @@ namespace OpenDreamClient.Renderer {
                 1.0f, 0.0f
             }, OpenGL.GL_STATIC_DRAW);
             _gl.EnableVertexAttribArray(_shader.TextureCoordLocation);
+
+            _gl.Uniform1(_shader.LayerUniform, 1.0f); //TODO: Use atom icons' layers
         }
 
         private DreamTexture GetDreamTexture(DreamIcon icon) {

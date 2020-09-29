@@ -2,13 +2,14 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamServer.Dream {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
+    delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 
     class DreamList {
         public event DreamListValueAssignedEventHandler ValueAssigned;
+        public event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
         private List<DreamValue> _values = new List<DreamValue>();
         private Dictionary<object, DreamValue> _associativeValues = new Dictionary<object, DreamValue>();
@@ -82,17 +83,17 @@ namespace OpenDreamServer.Dream {
         }
 
         public void RemoveValue(DreamValue value) {
-            foreach (DreamValue listValue in _values) {
-                if (value == listValue) {
-                    _values.Remove(listValue);
+            int valueIndex = _values.IndexOf(value);
 
-                    break;
-                }
+            if (valueIndex != -1) {
+                if (BeforeValueRemoved != null) BeforeValueRemoved.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
+                _values.RemoveAt(valueIndex);
             }
         }
 
         public void AddValue(DreamValue value) {
             _values.Add(value);
+            if (ValueAssigned != null) ValueAssigned.Invoke(this, new DreamValue(_values.Count), value);
         }
 
         //Does not include associations
@@ -118,6 +119,7 @@ namespace OpenDreamServer.Dream {
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
             for (int i = end - 1; i >= start; i--) {
+                if (BeforeValueRemoved != null) BeforeValueRemoved.Invoke(this, new DreamValue(i), _values[i - 1]);
                 _values.RemoveAt(i - 1);
             }
         }

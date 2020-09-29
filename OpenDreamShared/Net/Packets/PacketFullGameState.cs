@@ -60,7 +60,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteUInt16(atom.Value.BaseID);
                 stream.WriteUInt16(atom.Value.LocationID);
                 stream.WriteIconVisualProperties(atom.Value.VisualProperties, ATOMBase.AtomBases[atom.Value.BaseID].VisualProperties);
-                stream.WriteOverlays(null);
+                stream.WriteOverlays(atom.Value.Overlays);
                 if (ATOMBase.AtomBases[atom.Value.BaseID].Type == ATOMType.Movable) {
                     stream.WriteUInt16(0);
                     stream.WriteUInt16(0);

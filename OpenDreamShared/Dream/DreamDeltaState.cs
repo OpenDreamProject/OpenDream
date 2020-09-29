@@ -70,11 +70,12 @@ namespace OpenDreamShared.Dream {
         }
 
         public void AddAtomCreation(UInt16 atomID, UInt16 baseID) {
-            DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation();
+            AtomCreation atomCreation = new AtomCreation();
             atomCreation.AtomID = atomID;
             atomCreation.BaseID = baseID;
             atomCreation.LocationID = 0xFFFF;
             atomCreation.VisualProperties = new IconVisualProperties();
+            atomCreation.Overlays = new Dictionary<UInt16, IconVisualProperties>();
 
             AtomCreations.Add(atomCreation);
         }
@@ -116,11 +117,60 @@ namespace OpenDreamShared.Dream {
                     atomDelta.ChangedVisualProperties.IconState = iconState;
                     AtomDeltas[existingAtomDeltaIndex] = atomDelta;
                 }
-                
             } else {
                 AtomCreation atomCreation = AtomCreations[existingAtomCreationIndex];
 
                 atomCreation.VisualProperties.IconState = iconState;
+                AtomCreations[existingAtomCreationIndex] = atomCreation;
+            }
+        }
+
+        public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, IconVisualProperties overlay) {
+            int existingAtomCreationIndex = GetExistingAtomCreationIndex(atomID);
+
+            if (existingAtomCreationIndex == -1) {
+                int existingAtomDeltaIndex = GetExistingAtomDeltaIndex(atomID);
+
+                if (existingAtomDeltaIndex == -1) {
+                    AtomDelta atomDelta = new AtomDelta(atomID);
+
+                    atomDelta.OverlayAdditions[overlayID] = overlay;
+                    AtomDeltas.Add(atomDelta);
+                } else {
+                    AtomDelta atomDelta = AtomDeltas[existingAtomDeltaIndex];
+
+                    atomDelta.OverlayAdditions[overlayID] = overlay;
+                    AtomDeltas[existingAtomDeltaIndex] = atomDelta;
+                }
+            } else {
+                AtomCreation atomCreation = AtomCreations[existingAtomCreationIndex];
+
+                atomCreation.Overlays[overlayID] = overlay;
+                AtomCreations[existingAtomCreationIndex] = atomCreation;
+            }
+        }
+
+        public void RemoveAtomOverlay(UInt16 atomID, UInt16 overlayID) {
+            int existingAtomCreationIndex = GetExistingAtomCreationIndex(atomID);
+
+            if (existingAtomCreationIndex == -1) {
+                int existingAtomDeltaIndex = GetExistingAtomDeltaIndex(atomID);
+
+                if (existingAtomDeltaIndex == -1) {
+                    AtomDelta atomDelta = new AtomDelta(atomID);
+
+                    atomDelta.OverlayRemovals.Add(overlayID);
+                    AtomDeltas.Add(atomDelta);
+                } else {
+                    AtomDelta atomDelta = AtomDeltas[existingAtomDeltaIndex];
+
+                    atomDelta.OverlayRemovals.Add(overlayID);
+                    AtomDeltas[existingAtomDeltaIndex] = atomDelta;
+                }
+            } else {
+                AtomCreation atomCreation = AtomCreations[existingAtomCreationIndex];
+
+                atomCreation.Overlays.Remove(overlayID);
                 AtomCreations[existingAtomCreationIndex] = atomCreation;
             }
         }
@@ -146,7 +196,7 @@ namespace OpenDreamShared.Dream {
         }
 
         public bool ContainsChanges() {
-            return (AtomCreations.Count > 0) || (AtomLocationDeltas.Count > 0) || (TurfDeltas.Count > 0) || (ClientDeltas.Count > 0);
+            return (AtomCreations.Count > 0) || (AtomLocationDeltas.Count > 0) || (AtomDeltas.Count > 0) || (TurfDeltas.Count > 0) || (ClientDeltas.Count > 0);
         }
 
         private int GetExistingAtomCreationIndex(UInt16 atomID) {

@@ -30,7 +30,7 @@ namespace OpenDreamShared.Resources {
             }
 
             public ParsedDMIState GetState(string stateName = null) {
-                if (stateName == null) stateName = DefaultStateName;
+                if (!States.ContainsKey(stateName)) stateName = DefaultStateName;
 
                 return States[stateName];
             }

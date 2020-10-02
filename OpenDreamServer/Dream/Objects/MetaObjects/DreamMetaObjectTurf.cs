@@ -1,14 +1,16 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectTurf : DreamMetaObjectAtom {
+        private static DreamObject _area = null; //TODO: Actual areas
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
+
+            if (_area == null) {
+                _area = Program.DreamObjectTree.CreateObject(DreamPath.Area);
+            }
 
             DreamObject loc = dreamObject.GetVariable("loc").GetValueAsDreamObject();
             if (loc != null && loc.IsSubtypeOf(DreamPath.Turf)) {
@@ -29,6 +31,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 } else {
                     return new DreamValue(0);
                 }
+            } else if (variableName == "loc") {
+                return new DreamValue(_area);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

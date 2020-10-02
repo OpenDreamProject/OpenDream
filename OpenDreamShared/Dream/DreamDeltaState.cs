@@ -196,7 +196,12 @@ namespace OpenDreamShared.Dream {
         }
 
         public bool ContainsChanges() {
-            return (AtomCreations.Count > 0) || (AtomLocationDeltas.Count > 0) || (AtomDeltas.Count > 0) || (TurfDeltas.Count > 0) || (ClientDeltas.Count > 0);
+            return (AtomCreations.Count > 0)
+                    ||(AtomDeletions.Count > 0)
+                    || (AtomLocationDeltas.Count > 0)
+                    || (AtomDeltas.Count > 0)
+                    || (TurfDeltas.Count > 0)
+                    || (ClientDeltas.Count > 0);
         }
 
         private int GetExistingAtomCreationIndex(UInt16 atomID) {

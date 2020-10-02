@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Text;
 
 namespace OpenDreamShared.Dream {
     class DreamFullState {
@@ -58,6 +57,13 @@ namespace OpenDreamShared.Dream {
                     Atoms[atom.AtomID] = atom;
                 }
 
+                foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in deltaState.AtomLocationDeltas) {
+                    Atom atom = Atoms[atomLocationDelta.AtomID];
+
+                    atom.LocationID = atomLocationDelta.LocationID;
+                    Atoms[atomLocationDelta.AtomID] = atom;
+                }
+
                 foreach (UInt16 atomDeletion in deltaState.AtomDeletions) {
                     Atoms.Remove(atomDeletion);
                 }
@@ -80,13 +86,6 @@ namespace OpenDreamShared.Dream {
                     }
 
                     Atoms[atomDelta.AtomID] = atom;
-                }
-
-                foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in deltaState.AtomLocationDeltas) {
-                    Atom atom = Atoms[atomLocationDelta.AtomID];
-
-                    atom.LocationID = atomLocationDelta.LocationID;
-                    Atoms[atomLocationDelta.AtomID] = atom;
                 }
 
                 foreach (DreamDeltaState.TurfDelta turfDelta in deltaState.TurfDeltas) {

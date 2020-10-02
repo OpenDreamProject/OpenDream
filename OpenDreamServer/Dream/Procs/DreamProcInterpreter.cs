@@ -162,12 +162,12 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(new DreamValue(first.GetValueAsDouble() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
                     Push(new DreamValue(first.GetValueAsDouble() + second.GetValueAsDouble()));
-                } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.Integer) {
-                    Push(new DreamValue(first.GetValueAsString() + second.GetValueAsInteger()));
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.String) {
-                    Push(new DreamValue(first.GetValueAsInteger() + second.GetValueAsString()));
+                } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.String) {
+                    Push(new DreamValue(first.GetValueAsDouble() + second.GetValueAsString()));
                 } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
                     Push(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
+                } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.Double) {
+                    Push(new DreamValue(first.GetValueAsString() + second.GetValueAsDouble()));
                 } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value != null) {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
@@ -274,6 +274,12 @@ namespace OpenDreamServer.Dream.Procs {
 
                 if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     Push(new DreamValue(first.GetValueAsInteger() - second.GetValueAsInteger()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
+                    Push(new DreamValue(first.GetValueAsInteger() - second.GetValueAsDouble()));
+                } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
+                    Push(new DreamValue(first.GetValueAsDouble() - second.GetValueAsDouble()));
+                } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
+                    Push(new DreamValue(first.GetValueAsDouble() - second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value != null) {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
@@ -355,6 +361,10 @@ namespace OpenDreamServer.Dream.Procs {
                     }
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
+                    identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsDouble()));
+                } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
+                    identifier.Assign(new DreamValue(first.GetValueAsDouble() + second.GetValueAsDouble()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                     identifier.Assign(new DreamValue(first.GetValueAsDouble() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
@@ -459,9 +469,13 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamValue first = PopDreamValue();
 
                 if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                    Push(new DreamValue(first.GetValueAsInteger() / second.GetValueAsInteger()));
+                    Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
+                    Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
-                    Push(new DreamValue(first.GetValueAsDouble() / second.GetValueAsInteger()));
+                    Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
+                } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
+                    Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
                 } else {
                     throw new Exception("Invalid divide operation on " + first + " and " + second);
                 }
@@ -816,6 +830,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return false;
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsInteger() == second.GetValueAsInteger();
+            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
+                return first.GetValueAsInteger() == second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.DreamObject) {
                 return false;
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
@@ -844,8 +860,12 @@ namespace OpenDreamServer.Dream.Procs {
         private bool IsLessThan(DreamValue first, DreamValue second) {
             if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsInteger() < second.GetValueAsInteger();
+            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
+                return first.GetValueAsInteger() < second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsDouble() < second.GetValueAsInteger();
+            } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
+                return first.GetValueAsDouble() < second.GetValueAsDouble();
             } else {
                 throw new Exception("Invalid less than comparison between " + first + " and " + second);
             }
@@ -856,6 +876,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsInteger() > second.GetValueAsInteger();
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
                 return first.GetValueAsInteger() > second.GetValueAsDouble();
+            } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
+                return first.GetValueAsDouble() > second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsDouble() > second.GetValueAsInteger();
             } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value == null) {

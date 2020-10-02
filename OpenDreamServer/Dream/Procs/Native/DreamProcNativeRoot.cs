@@ -348,6 +348,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 } else {
                     return new DreamValue(0);
                 }
+            } else if (value.Type == DreamValue.DreamValueType.DreamPath) {
+                return new DreamValue(0);
             }
 
             throw new Exception("Cannot check length of " + value + "");
@@ -400,6 +402,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     } else if (value.Type == DreamValue.DreamValueType.String) {
                         if (String.Compare(value.GetValueAsString(), currentMax.GetValueAsString()) > 0) currentMax = value;
                     }
+                } else if (value.Type == DreamValue.DreamValueType.Integer && currentMax.Type == DreamValue.DreamValueType.Double) {
+                    if (value.GetValueAsInteger() > currentMax.GetValueAsDouble()) currentMax = value;
+                } else if (value.Type == DreamValue.DreamValueType.Double && currentMax.Type == DreamValue.DreamValueType.Integer) {
+                    if (value.GetValueAsDouble() > currentMax.GetValueAsInteger()) currentMax = value;
                 } else {
                     throw new Exception("Cannot compare " + currentMax + " and " + value);
                 }
@@ -442,6 +448,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return currentMin;
+        }
+
+        public static DreamValue NativeProc_num2text(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue number = scope.GetValue("N");
+
+            if (number.IsType(DreamValue.DreamValueType.Integer | DreamValue.DreamValueType.Double)) {
+                return new DreamValue(number.GetValueAsNumber().ToString());
+            } else {
+                return new DreamValue("0");
+            }
         }
 
         public static DreamValue NativeProc_orange(DreamProcScope scope, DreamProcArguments arguments) {
@@ -543,11 +559,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_sleep(DreamProcScope scope, DreamProcArguments arguments) {
             double delay = scope.GetValue("Delay").GetValueAsNumber();
             int delayMilliseconds = (int)(delay * 100);
+            int ticksToSleep = (int)Math.Ceiling(delayMilliseconds / (Program.WorldInstance.GetVariable("tick_lag").GetValueAsNumber() * 100));
 
-            Thread.Sleep(delayMilliseconds);
-
-            int ticksSlept = delayMilliseconds / (int)(Program.WorldInstance.GetVariable("tick_lag").GetValueAsNumber() * 100);
-            Program.TickCount += ticksSlept;
+            CountdownEvent tickEvent = new CountdownEvent(ticksToSleep);
+            Program.TickEvents.Add(tickEvent);
+            tickEvent.Wait();
 
             return new DreamValue((DreamObject)null);
         }

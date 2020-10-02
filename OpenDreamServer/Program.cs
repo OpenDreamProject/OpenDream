@@ -27,7 +27,9 @@ namespace OpenDreamServer {
         public static DreamObject WorldInstance = null;
         public static Dictionary<DreamObjectDefinition, UInt16> AtomBaseIDs = new Dictionary<DreamObjectDefinition, UInt16>();
         public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new Dictionary<DreamObject, DreamConnection>();
+        public static List<CountdownEvent> TickEvents = new List<CountdownEvent>();
         public static int TickCount = 0;
+        public static long TickStartTime = 0;
 
         private static InterfaceDescriptor _clientInterface = null;
 
@@ -56,15 +58,17 @@ namespace OpenDreamServer {
 
             DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
             DreamServer.RegisterPacketCallback<PacketKeyboardInput>(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => {
-                if (pKeyboardInput.KeysDown.Contains(38)) {
-                    connection.ClientDreamObject?.CallProc("North");
-                } else if (pKeyboardInput.KeysDown.Contains(39)) {
-                    connection.ClientDreamObject?.CallProc("East");
-                } else if (pKeyboardInput.KeysDown.Contains(40)) {
-                    connection.ClientDreamObject?.CallProc("South");
-                } else if (pKeyboardInput.KeysDown.Contains(37)) {
-                    connection.ClientDreamObject?.CallProc("West");
-                }
+                Task.Run(() => {
+                    if (pKeyboardInput.KeysDown.Contains(38)) {
+                        connection.ClientDreamObject?.CallProc("North");
+                    } else if (pKeyboardInput.KeysDown.Contains(39)) {
+                        connection.ClientDreamObject?.CallProc("East");
+                    } else if (pKeyboardInput.KeysDown.Contains(40)) {
+                        connection.ClientDreamObject?.CallProc("South");
+                    } else if (pKeyboardInput.KeysDown.Contains(37)) {
+                        connection.ClientDreamObject?.CallProc("West");
+                    }
+                });
             });
             DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
                 if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
@@ -106,14 +110,26 @@ namespace OpenDreamServer {
             DreamMap = new DreamMap();
             DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));
 
+            TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
             Task.Run(() => WorldInstance.CallProc("New"));
             DreamServer.Start();
             while (true) {
+                TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
+                for (int i = 0; i < TickEvents.Count; i++) {
+                    CountdownEvent tickEvent = TickEvents[i];
+
+                    tickEvent.Signal();
+                    if (tickEvent.CurrentCount <= 0) {
+                        TickEvents.RemoveAt(i);
+                        i--;
+                    }
+                }
+
                 DreamStateManager.FinalizeCurrentDeltaState();
                 DreamServer.Process();
 
                 TickCount++;
-                Thread.Sleep(100 * WorldInstance.GetVariable("tick_lag").GetValueAsInteger());
+                Thread.Sleep((int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsNumber()));
             }
         }
 
@@ -216,6 +232,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("lowertext", new DreamProc(DreamProcNativeRoot.NativeProc_lowertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("max", new DreamProc(DreamProcNativeRoot.NativeProc_max, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("min", new DreamProc(DreamProcNativeRoot.NativeProc_min, new List<string>() { "A" }));
+            DreamObjectTree.RegisterNativeProc("num2text", new DreamProc(DreamProcNativeRoot.NativeProc_num2text, new List<string>() { "N", "Digits", "Radix" }));
             DreamObjectTree.RegisterNativeProc("orange", new DreamProc(DreamProcNativeRoot.NativeProc_orange, new List<string>() { "Dist", "Center" }));
             DreamObjectTree.RegisterNativeProc("params2list", new DreamProc(DreamProcNativeRoot.NativeProc_params2list, new List<string>() { "Params" }));
             DreamObjectTree.RegisterNativeProc("pick", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>() { "Val1" }));

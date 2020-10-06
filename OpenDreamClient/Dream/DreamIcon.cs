@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Resources;
 
 namespace OpenDreamClient.Dream {
     class DreamIcon {
@@ -19,6 +20,7 @@ namespace OpenDreamClient.Dream {
         }
 
         private IconVisualProperties _visualProperties;
+        private DateTime _animationStartTime = DateTime.Now;
 
         public DreamIcon() {
 
@@ -29,7 +31,18 @@ namespace OpenDreamClient.Dream {
         }
 
         public int GetCurrentAnimationFrame() {
-            return 0;
+            DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(VisualProperties.IconState);
+            DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(VisualProperties.Direction);
+            double elapsedTime = DateTime.Now.Subtract(_animationStartTime).TotalMilliseconds / 100;
+            int animationFrame = (int)(elapsedTime / frames[0].Delay); //TODO: Don't just use the first frame's delay
+
+            if (dmiState.Loop) {
+                animationFrame %= frames.Length;
+            } else {
+                animationFrame = Math.Min(animationFrame, frames.Length);
+            }
+
+            return animationFrame;
         }
 
         public Color GetPixel(int x, int y) {
@@ -77,6 +90,7 @@ namespace OpenDreamClient.Dream {
 
             Program.OpenDream.DreamResourceManager.LoadResourceAsync<ResourceDMI>(VisualProperties.Icon, (ResourceDMI dmi) => {
                 DMI = dmi;
+                _animationStartTime = DateTime.Now;
             });
         }
 

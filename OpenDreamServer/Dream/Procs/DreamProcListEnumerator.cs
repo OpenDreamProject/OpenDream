@@ -15,7 +15,7 @@ namespace OpenDreamServer.Dream.Procs {
         public bool TryMoveNext(out DreamValue value) {
             CurrentIndex++;
 
-            if (CurrentIndex <= List.GetLength()) {
+            if (List != null && CurrentIndex <= List.GetLength()) {
                 value = List.GetValue(new DreamValue(CurrentIndex));
 
                 return true;

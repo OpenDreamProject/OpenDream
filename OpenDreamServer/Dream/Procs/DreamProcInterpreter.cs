@@ -712,7 +712,9 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamObject listObject = PopDreamValue().GetValueAsDreamObject();
                 DreamList list;
 
-                if (listObject.IsSubtypeOf(DreamPath.List)) {
+                if (listObject == null) {
+                    list = null;
+                } else if (listObject.IsSubtypeOf(DreamPath.List)) {
                     list = DreamMetaObjectList.DreamLists[listObject].CreateCopy();
                 } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
                     DreamObject contents = listObject.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);

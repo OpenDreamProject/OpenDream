@@ -456,9 +456,13 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.BitAnd) {
                 int second = PopDreamValue().GetValueAsInteger();
-                int first = PopDreamValue().GetValueAsInteger();
+                DreamValue first = PopDreamValue();
 
-                Push(new DreamValue(first & second));
+                if (first.Value != null) {
+                    Push(new DreamValue(first.GetValueAsInteger() & second));
+                } else {
+                    Push(new DreamValue(0));
+                }
             } else if (opcode == DreamProcOpcode.CompareNotEquals) {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
@@ -836,6 +840,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsInteger() == second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.DreamObject) {
                 return false;
+            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.String) {
+                return false;
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
                 return first.GetValueAsDouble() == second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
@@ -850,6 +856,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return false;
             } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.DreamPath) {
                 return first.GetValueAsPath().Equals(second.GetValueAsPath());
+            } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.DreamObject) {
+                return false;
             } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.String) {
                 return false;
             } else if (first.Value == null) {

@@ -67,6 +67,7 @@ namespace OpenDreamShared.Net.Packets {
             if (DeltaState.AtomDeletions.Count > 0) WriteAtomDeletionsSection(stream);
             if (DeltaState.AtomDeltas.Count > 0) WriteAtomDeltasSection(stream);
             if (DeltaState.AtomLocationDeltas.Count > 0) WriteAtomLocationDeltasSection(stream);
+            if (DeltaState.TurfDeltas.Count > 0) WriteTurfDeltasSection(stream);
             WriteClientSection(stream);
         }
 
@@ -223,6 +224,17 @@ namespace OpenDreamShared.Net.Packets {
                 turfDelta.TurfAtomID = stream.ReadUInt16();
 
                 DeltaState.TurfDeltas.Add(turfDelta);
+            }
+        }
+
+        private void WriteTurfDeltasSection(PacketStream stream) {
+            stream.WriteByte((byte)PacketDeltaGameStateSectionID.TurfDeltas);
+            stream.WriteUInt16((UInt16)DeltaState.TurfDeltas.Count);
+
+            foreach (DreamDeltaState.TurfDelta turfDelta in DeltaState.TurfDeltas) {
+                stream.WriteUInt16((UInt16)turfDelta.X);
+                stream.WriteUInt16((UInt16)turfDelta.Y);
+                stream.WriteUInt16(turfDelta.TurfAtomID);
             }
         }
 

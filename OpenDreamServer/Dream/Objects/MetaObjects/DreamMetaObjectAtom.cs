@@ -23,13 +23,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
             Program.DreamStateManager.AddAtomCreation(dreamObject);
 
-            if (creationArguments.ArgumentCount >= 1) {
-                DreamObject loc = creationArguments.GetArgument(0, "loc").GetValueAsDreamObject();
-                if (loc != null && loc.IsSubtypeOf(DreamPath.Atom)) {
-                    dreamObject.SetVariable("loc", new DreamValue(loc)); //loc is set before /New() is ever called
-                }
-            } else {
-                creationArguments.OrderedArguments.Add(new DreamValue((DreamObject)null)); //First argument is loc, which is null
+            DreamObject locArgument = FindLocArgument(creationArguments);
+            if (locArgument != null) {
+                dreamObject.SetVariable("loc", new DreamValue(locArgument)); //loc is set before /New() is ever called
+            } else if (creationArguments.ArgumentCount == 0) {
+                creationArguments.OrderedArguments.Add(new DreamValue(locArgument)); //First argument is loc, which is null
             }
 
             DreamObject worldContents = Program.WorldInstance.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
@@ -39,6 +37,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
+            if (Program.WorldInstance.GetVariable("contents").TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject worldContents)) {
+                worldContents.CallProc("Remove", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
+            }
+
             Program.DreamStateManager.AddAtomDeletion(dreamObject);
 
             lock (_atomListsLock) {
@@ -46,10 +48,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 AtomIDs.Remove(dreamObject);
                 _overlaysListToAtom.Remove(DreamMetaObjectList.DreamLists[dreamObject.GetVariable("overlays").GetValueAsDreamObjectOfType(DreamPath.List)]);
                 _atomOverlays.Remove(dreamObject);
-            }
-
-            if (Program.WorldInstance.GetVariable("contents").TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject worldContents)) {
-                worldContents.CallProc("Remove", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
             }
 
             base.OnObjectDeleted(dreamObject);
@@ -80,6 +78,18 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
                 _overlaysListToAtom[overlayList] = dreamObject;
             }
+        }
+
+        public static DreamObject FindLocArgument(DreamProcArguments arguments) {
+            if (arguments.ArgumentCount >= 1) {
+                DreamValue loc = arguments.GetArgument(0, "loc");
+
+                if (loc != null && loc.Value != null && loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
+                    return locValue;
+                }
+            }
+
+            return null;
         }
 
         private Dictionary<DreamValue, (UInt16, IconVisualProperties)> GetAtomOverlays(DreamObject atom) {

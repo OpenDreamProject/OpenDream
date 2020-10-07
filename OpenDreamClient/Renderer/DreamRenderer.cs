@@ -93,7 +93,7 @@ namespace OpenDreamClient.Renderer {
         private DreamTexture GetDreamTexture(DreamIcon icon) {
             DreamTexture texture = null;
             
-            if (icon != null && icon.DMI != null && icon.DMI.Description.States.ContainsKey(icon.VisualProperties.IconState)) {
+            if (icon != null && icon.IsValidIcon()) {
                 Rectangle textureRect = icon.DMI.GetTextureRect(icon.VisualProperties.IconState, icon.VisualProperties.Direction, icon.GetCurrentAnimationFrame());
 
                 if (!_textureCache.TryGetValue((icon.DMI.ResourcePath, textureRect), out texture)) {

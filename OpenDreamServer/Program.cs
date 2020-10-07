@@ -73,8 +73,6 @@ namespace OpenDreamServer {
             DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
                 if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
                     NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
-                    paramsBuilder.Add("shift", "0");
-                    paramsBuilder.Add("ctrl", "0");
                     paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
                     paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
 
@@ -85,7 +83,7 @@ namespace OpenDreamServer {
                         new DreamValue(paramsBuilder.ToString())
                     });
                     
-                    connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject);
+                    Task.Run(() => connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject));
                 }
             });
 
@@ -202,6 +200,7 @@ namespace OpenDreamServer {
 
         private static void RegisterNativeProcs() {
             DreamObjectTree.RegisterNativeProc("abs", new DreamProc(DreamProcNativeRoot.NativeProc_abs, new List<string>() { "A" }));
+            DreamObjectTree.RegisterNativeProc("animate", new DreamProc(DreamProcNativeRoot.NativeProc_animate, new List<string>() { "Object", "time", "loop", "easing", "flags" }));
             DreamObjectTree.RegisterNativeProc("ascii2text", new DreamProc(DreamProcNativeRoot.NativeProc_ascii2text, new List<string>() { "N" }));
             DreamObjectTree.RegisterNativeProc("block", new DreamProc(DreamProcNativeRoot.NativeProc_block, new List<string>() { "Start", "End" }));
             DreamObjectTree.RegisterNativeProc("browse", new DreamProc(DreamProcNativeRoot.NativeProc_browse, new List<string>() { "Body", "Options" }));

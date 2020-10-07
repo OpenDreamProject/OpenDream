@@ -51,11 +51,11 @@ namespace OpenDreamClient.Dream {
             if (x > 0 && x < textureRect.Width && y > 0 && y < textureRect.Height) {
                 Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
 
-                if (pixel == Color.Transparent) {
+                if (pixel.A == Color.Transparent.A || !IsValidIcon()) {
                     foreach (DreamIcon overlay in Overlays.Values) {
                         pixel = overlay.GetPixel(x, y);
 
-                        if (pixel != Color.Transparent) return pixel;
+                        if (pixel.A != Color.Transparent.A) return pixel;
                     }
 
                     return Color.Transparent;
@@ -65,6 +65,10 @@ namespace OpenDreamClient.Dream {
             } else {
                 return Color.Transparent;
             }
+        }
+
+        public bool IsValidIcon() {
+            return DMI != null && DMI.Description.States.ContainsKey(VisualProperties.IconState);
         }
 
         public void AddOverlay(UInt16 id, IconVisualProperties visualProperties) {

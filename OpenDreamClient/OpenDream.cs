@@ -258,7 +258,11 @@ namespace OpenDreamClient {
 
             foreach (DreamDeltaState.TurfDelta turfDelta in deltaState.TurfDeltas) {
                 if (ATOMs.ContainsKey(turfDelta.TurfAtomID)) {
-                    Map.Turfs[turfDelta.X, turfDelta.Y] = ATOMs[turfDelta.TurfAtomID];
+                    ATOM turf = ATOMs[turfDelta.TurfAtomID];
+
+                    turf.X = turfDelta.X;
+                    turf.Y = turfDelta.Y;
+                    Map.Turfs[turfDelta.X, turfDelta.Y] = turf;
                 } else {
                     Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfDelta.TurfAtomID + ")(Location " + turfDelta.X + ", " + turfDelta.Y + ")");
                 }

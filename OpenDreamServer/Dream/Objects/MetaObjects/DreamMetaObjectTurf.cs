@@ -6,14 +6,21 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         private static DreamObject _area = null; //TODO: Actual areas
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            DreamObject loc = DreamMetaObjectAtom.FindLocArgument(creationArguments);
+
             base.OnObjectCreated(dreamObject, creationArguments);
 
             if (_area == null) {
                 _area = Program.DreamObjectTree.CreateObject(DreamPath.Area);
             }
 
-            DreamObject loc = dreamObject.GetVariable("loc").GetValueAsDreamObject();
             if (loc != null && loc.IsSubtypeOf(DreamPath.Turf)) {
+                DreamObject contents = loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
+                DreamList contentsList = DreamMetaObjectList.DreamLists[contents];
+                while (contentsList.GetLength() > 0) { //Transfer all the old turf's contents
+                    contentsList.GetValue(new DreamValue(1)).GetValueAsDreamObjectOfType(DreamPath.Atom).SetVariable("loc", new DreamValue(dreamObject));
+                }
+
                 Program.DreamMap.SetTurf(loc.GetVariable("x").GetValueAsInteger(), loc.GetVariable("y").GetValueAsInteger(), dreamObject);
             }
         }

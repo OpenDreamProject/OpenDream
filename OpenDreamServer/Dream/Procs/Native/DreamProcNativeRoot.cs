@@ -18,6 +18,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(Math.Abs(number));
         }
 
+        public static DreamValue NativeProc_animate(DreamProcScope scope, DreamProcArguments arguments) {
+            return new DreamValue((DreamObject)null);
+        }
+
         public static DreamValue NativeProc_ascii2text(DreamProcScope scope, DreamProcArguments arguments) {
             int ascii = scope.GetValue("N").GetValueAsInteger();
 
@@ -61,7 +65,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
 
-            if (end == 0) {
+            if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
             }
 
@@ -440,6 +444,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     } else if (value.Type == DreamValue.DreamValueType.String) {
                         if (String.Compare(value.GetValueAsString(), currentMin.GetValueAsString()) < 0) currentMin = value;
                     }
+                } else if (value.Type == DreamValue.DreamValueType.Integer && currentMin.Type == DreamValue.DreamValueType.Double) {
+                    if (value.GetValueAsInteger() < currentMin.GetValueAsDouble()) currentMin = value;
+                } else if (value.Type == DreamValue.DreamValueType.Double && currentMin.Type == DreamValue.DreamValueType.Integer) {
+                    if (value.GetValueAsDouble() < currentMin.GetValueAsInteger()) currentMin = value;
                 } else if (value.Value == null) {
                     return value;
                 } else {
@@ -488,11 +496,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             foreach (string queryKey in query.AllKeys) {
                 string queryValue = query.Get(queryKey);
 
-                if (Int32.TryParse(queryValue, out int queryValueInt)) {
-                    listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValueInt));
-                } else {
-                    listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValue));
-                }
+                listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValue));
             }
 
             return new DreamValue(Program.DreamObjectTree.CreateObject(DreamPath.List, listCreationArguments));

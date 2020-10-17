@@ -8,3 +8,5 @@
 /OpenDreamServer/obj
 /packages/System.Net.Sockets.4.3.0
 /OpenDreamServer/bin/Debug/netcoreapp3.1
+/DMCompiler/bin/Debug/netcoreapp3.1
+/DMCompiler/obj

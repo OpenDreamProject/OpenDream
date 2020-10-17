@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68
 		TestGame\icons\turf.dmi = TestGame\icons\turf.dmi
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMCompiler", "DMCompiler\DMCompiler.csproj", "{5CE157DB-7811-499B-97B7-11AC3C2C728F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		OpenDreamShared\OpenDreamShared.projitems*{06092635-1e20-4f0e-9969-b2efbe53e200}*SharedItemsImports = 13
@@ -51,6 +53,14 @@ Global
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.ActiveCfg = Release|Any CPU
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.Build.0 = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|x64.Build.0 = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.ActiveCfg = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

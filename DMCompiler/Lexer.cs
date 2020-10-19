@@ -3,13 +3,21 @@ using System.Collections.Generic;
 
 namespace DMCompiler {
     class Lexer {
-        public string Source { get; private set; }
-        public string[] Lines { get => Source.Split("\n"); }
+        public string Source {
+            get => _source;
+            private set {
+                _source = value;
+                Lines = value.Split("\n");
+            }
+        }
+        public string[] Lines { get; private set; }
 
         protected Queue<Token> _pendingTokenQueue = new Queue<Token>();
         protected int _currentPosition = -1;
         protected int _currentLine = 1;
         protected int _currentColumn = 0;
+
+        private string _source = null;
 
         public Lexer(string source) {
             Source = source.Replace("\r\n", "\n");

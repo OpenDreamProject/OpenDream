@@ -100,7 +100,7 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             CreateAtomBases();
-
+            
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World, new DreamProcArguments(new List<DreamValue>()));
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             DreamObjectTree.InstantiateGlobalVariables();

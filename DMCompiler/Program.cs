@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using DMCompiler.DM;
 
 namespace DMCompiler {
     class Program {
@@ -14,13 +15,9 @@ namespace DMCompiler {
 
             string source = File.ReadAllText(args[0]);
             DMLexer dmLexer = new DMLexer(source);
-            Token dmToken;
+            DMParser dmParser = new DMParser(dmLexer);
 
-            do {
-                dmToken = dmLexer.GetNextToken();
-
-                Console.WriteLine(dmToken.Type + ": " + ((dmToken.Type != TokenType.Newline) ? dmToken.Text : ""));
-            } while (dmToken.Type != TokenType.EndOfFile);
+            dmParser.File();
         }
     }
 }

@@ -22,7 +22,8 @@ namespace OpenDreamShared.Dream {
         public enum PathType {
             Absolute,
             Relative,
-            Other
+            DownwardSearch,
+            UpwardSearch
         }
 
         public string LastElement {
@@ -63,11 +64,14 @@ namespace OpenDreamShared.Dream {
             if (pathTypeChar == '/') {
                 Type = PathType.Absolute;
                 rawPath = rawPath.Substring(1);
+            } else if (pathTypeChar == ':') {
+                Type = PathType.DownwardSearch;
+                rawPath = rawPath.Substring(1);
             } else if (pathTypeChar == '.') {
-                Type = PathType.Relative;
+                Type = PathType.UpwardSearch;
                 rawPath = rawPath.Substring(1);
             } else {
-                Type = PathType.Other;
+                Type = PathType.Relative;
             }
 
             Elements = rawPath.Split("/");

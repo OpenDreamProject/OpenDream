@@ -19,6 +19,7 @@
         DM_Comma,
         DM_Dedent,
         DM_Del,
+        DM_Else,
         DM_Equals,
         DM_EqualsEquals,
         DM_Exclamation,

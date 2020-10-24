@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace DMCompiler {
     class Parser {
         private Lexer _lexer;
         private Token _currentToken;
+        private Queue<Token> _tokenQueue = new Queue<Token>();
 
         public Parser(Lexer lexer) {
             _lexer = lexer;
@@ -16,9 +18,18 @@ namespace DMCompiler {
         }
 
         protected Token Advance() {
-            _currentToken = _lexer.GetNextToken();
+            if (_tokenQueue.Count > 0) {
+                _currentToken = _tokenQueue.Dequeue();
+            } else {
+                _currentToken = _lexer.GetNextToken();
+            }
 
             return Current();
+        }
+
+        protected void ReuseToken(Token token) {
+            _tokenQueue.Enqueue(_currentToken);
+            _currentToken = token;
         }
 
         protected bool Check(TokenType type) {
@@ -48,6 +59,14 @@ namespace DMCompiler {
             if (!Check(type)) {
                 throw new Exception(errorMessage);
             }
+        }
+
+        protected void Consume(TokenType[] types, string errorMessage) {
+            foreach (TokenType type in types) {
+                if (Check(type)) return;
+            }
+            
+            throw new Exception(errorMessage);
         }
     }
 }

@@ -8,6 +8,7 @@ namespace DMCompiler.DM {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "if", TokenType.DM_If },
+            { "else", TokenType.DM_Else },
             { "for", TokenType.DM_For },
             { "switch", TokenType.DM_Switch },
             { "while", TokenType.DM_While },
@@ -364,6 +365,11 @@ namespace DMCompiler.DM {
 
                         break;
                     }
+                }
+            } else if (token.Type == TokenType.EndOfFile) {
+                while (_indentationStack.Peek() > 0) {
+                    _indentationStack.Pop();
+                    _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
                 }
             }
 

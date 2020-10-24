@@ -32,7 +32,12 @@ namespace DMCompiler {
             Token nextToken = ParseNextToken();
             while (nextToken.Type == TokenType.Skip) nextToken = ParseNextToken();
 
-            return nextToken;
+            if (_pendingTokenQueue.Count > 0) {
+                _pendingTokenQueue.Enqueue(nextToken);
+                return _pendingTokenQueue.Dequeue();
+            } else {
+                return nextToken;
+            }
         }
 
         protected virtual Token ParseNextToken() {

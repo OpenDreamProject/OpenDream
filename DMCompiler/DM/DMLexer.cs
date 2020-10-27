@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM {
     class DMLexer : Lexer {
+        private bool _checkingIndentation = true;
         private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
         private Dictionary<string, TokenType> _keywords = new Dictionary<string, TokenType>() {
             { "null", TokenType.DM_Null },
@@ -37,12 +38,25 @@ namespace DMCompiler.DM {
                     case ')': Advance(); token = CreateToken(TokenType.DM_RightParenthesis, c); break;
                     case '[': Advance(); token = CreateToken(TokenType.DM_LeftBracket, c); break;
                     case ']': Advance(); token = CreateToken(TokenType.DM_RightBracket, c); break;
-                    case '{': Advance(); token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
                     case '}': Advance(); token = CreateToken(TokenType.DM_RightCurlyBracket, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Comma, c); break;
                     case ';': Advance(); token = CreateToken(TokenType.DM_Semicolon, c); break;
                     case ':': Advance(); token = CreateToken(TokenType.DM_Colon, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Question, c); break;
+                    case '{': {
+                        c = Advance();
+                        
+                        if (c == '"') {
+                            token = LexString(true);
+                            if (GetCurrent() != '}') throw new Exception("Expected '}' to end long string");
+                            Advance();
+                            token.Text = "{" + token.Text + "}";
+                        } else {
+                            token = CreateToken(TokenType.DM_LeftCurlyBracket, c);
+                        }
+                        
+                        break;
+                    }
                     case '.': {
                         c = Advance();
 
@@ -249,70 +263,8 @@ namespace DMCompiler.DM {
                         break;
                     }
                     case '"': {
-                        string text = Convert.ToString(c);
-                        string stringValue = String.Empty;
+                        token = LexString(false);
 
-                        do {
-                            c = Advance();
-
-                            text += c;
-                            if (c == '\\') {
-                                string escapeSequence = String.Empty;
-                                bool validEscapeSequence = false;
-
-                                while (Advance() != ' ') {
-                                    c = GetCurrent();
-
-                                    text += c;
-                                    escapeSequence += c;
-                                    if (escapeSequence == "\"" || escapeSequence == "n" || escapeSequence == "\\" || escapeSequence == "[" || escapeSequence == "]") {
-                                        stringValue += escapeSequence;
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "Roman" || escapeSequence == "roman") {
-                                        //TODO: Roman escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "The" || escapeSequence == "the") {
-                                        //TODO: "The" escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "A" || escapeSequence == "a" || escapeSequence == "An" || escapeSequence == "an") {
-                                        //TODO: "A(n)" escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "s") {
-                                        //TODO: "s" escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "ref") {
-                                        //TODO: Ref escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "improper") {
-                                        //TODO: Improper escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    } else if (escapeSequence == "proper") {
-                                        //TODO: Proper escape sequence
-                                        validEscapeSequence = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!validEscapeSequence) {
-                                    throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
-                                }
-                            } else if (c != '"' && c != '\n') {
-                                stringValue += c;
-                            } else {
-                                break;
-                            }
-                        } while (!IsAtEndOfFile());
-                        if (c != '"') throw new Exception("Expected '\"' to end string");
-
-                        Advance();
-                        token = CreateToken(TokenType.DM_String, text, stringValue);
                         break;
                     }
                     default: {
@@ -379,7 +331,7 @@ namespace DMCompiler.DM {
         protected override char Advance() {
             base.Advance();
 
-            if (_currentColumn == 1) { //Beginning a new line
+            if (_currentColumn == 1 && _checkingIndentation) { //Beginning a new line
                 CheckIndentation();
             }
 
@@ -413,6 +365,76 @@ namespace DMCompiler.DM {
                     throw new Exception("Invalid indentation at line " + _currentLine + ":" + _currentColumn);
                 }
             }
+        }
+
+        private Token LexString(bool isLong) {
+            char c = GetCurrent();
+            string text = Convert.ToString(c);
+            string stringValue = String.Empty;
+
+            if (isLong) _checkingIndentation = false;
+            do {
+                c = Advance();
+
+                text += c;
+                if (c == '\\') {
+                    string escapeSequence = String.Empty;
+                    bool validEscapeSequence = false;
+
+                    while (Advance() != ' ') {
+                        c = GetCurrent();
+
+                        text += c;
+                        escapeSequence += c;
+                        if (escapeSequence == "\"" || escapeSequence == "n" || escapeSequence == "\\" || escapeSequence == "[" || escapeSequence == "]") {
+                            stringValue += escapeSequence;
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "Roman" || escapeSequence == "roman") {
+                            //TODO: Roman escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "The" || escapeSequence == "the") {
+                            //TODO: "The" escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "A" || escapeSequence == "a" || escapeSequence == "An" || escapeSequence == "an") {
+                            //TODO: "A(n)" escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "s") {
+                            //TODO: "s" escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "ref") {
+                            //TODO: Ref escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "improper") {
+                            //TODO: Improper escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        } else if (escapeSequence == "proper") {
+                            //TODO: Proper escape sequence
+                            validEscapeSequence = true;
+                            break;
+                        }
+                    }
+
+                    if (!validEscapeSequence) {
+                        throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                    }
+                } else if (c != '"' && !(!isLong && c == '\n')) {
+                    stringValue += c;
+                } else {
+                    break;
+                }
+            } while (!IsAtEndOfFile());
+            if (c != '"') throw new Exception("Expected '\"' to end string");
+
+            Advance();
+            if (isLong) _checkingIndentation = true;
+            return CreateToken(TokenType.DM_String, text, stringValue);
         }
     }
 }

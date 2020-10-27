@@ -1,4 +1,4 @@
-﻿namespace DMCompiler {
+﻿namespace DMCompiler.Compiler {
     enum TokenType {
         //Base lexer
         Error,

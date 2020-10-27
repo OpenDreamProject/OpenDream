@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DMCompiler {
+namespace DMCompiler.Compiler {
     class Parser {
         private Lexer _lexer;
         private Token _currentToken;

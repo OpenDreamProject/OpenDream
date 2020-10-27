@@ -1,44 +1,48 @@
-﻿using OpenDreamShared.Dream;
-using System.Linq;
+﻿using System.Linq;
+using DMCompiler.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM {
     interface DMASTVisitor {
-        public object VisitFile(DMASTFile file);
-        public object VisitBlockInner(DMASTBlockInner block);
-        public object VisitProcBlockInner(DMASTProcBlockInner procBlock);
-        public object VisitObject(DMASTObjectDefinition statement);
-        public object VisitPath(DMASTPath path);
-        public object VisitPathElement(DMASTPathElement pathElement);
-        public object VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition);
-        public object VisitProcStatementExpression(DMASTProcStatementExpression statementExpression);
-        public object VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration);
-        public object VisitProcStatementReturn(DMASTProcStatementReturn statementReturn);
-        public object VisitProcStatementBreak(DMASTProcStatementBreak statementBreak);
-        public object VisitProcStatementDel(DMASTProcStatementDel statementDel);
-        public object VisitProcStatementIf(DMASTProcStatementIf statementIf);
-        public object VisitProcStatementForList(DMASTProcStatementForList statementForList);
-        public object VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop);
-        public object VisitProcDefinition(DMASTProcDefinition procDefinition);
-        public object VisitIdentifier(DMASTIdentifier identifier);
-        public object VisitConstantInteger(DMASTConstantInteger constant);
-        public object VisitConstantFloat(DMASTConstantFloat constant);
-        public object VisitConstantString(DMASTConstantString constant);
-        public object VisitConstantNull(DMASTConstantNull constant);
-        public object VisitConstantPath(DMASTConstantPath constant);
-        public object VisitAssign(DMASTAssign assign);
-        public object VisitNewPath(DMASTNewPath newPath);
-        public object VisitNewDereference(DMASTNewDereference newDereference);
-        public object VisitExpressionNot(DMASTExpressionNot not);
-        public object VisitExpressionNegate(DMASTExpressionNegate negate);
-        public object VisitComparisonEqual(DMASTComparisonEqual comparison);
-        public object VisitComparisonNotEqual(DMASTComparisonNotEqual comparison);
-        public object VisitAnd(DMASTAnd and);
-        public object VisitProcCall(DMASTProcCall procCall);
-        public object VisitCallParameter(DMASTCallParameter callParameter);
-        public object VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter);
-        public object VisitCallableIdentifier(DMASTCallableIdentifier identifier);
-        public object VisitCallableDereference(DMASTCallableDereference dereference);
-        public object VisitCallableSuper(DMASTCallableSuper super);
+        public void VisitFile(DMASTFile file);
+        public void VisitBlockInner(DMASTBlockInner block);
+        public void VisitProcBlockInner(DMASTProcBlockInner procBlock);
+        public void VisitObject(DMASTObjectDefinition statement);
+        public void VisitPath(DMASTPath path);
+        public void VisitPathElement(DMASTPathElement pathElement);
+        public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition);
+        public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression);
+        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration);
+        public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn);
+        public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak);
+        public void VisitProcStatementDel(DMASTProcStatementDel statementDel);
+        public void VisitProcStatementIf(DMASTProcStatementIf statementIf);
+        public void VisitProcStatementForList(DMASTProcStatementForList statementForList);
+        public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop);
+        public void VisitProcDefinition(DMASTProcDefinition procDefinition);
+        public void VisitIdentifier(DMASTIdentifier identifier);
+        public void VisitConstantInteger(DMASTConstantInteger constant);
+        public void VisitConstantFloat(DMASTConstantFloat constant);
+        public void VisitConstantString(DMASTConstantString constant);
+        public void VisitConstantNull(DMASTConstantNull constant);
+        public void VisitConstantPath(DMASTConstantPath constant);
+        public void VisitAssign(DMASTAssign assign);
+        public void VisitNewPath(DMASTNewPath newPath);
+        public void VisitNewDereference(DMASTNewDereference newDereference);
+        public void VisitExpressionNot(DMASTExpressionNot not);
+        public void VisitExpressionNegate(DMASTExpressionNegate negate);
+        public void VisitComparisonEqual(DMASTComparisonEqual comparison);
+        public void VisitComparisonNotEqual(DMASTComparisonNotEqual comparison);
+        public void VisitAdd(DMASTAdd add);
+        public void VisitSubtract(DMASTSubtract subtract);
+        public void VisitAnd(DMASTAnd and);
+        public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd);
+        public void VisitProcCall(DMASTProcCall procCall);
+        public void VisitCallParameter(DMASTCallParameter callParameter);
+        public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter);
+        public void VisitCallableIdentifier(DMASTCallableIdentifier identifier);
+        public void VisitCallableDereference(DMASTCallableDereference dereference);
+        public void VisitCallableSuper(DMASTCallableSuper super);
     }
 
     interface DMASTNode : ASTNode<DMASTVisitor> {
@@ -68,8 +72,8 @@ namespace DMCompiler.DM {
             BlockInner = blockInner;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitFile(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitFile(this);
         }
     }
 
@@ -80,8 +84,8 @@ namespace DMCompiler.DM {
             Statements = statements;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitBlockInner(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitBlockInner(this);
         }
     }
 
@@ -92,8 +96,8 @@ namespace DMCompiler.DM {
             Statements = statements;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcBlockInner(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcBlockInner(this);
         }
     }
 
@@ -106,22 +110,24 @@ namespace DMCompiler.DM {
             InnerBlock = innerBlock;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitObject(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitObject(this);
         }
     }
 
     class DMASTProcDefinition : DMASTStatement {
         public DMASTPath Path;
         public DMASTDefinitionParameter[] Parameters;
+        public DMASTProcBlockInner Body;
 
-        public DMASTProcDefinition(DMASTPath path, DMASTDefinitionParameter[] parameters) {
+        public DMASTProcDefinition(DMASTPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) {
             Path = path;
             Parameters = parameters;
+            Body = body;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcDefinition(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcDefinition(this);
         }
     }
 
@@ -134,8 +140,8 @@ namespace DMCompiler.DM {
             PathElements = pathElements;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitPath(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPath(this);
         }
     }
 
@@ -146,8 +152,8 @@ namespace DMCompiler.DM {
             Element = element;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitPathElement(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPathElement(this);
         }
     }
 
@@ -160,8 +166,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitObjectVarDefinition(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitObjectVarDefinition(this);
         }
     }
 
@@ -172,8 +178,8 @@ namespace DMCompiler.DM {
             Expression = expression;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementExpression(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementExpression(this);
         }
     }
 
@@ -185,13 +191,13 @@ namespace DMCompiler.DM {
         public DMASTProcStatementVarDeclaration(DMASTPath path, DMASTExpression value) {
             DMASTPathElement[] typeElements = path.PathElements.Take(path.PathElements.Length - 1).ToArray();
 
-            Type = new DMASTPath(path.PathType, typeElements);
+            Type = (typeElements.Length > 0) ? new DMASTPath(path.PathType, typeElements) : null;
             Name = path.PathElements[path.PathElements.Length - 1].Element;
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementVarDeclaration(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementVarDeclaration(this);
         }
     }
 
@@ -202,14 +208,14 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementReturn(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementReturn(this);
         }
     }
 
     class DMASTProcStatementBreak : DMASTProcStatement {
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementBreak(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementBreak(this);
         }
     }
 
@@ -220,8 +226,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementDel(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementDel(this);
         }
     }
 
@@ -236,8 +242,8 @@ namespace DMCompiler.DM {
             ElseBody = elseBody;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementIf(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementIf(this);
         }
     }
 
@@ -254,8 +260,8 @@ namespace DMCompiler.DM {
             Body = body;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementForList(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForList(this);
         }
     }
 
@@ -273,8 +279,8 @@ namespace DMCompiler.DM {
             Body = body;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementForLoop(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForLoop(this);
         }
     }
 
@@ -285,8 +291,8 @@ namespace DMCompiler.DM {
             Identifier = identifier;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitIdentifier(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitIdentifier(this);
         }
     }
 
@@ -297,8 +303,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitConstantInteger(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitConstantInteger(this);
         }
     }
 
@@ -309,8 +315,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitConstantFloat(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitConstantFloat(this);
         }
     }
 
@@ -321,14 +327,14 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitConstantString(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitConstantString(this);
         }
     }
 
     class DMASTConstantNull : DMASTExpression {
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitConstantNull(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitConstantNull(this);
         }
     }
 
@@ -339,8 +345,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitConstantPath(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitConstantPath(this);
         }
     }
 
@@ -352,8 +358,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitAssign(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitAssign(this);
         }
     }
 
@@ -366,8 +372,8 @@ namespace DMCompiler.DM {
             Parameters = parameters;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitNewPath(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewPath(this);
         }
     }
 
@@ -380,8 +386,8 @@ namespace DMCompiler.DM {
             Parameters = parameters;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitNewDereference(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewDereference(this);
         }
     }
 
@@ -392,8 +398,8 @@ namespace DMCompiler.DM {
             Expression = expression;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitExpressionNot(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitExpressionNot(this);
         }
     }
 
@@ -404,8 +410,8 @@ namespace DMCompiler.DM {
             Expression = expression;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitExpressionNegate(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitExpressionNegate(this);
         }
     }
 
@@ -417,8 +423,8 @@ namespace DMCompiler.DM {
             B = b;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitComparisonEqual(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitComparisonEqual(this);
         }
     }
 
@@ -430,8 +436,34 @@ namespace DMCompiler.DM {
             B = b;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitComparisonNotEqual(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitComparisonNotEqual(this);
+        }
+    }
+
+    class DMASTAdd : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTAdd(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitAdd(this);
+        }
+    }
+
+    class DMASTSubtract : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTSubtract(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitSubtract(this);
         }
     }
 
@@ -443,8 +475,21 @@ namespace DMCompiler.DM {
             B = b;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitAnd(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitAnd(this);
+        }
+    }
+
+    class DMASTBinaryAnd : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTBinaryAnd(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitBinaryAnd(this);
         }
     }
 
@@ -457,8 +502,8 @@ namespace DMCompiler.DM {
             Parameters = parameters;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcCall(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcCall(this);
         }
     }
 
@@ -471,8 +516,8 @@ namespace DMCompiler.DM {
             Name = name;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitCallParameter(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallParameter(this);
         }
     }
 
@@ -485,8 +530,8 @@ namespace DMCompiler.DM {
             Value = value;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitDefinitionParameter(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitDefinitionParameter(this);
         }
     }
 
@@ -497,8 +542,8 @@ namespace DMCompiler.DM {
             Identifier = identifier;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitCallableIdentifier(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallableIdentifier(this);
         }
     }
 
@@ -510,14 +555,14 @@ namespace DMCompiler.DM {
             Right = right;
         }
 
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitCallableDereference(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallableDereference(this);
         }
     }
     
     class DMASTCallableSuper : DMASTCallable {
-        public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitCallableSuper(this);
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallableSuper(this);
         }
     }
 }

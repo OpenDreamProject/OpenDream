@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM {
     class DMLexer : Lexer {

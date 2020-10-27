@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using DMCompiler.DM;
+using DMCompiler.DM.Visitors;
 
 namespace DMCompiler {
     class Program {
@@ -16,8 +17,9 @@ namespace DMCompiler {
             string source = File.ReadAllText(args[0]);
             DMLexer dmLexer = new DMLexer(source);
             DMParser dmParser = new DMParser(dmLexer);
+            DMVisitorPrint dmPrinter = new DMVisitorPrint();
 
-            dmParser.File();
+            dmParser.File().Visit(dmPrinter);
         }
     }
 }

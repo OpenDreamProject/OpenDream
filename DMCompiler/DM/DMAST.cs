@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Dream;
+using System.Linq;
 
 namespace DMCompiler.DM {
     interface DMASTVisitor {
@@ -10,8 +11,13 @@ namespace DMCompiler.DM {
         public object VisitPathElement(DMASTPathElement pathElement);
         public object VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition);
         public object VisitProcStatementExpression(DMASTProcStatementExpression statementExpression);
-        public object VisitProcStatementAssign(DMASTProcStatementAssign statementAssign);
+        public object VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration);
+        public object VisitProcStatementReturn(DMASTProcStatementReturn statementReturn);
+        public object VisitProcStatementBreak(DMASTProcStatementBreak statementBreak);
+        public object VisitProcStatementDel(DMASTProcStatementDel statementDel);
         public object VisitProcStatementIf(DMASTProcStatementIf statementIf);
+        public object VisitProcStatementForList(DMASTProcStatementForList statementForList);
+        public object VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop);
         public object VisitProcDefinition(DMASTProcDefinition procDefinition);
         public object VisitIdentifier(DMASTIdentifier identifier);
         public object VisitConstantInteger(DMASTConstantInteger constant);
@@ -19,14 +25,20 @@ namespace DMCompiler.DM {
         public object VisitConstantString(DMASTConstantString constant);
         public object VisitConstantNull(DMASTConstantNull constant);
         public object VisitConstantPath(DMASTConstantPath constant);
+        public object VisitAssign(DMASTAssign assign);
+        public object VisitNewPath(DMASTNewPath newPath);
+        public object VisitNewDereference(DMASTNewDereference newDereference);
         public object VisitExpressionNot(DMASTExpressionNot not);
         public object VisitExpressionNegate(DMASTExpressionNegate negate);
+        public object VisitComparisonEqual(DMASTComparisonEqual comparison);
         public object VisitComparisonNotEqual(DMASTComparisonNotEqual comparison);
+        public object VisitAnd(DMASTAnd and);
         public object VisitProcCall(DMASTProcCall procCall);
         public object VisitCallParameter(DMASTCallParameter callParameter);
         public object VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter);
         public object VisitCallableIdentifier(DMASTCallableIdentifier identifier);
         public object VisitCallableDereference(DMASTCallableDereference dereference);
+        public object VisitCallableSuper(DMASTCallableSuper super);
     }
 
     interface DMASTNode : ASTNode<DMASTVisitor> {
@@ -165,16 +177,51 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTProcStatementAssign : DMASTProcStatement {
-        public DMASTExpression Expression, Value;
+    class DMASTProcStatementVarDeclaration : DMASTProcStatement {
+        public DMASTPath Type;
+        public string Name;
+        public DMASTExpression Value;
 
-        public DMASTProcStatementAssign(DMASTExpression expression, DMASTExpression value) {
-            Expression = expression;
+        public DMASTProcStatementVarDeclaration(DMASTPath path, DMASTExpression value) {
+            DMASTPathElement[] typeElements = path.PathElements.Take(path.PathElements.Length - 1).ToArray();
+
+            Type = new DMASTPath(path.PathType, typeElements);
+            Name = path.PathElements[path.PathElements.Length - 1].Element;
             Value = value;
         }
 
         public object Visit(DMASTVisitor visitor) {
-            return visitor.VisitProcStatementAssign(this);
+            return visitor.VisitProcStatementVarDeclaration(this);
+        }
+    }
+
+    class DMASTProcStatementReturn : DMASTProcStatement {
+        public DMASTExpression Value;
+
+        public DMASTProcStatementReturn(DMASTExpression value) {
+            Value = value;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitProcStatementReturn(this);
+        }
+    }
+
+    class DMASTProcStatementBreak : DMASTProcStatement {
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitProcStatementBreak(this);
+        }
+    }
+
+    class DMASTProcStatementDel : DMASTProcStatement {
+        public DMASTExpression Value;
+
+        public DMASTProcStatementDel(DMASTExpression value) {
+            Value = value;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitProcStatementDel(this);
         }
     }
 
@@ -191,6 +238,43 @@ namespace DMCompiler.DM {
 
         public object Visit(DMASTVisitor visitor) {
             return visitor.VisitProcStatementIf(this);
+        }
+    }
+
+    class DMASTProcStatementForList : DMASTProcStatement {
+        public DMASTProcStatementVarDeclaration VariableDeclaration;
+        public DMASTCallable Variable;
+        public DMASTExpression List;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementForList(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression list, DMASTProcBlockInner body) {
+            VariableDeclaration = variableDeclaration;
+            Variable = variable;
+            List = list;
+            Body = body;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitProcStatementForList(this);
+        }
+    }
+
+    class DMASTProcStatementForLoop : DMASTProcStatement {
+        public DMASTProcStatementVarDeclaration VariableDeclaration;
+        public DMASTCallable Variable;
+        public DMASTExpression Condition, Incrementer;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementForLoop(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression condition, DMASTExpression incrementer, DMASTProcBlockInner body) {
+            VariableDeclaration = variableDeclaration;
+            Variable = variable;
+            Condition = condition;
+            Incrementer = incrementer;
+            Body = body;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitProcStatementForLoop(this);
         }
     }
 
@@ -260,6 +344,47 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTAssign : DMASTExpression {
+        public DMASTExpression Expression, Value;
+
+        public DMASTAssign(DMASTExpression expression, DMASTExpression value) {
+            Expression = expression;
+            Value = value;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitAssign(this);
+        }
+    }
+
+    class DMASTNewPath : DMASTExpression {
+        public DMASTPath Path;
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewPath(DMASTPath path, DMASTCallParameter[] parameters) {
+            Path = path;
+            Parameters = parameters;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitNewPath(this);
+        }
+    }
+
+    class DMASTNewDereference : DMASTExpression {
+        public DMASTCallableDereference Dereference;
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewDereference(DMASTCallableDereference dereference, DMASTCallParameter[] parameters) {
+            Dereference = dereference;
+            Parameters = parameters;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitNewDereference(this);
+        }
+    }
+
     class DMASTExpressionNot : DMASTExpression {
         public DMASTExpression Expression;
 
@@ -284,6 +409,19 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTComparisonEqual : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTComparisonEqual(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitComparisonEqual(this);
+        }
+    }
+
     class DMASTComparisonNotEqual : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -294,6 +432,19 @@ namespace DMCompiler.DM {
 
         public object Visit(DMASTVisitor visitor) {
             return visitor.VisitComparisonNotEqual(this);
+        }
+    }
+
+    class DMASTAnd : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTAnd(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitAnd(this);
         }
     }
 
@@ -352,7 +503,7 @@ namespace DMCompiler.DM {
     }
 
     class DMASTCallableDereference : DMASTCallable {
-        DMASTExpression Left, Right;
+        public DMASTExpression Left, Right;
 
         public DMASTCallableDereference(DMASTExpression left, DMASTExpression right) {
             Left = left;
@@ -361,6 +512,12 @@ namespace DMCompiler.DM {
 
         public object Visit(DMASTVisitor visitor) {
             return visitor.VisitCallableDereference(this);
+        }
+    }
+    
+    class DMASTCallableSuper : DMASTCallable {
+        public object Visit(DMASTVisitor visitor) {
+            return visitor.VisitCallableSuper(this);
         }
     }
 }

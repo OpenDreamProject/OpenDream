@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DMCompiler.Compiler;
 using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM {
@@ -45,7 +46,7 @@ namespace DMCompiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
                     DMASTProcBlockInner procBlock = ProcBlock();
 
-                    return new DMASTProcDefinition(path, parameters);
+                    return new DMASTProcDefinition(path, parameters, procBlock);
                 } else {
                     DMASTBlockInner block = Block();
 
@@ -375,6 +376,7 @@ namespace DMCompiler.DM {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 DMASTCallParameter[] callParameters = CallParameters();
 
+                if (callParameters == null) callParameters = new DMASTCallParameter[0];
                 Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
                 return callParameters;
             }
@@ -434,7 +436,7 @@ namespace DMCompiler.DM {
             if (parameters.Count > 0) {
                 return parameters.ToArray();
             } else {
-                return null;
+                return new DMASTDefinitionParameter[0];
             }
         }
 
@@ -463,13 +465,26 @@ namespace DMCompiler.DM {
         public DMASTExpression ExpressionAssign() {
             DMASTExpression expression = ExpressionAnd();
 
-            if (expression != null && Check(TokenType.DM_Equals)) {
-                DMASTExpression value = ExpressionAssign();
+            if (expression != null) {
+                Token token = Current();
+                TokenType[] assignTypes = new TokenType[] {
+                    TokenType.DM_Equals,
+                    TokenType.DM_PlusEquals,
+                    TokenType.DM_MinusEquals
+                };
 
-                if (value != null) {
-                    return new DMASTAssign(expression, value);
-                } else {
-                    throw new Exception("Expected an assignment value");
+                if (Check(assignTypes)) {
+                    DMASTExpression value = ExpressionAssign();
+
+                    if (value != null) {
+                        switch (token.Type) {
+                            case TokenType.DM_Equals: return new DMASTAssign(expression, value);
+                            case TokenType.DM_PlusEquals: return new DMASTAssign(expression, new DMASTAdd(expression, value));
+                            case TokenType.DM_MinusEquals: return new DMASTAssign(expression, new DMASTSubtract(expression, value));
+                        }
+                    } else {
+                        throw new Exception("Expected a value");
+                    }
                 }
             }
 
@@ -477,7 +492,7 @@ namespace DMCompiler.DM {
         }
 
         public DMASTExpression ExpressionAnd() {
-            DMASTExpression a = ExpressionComparison();
+            DMASTExpression a = ExpressionBinaryAnd();
 
             if (a != null && Check(TokenType.DM_AndAnd)) {
                 DMASTExpression b = ExpressionAnd();
@@ -492,8 +507,21 @@ namespace DMCompiler.DM {
             return a;
         }
 
+        public DMASTExpression ExpressionBinaryAnd() {
+            DMASTExpression a = ExpressionComparison();
+
+            if (a != null && Check(TokenType.DM_And)) {
+                DMASTExpression b = ExpressionBinaryAnd();
+
+                if (b == null) throw new Exception("Expected an expression");
+                return new DMASTBinaryAnd(a, b);
+            }
+
+            return a;
+        }
+
         public DMASTExpression ExpressionComparison() {
-            DMASTExpression expression = ExpressionNot();
+            DMASTExpression expression = ExpressionAdditionSubtraction();
 
             if (expression != null) {
                 Token token = Current();
@@ -509,6 +537,26 @@ namespace DMCompiler.DM {
             }
 
             return expression;
+        }
+
+        public DMASTExpression ExpressionAdditionSubtraction() {
+            DMASTExpression a = ExpressionNot();
+
+            if (a != null) {
+                if (Check(TokenType.DM_Plus)) {
+                    DMASTExpression b = ExpressionAdditionSubtraction();
+
+                    if (b == null) throw new Exception("Expected value to add");
+                    return new DMASTAdd(a, b);
+                } else if (Check(TokenType.DM_Minus)) {
+                    DMASTExpression b = ExpressionAdditionSubtraction();
+
+                    if (b == null) throw new Exception("Expected value to subtract");
+                    return new DMASTSubtract(a, b);
+                }
+            }
+
+            return a;
         }
 
         public DMASTExpression ExpressionNot() {

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorPrint : DMASTVisitor {
@@ -28,6 +26,12 @@ namespace DMCompiler.DM.Visitors {
             Console.Write(")");
         }
 
+        public void VisitAppend(DMASTAppend append) {
+            append.A.Visit(this);
+            Console.Write(" |= ");
+            append.B.Visit(this);
+        }
+
         public void VisitAssign(DMASTAssign assign) {
             assign.Expression.Visit(this);
             Console.Write(" = ");
@@ -39,6 +43,20 @@ namespace DMCompiler.DM.Visitors {
             binaryAnd.A.Visit(this);
             Console.Write(" & ");
             binaryAnd.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitBinaryNot(DMASTBinaryNot binaryNot) {
+            Console.Write("~(");
+            binaryNot.Value.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitBinaryOr(DMASTBinaryOr binaryOr) {
+            Console.Write("(");
+            binaryOr.A.Visit(this);
+            Console.Write(" | ");
+            binaryOr.B.Visit(this);
             Console.Write(")");
         }
 
@@ -65,6 +83,10 @@ namespace DMCompiler.DM.Visitors {
             Console.Write("..");
         }
 
+        public void VisitCallableSelf(DMASTCallableSelf self) {
+            Console.Write(".");
+        }
+
         public void VisitCallParameter(DMASTCallParameter callParameter) {
             if (callParameter.Name != null) {
                 Console.Write(callParameter.Name + " = ");
@@ -73,19 +95,57 @@ namespace DMCompiler.DM.Visitors {
             callParameter.Value.Visit(this);
         }
 
-        public void VisitComparisonEqual(DMASTComparisonEqual comparison) {
+        public void VisitEqual(DMASTEqual equal) {
             Console.Write("(");
-            comparison.A.Visit(this);
+            equal.A.Visit(this);
             Console.Write(" == ");
-            comparison.B.Visit(this);
+            equal.B.Visit(this);
             Console.Write(")");
         }
 
-        public void VisitComparisonNotEqual(DMASTComparisonNotEqual comparison) {
+        public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
             Console.Write("(");
-            comparison.A.Visit(this);
+            greaterThan.A.Visit(this);
+            Console.Write(" > ");
+            greaterThan.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitGreaterThanOrEqual(DMASTGreaterThanOrEqual greaterThanOrEqual) {
+            Console.Write("(");
+            greaterThanOrEqual.A.Visit(this);
+            Console.Write(" >= ");
+            greaterThanOrEqual.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitMask(DMASTMask mask) {
+            mask.A.Visit(this);
+            Console.Write(" &= ");
+            mask.B.Visit(this);
+        }
+
+        public void VisitModulus(DMASTModulus modulus) {
+            Console.Write("(");
+            modulus.A.Visit(this);
+            Console.Write(" % ");
+            modulus.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitMultiply(DMASTMultiply multiply) {
+            Console.Write("(");
+            multiply.A.Visit(this);
+            Console.Write(" * ");
+            multiply.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitNotEqual(DMASTNotEqual notEqual) {
+            Console.Write("(");
+            notEqual.A.Visit(this);
             Console.Write(" != ");
-            comparison.B.Visit(this);
+            notEqual.B.Visit(this);
             Console.Write(")");
         }
 
@@ -105,8 +165,12 @@ namespace DMCompiler.DM.Visitors {
             constant.Value.Visit(this);
         }
 
+        public void VisitConstantResource(DMASTConstantResource constant) {
+            Console.Write("'" + constant.Path + "'");
+        }
+
         public void VisitConstantString(DMASTConstantString constant) {
-            Console.Write("\"" + constant.Value.ToString() + "\"");
+            Console.Write("\"" + constant.Value + "\"");
         }
 
         public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter) {
@@ -116,6 +180,14 @@ namespace DMCompiler.DM.Visitors {
                 Console.Write(" = ");
                 definitionParameter.Value.Visit(this);
             }
+        }
+
+        public void VisitDivide(DMASTDivide divide) {
+            Console.Write("(");
+            divide.A.Visit(this);
+            Console.Write(" / ");
+            divide.B.Visit(this);
+            Console.Write(")");
         }
 
         public void VisitExpressionNegate(DMASTExpressionNegate negate) {
@@ -135,6 +207,53 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitIdentifier(DMASTIdentifier identifier) {
             throw new NotImplementedException();
+        }
+
+        public void VisitIn(DMASTExpressionIn expressionIn) {
+            Console.Write("(");
+            expressionIn.Value.Visit(this);
+            Console.Write(" in ");
+            expressionIn.List.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitLeftShift(DMASTLeftShift leftShift) {
+            Console.Write("(");
+            leftShift.A.Visit(this);
+            Console.Write(" << ");
+            leftShift.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitRightShift(DMASTRightShift rightShift) {
+            Console.Write("(");
+            rightShift.A.Visit(this);
+            Console.Write(" >> ");
+            rightShift.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitLessThan(DMASTLessThan lessThan) {
+            Console.Write("(");
+            lessThan.A.Visit(this);
+            Console.Write(" < ");
+            lessThan.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitLessThanOrEqual(DMASTLessThanOrEqual lessThanOrEqual) {
+            Console.Write("(");
+            lessThanOrEqual.A.Visit(this);
+            Console.Write(" <= ");
+            lessThanOrEqual.B.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitListIndex(DMASTListIndex listIndex) {
+            listIndex.Expression.Visit(this);
+            Console.Write("[");
+            listIndex.Index.Visit(this);
+            Console.Write("]");
         }
 
         public void VisitNewDereference(DMASTNewDereference newDereference) {
@@ -166,6 +285,14 @@ namespace DMCompiler.DM.Visitors {
                 statement.InnerBlock.Visit(this);
                 _indentLevel--;
             }
+        }
+
+        public void VisitOr(DMASTOr or) {
+            Console.Write("(");
+            or.A.Visit(this);
+            Console.Write(" || ");
+            or.B.Visit(this);
+            Console.Write(")");
         }
 
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) {
@@ -300,6 +427,34 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
+            Console.Write("set " + statementSet.Property + " = ");
+            statementSet.Value.Visit(this);
+        }
+
+        public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
+            Console.Write("switch (");
+            statementSwitch.Value.Visit(this);
+            Console.Write(")\n");
+
+            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
+                _indentLevel++;
+                PrintIndents();
+
+                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValue) {
+                    Console.Write("if (");
+                    ((DMASTProcStatementSwitch.SwitchCaseValue)switchCase).Value.Visit(this);
+                    Console.Write(")\n");
+                } else {
+                    Console.Write("else\n");
+                }
+
+                _indentLevel++;
+                switchCase.Body.Visit(this);
+                _indentLevel -= 2;
+            }
+        }
+
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             Console.Write("var");
             if (varDeclaration.Type != null) varDeclaration.Type.Visit(this);
@@ -317,6 +472,26 @@ namespace DMCompiler.DM.Visitors {
             Console.Write(" - ");
             subtract.B.Visit(this);
             Console.Write(")");
+        }
+
+        public void VisitTernary(DMASTTernary ternary) {
+            Console.Write("(");
+            ternary.A.Visit(this);
+            Console.Write(" ? ");
+            ternary.B.Visit(this);
+            Console.Write(" : ");
+            ternary.C.Visit(this);
+            Console.Write(")");
+        }
+
+        public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
+            Console.Write("while (");
+            statementWhile.Conditional.Visit(this);
+            Console.Write(")\n");
+
+            _indentLevel++;
+            statementWhile.Body.Visit(this);
+            _indentLevel--;
         }
     }
 }

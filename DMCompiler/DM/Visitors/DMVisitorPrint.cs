@@ -6,7 +6,7 @@ namespace DMCompiler.DM.Visitors {
 
         private void PrintIndents() {
             for (int i = 0; i < _indentLevel; i++) {
-                Console.Write("\t");
+                Console.Write("    ");
             }
         }
 
@@ -69,10 +69,34 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitCall(DMASTCall call) {
+            Console.Write("call(");
+            call.CallParameters[0].Visit(this);
+            if (call.CallParameters.Length > 1) {
+                Console.Write(", ");
+                call.CallParameters[1].Visit(this);
+            }
+            Console.Write(")");
+
+            Console.Write("(");
+            for (int i = 0; i < call.ProcParameters.Length; i++) {
+                call.ProcParameters[i].Visit(this);
+
+                if (i < call.ProcParameters.Length - 1) Console.Write(", ");
+            }
+            Console.Write(")");
+        }
+
         public void VisitCallableDereference(DMASTCallableDereference dereference) {
             dereference.Left.Visit(this);
             Console.Write(".");
             dereference.Right.Visit(this);
+        }
+
+        public void VisitCallableDereferenceSearch(DMASTCallableDereferenceSearch dereferenceSearch) {
+            dereferenceSearch.Left.Visit(this);
+            Console.Write(":");
+            dereferenceSearch.Right.Visit(this);
         }
 
         public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) {
@@ -260,23 +284,37 @@ namespace DMCompiler.DM.Visitors {
             throw new NotImplementedException();
         }
 
+        public void VisitNewInferred(DMASTNewInferred newInferred) {
+            Console.Write("new");
+
+            if (newInferred.Parameters != null) {
+                Console.Write("(");
+                for (int i = 0; i < newInferred.Parameters.Length; i++) {
+                    newInferred.Parameters[i].Visit(this);
+
+                    if (i < newInferred.Parameters.Length - 1) Console.Write(", ");
+                }
+                Console.Write(")");
+            }
+        }
+
         public void VisitNewPath(DMASTNewPath newPath) {
             Console.Write("new ");
             newPath.Path.Visit(this);
 
-            Console.Write("(");
-            for (int i = 0; i < newPath.Parameters.Length; i++) {
-                newPath.Parameters[i].Visit(this);
+            if (newPath.Parameters != null) {
+                Console.Write("(");
+                for (int i = 0; i < newPath.Parameters.Length; i++) {
+                    newPath.Parameters[i].Visit(this);
 
-                if (i < newPath.Parameters.Length - 1) Console.Write(", ");
+                    if (i < newPath.Parameters.Length - 1) Console.Write(", ");
+                }
+                Console.Write(")");
             }
-            Console.Write(")");
         }
 
-        public void VisitObject(DMASTObjectDefinition statement) {
-            Console.Write("ObjectDefinition(");
+        public void VisitObjectDefinition(DMASTObjectDefinition statement) {
             statement.Path.Visit(this);
-            Console.Write(")");
 
             if (statement.InnerBlock != null) {
                 Console.Write("\n");
@@ -296,29 +334,32 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) {
-            Console.Write("VarDefinition(");
-            objectVarDefinition.Path.Visit(this);
-            Console.Write(" = ");
+            Console.Write(objectVarDefinition.Type.Path.PathString + objectVarDefinition.Name + " = ");
             objectVarDefinition.Value.Visit(this);
-            Console.Write(")");
         }
 
         public void VisitPath(DMASTPath path) {
-            switch (path.PathType) {
+            switch (path.Path.Type) {
                 case OpenDreamShared.Dream.DreamPath.PathType.Absolute: Console.Write("/"); break;
                 case OpenDreamShared.Dream.DreamPath.PathType.DownwardSearch: Console.Write(":"); break;
                 case OpenDreamShared.Dream.DreamPath.PathType.UpwardSearch: Console.Write("."); break;
             }
 
-            for (int i = 0; i < path.PathElements.Length; i++) {
-                path.PathElements[i].Visit(this);
-                
-                if (i < path.PathElements.Length - 1) Console.Write("/");
+            for (int i = 0; i < path.Path.Elements.Length; i++) {
+                Console.Write(path.Path.Elements[i]);
+
+                if (i < path.Path.Elements.Length - 1) Console.Write("/");
             }
         }
 
-        public void VisitPathElement(DMASTPathElement pathElement) {
-            Console.Write(pathElement.Element);
+        public void VisitPostDecrement(DMASTPostDecrement postDecrement) {
+            postDecrement.Expression.Visit(this);
+            Console.Write("--");
+        }
+
+        public void VisitPostIncrement(DMASTPostIncrement postIncrement) {
+            postIncrement.Expression.Visit(this);
+            Console.Write("++");
         }
 
         public void VisitProcBlockInner(DMASTProcBlockInner procBlock) {
@@ -343,7 +384,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) {
-            Console.Write("ProcDefinition(");
             procDefinition.Path.Visit(this);
 
             Console.Write("(");
@@ -352,7 +392,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (i < procDefinition.Parameters.Length - 1) Console.Write(", ");
             }
-            Console.Write("))");
+            Console.Write(")");
 
             if (procDefinition.Body != null) {
                 Console.Write("\n");
@@ -364,6 +404,10 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) {
+            Console.Write("break");
+        }
+
+        public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) {
             Console.Write("break");
         }
 
@@ -396,6 +440,26 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) {
             throw new NotImplementedException();
+        }
+
+        public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) {
+            Console.Write("for (");
+
+            if (statementForNumberRange.VariableDeclaration != null) {
+                statementForNumberRange.VariableDeclaration.Visit(this);
+            } else {
+                statementForNumberRange.Variable.Visit(this);
+                Console.Write(" = ");
+            }
+
+            statementForNumberRange.RangeBegin.Visit(this);
+            Console.Write(" to ");
+            statementForNumberRange.RangeEnd.Visit(this);
+            Console.Write(")\n");
+
+            _indentLevel++;
+            statementForNumberRange.Body.Visit(this);
+            _indentLevel--;
         }
 
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) {
@@ -432,12 +496,22 @@ namespace DMCompiler.DM.Visitors {
             statementSet.Value.Visit(this);
         }
 
+        public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
+            Console.Write("spawn(");
+            statementSpawn.Time.Visit(this);
+            Console.Write(")");
+
+            statementSpawn.Body.Visit(this);
+        }
+
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             Console.Write("switch (");
             statementSwitch.Value.Visit(this);
             Console.Write(")\n");
 
-            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
+            for (int i = 0; i < statementSwitch.Cases.Length; i++) {
+                DMASTProcStatementSwitch.SwitchCase switchCase = statementSwitch.Cases[i];
+
                 _indentLevel++;
                 PrintIndents();
 
@@ -451,6 +525,7 @@ namespace DMCompiler.DM.Visitors {
 
                 _indentLevel++;
                 switchCase.Body.Visit(this);
+                if (i < statementSwitch.Cases.Length - 1) Console.Write("\n");
                 _indentLevel -= 2;
             }
         }

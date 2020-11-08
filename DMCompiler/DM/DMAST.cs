@@ -1,70 +1,77 @@
-﻿using System.Linq;
+﻿using System;
 using DMCompiler.Compiler;
 using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM {
     interface DMASTVisitor {
-        public void VisitFile(DMASTFile file);
-        public void VisitBlockInner(DMASTBlockInner block);
-        public void VisitProcBlockInner(DMASTProcBlockInner procBlock);
-        public void VisitObject(DMASTObjectDefinition statement);
-        public void VisitPath(DMASTPath path);
-        public void VisitPathElement(DMASTPathElement pathElement);
-        public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition);
-        public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression);
-        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration);
-        public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn);
-        public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak);
-        public void VisitProcStatementDel(DMASTProcStatementDel statementDel);
-        public void VisitProcStatementSet(DMASTProcStatementSet statementSet);
-        public void VisitProcStatementIf(DMASTProcStatementIf statementIf);
-        public void VisitProcStatementForList(DMASTProcStatementForList statementForList);
-        public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop);
-        public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile);
-        public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch);
-        public void VisitProcDefinition(DMASTProcDefinition procDefinition);
-        public void VisitIdentifier(DMASTIdentifier identifier);
-        public void VisitConstantInteger(DMASTConstantInteger constant);
-        public void VisitConstantFloat(DMASTConstantFloat constant);
-        public void VisitConstantString(DMASTConstantString constant);
-        public void VisitConstantResource(DMASTConstantResource constant);
-        public void VisitConstantNull(DMASTConstantNull constant);
-        public void VisitConstantPath(DMASTConstantPath constant);
-        public void VisitAssign(DMASTAssign assign);
-        public void VisitNewPath(DMASTNewPath newPath);
-        public void VisitNewDereference(DMASTNewDereference newDereference);
-        public void VisitExpressionNot(DMASTExpressionNot not);
-        public void VisitExpressionNegate(DMASTExpressionNegate negate);
-        public void VisitEqual(DMASTEqual equal);
-        public void VisitNotEqual(DMASTNotEqual notEqual);
-        public void VisitLessThan(DMASTLessThan lessThan);
-        public void VisitLessThanOrEqual(DMASTLessThanOrEqual lessThanOrEqual);
-        public void VisitGreaterThan(DMASTGreaterThan greaterThan);
-        public void VisitGreaterThanOrEqual(DMASTGreaterThanOrEqual greaterThanOrEqual);
-        public void VisitMultiply(DMASTMultiply multiply);
-        public void VisitDivide(DMASTDivide divide);
-        public void VisitModulus(DMASTModulus modulus);
-        public void VisitAdd(DMASTAdd add);
-        public void VisitSubtract(DMASTSubtract subtract);
-        public void VisitTernary(DMASTTernary ternary);
-        public void VisitAppend(DMASTAppend append);
-        public void VisitMask(DMASTMask mask);
-        public void VisitOr(DMASTOr or);
-        public void VisitAnd(DMASTAnd and);
-        public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd);
-        public void VisitBinaryOr(DMASTBinaryOr binaryOr);
-        public void VisitBinaryNot(DMASTBinaryNot binaryNot);
-        public void VisitLeftShift(DMASTLeftShift leftShift);
-        public void VisitRightShift(DMASTRightShift rightShift);
-        public void VisitIn(DMASTExpressionIn expressionIn);
-        public void VisitListIndex(DMASTListIndex listIndex);
-        public void VisitProcCall(DMASTProcCall procCall);
-        public void VisitCallParameter(DMASTCallParameter callParameter);
-        public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter);
-        public void VisitCallableIdentifier(DMASTCallableIdentifier identifier);
-        public void VisitCallableDereference(DMASTCallableDereference dereference);
-        public void VisitCallableSuper(DMASTCallableSuper super);
-        public void VisitCallableSelf(DMASTCallableSelf self);
+        public void VisitFile(DMASTFile file) { throw new NotImplementedException(); }
+        public void VisitBlockInner(DMASTBlockInner block) { throw new NotImplementedException(); }
+        public void VisitProcBlockInner(DMASTProcBlockInner procBlock) { throw new NotImplementedException(); }
+        public void VisitObjectDefinition(DMASTObjectDefinition statement) { throw new NotImplementedException(); }
+        public void VisitPath(DMASTPath path) { throw new NotImplementedException(); }
+        public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) { throw new NotImplementedException(); }
+        public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
+        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
+        public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
+        public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) { throw new NotImplementedException(); }
+        public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) { throw new NotImplementedException(); }
+        public void VisitProcStatementDel(DMASTProcStatementDel statementDel) { throw new NotImplementedException(); }
+        public void VisitProcStatementSet(DMASTProcStatementSet statementSet) { throw new NotImplementedException(); }
+        public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) { throw new NotImplementedException(); }
+        public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
+        public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
+        public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) { throw new NotImplementedException(); }
+        public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
+        public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
+        public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
+        public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
+        public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
+        public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
+        public void VisitConstantFloat(DMASTConstantFloat constant) { throw new NotImplementedException(); }
+        public void VisitConstantString(DMASTConstantString constant) { throw new NotImplementedException(); }
+        public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
+        public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
+        public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
+        public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
+        public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
+        public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
+        public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
+        public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
+        public void VisitExpressionNot(DMASTExpressionNot not) { throw new NotImplementedException(); }
+        public void VisitExpressionNegate(DMASTExpressionNegate negate) { throw new NotImplementedException(); }
+        public void VisitEqual(DMASTEqual equal) { throw new NotImplementedException(); }
+        public void VisitNotEqual(DMASTNotEqual notEqual) { throw new NotImplementedException(); }
+        public void VisitLessThan(DMASTLessThan lessThan) { throw new NotImplementedException(); }
+        public void VisitLessThanOrEqual(DMASTLessThanOrEqual lessThanOrEqual) { throw new NotImplementedException(); }
+        public void VisitGreaterThan(DMASTGreaterThan greaterThan) { throw new NotImplementedException(); }
+        public void VisitGreaterThanOrEqual(DMASTGreaterThanOrEqual greaterThanOrEqual) { throw new NotImplementedException(); }
+        public void VisitMultiply(DMASTMultiply multiply) { throw new NotImplementedException(); }
+        public void VisitDivide(DMASTDivide divide) { throw new NotImplementedException(); }
+        public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
+        public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
+        public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
+        public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }
+        public void VisitPostDecrement(DMASTPostDecrement postDecrement) { throw new NotImplementedException(); }
+        public void VisitTernary(DMASTTernary ternary) { throw new NotImplementedException(); }
+        public void VisitAppend(DMASTAppend append) { throw new NotImplementedException(); }
+        public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
+        public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
+        public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
+        public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
+        public void VisitBinaryOr(DMASTBinaryOr binaryOr) { throw new NotImplementedException(); }
+        public void VisitBinaryNot(DMASTBinaryNot binaryNot) { throw new NotImplementedException(); }
+        public void VisitLeftShift(DMASTLeftShift leftShift) { throw new NotImplementedException(); }
+        public void VisitRightShift(DMASTRightShift rightShift) { throw new NotImplementedException(); }
+        public void VisitIn(DMASTExpressionIn expressionIn) { throw new NotImplementedException(); }
+        public void VisitListIndex(DMASTListIndex listIndex) { throw new NotImplementedException(); }
+        public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }
+        public void VisitCallParameter(DMASTCallParameter callParameter) { throw new NotImplementedException(); }
+        public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter) { throw new NotImplementedException(); }
+        public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) { throw new NotImplementedException(); }
+        public void VisitCallableDereference(DMASTCallableDereference dereference) { throw new NotImplementedException(); }
+        public void VisitCallableDereferenceSearch(DMASTCallableDereferenceSearch dereferenceSearch) { throw new NotImplementedException(); }
+        public void VisitCallableSuper(DMASTCallableSuper super) { throw new NotImplementedException(); }
+        public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
     }
 
     interface DMASTNode : ASTNode<DMASTVisitor> {
@@ -137,7 +144,7 @@ namespace DMCompiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitObject(this);
+            visitor.VisitObjectDefinition(this);
         }
     }
 
@@ -158,12 +165,10 @@ namespace DMCompiler.DM {
     }
 
     class DMASTPath : DMASTNode {
-        public DreamPath.PathType PathType;
-        public DMASTPathElement[] PathElements;
+        public DreamPath Path;
 
-        public DMASTPath(DreamPath.PathType pathType, DMASTPathElement[] pathElements) {
-            PathType = pathType;
-            PathElements = pathElements;
+        public DMASTPath(DreamPath.PathType pathType, string[] pathElements) {
+            Path = new DreamPath(pathType, pathElements);
         }
 
         public void Visit(DMASTVisitor visitor) {
@@ -171,24 +176,17 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTPathElement : DMASTNode {
-        public string Element;
-
-        public DMASTPathElement(string element) {
-            Element = element;
-        }
-
-        public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPathElement(this);
-        }
-    }
-
     class DMASTObjectVarDefinition : DMASTStatement {
-        public DMASTPath Path;
+        public DMASTPath Type;
+        public string Name;
         public DMASTExpression Value;
 
         public DMASTObjectVarDefinition(DMASTPath path, DMASTExpression value) {
-            Path = path;
+            int varElementIndex = path.Path.FindElement("var");
+            string[] typeElements = path.Path.GetElements(varElementIndex + 1);
+
+            Type = (typeElements.Length > 0) ? new DMASTPath(path.Path.Type, typeElements) : null;
+            Name = path.Path.LastElement;
             Value = value;
         }
 
@@ -215,10 +213,11 @@ namespace DMCompiler.DM {
         public DMASTExpression Value;
 
         public DMASTProcStatementVarDeclaration(DMASTPath path, DMASTExpression value) {
-            DMASTPathElement[] typeElements = path.PathElements.Take(path.PathElements.Length - 1).ToArray();
+            int varElementIndex = path.Path.FindElement("var");
+            string[] typeElements = path.Path.GetElements(varElementIndex + 1);
 
-            Type = (typeElements.Length > 0) ? new DMASTPath(path.PathType, typeElements) : null;
-            Name = path.PathElements[path.PathElements.Length - 1].Element;
+            Type = (typeElements.Length > 0) ? new DMASTPath(path.Path.Type, typeElements) : null;
+            Name = path.Path.LastElement;
             Value = value;
         }
 
@@ -245,6 +244,12 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTProcStatementContinue : DMASTProcStatement {
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementContinue(this);
+        }
+    }
+
     class DMASTProcStatementDel : DMASTProcStatement {
         public DMASTExpression Value;
 
@@ -268,6 +273,20 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSet(this);
+        }
+    }
+
+    class DMASTProcStatementSpawn : DMASTProcStatement {
+        public DMASTExpression Time;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementSpawn(DMASTExpression time, DMASTProcBlockInner body) {
+            Time = time;
+            Body = body;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementSpawn(this);
         }
     }
 
@@ -302,6 +321,25 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementForList(this);
+        }
+    }
+
+    class DMASTProcStatementForNumberRange : DMASTProcStatement {
+        public DMASTProcStatementVarDeclaration VariableDeclaration;
+        public DMASTCallable Variable;
+        public DMASTExpression RangeBegin, RangeEnd;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementForNumberRange(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTProcBlockInner body) {
+            VariableDeclaration = variableDeclaration;
+            Variable = variable;
+            RangeBegin = rangeBegin;
+            RangeEnd = rangeEnd;
+            Body = body;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForNumberRange(this);
         }
     }
 
@@ -450,6 +488,19 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTCall : DMASTExpression {
+        public DMASTCallParameter[] CallParameters, ProcParameters;
+
+        public DMASTCall(DMASTCallParameter[] callParameters, DMASTCallParameter[] procParameters) {
+            CallParameters = callParameters;
+            ProcParameters = procParameters;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCall(this);
+        }
+    }
+
     class DMASTAssign : DMASTExpression {
         public DMASTExpression Expression, Value;
 
@@ -488,6 +539,18 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitNewDereference(this);
+        }
+    }
+
+    class DMASTNewInferred : DMASTExpression {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewInferred(DMASTCallParameter[] parameters) {
+            Parameters = parameters;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewInferred(this);
         }
     }
 
@@ -655,6 +718,30 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitSubtract(this);
+        }
+    }
+
+    class DMASTPostIncrement : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTPostIncrement(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPostIncrement(this);
+        }
+    }
+
+    class DMASTPostDecrement : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTPostDecrement(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPostDecrement(this);
         }
     }
 
@@ -846,18 +933,24 @@ namespace DMCompiler.DM {
 
     class DMASTDefinitionParameter : DMASTNode{
         public enum ParameterType {
-            Anything,
-            Text
+            Default = 0x0,
+            Anything = 0x1,
+            Text = 0x2,
+            Obj = 0x4,
+            Mob = 0x8,
+            Turf = 0x10
         }
 
         public DMASTPath Path;
         public DMASTExpression Value;
         public ParameterType Type;
+        public DMASTExpression PossibleValues;
 
-        public DMASTDefinitionParameter(DMASTPath path, DMASTExpression value, ParameterType type) {
+        public DMASTDefinitionParameter(DMASTPath path, DMASTExpression value, ParameterType type, DMASTExpression possibleValues) {
             Path = path;
             Value = value;
             Type = type;
+            PossibleValues = possibleValues;
         }
 
         public void Visit(DMASTVisitor visitor) {
@@ -885,11 +978,21 @@ namespace DMCompiler.DM {
             Right = right;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public virtual void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableDereference(this);
         }
     }
-    
+
+    class DMASTCallableDereferenceSearch : DMASTCallableDereference {
+        public DMASTCallableDereferenceSearch(DMASTExpression left, DMASTExpression right) : base(left, right) {
+
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallableDereferenceSearch(this);
+        }
+    }
+
     class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSuper(this);

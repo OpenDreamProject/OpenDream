@@ -504,7 +504,7 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamProcInterpreterArguments arguments = PopArguments();
                 DreamPath objectPath = PopDreamValue().GetValueAsPath();
 
-                if (objectPath.Type == DreamPath.PathType.UpwardSearch && objectPath.Elements.Length == 1) {
+                if (objectPath.Type == DreamPath.PathType.Relative && objectPath.Elements.Length == 1) {
                     objectPath = currentScope.GetValue(objectPath.LastElement).GetValueAsPath();
                 }
 

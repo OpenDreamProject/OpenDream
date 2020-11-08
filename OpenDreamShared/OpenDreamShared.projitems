@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Dream\ATOMBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
     <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamFullState.cs" />

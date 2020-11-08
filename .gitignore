@@ -10,3 +10,4 @@
 /OpenDreamServer/bin/Debug/netcoreapp3.1
 /DMCompiler/bin/Debug/netcoreapp3.1
 /DMCompiler/obj
+/DMCompiler/Properties/launchSettings.json

@@ -9,6 +9,7 @@ namespace DMCompiler.DM {
         private Dictionary<string, TokenType> _keywords = new Dictionary<string, TokenType>() {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
+            { "continue", TokenType.DM_Continue },
             { "if", TokenType.DM_If },
             { "else", TokenType.DM_Else },
             { "for", TokenType.DM_For },
@@ -20,8 +21,11 @@ namespace DMCompiler.DM {
             { "del", TokenType.DM_Del },
             { "return", TokenType.DM_Return },
             { "in", TokenType.DM_In },
+            { "to", TokenType.DM_To },
             { "as", TokenType.DM_As },
-            { "set", TokenType.DM_Set }
+            { "set", TokenType.DM_Set },
+            { "call", TokenType.DM_Call },
+            { "spawn", TokenType.DM_Spawn }
         };
 
         public DMLexer(string source) : base(source) {
@@ -138,7 +142,11 @@ namespace DMCompiler.DM {
                     case '+': {
                         c = Advance();
 
-                        if (c == '=') {
+                        if (c == '+') {
+                            Advance();
+
+                            token = CreateToken(TokenType.DM_PlusPlus, "++");
+                        } else if (c == '=') {
                             Advance();
 
                             token = CreateToken(TokenType.DM_PlusEquals, "+=");
@@ -151,7 +159,11 @@ namespace DMCompiler.DM {
                     case '-': {
                         c = Advance();
 
-                        if (c == '=') {
+                        if (c == '-') {
+                            Advance();
+
+                            token = CreateToken(TokenType.DM_MinusMinus, "--");
+                        } else if (c == '=') {
                             Advance();
 
                             token = CreateToken(TokenType.DM_MinusEquals, "-=");
@@ -404,6 +416,10 @@ namespace DMCompiler.DM {
                                 stringValue += escapeSequence;
                                 validEscapeSequence = true;
                                 break;
+                            } else if (escapeSequence == "t") {
+                                stringValue += '\t';
+                                validEscapeSequence = true;
+                                break;
                             } else if (escapeSequence == "Roman" || escapeSequence == "roman") {
                                 //TODO: Roman escape sequence
                                 validEscapeSequence = true;
@@ -432,19 +448,27 @@ namespace DMCompiler.DM {
                                 //TODO: Proper escape sequence
                                 validEscapeSequence = true;
                                 break;
+                            } else if (escapeSequence == "red") {
+                                //TODO: red escape sequence
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "...") {
+                                //TODO: "..." escape sequence
+                                validEscapeSequence = true;
+                                break;
                             }
                         }
 
                         if (!validEscapeSequence) {
                             throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
                         }
+                    } else if (c != '"' && !(!isLong && c == '\n')) {
+                        stringValue += c;
+                    } else {
+                        break;
                     }
-                }
-
-                if (!(nestingLevel == 0 && c == '"') && !(!isLong && c == '\n')) {
-                    stringValue += c;
                 } else {
-                    break;
+                    stringValue += c;
                 }
             } while (!IsAtEndOfFile());
             if (c != '"') throw new Exception("Expected '\"' to end string");

@@ -284,8 +284,8 @@ namespace OpenDreamServer.Dream.Objects {
                         if (procDefinition.DefaultArgumentValues != null) {
                             defaultArgumentValues = new Dictionary<string, DreamValue>();
 
-                            foreach (KeyValuePair<string, JsonElement> defaultArgumentValue in procDefinition.DefaultArgumentValues) {
-                                defaultArgumentValues[defaultArgumentValue.Key] = GetDreamValueFromJsonElement(defaultArgumentValue.Value);
+                            foreach (KeyValuePair<string, object> defaultArgumentValue in procDefinition.DefaultArgumentValues) {
+                                defaultArgumentValues[defaultArgumentValue.Key] = GetDreamValueFromJsonElement((JsonElement)defaultArgumentValue.Value);
                             }
                         }
 

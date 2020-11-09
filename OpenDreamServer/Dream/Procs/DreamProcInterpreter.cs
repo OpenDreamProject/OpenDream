@@ -1,6 +1,7 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -682,23 +683,13 @@ namespace OpenDreamServer.Dream.Procs {
                 int argumentCount = ReadInt(bytecodeStream);
 
                 for (int i = 0; i < argumentCount; i++) {
-                    DreamProcOpcode argumentType = (DreamProcOpcode)bytecodeStream.ReadByte();
+                    DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)bytecodeStream.ReadByte();
 
-                    if (argumentType == DreamProcOpcode.ParameterNamed) {
+                    if (argumentType == DreamProcOpcodeParameterType.Named) {
                         string argumentName = ReadString(bytecodeStream);
 
-                        while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.ParameterEnd) {
-                            bytecodeStream.Seek(-1, SeekOrigin.Current);
-                            Step(bytecodeStream);
-                        }
-
                         arguments.NamedArguments[argumentName] = _stack.Pop();
-                    } else if (argumentType == DreamProcOpcode.ParameterUnnamed) {
-                        while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.ParameterEnd) {
-                            bytecodeStream.Seek(-1, SeekOrigin.Current);
-                            Step(bytecodeStream);
-                        }
-
+                    } else if (argumentType == DreamProcOpcodeParameterType.Unnamed) {
                         arguments.OrderedArguments.Add(_stack.Pop());
                     } else {
                         throw new Exception("Invalid argument type (" + argumentType + ")");

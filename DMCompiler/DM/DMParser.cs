@@ -137,19 +137,17 @@ namespace DMCompiler.DM {
             Token leftToken = Current();
 
             if (Check(TokenType.DM_Identifier)) {
-                Token separatorToken = Current();
-
                 if (Check(TokenType.DM_Period)) {
-                    DMASTCallable right = Dereference();
+                    List<DMASTCallableIdentifier> dereferences = new List<DMASTCallableIdentifier>();
 
-                    if (right == null) {
-                        Token rightToken = Current();
+                    do {
+                        DMASTCallableIdentifier identifier = Callable() as DMASTCallableIdentifier;
+                        if (identifier == null) throw new Exception("Expected an identifier");
 
-                        Consume(TokenType.DM_Identifier, "Expected identifier");
-                        right = new DMASTCallableIdentifier(rightToken.Text);
-                    }
+                        dereferences.Add(identifier);
+                    } while (Check(TokenType.DM_Period));
 
-                    return new DMASTCallableDereference(new DMASTCallableIdentifier(leftToken.Text), right);
+                    return new DMASTCallableDereference(new DMASTCallableIdentifier(leftToken.Text), dereferences.ToArray());
                 } else { 
                     ReuseToken(leftToken);
                 }

@@ -90,13 +90,12 @@ namespace DMCompiler.DM.Visitors {
         public void VisitCallableDereference(DMASTCallableDereference dereference) {
             dereference.Left.Visit(this);
             Console.Write(".");
-            dereference.Right.Visit(this);
-        }
 
-        public void VisitCallableDereferenceSearch(DMASTCallableDereferenceSearch dereferenceSearch) {
-            dereferenceSearch.Left.Visit(this);
-            Console.Write(":");
-            dereferenceSearch.Right.Visit(this);
+            for (int i = 0; i < dereference.Dereferences.Length; i++) {
+                dereference.Dereferences[i].Visit(this);
+
+                if ( i < dereference.Dereferences.Length - 1) Console.Write(".");
+            }
         }
 
         public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) {

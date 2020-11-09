@@ -69,7 +69,6 @@ namespace DMCompiler.DM {
         public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter) { throw new NotImplementedException(); }
         public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitCallableDereference(DMASTCallableDereference dereference) { throw new NotImplementedException(); }
-        public void VisitCallableDereferenceSearch(DMASTCallableDereferenceSearch dereferenceSearch) { throw new NotImplementedException(); }
         public void VisitCallableSuper(DMASTCallableSuper super) { throw new NotImplementedException(); }
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
     }
@@ -971,25 +970,16 @@ namespace DMCompiler.DM {
     }
 
     class DMASTCallableDereference : DMASTCallable {
-        public DMASTExpression Left, Right;
+        public DMASTExpression Left;
+        public DMASTCallableIdentifier[] Dereferences;
 
-        public DMASTCallableDereference(DMASTExpression left, DMASTExpression right) {
+        public DMASTCallableDereference(DMASTExpression left, DMASTCallableIdentifier[] dereferences) {
             Left = left;
-            Right = right;
+            Dereferences = dereferences;
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableDereference(this);
-        }
-    }
-
-    class DMASTCallableDereferenceSearch : DMASTCallableDereference {
-        public DMASTCallableDereferenceSearch(DMASTExpression left, DMASTExpression right) : base(left, right) {
-
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableDereferenceSearch(this);
         }
     }
 

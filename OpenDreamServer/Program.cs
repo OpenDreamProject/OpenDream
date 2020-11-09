@@ -314,7 +314,7 @@ namespace OpenDreamServer {
                 connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
                 connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
             } else {
-                connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
+              connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
             }
         }
     }

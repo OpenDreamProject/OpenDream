@@ -146,6 +146,19 @@ namespace OpenDreamShared.Dream {
             return new DreamPath(rawPath);
         }
 
+        public DreamPath RemoveElement(int elementIndex) {
+            if (elementIndex < 0) elementIndex = Elements.Length + elementIndex + 1;
+
+            List<string> elements = new List<string>();
+            elements.AddRange(GetElements(0, elementIndex));
+            elements.AddRange(GetElements(Math.Min(elementIndex + 1, Elements.Length), -1));
+            return new DreamPath(Type, elements.ToArray());
+        }
+
+        public DreamPath Combine(DreamPath path) {
+            return new DreamPath(PathString + path.PathString);
+        }
+
         public override string ToString() {
             return PathString;
         }

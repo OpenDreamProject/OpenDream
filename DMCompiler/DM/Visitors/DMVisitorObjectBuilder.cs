@@ -8,6 +8,7 @@ namespace DMCompiler.DM.Visitors {
         private Dictionary<DreamPath, DMObject> _dmObjects = new Dictionary<DreamPath, DMObject>();
         private UInt32 _dmObjectIdCounter = 0;
         private DMObject _currentObject = null;
+        private DMVisitorProcBuilder _procBuilder = new DMVisitorProcBuilder();
 
         public Dictionary<DreamPath, DMObject> BuildObjects(DMASTFile astFile) {
             _valueStack.Clear();
@@ -63,11 +64,32 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) {
             string procName = procDefinition.Path.Path.LastElement;
+            DreamPath objectPath = _currentObject.Path.Combine(procDefinition.Path.Path.FromElements(0, -2));
+            int procElementIndex = objectPath.FindElement("proc");
 
-            if (!_currentObject.Procs.ContainsKey(procName)) _currentObject.Procs.Add(procName, new List<DMProc>());
-            _currentObject.Procs[procName].Add(new DMProc());
+            if (procElementIndex != -1) {
+                objectPath = objectPath.RemoveElement(procElementIndex);
+            }
 
-            //TODO
+            DMObject dmObject = GetDMObject(objectPath);
+            DMProc proc = _procBuilder.BuildProc(procDefinition);
+            if (!dmObject.Procs.ContainsKey(procName)) dmObject.Procs.Add(procName, new List<DMProc>());
+
+            foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
+                object defaultValue;
+
+                if (parameter.Value != null) {
+                    parameter.Value.Visit(this);
+
+                    defaultValue = _valueStack.Pop();
+                } else {
+                    defaultValue = null;
+                }
+                
+                proc.Parameters.Add(new DMProc.Parameter(parameter.Path.Path.LastElement, defaultValue));
+            }
+
+            dmObject.Procs[procName].Add(proc);
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {
@@ -140,10 +162,10 @@ namespace DMCompiler.DM.Visitors {
         private DMObject GetDMObject(DreamPath path) {
             DMObject dmObject;
             if (!_dmObjects.TryGetValue(path, out dmObject)) {
-                DreamPath? parentType = (_currentObject != null) ? _currentObject.Path : (DreamPath?)null;
+                DreamPath parentType = path.FromElements(0, -2);
 
-                if (path.Elements.Length >= 2) {
-                    GetDMObject(path.FromElements(0, -2)); //Make sure the parent exists
+                if (parentType.Elements.Length >= 1) {
+                    GetDMObject(parentType); //Make sure the parent exists
                 }
 
                 dmObject = new DMObject(_dmObjectIdCounter++, path, parentType);

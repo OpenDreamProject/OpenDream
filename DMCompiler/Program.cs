@@ -71,6 +71,7 @@ namespace DMCompiler {
                 { "type", DreamObjectJsonVariableType.Object }
             });
 
+            AddNativeProcs(rootObject);
             return rootObject;
         }
 
@@ -95,7 +96,23 @@ namespace DMCompiler {
                     List<ProcDefinitionJson> procJson = new List<ProcDefinitionJson>();
 
                     foreach (DMProc proc in procs.Value) {
-                        procJson.Add(new ProcDefinitionJson());
+                        ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+
+                        if (proc.Bytecode.Length > 0) procDefinition.Bytecode = proc.Bytecode.ToArray();
+                        if (proc.Parameters.Count > 0) {
+                            procDefinition.ArgumentNames = new List<string>();
+
+                            foreach (DMProc.Parameter parameter in proc.Parameters) {
+                                procDefinition.ArgumentNames.Add(parameter.Name);
+
+                                if (parameter.DefaultValue != null) {
+                                    if (procDefinition.DefaultArgumentValues == null) procDefinition.DefaultArgumentValues = new Dictionary<string, object>();
+
+                                    procDefinition.DefaultArgumentValues.Add(parameter.Name, parameter.DefaultValue);
+                                }
+                            }
+                        }
+                        procJson.Add(procDefinition);
                     }
 
                     objectJson.Procs.Add(procs.Key, procJson);
@@ -135,9 +152,27 @@ namespace DMCompiler {
                     { "type", DreamObjectJsonVariableType.Resource },
                     { "resourcePath", ((DMResource)value).ResourcePath }
                 };
+            } else if (value is DreamPath) {
+                return new Dictionary<string, object>() {
+                    { "type", DreamObjectJsonVariableType.Path },
+                    { "value", ((DreamPath)value).PathString }
+                };
             } else {
                 throw new Exception("Invalid variable value");
             }
+        }
+
+        private static void AddNativeProcs(DreamObjectJson rootObject) {
+            AddNativeProc(rootObject, "locate", "locate");
+            AddNativeProc(rootObject, "num2text", "num2text");
+        }
+
+        private static void AddNativeProc(DreamObjectJson objectJson, string procName, string nativeProcName) {
+            objectJson.Procs[procName] = new List<ProcDefinitionJson>() {
+                new ProcDefinitionJson() {
+                    NativeProcName = nativeProcName
+                }
+            };
         }
     }
 }

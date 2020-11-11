@@ -13,7 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
 		TestGame\map.dmm = TestGame\map.dmm
-		TestGame\ObjectTree.json = TestGame\ObjectTree.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68-4117-4ECC-8174-D399C1D6C409}"
@@ -22,9 +21,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68
 		TestGame\icons\turf.dmi = TestGame\icons\turf.dmi
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMCompiler", "DMCompiler\DMCompiler.csproj", "{5CE157DB-7811-499B-97B7-11AC3C2C728F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		OpenDreamShared\OpenDreamShared.projitems*{06092635-1e20-4f0e-9969-b2efbe53e200}*SharedItemsImports = 13
+		OpenDreamShared\OpenDreamShared.projitems*{5ce157db-7811-499b-97b7-11ac3c2c728f}*SharedItemsImports = 5
 		OpenDreamShared\OpenDreamShared.projitems*{7c10496a-8fe6-4341-9725-18282cb14ad3}*SharedItemsImports = 5
 		OpenDreamShared\OpenDreamShared.projitems*{d4c253e8-22ab-47a4-b0a7-7963cf0d253b}*SharedItemsImports = 5
 	EndGlobalSection
@@ -51,6 +53,14 @@ Global
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.ActiveCfg = Release|Any CPU
 		{D4C253E8-22AB-47A4-B0A7-7963CF0D253B}.Release|x64.Build.0 = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Debug|x64.Build.0 = Debug|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.ActiveCfg = Release|Any CPU
+		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

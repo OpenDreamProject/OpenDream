@@ -2,12 +2,10 @@
 using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Objects {
     class DreamObjectTree {
@@ -49,28 +47,6 @@ namespace OpenDreamServer.Dream.Objects {
 
                 return descendants;
             }
-        }
-
-        private enum DreamObjectTreeVariableType {
-            Resource = 0,
-            Object = 1,
-            Path = 2
-        }
-
-        private class DreamObjectTreeJsonObject {
-            public string Name { get; set; }
-            public string Parent { get; set; }
-            public Dictionary<string, JsonElement> Variables { get; set; }
-            public Dictionary<string, JsonElement> GlobalVariables { get; set; }
-            public List<DreamObjectTreeJsonObject> Children { get; set; }
-            public Dictionary<string, List<DreamObjectTreeJsonObjectProcDefinition>> Procs { get; set; }
-        }
-
-        private class DreamObjectTreeJsonObjectProcDefinition {
-            public List<string> ArgumentNames { get; set; }
-            public Dictionary<string, JsonElement> DefaultArgumentValues { get; set; }
-            public byte[] Bytecode { get; set; }
-            public string NativeProcName { get; set; }
         }
 
         public DreamObjectTreeEntry RootObject = new DreamObjectTreeEntry(DreamPath.Root);
@@ -153,7 +129,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public void LoadFromJson(string json) {
-            DreamObjectTreeJsonObject rootJsonObject = JsonSerializer.Deserialize<DreamObjectTreeJsonObject>(json);
+            DreamObjectJson rootJsonObject = JsonSerializer.Deserialize<DreamObjectJson>(json);
 
             if (rootJsonObject.Name != "") {
                 throw new Exception("Root object in json should have an empty name");
@@ -163,7 +139,7 @@ namespace OpenDreamServer.Dream.Objects {
             LoadTreeEntryFromJson(RootObject, rootJsonObject);
         }
 
-        private void LoadTreeEntryFromJson(DreamObjectTreeEntry treeEntry, DreamObjectTreeJsonObject jsonObject) {
+        private void LoadTreeEntryFromJson(DreamObjectTreeEntry treeEntry, DreamObjectJson jsonObject) {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
 
             if (jsonObject.Procs != null) {
@@ -171,7 +147,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
             
             if (jsonObject.Children != null) {
-                foreach (DreamObjectTreeJsonObject childJsonObject in jsonObject.Children) {
+                foreach (DreamObjectJson childJsonObject in jsonObject.Children) {
                     DreamObjectTreeEntry childObjectTreeEntry;
                     DreamPath childObjectPath = treeEntry.ObjectDefinition.Type.AddToPath(childJsonObject.Name);
 
@@ -203,9 +179,9 @@ namespace OpenDreamServer.Dream.Objects {
                     return new DreamValue(value);
                 }
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {
-                DreamObjectTreeVariableType variableType = (DreamObjectTreeVariableType)jsonElement.GetProperty("type").GetByte();
+                DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                if (variableType == DreamObjectTreeVariableType.Resource) {
+                if (variableType == DreamObjectJsonVariableType.Resource) {
                     JsonElement resourcePathElement = jsonElement.GetProperty("resourcePath");
 
                     if (resourcePathElement.ValueKind == JsonValueKind.String) {
@@ -217,9 +193,9 @@ namespace OpenDreamServer.Dream.Objects {
                     } else {
                         throw new Exception("Property 'resourcePath' must be a string or null");
                     }
-                } else if (variableType == DreamObjectTreeVariableType.Object) {
+                } else if (variableType == DreamObjectJsonVariableType.Object) {
                     return new DreamValue((DreamObject)null);
-                } else if (variableType == DreamObjectTreeVariableType.Path) {
+                } else if (variableType == DreamObjectJsonVariableType.Path) {
                     return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
                 } else {
                     throw new Exception("Invalid variable type (" + variableType + ")");
@@ -229,18 +205,18 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamObjectTreeJsonObject jsonObject) {
+        private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamObjectJson jsonObject) {
             if (jsonObject.Variables != null) {
-                foreach (KeyValuePair<string, JsonElement> jsonVariable in jsonObject.Variables) {
-                    JsonElement jsonElement = jsonVariable.Value;
+                foreach (KeyValuePair<string, object> jsonVariable in jsonObject.Variables) {
+                    JsonElement jsonElement = (JsonElement)jsonVariable.Value;
                     DreamValue value = GetDreamValueFromJsonElement(jsonElement);
 
                     objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
 
                     if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        DreamObjectTreeVariableType variableType = (DreamObjectTreeVariableType)jsonElement.GetProperty("type").GetByte();
+                        DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                        if (variableType == DreamObjectTreeVariableType.Object) {
+                        if (variableType == DreamObjectJsonVariableType.Object) {
                             JsonElement objectPath;
 
                             if (jsonElement.TryGetProperty("path", out objectPath)) {
@@ -268,17 +244,17 @@ namespace OpenDreamServer.Dream.Objects {
             }
 
             if (jsonObject.GlobalVariables != null) {
-                foreach (KeyValuePair<string, JsonElement> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                    JsonElement jsonElement = jsonGlobalVariable.Value;
+                foreach (KeyValuePair<string, object> jsonGlobalVariable in jsonObject.GlobalVariables) {
+                    JsonElement jsonElement = (JsonElement)jsonGlobalVariable.Value;
                     DreamValue value = GetDreamValueFromJsonElement(jsonElement);
                     DreamGlobalVariable globalVariable = new DreamGlobalVariable(value);
 
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);
 
                     if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        DreamObjectTreeVariableType variableType = (DreamObjectTreeVariableType)jsonElement.GetProperty("type").GetByte();
+                        DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                        if (variableType == DreamObjectTreeVariableType.Object) {
+                        if (variableType == DreamObjectJsonVariableType.Object) {
                             JsonElement objectPath;
 
                             if (jsonElement.TryGetProperty("path", out objectPath)) {
@@ -293,11 +269,11 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<DreamObjectTreeJsonObjectProcDefinition>> jsonProcs) {
-            foreach (KeyValuePair<string, List<DreamObjectTreeJsonObjectProcDefinition>> jsonProc in jsonProcs) {
+        private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {
+            foreach (KeyValuePair<string, List<ProcDefinitionJson>> jsonProc in jsonProcs) {
                 string procName = jsonProc.Key;
 
-                foreach (DreamObjectTreeJsonObjectProcDefinition procDefinition in jsonProc.Value) {
+                foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
                     if (procDefinition.NativeProcName != null) {
                         objectDefinition.SetProcDefinition(jsonProc.Key, _nativeProcs[procDefinition.NativeProcName]);
                     } else {
@@ -308,8 +284,8 @@ namespace OpenDreamServer.Dream.Objects {
                         if (procDefinition.DefaultArgumentValues != null) {
                             defaultArgumentValues = new Dictionary<string, DreamValue>();
 
-                            foreach (KeyValuePair<string, JsonElement> defaultArgumentValue in procDefinition.DefaultArgumentValues) {
-                                defaultArgumentValues[defaultArgumentValue.Key] = GetDreamValueFromJsonElement(defaultArgumentValue.Value);
+                            foreach (KeyValuePair<string, object> defaultArgumentValue in procDefinition.DefaultArgumentValues) {
+                                defaultArgumentValues[defaultArgumentValue.Key] = GetDreamValueFromJsonElement((JsonElement)defaultArgumentValue.Value);
                             }
                         }
 

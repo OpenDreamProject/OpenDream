@@ -100,7 +100,7 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             CreateAtomBases();
-
+            
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World, new DreamProcArguments(new List<DreamValue>()));
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             DreamObjectTree.InstantiateGlobalVariables();
@@ -314,7 +314,7 @@ namespace OpenDreamServer {
                 connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
                 connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
             } else {
-                connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
+              connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
             }
         }
     }

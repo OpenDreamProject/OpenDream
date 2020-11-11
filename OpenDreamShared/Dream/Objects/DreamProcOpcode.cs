@@ -1,4 +1,4 @@
-﻿namespace OpenDreamServer.Dream.Procs {
+﻿namespace OpenDreamShared.Dream.Procs {
     enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,
@@ -69,10 +69,11 @@
         BuildStringPartString = 0xF8,
         BuildStringPartExpression = 0xF9,
         BuildStringPartExpressionEnd = 0xFA,
-        BuildStringEnd = 0xFB,
+        BuildStringEnd = 0xFB
+    }
 
-        ParameterNamed = 0xFC,
-        ParameterUnnamed = 0xFD,
-        ParameterEnd = 0xFE
+    enum DreamProcOpcodeParameterType {
+        Named = 0xFC,
+        Unnamed = 0xFD
     }
 }

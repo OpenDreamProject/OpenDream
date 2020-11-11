@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 
 namespace OpenDreamShared.Dream {
     struct DreamPath {
@@ -22,39 +23,60 @@ namespace OpenDreamShared.Dream {
         public enum PathType {
             Absolute,
             Relative,
-            Other
+            DownwardSearch,
+            UpwardSearch
         }
 
         public string LastElement {
             get => Elements.Last();
         }
 
-        public string[] Elements;
-        public PathType Type;
+        public string[] Elements {
+            get => _elements;
+            set {
+                _elements = value;
+                _pathString = null;
+            }
+        }
 
         public string PathString {
             get {
-                string pathString = null;
+                if (_pathString != null) return _pathString;
 
-                if (Type == PathType.Absolute) pathString = "/";
-                else if (Type == PathType.Relative) pathString = ".";
+                if (Type == PathType.Absolute) _pathString = "/";
+                else if (Type == PathType.DownwardSearch) _pathString = ".";
+                else if (Type == PathType.UpwardSearch) _pathString = ":";
+                else if (Type == PathType.Relative) _pathString = String.Empty;
 
                 if (Elements.Length > 0) {
-                    pathString += Elements.Aggregate((string first, string second) => {
+                    _pathString += Elements.Aggregate((string first, string second) => {
                         return first + "/" + second;
                     });
                 }
 
-                if (!pathString.EndsWith("/")) pathString += "/";
-                return pathString;
+                return _pathString;
             }
         }
 
+        public PathType Type;
+
+        private string[] _elements;
+        private string _pathString;
+
         public DreamPath(string path) {
-            Elements = null;
             Type = PathType.Absolute;
+            _elements = null;
+            _pathString = null;
 
             SetFromString(path);
+        }
+
+        public DreamPath(PathType type, string[] elements) {
+            Type = type;
+            _elements = elements;
+            _pathString = null;
+
+            Normalize();
         }
 
         public void SetFromString(string rawPath) {
@@ -63,11 +85,14 @@ namespace OpenDreamShared.Dream {
             if (pathTypeChar == '/') {
                 Type = PathType.Absolute;
                 rawPath = rawPath.Substring(1);
+            } else if (pathTypeChar == ':') {
+                Type = PathType.DownwardSearch;
+                rawPath = rawPath.Substring(1);
             } else if (pathTypeChar == '.') {
-                Type = PathType.Relative;
+                Type = PathType.UpwardSearch;
                 rawPath = rawPath.Substring(1);
             } else {
-                Type = PathType.Other;
+                Type = PathType.Relative;
             }
 
             Elements = rawPath.Split("/");
@@ -96,20 +121,42 @@ namespace OpenDreamShared.Dream {
             return -1;
         }
 
-        public DreamPath FromElements(int elementStart, int elementEnd = -1) {
+        public string[] GetElements(int elementStart, int elementEnd = -1) {
             List<string> elements = new List<string>();
 
-            if (elementEnd == -1) elementEnd = Elements.Length;
+            if (elementEnd < 0) elementEnd = Elements.Length + elementEnd + 1;
             for (int i = elementStart; i < elementEnd; i++) {
                 elements.Add(Elements[i]);
             }
 
-            string rawPath = elements.Aggregate((string second, string first) => {
-                return first + "/" + second;
-            });
+            return elements.ToArray();
+        }
+
+        public DreamPath FromElements(int elementStart, int elementEnd = -1) {
+            string[] elements = GetElements(elementStart, elementEnd);
+            string rawPath = String.Empty;
+
+            if (elements.Length >= 1) {
+                rawPath = elements.Aggregate((string first, string second) => {
+                    return first + "/" + second;
+                });
+            }
 
             if (!rawPath.StartsWith("/")) rawPath = "/" + rawPath;
             return new DreamPath(rawPath);
+        }
+
+        public DreamPath RemoveElement(int elementIndex) {
+            if (elementIndex < 0) elementIndex = Elements.Length + elementIndex + 1;
+
+            List<string> elements = new List<string>();
+            elements.AddRange(GetElements(0, elementIndex));
+            elements.AddRange(GetElements(Math.Min(elementIndex + 1, Elements.Length), -1));
+            return new DreamPath(Type, elements.ToArray());
+        }
+
+        public DreamPath Combine(DreamPath path) {
+            return new DreamPath(PathString + path.PathString);
         }
 
         public override string ToString() {

@@ -164,6 +164,8 @@ namespace DMCompiler {
 
         private static void AddNativeProcs(DreamObjectJson rootObject) {
             AddNativeProc(rootObject, "locate", "locate");
+            AddNativeProc(rootObject, "max", "max");
+            AddNativeProc(rootObject, "min", "min");
             AddNativeProc(rootObject, "num2text", "num2text");
         }
 

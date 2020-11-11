@@ -20,9 +20,29 @@ namespace DMCompiler.DM {
         public List<Parameter> Parameters = new List<Parameter>();
 
         private BinaryWriter _bytecodeWriter = null;
+        private Dictionary<string, long> _labels = new Dictionary<string, long>();
+        private List<(long Position, string LabelName)> _unresolvedLabels = new List<(long, string)>();
+        private int _labelIdCounter = 0;
 
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);
+        }
+
+        public void ResolveLabels() {
+            foreach ((long Position, string LabelName) unresolvedLabel in _unresolvedLabels) {
+                if (_labels.TryGetValue(unresolvedLabel.LabelName, out long labelPosition)) {
+                    _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
+                    WriteInt((int)labelPosition);
+                } else {
+                    throw new Exception("Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                }
+            }
+
+            _bytecodeWriter.Seek(0, SeekOrigin.End);
+        }
+
+        public void AddLabel(string name) {
+            _labels.Add(name, Bytecode.Position);
         }
 
         public void GetIdentifier(string identifier) {
@@ -50,6 +70,51 @@ namespace DMCompiler.DM {
             }
         }
 
+        public string IfStart() {
+            string endLabel = "label" + _labelIdCounter++;
+
+            JumpIfFalse(endLabel);
+            WriteOpcode(DreamProcOpcode.CreateScope);
+
+            return endLabel;
+        }
+
+        public void IfEnd(string endLabelName) {
+            WriteOpcode(DreamProcOpcode.DestroyScope);
+            AddLabel(endLabelName);
+        }
+
+        public (string ElseLabel, string EndLabel) IfElseStart() {
+            string elseLabel = "label" + _labelIdCounter++;
+            string endLabel = "label" + _labelIdCounter++;
+
+            JumpIfFalse(elseLabel);
+            WriteOpcode(DreamProcOpcode.CreateScope);
+
+            return (elseLabel, endLabel);
+        }
+
+        public void IfElseEnd(string elseLabel, string endLabel) {
+            WriteOpcode(DreamProcOpcode.DestroyScope);
+            Jump(endLabel);
+
+            AddLabel(elseLabel);
+        }
+
+        public void Jump(string label) {
+            WriteOpcode(DreamProcOpcode.Jump);
+
+            _unresolvedLabels.Add((Bytecode.Position, label));
+            WriteInt(0); //Resolved later
+        }
+
+        public void JumpIfFalse(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfFalse);
+
+            _unresolvedLabels.Add((Bytecode.Position, label));
+            WriteInt(0); //Resolved later
+        }
+
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
         }
@@ -60,6 +125,11 @@ namespace DMCompiler.DM {
 
         public void Assign() {
             WriteOpcode(DreamProcOpcode.Assign);
+        }
+
+        public void DefineVariable(string name) {
+            WriteOpcode(DreamProcOpcode.DefineVariable);
+            WriteString(name);
         }
 
         public void Dereference(string identifier) {
@@ -81,6 +151,22 @@ namespace DMCompiler.DM {
 
         public void BitShiftLeft() {
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
+        }
+
+        public void BinaryAnd() {
+            WriteOpcode(DreamProcOpcode.BitAnd);
+        }
+
+        public void Equal() {
+            WriteOpcode(DreamProcOpcode.CompareEquals);
+        }
+
+        public void GreaterThan() {
+            WriteOpcode(DreamProcOpcode.CompareGreaterThan);
+        }
+
+        public void LessThan() {
+            WriteOpcode(DreamProcOpcode.CompareLessThan);
         }
 
         public void PushSuperProc() {

@@ -14,6 +14,7 @@ namespace DMCompiler.DM.Visitors {
             if (procDefinition.Body != null) {
                 _valueStack.Clear();
                 procDefinition.Body.Visit(this);
+                _proc.ResolveLabels();
             }
 
             return _proc;
@@ -29,6 +30,11 @@ namespace DMCompiler.DM.Visitors {
             statement.Expression.Visit(this);
         }
 
+        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
+            varDeclaration.Value.Visit(this);
+            _proc.DefineVariable(varDeclaration.Name);
+        }
+
         public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
                 statement.Value.Visit(this);
@@ -37,6 +43,24 @@ namespace DMCompiler.DM.Visitors {
             }
 
             _proc.Return();
+        }
+
+        public void VisitProcStatementIf(DMASTProcStatementIf statement) {
+            statement.Condition.Visit(this);
+            
+            if (statement.ElseBody == null) {
+                string endLabel = _proc.IfStart();
+
+                statement.Body.Visit(this);
+                _proc.IfEnd(endLabel);
+            } else {
+                (string ElseLabel, string EndLabel) labels = _proc.IfElseStart();
+
+                statement.Body.Visit(this);
+                _proc.IfElseEnd(labels.ElseLabel, labels.EndLabel);
+                statement.ElseBody.Visit(this);
+                _proc.AddLabel(labels.EndLabel);
+            }
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {
@@ -93,6 +117,30 @@ namespace DMCompiler.DM.Visitors {
             leftShift.A.Visit(this);
             leftShift.B.Visit(this);
             _proc.BitShiftLeft();
+        }
+
+        public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) {
+            binaryAnd.A.Visit(this);
+            binaryAnd.B.Visit(this);
+            _proc.BinaryAnd();
+        }
+
+        public void VisitEqual(DMASTEqual equal) {
+            equal.A.Visit(this);
+            equal.B.Visit(this);
+            _proc.Equal();
+        }
+
+        public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
+            greaterThan.A.Visit(this);
+            greaterThan.B.Visit(this);
+            _proc.GreaterThan();
+        }
+
+        public void VisitLessThan(DMASTLessThan lessThan) {
+            lessThan.A.Visit(this);
+            lessThan.B.Visit(this);
+            _proc.LessThan();
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {

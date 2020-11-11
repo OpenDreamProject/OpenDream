@@ -17,20 +17,23 @@ proc/Del()
 
 		return mob
 
+	proc/Click(object, location, control, params)
+		object.Click(location, control, params)
+
 	proc/Move(loc, dir)
 		mob.Move(loc, dir)
 
 	proc/North()
-		Move(locate(mob.x, mob.y + 1, mob.z), 1)
+		Move(get_step(mob, 1), 1)
 
 	proc/South()
-		Move(locate(mob.x, mob.y - 1, mob.z), 2)
+		Move(get_step(mob, 2), 2)
 
 	proc/East()
-		Move(locate(mob.x + 1, mob.y, mob.z), 4)
+		Move(get_step(mob, 4), 4)
 
 	proc/West()
-		Move(locate(mob.x - 1, mob.y, mob.z), 8)
+		Move(get_step(mob, 8), 8)
 
 /world
 	var/list/contents = list()
@@ -49,6 +52,8 @@ proc/Del()
 	var/icon = null
 	var/icon_state = ""
 	var/layer = 2.0
+
+	proc/Click(location, control, params)
 
 /atom/movable
 	proc/Move(NewLoc, Dir=0)
@@ -75,3 +80,25 @@ proc/Del()
 
 	proc/Login()
 	proc/Logout()
+
+proc/max(a, b)
+	if (a > b) return a
+	else return b
+
+proc/min(a, b)
+	if (a < b) return a
+	else return b
+
+proc/get_step(atom/Ref, Dir)
+	if (Ref == null) return null
+	
+	var/x = Ref.x
+	var/y = Ref.y
+
+	if (Dir & 1) y += 1
+	else if (Dir & 2) y -= 1
+
+	if (Dir & 4) x += 1
+	else if (Dir & 8) x -= 1
+
+	return locate(max(x, 1), max(y, 1), Ref.z)

@@ -65,12 +65,6 @@ namespace DMCompiler {
                 }
             }
 
-            //TODO: Move to Standard.dm
-            rootObject.GlobalVariables = new Dictionary<string, object>();
-            rootObject.GlobalVariables.Add("world", new Dictionary<string, object>() {
-                { "type", DreamObjectJsonVariableType.Object }
-            });
-
             AddNativeProcs(rootObject);
             return rootObject;
         }
@@ -86,6 +80,14 @@ namespace DMCompiler {
 
                 foreach (KeyValuePair<string, object> variable in dmObject.Variables) {
                     objectJson.Variables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value));
+                }
+            }
+
+            if (dmObject.GlobalVariables.Count > 0) {
+                objectJson.GlobalVariables = new Dictionary<string, object>();
+
+                foreach (KeyValuePair<string, object> variable in dmObject.GlobalVariables) {
+                    objectJson.GlobalVariables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value));
                 }
             }
 
@@ -108,7 +110,7 @@ namespace DMCompiler {
                                 if (parameter.DefaultValue != null) {
                                     if (procDefinition.DefaultArgumentValues == null) procDefinition.DefaultArgumentValues = new Dictionary<string, object>();
 
-                                    procDefinition.DefaultArgumentValues.Add(parameter.Name, parameter.DefaultValue);
+                                    procDefinition.DefaultArgumentValues.Add(parameter.Name, CreateDreamObjectJsonVariable(parameter.DefaultValue));
                                 }
                             }
                         }
@@ -146,7 +148,22 @@ namespace DMCompiler {
                     jsonVariable.Add("arguments", dmListValues);
                 }
 
+                if (dmList.AssociatedValues.Count > 0) {
+                    Dictionary<string, object> dmAssociatedListValues = new Dictionary<string, object>();
+
+                    foreach (KeyValuePair<string, object> dmAssociatedListValue in dmList.AssociatedValues) {
+                        dmAssociatedListValues.Add(dmAssociatedListValue.Key, CreateDreamObjectJsonVariable(dmAssociatedListValue.Value));
+                    }
+
+                    jsonVariable.Add("namedArguments", dmAssociatedListValues);
+                }
+
                 return jsonVariable;
+            } else if (value is DMNewInstance) {
+                return new Dictionary<string, object>() {
+                    { "type", DreamObjectJsonVariableType.Object },
+                    { "path", ((DMNewInstance)value).Path.PathString }
+                };
             } else if (value is DMResource) {
                 return new Dictionary<string, object>() {
                     { "type", DreamObjectJsonVariableType.Resource },
@@ -163,13 +180,38 @@ namespace DMCompiler {
         }
 
         private static void AddNativeProcs(DreamObjectJson rootObject) {
+            AddNativeProc(rootObject, "browse", "browse");
+            AddNativeProc(rootObject, "copytext", "copytext");
+            AddNativeProc(rootObject, "CRASH", "CRASH");
+            AddNativeProc(rootObject, "file2text", "file2text");
+            AddNativeProc(rootObject, "ismob", "ismob");
+            AddNativeProc(rootObject, "isnull", "isnull");
+            AddNativeProc(rootObject, "ispath", "ispath");
+            AddNativeProc(rootObject, "istype", "istype");
+            AddNativeProc(rootObject, "length", "length");
+            AddNativeProc(rootObject, "list", "list");
             AddNativeProc(rootObject, "locate", "locate");
+            AddNativeProc(rootObject, "lowertext", "lowertext");
             AddNativeProc(rootObject, "max", "max");
             AddNativeProc(rootObject, "min", "min");
             AddNativeProc(rootObject, "num2text", "num2text");
+            AddNativeProc(rootObject, "replacetext", "replacetext");
+            AddNativeProc(rootObject, "splittext", "splittext");
+            AddNativeProc(rootObject, "sleep", "sleep");
+            AddNativeProc(rootObject, "text2ascii", "text2ascii");
+            AddNativeProc(rootObject, "typesof", "typesof");
+
+            DreamObjectJson listObject = rootObject.Children.Find((DreamObjectJson child) => {
+                return child.Name == "list";
+            });
+            AddNativeProc(listObject, "Add", "list_Add");
+            AddNativeProc(listObject, "Remove", "list_Remove");
+            AddNativeProc(listObject, "Copy", "list_Copy");
         }
 
         private static void AddNativeProc(DreamObjectJson objectJson, string procName, string nativeProcName) {
+            if (objectJson.Procs == null) objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
+
             objectJson.Procs[procName] = new List<ProcDefinitionJson>() {
                 new ProcDefinitionJson() {
                     NativeProcName = nativeProcName

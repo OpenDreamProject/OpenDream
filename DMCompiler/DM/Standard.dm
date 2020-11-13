@@ -1,16 +1,25 @@
-﻿proc/New()
+﻿/var/global/world/world = null
+
+proc/New()
 proc/Del()
 
 /list
+	var/len
+
 	proc/Add()
 	proc/Remove()
+	proc/Copy()
 
 /sound
 
 /client
-	var/mob/mob = null
-	var/atom/eye = null
-	var/ckey = null
+	var/list/verbs = list()
+	var/list/screen = list()
+	var/list/images = list()
+	var/mob/mob
+	var/atom/eye
+	var/key
+	var/ckey
 
 	proc/New(TopicData)
 		mob = new world.mob(null)
@@ -37,14 +46,19 @@ proc/Del()
 
 /world
 	var/list/contents = list()
+	var/time = 0
 	var/tick_lag = 0.5
 	var/mob/mob = /mob
 
 /datum
+	var/type
 
 /atom
+	parent_type = /datum
+
 	var/list/contents = list()
-	var/atom/loc = null
+	var/list/overlays = list()
+	var/atom/loc
 	var/x = 0
 	var/y = 0
 	var/z = 0
@@ -61,33 +75,30 @@ proc/Del()
 
 /area
 	parent_type = /atom
+
 	layer = 1.0
 
 /turf
 	parent_type = /atom
+
 	layer = 2.0
 
 /obj
 	parent_type = /atom/movable
+
 	layer = 3.0
 
 /mob
 	parent_type = /atom/movable
-
-	var/client/client = null
+	
+	var/client/client
+	var/key
+	var/ckey
 
 	layer = 4.0
 
 	proc/Login()
 	proc/Logout()
-
-proc/max(a, b)
-	if (a > b) return a
-	else return b
-
-proc/min(a, b)
-	if (a < b) return a
-	else return b
 
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null

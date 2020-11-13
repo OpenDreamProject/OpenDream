@@ -4,7 +4,6 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -303,22 +302,12 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(new DreamValue(IsGreaterThan(first, second) ? 1 : 0));
             } else if (opcode == DreamProcOpcode.BooleanAnd) {
-                int afterExpressionPosition = ReadInt(bytecodeStream);
-                DreamValue leftValue = PopDreamValue();
+                DreamValue a = PopDreamValue();
+                int jumpPosition = ReadInt(bytecodeStream);
 
-                if (IsTruthy(leftValue)) {
-                    while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.BooleanExpressionEnd) {
-                        bytecodeStream.Seek(-1, SeekOrigin.Current);
-                        Step(bytecodeStream);
-                    }
-
-                    bytecodeStream.Seek(afterExpressionPosition, SeekOrigin.Begin);
-
-                    DreamValue rightValue = PopDreamValue();
-                    Push(new DreamValue(IsTruthy(rightValue) ? 1 : 0));
-                } else {
-                    bytecodeStream.Seek(afterExpressionPosition, SeekOrigin.Begin);
-                    Push(new DreamValue(0));
+                if (!IsTruthy(a)) {
+                    Push(a);
+                    bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.BooleanNot) {
                 DreamValue value = PopDreamValue();
@@ -419,6 +408,10 @@ namespace OpenDreamServer.Dream.Procs {
                 } else {
                     throw new Exception("Cannot delete a null value");
                 }
+            } else if (opcode == DreamProcOpcode.PushResource) {
+                string resourcePath = ReadString(bytecodeStream);
+
+                Push(new DreamValue(Program.DreamResourceManager.LoadResource(resourcePath)));
             } else if (opcode == DreamProcOpcode.CallStatement) {
                 DreamProcInterpreterArguments arguments = PopArguments();
                 DreamValue source = PopDreamValue();
@@ -550,19 +543,12 @@ namespace OpenDreamServer.Dream.Procs {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
             } else if (opcode == DreamProcOpcode.BooleanOr) {
-                int afterExpressionPosition = ReadInt(bytecodeStream);
-                DreamValue leftValue = PopDreamValue();
+                DreamValue a = PopDreamValue();
+                int jumpPosition = ReadInt(bytecodeStream);
 
-                if (IsTruthy(leftValue)) {
-                    bytecodeStream.Seek(afterExpressionPosition, SeekOrigin.Begin);
-                    Push(leftValue);
-                } else {
-                    while (bytecodeStream.Position < afterExpressionPosition) {
-                        Step(bytecodeStream);
-                    }
-
-                    DreamValue rightValue = PopDreamValue();
-                    Push(rightValue);
+                if (IsTruthy(a)) {
+                    Push(a);
+                    bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.PushArgumentList) {
                 DreamProcInterpreterArguments arguments = new DreamProcInterpreterArguments(new List<object>(), new Dictionary<string, object>());
@@ -596,42 +582,16 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamValue first = PopDreamValue();
 
                 Push(new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0));
-            } else if (opcode == DreamProcOpcode.BranchSwitch) {
-                int afterSwitchPosition = ReadInt(bytecodeStream);
-                int elsePosition = ReadInt(bytecodeStream);
-                int caseCount = ReadInt(bytecodeStream);
-                bool caseFound = false;
+            } else if (opcode == DreamProcOpcode.SwitchCase) {
+                int casePosition = ReadInt(bytecodeStream);
+                DreamValue testValue = PopDreamValue();
                 DreamValue value = PopDreamValue();
 
-                for (int i = 0; i < caseCount; i++) {
-                    while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.BranchSwitchCaseExpressionEnd) {
-                        bytecodeStream.Seek(-1, SeekOrigin.Current);
-                        Step(bytecodeStream);
-                    }
-
-                    int caseBodyPosition = ReadInt(bytecodeStream);
-                    DreamValue testValue = PopDreamValue();
-                    if (IsEqual(value, testValue)) {
-                        caseFound = true;
-                        bytecodeStream.Seek(caseBodyPosition, SeekOrigin.Begin);
-                        break;
-                    }
-                }
-
-                if (caseFound) {
-                    while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.BranchSwitchCaseEnd) {
-                        bytecodeStream.Seek(-1, SeekOrigin.Current);
-                        Step(bytecodeStream);
-                    }
+                if (IsEqual(value, testValue)) {
+                    bytecodeStream.Seek(casePosition, SeekOrigin.Begin);
                 } else {
-                    bytecodeStream.Seek(elsePosition, SeekOrigin.Begin);
-
-                    while (bytecodeStream.Position < afterSwitchPosition) {
-                        Step(bytecodeStream);
-                    }
+                    Push(value);
                 }
-
-                bytecodeStream.Seek(afterSwitchPosition, SeekOrigin.Begin);
             } else if (opcode == DreamProcOpcode.Mask) {
                 DreamValue second = PopDreamValue();
                 IDreamProcIdentifier identifier = PopIdentifier();
@@ -641,20 +601,6 @@ namespace OpenDreamServer.Dream.Procs {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
                 } else {
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
-                }
-            } else if (opcode == DreamProcOpcode.Ternary) {
-                DreamValue testValue = PopDreamValue();
-                int rightExpressionPosition = ReadInt(bytecodeStream);
-                int afterTernaryPosition = ReadInt(bytecodeStream);
-
-                if (IsTruthy(testValue)) {
-                    while (bytecodeStream.Position < rightExpressionPosition) {
-                        Step(bytecodeStream);
-                    }
-
-                    bytecodeStream.Seek(afterTernaryPosition, SeekOrigin.Begin);
-                } else {
-                    bytecodeStream.Seek(rightExpressionPosition, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.IsInList) {
                 DreamValue listValue = PopDreamValue();
@@ -805,6 +751,8 @@ namespace OpenDreamServer.Dream.Procs {
         private bool IsTruthy(DreamValue value) {
             if (value.Type == DreamValue.DreamValueType.DreamObject) {
                 return (value.GetValueAsDreamObject() != null);
+            } else if (value.Type == DreamValue.DreamValueType.DreamResource) {
+                return true;
             } else if (value.Type == DreamValue.DreamValueType.DreamPath) {
                 return true;
             } else if (value.Type == DreamValue.DreamValueType.Integer) {

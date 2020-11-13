@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +23,7 @@ namespace DMCompiler.DM {
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new Dictionary<string, long>();
         private List<(long Position, string LabelName)> _unresolvedLabels = new List<(long, string)>();
-        private int _labelIdCounter = 0;
+        private Stack<string> _loopStack = new Stack<string>();
 
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);
@@ -38,6 +39,7 @@ namespace DMCompiler.DM {
                 }
             }
 
+            _unresolvedLabels.Clear();
             _bytecodeWriter.Seek(0, SeekOrigin.End);
         }
 
@@ -50,16 +52,55 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
-        public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
-            if ((argumentCount > 0 && parameterTypes == null) || parameterTypes.Length != argumentCount) {
-                throw new ArgumentException("Length of parameter types does not match the argument count");
-            }
+        public void CreateListEnumerator() {
+            WriteOpcode(DreamProcOpcode.CreateListEnumerator);
+        }
 
+        public void EnumerateList(string outputVariableName) {
+            WriteOpcode(DreamProcOpcode.EnumerateList);
+            WriteString(outputVariableName);
+        }
+
+        public void DestroyListEnumerator() {
+            WriteOpcode(DreamProcOpcode.DestroyListEnumerator);
+        }
+
+        public void LoopStart(string loopLabel) {
+            _loopStack.Push(loopLabel);
+
+            AddLabel(loopLabel + "_start");
+            CreateScope();
+        }
+
+        public void LoopEnd() {
+            AddLabel(_loopStack.Pop() + "_end");
+            DestroyScope();
+        }
+
+        public void SwitchCase(string caseLabel) {
+            WriteOpcode(DreamProcOpcode.SwitchCase);
+            WriteLabel(caseLabel);
+        }
+
+        public void Break() {
+            Jump(_loopStack.Peek() + "_end");
+        }
+
+        public void Continue() {
+            DestroyScope();
+            Jump(_loopStack.Peek() + "_start");
+        }
+
+        public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
-            if (parameterTypes != null) {
-                int namedParameterIndex = 0;
 
+            if (argumentCount > 0) {
+                if (parameterTypes == null || parameterTypes.Length != argumentCount) {
+                    throw new ArgumentException("Length of parameter types does not match the argument count");
+                }
+
+                int namedParameterIndex = 0;
                 foreach (DreamProcOpcodeParameterType parameterType in parameterTypes) {
                     _bytecodeWriter.Write((byte)parameterType);
 
@@ -70,53 +111,45 @@ namespace DMCompiler.DM {
             }
         }
 
-        public string IfStart() {
-            string endLabel = "label" + _labelIdCounter++;
+        public void BooleanOr(string endLabel) {
+            WriteOpcode(DreamProcOpcode.BooleanOr);
+            WriteLabel(endLabel);
+        }
 
-            JumpIfFalse(endLabel);
+        public void BooleanAnd(string endLabel) {
+            WriteOpcode(DreamProcOpcode.BooleanAnd);
+            WriteLabel(endLabel);
+        }
+
+        public void CreateScope() {
             WriteOpcode(DreamProcOpcode.CreateScope);
-
-            return endLabel;
         }
 
-        public void IfEnd(string endLabelName) {
+        public void DestroyScope() {
             WriteOpcode(DreamProcOpcode.DestroyScope);
-            AddLabel(endLabelName);
-        }
-
-        public (string ElseLabel, string EndLabel) IfElseStart() {
-            string elseLabel = "label" + _labelIdCounter++;
-            string endLabel = "label" + _labelIdCounter++;
-
-            JumpIfFalse(elseLabel);
-            WriteOpcode(DreamProcOpcode.CreateScope);
-
-            return (elseLabel, endLabel);
-        }
-
-        public void IfElseEnd(string elseLabel, string endLabel) {
-            WriteOpcode(DreamProcOpcode.DestroyScope);
-            Jump(endLabel);
-
-            AddLabel(elseLabel);
         }
 
         public void Jump(string label) {
             WriteOpcode(DreamProcOpcode.Jump);
-
-            _unresolvedLabels.Add((Bytecode.Position, label));
-            WriteInt(0); //Resolved later
+            WriteLabel(label);
         }
 
         public void JumpIfFalse(string label) {
             WriteOpcode(DreamProcOpcode.JumpIfFalse);
+            WriteLabel(label);
+        }
 
-            _unresolvedLabels.Add((Bytecode.Position, label));
-            WriteInt(0); //Resolved later
+        public void JumpIfTrue(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfTrue);
+            WriteLabel(label);
         }
 
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
+        }
+
+        public void CallStatement() {
+            WriteOpcode(DreamProcOpcode.CallStatement);
         }
 
         public void Return() {
@@ -141,6 +174,18 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateObject);
         }
 
+        public void DeleteObject() {
+            WriteOpcode(DreamProcOpcode.DeleteObject);
+        }
+
+        public void Not() {
+            WriteOpcode(DreamProcOpcode.BooleanNot);
+        }
+
+        public void Negate() {
+            WriteOpcode(DreamProcOpcode.Negate);
+        }
+
         public void Add() {
             WriteOpcode(DreamProcOpcode.Add);
         }
@@ -149,28 +194,76 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Subtract);
         }
 
+        public void Multiply() {
+            WriteOpcode(DreamProcOpcode.Multiply);
+        }
+
+        public void Divide() {
+            WriteOpcode(DreamProcOpcode.Divide);
+        }
+        
+        public void Modulus() {
+            WriteOpcode(DreamProcOpcode.Modulus);
+        }
+
+        public void Append() {
+            WriteOpcode(DreamProcOpcode.Append);
+        }
+
+        public void Mask() {
+            WriteOpcode(DreamProcOpcode.Append);
+        }
+
         public void BitShiftLeft() {
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
+        }
+
+        public void BinaryNot() {
+            WriteOpcode(DreamProcOpcode.BitNot);
         }
 
         public void BinaryAnd() {
             WriteOpcode(DreamProcOpcode.BitAnd);
         }
 
+        public void BinaryOr() {
+            WriteOpcode(DreamProcOpcode.BitOr);
+        }
+
         public void Equal() {
             WriteOpcode(DreamProcOpcode.CompareEquals);
+        }
+
+        public void NotEqual() {
+            WriteOpcode(DreamProcOpcode.CompareNotEquals);
         }
 
         public void GreaterThan() {
             WriteOpcode(DreamProcOpcode.CompareGreaterThan);
         }
 
+        public void GreaterThanOrEqual() {
+            WriteOpcode(DreamProcOpcode.CompareGreaterThanOrEqual);
+        }
+
         public void LessThan() {
             WriteOpcode(DreamProcOpcode.CompareLessThan);
         }
 
+        public void LessThanOrEqual() {
+            WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
+        }
+
         public void PushSuperProc() {
             WriteOpcode(DreamProcOpcode.PushSuperProc);
+        }
+
+        public void PushSelf() {
+            WriteOpcode(DreamProcOpcode.PushSelf);
+        }
+
+        public void PushSrc() {
+            WriteOpcode(DreamProcOpcode.PushSrc);
         }
 
         public void PushInt(int value) {
@@ -178,13 +271,36 @@ namespace DMCompiler.DM {
             WriteInt(value);
         }
 
+        public void PushDouble(double value) {
+            WriteOpcode(DreamProcOpcode.PushDouble);
+            WriteDouble(value);
+        }
+
         public void PushString(string value) {
             WriteOpcode(DreamProcOpcode.PushString);
             WriteString(value);
         }
 
+        public void PushResource(string value) {
+            WriteOpcode(DreamProcOpcode.PushResource);
+            WriteString(value);
+        }
+
+        public void PushPath(DreamPath value) {
+            WriteOpcode(DreamProcOpcode.PushPath);
+            WriteString(value.PathString);
+        }
+
         public void PushNull() {
             WriteOpcode(DreamProcOpcode.PushNull);
+        }
+
+        public void IndexList() {
+            WriteOpcode(DreamProcOpcode.IndexList);
+        }
+
+        public void IsInList() {
+            WriteOpcode(DreamProcOpcode.IsInList);
         }
 
         private void WriteOpcode(DreamProcOpcode opcode) {
@@ -200,12 +316,21 @@ namespace DMCompiler.DM {
             _bytecodeWriter.Write((byte)(value & 0x000000FF));
         }
 
+        private void WriteDouble(double value) {
+            _bytecodeWriter.Write(value);
+        }
+
         private void WriteString(string value) {
             foreach (char character in value.ToCharArray()) {
                 _bytecodeWriter.Write(character);
             }
 
             _bytecodeWriter.Write((byte)0);
+        }
+
+        private void WriteLabel(string labelName) {
+            _unresolvedLabels.Add((Bytecode.Position, labelName));
+            WriteInt(0); //Resolved later
         }
     }
 }

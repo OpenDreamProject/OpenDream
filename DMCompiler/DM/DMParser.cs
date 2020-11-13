@@ -56,9 +56,17 @@ namespace DMCompiler.DM {
                         if (Check(TokenType.DM_Equals)) {
                             DMASTExpression value = Expression();
 
-                            return new DMASTObjectVarDefinition(path, value);
+                            if (path.Path.FindElement("var") != -1) {
+                                return new DMASTObjectVarDefinition(path, value);
+                            } else {
+                                return new DMASTObjectVarOverride(path, value);
+                            }
                         } else {
-                            return new DMASTObjectDefinition(path, null);
+                            if (path.Path.FindElement("var") != -1) {
+                                return new DMASTObjectVarDefinition(path, new DMASTConstantNull());
+                            } else {
+                                return new DMASTObjectDefinition(path, null);
+                            }
                         }
                     }
                 }
@@ -96,7 +104,7 @@ namespace DMCompiler.DM {
                     }
                 }
 
-                return new DMASTPath(pathType, pathElements.ToArray());
+                return new DMASTPath(new DreamPath(pathType, pathElements.ToArray()));
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
 
@@ -121,16 +129,19 @@ namespace DMCompiler.DM {
 
             if (callable == null && Check(TokenType.DM_SuperProc)) callable = new DMASTCallableSuper();
             if (callable == null && Check(TokenType.DM_Period)) callable = new DMASTCallableSelf();
-
-            if (callable == null) {
-                Token firstToken = Current();
-
-                if (Check(TokenType.DM_Identifier)) {
-                    return new DMASTCallableIdentifier(firstToken.Text);
-                }
-            }
+            if (callable == null) callable = Identifier();
             
             return callable;
+        }
+
+        public DMASTCallableIdentifier Identifier() {
+            Token token = Current();
+
+            if (Check(TokenType.DM_Identifier)) {
+                return new DMASTCallableIdentifier(token.Text);
+            }
+
+            return null;
         }
 
         public DMASTCallableDereference Dereference() {
@@ -141,7 +152,7 @@ namespace DMCompiler.DM {
                     List<DMASTCallableIdentifier> dereferences = new List<DMASTCallableIdentifier>();
 
                     do {
-                        DMASTCallableIdentifier identifier = Callable() as DMASTCallableIdentifier;
+                        DMASTCallableIdentifier identifier = Identifier();
                         if (identifier == null) throw new Exception("Expected an identifier");
 
                         dereferences.Add(identifier);
@@ -409,11 +420,11 @@ namespace DMCompiler.DM {
             if (Check(TokenType.DM_For)) {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration();
-                DMASTCallable variable;
+                DMASTCallableIdentifier variable;
                 if (variableDeclaration != null) {
                     variable = new DMASTCallableIdentifier(variableDeclaration.Name);
                 } else {
-                    variable = Callable();
+                    variable = Identifier();
                     if (variable == null) throw new Exception("Expected variable");
                 }
 
@@ -610,6 +621,10 @@ namespace DMCompiler.DM {
                     DMASTExpression value = Expression();
 
                     return new DMASTCallParameter(value, ((DMASTCallableIdentifier)expression).Identifier);
+                } else if (expression is DMASTAssign && ((DMASTAssign)expression).Expression is DMASTConstantString) {
+                    DMASTAssign assignExpression = (DMASTAssign)expression;
+
+                    return new DMASTCallParameter(assignExpression.Value, ((DMASTConstantString)assignExpression.Expression).Value);
                 } else {
                     return new DMASTCallParameter(expression);
                 }
@@ -903,7 +918,7 @@ namespace DMCompiler.DM {
                 DMASTExpression expression = ExpressionUnary();
 
                 if (expression == null) throw new Exception("Expected an expression");
-                return new DMASTExpressionNot(expression);
+                return new DMASTNot(expression);
             } else if (Check(TokenType.DM_Tilde)) {
                 DMASTExpression expression = ExpressionUnary();
 
@@ -932,7 +947,7 @@ namespace DMCompiler.DM {
 
                 if (expression == null) throw new Exception("Expected an expression");
                 if (token.Type == TokenType.DM_Minus) {
-                    return new DMASTExpressionNegate(expression);
+                    return new DMASTNegate(expression);
                 } else {
                     return expression;
                 }

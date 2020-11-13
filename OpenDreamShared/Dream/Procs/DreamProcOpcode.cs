@@ -32,7 +32,7 @@
         IndexList = 0x1E,
         Remove = 0x1F,
         DeleteObject = 0x20,
-        //0x21
+        PushResource = 0x21,
         //0x22
         CallStatement = 0x23,
         BitAnd = 0x24,
@@ -49,10 +49,10 @@
         BooleanOr = 0x2F,
         PushArgumentList = 0x30,
         CompareGreaterThanOrEqual = 0x31,
-        BranchSwitch = 0x32,
+        SwitchCase = 0x32,
         Mask = 0x33,
         //0x34
-        Ternary = 0x35,
+        //0x35
         IsInList = 0x36,
         PushArguments = 0x37,
         PushDouble = 0x38,
@@ -60,9 +60,6 @@
         CreateListEnumerator = 0x3A,
         EnumerateList = 0x3B,
         DestroyListEnumerator = 0x3C,
-
-        BranchSwitchCaseEnd = 0xF5,
-        BranchSwitchCaseExpressionEnd = 0xF6,
 
         BooleanExpressionEnd = 0xF7,
 

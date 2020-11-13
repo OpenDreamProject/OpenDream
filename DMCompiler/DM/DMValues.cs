@@ -4,9 +4,11 @@ using System.Collections.Generic;
 namespace DMCompiler.DM {
     struct DMList {
         public object[] Values;
+        public Dictionary<string, object> AssociatedValues;
 
-        public DMList(object[] values) {
+        public DMList(object[] values, Dictionary<string, object> associatedValues) {
             Values = values;
+            AssociatedValues = associatedValues;
         }
     }
 

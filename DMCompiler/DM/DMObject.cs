@@ -9,6 +9,7 @@ namespace DMCompiler.DM {
         public DreamPath? Parent;
         public Dictionary<string, List<DMProc>> Procs = new Dictionary<string, List<DMProc>>();
         public Dictionary<string, object> Variables = new Dictionary<string, object>();
+        public Dictionary<string, object> GlobalVariables = new Dictionary<string, object>();
 
         public DMObject(UInt32 id, DreamPath path, DreamPath? parent) {
             Id = id;

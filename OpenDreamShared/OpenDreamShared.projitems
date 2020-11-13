@@ -11,7 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Dream\ATOMBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamProcOpcode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
     <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamFullState.cs" />

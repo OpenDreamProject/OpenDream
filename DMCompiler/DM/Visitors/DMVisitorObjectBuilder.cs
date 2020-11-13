@@ -31,6 +31,10 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitCallParameter(DMASTCallParameter callParameter) {
+            callParameter.Value.Visit(this);
+        }
+
         public void VisitObjectDefinition(DMASTObjectDefinition objectDefinition) {
             DMObject oldObject = _currentObject;
             DreamPath newObjectPath = objectDefinition.Path.Path;
@@ -43,22 +47,45 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
-            if (varDefinition.Name == "parent_type") {
-                DMASTConstantPath parentType = varDefinition.Value as DMASTConstantPath;
+            DMObject dmObject = _currentObject;
+
+            if (varDefinition.ObjectPath != null) {
+                dmObject = GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Path));
+            }
+
+            object value;
+
+            if (varDefinition.Value is DMASTNewInferred) {
+                //TODO: Arguments
+
+                value = new DMNewInstance(varDefinition.Type.Path);
+            } else {
+                varDefinition.Value.Visit(this);
+                value = _valueStack.Pop();
+            }
+
+            if (varDefinition.IsGlobal) {
+                dmObject.GlobalVariables[varDefinition.Name] = value;
+            } else {
+                dmObject.Variables[varDefinition.Name] = value;
+            }
+        }
+
+        public void VisitObjectVarOverride(DMASTObjectVarOverride varOverride) {
+            DMObject dmObject = _currentObject;
+
+            if (varOverride.ObjectPath != null) {
+                dmObject = GetDMObject(_currentObject.Path.Combine(varOverride.ObjectPath.Path));
+            }
+
+            if (varOverride.VarName == "parent_type") {
+                DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
                 if (parentType == null) throw new Exception("Expected a constant path");
-                _currentObject.Parent = parentType.Value.Path;
+                dmObject.Parent = parentType.Value.Path;
             } else {
-                object value;
-
-                if (varDefinition.Value is DMASTNewInferred) {
-                    value = new DMNewInstance(varDefinition.Type.Path);
-                } else {
-                    varDefinition.Value.Visit(this);
-                    value = _valueStack.Pop();
-                }
-
-                _currentObject.Variables.Add(varDefinition.Name, value);
+                varOverride.Value.Visit(this);
+                dmObject.Variables[varOverride.VarName] = _valueStack.Pop();
             }
         }
 
@@ -85,7 +112,7 @@ namespace DMCompiler.DM.Visitors {
                 } else {
                     defaultValue = null;
                 }
-                
+
                 proc.Parameters.Add(new DMProc.Parameter(parameter.Path.Path.LastElement, defaultValue));
             }
 
@@ -97,21 +124,31 @@ namespace DMCompiler.DM.Visitors {
 
             if (identifier != null && identifier.Identifier == "list") {
                 List<object> values = new List<object>();
+                Dictionary<string, object> associatedValues = new Dictionary<string, object>();
 
                 foreach (DMASTCallParameter parameter in procCall.Parameters) {
-                    if (parameter.Name != null) throw new Exception("Associated list values are not yet supported in this context");
+                    if (parameter.Value is DMASTAssign) {
+                        DMASTAssign associatedAssign = (DMASTAssign)parameter.Value;
 
-                    parameter.Visit(this);
-                    values.Add(_valueStack.Pop());
+                        if (associatedAssign.Expression is DMASTConstantString) {
+                            associatedAssign.Value.Visit(this);
+                            associatedValues.Add(((DMASTConstantString)associatedAssign.Value).Value, _valueStack.Pop());
+                        } else {
+                            throw new Exception("Associated value must have a string index");
+                        }
+                    } else {
+                        parameter.Visit(this);
+                        values.Add(_valueStack.Pop());
+                    }
                 }
 
-                _valueStack.Push(new DMList(values.ToArray()));
+                _valueStack.Push(new DMList(values.ToArray(), associatedValues));
             } else {
                 throw new Exception("Invalid value");
             }
         }
 
-        public void VisitExpressionNegate(DMASTExpressionNegate negate) {
+        public void VisitNegate(DMASTNegate negate) {
             negate.Expression.Visit(this);
             object value = _valueStack.Pop();
 
@@ -133,6 +170,25 @@ namespace DMCompiler.DM.Visitors {
             } else {
                 throw new Exception("Invalid value");
             }
+        }
+
+        public void VisitLeftShift(DMASTLeftShift leftShift) {
+            leftShift.B.Visit(this);
+            leftShift.A.Visit(this);
+            object a = _valueStack.Pop();
+            object b = _valueStack.Pop();
+
+            if (a is int && b is int) {
+                _valueStack.Push((int)a << (int)b);
+            } else {
+                throw new Exception("Invalid value");
+            }
+        }
+
+        public void VisitNewPath(DMASTNewPath newPath) {
+            //TODO: Arguments
+
+            _valueStack.Push(new DMNewInstance(newPath.Path.Path));
         }
 
         public void VisitConstantNull(DMASTConstantNull constantNull) {

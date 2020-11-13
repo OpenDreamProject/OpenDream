@@ -10,6 +10,7 @@ namespace DMCompiler.DM {
         public void VisitObjectDefinition(DMASTObjectDefinition statement) { throw new NotImplementedException(); }
         public void VisitPath(DMASTPath path) { throw new NotImplementedException(); }
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) { throw new NotImplementedException(); }
+        public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) { throw new NotImplementedException(); }
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
         public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
@@ -37,8 +38,8 @@ namespace DMCompiler.DM {
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
-        public void VisitExpressionNot(DMASTExpressionNot not) { throw new NotImplementedException(); }
-        public void VisitExpressionNegate(DMASTExpressionNegate negate) { throw new NotImplementedException(); }
+        public void VisitNot(DMASTNot not) { throw new NotImplementedException(); }
+        public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
         public void VisitEqual(DMASTEqual equal) { throw new NotImplementedException(); }
         public void VisitNotEqual(DMASTNotEqual notEqual) { throw new NotImplementedException(); }
         public void VisitLessThan(DMASTLessThan lessThan) { throw new NotImplementedException(); }
@@ -166,8 +167,8 @@ namespace DMCompiler.DM {
     class DMASTPath : DMASTNode {
         public DreamPath Path;
 
-        public DMASTPath(DreamPath.PathType pathType, string[] pathElements) {
-            Path = new DreamPath(pathType, pathElements);
+        public DMASTPath(DreamPath path) {
+            Path = path;
         }
 
         public void Visit(DMASTVisitor visitor) {
@@ -176,21 +177,48 @@ namespace DMCompiler.DM {
     }
 
     class DMASTObjectVarDefinition : DMASTStatement {
+        public DMASTPath ObjectPath;
         public DMASTPath Type;
         public string Name;
         public DMASTExpression Value;
+        public bool IsGlobal = false;
 
-        public DMASTObjectVarDefinition(DMASTPath path, DMASTExpression value) {
-            int varElementIndex = path.Path.FindElement("var");
-            string[] typeElements = path.Path.GetElements(varElementIndex + 1);
+        public DMASTObjectVarDefinition(DMASTPath astPath, DMASTExpression value) {
+            DreamPath path = astPath.Path;
 
-            Type = (typeElements.Length > 0) ? new DMASTPath(path.Path.Type, typeElements) : null;
-            Name = path.Path.LastElement;
+            int globalElementIndex = path.FindElement("global");
+            if (globalElementIndex != -1) {
+                path = path.RemoveElement(globalElementIndex);
+                IsGlobal = true;
+            }
+
+            int varElementIndex = path.FindElement("var");
+            DreamPath varPath = path.FromElements(varElementIndex + 1, -1);
+
+            ObjectPath = (varElementIndex > 1) ? new DMASTPath(path.FromElements(0, varElementIndex - 1)) : null;
+            Type = (varPath.Elements.Length > 1) ? new DMASTPath(varPath.FromElements(0, -2)) : null;
+            Name = varPath.LastElement;
             Value = value;
         }
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitObjectVarDefinition(this);
+        }
+    }
+
+    class DMASTObjectVarOverride : DMASTStatement {
+        public DMASTPath ObjectPath;
+        public string VarName;
+        public DMASTExpression Value;
+
+        public DMASTObjectVarOverride(DMASTPath path, DMASTExpression value) {
+            ObjectPath = (path.Path.Elements.Length > 1) ? new DMASTPath(path.Path.FromElements(0, -2)) : null;
+            VarName = path.Path.LastElement;
+            Value = value;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitObjectVarOverride(this);
         }
     }
 
@@ -213,9 +241,9 @@ namespace DMCompiler.DM {
 
         public DMASTProcStatementVarDeclaration(DMASTPath path, DMASTExpression value) {
             int varElementIndex = path.Path.FindElement("var");
-            string[] typeElements = path.Path.GetElements(varElementIndex + 1);
+            DreamPath typePath = path.Path.FromElements(varElementIndex + 1, -2);
 
-            Type = (typeElements.Length > 0) ? new DMASTPath(path.Path.Type, typeElements) : null;
+            Type = (typePath.Elements.Length > 0) ? new DMASTPath(typePath) : null;
             Name = path.Path.LastElement;
             Value = value;
         }
@@ -307,11 +335,11 @@ namespace DMCompiler.DM {
 
     class DMASTProcStatementForList : DMASTProcStatement {
         public DMASTProcStatementVarDeclaration VariableDeclaration;
-        public DMASTCallable Variable;
+        public DMASTCallableIdentifier Variable;
         public DMASTExpression List;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementForList(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression list, DMASTProcBlockInner body) {
+        public DMASTProcStatementForList(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) {
             VariableDeclaration = variableDeclaration;
             Variable = variable;
             List = list;
@@ -553,27 +581,27 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTExpressionNot : DMASTExpression {
+    class DMASTNot : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTExpressionNot(DMASTExpression expression) {
+        public DMASTNot(DMASTExpression expression) {
             Expression = expression;
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitExpressionNot(this);
+            visitor.VisitNot(this);
         }
     }
 
-    class DMASTExpressionNegate : DMASTExpression {
+    class DMASTNegate : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTExpressionNegate(DMASTExpression expression) {
+        public DMASTNegate(DMASTExpression expression) {
             Expression = expression;
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitExpressionNegate(this);
+            visitor.VisitNegate(this);
         }
     }
 

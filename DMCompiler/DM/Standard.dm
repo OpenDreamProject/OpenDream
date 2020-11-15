@@ -90,6 +90,7 @@ proc/Del()
 /world
 	var/list/contents = list()
 
+	var/name = "OpenDream World"
 	var/time
 	var/timeofday
 	var/tick_lag = 0.5

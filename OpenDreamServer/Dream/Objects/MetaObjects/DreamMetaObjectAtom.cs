@@ -58,6 +58,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
             if (variableName == "icon_state") {
                 Program.DreamStateManager.AddAtomIconStateDelta(dreamObject);
+            } else if (variableName == "dir") {
+                Program.DreamStateManager.AddAtomDirectionDelta(dreamObject, (AtomDirection)variableValue.GetValueAsInteger());
             } else if (variableName == "overlays") {
                 if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject oldListObject)) {
                     DreamList oldList = DreamMetaObjectList.DreamLists[oldListObject];
@@ -84,7 +86,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (arguments.ArgumentCount >= 1) {
                 DreamValue loc = arguments.GetArgument(0, "loc");
 
-                if (loc != null && loc.Value != null && loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
+                if (loc.Value != null && loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
                     return locValue;
                 }
             }

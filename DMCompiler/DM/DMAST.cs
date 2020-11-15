@@ -199,7 +199,7 @@ namespace DMCompiler.DM {
             int varElementIndex = path.FindElement("var");
             DreamPath varPath = path.FromElements(varElementIndex + 1, -1);
 
-            ObjectPath = (varElementIndex > 1) ? new DMASTPath(path.FromElements(0, varElementIndex - 1)) : null;
+            ObjectPath = (varElementIndex > 1) ? new DMASTPath(path.FromElements(0, varElementIndex)) : null;
             Type = (varPath.Elements.Length > 1) ? new DMASTPath(varPath.FromElements(0, -2)) : null;
             Name = varPath.LastElement;
             Value = value;

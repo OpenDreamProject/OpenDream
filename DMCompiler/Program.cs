@@ -181,6 +181,7 @@ namespace DMCompiler {
 
         private static void AddNativeProcs(DreamObjectJson rootObject) {
             AddNativeProc(rootObject, "abs", "abs");
+            AddNativeProc(rootObject, "animate", "animate");
             AddNativeProc(rootObject, "ascii2text", "ascii2text");
             AddNativeProc(rootObject, "browse", "browse");
             AddNativeProc(rootObject, "ckey", "ckey");

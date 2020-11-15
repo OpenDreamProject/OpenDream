@@ -79,6 +79,12 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public void AddAtomDirectionDelta(DreamObject atom, AtomDirection direction) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomDirectionDelta(DreamMetaObjectAtom.AtomIDs[atom], direction);
+            }
+        }
+
         public void AddAtomOverlay(DreamObject atom, UInt16 overlayID, IconVisualProperties overlay) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID, overlay);

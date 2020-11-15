@@ -125,6 +125,31 @@ namespace OpenDreamShared.Dream {
             }
         }
 
+        public void AddAtomDirectionDelta(UInt16 atomID, AtomDirection direction) {
+            int existingAtomCreationIndex = GetExistingAtomCreationIndex(atomID);
+
+            if (existingAtomCreationIndex == -1) {
+                int existingAtomDeltaIndex = GetExistingAtomDeltaIndex(atomID);
+
+                if (existingAtomDeltaIndex == -1) {
+                    AtomDelta atomDelta = new AtomDelta(atomID);
+
+                    atomDelta.ChangedVisualProperties.Direction = direction;
+                    AtomDeltas.Add(atomDelta);
+                } else {
+                    AtomDelta atomDelta = AtomDeltas[existingAtomDeltaIndex];
+
+                    atomDelta.ChangedVisualProperties.Direction = direction;
+                    AtomDeltas[existingAtomDeltaIndex] = atomDelta;
+                }
+            } else {
+                AtomCreation atomCreation = AtomCreations[existingAtomCreationIndex];
+
+                atomCreation.VisualProperties.Direction = direction;
+                AtomCreations[existingAtomCreationIndex] = atomCreation;
+            }
+        }
+
         public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, IconVisualProperties overlay) {
             int existingAtomCreationIndex = GetExistingAtomCreationIndex(atomID);
 

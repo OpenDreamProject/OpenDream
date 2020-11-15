@@ -58,17 +58,13 @@ namespace OpenDreamServer {
 
             DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
             DreamServer.RegisterPacketCallback<PacketKeyboardInput>(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => {
-                Task.Run(() => {
-                    if (pKeyboardInput.KeysDown.Contains(38)) {
-                        connection.ClientDreamObject?.CallProc("North");
-                    } else if (pKeyboardInput.KeysDown.Contains(39)) {
-                        connection.ClientDreamObject?.CallProc("East");
-                    } else if (pKeyboardInput.KeysDown.Contains(40)) {
-                        connection.ClientDreamObject?.CallProc("South");
-                    } else if (pKeyboardInput.KeysDown.Contains(37)) {
-                        connection.ClientDreamObject?.CallProc("West");
-                    }
-                });
+                foreach (int key in pKeyboardInput.KeysDown) {
+                    if (!connection.PressedKeys.Contains(key)) connection.PressedKeys.Add(key);
+                }
+
+                foreach (int key in pKeyboardInput.KeysUp) {
+                    connection.PressedKeys.Remove(key);
+                }
             });
             DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
                 if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
@@ -121,6 +117,18 @@ namespace OpenDreamServer {
                     if (tickEvent.CurrentCount <= 0) {
                         TickEvents.RemoveAt(i);
                         i--;
+                    }
+                }
+
+                foreach (DreamConnection connection in DreamServer.DreamConnections) {
+                    if (connection.PressedKeys.Contains(38)) {
+                        Task.Run(() => { connection.ClientDreamObject?.CallProc("North"); });
+                    } else if (connection.PressedKeys.Contains(39)) {
+                        Task.Run(() => { connection.ClientDreamObject?.CallProc("East"); });
+                    } else if (connection.PressedKeys.Contains(40)) {
+                        Task.Run(() => { connection.ClientDreamObject?.CallProc("South"); });
+                    } else if (connection.PressedKeys.Contains(37)) {
+                        Task.Run(() => { connection.ClientDreamObject?.CallProc("West"); });
                     }
                 }
 

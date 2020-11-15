@@ -3,12 +3,14 @@ using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Net.Packets;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 
 namespace OpenDreamServer.Net {
     class DreamConnection {
         public string CKey = null;
+        public List<int> PressedKeys = new List<int>();
         public DreamObject ClientDreamObject = null;
         public DreamObject MobDreamObject {
             get => _mobDreamObject;

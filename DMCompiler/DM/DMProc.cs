@@ -91,6 +91,10 @@ namespace DMCompiler.DM {
             Jump(_loopStack.Peek() + "_start");
         }
 
+        public void PushArgumentList() {
+            WriteOpcode(DreamProcOpcode.PushArgumentList);
+        }
+
         public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
@@ -210,8 +214,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Append);
         }
 
+        public void Remove() {
+            WriteOpcode(DreamProcOpcode.Remove);
+        }
+
+        public void Combine() {
+            WriteOpcode(DreamProcOpcode.Combine);
+        }
+
         public void Mask() {
-            WriteOpcode(DreamProcOpcode.Append);
+            WriteOpcode(DreamProcOpcode.Mask);
         }
 
         public void BitShiftLeft() {
@@ -224,6 +236,10 @@ namespace DMCompiler.DM {
 
         public void BinaryAnd() {
             WriteOpcode(DreamProcOpcode.BitAnd);
+        }
+
+        public void BinaryXor() {
+            WriteOpcode(DreamProcOpcode.BitXor);
         }
 
         public void BinaryOr() {
@@ -293,6 +309,11 @@ namespace DMCompiler.DM {
 
         public void PushNull() {
             WriteOpcode(DreamProcOpcode.PushNull);
+        }
+
+        public void BuildString(int pieceCount) {
+            WriteOpcode(DreamProcOpcode.BuildString);
+            WriteInt(pieceCount);
         }
 
         public void IndexList() {

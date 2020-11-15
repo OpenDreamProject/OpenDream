@@ -1,10 +1,7 @@
-﻿using OpenDreamServer.Dream.Objects.MetaObjects;
-using OpenDreamServer.Dream.Procs;
+﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Objects {
     delegate void DreamObjectCreatedDelegate(DreamObject dreamObject);
@@ -102,12 +99,6 @@ namespace OpenDreamServer.Dream.Objects {
 
         public override string ToString() {
             return "DreamObject(" + ObjectDefinition.Type + ")";
-        }
-
-        private void CreateVariable(string name, DreamValue value) {
-            if (HasVariable(name)) throw new Exception("Variable '" + name + "' already exists");
-
-            _variables[name] = value;
         }
     }
 }

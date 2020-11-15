@@ -39,7 +39,7 @@ namespace OpenDreamClient.Dream {
             if (dmiState.Loop) {
                 animationFrame %= frames.Length;
             } else {
-                animationFrame = Math.Min(animationFrame, frames.Length);
+                animationFrame = Math.Min(animationFrame, frames.Length - 1);
             }
 
             return animationFrame;

@@ -89,9 +89,12 @@ namespace OpenDreamServer.Net {
                         DreamValue file = outputObject.GetVariable("file"); 
                         UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
 
-                        //File should be DreamResource.ResourcePath, but the compiler currently treats resource paths as strings
                         if (file.IsType(DreamValue.DreamValueType.String) || file.Value == null) {
                             PacketOutput.OutputSound outputValue = new PacketOutput.OutputSound(channel, (string)file.Value, volume);
+
+                            SendPacket(new PacketOutput(outputValue));
+                        } else if (file.IsType(DreamValue.DreamValueType.DreamResource)) {
+                            PacketOutput.OutputSound outputValue = new PacketOutput.OutputSound(channel, file.GetValueAsDreamResource().ResourcePath, volume);
 
                             SendPacket(new PacketOutput(outputValue));
                         } else {

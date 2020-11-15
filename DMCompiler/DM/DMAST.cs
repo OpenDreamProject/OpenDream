@@ -33,6 +33,7 @@ namespace DMCompiler.DM {
         public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
+        public void VisitBuildString(DMASTBuildString buildString) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -55,10 +56,13 @@ namespace DMCompiler.DM {
         public void VisitPostDecrement(DMASTPostDecrement postDecrement) { throw new NotImplementedException(); }
         public void VisitTernary(DMASTTernary ternary) { throw new NotImplementedException(); }
         public void VisitAppend(DMASTAppend append) { throw new NotImplementedException(); }
+        public void VisitRemove(DMASTRemove remove) { throw new NotImplementedException(); }
+        public void VisitCombine(DMASTCombine combine) { throw new NotImplementedException(); }
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
         public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
         public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
+        public void VisitBinaryXor(DMASTBinaryXor binaryXor) { throw new NotImplementedException(); }
         public void VisitBinaryOr(DMASTBinaryOr binaryOr) { throw new NotImplementedException(); }
         public void VisitBinaryNot(DMASTBinaryNot binaryNot) { throw new NotImplementedException(); }
         public void VisitLeftShift(DMASTLeftShift leftShift) { throw new NotImplementedException(); }
@@ -515,6 +519,18 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTBuildString : DMASTExpression {
+        public DMASTExpression[] Pieces;
+
+        public DMASTBuildString(DMASTExpression[] pieces) {
+            Pieces = pieces;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitBuildString(this);
+        }
+    }
+
     class DMASTCall : DMASTExpression {
         public DMASTCallParameter[] CallParameters, ProcParameters;
 
@@ -799,6 +815,32 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTRemove : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTRemove(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitRemove(this);
+        }
+    }
+
+    class DMASTCombine : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTCombine(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCombine(this);
+        }
+    }
+
     class DMASTMask : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -848,6 +890,19 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryAnd(this);
+        }
+    }
+
+    class DMASTBinaryXor : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTBinaryXor(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitBinaryXor(this);
         }
     }
 

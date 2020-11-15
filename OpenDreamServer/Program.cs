@@ -92,6 +92,7 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
             DreamObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
             DreamObjectTree.SetMetaObject(DreamPath.Sound, new DreamMetaObjectSound());
+            DreamObjectTree.SetMetaObject(DreamPath.Image, new DreamMetaObjectImage());
             DreamObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
             DreamObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
             DreamObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
@@ -202,7 +203,6 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("abs", new DreamProc(DreamProcNativeRoot.NativeProc_abs, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("animate", new DreamProc(DreamProcNativeRoot.NativeProc_animate, new List<string>() { "Object", "time", "loop", "easing", "flags" }));
             DreamObjectTree.RegisterNativeProc("ascii2text", new DreamProc(DreamProcNativeRoot.NativeProc_ascii2text, new List<string>() { "N" }));
-            DreamObjectTree.RegisterNativeProc("block", new DreamProc(DreamProcNativeRoot.NativeProc_block, new List<string>() { "Start", "End" }));
             DreamObjectTree.RegisterNativeProc("browse", new DreamProc(DreamProcNativeRoot.NativeProc_browse, new List<string>() { "Body", "Options" }));
             DreamObjectTree.RegisterNativeProc("ckey", new DreamProc(DreamProcNativeRoot.NativeProc_ckey, new List<string>() { "Key" }));
             DreamObjectTree.RegisterNativeProc("copytext", new DreamProc(DreamProcNativeRoot.NativeProc_copytext, new List<string>() { "T", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));

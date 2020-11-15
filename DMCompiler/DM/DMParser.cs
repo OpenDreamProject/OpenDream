@@ -617,17 +617,17 @@ namespace DMCompiler.DM {
             DMASTExpression expression = Expression();
 
             if (expression != null) {
-                if (expression is DMASTCallableIdentifier && Check(TokenType.DM_Equals)) {
-                    DMASTExpression value = Expression();
+                if (expression is DMASTAssign) {
+                    DMASTAssign assign = (DMASTAssign)expression;
 
-                    return new DMASTCallParameter(value, ((DMASTCallableIdentifier)expression).Identifier);
-                } else if (expression is DMASTAssign && ((DMASTAssign)expression).Expression is DMASTConstantString) {
-                    DMASTAssign assignExpression = (DMASTAssign)expression;
-
-                    return new DMASTCallParameter(assignExpression.Value, ((DMASTConstantString)assignExpression.Expression).Value);
-                } else {
-                    return new DMASTCallParameter(expression);
+                    if (assign.Expression is DMASTConstantString) {
+                        return new DMASTCallParameter(assign.Value, ((DMASTConstantString)assign.Expression).Value);
+                    } else if (assign.Expression is DMASTCallableIdentifier) {
+                        return new DMASTCallParameter(assign.Value, ((DMASTCallableIdentifier)assign.Expression).Identifier);
+                    }
                 }
+                
+                return new DMASTCallParameter(expression);
             }
 
             return null;
@@ -700,9 +700,9 @@ namespace DMCompiler.DM {
                     if (value != null) {
                         switch (token.Type) {
                             case TokenType.DM_Equals: return new DMASTAssign(expression, value);
-                            case TokenType.DM_PlusEquals: return new DMASTAssign(expression, new DMASTAdd(expression, value));
-                            case TokenType.DM_MinusEquals: return new DMASTAssign(expression, new DMASTSubtract(expression, value));
-                            case TokenType.DM_BarEquals: return new DMASTAppend(expression, value);
+                            case TokenType.DM_PlusEquals: return new DMASTAppend(expression, value);
+                            case TokenType.DM_MinusEquals: return new DMASTRemove(expression, value);
+                            case TokenType.DM_BarEquals: return new DMASTCombine(expression, value);
                             case TokenType.DM_AndEquals: return new DMASTMask(expression, value);
                         }
                     } else {
@@ -763,13 +763,26 @@ namespace DMCompiler.DM {
         }
 
         public DMASTExpression ExpressionBinaryOr() {
-            DMASTExpression a = ExpressionBinaryAnd();
+            DMASTExpression a = ExpressionBinaryXor();
 
             if (a != null && Check(TokenType.DM_Bar)) {
                 DMASTExpression b = ExpressionBinaryOr();
 
                 if (b == null) throw new Exception("Expected an expression");
                 return new DMASTBinaryOr(a, b);
+            }
+
+            return a;
+        }
+
+        public DMASTExpression ExpressionBinaryXor() {
+            DMASTExpression a = ExpressionBinaryAnd();
+
+            if (a != null && Check(TokenType.DM_Xor)) {
+                DMASTExpression b = ExpressionBinaryXor();
+
+                if (b == null) throw new Exception("Expected an expression");
+                return new DMASTBinaryXor(a, b);
             }
 
             return a;
@@ -1040,9 +1053,43 @@ namespace DMCompiler.DM {
             switch (constantToken.Type) {
                 case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger((int)constantToken.Value);
                 case TokenType.DM_Float: Advance(); return new DMASTConstantFloat((float)constantToken.Value);
-                case TokenType.DM_String: Advance(); return new DMASTConstantString((string)constantToken.Value);
                 case TokenType.DM_Resource: Advance(); return new DMASTConstantResource((string)constantToken.Value);
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull();
+                case TokenType.DM_String: {
+                    string tokenValue = (string)constantToken.Value;
+                    int bracketIndex = tokenValue.IndexOf(DMLexer.StringInterpolationStart);
+                    Advance();
+
+                    if (bracketIndex != -1) {
+                        List<DMASTExpression> pieces = new List<DMASTExpression>();
+
+                        if (bracketIndex > 0) pieces.Add(new DMASTConstantString(tokenValue.Substring(0, bracketIndex)));
+                        do {
+                            int expressionEndIndex = tokenValue.IndexOf(DMLexer.StringInterpolationEnd, bracketIndex + 1);
+                            int afterExpression = expressionEndIndex + DMLexer.StringInterpolationStart.Length;
+                            string expressionString = tokenValue.Substring(bracketIndex + DMLexer.StringInterpolationStart.Length, expressionEndIndex - bracketIndex - DMLexer.StringInterpolationStart.Length);
+                            DMLexer expressionLexer = new DMLexer(expressionString);
+                            DMParser expressionParser = new DMParser(expressionLexer);
+                            DMASTExpression expression = expressionParser.Expression();
+                            if (expression == null) throw new Exception("Expected an expression");
+
+                            pieces.Add(expression);
+                            bracketIndex = tokenValue.IndexOf(DMLexer.StringInterpolationStart, afterExpression);
+
+                            string inBetween;
+                            if (bracketIndex != -1) inBetween = tokenValue.Substring(afterExpression, bracketIndex - afterExpression);
+                            else inBetween = tokenValue.Substring(afterExpression, tokenValue.Length - afterExpression);
+
+                            if (inBetween.Length > 0) {
+                                pieces.Add(new DMASTConstantString(inBetween));
+                            }
+                        } while (bracketIndex != -1);
+
+                        return new DMASTBuildString(pieces.ToArray());
+                    } else {
+                        return new DMASTConstantString((string)constantToken.Value);
+                    }
+                }
                 default: return null;
             }
         }

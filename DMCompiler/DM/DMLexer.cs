@@ -4,6 +4,9 @@ using DMCompiler.Compiler;
 
 namespace DMCompiler.DM {
     class DMLexer : Lexer {
+        public static string StringInterpolationStart = new string(new char[] { (char)0xFF, (char)0x0 });
+        public static string StringInterpolationEnd = new string(new char[] { (char)0xFF, (char)0x1 });
+
         private bool _checkingIndentation = true;
         private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
         private Dictionary<string, TokenType> _keywords = new Dictionary<string, TokenType>() {
@@ -182,6 +185,19 @@ namespace DMCompiler.DM {
                             token = CreateToken(TokenType.DM_StarEquals, "*=");
                         } else {
                             token = CreateToken(TokenType.DM_Star, '*');
+                        }
+
+                        break;
+                    }
+                    case '^': {
+                        c = Advance();
+
+                        if (c == '=') {
+                            Advance();
+
+                            token = CreateToken(TokenType.DM_XorEquals, "^=");
+                        } else {
+                            token = CreateToken(TokenType.DM_Xor, '^');
                         }
 
                         break;
@@ -412,8 +428,12 @@ namespace DMCompiler.DM {
 
                             text += c;
                             escapeSequence += c;
-                            if (escapeSequence == "\"" || escapeSequence == "n" || escapeSequence == "\\" || escapeSequence == "[" || escapeSequence == "]") {
+                            if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "[" || escapeSequence == "]") {
                                 stringValue += escapeSequence;
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "n") {
+                                stringValue += '\n';
                                 validEscapeSequence = true;
                                 break;
                             } else if (escapeSequence == "t") {
@@ -463,10 +483,16 @@ namespace DMCompiler.DM {
                             throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
                         }
                     } else if (c != '"' && !(!isLong && c == '\n')) {
-                        stringValue += c;
+                        if (c == ']') {
+                            stringValue += StringInterpolationEnd;
+                        } else {
+                            stringValue += c;
+                        }
                     } else {
                         break;
                     }
+                } else if (c == '[' && nestingLevel == 1) {
+                    stringValue += StringInterpolationStart;
                 } else {
                     stringValue += c;
                 }

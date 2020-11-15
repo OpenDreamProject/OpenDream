@@ -104,14 +104,26 @@ namespace DMCompiler.DM.Visitors {
                 if (statementForList.VariableDeclaration != null) statementForList.VariableDeclaration.Visit(this);
 
                 string loopLabel = NewLabelName();
+                string typeCheckLabel = NewLabelName();
                 string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.EnumerateList(statementForList.Variable.Identifier);
-                    _proc.JumpIfTrue(loopBodyLabel);
+                    _proc.JumpIfTrue(typeCheckLabel);
                     _proc.Break();
 
-                    //TODO: Hidden istype()
+                    _proc.AddLabel(typeCheckLabel);
+                    if (statementForList.VariableDeclaration != null && statementForList.VariableDeclaration.Type != null) {
+                        _proc.GetIdentifier("istype");
+                        PushCallParameters(new DMASTCallParameter[] {
+                            new DMASTCallParameter(statementForList.Variable),
+                            new DMASTCallParameter(new DMASTConstantPath(statementForList.VariableDeclaration.Type))
+                        });
+                        _proc.Call();
+
+                        _proc.JumpIfTrue(loopBodyLabel);
+                        _proc.Continue();
+                    }
 
                     _proc.AddLabel(loopBodyLabel);
                     statementForList.Body.Visit(this);
@@ -296,6 +308,18 @@ namespace DMCompiler.DM.Visitors {
             _proc.Append();
         }
 
+        public void VisitRemove(DMASTRemove remove) {
+            remove.A.Visit(this);
+            remove.B.Visit(this);
+            _proc.Remove();
+        }
+
+        public void VisitCombine(DMASTCombine combine) {
+            combine.A.Visit(this);
+            combine.B.Visit(this);
+            _proc.Combine();
+        }
+
         public void VisitMask(DMASTMask mask) {
             mask.A.Visit(this);
             mask.B.Visit(this);
@@ -317,6 +341,12 @@ namespace DMCompiler.DM.Visitors {
             binaryAnd.A.Visit(this);
             binaryAnd.B.Visit(this);
             _proc.BinaryAnd();
+        }
+
+        public void VisitBinaryXor(DMASTBinaryXor binaryXor) {
+            binaryXor.A.Visit(this);
+            binaryXor.B.Visit(this);
+            _proc.BinaryXor();
         }
 
         public void VisitBinaryOr(DMASTBinaryOr binaryOr) {
@@ -393,6 +423,14 @@ namespace DMCompiler.DM.Visitors {
             _proc.IsInList();
         }
 
+        public void VisitBuildString(DMASTBuildString buildString) {
+            for (int i = buildString.Pieces.Length - 1; i >= 0; i--) {
+                buildString.Pieces[i].Visit(this);
+            }
+
+            _proc.BuildString(buildString.Pieces.Length);
+        }
+
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             _proc.PushInt(constant.Value);
         }
@@ -423,11 +461,27 @@ namespace DMCompiler.DM.Visitors {
 
         private void PushCallParameters(DMASTCallParameter[] parameters) {
             if (parameters != null) {
+                if (parameters.Length > 0 && parameters[0].Value is DMASTProcCall) {
+                    DMASTProcCall procCallParameter = (DMASTProcCall)parameters[0].Value;
+
+                    if (procCallParameter.Callable is DMASTCallableIdentifier) {
+                        DMASTCallableIdentifier procCallIdentifier = (DMASTCallableIdentifier)procCallParameter.Callable;
+
+                        if (procCallIdentifier.Identifier == "arglist") {
+                            if (parameters.Length != 1) throw new Exception("arglist must be the only argument");
+                            if (procCallParameter.Parameters.Length != 1) throw new Exception("arglist must have 1 argument");
+
+                            procCallParameter.Parameters[0].Visit(this);
+                            _proc.PushArgumentList();
+                            return;
+                        }
+                    }
+                }
+
                 List<DreamProcOpcodeParameterType> parameterTypes = new List<DreamProcOpcodeParameterType>();
                 List<string> parameterNames = new List<string>();
 
-                for (int i = parameters.Length - 1; i >= 0; i--) { //Push arguments backwards
-                    DMASTCallParameter parameter = parameters[i];
+                foreach (DMASTCallParameter parameter in parameters) {
                     parameter.Visit(this);
 
                     if (parameter.Name != null) {

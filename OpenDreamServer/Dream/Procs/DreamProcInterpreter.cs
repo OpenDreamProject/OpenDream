@@ -111,29 +111,15 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (opcode == DreamProcOpcode.PushString) {
                 Push(new DreamValue(ReadString(bytecodeStream)));
             } else if (opcode == DreamProcOpcode.BuildString) {
+                int pieceCount = ReadInt(bytecodeStream);
                 string stringResult = String.Empty;
-                DreamProcOpcode buildStringOpcode;
 
-                while ((buildStringOpcode = (DreamProcOpcode)bytecodeStream.ReadByte()) != DreamProcOpcode.BuildStringEnd) {
-                    if (buildStringOpcode == DreamProcOpcode.BuildStringPartString) {
-                        stringResult += ReadString(bytecodeStream);
-                    } else if (buildStringOpcode == DreamProcOpcode.BuildStringPartExpression) {
-                        while ((DreamProcOpcode)bytecodeStream.ReadByte() != DreamProcOpcode.BuildStringPartExpressionEnd) {
-                            bytecodeStream.Seek(-1, SeekOrigin.Current);
-                            Step(bytecodeStream);
-                        }
+                for (int i = 0; i < pieceCount; i++) {
+                    DreamValue piece = PopDreamValue();
 
-                        DreamValue value = PopDreamValue();
-                        if (stringResult.EndsWith("\\ref")) {
-                            DreamObject dreamObject = value.GetValueAsDreamObject();
-
-                            stringResult = stringResult.Substring(0, stringResult.Length - 4) + DreamObject.CreateReferenceID(dreamObject);
-                        } else {
-                            stringResult += value.Stringify();
-                        }
-                    }
+                    stringResult += piece.Stringify();
                 }
-
+                
                 Push(new DreamValue(stringResult));
             } else if (opcode == DreamProcOpcode.PushInt) {
                 int value = ReadInt(bytecodeStream);
@@ -627,6 +613,11 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (opcode == DreamProcOpcode.PushArguments) {
                 DreamProcInterpreterArguments arguments = new DreamProcInterpreterArguments(new List<object>(), new Dictionary<string, object>());
                 int argumentCount = ReadInt(bytecodeStream);
+                object[] argumentValues = new object[argumentCount];
+
+                for (int i = argumentCount - 1; i >= 0; i--) {
+                    argumentValues[i] = _stack.Pop();
+                }
 
                 for (int i = 0; i < argumentCount; i++) {
                     DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)bytecodeStream.ReadByte();
@@ -634,9 +625,9 @@ namespace OpenDreamServer.Dream.Procs {
                     if (argumentType == DreamProcOpcodeParameterType.Named) {
                         string argumentName = ReadString(bytecodeStream);
 
-                        arguments.NamedArguments[argumentName] = _stack.Pop();
+                        arguments.NamedArguments[argumentName] = argumentValues[i];
                     } else if (argumentType == DreamProcOpcodeParameterType.Unnamed) {
-                        arguments.OrderedArguments.Add(_stack.Pop());
+                        arguments.OrderedArguments.Add(argumentValues[i]);
                     } else {
                         throw new Exception("Invalid argument type (" + argumentType + ")");
                     }

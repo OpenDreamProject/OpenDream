@@ -59,14 +59,7 @@
         PushSrc = 0x39,
         CreateListEnumerator = 0x3A,
         EnumerateList = 0x3B,
-        DestroyListEnumerator = 0x3C,
-
-        BooleanExpressionEnd = 0xF7,
-
-        BuildStringPartString = 0xF8,
-        BuildStringPartExpression = 0xF9,
-        BuildStringPartExpressionEnd = 0xFA,
-        BuildStringEnd = 0xFB
+        DestroyListEnumerator = 0x3C
     }
 
     enum DreamProcOpcodeParameterType {

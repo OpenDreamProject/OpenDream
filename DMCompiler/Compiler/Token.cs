@@ -75,7 +75,9 @@
         DM_TildeEquals,
         DM_To,
         DM_Var,
-        DM_While
+        DM_While,
+        DM_Xor,
+        DM_XorEquals
     }
 
     struct Token {

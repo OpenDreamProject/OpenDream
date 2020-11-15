@@ -28,27 +28,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(Convert.ToChar(ascii).ToString());
         }
 
-        public static DreamValue NativeProc_block(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject start = scope.GetValue("Start").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamObject end = scope.GetValue("End").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            int startX = start.GetVariable("x").GetValueAsInteger();
-            int endX = end.GetVariable("x").GetValueAsInteger();
-            int startY = start.GetVariable("y").GetValueAsInteger();
-            int endY = end.GetVariable("y").GetValueAsInteger();
-            int startZ = start.GetVariable("z").GetValueAsInteger();
-            int endZ = end.GetVariable("z").GetValueAsInteger();
-            List<DreamValue> turfs = new List<DreamValue>();
-
-            for (int x = startX; x <= endX; x++) {
-                for (int y = startY; y <= endY; y++) {
-                    //TODO: Z coordinate
-                    turfs.Add(new DreamValue(Program.DreamMap.GetTurfAt(x, y)));
-                }
-            }
-
-            return new DreamValue(Program.DreamObjectTree.CreateObject(DreamPath.List, new DreamProcArguments(turfs)));
-        }
-
         public static DreamValue NativeProc_browse(DreamProcScope scope, DreamProcArguments arguments) {
             return new DreamValue((DreamObject)null);
         }

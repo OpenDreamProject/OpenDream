@@ -36,6 +36,12 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 int tickUsage = (int)(elapsedTime / tickLength * 100);
 
                 return new DreamValue(tickUsage);
+            } else if (variableName == "maxx") {
+                return new DreamValue(Program.DreamMap.Width);
+            } else if (variableName == "maxy") {
+                return new DreamValue(Program.DreamMap.Height);
+            } else if (variableName == "maxz") {
+                return new DreamValue(1); //TODO: Z-Level support
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

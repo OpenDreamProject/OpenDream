@@ -180,14 +180,30 @@ namespace DMCompiler {
         }
 
         private static void AddNativeProcs(DreamObjectJson rootObject) {
+            AddNativeProc(rootObject, "abs", "abs");
+            AddNativeProc(rootObject, "ascii2text", "ascii2text");
             AddNativeProc(rootObject, "browse", "browse");
+            AddNativeProc(rootObject, "ckey", "ckey");
             AddNativeProc(rootObject, "copytext", "copytext");
             AddNativeProc(rootObject, "CRASH", "CRASH");
+            AddNativeProc(rootObject, "fexists", "fexists");
             AddNativeProc(rootObject, "file2text", "file2text");
+            AddNativeProc(rootObject, "findlasttext", "findlasttext");
+            AddNativeProc(rootObject, "findtext", "findtext");
+            AddNativeProc(rootObject, "findtextEx", "findtextEx");
+            AddNativeProc(rootObject, "get_dir", "get_dir");
+            AddNativeProc(rootObject, "get_dist", "get_dist");
+            AddNativeProc(rootObject, "image", "image");
+            AddNativeProc(rootObject, "isarea", "isarea");
+            AddNativeProc(rootObject, "isloc", "isloc");
             AddNativeProc(rootObject, "ismob", "ismob");
             AddNativeProc(rootObject, "isnull", "isnull");
+            AddNativeProc(rootObject, "isnum", "isnum");
             AddNativeProc(rootObject, "ispath", "ispath");
+            AddNativeProc(rootObject, "istext", "istext");
             AddNativeProc(rootObject, "istype", "istype");
+            AddNativeProc(rootObject, "isturf", "isturf");
+            AddNativeProc(rootObject, "json_decode", "json_decode");
             AddNativeProc(rootObject, "length", "length");
             AddNativeProc(rootObject, "list", "list");
             AddNativeProc(rootObject, "locate", "locate");
@@ -195,11 +211,24 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "max", "max");
             AddNativeProc(rootObject, "min", "min");
             AddNativeProc(rootObject, "num2text", "num2text");
+            AddNativeProc(rootObject, "orange", "orange");
+            AddNativeProc(rootObject, "params2list", "params2list");
+            AddNativeProc(rootObject, "pick", "pick");
+            AddNativeProc(rootObject, "prob", "prob");
             AddNativeProc(rootObject, "replacetext", "replacetext");
+            AddNativeProc(rootObject, "rand", "rand");
+            AddNativeProc(rootObject, "round", "round");
             AddNativeProc(rootObject, "splittext", "splittext");
             AddNativeProc(rootObject, "sleep", "sleep");
+            AddNativeProc(rootObject, "sound", "sound");
             AddNativeProc(rootObject, "text2ascii", "text2ascii");
+            AddNativeProc(rootObject, "text2num", "text2num");
+            AddNativeProc(rootObject, "text2path", "text2path");
             AddNativeProc(rootObject, "typesof", "typesof");
+            AddNativeProc(rootObject, "uppertext", "uppertext");
+            AddNativeProc(rootObject, "view", "view");
+            AddNativeProc(rootObject, "walk", "walk");
+            AddNativeProc(rootObject, "walk_to", "walk_to");
 
             DreamObjectJson listObject = rootObject.Children.Find((DreamObjectJson child) => {
                 return child.Name == "list";
@@ -207,6 +236,9 @@ namespace DMCompiler {
             AddNativeProc(listObject, "Add", "list_Add");
             AddNativeProc(listObject, "Remove", "list_Remove");
             AddNativeProc(listObject, "Copy", "list_Copy");
+            AddNativeProc(listObject, "Cut", "list_Cut");
+            AddNativeProc(listObject, "Find", "list_Find");
+            AddNativeProc(listObject, "Join", "list_Join");
         }
 
         private static void AddNativeProc(DreamObjectJson objectJson, string procName, string nativeProcName) {

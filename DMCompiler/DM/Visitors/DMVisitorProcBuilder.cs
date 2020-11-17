@@ -431,6 +431,33 @@ namespace DMCompiler.DM.Visitors {
             _proc.BuildString(buildString.Pieces.Length);
         }
 
+        public void VisitList(DMASTList list) {
+            _proc.CreateList();
+
+            if (list.Values != null) {
+                foreach (DMASTCallParameter value in list.Values) {
+                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
+
+                    if (associatedAssign != null) {
+                        associatedAssign.Value.Visit(this);
+
+                        if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
+                            _proc.PushString(value.Name);
+                            _proc.ListAppendAssociated();
+                        } else if (associatedAssign.Expression is DMASTConstantResource) {
+                            associatedAssign.Expression.Visit(this);
+                            _proc.ListAppendAssociated();
+                        } else {
+                            throw new Exception("Associated value has an invalid index");
+                        }
+                    } else {
+                        value.Visit(this);
+                        _proc.ListAppend();
+                    }
+                }
+            }
+        }
+
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             _proc.PushInt(constant.Value);
         }

@@ -197,6 +197,8 @@ namespace OpenDreamServer.Dream.Objects {
                     return new DreamValue((DreamObject)null);
                 } else if (variableType == DreamObjectJsonVariableType.Path) {
                     return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
+                } else if (variableType == DreamObjectJsonVariableType.List) {
+                    return new DreamValue((DreamObject)null);
                 } else {
                     throw new Exception("Invalid variable type (" + variableType + ")");
                 }
@@ -217,9 +219,7 @@ namespace OpenDreamServer.Dream.Objects {
                         DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
 
                         if (variableType == DreamObjectJsonVariableType.Object) {
-                            JsonElement objectPath;
-
-                            if (jsonElement.TryGetProperty("path", out objectPath)) {
+                            if (jsonElement.TryGetProperty("path", out JsonElement objectPath)) {
                                 DreamPath path = new DreamPath(objectPath.GetString());
                                 DreamProcArguments creationArguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
                                 JsonElement arguments;
@@ -238,6 +238,24 @@ namespace OpenDreamServer.Dream.Objects {
 
                                 objectDefinition.RuntimeInstantiatedVariables[jsonVariable.Key] = (path, creationArguments);
                             }
+                        } else if (variableType == DreamObjectJsonVariableType.List) {
+                            List<(DreamValue Index, DreamValue Value)> listValues = new List<(DreamValue, DreamValue)>();
+
+                            if (jsonElement.TryGetProperty("values", out JsonElement values)) {
+                                for (int i = 0; i < values.GetArrayLength(); i++) {
+                                    JsonElement jsonListValue = values[i];
+                                    JsonElement jsonValue = jsonListValue.GetProperty("value");
+                                    DreamValue listValue = GetDreamValueFromJsonElement(jsonValue);
+
+                                    if (jsonListValue.TryGetProperty("key", out JsonElement jsonKey)) {
+                                        listValues.Add((GetDreamValueFromJsonElement(jsonKey), listValue));
+                                    } else {
+                                        listValues.Add((new DreamValue((DreamObject)null), listValue));
+                                    }
+                                }
+                            }
+
+                            objectDefinition.RuntimeInstantiatedLists.Add((jsonVariable.Key, listValues));
                         }
                     }
                 }

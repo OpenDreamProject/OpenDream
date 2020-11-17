@@ -133,31 +133,34 @@ namespace DMCompiler {
                 };
             } else if (value is DMList) {
                 DMList dmList = (DMList)value;
+                List<object> dmListValues = new List<object>();
                 Dictionary<string, object> jsonVariable = new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.Object },
-                    { "path", "/list" }
+                    { "type", DreamObjectJsonVariableType.List }
                 };
 
-                if (dmList.Values.Length > 0) {
-                    List<object> dmListValues = new List<object>();
-
-                    foreach (object dmListValue in dmList.Values) {
-                        dmListValues.Add(CreateDreamObjectJsonVariable(dmListValue));
-                    }
-
-                    jsonVariable.Add("arguments", dmListValues);
+                foreach (object dmListValue in dmList.Values) {
+                    dmListValues.Add(new Dictionary<string, object>() {
+                        { "value",  CreateDreamObjectJsonVariable(dmListValue) }
+                    });
                 }
 
-                if (dmList.AssociatedValues.Count > 0) {
-                    Dictionary<string, object> dmAssociatedListValues = new Dictionary<string, object>();
-
-                    foreach (KeyValuePair<string, object> dmAssociatedListValue in dmList.AssociatedValues) {
-                        dmAssociatedListValues.Add(dmAssociatedListValue.Key, CreateDreamObjectJsonVariable(dmAssociatedListValue.Value));
+                foreach (KeyValuePair<object, object> dmAssociatedListValue in dmList.AssociatedValues) {
+                    object key;
+                    if (dmAssociatedListValue.Key is DMResource) {
+                        key = CreateDreamObjectJsonVariable(dmAssociatedListValue.Key);
+                    } else if (dmAssociatedListValue.Key is string) {
+                        key = dmAssociatedListValue.Key;
+                    } else {
+                        throw new Exception("Invalid list index");
                     }
 
-                    jsonVariable.Add("namedArguments", dmAssociatedListValues);
+                    dmListValues.Add(new Dictionary<string, object>() {
+                        { "key", key },
+                        { "value",  CreateDreamObjectJsonVariable(dmAssociatedListValue.Value) }
+                    });
                 }
 
+                if (dmListValues.Count > 0) jsonVariable.Add("values", dmListValues);
                 return jsonVariable;
             } else if (value is DMNewInstance) {
                 return new Dictionary<string, object>() {
@@ -206,7 +209,6 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "isturf", "isturf");
             AddNativeProc(rootObject, "json_decode", "json_decode");
             AddNativeProc(rootObject, "length", "length");
-            AddNativeProc(rootObject, "list", "list");
             AddNativeProc(rootObject, "locate", "locate");
             AddNativeProc(rootObject, "lowertext", "lowertext");
             AddNativeProc(rootObject, "max", "max");

@@ -33,11 +33,11 @@
         Remove = 0x1F,
         DeleteObject = 0x20,
         PushResource = 0x21,
-        //0x22
+        CreateList = 0x22,
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        //0x26
+        ListAppend = 0x26,
         Divide = 0x27,
         Multiply = 0x28,
         PushSelf = 0x29,
@@ -51,7 +51,7 @@
         CompareGreaterThanOrEqual = 0x31,
         SwitchCase = 0x32,
         Mask = 0x33,
-        //0x34
+        ListAppendAssociated = 0x34,
         //0x35
         IsInList = 0x36,
         PushArguments = 0x37,

@@ -38,7 +38,18 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamObject CreateDreamList() {
-            return Program.DreamObjectTree.CreateObject(DreamPath.List, this);
+            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+
+            foreach (DreamValue argument in OrderedArguments) {
+                list.AddValue(argument);
+            }
+
+            foreach (KeyValuePair<string, DreamValue> argument in NamedArguments) {
+                list.SetValue(new DreamValue(argument.Key), argument.Value);
+            }
+
+            return listObject;
         }
     }
 }

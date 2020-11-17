@@ -10,15 +10,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             DreamList list = new DreamList();
 
             DreamLists.Add(dreamObject, list);
-
-            foreach (DreamValue orderedArgument in creationArguments.OrderedArguments) {
-                list.AddValue(orderedArgument);
-            }
-
-            foreach (KeyValuePair<string, DreamValue> namedArgument in creationArguments.NamedArguments) {
-                list.SetValue(new DreamValue(namedArgument.Key), namedArgument.Value);
-            }
-
             base.OnObjectCreated(dreamObject, creationArguments);
         }
 

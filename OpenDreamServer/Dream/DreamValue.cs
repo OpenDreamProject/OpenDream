@@ -70,6 +70,8 @@ namespace OpenDreamServer.Dream {
                 value = "null";
             } else if (Type == DreamValueType.String) {
                 value = "\"" + Value + "\"";
+            } else if (Type == DreamValueType.DreamResource) {
+                value = "'" + ((DreamResource)Value).ResourcePath + "'";
             } else {
                 value = Value.ToString();
             }
@@ -181,7 +183,11 @@ namespace OpenDreamServer.Dream {
         }
 
         public override int GetHashCode() {
-            return Value.GetHashCode();
+            if (Value != null) {
+                return Value.GetHashCode();
+            } else {
+                return 0;
+            }
         }
 
         public static bool operator ==(DreamValue a, DreamValue b) {

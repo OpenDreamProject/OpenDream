@@ -6,7 +6,8 @@ namespace OpenDreamShared.Dream.Objects {
     public enum DreamObjectJsonVariableType {
         Resource = 0,
         Object = 1,
-        Path = 2
+        Path = 2,
+        List = 3
     }
 
     public class DreamObjectJson {

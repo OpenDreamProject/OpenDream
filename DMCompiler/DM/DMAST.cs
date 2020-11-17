@@ -34,6 +34,7 @@ namespace DMCompiler.DM {
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
         public void VisitBuildString(DMASTBuildString buildString) { throw new NotImplementedException(); }
+        public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -528,6 +529,18 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitBuildString(this);
+        }
+    }
+
+    class DMASTList : DMASTExpression {
+        public DMASTCallParameter[] Values;
+
+        public DMASTList(DMASTCallParameter[] values) {
+            Values = values;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitList(this);
         }
     }
 

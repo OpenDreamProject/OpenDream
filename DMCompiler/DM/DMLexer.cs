@@ -28,7 +28,8 @@ namespace DMCompiler.DM {
             { "as", TokenType.DM_As },
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
-            { "spawn", TokenType.DM_Spawn }
+            { "spawn", TokenType.DM_Spawn },
+            { "list", TokenType.DM_List }
         };
 
         public DMLexer(string source) : base(source) {

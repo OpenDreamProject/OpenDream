@@ -119,7 +119,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                     stringResult += piece.Stringify();
                 }
-                
+
                 Push(new DreamValue(stringResult));
             } else if (opcode == DreamProcOpcode.PushInt) {
                 int value = ReadInt(bytecodeStream);
@@ -398,6 +398,8 @@ namespace OpenDreamServer.Dream.Procs {
                 string resourcePath = ReadString(bytecodeStream);
 
                 Push(new DreamValue(Program.DreamResourceManager.LoadResource(resourcePath)));
+            } else if (opcode == DreamProcOpcode.CreateList) {
+                Push(new DreamValue(Program.DreamObjectTree.CreateObject(DreamPath.List)));
             } else if (opcode == DreamProcOpcode.CallStatement) {
                 DreamProcInterpreterArguments arguments = PopArguments();
                 DreamValue source = PopDreamValue();
@@ -448,6 +450,12 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamValue first = PopDreamValue();
 
                 Push(new DreamValue(IsEqual(first, second) ? 0 : 1));
+            } else if (opcode == DreamProcOpcode.ListAppend) {
+                DreamValue value = PopDreamValue();
+                DreamObject listObject = PopDreamValue().GetValueAsDreamObjectOfType(DreamPath.List);
+
+                DreamMetaObjectList.DreamLists[listObject].AddValue(value);
+                Push(new DreamValue(listObject));
             } else if (opcode == DreamProcOpcode.Divide) {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
@@ -561,7 +569,7 @@ namespace OpenDreamServer.Dream.Procs {
                         }
                     }
                 }
-                
+
                 Push(arguments);
             } else if (opcode == DreamProcOpcode.CompareGreaterThanOrEqual) {
                 DreamValue second = PopDreamValue();
@@ -588,6 +596,13 @@ namespace OpenDreamServer.Dream.Procs {
                 } else {
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
                 }
+            } else if (opcode == DreamProcOpcode.ListAppendAssociated) {
+                DreamValue index = PopDreamValue();
+                DreamValue value = PopDreamValue();
+                DreamObject listObject = PopDreamValue().GetValueAsDreamObjectOfType(DreamPath.List);
+
+                DreamMetaObjectList.DreamLists[listObject].SetValue(index, value);
+                Push(new DreamValue(listObject));
             } else if (opcode == DreamProcOpcode.IsInList) {
                 DreamValue listValue = PopDreamValue();
                 DreamValue value = PopDreamValue();

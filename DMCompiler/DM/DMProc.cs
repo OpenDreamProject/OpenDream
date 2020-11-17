@@ -65,6 +65,18 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DestroyListEnumerator);
         }
 
+        public void CreateList() {
+            WriteOpcode(DreamProcOpcode.CreateList);
+        }
+
+        public void ListAppend() {
+            WriteOpcode(DreamProcOpcode.ListAppend);
+        }
+
+        public void ListAppendAssociated() {
+            WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        }
+
         public void LoopStart(string loopLabel) {
             _loopStack.Push(loopLabel);
 

@@ -33,7 +33,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamObject listObject = scope.DreamObject;
             DreamList list = DreamMetaObjectList.DreamLists[listObject];
             DreamList listCopy = list.CreateCopy(start, end);
-            DreamObject newListObject = Program.DreamObjectTree.CreateObject(DreamPath.List, new DreamProcArguments(null));
+            DreamObject newListObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
 
             DreamMetaObjectList.DreamLists[newListObject] = listCopy;
             return new DreamValue(newListObject);

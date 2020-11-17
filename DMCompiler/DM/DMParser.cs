@@ -117,7 +117,7 @@ namespace DMCompiler.DM {
         public string PathElement() {
             Token elementToken = Current();
 
-            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Var, TokenType.DM_Proc })) {
+            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Var, TokenType.DM_Proc, TokenType.DM_List })) {
                 return elementToken.Text;
             } else {
                 return null;
@@ -617,8 +617,9 @@ namespace DMCompiler.DM {
             DMASTExpression expression = Expression();
 
             if (expression != null) {
-                if (expression is DMASTAssign) {
-                    DMASTAssign assign = (DMASTAssign)expression;
+                DMASTAssign assign = expression as DMASTAssign;
+
+                if (assign != null) {
 
                     if (assign.Expression is DMASTConstantString) {
                         return new DMASTCallParameter(assign.Value, ((DMASTConstantString)assign.Expression).Value);
@@ -1041,6 +1042,12 @@ namespace DMCompiler.DM {
                     if (procParameters == null) throw new Exception("Expected proc parameters");
 
                     primary = new DMASTCall(callParameters, procParameters);
+                }
+
+                if (primary == null && Check(TokenType.DM_List)) {
+                    DMASTCallParameter[] values = ProcCall();
+
+                    primary = new DMASTList(values);
                 }
 
                 return primary;

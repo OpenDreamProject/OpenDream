@@ -1,4 +1,5 @@
 ﻿using OpenDreamServer.Dream.Objects;
+using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
@@ -56,8 +57,16 @@ namespace OpenDreamServer.Dream {
                     return new DreamValue((DreamObject)null);
                 }
             } else if (key.TryGetValueAsDreamObject(out DreamObject keyObject)) {
-               if (_associativeValues.ContainsKey(keyObject)) {
+                if (_associativeValues.ContainsKey(keyObject)) {
                     return _associativeValues[keyObject];
+                } else {
+                    return new DreamValue((DreamObject)null);
+                }
+            } else if (key.Type == DreamValue.DreamValueType.DreamResource) {
+                DreamResource keyResource = key.GetValueAsDreamResource();
+
+                if (_associativeValues.ContainsKey(keyResource)) {
+                    return _associativeValues[keyResource];
                 } else {
                     return new DreamValue((DreamObject)null);
                 }
@@ -70,7 +79,7 @@ namespace OpenDreamServer.Dream {
 
         public void SetValue(DreamValue key, DreamValue value) {
             if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
-            if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject) && key.Value != null) {
+            if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject | DreamValue.DreamValueType.DreamResource) && key.Value != null) {
                 if (!ContainsValue(key)) _values.Add(key);
 
                 _associativeValues[key.Value] = value;

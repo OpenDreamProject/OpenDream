@@ -1,4 +1,5 @@
-﻿using OpenDreamServer.Dream.Procs;
+﻿using OpenDreamServer.Dream.Objects.MetaObjects;
+using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,21 @@ namespace OpenDreamServer.Dream.Objects {
                 DreamObject instantiatedObject = Program.DreamObjectTree.CreateObject(runtimeInstantiatedVariable.Value.Item1, runtimeInstantiatedVariable.Value.Item2);
 
                 SetVariable(runtimeInstantiatedVariable.Key, new DreamValue(instantiatedObject));
+            }
+
+            foreach ((string VariableName, List<(DreamValue, DreamValue)> Values) runtimeInstantiatedList in ObjectDefinition.RuntimeInstantiatedLists) {
+                DreamObject instantiatedList = Program.DreamObjectTree.CreateObject(DreamPath.List);
+                DreamList list = DreamMetaObjectList.DreamLists[instantiatedList];
+
+                foreach ((DreamValue Index, DreamValue Value) value in runtimeInstantiatedList.Values) {
+                    if (value.Index.Value != null) {
+                        list.SetValue(value.Index, value.Value);
+                    } else {
+                        list.AddValue(value.Value);
+                    }
+                }
+
+                SetVariable(runtimeInstantiatedList.VariableName, new DreamValue(instantiatedList));
             }
 
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectCreated(this, creationArguments);

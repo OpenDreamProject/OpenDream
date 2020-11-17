@@ -338,12 +338,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             throw new Exception("Cannot check length of " + value + "");
         }
 
-        public static DreamValue NativeProc_list(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List, arguments);
-
-            return new DreamValue(listObject);
-        }
-
         public static DreamValue NativeProc_locate(DreamProcScope scope, DreamProcArguments arguments) {
             int x = scope.GetValue("X").GetValueAsInteger(); //1-indexed
             int y = scope.GetValue("Y").GetValueAsInteger(); //1-indexed
@@ -470,15 +464,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_params2list(DreamProcScope scope, DreamProcArguments arguments) {
             string paramsString = scope.GetValue("Params").GetValueAsString();
             NameValueCollection query = HttpUtility.ParseQueryString(paramsString);
-            DreamProcArguments listCreationArguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
+            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
 
             foreach (string queryKey in query.AllKeys) {
                 string queryValue = query.Get(queryKey);
 
-                listCreationArguments.NamedArguments.Add(queryKey, new DreamValue(queryValue));
+                list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
             }
 
-            return new DreamValue(Program.DreamObjectTree.CreateObject(DreamPath.List, listCreationArguments));
+            return new DreamValue(listObject);
         }
 
         public static DreamValue NativeProc_pick(DreamProcScope scope, DreamProcArguments arguments) {
@@ -561,13 +556,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string text = scope.GetValue("Text").GetValueAsString();
             string delimiter = scope.GetValue("Delimiter").GetValueAsString();
             string[] splitText = text.Split(delimiter);
-            List<DreamValue> listValues = new List<DreamValue>();
+            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
 
             foreach (string value in splitText) {
-                listValues.Add(new DreamValue(value));
+                list.AddValue(new DreamValue(value));
             }
 
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List, new DreamProcArguments(listValues));
             return new DreamValue(listObject);
         }
 
@@ -601,7 +596,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         public static DreamValue NativeProc_typesof(DreamProcScope scope, DreamProcArguments arguments) {
-            List<DreamValue> types = new List<DreamValue>();
+            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 DreamPath typePath = type.GetValueAsPath();
@@ -611,19 +607,18 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     DreamObjectDefinition objectDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(objectTypePath);
 
                     foreach (KeyValuePair<string, DreamProc> proc in objectDefinition.Procs) {
-                        types.Add(new DreamValue(proc.Key));
+                        list.AddValue(new DreamValue(proc.Key));
                     }
                 } else {
                     DreamObjectTree.DreamObjectTreeEntry objectTreeEntry = Program.DreamObjectTree.GetTreeEntryFromPath(typePath);
                     List<DreamObjectTree.DreamObjectTreeEntry> objectTreeDescendants = objectTreeEntry.GetAllDescendants(true, true);
 
                     foreach (DreamObjectTree.DreamObjectTreeEntry objectTreeDescendant in objectTreeDescendants) {
-                        types.Add(new DreamValue(objectTreeDescendant.ObjectDefinition.Type));
+                        list.AddValue(new DreamValue(objectTreeDescendant.ObjectDefinition.Type));
                     }
                 }
             }
 
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List, new DreamProcArguments(types));
             return new DreamValue(listObject);
         }
 

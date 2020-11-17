@@ -119,35 +119,6 @@ namespace DMCompiler.DM.Visitors {
             dmObject.Procs[procName].Add(proc);
         }
 
-        public void VisitProcCall(DMASTProcCall procCall) {
-            DMASTCallableIdentifier identifier = procCall.Callable as DMASTCallableIdentifier;
-
-            if (identifier != null && identifier.Identifier == "list") {
-                List<object> values = new List<object>();
-                Dictionary<string, object> associatedValues = new Dictionary<string, object>();
-
-                foreach (DMASTCallParameter parameter in procCall.Parameters) {
-                    if (parameter.Value is DMASTAssign) {
-                        DMASTAssign associatedAssign = (DMASTAssign)parameter.Value;
-
-                        if (associatedAssign.Expression is DMASTConstantString) {
-                            associatedAssign.Value.Visit(this);
-                            associatedValues.Add(((DMASTConstantString)associatedAssign.Value).Value, _valueStack.Pop());
-                        } else {
-                            throw new Exception("Associated value must have a string index");
-                        }
-                    } else {
-                        parameter.Visit(this);
-                        values.Add(_valueStack.Pop());
-                    }
-                }
-
-                _valueStack.Push(new DMList(values.ToArray(), associatedValues));
-            } else {
-                throw new Exception("Invalid value");
-            }
-        }
-
         public void VisitNegate(DMASTNegate negate) {
             negate.Expression.Visit(this);
             object value = _valueStack.Pop();
@@ -189,6 +160,35 @@ namespace DMCompiler.DM.Visitors {
             //TODO: Arguments
 
             _valueStack.Push(new DMNewInstance(newPath.Path.Path));
+        }
+
+        public void VisitList(DMASTList list) {
+            List<object> values = new List<object>();
+            Dictionary<object, object> associatedValues = new Dictionary<object, object>();
+
+            if (list.Values != null) {
+                foreach (DMASTCallParameter value in list.Values) {
+                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
+
+                    if (associatedAssign != null) {
+                        associatedAssign.Value.Visit(this);
+
+                        if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
+                            associatedValues.Add(value.Name, _valueStack.Pop());
+                        } else if (associatedAssign.Expression is DMASTConstantResource) {
+                            associatedValues.Add(new DMResource(((DMASTConstantResource)associatedAssign.Expression).Path), _valueStack.Pop());
+                        } else {
+                            throw new Exception("Associated value has an invalid index");
+                        }
+                    } else {
+                        value.Visit(this);
+                        values.Add(_valueStack.Pop());
+                    }
+                }
+
+            }
+
+            _valueStack.Push(new DMList(values.ToArray(), associatedValues));
         }
 
         public void VisitConstantNull(DMASTConstantNull constantNull) {

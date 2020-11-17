@@ -16,6 +16,7 @@ namespace OpenDreamServer.Dream.Objects {
 
         //DreamObject variables that need instantiated at object creation
         public Dictionary<string, (DreamPath, DreamProcArguments)> RuntimeInstantiatedVariables = new Dictionary<string, (DreamPath, DreamProcArguments)>();
+        public List<(string VariableName, List<(DreamValue Index, DreamValue Value)> Values)> RuntimeInstantiatedLists = new List<(string, List<(DreamValue, DreamValue)>)>();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
@@ -37,6 +38,10 @@ namespace OpenDreamServer.Dream.Objects {
 
             foreach (KeyValuePair<string, (DreamPath, DreamProcArguments)> runtimeInstantiatedVariable in parentObjectDefinition.RuntimeInstantiatedVariables) {
                 RuntimeInstantiatedVariables.Add(runtimeInstantiatedVariable.Key, runtimeInstantiatedVariable.Value);
+            }
+
+            foreach ((string, List<(DreamValue, DreamValue)>) runtimeInstantiatedList in parentObjectDefinition.RuntimeInstantiatedLists) {
+                RuntimeInstantiatedLists.Add((runtimeInstantiatedList.Item1, runtimeInstantiatedList.Item2));
             }
         }
 

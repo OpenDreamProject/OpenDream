@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -234,7 +233,6 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("istype", new DreamProc(DreamProcNativeRoot.NativeProc_istype, new List<string>() { "Val", "Type" }));
             DreamObjectTree.RegisterNativeProc("json_decode", new DreamProc(DreamProcNativeRoot.NativeProc_json_decode, new List<string>() { "JSON" }));
             DreamObjectTree.RegisterNativeProc("length", new DreamProc(DreamProcNativeRoot.NativeProc_length, new List<string>() { "E" }));
-            DreamObjectTree.RegisterNativeProc("list", new DreamProc(DreamProcNativeRoot.NativeProc_list, new List<string>()));
             DreamObjectTree.RegisterNativeProc("locate", new DreamProc(DreamProcNativeRoot.NativeProc_locate, new List<string>() { "X", "Y", "Z" }));
             DreamObjectTree.RegisterNativeProc("lowertext", new DreamProc(DreamProcNativeRoot.NativeProc_lowertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("max", new DreamProc(DreamProcNativeRoot.NativeProc_max, new List<string>() { "A" }));

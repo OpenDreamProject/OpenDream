@@ -43,8 +43,14 @@ namespace DMCompiler.DM {
                 char c = GetCurrent();
 
                 switch (c) {
-                    case ' ': Advance(); token = CreateToken(TokenType.Skip, c); break;
-                    case '\t': Advance(); token = CreateToken(TokenType.Skip, c); break;
+                    case ' ':
+                    case '\t': {
+                        Advance();
+                        while (GetCurrent() == ' ' || GetCurrent() == '\t') Advance();
+
+                        token = CreateToken(TokenType.DM_Whitespace, ' ');
+                        break;
+                    }
                     case '(': Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_RightParenthesis, c); break;
                     case '[': Advance(); token = CreateToken(TokenType.DM_LeftBracket, c); break;

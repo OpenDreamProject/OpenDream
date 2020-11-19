@@ -77,6 +77,7 @@
         DM_To,
         DM_Var,
         DM_While,
+        DM_Whitespace,
         DM_Xor,
         DM_XorEquals
     }

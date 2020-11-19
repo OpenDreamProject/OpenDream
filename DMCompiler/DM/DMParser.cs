@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using DMCompiler.Compiler;
 using OpenDreamShared.Dream;
+using DereferenceType = DMCompiler.DM.DMASTCallableDereference.DereferenceType;
+using Dereference = DMCompiler.DM.DMASTCallableDereference.Dereference;
 
 namespace DMCompiler.DM {
     class DMParser : Parser {
@@ -157,17 +159,35 @@ namespace DMCompiler.DM {
             Token leftToken = Current();
 
             if (Check(TokenType.DM_Identifier)) {
-                if (Check(TokenType.DM_Period)) {
-                    List<DMASTCallableIdentifier> dereferences = new List<DMASTCallableIdentifier>();
+                Token dereferenceToken = Current();
+                TokenType[] dereferenceTokenTypes = new TokenType[] {
+                    TokenType.DM_Period,
+                    TokenType.DM_Colon
+                };
 
-                    do {
-                        DMASTCallableIdentifier identifier = Identifier();
-                        if (identifier == null) throw new Exception("Expected an identifier");
+                if (Check(dereferenceTokenTypes)) {
+                    List<Dereference> dereferences = new List<Dereference>();
+                    DMASTCallableIdentifier identifier = Identifier();
 
-                        dereferences.Add(identifier);
-                    } while (Check(TokenType.DM_Period));
+                    if (identifier != null) {
+                        do {
+                            DereferenceType type = (dereferenceToken.Type == TokenType.DM_Period) ? DereferenceType.Direct : DereferenceType.Search;
+                            dereferences.Add(new Dereference(type, identifier.Identifier));
 
-                    return new DMASTCallableDereference(new DMASTCallableIdentifier(leftToken.Text), dereferences.ToArray());
+                            dereferenceToken = Current();
+                            if (Check(dereferenceTokenTypes)) {
+                                identifier = Identifier();
+                                if (identifier == null) throw new Exception("Expected an identifier");
+                            } else {
+                                identifier = null;
+                            }
+                        } while (identifier != null);
+
+                        return new DMASTCallableDereference(new DMASTCallableIdentifier(leftToken.Text), dereferences.ToArray());
+                    } else {
+                        ReuseToken(dereferenceToken);
+                        ReuseToken(leftToken);
+                    }
                 } else { 
                     ReuseToken(leftToken);
                 }
@@ -247,13 +267,12 @@ namespace DMCompiler.DM {
             if (procStatement != null) {
                 List<DMASTProcStatement> procStatements = new List<DMASTProcStatement>() { procStatement };
 
-                while (Delimiter()) {
+                while (procStatement is DMASTProcStatementLabel || Delimiter()) {
                     Whitespace();
                     procStatement = ProcStatement();
 
                     if (procStatement != null) {
                         Whitespace();
-
 
                         procStatements.Add(procStatement);
                     }
@@ -269,12 +288,19 @@ namespace DMCompiler.DM {
             DMASTExpression expression = Expression();
 
             if (expression != null) {
-                return new DMASTProcStatementExpression(expression);
+                if (expression is DMASTCallableIdentifier) {
+                    Check(TokenType.DM_Colon);
+
+                    return new DMASTProcStatementLabel(((DMASTCallableIdentifier)expression).Identifier);
+                } else {
+                    return new DMASTProcStatementExpression(expression);
+                }
             } else {
                 DMASTProcStatement procStatement = ProcVarDeclaration();
                 if (procStatement == null) procStatement = Return();
                 if (procStatement == null) procStatement = Break();
                 if (procStatement == null) procStatement = Continue();
+                if (procStatement == null) procStatement = Goto();
                 if (procStatement == null) procStatement = Del();
                 if (procStatement == null) procStatement = Set();
                 if (procStatement == null) procStatement = Spawn();
@@ -335,6 +361,17 @@ namespace DMCompiler.DM {
         public DMASTProcStatementContinue Continue() {
             if (Check(TokenType.DM_Continue)) {
                 return new DMASTProcStatementContinue();
+            } else {
+                return null;
+            }
+        }
+
+        public DMASTProcStatementGoto Goto() {
+            if (Check(TokenType.DM_Goto)) {
+                Whitespace();
+                DMASTCallableIdentifier label = Identifier();
+
+                return new DMASTProcStatementGoto(label);
             } else {
                 return null;
             }

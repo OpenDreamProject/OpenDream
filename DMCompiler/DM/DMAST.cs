@@ -16,6 +16,8 @@ namespace DMCompiler.DM {
         public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) { throw new NotImplementedException(); }
         public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) { throw new NotImplementedException(); }
+        public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) { throw new NotImplementedException(); }
+        public void VisitProcStatementLabel(DMASTProcStatementLabel statementLabel) { throw new NotImplementedException(); }
         public void VisitProcStatementDel(DMASTProcStatementDel statementDel) { throw new NotImplementedException(); }
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) { throw new NotImplementedException(); }
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) { throw new NotImplementedException(); }
@@ -279,6 +281,30 @@ namespace DMCompiler.DM {
     class DMASTProcStatementContinue : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementContinue(this);
+        }
+    }
+
+    class DMASTProcStatementGoto : DMASTProcStatement {
+        public DMASTCallableIdentifier Label;
+
+        public DMASTProcStatementGoto(DMASTCallableIdentifier label) {
+            Label = label;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementGoto(this);
+        }
+    }
+
+    class DMASTProcStatementLabel : DMASTProcStatement {
+        public string Name;
+
+        public DMASTProcStatementLabel(string name) {
+            Name = name;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementLabel(this);
         }
     }
 
@@ -1066,11 +1092,26 @@ namespace DMCompiler.DM {
     }
 
     class DMASTCallableDereference : DMASTCallable {
-        public DMASTExpression Left;
-        public DMASTCallableIdentifier[] Dereferences;
+        public enum DereferenceType {
+            Direct,
+            Search
+        }
 
-        public DMASTCallableDereference(DMASTExpression left, DMASTCallableIdentifier[] dereferences) {
-            Left = left;
+        public struct Dereference {
+            public DereferenceType Type;
+            public string Property;
+
+            public Dereference(DereferenceType type, string property) {
+                Type = type;
+                Property = property;
+            }
+        }
+
+        public DMASTExpression Expression;
+        public Dereference[] Dereferences;
+
+        public DMASTCallableDereference(DMASTExpression expression, Dereference[] dereferences) {
+            Expression = expression;
             Dereferences = dereferences;
         }
 
@@ -1078,6 +1119,8 @@ namespace DMCompiler.DM {
             visitor.VisitCallableDereference(this);
         }
     }
+
+    
 
     class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {

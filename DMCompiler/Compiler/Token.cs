@@ -29,6 +29,7 @@
         DM_ExclamationEquals,
         DM_Float,
         DM_For,
+        DM_Goto,
         DM_GreaterThan,
         DM_GreaterThanEquals,
         DM_Identifier,

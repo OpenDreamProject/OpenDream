@@ -5,7 +5,7 @@ namespace DMCompiler.Compiler {
     class Parser {
         private Lexer _lexer;
         private Token _currentToken;
-        private Queue<Token> _tokenQueue = new Queue<Token>();
+        private Stack<Token> _tokenStack = new Stack<Token>();
 
         public Parser(Lexer lexer) {
             _lexer = lexer;
@@ -18,8 +18,8 @@ namespace DMCompiler.Compiler {
         }
 
         protected Token Advance() {
-            if (_tokenQueue.Count > 0) {
-                _currentToken = _tokenQueue.Dequeue();
+            if (_tokenStack.Count > 0) {
+                _currentToken = _tokenStack.Pop();
             } else {
                 _currentToken = _lexer.GetNextToken();
             }
@@ -28,7 +28,7 @@ namespace DMCompiler.Compiler {
         }
 
         protected void ReuseToken(Token token) {
-            _tokenQueue.Enqueue(_currentToken);
+            _tokenStack.Push(_currentToken);
             _currentToken = token;
         }
 

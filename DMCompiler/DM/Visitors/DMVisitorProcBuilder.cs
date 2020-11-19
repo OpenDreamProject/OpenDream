@@ -242,10 +242,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCallableDereference(DMASTCallableDereference dereference) {
-            dereference.Left.Visit(this);
+            dereference.Expression.Visit(this);
 
-            foreach (DMASTCallableIdentifier identifier in dereference.Dereferences) {
-                _proc.Dereference(identifier.Identifier);
+            foreach (DMASTCallableDereference.Dereference deref in dereference.Dereferences) {
+                if (deref.Type == DMASTCallableDereference.DereferenceType.Direct) {
+                    _proc.Dereference(deref.Property);
+                } else if (deref.Type == DMASTCallableDereference.DereferenceType.Search) {
+                    throw new NotImplementedException();
+                }
             }
         }
 

@@ -18,6 +18,7 @@ namespace DMCompiler.DM {
             { "for", TokenType.DM_For },
             { "switch", TokenType.DM_Switch },
             { "while", TokenType.DM_While },
+            { "do", TokenType.DM_Do },
             { "var", TokenType.DM_Var },
             { "proc", TokenType.DM_Proc },
             { "new", TokenType.DM_New },
@@ -191,6 +192,10 @@ namespace DMCompiler.DM {
                             Advance();
 
                             token = CreateToken(TokenType.DM_StarEquals, "*=");
+                        } else if (c == '*') {
+                            Advance();
+
+                            token = CreateToken(TokenType.DM_StarStar, "**");
                         } else {
                             token = CreateToken(TokenType.DM_Star, '*');
                         }
@@ -337,8 +342,14 @@ namespace DMCompiler.DM {
                             do {
                                 c = Advance();
 
-                                if (IsAlphanumeric(c) || c == '.') {
+                                if (IsNumeric(c) || c == '.' || c == 'E' || c == 'e') {
                                     if (c == '.' && text.Contains('.')) throw new Exception("Multiple decimals in number");
+                                    if (c == 'E' || c == 'e') {
+                                        text += c;
+                                        c = Advance();
+
+                                        if (!(IsNumeric(c) || c == '-')) throw new Exception("Invalid scientific notation");
+                                    }
 
                                     text += c;
                                 } else {
@@ -448,6 +459,10 @@ namespace DMCompiler.DM {
                                 stringValue += '\t';
                                 validEscapeSequence = true;
                                 break;
+                            } else if (escapeSequence == "icon") {
+                                //TODO: Icon escape sequence
+                                validEscapeSequence = true;
+                                break;
                             } else if (escapeSequence == "Roman" || escapeSequence == "roman") {
                                 //TODO: Roman escape sequence
                                 validEscapeSequence = true;
@@ -464,6 +479,18 @@ namespace DMCompiler.DM {
                                 //TODO: "s" escape sequence
                                 validEscapeSequence = true;
                                 break;
+                            } else if (escapeSequence == "him") {
+                                //TODO: "him" escape sequence
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "his" || escapeSequence == "His") {
+                                //TODO: "his" escape sequence
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "hers" || escapeSequence == "Hers") {
+                                //TODO: "hers" escape sequence
+                                validEscapeSequence = true;
+                                break;
                             } else if (escapeSequence == "ref") {
                                 //TODO: Ref escape sequence
                                 validEscapeSequence = true;
@@ -478,6 +505,14 @@ namespace DMCompiler.DM {
                                 break;
                             } else if (escapeSequence == "red") {
                                 //TODO: red escape sequence
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "blue") {
+                                //TODO: blue escape sequence
+                                validEscapeSequence = true;
+                                break;
+                            } else if (escapeSequence == "green") {
+                                //TODO: green escape sequence
                                 validEscapeSequence = true;
                                 break;
                             } else if (escapeSequence == "...") {

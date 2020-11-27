@@ -603,6 +603,8 @@ namespace OpenDreamServer.Dream.Procs {
 
                 DreamMetaObjectList.DreamLists[listObject].SetValue(index, value);
                 Push(new DreamValue(listObject));
+            } else if (opcode == DreamProcOpcode.Error) {
+                throw new Exception("Reached an error opcode");
             } else if (opcode == DreamProcOpcode.IsInList) {
                 DreamValue listValue = PopDreamValue();
                 DreamValue value = PopDreamValue();

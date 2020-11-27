@@ -22,10 +22,12 @@ namespace DMCompiler.DM {
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) { throw new NotImplementedException(); }
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) { throw new NotImplementedException(); }
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
+        public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) { throw new NotImplementedException(); }
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
         public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) { throw new NotImplementedException(); }
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
+        public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
@@ -37,6 +39,7 @@ namespace DMCompiler.DM {
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
         public void VisitBuildString(DMASTBuildString buildString) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
+        public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -53,8 +56,11 @@ namespace DMCompiler.DM {
         public void VisitMultiply(DMASTMultiply multiply) { throw new NotImplementedException(); }
         public void VisitDivide(DMASTDivide divide) { throw new NotImplementedException(); }
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
+        public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
         public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
+        public void VisitPreIncrement(DMASTPreIncrement preIncrement) { throw new NotImplementedException(); }
+        public void VisitPreDecrement(DMASTPreDecrement preDecrement) { throw new NotImplementedException(); }
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }
         public void VisitPostDecrement(DMASTPostDecrement postDecrement) { throw new NotImplementedException(); }
         public void VisitTernary(DMASTTernary ternary) { throw new NotImplementedException(); }
@@ -62,6 +68,8 @@ namespace DMCompiler.DM {
         public void VisitRemove(DMASTRemove remove) { throw new NotImplementedException(); }
         public void VisitCombine(DMASTCombine combine) { throw new NotImplementedException(); }
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
+        public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) { throw new NotImplementedException(); }
+        public void VisitDivideAssign(DMASTDivideAssign divideAssign) { throw new NotImplementedException(); }
         public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
         public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
@@ -364,39 +372,56 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTProcStatementForList : DMASTProcStatement {
-        public DMASTProcStatementVarDeclaration VariableDeclaration;
+    class DMASTProcStatementFor : DMASTProcStatement {
+        public DMASTProcStatement Initializer;
         public DMASTCallableIdentifier Variable;
-        public DMASTExpression List;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementForList(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) {
-            VariableDeclaration = variableDeclaration;
+        public DMASTProcStatementFor(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTProcBlockInner body) {
+            Initializer = initializer;
             Variable = variable;
-            List = list;
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public virtual void Visit(DMASTVisitor visitor) {
+            throw new NotImplementedException();
+        }
+    }
+
+    class DMASTProcStatementForStandard : DMASTProcStatementFor {
+        public DMASTProcStatement Comparator, Incrementor;
+
+        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTProcStatement comparator, DMASTProcStatement incrementor, DMASTProcBlockInner body) : base(initializer, variable, body) {
+            Comparator = comparator;
+            Incrementor = incrementor;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForStandard(this);
+        }
+    }
+
+    class DMASTProcStatementForList : DMASTProcStatementFor {
+        public DMASTExpression List;
+
+        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, variable, body) {
+            List = list;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementForList(this);
         }
     }
 
-    class DMASTProcStatementForNumberRange : DMASTProcStatement {
-        public DMASTProcStatementVarDeclaration VariableDeclaration;
-        public DMASTCallable Variable;
+    class DMASTProcStatementForNumberRange : DMASTProcStatementFor {
         public DMASTExpression RangeBegin, RangeEnd;
-        public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementForNumberRange(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTProcBlockInner body) {
-            VariableDeclaration = variableDeclaration;
-            Variable = variable;
+        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTProcBlockInner body) : base(initializer, variable, body) {
             RangeBegin = rangeBegin;
             RangeEnd = rangeEnd;
-            Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementForNumberRange(this);
         }
     }
@@ -434,6 +459,20 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTProcStatementDoWhile : DMASTProcStatement {
+        public DMASTExpression Conditional;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementDoWhile(DMASTExpression conditional, DMASTProcBlockInner body) {
+            Conditional = conditional;
+            Body = body;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementDoWhile(this);
+        }
+    }
+
     class DMASTProcStatementSwitch : DMASTProcStatement {
         public class SwitchCase {
             public DMASTProcBlockInner Body;
@@ -447,11 +486,11 @@ namespace DMCompiler.DM {
             public SwitchCaseDefault(DMASTProcBlockInner body) : base(body) { }
         }
 
-        public class SwitchCaseValue : SwitchCase {
-            public DMASTExpressionConstant Value;
+        public class SwitchCaseValues : SwitchCase {
+            public DMASTExpressionConstant[] Values;
 
-            public SwitchCaseValue(DMASTExpressionConstant value, DMASTProcBlockInner body) : base(body) {
-                Value = value;
+            public SwitchCaseValues(DMASTExpressionConstant[] values, DMASTProcBlockInner body) : base(body) {
+                Values = values;
             }
         }
 
@@ -567,6 +606,22 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitList(this);
+        }
+    }
+
+    class DMASTInput : DMASTExpression {
+        public DMASTCallParameter[] Parameters;
+        public DMASTDefinitionParameter.ParameterType Types;
+        public DMASTExpression List;
+
+        public DMASTInput(DMASTCallParameter[] parameters, DMASTDefinitionParameter.ParameterType types, DMASTExpression list) {
+            Parameters = parameters;
+            Types = types;
+            List = list;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitInput(this);
         }
     }
 
@@ -777,6 +832,19 @@ namespace DMCompiler.DM {
         }
     }
 
+    class DMASTPower : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTPower(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPower(this);
+        }
+    }
+
     class DMASTAdd : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -800,6 +868,30 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitSubtract(this);
+        }
+    }
+
+    class DMASTPreIncrement : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTPreIncrement(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPreIncrement(this);
+        }
+    }
+
+    class DMASTPreDecrement : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTPreDecrement(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPreDecrement(this);
         }
     }
 
@@ -890,6 +982,32 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitMask(this);
+        }
+    }
+
+    class DMASTMultiplyAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTMultiplyAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitMultiplyAssign(this);
+        }
+    }
+
+    class DMASTDivideAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTDivideAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitDivideAssign(this);
         }
     }
 
@@ -1056,10 +1174,14 @@ namespace DMCompiler.DM {
         public enum ParameterType {
             Default = 0x0,
             Anything = 0x1,
-            Text = 0x2,
-            Obj = 0x4,
-            Mob = 0x8,
-            Turf = 0x10
+            Null = 0x2,
+            Text = 0x4,
+            Obj = 0x8,
+            Mob = 0x10,
+            Turf = 0x20,
+            Num = 0x40,
+            Message = 0x80,
+            Area = 0x100
         }
 
         public DMASTPath Path;

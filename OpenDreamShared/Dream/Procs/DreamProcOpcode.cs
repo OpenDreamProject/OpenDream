@@ -52,7 +52,7 @@
         SwitchCase = 0x32,
         Mask = 0x33,
         ListAppendAssociated = 0x34,
-        //0x35
+        Error = 0x35,
         IsInList = 0x36,
         PushArguments = 0x37,
         PushDouble = 0x38,

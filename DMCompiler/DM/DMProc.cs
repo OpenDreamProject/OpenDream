@@ -47,6 +47,10 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
+        public void Error() {
+            WriteOpcode(DreamProcOpcode.Error);
+        }
+
         public void GetIdentifier(string identifier) {
             WriteOpcode(DreamProcOpcode.GetIdentifier);
             WriteString(identifier);

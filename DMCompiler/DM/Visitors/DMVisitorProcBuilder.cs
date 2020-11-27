@@ -101,7 +101,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateListEnumerator();
             _proc.CreateScope();
             {
-                if (statementForList.VariableDeclaration != null) statementForList.VariableDeclaration.Visit(this);
+                if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
 
                 string loopLabel = NewLabelName();
                 string typeCheckLabel = NewLabelName();
@@ -113,11 +113,12 @@ namespace DMCompiler.DM.Visitors {
                     _proc.Break();
 
                     _proc.AddLabel(typeCheckLabel);
-                    if (statementForList.VariableDeclaration != null && statementForList.VariableDeclaration.Type != null) {
+                    DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
+                    if (varDeclaration != null && varDeclaration.Type != null) {
                         _proc.GetIdentifier("istype");
                         PushCallParameters(new DMASTCallParameter[] {
                             new DMASTCallParameter(statementForList.Variable),
-                            new DMASTCallParameter(new DMASTConstantPath(statementForList.VariableDeclaration.Type))
+                            new DMASTCallParameter(new DMASTConstantPath(varDeclaration.Type))
                         });
                         _proc.Call();
 
@@ -164,11 +165,13 @@ namespace DMCompiler.DM.Visitors {
             statementSwitch.Value.Visit(this);
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
 
-                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValue) {
+                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues) {
                     string caseLabel = NewLabelName();
 
-                    ((DMASTProcStatementSwitch.SwitchCaseValue)switchCase).Value.Visit(this);
-                    _proc.SwitchCase(caseLabel);
+                    foreach (DMASTExpressionConstant value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
+                        value.Visit(this);
+                        _proc.SwitchCase(caseLabel);
+                    }
 
                     valueCases.Add((caseLabel, switchCase.Body));
                 } else {
@@ -433,6 +436,11 @@ namespace DMCompiler.DM.Visitors {
             }
 
             _proc.BuildString(buildString.Pieces.Length);
+        }
+
+        public void VisitInput(DMASTInput input) {
+            //TODO
+            _proc.Error();
         }
 
         public void VisitList(DMASTList list) {

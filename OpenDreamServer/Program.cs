@@ -140,68 +140,93 @@ namespace OpenDreamServer {
         }
 
         private static InterfaceDescriptor CreateClientInterface() {
-            InterfaceElementDescriptor mapwindowMain = new InterfaceElementDescriptor("mapwindow", InterfaceElementDescriptor.InterfaceElementDescriptorType.Main);
-            mapwindowMain.CoordinateAttributes["pos"] = new Point(0, 0);
-            mapwindowMain.DimensionAttributes["size"] = new Size(640, 480);
-            mapwindowMain.BoolAttributes["is-pane"] = true;
-            InterfaceElementDescriptor map = new InterfaceElementDescriptor("map", InterfaceElementDescriptor.InterfaceElementDescriptorType.Map);
-            map.CoordinateAttributes["pos"] = new Point(0, 0);
-            map.DimensionAttributes["size"] = new Size(640, 480);
-            map.CoordinateAttributes["anchor1"] = new Point(0, 0);
-            map.CoordinateAttributes["anchor2"] = new Point(100, 100);
-            map.BoolAttributes["is-default"] = true;
-            InterfaceWindowDescriptor mapwindow = new InterfaceWindowDescriptor("mapwindow", new List<InterfaceElementDescriptor>() { mapwindowMain, map });
+            InterfaceWindowDescriptor mapwindow = new InterfaceWindowDescriptor("mapwindow", new() {
+                new ElementDescriptorMain("mapwindow") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
 
-            InterfaceElementDescriptor infowindowMain = new InterfaceElementDescriptor("infowindow", InterfaceElementDescriptor.InterfaceElementDescriptorType.Main);
-            infowindowMain.CoordinateAttributes["pos"] = new Point(0, 0);
-            infowindowMain.DimensionAttributes["size"] = new Size(640, 480);
-            infowindowMain.BoolAttributes["is-pane"] = true;
-            InterfaceElementDescriptor info = new InterfaceElementDescriptor("info", InterfaceElementDescriptor.InterfaceElementDescriptorType.Child);
-            info.CoordinateAttributes["pos"] = new Point(0, 30);
-            info.DimensionAttributes["size"] = new Size(640, 445);
-            info.CoordinateAttributes["anchor1"] = new Point(0, 0);
-            info.CoordinateAttributes["anchor2"] = new Point(100, 100);
-            info.StringAttributes["left"] = "statwindow";
-            info.StringAttributes["right"] = "outputwindow";
-            info.BoolAttributes["is-vert"] = false;
-            InterfaceWindowDescriptor infowindow = new InterfaceWindowDescriptor("infowindow", new List<InterfaceElementDescriptor>() { infowindowMain, info });
+                    IsPane = true
+                },
+                new ElementDescriptorMap("map") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
+                    Anchor1 = new Point(0, 0),
+                    Anchor2 = new Point(100, 100),
 
-            InterfaceElementDescriptor outputwindowMain = new InterfaceElementDescriptor("outputwindow", InterfaceElementDescriptor.InterfaceElementDescriptorType.Main);
-            outputwindowMain.CoordinateAttributes["pos"] = new Point(0, 0);
-            outputwindowMain.DimensionAttributes["size"] = new Size(640, 480);
-            outputwindowMain.BoolAttributes["is-pane"] = true;
-            InterfaceElementDescriptor output = new InterfaceElementDescriptor("output", InterfaceElementDescriptor.InterfaceElementDescriptorType.Output);
-            output.CoordinateAttributes["pos"] = new Point(0, 0);
-            output.DimensionAttributes["size"] = new Size(640, 480);
-            output.CoordinateAttributes["anchor1"] = new Point(0, 0);
-            output.CoordinateAttributes["anchor2"] = new Point(100, 100);
-            output.BoolAttributes["is-default"] = true;
-            InterfaceWindowDescriptor outputwindow = new InterfaceWindowDescriptor("outputwindow", new List<InterfaceElementDescriptor>() { outputwindowMain, output });
+                    IsDefault = true
+                }
+            });
 
-            InterfaceElementDescriptor statwindowMain = new InterfaceElementDescriptor("statwindow", InterfaceElementDescriptor.InterfaceElementDescriptorType.Main);
-            statwindowMain.CoordinateAttributes["pos"] = new Point(0, 0);
-            statwindowMain.DimensionAttributes["size"] = new Size(640, 480);
-            statwindowMain.BoolAttributes["is-pane"] = true;
-            InterfaceElementDescriptor stat = new InterfaceElementDescriptor("output", InterfaceElementDescriptor.InterfaceElementDescriptorType.Info);
-            stat.CoordinateAttributes["pos"] = new Point(0, 0);
-            stat.DimensionAttributes["size"] = new Size(640, 480);
-            stat.CoordinateAttributes["anchor1"] = new Point(0, 0);
-            stat.CoordinateAttributes["anchor2"] = new Point(100, 100);
-            stat.BoolAttributes["is-default"] = true;
-            InterfaceWindowDescriptor statwindow = new InterfaceWindowDescriptor("statwindow", new List<InterfaceElementDescriptor>() { statwindowMain, stat });
+            InterfaceWindowDescriptor infowindow = new InterfaceWindowDescriptor("infowindow", new() {
+                new ElementDescriptorMain("infowindow") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
 
-            InterfaceElementDescriptor mainwindowMain = new InterfaceElementDescriptor("mainwindow", InterfaceElementDescriptor.InterfaceElementDescriptorType.Main);
-            mainwindowMain.DimensionAttributes["size"] = new Size(640, 440);
-            mainwindowMain.BoolAttributes["is-default"] = true;
-            InterfaceElementDescriptor split = new InterfaceElementDescriptor("split", InterfaceElementDescriptor.InterfaceElementDescriptorType.Child);
-            split.CoordinateAttributes["pos"] = new Point(3, 0);
-            split.DimensionAttributes["size"] = new Size(634, 417);
-            split.CoordinateAttributes["anchor1"] = new Point(0, 0);
-            split.CoordinateAttributes["anchor2"] = new Point(100, 100);
-            split.StringAttributes["left"] = "mapwindow";
-            split.StringAttributes["right"] = "infowindow";
-            split.BoolAttributes["is-vert"] = true;
-            InterfaceWindowDescriptor mainwindow = new InterfaceWindowDescriptor("mainwindow", new List<InterfaceElementDescriptor>() { mainwindowMain, split });
+                    IsPane = true
+                },
+                new ElementDescriptorChild("info") {
+                    Pos = new Point(0, 30),
+                    Size = new Size(640, 445),
+                    Anchor1 = new Point(0, 0),
+                    Anchor2 = new Point(100, 100),
+
+                    Left = "statwindow",
+                    Right = "outputwindow",
+                    IsVert = false
+                }
+            });
+
+            InterfaceWindowDescriptor outputwindow = new InterfaceWindowDescriptor("outputwindow", new() {
+                new ElementDescriptorMain("outputwindow") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
+
+                    IsPane = true
+                },
+                new ElementDescriptorOutput("output") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
+                    Anchor1 = new Point(0, 0),
+                    Anchor2 = new Point(100, 100),
+
+                    IsDefault = true
+                }
+            });
+
+            InterfaceWindowDescriptor statwindow = new InterfaceWindowDescriptor("statwindow", new() {
+                new ElementDescriptorMain("statwindow") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
+
+                    IsPane = true
+                },
+                new ElementDescriptorInfo("output") {
+                    Pos = new Point(0, 0),
+                    Size = new Size(640, 480),
+                    Anchor1 = new Point(0, 0),
+                    Anchor2 = new Point(100, 100),
+
+                    IsDefault = true
+                }
+            });
+
+            InterfaceWindowDescriptor mainwindow = new InterfaceWindowDescriptor("mainwindow", new() {
+                new ElementDescriptorMain("mainwindow") {
+                    Size = new Size(640, 440),
+
+                    IsDefault = true
+                },
+                new ElementDescriptorChild("split") {
+                    Pos = new Point(3, 0),
+                    Size = new Size(634, 417),
+                    Anchor1 = new Point(0, 0),
+                    Anchor2 = new Point(100, 100),
+
+                    Left = "mapwindow",
+                    Right = "infowindow",
+                    IsVert = true
+                }
+            });
             
             return new InterfaceDescriptor(new List<InterfaceWindowDescriptor>() { mainwindow, mapwindow, infowindow, outputwindow, statwindow });
         }

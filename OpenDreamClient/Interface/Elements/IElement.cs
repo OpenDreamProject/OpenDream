@@ -2,6 +2,6 @@
 
 namespace OpenDreamClient.Interface.Elements {
     interface IElement {
-        public InterfaceElementDescriptor ElementDescriptor { get; set; }
+        public ElementDescriptor ElementDescriptor { get; set; }
     }
 }

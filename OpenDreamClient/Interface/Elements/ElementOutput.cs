@@ -5,15 +5,15 @@ using System.Windows.Media;
 namespace OpenDreamClient.Interface.Elements {
     class ElementOutput : Border, IElement {
         public TextBox TextBox = new TextBox();
-        public InterfaceElementDescriptor ElementDescriptor {
+        public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
-                _elementDescriptor = value;
+                _elementDescriptor = (ElementDescriptorOutput)value;
                 UpdateVisuals();
             }
         }
 
-        private InterfaceElementDescriptor _elementDescriptor;
+        private ElementDescriptorOutput _elementDescriptor;
 
         public ElementOutput() {
             this.BorderBrush = Brushes.Black;

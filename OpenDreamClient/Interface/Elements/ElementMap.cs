@@ -10,15 +10,15 @@ using OpenDreamShared.Net.Packets;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementMap : Grid, IElement {
-        public InterfaceElementDescriptor ElementDescriptor {
+        public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
-                _elementDescriptor = value;
+                _elementDescriptor = (ElementDescriptorMap)value;
                 UpdateVisuals();
             }
         }
 
-        private InterfaceElementDescriptor _elementDescriptor;
+        private ElementDescriptorMap _elementDescriptor;
         private DreamRenderer _dreamRenderer;
 
         public ElementMap() {

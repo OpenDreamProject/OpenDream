@@ -8,12 +8,12 @@ using System.Windows.Controls;
 namespace OpenDreamClient.Interface {
     static class InterfaceHelpers {
         public static ElementWindow CreateWindowFromDescriptor(InterfaceWindowDescriptor windowDescriptor) {
-            InterfaceElementDescriptor mainDescriptor = windowDescriptor.MainElementDescriptor;
+            ElementDescriptorMain mainDescriptor = windowDescriptor.MainElementDescriptor;
             ElementWindow elementWindow = new ElementWindow();
             List<IElement> elements = new List<IElement>();
 
             elementWindow.ElementDescriptor = mainDescriptor;
-            foreach (InterfaceElementDescriptor elementDescriptor in windowDescriptor.ElementDescriptors) {
+            foreach (ElementDescriptor elementDescriptor in windowDescriptor.ElementDescriptors) {
                 if (elementDescriptor != mainDescriptor) {
                     try {
                         IElement element = CreateElementFromDescriptor(elementDescriptor);
@@ -26,6 +26,7 @@ namespace OpenDreamClient.Interface {
                 }
             }
 
+            elementWindow.ChildElements = elements.ToArray();
             elementWindow.Margin = new Thickness(0, 0, 0, 0);
             elementWindow.HorizontalAlignment = HorizontalAlignment.Stretch;
             elementWindow.VerticalAlignment = VerticalAlignment.Stretch;
@@ -34,18 +35,17 @@ namespace OpenDreamClient.Interface {
             return elementWindow;
         }
 
-        public static IElement CreateElementFromDescriptor(InterfaceElementDescriptor elementDescriptor) {
+        public static IElement CreateElementFromDescriptor(ElementDescriptor elementDescriptor) {
             IElement element;
 
-            switch (elementDescriptor.Type) {
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Child: element = new ElementChild(); break;
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Input: element = new ElementInput(); break;
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Button: element = new ElementButton(); break;
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Output: element = new ElementOutput(); break;
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Info: element = new ElementInfo(); break;
-                case InterfaceElementDescriptor.InterfaceElementDescriptorType.Map: element = new ElementMap(); break;
-                default: throw new Exception("Element descriptor had an invalid type (" + elementDescriptor.Type + ")");
-            }
+            if (elementDescriptor is ElementDescriptorChild) element = new ElementChild();
+            else if (elementDescriptor is ElementDescriptorInput) element = new ElementInput();
+            else if (elementDescriptor is ElementDescriptorButton) element = new ElementButton();
+            else if (elementDescriptor is ElementDescriptorOutput) element = new ElementOutput();
+            else if (elementDescriptor is ElementDescriptorInfo) element = new ElementInfo();
+            else if (elementDescriptor is ElementDescriptorMap) element = new ElementMap();
+            else if (elementDescriptor is ElementDescriptorBrowser) element = new ElementBrowser();
+            else throw new Exception("Invalid descriptor");
 
             SetSharedAttributes(element, elementDescriptor);
             element.ElementDescriptor = elementDescriptor;
@@ -53,42 +53,46 @@ namespace OpenDreamClient.Interface {
             return element;
         }
 
-        private static void SetSharedAttributes(IElement element, InterfaceElementDescriptor elementDescriptor) {
+        private static void SetSharedAttributes(IElement element, ElementDescriptor elementDescriptor) {
             UIElement uiElement = (UIElement)element;
             FrameworkElement frameworkElement = uiElement as FrameworkElement;
+            System.Drawing.Point pos = elementDescriptor.Pos.GetValueOrDefault();
 
-            Canvas.SetLeft(uiElement, elementDescriptor.Pos.X);
-            Canvas.SetTop(uiElement, elementDescriptor.Pos.Y);
+            Canvas.SetLeft(uiElement, pos.X);
+            Canvas.SetTop(uiElement, pos.Y);
             if (frameworkElement != null) {
-                frameworkElement.Width = elementDescriptor.Size.Width;
-                frameworkElement.Height = elementDescriptor.Size.Height;
+                System.Drawing.Size size = elementDescriptor.Size.GetValueOrDefault();
+
+                frameworkElement.Width = size.Width;
+                frameworkElement.Height = size.Height;
             }
         }
 
         private static void UpdateAnchors(ElementWindow elementWindow, List<IElement> elements) {
-            InterfaceElementDescriptor mainDescriptor = elementWindow.ElementDescriptor;
+            ElementDescriptor mainDescriptor = elementWindow.ElementDescriptor;
 
             foreach (IElement element in elements) {
-                InterfaceElementDescriptor elementDescriptor = element.ElementDescriptor;
+                ElementDescriptor elementDescriptor = element.ElementDescriptor;
                 FrameworkElement control = (FrameworkElement)element;
 
-                if (elementDescriptor.CoordinateAttributes.ContainsKey("anchor1")) {
-                    System.Drawing.Point anchor1 = elementDescriptor.CoordinateAttributes["anchor1"];
+                if (elementDescriptor.Anchor1.HasValue) {
+                    System.Drawing.Point elementPos = elementDescriptor.Pos.GetValueOrDefault();
+                    System.Drawing.Size windowSize = mainDescriptor.Size.GetValueOrDefault();
 
-                    double offset1X = elementDescriptor.Pos.X - (mainDescriptor.Size.Width * anchor1.X / 100);
-                    double offset1Y = elementDescriptor.Pos.Y - (mainDescriptor.Size.Height * anchor1.Y / 100);
-                    double left = (elementWindow.ActualWidth * anchor1.X / 100) + offset1X;
-                    double top = (elementWindow.ActualHeight * anchor1.Y / 100) + offset1Y;
+                    double offset1X = elementPos.X - (windowSize.Width * elementDescriptor.Anchor1.Value.X / 100);
+                    double offset1Y = elementPos.Y - (windowSize.Height * elementDescriptor.Anchor1.Value.Y / 100);
+                    double left = (elementWindow.ActualWidth * elementDescriptor.Anchor1.Value.X / 100) + offset1X;
+                    double top = (elementWindow.ActualHeight * elementDescriptor.Anchor1.Value.Y / 100) + offset1Y;
                     Canvas.SetLeft(control, left);
                     Canvas.SetTop(control, top);
 
-                    if (elementDescriptor.CoordinateAttributes.ContainsKey("anchor2")) {
-                        System.Drawing.Point anchor2 = elementDescriptor.CoordinateAttributes["anchor2"];
+                    if (elementDescriptor.Anchor2.HasValue) {
+                        System.Drawing.Size elementSize = elementDescriptor.Size.GetValueOrDefault();
 
-                        double offset2X = (elementDescriptor.Pos.X + elementDescriptor.Size.Width) - (mainDescriptor.Size.Width * anchor2.X / 100);
-                        double offset2Y = (elementDescriptor.Pos.Y + elementDescriptor.Size.Height) - (mainDescriptor.Size.Height * anchor2.Y / 100);
-                        control.Width = (elementWindow.ActualWidth * anchor2.X / 100) + offset2X - left;
-                        control.Height = (elementWindow.ActualHeight * anchor2.Y / 100) + offset2Y - top;
+                        double offset2X = (elementPos.X + elementSize.Width) - (windowSize.Width * elementDescriptor.Anchor2.Value.X / 100);
+                        double offset2Y = (elementPos.Y + elementSize.Height) - (windowSize.Height * elementDescriptor.Anchor2.Value.Y / 100);
+                        control.Width = (elementWindow.ActualWidth * elementDescriptor.Anchor2.Value.X / 100) + offset2X - left;
+                        control.Height = (elementWindow.ActualHeight * elementDescriptor.Anchor2.Value.Y / 100) + offset2Y - top;
                     }
                 }
             }

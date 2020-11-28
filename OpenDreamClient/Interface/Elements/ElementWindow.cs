@@ -2,15 +2,16 @@
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementWindow : System.Windows.Controls.Canvas, IElement {
-        public InterfaceElementDescriptor ElementDescriptor {
+        public IElement[] ChildElements;
+        public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
-                _elementDescriptor = value;
+                _elementDescriptor = (ElementDescriptorMain)value;
                 UpdateVisuals();
             }
         }
 
-        private InterfaceElementDescriptor _elementDescriptor;
+        private ElementDescriptorMain _elementDescriptor;
 
         public ElementWindow() {
             

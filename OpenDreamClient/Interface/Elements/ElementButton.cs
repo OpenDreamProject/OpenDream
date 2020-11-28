@@ -3,20 +3,18 @@ using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementButton : Button, IElement {
-        public InterfaceElementDescriptor ElementDescriptor {
+        public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
-                _elementDescriptor = value;
+                _elementDescriptor = (ElementDescriptorButton)value;
                 UpdateVisuals();
             }
         }
 
-        private InterfaceElementDescriptor _elementDescriptor;
+        private ElementDescriptorButton _elementDescriptor;
 
         private void UpdateVisuals() {
-            if (_elementDescriptor.StringAttributes.ContainsKey("text")) {
-                this.Content = _elementDescriptor.StringAttributes["text"];
-            }
+            this.Content = _elementDescriptor.Text;
         }
     }
 }

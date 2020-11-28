@@ -4,7 +4,7 @@ namespace OpenDreamShared.Net.Packets {
     class PacketOutput : IPacket {
         public enum PacketOutputType {
             String = 0x0,
-            BrowseObject = 0x1,
+            Browse = 0x1,
             Sound = 0x2
         }
 
@@ -17,6 +17,14 @@ namespace OpenDreamShared.Net.Packets {
 
             public OutputString(string value) {
                 Value = value;
+            }
+        }
+
+        public struct OutputBrowse : IPacketOutputValue {
+            public string HtmlSource;
+
+            public OutputBrowse(string htmlSource) {
+                HtmlSource = htmlSource;
             }
         }
 
@@ -43,6 +51,11 @@ namespace OpenDreamShared.Net.Packets {
             Value = new OutputString(value);
         }
 
+        public PacketOutput(OutputBrowse browse) {
+            ValueType = PacketOutputType.Browse;
+            Value = browse;
+        }
+
         public PacketOutput(OutputSound sound) {
             ValueType = PacketOutputType.Sound;
             Value = sound;
@@ -53,6 +66,8 @@ namespace OpenDreamShared.Net.Packets {
 
             if (ValueType == PacketOutputType.String) {
                 Value = new OutputString(stream.ReadString());
+            } else if (ValueType == PacketOutputType.Browse) {
+                Value = new OutputBrowse(stream.ReadString());
             } else if (ValueType == PacketOutputType.Sound) {
                 OutputSound soundValue = new OutputSound();
                 bool hasFile = stream.ReadBool();
@@ -77,6 +92,10 @@ namespace OpenDreamShared.Net.Packets {
                 OutputString stringValue = (OutputString)Value;
 
                 stream.WriteString(stringValue.Value);
+            } else if (ValueType == PacketOutputType.Browse) {
+                OutputBrowse browseValue = (OutputBrowse)Value;
+
+                stream.WriteString(browseValue.HtmlSource);
             } else if (ValueType == PacketOutputType.Sound) {
                 OutputSound soundValue = (OutputSound)Value;
 

@@ -5,15 +5,32 @@ using System.Drawing;
 
 namespace OpenDreamShared.Net.Packets {
     class PacketInterfaceData : IPacket {
-		enum PacketInterfaceDataAttributeType {
-			String = 0x0,
-			Boolean = 0x1,
-			Integer = 0x2,
-			Coordinate = 0x3,
-			Dimension = 0x4
+		enum AttributeType {
+			End = 0x0,
+			Pos = 0x1,
+			Size = 0x2,
+			Anchor1 = 0x3,
+			Anchor2 = 0x4,
+			IsDefault = 0x5,
+			IsPane = 0x6,
+			Left = 0x7,
+			Right = 0x8,
+			IsVert = 0x9,
+			Text = 0xA
 		}
 
-        public PacketID PacketID => PacketID.InterfaceData;
+		enum DescriptorType {
+			Main = 0x0,
+			Child = 0x1,
+			Input = 0x2,
+			Button = 0x3,
+			Output = 0x4,
+			Info = 0x5,
+			Map = 0x6,
+			Browser = 0x7
+		}
+
+		public PacketID PacketID => PacketID.InterfaceData;
 		public InterfaceDescriptor InterfaceDescriptor;
 
         public PacketInterfaceData() { }
@@ -28,42 +45,52 @@ namespace OpenDreamShared.Net.Packets {
 			int windowCount = stream.ReadByte();
 			for (int i = 0; i < windowCount; i++) {
 				string windowName = stream.ReadString();
-				List<InterfaceElementDescriptor> elementDescriptors = new List<InterfaceElementDescriptor>();
+				List<ElementDescriptor> elementDescriptors = new List<ElementDescriptor>();
 
 				int elementCount = stream.ReadByte();
 				for (int j = 0; j < elementCount; j++) {
-					InterfaceElementDescriptor elementDescriptor = new InterfaceElementDescriptor(stream.ReadString(), (InterfaceElementDescriptor.InterfaceElementDescriptorType)stream.ReadByte());
+					string elementName = stream.ReadString();
+					DescriptorType elementType = (DescriptorType)stream.ReadByte();
+					ElementDescriptor elementDescriptor;
+
+					switch (elementType) {
+						case DescriptorType.Main: elementDescriptor = new ElementDescriptorMain(elementName); break;
+						case DescriptorType.Input: elementDescriptor = new ElementDescriptorInput(elementName); break;
+						case DescriptorType.Button: elementDescriptor = new ElementDescriptorButton(elementName); break;
+						case DescriptorType.Child: elementDescriptor = new ElementDescriptorChild(elementName); break;
+						case DescriptorType.Output: elementDescriptor = new ElementDescriptorOutput(elementName); break;
+						case DescriptorType.Info: elementDescriptor = new ElementDescriptorInfo(elementName); break;
+						case DescriptorType.Map: elementDescriptor = new ElementDescriptorMap(elementName); break;
+						case DescriptorType.Browser: elementDescriptor = new ElementDescriptorBrowser(elementName); break;
+						default: throw new Exception("Invalid descriptor type '" + elementType + "'");
+					}
+
 					elementDescriptors.Add(elementDescriptor);
 
-					int attributeCount = stream.ReadByte();
-					for (int k = 0; k < attributeCount; k++) {
-						string attributeName = stream.ReadString();
+					AttributeType valueType;
+					do {
+						valueType = (AttributeType)stream.ReadByte();
 
-						PacketInterfaceDataAttributeType valueType = (PacketInterfaceDataAttributeType)stream.ReadByte();
-						if (valueType == PacketInterfaceDataAttributeType.String) {
-							elementDescriptor.StringAttributes.Add(attributeName, stream.ReadString());
-						} else if (valueType == PacketInterfaceDataAttributeType.Boolean) {
-							elementDescriptor.BoolAttributes.Add(attributeName, stream.ReadBool());
-						} else if (valueType == PacketInterfaceDataAttributeType.Integer) {
-							elementDescriptor.IntegerAttributes.Add(attributeName, stream.ReadUInt16());
-						} else if (valueType == PacketInterfaceDataAttributeType.Coordinate) {
-							System.Drawing.Point coordinate = new System.Drawing.Point(stream.ReadUInt16(), stream.ReadUInt16());
+						switch (valueType) {
+							case AttributeType.Pos: elementDescriptor.Pos = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
+							case AttributeType.Size: elementDescriptor.Size = new Size(stream.ReadUInt16(), stream.ReadUInt16()); break;
+							case AttributeType.Anchor1: elementDescriptor.Anchor1 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
+							case AttributeType.Anchor2: elementDescriptor.Anchor2 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
+							case AttributeType.IsDefault: elementDescriptor.IsDefault = stream.ReadBool(); break;
+							case AttributeType.IsPane: ((ElementDescriptorMain)elementDescriptor).IsPane = stream.ReadBool(); break;
+							case AttributeType.Left: ((ElementDescriptorChild)elementDescriptor).Left = stream.ReadString(); break;
+							case AttributeType.Right: ((ElementDescriptorChild)elementDescriptor).Right = stream.ReadString(); break;
+							case AttributeType.IsVert: ((ElementDescriptorChild)elementDescriptor).IsVert = stream.ReadBool(); break;
+							case AttributeType.Text:
+								if (elementDescriptor is ElementDescriptorButton)
+									((ElementDescriptorButton)elementDescriptor).Text = stream.ReadString();
+								break;
 
-							elementDescriptor.CoordinateAttributes.Add(attributeName, coordinate);
-							if (attributeName == "pos") {
-								elementDescriptor.Pos = coordinate;
-							}
-						} else if (valueType == PacketInterfaceDataAttributeType.Dimension) {
-							System.Drawing.Size dimensions = new System.Drawing.Size(stream.ReadUInt16(), stream.ReadUInt16());
 
-							elementDescriptor.DimensionAttributes.Add(attributeName, dimensions);
-							if (attributeName == "size") {
-								elementDescriptor.Size = dimensions;
-							}
-						} else {
-							throw new Exception("Invalid attribute value type '" + valueType + "'");
+							case AttributeType.End: break;
+							default: throw new Exception("Invalid attribute type '" + valueType + "'");
 						}
-					}
+					} while (valueType != AttributeType.End);
 				}
 
 				InterfaceWindowDescriptor windowDescriptor = new InterfaceWindowDescriptor(windowName, elementDescriptors);
@@ -80,46 +107,83 @@ namespace OpenDreamShared.Net.Packets {
 				stream.WriteString(windowDescriptor.Name);
 
 				stream.WriteByte((byte)windowDescriptor.ElementDescriptors.Count);
-				foreach (InterfaceElementDescriptor elementDescriptor in windowDescriptor.ElementDescriptors) {
+				foreach (ElementDescriptor elementDescriptor in windowDescriptor.ElementDescriptors) {
 					stream.WriteString(elementDescriptor.Name);
-					stream.WriteByte((byte)elementDescriptor.Type);
-					stream.WriteByte((byte)(elementDescriptor.StringAttributes.Count
-											+ elementDescriptor.BoolAttributes.Count
-											+ elementDescriptor.IntegerAttributes.Count
-											+ elementDescriptor.CoordinateAttributes.Count
-											+ elementDescriptor.DimensionAttributes.Count));
 
-					foreach (KeyValuePair<string, string> attribute in elementDescriptor.StringAttributes) {
-						stream.WriteString(attribute.Key);
-						stream.WriteByte((byte)PacketInterfaceDataAttributeType.String);
-						stream.WriteString(attribute.Value);
+					if (elementDescriptor is ElementDescriptorMain) stream.WriteByte((byte)DescriptorType.Main);
+					else if (elementDescriptor is ElementDescriptorChild) stream.WriteByte((byte)DescriptorType.Child);
+					else if (elementDescriptor is ElementDescriptorInput) stream.WriteByte((byte)DescriptorType.Input);
+					else if (elementDescriptor is ElementDescriptorButton) stream.WriteByte((byte)DescriptorType.Button);
+					else if (elementDescriptor is ElementDescriptorOutput) stream.WriteByte((byte)DescriptorType.Output);
+					else if (elementDescriptor is ElementDescriptorInfo) stream.WriteByte((byte)DescriptorType.Info);
+					else if (elementDescriptor is ElementDescriptorMap) stream.WriteByte((byte)DescriptorType.Map);
+					else if (elementDescriptor is ElementDescriptorBrowser) stream.WriteByte((byte)DescriptorType.Browser);
+					else throw new Exception("Invalid descriptor");
+
+					if (elementDescriptor.Pos.HasValue) {
+						stream.WriteByte((byte)AttributeType.Pos);
+						stream.WriteUInt16((UInt16)elementDescriptor.Pos.Value.X);
+						stream.WriteUInt16((UInt16)elementDescriptor.Pos.Value.Y);
+                    }
+					
+					if (elementDescriptor.Size.HasValue) {
+						stream.WriteByte((byte)AttributeType.Size);
+						stream.WriteUInt16((UInt16)elementDescriptor.Size.Value.Width);
+						stream.WriteUInt16((UInt16)elementDescriptor.Size.Value.Height);
+                    }
+
+					if (elementDescriptor.Anchor1.HasValue) {
+						stream.WriteByte((byte)AttributeType.Anchor1);
+						stream.WriteUInt16((UInt16)elementDescriptor.Anchor1.Value.X);
+						stream.WriteUInt16((UInt16)elementDescriptor.Anchor1.Value.Y);
+					}
+					
+					if (elementDescriptor.Anchor2.HasValue) {
+						stream.WriteByte((byte)AttributeType.Anchor2);
+						stream.WriteUInt16((UInt16)elementDescriptor.Anchor2.Value.X);
+						stream.WriteUInt16((UInt16)elementDescriptor.Anchor2.Value.Y);
 					}
 
-					foreach (KeyValuePair<string, bool> attribute in elementDescriptor.BoolAttributes) {
-						stream.WriteString(attribute.Key);
-						stream.WriteByte((byte)PacketInterfaceDataAttributeType.Boolean);
-						stream.WriteBool(attribute.Value);
+					if (elementDescriptor.IsDefault != default) {
+						stream.WriteByte((byte)AttributeType.IsDefault);
+						stream.WriteBool(elementDescriptor.IsDefault);
+                    }
+
+					ElementDescriptorMain elementMainDescriptor = elementDescriptor as ElementDescriptorMain;
+					if (elementMainDescriptor != null) {
+						if (elementMainDescriptor.IsPane != default) {
+							stream.WriteByte((byte)AttributeType.IsPane);
+							stream.WriteBool(elementMainDescriptor.IsPane);
+						}
+                    }
+
+					ElementDescriptorChild elementChildDescriptor = elementDescriptor as ElementDescriptorChild;
+					if (elementChildDescriptor != null) {
+						if (elementChildDescriptor.Left != null) {
+							stream.WriteByte((byte)AttributeType.Left);
+							stream.WriteString(elementChildDescriptor.Left);
+						}
+
+						if (elementChildDescriptor.Right != null) {
+							stream.WriteByte((byte)AttributeType.Right);
+							stream.WriteString(elementChildDescriptor.Right);
+						}
+
+						if (elementChildDescriptor.IsVert != default) {
+							stream.WriteByte((byte)AttributeType.IsVert);
+							stream.WriteBool(elementChildDescriptor.IsVert);
+						}
 					}
 
-					foreach (KeyValuePair<string, int> attribute in elementDescriptor.IntegerAttributes) {
-						stream.WriteString(attribute.Key);
-						stream.WriteByte((byte)PacketInterfaceDataAttributeType.Integer);
-						stream.WriteUInt16((UInt16)attribute.Value);
+					ElementDescriptorButton elementButtonDescriptor = elementDescriptor as ElementDescriptorButton;
+					if (elementButtonDescriptor != null) {
+						if (elementButtonDescriptor.Text != null) {
+							stream.WriteByte((byte)AttributeType.Text);
+							stream.WriteString(elementButtonDescriptor.Text);
+						}
 					}
 
-					foreach (KeyValuePair<string, Point> attribute in elementDescriptor.CoordinateAttributes) {
-						stream.WriteString(attribute.Key);
-						stream.WriteByte((byte)PacketInterfaceDataAttributeType.Coordinate);
-						stream.WriteUInt16((UInt16)attribute.Value.X);
-						stream.WriteUInt16((UInt16)attribute.Value.Y);
-					}
-
-					foreach (KeyValuePair<string, Size> attribute in elementDescriptor.DimensionAttributes) {
-						stream.WriteString(attribute.Key);
-						stream.WriteByte((byte)PacketInterfaceDataAttributeType.Dimension);
-						stream.WriteUInt16((UInt16)attribute.Value.Width);
-						stream.WriteUInt16((UInt16)attribute.Value.Height);
-					}
+					stream.WriteByte((byte)AttributeType.End);
 				}
 			}
 		}

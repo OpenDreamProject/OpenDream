@@ -93,6 +93,9 @@ namespace OpenDreamClient {
 
                 if (GameWindow.DefaultOutput != null) GameWindow.DefaultOutput.TextBox.AppendText(stringValue.Value + Environment.NewLine);
                 else Console.WriteLine(stringValue.Value);
+            } else if (pOutput.ValueType == PacketOutput.PacketOutputType.Browse) {
+                BrowseWindow popup = new BrowseWindow(((PacketOutput.OutputBrowse)pOutput.Value).HtmlSource);
+                popup.Show();
             } else if (pOutput.ValueType == PacketOutput.PacketOutputType.Sound) {
                 PacketOutput.OutputSound soundValue = (PacketOutput.OutputSound)pOutput.Value;
 

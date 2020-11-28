@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 
 namespace OpenDreamShared.Interface {
     class InterfaceDescriptor {
@@ -9,9 +10,9 @@ namespace OpenDreamShared.Interface {
             WindowDescriptors = windowDescriptors;
 
             foreach (InterfaceWindowDescriptor windowDescriptor in WindowDescriptors) {
-                InterfaceElementDescriptor mainElementDescriptor = windowDescriptor.MainElementDescriptor;
+                ElementDescriptor mainElementDescriptor = windowDescriptor.MainElementDescriptor;
 
-                if (mainElementDescriptor.BoolAttributes.ContainsKey("is-default") && mainElementDescriptor.BoolAttributes["is-default"] == true) {
+                if (mainElementDescriptor.IsDefault) {
                     DefaultWindowDescriptor = windowDescriptor;
                 }
             }
@@ -28,46 +29,73 @@ namespace OpenDreamShared.Interface {
 
     class InterfaceWindowDescriptor {
         public string Name;
-        public List<InterfaceElementDescriptor> ElementDescriptors;
-        public InterfaceElementDescriptor MainElementDescriptor { get; private set; } = null;
+        public List<ElementDescriptor> ElementDescriptors;
+        public ElementDescriptorMain MainElementDescriptor { get; private set; } = null;
 
-        public InterfaceWindowDescriptor(string name, List<InterfaceElementDescriptor> elementDescriptors) {
+        public InterfaceWindowDescriptor(string name, List<ElementDescriptor> elementDescriptors) {
             Name = name;
             ElementDescriptors = elementDescriptors;
 
-            foreach (InterfaceElementDescriptor elementDescriptor in ElementDescriptors) {
-                if (elementDescriptor.Type == InterfaceElementDescriptor.InterfaceElementDescriptorType.Main) {
-                    MainElementDescriptor = elementDescriptor;
+            foreach (ElementDescriptor elementDescriptor in ElementDescriptors) {
+                if (elementDescriptor is ElementDescriptorMain) {
+                    MainElementDescriptor = (ElementDescriptorMain)elementDescriptor;
                 }
             }
         }
     }
 
-    class InterfaceElementDescriptor {
-        public enum InterfaceElementDescriptorType {
-            Main = 0,
-            Child = 1,
-            Input = 2,
-            Button = 3,
-            Output = 4,
-            Info = 5,
-            Map = 6,
-            Browser = 7
-        }
-
+    class ElementDescriptor {
         public string Name;
-        public InterfaceElementDescriptorType Type;
-        public Dictionary<string, string> StringAttributes = new Dictionary<string, string>();
-        public Dictionary<string, bool> BoolAttributes = new Dictionary<string, bool>();
-        public Dictionary<string, int> IntegerAttributes = new Dictionary<string, int>();
-        public Dictionary<string, System.Drawing.Point> CoordinateAttributes = new Dictionary<string, System.Drawing.Point>();
-        public Dictionary<string, System.Drawing.Size> DimensionAttributes = new Dictionary<string, System.Drawing.Size>();
-        public System.Drawing.Point Pos = new System.Drawing.Point(0, 0);
-        public System.Drawing.Size Size = new System.Drawing.Size(0, 0);
 
-        public InterfaceElementDescriptor(string name, InterfaceElementDescriptorType type) {
+        public Point? Pos = null;
+        public Size? Size = null;
+        public Point? Anchor1 = null;
+        public Point? Anchor2 = null;
+
+        public bool IsDefault = false;
+
+        public ElementDescriptor(string name) {
             Name = name;
-            Type = type;
         }
+    }
+
+    class ElementDescriptorMain : ElementDescriptor {
+        public bool IsPane = false;
+
+        public ElementDescriptorMain(string name) : base(name) { }
+    }
+
+    class ElementDescriptorChild : ElementDescriptor {
+        public string Left = null;
+        public string Right = null;
+        public bool IsVert = false;
+
+        public ElementDescriptorChild(string name) : base(name) { }
+    }
+
+    class ElementDescriptorInput : ElementDescriptor {
+        public ElementDescriptorInput(string name) : base(name) { }
+    }
+
+    class ElementDescriptorButton : ElementDescriptor {
+        public string Text = null;
+
+        public ElementDescriptorButton(string name) : base(name) { }
+    }
+
+    class ElementDescriptorOutput : ElementDescriptor {
+        public ElementDescriptorOutput(string name) : base(name) { }
+    }
+
+    class ElementDescriptorInfo : ElementDescriptor {
+        public ElementDescriptorInfo(string name) : base(name) { }
+    }
+
+    class ElementDescriptorMap : ElementDescriptor {
+        public ElementDescriptorMap(string name) : base(name) { }
+    }
+    
+    class ElementDescriptorBrowser : ElementDescriptor {
+        public ElementDescriptorBrowser(string name) : base(name) { }
     }
 }

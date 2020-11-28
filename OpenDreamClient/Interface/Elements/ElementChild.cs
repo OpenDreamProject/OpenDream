@@ -5,16 +5,15 @@ using System.Windows.Controls;
 namespace OpenDreamClient.Interface.Elements {
     class ElementChild : Grid, IElement {
         public ElementWindow LeftElement, RightElement;
-        public InterfaceElementDescriptor ElementDescriptor {
+        public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
-                _elementDescriptor = value;
+                _elementDescriptor = (ElementDescriptorChild)value;
                 UpdateVisuals();
             }
         }
 
-        private InterfaceElementDescriptor _elementDescriptor;
-        private bool _isVertical;
+        private ElementDescriptorChild _elementDescriptor;
 
         private void UpdateGrid() {
             this.ColumnDefinitions.Clear();
@@ -25,7 +24,7 @@ namespace OpenDreamClient.Interface.Elements {
             splitter.VerticalAlignment = VerticalAlignment.Stretch;
             this.Children.Add(splitter);
 
-            if (_isVertical) {
+            if (_elementDescriptor.IsVert) {
                 ColumnDefinition leftColumnDef = new ColumnDefinition();
                 leftColumnDef.Width = new GridLength(1, GridUnitType.Star);
                 this.ColumnDefinitions.Add(leftColumnDef);
@@ -64,22 +63,18 @@ namespace OpenDreamClient.Interface.Elements {
             this.Children.Remove(LeftElement);
             this.Children.Remove(RightElement);
 
-            if (_elementDescriptor.StringAttributes.ContainsKey("left")) {
-                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.StringAttributes["left"]);
+            if (_elementDescriptor.Left != null) {
+                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.Left);
                 LeftElement = InterfaceHelpers.CreateWindowFromDescriptor(windowDescriptor);
 
                 this.Children.Add(LeftElement);
             }
 
-            if (_elementDescriptor.StringAttributes.ContainsKey("right")) {
-                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.StringAttributes["right"]);
+            if (_elementDescriptor.Right != null) {
+                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.Right);
                 RightElement = InterfaceHelpers.CreateWindowFromDescriptor(windowDescriptor);
 
                 this.Children.Add(RightElement);
-            }
-
-            if (_elementDescriptor.BoolAttributes.ContainsKey("is-vert")) {
-                _isVertical = _elementDescriptor.BoolAttributes["is-vert"];
             }
 
             UpdateGrid();

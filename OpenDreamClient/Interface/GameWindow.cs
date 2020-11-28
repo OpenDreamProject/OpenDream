@@ -27,8 +27,8 @@ namespace OpenDreamClient.Interface {
             InterfaceDescriptor = interfaceDescriptor;
 
             ElementWindow defaultWindow = InterfaceHelpers.CreateWindowFromDescriptor(InterfaceDescriptor.DefaultWindowDescriptor);
-            this.Width = defaultWindow.ElementDescriptor.Size.Width;
-            this.Height = defaultWindow.ElementDescriptor.Size.Height;
+            this.Width = defaultWindow.ElementDescriptor.Size.Value.Width;
+            this.Height = defaultWindow.ElementDescriptor.Size.Value.Height;
             this.Content = defaultWindow;
             defaultWindow.Focus();
         }

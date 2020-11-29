@@ -60,7 +60,8 @@
         CreateListEnumerator = 0x3A,
         EnumerateList = 0x3B,
         DestroyListEnumerator = 0x3C,
-        Browse = 0x3D
+        Browse = 0x3D,
+        BrowseResource = 0x3E
     }
 
     enum DreamProcOpcodeParameterType {

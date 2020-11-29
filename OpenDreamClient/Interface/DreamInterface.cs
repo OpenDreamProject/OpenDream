@@ -3,6 +3,7 @@ using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 
 namespace OpenDreamClient.Interface {
@@ -13,6 +14,8 @@ namespace OpenDreamClient.Interface {
 
         public ElementWindow DefaultWindow;
         public ElementOutput DefaultOutput;
+
+        private Window _defaultWindow;
 
         public void LoadInterfaceDescriptor(InterfaceDescriptor interfaceDescriptor) {
             InterfaceDescriptor = interfaceDescriptor;
@@ -55,11 +58,11 @@ namespace OpenDreamClient.Interface {
         }
 
         public Window CreatePopupWindow(string windowName, System.Drawing.Size windowSize) {
-            WindowDescriptor popupWindowDescriptor = new WindowDescriptor("popupWindow", new() {
-                new ElementDescriptorMain("popupWindowMain") {
+            WindowDescriptor popupWindowDescriptor = new WindowDescriptor(windowName, new() {
+                new ElementDescriptorMain(windowName + "Main") {
                     Size = new System.Drawing.Size(480, 480)
                 },
-                new ElementDescriptorBrowser("popupWindowBrowser") {
+                new ElementDescriptorBrowser(windowName + "Browser") {
                     Size = new System.Drawing.Size(480, 480),
                     Anchor1 = new System.Drawing.Point(0, 0),
                     Anchor2 = new System.Drawing.Point(100, 100)
@@ -67,7 +70,7 @@ namespace OpenDreamClient.Interface {
             });
 
             Window popup = CreateWindow(InterfaceHelpers.CreateWindowFromDescriptor(popupWindowDescriptor));
-            popup.Topmost = true;
+            popup.Owner = _defaultWindow;
             popup.Width = windowSize.Width;
             popup.Height = windowSize.Height;
             popup.Closed += (object sender, EventArgs e) => {
@@ -81,7 +84,7 @@ namespace OpenDreamClient.Interface {
         public void HandlePacketInterfaceData(PacketInterfaceData pInterfaceData) {
             LoadInterfaceDescriptor(pInterfaceData.InterfaceDescriptor);
 
-            CreateDefaultWindow();
+            _defaultWindow = CreateDefaultWindow();
         }
 
         public void HandlePacketOutput(PacketOutput pOutput) {
@@ -92,9 +95,11 @@ namespace OpenDreamClient.Interface {
             if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
                 PopupWindows[pBrowse.Window].Close();
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
-                ElementBrowser outputBrowser = null;
+                string htmlFileName;
+                ElementBrowser outputBrowser;
 
                 if (pBrowse.Window != null) {
+                    htmlFileName = pBrowse.Window;
                     outputBrowser = FindElementWithName(pBrowse.Window) as ElementBrowser;
 
                     if (outputBrowser == null) {
@@ -109,25 +114,28 @@ namespace OpenDreamClient.Interface {
                     }
                 } else {
                     //TODO: Find embedded browser panel
+                    htmlFileName = null;
+                    outputBrowser = null;
                 }
 
-                if (outputBrowser != null) outputBrowser.SetHtmlSource(pBrowse.HtmlSource);
+                FileInfo cacheFile = Program.OpenDream.ResourceManager.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
+                if (outputBrowser != null) outputBrowser.SetFileSource(cacheFile.FullName);
             }
         }
 
-        private void CreateDefaultWindow() {
+        private Window CreateDefaultWindow() {
             Window defaultWindow = CreateWindow(DefaultWindow);
 
             defaultWindow.Closed += OnDefaultWindowClosed;
             defaultWindow.KeyDown += OnDefaultWindowKeyDown;
             defaultWindow.KeyUp += OnDefaultWindowKeyUp;
             defaultWindow.Show();
+
+            return defaultWindow;
         }
 
         private void OnDefaultWindowClosed(object sender, EventArgs e) {
-            foreach (Window popup in PopupWindows.Values) {
-                popup.Close();
-            }
+            _defaultWindow = null;
 
             Program.OpenDream.DisconnectFromServer();
         }

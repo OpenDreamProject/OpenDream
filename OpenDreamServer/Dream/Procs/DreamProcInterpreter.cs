@@ -1,6 +1,7 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamServer.Net;
+using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
@@ -704,6 +705,25 @@ namespace OpenDreamServer.Dream.Procs {
                     DreamConnection connection = Program.ClientToConnection[client];
 
                     connection.Browse((body.Value != null) ? body.GetValueAsString() : null, options);
+                }
+            } else if (opcode == DreamProcOpcode.BrowseResource) {
+                DreamValue filename = PopDreamValue();
+                DreamResource file = PopDreamValue().GetValueAsDreamResource();
+                DreamObject receiver = PopDreamValue().GetValueAsDreamObject();
+
+                DreamObject client;
+                if (receiver.IsSubtypeOf(DreamPath.Mob)) {
+                    client = receiver.GetVariable("client").GetValueAsDreamObject();
+                } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
+                    client = receiver;
+                } else {
+                    throw new Exception("Invalid browse_rsc() recipient");
+                }
+
+                if (client != null) {
+                    DreamConnection connection = Program.ClientToConnection[client];
+
+                    connection.BrowseResource(file, (filename.Value != null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
                 }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");

@@ -305,6 +305,12 @@ namespace DMCompiler.DM {
                             DMASTExpression body = procCall.Parameters[0].Value;
                             DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull();
                             return new DMASTProcStatementBrowse(leftShift.A, body, options);
+                        } else if (identifier.Identifier == "browse_rsc") {
+                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) throw new Exception("browse_rsc() requires 1 or 2 parameters");
+
+                            DMASTExpression file = procCall.Parameters[0].Value;
+                            DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull();
+                            return new DMASTProcStatementBrowseResource(leftShift.A, file, filepath);
                         }
                     }
                 }

@@ -2,10 +2,11 @@
 using Microsoft.Web.WebView2.Wpf;
 using System.Windows.Controls;
 using OpenDreamShared.Interface;
+using Microsoft.Web.WebView2.Core;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementBrowser : DockPanel, IElement {
-        public WebView2 webView;
+        public WebView2 WebView;
         public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
             set {
@@ -14,23 +15,24 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private Label _loadingLabel;
-        private string _htmlSource;
+        private string _fileSource;
         private ElementDescriptorBrowser _elementDescriptor;
 
         public ElementBrowser() {
             _loadingLabel = new Label();
             _loadingLabel.Content = "Loading WebView2\nIf nothing happens, you may need to install the WebView2 runtime";
-            webView = new WebView2();
+            WebView = new WebView2();
 
-            this.Children.Add(webView);
+            this.Children.Add(WebView);
             this.Children.Add(_loadingLabel);
-            webView.CoreWebView2Ready += OnWebView2Ready;
-            webView.EnsureCoreWebView2Async();
+            WebView.CoreWebView2Ready += OnWebView2Ready;
+            WebView.NavigationStarting += OnWebViewNavigationStarting;
+            WebView.EnsureCoreWebView2Async();
         }
 
-        public void SetHtmlSource(string htmlSource) {
-            _htmlSource = htmlSource;
-            if (webView.CoreWebView2 != null) webView.CoreWebView2.NavigateToString(htmlSource);
+        public void SetFileSource(string filepath) {
+            _fileSource = filepath;
+            if (WebView.CoreWebView2 != null) WebView.CoreWebView2.Navigate("file://" + _fileSource);
         }
 
         public void UpdateVisuals() {
@@ -39,7 +41,16 @@ namespace OpenDreamClient.Interface.Elements {
 
         private void OnWebView2Ready(object sender, EventArgs e) {
             this.Children.Remove(_loadingLabel);
-            if (_htmlSource != null) webView.NavigateToString(_htmlSource);
+            if (_fileSource != null) WebView.CoreWebView2.Navigate("file://" + _fileSource);
+        }
+
+        private void OnWebViewNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e) {
+            Uri oldUri = new Uri(WebView.CoreWebView2.Source);
+            Uri newUri = new Uri(e.Uri);
+
+            if (newUri.Scheme == "byond" || newUri.AbsolutePath == oldUri.AbsolutePath) {
+                e.Cancel = true;
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ using System.IO;
 
 namespace OpenDreamClient.Resources {
     class DreamResourceManager {
-        private class LoadingResourceEntry {
+        private struct LoadingResourceEntry {
             public Type ResourceType;
             public List<Action<Resource>> LoadCallbacks;
 
@@ -19,6 +19,19 @@ namespace OpenDreamClient.Resources {
 
         private Dictionary<string, LoadingResourceEntry> _loadingResources = new Dictionary<string, LoadingResourceEntry>();
         private Dictionary<string, Resource> _resourceCache = new Dictionary<string, Resource>();
+        private DirectoryInfo _cacheDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "opendreamcache"));
+
+        public DreamResourceManager() {
+            if (_cacheDirectory.Exists) {
+                foreach (FileInfo file in _cacheDirectory.EnumerateFiles()) {
+                    file.Delete();
+                }
+
+                _cacheDirectory.Delete();
+            }
+
+            _cacheDirectory.Create();
+        }
 
         public void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:Resource {
             Resource resource = GetCachedResource(resourcePath);
@@ -42,6 +55,20 @@ namespace OpenDreamClient.Resources {
             }
         }
 
+        public FileInfo CreateCacheFile(string filename, string data) {
+            string cacheFilePath = Path.Combine(_cacheDirectory.FullName, filename);
+
+            File.WriteAllText(cacheFilePath, data);
+            return new FileInfo(cacheFilePath);
+        }
+
+        public FileInfo CreateCacheFile(string filename, byte[] data) {
+            string cacheFilePath = Path.Combine(_cacheDirectory.FullName, filename);
+
+            File.WriteAllBytes(cacheFilePath, data);
+            return new FileInfo(cacheFilePath);
+        }
+
         public void HandlePacketResource(PacketResource pResource) {
             if (_loadingResources.ContainsKey(pResource.ResourcePath)) {
                 LoadingResourceEntry entry = _loadingResources[pResource.ResourcePath];
@@ -60,6 +87,10 @@ namespace OpenDreamClient.Resources {
             } else {
                 throw new Exception("Received unexpected resource packet for '" +  pResource.ResourcePath + "'");
             }
+        }
+
+        public void HandlePacketBrowseResource(PacketBrowseResource pBrowseResource) {
+            CreateCacheFile(pBrowseResource.Filename, pBrowseResource.Data);
         }
 
         private Resource GetCachedResource(string resourcePath) {

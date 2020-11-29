@@ -102,6 +102,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Browse);
         }
 
+        public void BrowseResource() {
+            WriteOpcode(DreamProcOpcode.BrowseResource);
+        }
+
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }

@@ -1,5 +1,6 @@
 ﻿using OpenDreamServer.Dream;
 using OpenDreamServer.Dream.Objects;
+using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Net.Packets;
 using System;
@@ -131,6 +132,10 @@ namespace OpenDreamServer.Net {
             SendPacket(new PacketBrowse(window, body) {
                 Size = size
             });
+        }
+
+        public void BrowseResource(DreamResource resource, string filename) {
+            SendPacket(new PacketBrowseResource(filename, resource.ResourceData));
         }
     }
 }

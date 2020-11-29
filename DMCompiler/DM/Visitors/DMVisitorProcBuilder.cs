@@ -231,6 +231,13 @@ namespace DMCompiler.DM.Visitors {
             _proc.Browse();
         }
 
+        public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) {
+            statementBrowseResource.Receiver.Visit(this);
+            statementBrowseResource.File.Visit(this);
+            statementBrowseResource.Filename.Visit(this);
+            _proc.BrowseResource();
+        }
+
         public void VisitProcCall(DMASTProcCall procCall) {
             procCall.Callable.Visit(this);
             PushCallParameters(procCall.Parameters);

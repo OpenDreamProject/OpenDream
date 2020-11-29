@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowse.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowseResource.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketSound.cs" />
     <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />

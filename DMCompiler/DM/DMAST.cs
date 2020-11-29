@@ -30,6 +30,7 @@ namespace DMCompiler.DM {
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
+        public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -522,6 +523,22 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBrowse(this);
+        }
+    }
+    
+    class DMASTProcStatementBrowseResource : DMASTProcStatement {
+        public DMASTExpression Receiver;
+        public DMASTExpression File;
+        public DMASTExpression Filename;
+
+        public DMASTProcStatementBrowseResource(DMASTExpression receiver, DMASTExpression file, DMASTExpression filename) {
+            Receiver = receiver;
+            File = file;
+            Filename = filename;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementBrowseResource(this);
         }
     }
 

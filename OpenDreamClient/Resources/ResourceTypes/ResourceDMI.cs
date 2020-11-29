@@ -75,7 +75,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
                         uncompressedDataStream.Seek(0, SeekOrigin.Begin);
                         uncompressedDataStream.Read(uncompressedData);
 
-                        return Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length); ;
+                        return Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
                     } else {
                         stream.Position = chunkDataPosition + chunkLength + 4;
                     }

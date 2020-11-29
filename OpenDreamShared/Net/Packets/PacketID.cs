@@ -15,6 +15,7 @@
 		ClickAtom = 0xC,
 		ScreenViewChanges = 0xD,
 		Sound = 0xE,
-		Browse = 0xF
+		Browse = 0xF,
+		BrowseResource = 0x10
     }
 }

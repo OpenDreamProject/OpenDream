@@ -9,7 +9,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {
             if (resourcePath.EndsWith(".ogg")) {
-                SoundEngineData = Program.OpenDream.DreamSoundEngine.CreateSoundEngineData(this);
+                SoundEngineData = Program.OpenDream.SoundEngine.CreateSoundEngineData(this);
             } else {
                 throw new Exception("Only *.ogg audio files are supported");
             }

@@ -9,11 +9,31 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorChild)value;
-                UpdateVisuals();
             }
         }
 
         private ElementDescriptorChild _elementDescriptor;
+
+        public void UpdateVisuals() {
+            this.Children.Remove(LeftElement);
+            this.Children.Remove(RightElement);
+
+            if (_elementDescriptor.Left != null) {
+                LeftElement = Program.OpenDream.Interface.Windows[_elementDescriptor.Left];
+
+                LeftElement.UpdateVisuals();
+                this.Children.Add(LeftElement);
+            }
+
+            if (_elementDescriptor.Right != null) {
+                RightElement = Program.OpenDream.Interface.Windows[_elementDescriptor.Right];
+
+                RightElement.UpdateVisuals();
+                this.Children.Add(RightElement);
+            }
+
+            UpdateGrid();
+        }
 
         private void UpdateGrid() {
             this.ColumnDefinitions.Clear();
@@ -57,27 +77,6 @@ namespace OpenDreamClient.Interface.Elements {
                 Grid.SetRow(splitter, 1);
                 Grid.SetRow(RightElement, 2);
             }
-        }
-
-        private void UpdateVisuals() {
-            this.Children.Remove(LeftElement);
-            this.Children.Remove(RightElement);
-
-            if (_elementDescriptor.Left != null) {
-                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.Left);
-                LeftElement = InterfaceHelpers.CreateWindowFromDescriptor(windowDescriptor);
-
-                this.Children.Add(LeftElement);
-            }
-
-            if (_elementDescriptor.Right != null) {
-                InterfaceWindowDescriptor windowDescriptor = Program.OpenDream.GameWindow.InterfaceDescriptor.GetWindowDescriptorFromName(_elementDescriptor.Right);
-                RightElement = InterfaceHelpers.CreateWindowFromDescriptor(windowDescriptor);
-
-                this.Children.Add(RightElement);
-            }
-
-            UpdateGrid();
         }
     }
 }

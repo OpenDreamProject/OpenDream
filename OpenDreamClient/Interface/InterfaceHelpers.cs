@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace OpenDreamClient.Interface {
     static class InterfaceHelpers {
-        public static ElementWindow CreateWindowFromDescriptor(InterfaceWindowDescriptor windowDescriptor) {
+        public static ElementWindow CreateWindowFromDescriptor(WindowDescriptor windowDescriptor) {
             ElementDescriptorMain mainDescriptor = windowDescriptor.MainElementDescriptor;
             ElementWindow elementWindow = new ElementWindow();
             List<IElement> elements = new List<IElement>();
@@ -96,6 +97,23 @@ namespace OpenDreamClient.Interface {
                     }
                 }
             }
+        }
+
+        public static int KeyToKeyCode(Key key) {
+            int keyCode = -1;
+
+            switch (key) {
+                case Key.W: keyCode = 87; break;
+                case Key.A: keyCode = 65; break;
+                case Key.S: keyCode = 83; break;
+                case Key.D: keyCode = 68; break;
+                case Key.Up: keyCode = 38; break;
+                case Key.Down: keyCode = 40; break;
+                case Key.Left: keyCode = 37; break;
+                case Key.Right: keyCode = 39; break;
+            }
+
+            return keyCode;
         }
     }
 }

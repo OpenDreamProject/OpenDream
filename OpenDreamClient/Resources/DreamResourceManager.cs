@@ -42,7 +42,7 @@ namespace OpenDreamClient.Resources {
             }
         }
 
-        public void HandleResourcePacket(PacketResource pResource) {
+        public void HandlePacketResource(PacketResource pResource) {
             if (_loadingResources.ContainsKey(pResource.ResourcePath)) {
                 LoadingResourceEntry entry = _loadingResources[pResource.ResourcePath];
                 Resource resource = (Resource)Activator.CreateInstance(entry.ResourceType, new object[] { pResource.ResourcePath, pResource.ResourceData });

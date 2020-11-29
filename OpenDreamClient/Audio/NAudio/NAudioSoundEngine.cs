@@ -1,4 +1,5 @@
 ﻿using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,6 +47,16 @@ namespace OpenDreamClient.Audio.NAudio {
         public void StopAllChannels() {
             for (int i = 0; i < _channels.Length; i++) {
                 StopChannel(i + 1);
+            }
+        }
+
+        public void HandlePacketSound(PacketSound pSound) {
+            if (pSound.File != null) {
+                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceSound>(pSound.File, (ResourceSound sound) => {
+                    Program.OpenDream.SoundEngine.PlaySound(pSound.Channel, sound);
+                });
+            } else {
+                Program.OpenDream.SoundEngine.StopChannel(pSound.Channel);
             }
         }
     }

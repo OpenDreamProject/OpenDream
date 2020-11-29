@@ -29,6 +29,7 @@ namespace DMCompiler.DM {
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
+        public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -414,11 +415,12 @@ namespace DMCompiler.DM {
     }
 
     class DMASTProcStatementForNumberRange : DMASTProcStatementFor {
-        public DMASTExpression RangeBegin, RangeEnd;
+        public DMASTExpression RangeBegin, RangeEnd, Step;
 
-        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTProcBlockInner body) : base(initializer, variable, body) {
+        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, variable, body) {
             RangeBegin = rangeBegin;
             RangeEnd = rangeEnd;
+            Step = step;
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -504,6 +506,22 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSwitch(this);
+        }
+    }
+
+    class DMASTProcStatementBrowse : DMASTProcStatement {
+        public DMASTExpression Receiver;
+        public DMASTExpression Body;
+        public DMASTExpression Options;
+
+        public DMASTProcStatementBrowse(DMASTExpression receiver, DMASTExpression body, DMASTExpression options) {
+            Receiver = receiver;
+            Body = body;
+            Options = options;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementBrowse(this);
         }
     }
 

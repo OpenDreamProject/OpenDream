@@ -7,7 +7,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorMain)value;
-                UpdateVisuals();
             }
         }
 
@@ -17,8 +16,10 @@ namespace OpenDreamClient.Interface.Elements {
             
         }
 
-        private void UpdateVisuals() {
-            
+        public void UpdateVisuals() {
+            foreach (IElement childElement in ChildElements) {
+                childElement.UpdateVisuals();
+            }
         }
     }
 }

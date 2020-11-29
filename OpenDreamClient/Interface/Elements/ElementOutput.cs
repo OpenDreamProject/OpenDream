@@ -9,7 +9,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorOutput)value;
-                UpdateVisuals();
             }
         }
 
@@ -21,10 +20,9 @@ namespace OpenDreamClient.Interface.Elements {
 
             this.TextBox.IsReadOnly = true;
             this.Child = TextBox;
-            Program.OpenDream.GameWindow.DefaultOutput = this;
         }
 
-        private void UpdateVisuals() {
+        public void UpdateVisuals() {
 
         }
     }

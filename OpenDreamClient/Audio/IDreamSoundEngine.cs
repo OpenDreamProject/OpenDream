@@ -1,7 +1,5 @@
 ﻿using OpenDreamClient.Resources.ResourceTypes;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using OpenDreamShared.Net.Packets;
 
 namespace OpenDreamClient.Audio {
     interface IDreamSoundEngine {
@@ -9,5 +7,7 @@ namespace OpenDreamClient.Audio {
         public void PlaySound(int channel, ResourceSound sound);
         public void StopChannel(int channel);
         public void StopAllChannels();
+
+        public void HandlePacketSound(PacketSound pSound);
     }
 }

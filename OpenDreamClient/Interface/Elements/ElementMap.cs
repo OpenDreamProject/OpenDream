@@ -14,7 +14,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorMap)value;
-                UpdateVisuals();
             }
         }
 
@@ -33,7 +32,7 @@ namespace OpenDreamClient.Interface.Elements {
             this.MouseDown += OnMouseDown;
         }
 
-        private void UpdateVisuals() {
+        public void UpdateVisuals() {
             
         }
 

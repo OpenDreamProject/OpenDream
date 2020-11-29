@@ -292,9 +292,24 @@ namespace DMCompiler.DM {
                     Check(TokenType.DM_Colon);
 
                     return new DMASTProcStatementLabel(((DMASTCallableIdentifier)expression).Identifier);
-                } else {
-                    return new DMASTProcStatementExpression(expression);
+                } else if (expression is DMASTLeftShift) {
+                    DMASTLeftShift leftShift = (DMASTLeftShift)expression;
+                    DMASTProcCall procCall = leftShift.B as DMASTProcCall;
+
+                    if (procCall != null && procCall.Callable is DMASTCallableIdentifier) {
+                        DMASTCallableIdentifier identifier = (DMASTCallableIdentifier)procCall.Callable;
+
+                        if (identifier.Identifier == "browse") {
+                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) throw new Exception("browse() requires 1 or 2 parameters");
+
+                            DMASTExpression body = procCall.Parameters[0].Value;
+                            DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull();
+                            return new DMASTProcStatementBrowse(leftShift.A, body, options);
+                        }
+                    }
                 }
+
+                return new DMASTProcStatementExpression(expression);
             } else {
                 DMASTProcStatement procStatement = ProcVarDeclaration();
                 if (procStatement == null) procStatement = Return();
@@ -572,7 +587,7 @@ namespace DMCompiler.DM {
                         body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                     }
 
-                    return new DMASTProcStatementForNumberRange(initializer, variable, rangeBegin, rangeEnd, body);
+                    return new DMASTProcStatementForNumberRange(initializer, variable, rangeBegin, rangeEnd, new DMASTConstantInteger(1), body);
                 } else {
                     throw new Exception("Expected 'in'");
                 }

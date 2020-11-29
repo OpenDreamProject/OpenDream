@@ -7,13 +7,12 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorButton)value;
-                UpdateVisuals();
             }
         }
 
         private ElementDescriptorButton _elementDescriptor;
 
-        private void UpdateVisuals() {
+        public void UpdateVisuals() {
             this.Content = _elementDescriptor.Text;
         }
     }

@@ -2,110 +2,21 @@
 
 namespace OpenDreamShared.Net.Packets {
     class PacketOutput : IPacket {
-        public enum PacketOutputType {
-            String = 0x0,
-            Browse = 0x1,
-            Sound = 0x2
-        }
-
-        public interface IPacketOutputValue {
-
-        }
-
-        public struct OutputString : IPacketOutputValue {
-            public string Value;
-
-            public OutputString(string value) {
-                Value = value;
-            }
-        }
-
-        public struct OutputBrowse : IPacketOutputValue {
-            public string HtmlSource;
-
-            public OutputBrowse(string htmlSource) {
-                HtmlSource = htmlSource;
-            }
-        }
-
-        public struct OutputSound : IPacketOutputValue {
-            public UInt16 Channel;
-            public string File;
-            public int Volume;
-
-            public OutputSound(UInt16 channel, string file, int volume) {
-                Channel = channel;
-                File = file;
-                Volume = volume;
-            }
-        }
-
         public PacketID PacketID => PacketID.Output;
-        public PacketOutputType ValueType;
-        public IPacketOutputValue Value = null;
+        public string Value;
 
         public PacketOutput() { }
 
         public PacketOutput(string value) {
-            ValueType = PacketOutputType.String;
-            Value = new OutputString(value);
-        }
-
-        public PacketOutput(OutputBrowse browse) {
-            ValueType = PacketOutputType.Browse;
-            Value = browse;
-        }
-
-        public PacketOutput(OutputSound sound) {
-            ValueType = PacketOutputType.Sound;
-            Value = sound;
+            Value = value;
         }
 
         public void ReadFromStream(PacketStream stream) {
-            ValueType = (PacketOutputType)stream.ReadByte();
-
-            if (ValueType == PacketOutputType.String) {
-                Value = new OutputString(stream.ReadString());
-            } else if (ValueType == PacketOutputType.Browse) {
-                Value = new OutputBrowse(stream.ReadString());
-            } else if (ValueType == PacketOutputType.Sound) {
-                OutputSound soundValue = new OutputSound();
-                bool hasFile = stream.ReadBool();
-
-                soundValue.Channel = stream.ReadUInt16();
-                if (hasFile) {
-                    soundValue.File = stream.ReadString();
-                    soundValue.Volume = stream.ReadByte();
-                } else {
-                    soundValue.File = null;
-                    soundValue.Volume = 100;
-                }
-                
-                Value = soundValue;
-            }
+            Value = stream.ReadString();
         }
 
         public void WriteToStream(PacketStream stream) {
-            stream.WriteByte((byte)ValueType);
-
-            if (ValueType == PacketOutputType.String) {
-                OutputString stringValue = (OutputString)Value;
-
-                stream.WriteString(stringValue.Value);
-            } else if (ValueType == PacketOutputType.Browse) {
-                OutputBrowse browseValue = (OutputBrowse)Value;
-
-                stream.WriteString(browseValue.HtmlSource);
-            } else if (ValueType == PacketOutputType.Sound) {
-                OutputSound soundValue = (OutputSound)Value;
-
-                stream.WriteBool(soundValue.File != null);
-                stream.WriteUInt16(soundValue.Channel);
-                if (soundValue.File != null) {
-                    stream.WriteString(soundValue.File);
-                    stream.WriteByte((byte)soundValue.Volume);
-                }
-            }
+            stream.WriteString(Value);
         }
     }
 }

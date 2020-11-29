@@ -3,36 +3,19 @@ using System.Drawing;
 
 namespace OpenDreamShared.Interface {
     class InterfaceDescriptor {
-        public List<InterfaceWindowDescriptor> WindowDescriptors;
-        public InterfaceWindowDescriptor DefaultWindowDescriptor { get; private set; } = null;
+        public List<WindowDescriptor> WindowDescriptors;
 
-        public InterfaceDescriptor(List<InterfaceWindowDescriptor> windowDescriptors) {
+        public InterfaceDescriptor(List<WindowDescriptor> windowDescriptors) {
             WindowDescriptors = windowDescriptors;
-
-            foreach (InterfaceWindowDescriptor windowDescriptor in WindowDescriptors) {
-                ElementDescriptor mainElementDescriptor = windowDescriptor.MainElementDescriptor;
-
-                if (mainElementDescriptor.IsDefault) {
-                    DefaultWindowDescriptor = windowDescriptor;
-                }
-            }
-        }
-
-        public InterfaceWindowDescriptor GetWindowDescriptorFromName(string name) {
-            foreach (InterfaceWindowDescriptor windowDescriptor in WindowDescriptors) {
-                if (windowDescriptor.Name == name) return windowDescriptor;
-            }
-
-            return null;
         }
     }
 
-    class InterfaceWindowDescriptor {
+    class WindowDescriptor {
         public string Name;
         public List<ElementDescriptor> ElementDescriptors;
         public ElementDescriptorMain MainElementDescriptor { get; private set; } = null;
 
-        public InterfaceWindowDescriptor(string name, List<ElementDescriptor> elementDescriptors) {
+        public WindowDescriptor(string name, List<ElementDescriptor> elementDescriptors) {
             Name = name;
             ElementDescriptors = elementDescriptors;
 

@@ -9,7 +9,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorInfo)value;
-                UpdateVisuals();
             }
         }
 
@@ -20,7 +19,7 @@ namespace OpenDreamClient.Interface.Elements {
             this.BorderThickness = new Thickness(1);
         }
 
-        private void UpdateVisuals() {
+        public void UpdateVisuals() {
 
         }
     }

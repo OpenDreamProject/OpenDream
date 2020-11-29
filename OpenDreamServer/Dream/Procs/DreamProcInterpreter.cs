@@ -1,5 +1,6 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
+using OpenDreamServer.Net;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
@@ -685,6 +686,25 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.DestroyListEnumerator) {
                 _listEnumeratorStack.Pop();
+            } else if (opcode == DreamProcOpcode.Browse) {
+                string options = PopDreamValue().GetValueAsString();
+                DreamValue body = PopDreamValue();
+                DreamObject receiver = PopDreamValue().GetValueAsDreamObject();
+
+                DreamObject client;
+                if (receiver.IsSubtypeOf(DreamPath.Mob)) {
+                    client = receiver.GetVariable("client").GetValueAsDreamObject();
+                } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
+                    client = receiver;
+                } else {
+                    throw new Exception("Invalid browse() recipient");
+                }
+
+                if (client != null) {
+                    DreamConnection connection = Program.ClientToConnection[client];
+
+                    connection.Browse((body.Value != null) ? body.GetValueAsString() : null, options);
+                }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");
             }

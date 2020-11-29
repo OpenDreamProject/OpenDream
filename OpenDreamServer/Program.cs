@@ -140,7 +140,7 @@ namespace OpenDreamServer {
         }
 
         private static InterfaceDescriptor CreateClientInterface() {
-            InterfaceWindowDescriptor mapwindow = new InterfaceWindowDescriptor("mapwindow", new() {
+            WindowDescriptor mapwindow = new WindowDescriptor("mapwindow", new() {
                 new ElementDescriptorMain("mapwindow") {
                     Pos = new Point(0, 0),
                     Size = new Size(640, 480),
@@ -157,7 +157,7 @@ namespace OpenDreamServer {
                 }
             });
 
-            InterfaceWindowDescriptor infowindow = new InterfaceWindowDescriptor("infowindow", new() {
+            WindowDescriptor infowindow = new WindowDescriptor("infowindow", new() {
                 new ElementDescriptorMain("infowindow") {
                     Pos = new Point(0, 0),
                     Size = new Size(640, 480),
@@ -176,7 +176,7 @@ namespace OpenDreamServer {
                 }
             });
 
-            InterfaceWindowDescriptor outputwindow = new InterfaceWindowDescriptor("outputwindow", new() {
+            WindowDescriptor outputwindow = new WindowDescriptor("outputwindow", new() {
                 new ElementDescriptorMain("outputwindow") {
                     Pos = new Point(0, 0),
                     Size = new Size(640, 480),
@@ -193,7 +193,7 @@ namespace OpenDreamServer {
                 }
             });
 
-            InterfaceWindowDescriptor statwindow = new InterfaceWindowDescriptor("statwindow", new() {
+            WindowDescriptor statwindow = new WindowDescriptor("statwindow", new() {
                 new ElementDescriptorMain("statwindow") {
                     Pos = new Point(0, 0),
                     Size = new Size(640, 480),
@@ -210,7 +210,7 @@ namespace OpenDreamServer {
                 }
             });
 
-            InterfaceWindowDescriptor mainwindow = new InterfaceWindowDescriptor("mainwindow", new() {
+            WindowDescriptor mainwindow = new WindowDescriptor("mainwindow", new() {
                 new ElementDescriptorMain("mainwindow") {
                     Size = new Size(640, 440),
 
@@ -228,7 +228,7 @@ namespace OpenDreamServer {
                 }
             });
             
-            return new InterfaceDescriptor(new List<InterfaceWindowDescriptor>() { mainwindow, mapwindow, infowindow, outputwindow, statwindow });
+            return new InterfaceDescriptor(new List<WindowDescriptor>() { mainwindow, mapwindow, infowindow, outputwindow, statwindow });
         }
 
         private static void RegisterNativeProcs() {

@@ -7,7 +7,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorInput)value;
-                UpdateVisuals();
             }
         }
 

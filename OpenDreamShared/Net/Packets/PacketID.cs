@@ -13,6 +13,8 @@
 		KeyboardInput = 0xA,
 		Topic = 0xB,
 		ClickAtom = 0xC,
-		ScreenViewChanges = 0xD
+		ScreenViewChanges = 0xD,
+		Sound = 0xE,
+		Browse = 0xF
     }
 }

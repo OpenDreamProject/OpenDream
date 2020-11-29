@@ -136,6 +136,37 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyListEnumerator();
         }
 
+        public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) {
+            _proc.CreateScope();
+            {
+                if (statementForNumberRange.Initializer != null) statementForNumberRange.Initializer.Visit(this);
+                statementForNumberRange.Variable.Visit(this);
+                statementForNumberRange.RangeBegin.Visit(this);
+                _proc.Assign();
+
+                string loopLabel = NewLabelName();
+                string loopBodyLabel = NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    statementForNumberRange.Variable.Visit(this);
+                    statementForNumberRange.RangeEnd.Visit(this);
+                    _proc.LessThanOrEqual();
+                    _proc.JumpIfTrue(loopBodyLabel);
+                    _proc.Break();
+
+                    _proc.AddLabel(loopBodyLabel);
+                    statementForNumberRange.Body.Visit(this);
+
+                    statementForNumberRange.Variable.Visit(this);
+                    statementForNumberRange.Step.Visit(this);
+                    _proc.Append();
+                    _proc.Continue();
+                }
+                _proc.LoopEnd();
+            }
+            _proc.DestroyScope();
+        }
+
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
             string loopLabel = NewLabelName();
             string bodyLabel = NewLabelName();
@@ -191,6 +222,13 @@ namespace DMCompiler.DM.Visitors {
             }
 
             _proc.AddLabel(endLabel);
+        }
+
+        public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) {
+            statementBrowse.Receiver.Visit(this);
+            statementBrowse.Body.Visit(this);
+            statementBrowse.Options.Visit(this);
+            _proc.Browse();
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {

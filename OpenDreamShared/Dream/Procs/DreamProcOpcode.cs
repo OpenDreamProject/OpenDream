@@ -59,7 +59,8 @@
         PushSrc = 0x39,
         CreateListEnumerator = 0x3A,
         EnumerateList = 0x3B,
-        DestroyListEnumerator = 0x3C
+        DestroyListEnumerator = 0x3C,
+        Browse = 0x3D
     }
 
     enum DreamProcOpcodeParameterType {

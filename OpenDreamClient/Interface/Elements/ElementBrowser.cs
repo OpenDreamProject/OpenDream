@@ -10,7 +10,6 @@ namespace OpenDreamClient.Interface.Elements {
             get => _elementDescriptor;
             set {
                 _elementDescriptor = (ElementDescriptorBrowser)value;
-                UpdateVisuals();
             }
         }
 
@@ -34,7 +33,7 @@ namespace OpenDreamClient.Interface.Elements {
             if (webView.CoreWebView2 != null) webView.CoreWebView2.NavigateToString(htmlSource);
         }
 
-        private void UpdateVisuals() {
+        public void UpdateVisuals() {
             
         }
 

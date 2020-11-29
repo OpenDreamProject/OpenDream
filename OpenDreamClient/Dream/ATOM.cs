@@ -71,7 +71,7 @@ namespace OpenDreamClient.Dream {
             Program.OpenDream.AddATOM(this);
         }
 
-        public static void HandleAtomBasesPacket(PacketATOMTypes pAtomBases) {
+        public static void HandlePacketAtomBases(PacketATOMTypes pAtomBases) {
             ATOMBase.AtomBases = pAtomBases.AtomBases;
         }
     }

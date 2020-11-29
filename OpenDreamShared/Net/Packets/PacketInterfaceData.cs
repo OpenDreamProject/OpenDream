@@ -40,7 +40,7 @@ namespace OpenDreamShared.Net.Packets {
 		}
 
         public void ReadFromStream(PacketStream stream) {
-			List<InterfaceWindowDescriptor> windowDescriptors = new List<InterfaceWindowDescriptor>();
+			List<WindowDescriptor> windowDescriptors = new List<WindowDescriptor>();
 
 			int windowCount = stream.ReadByte();
 			for (int i = 0; i < windowCount; i++) {
@@ -93,7 +93,7 @@ namespace OpenDreamShared.Net.Packets {
 					} while (valueType != AttributeType.End);
 				}
 
-				InterfaceWindowDescriptor windowDescriptor = new InterfaceWindowDescriptor(windowName, elementDescriptors);
+				WindowDescriptor windowDescriptor = new WindowDescriptor(windowName, elementDescriptors);
 				windowDescriptors.Add(windowDescriptor);
 			}
 
@@ -103,7 +103,7 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteToStream(PacketStream stream) {
 			stream.WriteByte((byte)InterfaceDescriptor.WindowDescriptors.Count);
 
-			foreach (InterfaceWindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
+			foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
 				stream.WriteString(windowDescriptor.Name);
 
 				stream.WriteByte((byte)windowDescriptor.ElementDescriptors.Count);

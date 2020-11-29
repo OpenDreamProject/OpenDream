@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
 
@@ -90,15 +91,11 @@ namespace OpenDreamServer.Net {
                         UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                         DreamValue file = outputObject.GetVariable("file"); 
                         UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
-
+                        
                         if (file.IsType(DreamValue.DreamValueType.String) || file.Value == null) {
-                            PacketOutput.OutputSound outputValue = new PacketOutput.OutputSound(channel, (string)file.Value, volume);
-
-                            SendPacket(new PacketOutput(outputValue));
+                            SendPacket(new PacketSound(channel, (string)file.Value, volume));
                         } else if (file.IsType(DreamValue.DreamValueType.DreamResource)) {
-                            PacketOutput.OutputSound outputValue = new PacketOutput.OutputSound(channel, file.GetValueAsDreamResource().ResourcePath, volume);
-
-                            SendPacket(new PacketOutput(outputValue));
+                            SendPacket(new PacketSound(channel, file.GetValueAsDreamResource().ResourcePath, volume));
                         } else {
                             throw new ArgumentException("Cannot output " + value, nameof(value));
                         }
@@ -107,6 +104,33 @@ namespace OpenDreamServer.Net {
             } else {
                 throw new ArgumentException("Cannot output " + value, nameof(value));
             }
+        }
+
+        public void Browse(string body, string options) {
+            string window = null;
+            Size size = new Size(480, 480);
+
+            string[] separated = options.Split(',', ';', '&');
+            foreach (string option in separated) {
+                string optionTrimmed = option.Trim();
+
+                if (optionTrimmed != String.Empty) {
+                    string[] optionSeparated = optionTrimmed.Split("=");
+                    string key = optionSeparated[0];
+                    string value = optionSeparated[1];
+
+                    if (key == "window") window = value;
+                    if (key == "size") {
+                        string[] sizeSeparated = value.Split("x");
+
+                        size = new Size(int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                    }
+                }
+            }
+
+            SendPacket(new PacketBrowse(window, body) {
+                Size = size
+            });
         }
     }
 }

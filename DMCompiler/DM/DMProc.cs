@@ -98,6 +98,10 @@ namespace DMCompiler.DM {
             WriteLabel(caseLabel);
         }
 
+        public void Browse() {
+            WriteOpcode(DreamProcOpcode.Browse);
+        }
+
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }

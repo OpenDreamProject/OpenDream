@@ -232,6 +232,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "typesof", "typesof");
             AddNativeProc(rootObject, "uppertext", "uppertext");
             AddNativeProc(rootObject, "view", "view");
+            AddNativeProc(rootObject, "viewers", "viewers");
             AddNativeProc(rootObject, "walk", "walk");
             AddNativeProc(rootObject, "walk_to", "walk_to");
 

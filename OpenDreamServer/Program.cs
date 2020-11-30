@@ -71,7 +71,7 @@ namespace OpenDreamServer {
                     paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
                     paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
 
-                    DreamProcArguments clickArguments = new DreamProcArguments(new List<DreamValue>() {
+                    DreamProcArguments clickArguments = new DreamProcArguments(new() {
                         new DreamValue(atom),
                         new DreamValue((DreamObject)null),
                         new DreamValue((DreamObject)null),
@@ -80,6 +80,26 @@ namespace OpenDreamServer {
                     
                     Task.Run(() => connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject));
                 }
+            });
+            DreamServer.RegisterPacketCallback<PacketTopic>(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => {
+                DreamObject hrefListObject = DreamProcNativeRoot.params2list(pTopic.Query);
+                DreamList hrefList = DreamMetaObjectList.DreamLists[hrefListObject];
+                DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
+                DreamObject src = null;
+
+                if (srcRefValue.Value != null) {
+                    int srcRef = int.Parse(srcRefValue.GetValueAsString());
+
+                    src = DreamObject.GetFromReferenceID(srcRef);
+                }
+
+                DreamProcArguments topicArguments = new DreamProcArguments(new() {
+                    new DreamValue(pTopic.Query),
+                    new DreamValue(hrefListObject),
+                    new DreamValue(src)
+                });
+
+                Task.Run(() => connection.ClientDreamObject?.CallProc("Topic", topicArguments, connection.MobDreamObject));
             });
 
             RegisterNativeProcs();
@@ -281,6 +301,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("typesof", new DreamProc(DreamProcNativeRoot.NativeProc_typesof, new List<string>() { "Item1" }));
             DreamObjectTree.RegisterNativeProc("uppertext", new DreamProc(DreamProcNativeRoot.NativeProc_uppertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("view", new DreamProc(DreamProcNativeRoot.NativeProc_view, new List<string>() { "Dist", "Center" }, new Dictionary<string, DreamValue>() { { "Dist", new DreamValue(4) } }));
+            DreamObjectTree.RegisterNativeProc("viewers", new DreamProc(DreamProcNativeRoot.NativeProc_viewers, new List<string>() { "Depth", "Center" }));
             DreamObjectTree.RegisterNativeProc("walk", new DreamProc(DreamProcNativeRoot.NativeProc_walk, new List<string>() { "Ref", "Dir", "Lag", "Speed" }, new Dictionary<string, DreamValue>() { { "Lag", new DreamValue(0) }, { "Speed", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("walk_to", new DreamProc(DreamProcNativeRoot.NativeProc_walk_to, new List<string>() { "Ref", "Trg", "Min", "Lag", "Speed" }, new Dictionary<string, DreamValue>() { { "Min", new DreamValue(0) }, { "Lag", new DreamValue(0) }, { "Speed", new DreamValue(0) } }));
 

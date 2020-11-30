@@ -3,6 +3,7 @@ using Microsoft.Web.WebView2.Wpf;
 using System.Windows.Controls;
 using OpenDreamShared.Interface;
 using Microsoft.Web.WebView2.Core;
+using OpenDreamShared.Net.Packets;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementBrowser : DockPanel, IElement {
@@ -48,8 +49,10 @@ namespace OpenDreamClient.Interface.Elements {
             Uri oldUri = new Uri(WebView.CoreWebView2.Source);
             Uri newUri = new Uri(e.Uri);
 
-            if (newUri.Scheme == "byond" || newUri.AbsolutePath == oldUri.AbsolutePath) {
+            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 e.Cancel = true;
+
+                Program.OpenDream.Connection.SendPacket(new PacketTopic(newUri.Query));
             }
         }
     }

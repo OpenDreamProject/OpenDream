@@ -15,6 +15,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowseResource.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketSound.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketTopic.cs" />
     <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamFullState.cs" />

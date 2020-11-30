@@ -57,9 +57,16 @@ namespace OpenDreamServer.Dream.Objects {
             return _referenceIDs.IndexOf(dreamObject);
         }
 
+        public static DreamObject GetFromReferenceID(int refID) {
+            return _referenceIDs[refID];
+        }
+
         public void Delete() {
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectDeleted(this);
-            _referenceIDs.Remove(this);
+
+            int refID = _referenceIDs.IndexOf(this);
+            if (refID != -1) _referenceIDs[refID] = null;
+
             Deleted = true;
         }
 

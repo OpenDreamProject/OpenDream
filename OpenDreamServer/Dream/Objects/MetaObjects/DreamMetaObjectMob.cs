@@ -1,8 +1,28 @@
-﻿using OpenDreamServer.Net;
+﻿using OpenDreamServer.Dream.Procs;
+using OpenDreamServer.Net;
 using OpenDreamShared.Dream;
+using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectMob : DreamMetaObjectMovable {
+        public static List<DreamObject> Mobs = new List<DreamObject>();
+
+        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            base.OnObjectCreated(dreamObject, creationArguments);
+
+            lock (Mobs) {
+                Mobs.Add(dreamObject);
+            }
+        }
+
+        public override void OnObjectDeleted(DreamObject dreamObject) {
+            base.OnObjectDeleted(dreamObject);
+
+            lock (Mobs) {
+                Mobs.Remove(dreamObject);
+            }
+        }
+
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
             

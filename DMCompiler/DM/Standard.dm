@@ -1,8 +1,5 @@
 ﻿/var/global/world/world = null
 
-proc/New()
-proc/Del()
-
 /list
 	var/len
 
@@ -69,6 +66,10 @@ proc/Del()
 
 		return mob
 
+	proc/Topic(href, href_list, hsrc)
+		if (hsrc != null)
+			hsrc.Topic(href, href_list)
+
 	proc/Click(object, location, control, params)
 		object.Click(location, control, params)
 
@@ -105,6 +106,10 @@ proc/Del()
 /datum
 	var/type
 	var/parent_type
+
+	proc/New()
+	proc/Del()
+	proc/Topic(href, href_list)
 
 /atom
 	parent_type = /datum

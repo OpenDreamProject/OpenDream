@@ -473,9 +473,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(orangeList);
         }
 
-        public static DreamValue NativeProc_params2list(DreamProcScope scope, DreamProcArguments arguments) {
-            string paramsString = scope.GetValue("Params").GetValueAsString();
-            NameValueCollection query = HttpUtility.ParseQueryString(paramsString);
+        public static DreamObject params2list(string queryString) {
+            queryString = queryString.Replace(";", "&");
+            NameValueCollection query = HttpUtility.ParseQueryString(queryString);
             DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
             DreamList list = DreamMetaObjectList.DreamLists[listObject];
 
@@ -485,7 +485,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
             }
 
-            return new DreamValue(listObject);
+            return listObject;
+        }
+
+        public static DreamValue NativeProc_params2list(DreamProcScope scope, DreamProcArguments arguments) {
+            string paramsString = scope.GetValue("Params").GetValueAsString();
+            
+            return new DreamValue(params2list(paramsString));
         }
 
         public static DreamValue NativeProc_pick(DreamProcScope scope, DreamProcArguments arguments) {
@@ -642,7 +648,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         public static DreamValue NativeProc_view(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int distance = 5;
-            DreamObject center = null; //TODO: Default to usr
+            DreamObject center = scope.GetValue("usr").GetValueAsDreamObject();
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {
@@ -672,6 +678,45 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
 
                     viewList.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(turf), turf.GetVariable("contents") }));
+                }
+            }
+
+            return new DreamValue(viewList);
+        }
+
+        public static DreamValue NativeProc_viewers(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+            int depth = 5; //TODO: Default to world.view
+            DreamObject center = scope.GetValue("usr").GetValueAsDreamObject();
+
+            //Arguments are optional and can be passed in any order
+            if (arguments.ArgumentCount > 0) {
+                DreamValue firstArgument = arguments.GetArgument(0, "Depth");
+
+                if (firstArgument.Type == DreamValue.DreamValueType.DreamObject) {
+                    center = firstArgument.GetValueAsDreamObject();
+
+                    if (arguments.ArgumentCount > 1) {
+                        depth = arguments.GetArgument(1, "Center").GetValueAsInteger();
+                    }
+                } else {
+                    depth = firstArgument.GetValueAsInteger();
+
+                    if (arguments.ArgumentCount > 1) {
+                        center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+                    }
+                }
+            }
+
+            DreamObject viewList = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            int centerX = center.GetVariable("x").GetValueAsInteger();
+            int centerY = center.GetVariable("y").GetValueAsInteger();
+
+            foreach (DreamObject mob in DreamMetaObjectMob.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    viewList.CallProc("Add", new DreamProcArguments(new() { new DreamValue(mob) }));
                 }
             }
 

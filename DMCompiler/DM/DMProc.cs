@@ -335,9 +335,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
-        public void BuildString(int pieceCount) {
-            WriteOpcode(DreamProcOpcode.BuildString);
-            WriteInt(pieceCount);
+        public void FormatString(string value) {
+            WriteOpcode(DreamProcOpcode.FormatString);
+            WriteString(value);
         }
 
         public void IndexList() {
@@ -367,7 +367,7 @@ namespace DMCompiler.DM {
 
         private void WriteString(string value) {
             foreach (char character in value.ToCharArray()) {
-                _bytecodeWriter.Write(character);
+                _bytecodeWriter.Write((byte)character);
             }
 
             _bytecodeWriter.Write((byte)0);

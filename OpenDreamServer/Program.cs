@@ -246,6 +246,8 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("findlasttext", new DreamProc(DreamProcNativeRoot.NativeProc_findlasttext, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("get_dir", new DreamProc(DreamProcNativeRoot.NativeProc_get_dir, new List<string>() { "Loc1", "Loc2" }));
             DreamObjectTree.RegisterNativeProc("get_dist", new DreamProc(DreamProcNativeRoot.NativeProc_get_dist, new List<string>() { "Loc1", "Loc2" }));
+            DreamObjectTree.RegisterNativeProc("html_decode", new DreamProc(DreamProcNativeRoot.NativeProc_html_decode, new List<string>() { "HtmlText" }));
+            DreamObjectTree.RegisterNativeProc("html_encode", new DreamProc(DreamProcNativeRoot.NativeProc_html_encode, new List<string>() { "PlainText" }));
             DreamObjectTree.RegisterNativeProc("image", new DreamProc(DreamProcNativeRoot.NativeProc_image, new List<string>() { "icon", "loc", "icon_state", "layer", "dir" }));
             DreamObjectTree.RegisterNativeProc("isarea", new DreamProc(DreamProcNativeRoot.NativeProc_isarea, new List<string>() { "Loc1" }));
             DreamObjectTree.RegisterNativeProc("isloc", new DreamProc(DreamProcNativeRoot.NativeProc_isloc, new List<string>() { "Loc1" }));

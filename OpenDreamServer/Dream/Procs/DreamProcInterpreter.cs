@@ -112,17 +112,37 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.PushString) {
                 Push(new DreamValue(ReadString(bytecodeStream)));
-            } else if (opcode == DreamProcOpcode.BuildString) {
-                int pieceCount = ReadInt(bytecodeStream);
-                string stringResult = String.Empty;
+            } else if (opcode == DreamProcOpcode.FormatString) {
+                string unformattedString = ReadString(bytecodeStream);
+                string formattedString = String.Empty;
 
-                for (int i = 0; i < pieceCount; i++) {
-                    DreamValue piece = PopDreamValue();
+                for (int i = 0; i < unformattedString.Length; i++) {
+                    char c = unformattedString[i];
 
-                    stringResult += piece.Stringify();
+                    if (c == (char)0xFF) {
+                        c = unformattedString[++i];
+
+                        switch ((StringFormatTypes)c) {
+                            case StringFormatTypes.Stringify: {
+                                DreamValue value = PopDreamValue();
+
+                                formattedString += value.Stringify();
+                                break;
+                            }
+                            case StringFormatTypes.Ref: {
+                                DreamObject refObject = PopDreamValue().GetValueAsDreamObject();
+
+                                formattedString += DreamObject.CreateReferenceID(refObject);
+                                break;
+                            }
+                            default: throw new Exception("Invalid special character");
+                        }
+                    } else {
+                        formattedString += c;
+                    }
                 }
-
-                Push(new DreamValue(stringResult));
+                
+                Push(new DreamValue(formattedString));
             } else if (opcode == DreamProcOpcode.PushInt) {
                 int value = ReadInt(bytecodeStream);
 

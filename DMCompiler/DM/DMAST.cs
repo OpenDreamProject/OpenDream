@@ -39,7 +39,7 @@ namespace DMCompiler.DM {
         public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
-        public void VisitBuildString(DMASTBuildString buildString) { throw new NotImplementedException(); }
+        public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
@@ -620,15 +620,17 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTBuildString : DMASTExpression {
-        public DMASTExpression[] Pieces;
+    class DMASTStringFormat : DMASTExpression {
+        public string Value;
+        public DMASTExpression[] InterpolatedValues;
 
-        public DMASTBuildString(DMASTExpression[] pieces) {
-            Pieces = pieces;
+        public DMASTStringFormat(string value, DMASTExpression[] interpolatedValues) {
+            Value = value;
+            InterpolatedValues = interpolatedValues;
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBuildString(this);
+            visitor.VisitStringFormat(this);
         }
     }
 

@@ -197,6 +197,8 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "findtextEx", "findtextEx");
             AddNativeProc(rootObject, "get_dir", "get_dir");
             AddNativeProc(rootObject, "get_dist", "get_dist");
+            AddNativeProc(rootObject, "html_decode", "html_decode");
+            AddNativeProc(rootObject, "html_encode", "html_encode");
             AddNativeProc(rootObject, "image", "image");
             AddNativeProc(rootObject, "isarea", "isarea");
             AddNativeProc(rootObject, "isloc", "isloc");

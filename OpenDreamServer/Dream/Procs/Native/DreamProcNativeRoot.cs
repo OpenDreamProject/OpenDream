@@ -163,6 +163,18 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
+        public static DreamValue NativeProc_html_decode(DreamProcScope scope, DreamProcArguments arguments) {
+            string htmlText = scope.GetValue("HtmlText").GetValueAsString();
+
+            return new DreamValue(HttpUtility.HtmlDecode(htmlText));
+        }
+
+        public static DreamValue NativeProc_html_encode(DreamProcScope scope, DreamProcArguments arguments) {
+            string plainText = scope.GetValue("PlainText").GetValueAsString();
+
+            return new DreamValue(HttpUtility.HtmlEncode(plainText));
+        }
+
         public static DreamValue NativeProc_image(DreamProcScope scope, DreamProcArguments arguments) {
             DreamObject imageObject = Program.DreamObjectTree.CreateObject(DreamPath.Image, arguments);
 

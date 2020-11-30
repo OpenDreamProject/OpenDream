@@ -59,6 +59,7 @@ namespace OpenDreamServer.Dream.Objects {
 
         public void Delete() {
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectDeleted(this);
+            _referenceIDs.Remove(this);
             Deleted = true;
         }
 

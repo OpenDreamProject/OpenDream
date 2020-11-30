@@ -475,12 +475,12 @@ namespace DMCompiler.DM.Visitors {
             _proc.IsInList();
         }
 
-        public void VisitBuildString(DMASTBuildString buildString) {
-            for (int i = buildString.Pieces.Length - 1; i >= 0; i--) {
-                buildString.Pieces[i].Visit(this);
+        public void VisitStringFormat(DMASTStringFormat stringFormat) {
+            for (int i = stringFormat.InterpolatedValues.Length - 1; i >= 0; i--) {
+                stringFormat.InterpolatedValues[i].Visit(this);
             }
 
-            _proc.BuildString(buildString.Pieces.Length);
+            _proc.FormatString(stringFormat.Value);
         }
 
         public void VisitInput(DMASTInput input) {

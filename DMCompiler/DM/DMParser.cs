@@ -4,12 +4,13 @@ using DMCompiler.Compiler;
 using OpenDreamShared.Dream;
 using DereferenceType = DMCompiler.DM.DMASTCallableDereference.DereferenceType;
 using Dereference = DMCompiler.DM.DMASTCallableDereference.Dereference;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMParser : Parser {
-        public DMParser(DMLexer lexer) : base(lexer) {
+        public static char StringFormatCharacter = (char)0xFF;
 
-        }
+        public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
             DMASTBlockInner blockInner = BlockInner();
@@ -1339,42 +1340,70 @@ namespace DMCompiler.DM {
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull();
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
-                    int bracketIndex = tokenValue.IndexOf(DMLexer.StringInterpolationStart);
+                    string stringValue = String.Empty;
+                    List<DMASTExpression> interpolationValues = new List<DMASTExpression>();
                     Advance();
 
-                    if (bracketIndex != -1) {
-                        List<DMASTExpression> pieces = new List<DMASTExpression>();
+                    int bracketNesting = 0;
+                    string insideBrackets = String.Empty;
+                    StringFormatTypes currentInterpolationType = StringFormatTypes.Stringify;
+                    for (int i = 0; i < tokenValue.Length; i++) {
+                        char c = tokenValue[i];
 
-                        if (bracketIndex > 0) pieces.Add(new DMASTConstantString(tokenValue.Substring(0, bracketIndex)));
-                        do {
-                            int expressionEndIndex = tokenValue.IndexOf(DMLexer.StringInterpolationEnd, bracketIndex + 1);
-                            int afterExpression = expressionEndIndex + DMLexer.StringInterpolationStart.Length;
-                            string expressionString = tokenValue.Substring(bracketIndex + DMLexer.StringInterpolationStart.Length, expressionEndIndex - bracketIndex - DMLexer.StringInterpolationStart.Length);
+                        if (bracketNesting > 0) insideBrackets += c;
 
-                            if (expressionString.Trim() != "") {
-                                DMLexer expressionLexer = new DMLexer(expressionString);
+                        if (c == '[') {
+                            bracketNesting++;
+                        } else if (c == ']' && bracketNesting > 0) {
+                            bracketNesting--;
+
+                            if (bracketNesting == 0) { //End of expression
+                                DMLexer expressionLexer = new DMLexer(insideBrackets);
                                 DMParser expressionParser = new DMParser(expressionLexer);
+
                                 expressionParser.Whitespace();
                                 DMASTExpression expression = expressionParser.Expression();
                                 if (expression == null) throw new Exception("Expected an expression");
 
-                                pieces.Add(expression);
+                                interpolationValues.Add(expression);
+                                stringValue += StringFormatCharacter;
+                                stringValue += (char)currentInterpolationType;
+                                currentInterpolationType = StringFormatTypes.Stringify;
+
+                                insideBrackets = String.Empty;
                             }
+                        } else if (c == '\\' && bracketNesting == 0) {
+                            string escapeSequence = String.Empty;
 
-                            bracketIndex = tokenValue.IndexOf(DMLexer.StringInterpolationStart, afterExpression);
+                            do {
+                                c = tokenValue[++i];
+                                escapeSequence += c;
 
-                            string inBetween;
-                            if (bracketIndex != -1) inBetween = tokenValue.Substring(afterExpression, bracketIndex - afterExpression);
-                            else inBetween = tokenValue.Substring(afterExpression, tokenValue.Length - afterExpression);
+                                if (escapeSequence == "[" || escapeSequence == "]") {
+                                    stringValue += escapeSequence;
+                                    break;
+                                } else if (escapeSequence == "ref") {
+                                    currentInterpolationType = StringFormatTypes.Ref;
+                                    break;
+                                } else if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { //Unimplemented escape sequence
+                                    break;
+                                }
+                            } while (c != ' ');
 
-                            if (inBetween.Length > 0) {
-                                pieces.Add(new DMASTConstantString(inBetween));
+                            if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
                             }
-                        } while (bracketIndex != -1);
+                        } else if (bracketNesting == 0) {
+                            stringValue += c;
+                        }
+                    }
 
-                        return new DMASTBuildString(pieces.ToArray());
+                    if (bracketNesting > 0) throw new Exception("Expected ']'");
+
+                    if (interpolationValues.Count == 0) {
+                        return new DMASTConstantString(stringValue);
                     } else {
-                        return new DMASTConstantString((string)constantToken.Value);
+                        return new DMASTStringFormat(stringValue, interpolationValues.ToArray());
                     }
                 }
                 default: return null;

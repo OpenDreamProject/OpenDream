@@ -4,12 +4,26 @@ using DMCompiler.Compiler;
 
 namespace DMCompiler.DM {
     class DMLexer : Lexer {
-        public static string StringInterpolationStart = new string(new char[] { (char)0xFF, (char)0x0 });
-        public static string StringInterpolationEnd = new string(new char[] { (char)0xFF, (char)0x1 });
+        public static List<string> ValidEscapeSequences = new List<string>() {
+            "t", "n",
+            "[", "]",
+            "\\", "\"",
 
-        private bool _checkingIndentation = true;
-        private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
-        private Dictionary<string, TokenType> _keywords = new Dictionary<string, TokenType>() {
+            "icon",
+            "Roman", "roman",
+            "The", "the",
+            "A", "a", "An", "an",
+            "s",
+            "him",
+            "His", "his",
+            "Hers", "hers",
+            "ref",
+            "improper", "proper",
+            "red", "blue", "green",
+            "..."
+        };
+
+        public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "continue", TokenType.DM_Continue },
@@ -34,9 +48,10 @@ namespace DMCompiler.DM {
             { "goto", TokenType.DM_Goto }
         };
 
-        public DMLexer(string source) : base(source) {
+        private bool _checkingIndentation = true;
+        private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
 
-        }
+        public DMLexer(string source) : base(source) { }
 
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
@@ -331,7 +346,7 @@ namespace DMCompiler.DM {
                                 }
                             } while (!IsAtEndOfFile());
 
-                            if (_keywords.TryGetValue(text, out TokenType keywordType)) {
+                            if (Keywords.TryGetValue(text, out TokenType keywordType)) {
                                 token = CreateToken(keywordType, text);
                             } else {
                                 token = CreateToken(TokenType.DM_Identifier, text);
@@ -427,119 +442,53 @@ namespace DMCompiler.DM {
             char c = GetCurrent();
             string text = Convert.ToString(c);
             string stringValue = String.Empty;
-            int nestingLevel = 0;
+            int bracketNesting = 0;
 
             if (isLong) _checkingIndentation = false;
             do {
                 c = Advance();
 
                 text += c;
-                if (c == '[') nestingLevel++;
-                else if (c == ']') nestingLevel--;
 
-                if (nestingLevel == 0) {
+                if (c == '[') bracketNesting++;
+                else if (c == ']') bracketNesting--;
+
+                if (bracketNesting == 0) {
                     if (c == '\\') {
                         string escapeSequence = String.Empty;
-                        bool validEscapeSequence = false;
 
                         while (Advance() != ' ') {
                             c = GetCurrent();
 
                             text += c;
                             escapeSequence += c;
-                            if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "[" || escapeSequence == "]") {
+                            if (escapeSequence == "\"" || escapeSequence == "\\") {
                                 stringValue += escapeSequence;
-                                validEscapeSequence = true;
                                 break;
                             } else if (escapeSequence == "n") {
                                 stringValue += '\n';
-                                validEscapeSequence = true;
                                 break;
                             } else if (escapeSequence == "t") {
                                 stringValue += '\t';
-                                validEscapeSequence = true;
                                 break;
-                            } else if (escapeSequence == "icon") {
-                                //TODO: Icon escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "Roman" || escapeSequence == "roman") {
-                                //TODO: Roman escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "The" || escapeSequence == "the") {
-                                //TODO: "The" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "A" || escapeSequence == "a" || escapeSequence == "An" || escapeSequence == "an") {
-                                //TODO: "A(n)" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "s") {
-                                //TODO: "s" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "him") {
-                                //TODO: "him" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "his" || escapeSequence == "His") {
-                                //TODO: "his" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "hers" || escapeSequence == "Hers") {
-                                //TODO: "hers" escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "ref") {
-                                //TODO: Ref escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "improper") {
-                                //TODO: Improper escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "proper") {
-                                //TODO: Proper escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "red") {
-                                //TODO: red escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "blue") {
-                                //TODO: blue escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "green") {
-                                //TODO: green escape sequence
-                                validEscapeSequence = true;
-                                break;
-                            } else if (escapeSequence == "...") {
-                                //TODO: "..." escape sequence
-                                validEscapeSequence = true;
+                            } else if (ValidEscapeSequences.Contains(escapeSequence)) { //Handled in the parser
+                                stringValue += '\\' + escapeSequence;
                                 break;
                             }
                         }
 
-                        if (!validEscapeSequence) {
+                        if (!ValidEscapeSequences.Contains(escapeSequence)) {
                             throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
                         }
                     } else if (c != '"' && !(!isLong && c == '\n')) {
-                        if (c == ']') {
-                            stringValue += StringInterpolationEnd;
-                        } else {
-                            stringValue += c;
-                        }
+                        stringValue += c;
                     } else {
                         break;
                     }
-                } else if (c == '[' && nestingLevel == 1) {
-                    stringValue += StringInterpolationStart;
                 } else {
                     stringValue += c;
                 }
-            } while (!IsAtEndOfFile());
+        } while (!IsAtEndOfFile());
             if (c != '"') throw new Exception("Expected '\"' to end string");
 
             Advance();

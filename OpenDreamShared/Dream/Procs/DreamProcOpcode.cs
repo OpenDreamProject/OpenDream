@@ -3,7 +3,7 @@
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,
         PushString = 0x3,
-        BuildString = 0x4,
+        FormatString = 0x4,
         PushInt = 0x5,
         DefineVariable = 0x6,
         PushPath = 0x7,
@@ -67,5 +67,11 @@
     enum DreamProcOpcodeParameterType {
         Named = 0xFC,
         Unnamed = 0xFD
+    }
+
+    public enum StringFormatTypes {
+        //0x0 is skipped because it's used to signal the end of a string
+        Stringify = 0x1,
+        Ref = 0x2
     }
 }

@@ -70,6 +70,7 @@ namespace OpenDreamClient.Interface {
             });
 
             Window popup = CreateWindow(InterfaceHelpers.CreateWindowFromDescriptor(popupWindowDescriptor));
+            popup.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             popup.Owner = _defaultWindow;
             popup.Width = windowSize.Width;
             popup.Height = windowSize.Height;
@@ -93,7 +94,9 @@ namespace OpenDreamClient.Interface {
 
         public void HandlePacketBrowse(PacketBrowse pBrowse) {
             if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
-                PopupWindows[pBrowse.Window].Close();
+                if (PopupWindows.TryGetValue(pBrowse.Window, out Window popup)) {
+                    popup.Close();
+                }
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
                 string htmlFileName;
                 ElementBrowser outputBrowser;
@@ -144,6 +147,8 @@ namespace OpenDreamClient.Interface {
             int keyCode = InterfaceHelpers.KeyToKeyCode(e.Key);
 
             if (keyCode != -1) {
+                e.Handled = true;
+
                 Program.OpenDream.Connection.SendPacket(new PacketKeyboardInput(new int[1] { keyCode }, new int[0] { }));
             }
         }
@@ -152,6 +157,8 @@ namespace OpenDreamClient.Interface {
             int keyCode = InterfaceHelpers.KeyToKeyCode(e.Key);
 
             if (keyCode != -1) {
+                e.Handled = true;
+
                 Program.OpenDream.Connection.SendPacket(new PacketKeyboardInput(new int[0] { }, new int[1] { keyCode }));
             }
         }

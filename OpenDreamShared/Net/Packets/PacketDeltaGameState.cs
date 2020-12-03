@@ -5,7 +5,7 @@ using System.Drawing;
 
 namespace OpenDreamShared.Net.Packets {
     class PacketDeltaGameState : IPacket {
-        private enum PacketDeltaGameStateSectionID {
+        private enum SectionID {
             AtomCreations = 0x0,
             AtomDeletions = 0x1,
             AtomDeltas = 0x2,
@@ -14,7 +14,7 @@ namespace OpenDreamShared.Net.Packets {
             Client = 0x5
         }
 
-        private enum PacketDeltaGameStateAtomDeltaValueID {
+        private enum AtomDeltaValueID {
             End = 0x0,
             VisualProperties = 0x1,
             OverlayAdditions = 0x2,
@@ -22,7 +22,7 @@ namespace OpenDreamShared.Net.Packets {
             ScreenLocation = 0x4
         }
 
-        private enum PacketDeltaGameStateClientValueID {
+        private enum ClientValueID {
             End = 0x0,
             Eye = 0x1,
             ScreenObjectAdditions = 0x2,
@@ -32,8 +32,6 @@ namespace OpenDreamShared.Net.Packets {
         public PacketID PacketID => PacketID.DeltaGameState;
         public DreamDeltaState DeltaState;
         public DreamDeltaState.ClientDelta ClientDelta;
-        public UInt16[] ScreenObjectAdditions;
-        public UInt16[] ScreenObjectRemovals;
 
         public PacketDeltaGameState() { }
 
@@ -46,15 +44,15 @@ namespace OpenDreamShared.Net.Packets {
             DeltaState = new DreamDeltaState(stream.ReadUInt32());
 
             while (stream.Position < stream.Length) {
-                PacketDeltaGameStateSectionID sectionID = (PacketDeltaGameStateSectionID)stream.ReadByte();
+                SectionID sectionID = (SectionID)stream.ReadByte();
 
                 switch (sectionID) {
-                    case PacketDeltaGameStateSectionID.AtomCreations: ReadAtomCreationsSection(stream); break;
-                    case PacketDeltaGameStateSectionID.AtomDeletions: ReadAtomDeletionsSection(stream); break;
-                    case PacketDeltaGameStateSectionID.AtomDeltas: ReadAtomDeltasSection(stream); break;
-                    case PacketDeltaGameStateSectionID.AtomLocationDeltas: ReadAtomLocationDeltasSection(stream); break;
-                    case PacketDeltaGameStateSectionID.TurfDeltas: ReadTurfDeltasSection(stream); break;
-                    case PacketDeltaGameStateSectionID.Client: ReadClientSection(stream); break;
+                    case SectionID.AtomCreations: ReadAtomCreationsSection(stream); break;
+                    case SectionID.AtomDeletions: ReadAtomDeletionsSection(stream); break;
+                    case SectionID.AtomDeltas: ReadAtomDeltasSection(stream); break;
+                    case SectionID.AtomLocationDeltas: ReadAtomLocationDeltasSection(stream); break;
+                    case SectionID.TurfDeltas: ReadTurfDeltasSection(stream); break;
+                    case SectionID.Client: ReadClientSection(stream); break;
                     default: throw new Exception("Invalid section ID in delta game state packet (" + sectionID + ")");
                 }
             }
@@ -75,15 +73,13 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomCreationsCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomCreationsCount; i++) {
-                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation();
+                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), stream.ReadUInt16());
 
-                atomCreation.AtomID = stream.ReadUInt16();
-                atomCreation.BaseID = stream.ReadUInt16();
                 atomCreation.LocationID = stream.ReadUInt16();
                 atomCreation.VisualProperties = stream.ReadIconVisualProperties();
                 atomCreation.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
-                    atomCreation.ScreenLocation = new Point(stream.ReadUInt16(), stream.ReadUInt16());
+                    atomCreation.ScreenLocation = stream.ReadScreenLocation();
                 }
                 
                 DeltaState.AtomCreations.Add(atomCreation);
@@ -91,7 +87,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteAtomCreationsSection(PacketStream stream) {
-            stream.WriteByte((byte)PacketDeltaGameStateSectionID.AtomCreations);
+            stream.WriteByte((byte)SectionID.AtomCreations);
             stream.WriteUInt16((UInt16)DeltaState.AtomCreations.Count);
 
             foreach (DreamDeltaState.AtomCreation atomCreation in DeltaState.AtomCreations) {
@@ -101,8 +97,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteIconVisualProperties(atomCreation.VisualProperties);
                 stream.WriteOverlays(atomCreation.Overlays);
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
-                    stream.WriteUInt16((UInt16)atomCreation.ScreenLocation.X);
-                    stream.WriteUInt16((UInt16)atomCreation.ScreenLocation.Y);
+                    stream.WriteScreenLocation(atomCreation.ScreenLocation);
                 }
             }
         }
@@ -116,7 +111,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteAtomDeletionsSection(PacketStream stream) {
-            stream.WriteByte((byte)PacketDeltaGameStateSectionID.AtomDeletions);
+            stream.WriteByte((byte)SectionID.AtomDeletions);
             stream.WriteUInt16((UInt16)DeltaState.AtomDeletions.Count);
 
             foreach (UInt16 atomDeletion in DeltaState.AtomDeletions) {
@@ -128,58 +123,58 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomDeltasCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomDeltasCount; i++) {
-                DreamDeltaState.AtomDelta atomDelta = new DreamDeltaState.AtomDelta();
-                atomDelta.AtomID = stream.ReadUInt16();
-                atomDelta.HasChangedScreenLocation = false;
+                DreamDeltaState.AtomDelta atomDelta = new DreamDeltaState.AtomDelta(stream.ReadUInt16());
 
-                PacketDeltaGameStateAtomDeltaValueID valueID;
+                AtomDeltaValueID valueID;
                 do {
-                    valueID = (PacketDeltaGameStateAtomDeltaValueID)stream.ReadByte();
+                    valueID = (AtomDeltaValueID)stream.ReadByte();
 
-                    if (valueID == PacketDeltaGameStateAtomDeltaValueID.VisualProperties) {
+                    if (valueID == AtomDeltaValueID.VisualProperties) {
                         atomDelta.ChangedVisualProperties = stream.ReadIconVisualProperties();
-                    } else if (valueID == PacketDeltaGameStateAtomDeltaValueID.OverlayAdditions) {
+                    } else if (valueID == AtomDeltaValueID.OverlayAdditions) {
                         atomDelta.OverlayAdditions = stream.ReadOverlays();
-                    } else if (valueID == PacketDeltaGameStateAtomDeltaValueID.OverlayRemovals) {
+                    } else if (valueID == AtomDeltaValueID.OverlayRemovals) {
                         int overlayRemovalCount = stream.ReadByte();
 
                         atomDelta.OverlayRemovals = new List<UInt16>();
                         for (int k = 0; k < overlayRemovalCount; k++) {
                             atomDelta.OverlayRemovals.Add((UInt16)stream.ReadByte());
                         }
-                    } else if (valueID == PacketDeltaGameStateAtomDeltaValueID.ScreenLocation) {
-                        atomDelta.HasChangedScreenLocation = true;
-                        atomDelta.ScreenLocation = new Point(stream.ReadUInt16(), stream.ReadUInt16());
-                    } else if (valueID != PacketDeltaGameStateAtomDeltaValueID.End) {
+                    } else if (valueID == AtomDeltaValueID.ScreenLocation) {
+                        atomDelta.ScreenLocation = stream.ReadScreenLocation();
+                    } else if (valueID != AtomDeltaValueID.End) {
                         throw new Exception("Invalid atom delta value ID in delta game state packet (" + valueID.ToString() + ")");
                     }
-                } while (valueID != PacketDeltaGameStateAtomDeltaValueID.End);
+                } while (valueID != AtomDeltaValueID.End);
 
                 DeltaState.AtomDeltas.Add(atomDelta);
             }
         }
 
         private void WriteAtomDeltasSection(PacketStream stream) {
-            stream.WriteByte((byte)PacketDeltaGameStateSectionID.AtomDeltas);
+            stream.WriteByte((byte)SectionID.AtomDeltas);
             stream.WriteUInt16((UInt16)DeltaState.AtomDeltas.Count);
 
-            int wrote = 0;
             foreach (DreamDeltaState.AtomDelta atomDelta in DeltaState.AtomDeltas) {
-                wrote++;
                 stream.WriteUInt16(atomDelta.AtomID);
 
-                if (!atomDelta.ChangedVisualProperties.IsDefault()) {
-                    stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.VisualProperties);
-                    stream.WriteIconVisualProperties(atomDelta.ChangedVisualProperties);
+                if (atomDelta.ChangedVisualProperties.HasValue) {
+                    stream.WriteByte((byte)AtomDeltaValueID.VisualProperties);
+                    stream.WriteIconVisualProperties(atomDelta.ChangedVisualProperties.Value);
+                }
+
+                if (atomDelta.ScreenLocation.HasValue) {
+                    stream.WriteByte((byte)AtomDeltaValueID.ScreenLocation);
+                    stream.WriteScreenLocation(atomDelta.ScreenLocation.Value);
                 }
 
                 if (atomDelta.OverlayAdditions.Count > 0) {
-                    stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.OverlayAdditions);
+                    stream.WriteByte((byte)AtomDeltaValueID.OverlayAdditions);
                     stream.WriteOverlays(atomDelta.OverlayAdditions);
                 }
 
                 if (atomDelta.OverlayRemovals.Count > 0) {
-                    stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.OverlayRemovals);
+                    stream.WriteByte((byte)AtomDeltaValueID.OverlayRemovals);
 
                     stream.WriteByte((byte)atomDelta.OverlayRemovals.Count);
                     foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
@@ -187,7 +182,7 @@ namespace OpenDreamShared.Net.Packets {
                     }
                 }
 
-                stream.WriteByte((byte)PacketDeltaGameStateAtomDeltaValueID.End);
+                stream.WriteByte((byte)AtomDeltaValueID.End);
             }
         }
 
@@ -205,7 +200,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteAtomLocationDeltasSection(PacketStream stream) {
-            stream.WriteByte((byte)PacketDeltaGameStateSectionID.AtomLocationDeltas);
+            stream.WriteByte((byte)SectionID.AtomLocationDeltas);
             stream.WriteUInt16((UInt16)DeltaState.AtomLocationDeltas.Count);
 
             foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in DeltaState.AtomLocationDeltas) {
@@ -228,7 +223,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteTurfDeltasSection(PacketStream stream) {
-            stream.WriteByte((byte)PacketDeltaGameStateSectionID.TurfDeltas);
+            stream.WriteByte((byte)SectionID.TurfDeltas);
             stream.WriteUInt16((UInt16)DeltaState.TurfDeltas.Count);
 
             foreach (DreamDeltaState.TurfDelta turfDelta in DeltaState.TurfDeltas) {
@@ -239,44 +234,66 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void ReadClientSection(PacketStream stream) {
-            PacketDeltaGameStateClientValueID valueID;
+            ClientValueID valueID;
             ClientDelta = new DreamDeltaState.ClientDelta();
 
             do {
-                valueID = (PacketDeltaGameStateClientValueID)stream.ReadByte();
+                valueID = (ClientValueID)stream.ReadByte();
 
-                if (valueID == PacketDeltaGameStateClientValueID.Eye) {
+                if (valueID == ClientValueID.Eye) {
                     ClientDelta.NewEyeID = stream.ReadUInt16();
-                } else if (valueID == PacketDeltaGameStateClientValueID.ScreenObjectAdditions) {
+                } else if (valueID == ClientValueID.ScreenObjectAdditions) {
                     UInt16 screenObjectAdditionCount = stream.ReadUInt16();
 
-                    ScreenObjectAdditions = new ushort[screenObjectAdditionCount];
+                    ClientDelta.ScreenObjectAdditions = new List<UInt16>();
                     for (int i = 0; i < screenObjectAdditionCount; i++) {
-                        ScreenObjectAdditions[i] = stream.ReadUInt16();
+                        ClientDelta.ScreenObjectAdditions.Add(stream.ReadUInt16());
                     }
-                } else if (valueID == PacketDeltaGameStateClientValueID.ScreenObjectRemovals) {
+                } else if (valueID == ClientValueID.ScreenObjectRemovals) {
                     UInt16 screenObjectRemovalCount = stream.ReadUInt16();
 
-                    ScreenObjectRemovals = new ushort[screenObjectRemovalCount];
+                    ClientDelta.ScreenObjectRemovals = new List<UInt16>();
                     for (int i = 0; i < screenObjectRemovalCount; i++) {
-                        ScreenObjectRemovals[i] = stream.ReadUInt16();
+                        ClientDelta.ScreenObjectRemovals.Add(stream.ReadUInt16());
                     }
-                } else if (valueID != PacketDeltaGameStateClientValueID.End) {
+                } else if (valueID != ClientValueID.End) {
                     throw new Exception("Invalid client value ID in delta game state packet (" + valueID.ToString() + ")");
                 }
-            } while (valueID != PacketDeltaGameStateClientValueID.End);
+            } while (valueID != ClientValueID.End);
         }
 
         private void WriteClientSection(PacketStream stream) {
-            bool newEye = ClientDelta.NewEyeID != null;
+            bool newEye = ClientDelta.NewEyeID.HasValue;
+            bool screenAdditions = (ClientDelta.ScreenObjectAdditions != null && ClientDelta.ScreenObjectAdditions.Count > 0);
+            bool screenRemovals = (ClientDelta.ScreenObjectRemovals != null && ClientDelta.ScreenObjectRemovals.Count > 0);
 
-            if (newEye) {
-                stream.WriteByte((byte)PacketDeltaGameStateSectionID.Client);
+            if (newEye || screenAdditions || screenRemovals) {
+                stream.WriteByte((byte)SectionID.Client);
 
-                stream.WriteByte((byte)PacketDeltaGameStateClientValueID.Eye);
-                stream.WriteUInt16(ClientDelta.NewEyeID.Value);
+                if (newEye) {
+                    stream.WriteByte((byte)ClientValueID.Eye);
+                    stream.WriteUInt16(ClientDelta.NewEyeID.Value);
+                }
+                
+                if (screenAdditions) {
+                    stream.WriteByte((byte)ClientValueID.ScreenObjectAdditions);
 
-                stream.WriteByte((byte)PacketDeltaGameStateClientValueID.End);
+                    stream.WriteUInt16((UInt16)ClientDelta.ScreenObjectAdditions.Count);
+                    foreach (UInt16 screenObjectID in ClientDelta.ScreenObjectAdditions) {
+                        stream.WriteUInt16(screenObjectID);
+                    }
+                }
+
+                if (screenRemovals) {
+                    stream.WriteByte((byte)ClientValueID.ScreenObjectRemovals);
+
+                    stream.WriteUInt16((UInt16)ClientDelta.ScreenObjectRemovals.Count);
+                    foreach (UInt16 screenObjectID in ClientDelta.ScreenObjectRemovals) {
+                        stream.WriteUInt16(screenObjectID);
+                    }
+                }
+
+                stream.WriteByte((byte)ClientValueID.End);
             }
         }
     }

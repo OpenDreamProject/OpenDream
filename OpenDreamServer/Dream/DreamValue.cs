@@ -157,6 +157,8 @@ namespace OpenDreamServer.Dream {
                 return GetValueAsInteger().ToString();
             } else if (Type == DreamValueType.Double) {
                 return GetValueAsDouble().ToString();
+            } else if (Type == DreamValueType.DreamResource) {
+                return GetValueAsDreamResource().ResourcePath;
             } else if (Type == DreamValueType.DreamPath) {
                 return GetValueAsPath().PathString;
             } else if (Type == DreamValueType.DreamObject) {

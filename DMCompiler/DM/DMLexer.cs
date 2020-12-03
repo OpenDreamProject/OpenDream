@@ -19,7 +19,7 @@ namespace DMCompiler.DM {
             "Hers", "hers",
             "ref",
             "improper", "proper",
-            "red", "blue", "green",
+            "red", "blue", "green", "black",
             "..."
         };
 

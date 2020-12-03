@@ -24,6 +24,8 @@ namespace OpenDreamClient.Interface.Elements {
             _dreamRenderer = new DreamRenderer();
             this.Children.Add(_dreamRenderer.OpenGLViewControl);
             
+            this.Focusable = true;
+            this.IsEnabled = true;
             this.UseLayoutRounding = true;
             this.Background = Brushes.Black;
 
@@ -45,6 +47,9 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e) {
+            e.Handled = true;
+            this.Focus();
+
             Point mousePosition = e.GetPosition(_dreamRenderer.OpenGLViewControl);
             (int, int) cameraPosition = _dreamRenderer.GetCameraPosition();
             mousePosition.X = Math.Floor(mousePosition.X);

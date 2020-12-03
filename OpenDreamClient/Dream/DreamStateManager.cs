@@ -118,7 +118,9 @@ namespace OpenDreamClient.Dream {
                 if (Program.OpenDream.ATOMs.ContainsKey(atomDelta.AtomID)) {
                     ATOM atom = Program.OpenDream.ATOMs[atomDelta.AtomID];
 
-                    atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomDelta.ChangedVisualProperties);
+                    if (atomDelta.ChangedVisualProperties.HasValue) {
+                        atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomDelta.ChangedVisualProperties.Value);
+                    }
 
                     if (atomDelta.OverlayRemovals != null) {
                         foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
@@ -132,8 +134,8 @@ namespace OpenDreamClient.Dream {
                         }
                     }
 
-                    if (atomDelta.HasChangedScreenLocation) {
-                        atom.ScreenLocation = atomDelta.ScreenLocation;
+                    if (atomDelta.ScreenLocation.HasValue) {
+                        atom.ScreenLocation = atomDelta.ScreenLocation.Value;
                     }
                 } else {
                     Console.WriteLine("Delta state packet contains delta values for an invalid ATOM, and was ignored (ID " + atomDelta.AtomID + ")");
@@ -170,22 +172,28 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            if (pDeltaGameState.ClientDelta.NewEyeID != null) {
+            if (pDeltaGameState.ClientDelta != null) {
+                ApplyClientDelta(pDeltaGameState.ClientDelta);
+            }
+        }
+
+        private void ApplyClientDelta(DreamDeltaState.ClientDelta clientDelta) {
+            if (clientDelta.NewEyeID.HasValue) {
                 ATOM newEye = null;
 
-                if (pDeltaGameState.ClientDelta.NewEyeID.Value != 0xFFFF) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(pDeltaGameState.ClientDelta.NewEyeID.Value)) {
-                        newEye = Program.OpenDream.ATOMs[pDeltaGameState.ClientDelta.NewEyeID.Value];
+                if (clientDelta.NewEyeID.Value != 0xFFFF) {
+                    if (Program.OpenDream.ATOMs.ContainsKey(clientDelta.NewEyeID.Value)) {
+                        newEye = Program.OpenDream.ATOMs[clientDelta.NewEyeID.Value];
                     } else {
-                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM, and was ignored (ID " + pDeltaGameState.ClientDelta.NewEyeID.Value + ")");
+                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM, and was ignored (ID " + clientDelta.NewEyeID.Value + ")");
                     }
                 }
 
                 Program.OpenDream.Eye = newEye;
             }
 
-            if (pDeltaGameState.ScreenObjectAdditions != null) {
-                foreach (UInt16 screenObjectAtomID in pDeltaGameState.ScreenObjectAdditions) {
+            if (clientDelta.ScreenObjectAdditions != null) {
+                foreach (UInt16 screenObjectAtomID in clientDelta.ScreenObjectAdditions) {
                     if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
                         ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
 
@@ -200,8 +208,8 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            if (pDeltaGameState.ScreenObjectRemovals != null) {
-                foreach (UInt16 screenObjectAtomID in pDeltaGameState.ScreenObjectRemovals) {
+            if (clientDelta.ScreenObjectRemovals != null) {
+                foreach (UInt16 screenObjectAtomID in clientDelta.ScreenObjectRemovals) {
                     if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
                         ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
 

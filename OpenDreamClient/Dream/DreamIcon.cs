@@ -93,6 +93,8 @@ namespace OpenDreamClient.Dream {
             }
 
             Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(VisualProperties.Icon, (ResourceDMI dmi) => {
+                if (dmi.ResourcePath != VisualProperties.Icon) return; //Icon changed while resource was loading
+
                 DMI = dmi;
                 _animationStartTime = DateTime.Now;
             });

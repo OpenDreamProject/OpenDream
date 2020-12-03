@@ -96,6 +96,29 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
+            _proc.CreateScope();
+            {
+                if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
+
+                string loopLabel = NewLabelName();
+                string loopBodyLabel = NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    statementForStandard.Comparator.Visit(this);
+                    _proc.JumpIfTrue(loopBodyLabel);
+                    _proc.Break();
+
+                    _proc.AddLabel(loopBodyLabel);
+                    statementForStandard.Body.Visit(this);
+                    statementForStandard.Incrementor.Visit(this);
+                    _proc.Continue();
+                }
+                _proc.LoopEnd();
+            }
+            _proc.DestroyScope();
+        }
+
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
             statementForList.List.Visit(this);
             _proc.CreateListEnumerator();
@@ -212,8 +235,8 @@ namespace DMCompiler.DM.Visitors {
 
             if (defaultCaseBody != null) {
                 defaultCaseBody.Visit(this);
-                _proc.Jump(endLabel);
             }
+            _proc.Jump(endLabel);
 
             foreach ((string CaseLabel, DMASTProcBlockInner CaseBody) valueCase in valueCases) {
                 _proc.AddLabel(valueCase.CaseLabel);
@@ -334,6 +357,38 @@ namespace DMCompiler.DM.Visitors {
             subtract.A.Visit(this);
             subtract.B.Visit(this);
             _proc.Subtract();
+        }
+
+        public void VisitPreIncrement(DMASTPreIncrement preIncrement) {
+            preIncrement.Expression.Visit(this);
+            _proc.PushInt(1);
+            _proc.Append();
+
+            preIncrement.Expression.Visit(this);
+        }
+
+        public void VisitPreDecrement(DMASTPreDecrement preDecrement) {
+            preDecrement.Expression.Visit(this);
+            _proc.PushInt(1);
+            _proc.Remove();
+
+            preDecrement.Expression.Visit(this);
+        }
+
+        public void VisitPostIncrement(DMASTPostIncrement postIncrement) {
+            postIncrement.Expression.Visit(this);
+
+            postIncrement.Expression.Visit(this);
+            _proc.PushInt(1);
+            _proc.Append();
+        }
+
+        public void VisitPostDecrement(DMASTPostDecrement postDecrement) {
+            postDecrement.Expression.Visit(this);
+
+            postDecrement.Expression.Visit(this);
+            _proc.PushInt(1);
+            _proc.Remove();
         }
 
         public void VisitMultiply(DMASTMultiply multiply) {
@@ -501,7 +556,7 @@ namespace DMCompiler.DM.Visitors {
                         if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
                             _proc.PushString(value.Name);
                             _proc.ListAppendAssociated();
-                        } else if (associatedAssign.Expression is DMASTConstantResource) {
+                        } else if (associatedAssign.Expression is DMASTConstantResource || associatedAssign.Expression is DMASTConstantPath) {
                             associatedAssign.Expression.Visit(this);
                             _proc.ListAppendAssociated();
                         } else {

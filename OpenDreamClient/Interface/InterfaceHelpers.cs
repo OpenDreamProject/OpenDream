@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace OpenDreamClient.Interface {
     static class InterfaceHelpers {
@@ -66,6 +67,17 @@ namespace OpenDreamClient.Interface {
 
                 frameworkElement.Width = size.Width;
                 frameworkElement.Height = size.Height;
+            }
+
+            if (elementDescriptor.BackgroundColor.HasValue) {
+                System.Drawing.Color color = elementDescriptor.BackgroundColor.Value;
+                Brush brush = new SolidColorBrush(Color.FromRgb(color.R, color.G, color.B));
+
+                if (uiElement is Panel) {
+                    ((Panel)uiElement).Background = brush;
+                } else if (uiElement is Control) {
+                    ((Control)uiElement).Background = brush;
+                }
             }
         }
 

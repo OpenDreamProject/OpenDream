@@ -109,7 +109,6 @@ namespace OpenDreamClient.Renderer {
         private void RenderFrame(object sender, OpenGLRoutedEventArgs args) {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
-            
             if (Program.OpenDream.Map != null) {
                 Map map = Program.OpenDream.Map;
                 (int, int) cameraPosition = GetCameraPosition();
@@ -122,6 +121,15 @@ namespace OpenDreamClient.Renderer {
                         DrawATOM(atom);
                     }
                 }
+            }
+
+            foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
+                ScreenLocation screenLocation = screenObject.ScreenLocation;
+                float screenX = screenLocation.X * 32.0f + screenLocation.PixelOffsetX - (8 * 32.0f);
+                float screenY = screenLocation.Y * 32.0f + screenLocation.PixelOffsetY - (8 * 32.0f);
+
+                _gl.Uniform2(_shader.TranslationUniform, screenX, screenY);
+                DrawATOM(screenObject);
             }
         }
 

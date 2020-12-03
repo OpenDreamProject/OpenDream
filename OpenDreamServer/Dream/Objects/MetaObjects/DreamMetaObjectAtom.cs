@@ -5,12 +5,12 @@ using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
-        public static Dictionary<DreamObject, UInt16> AtomIDs = new Dictionary<DreamObject, UInt16>();
-        public static Dictionary<UInt16, DreamObject> AtomIDToAtom = new Dictionary<UInt16, DreamObject>();
+        public static Dictionary<DreamObject, UInt16> AtomIDs = new();
+        public static Dictionary<UInt16, DreamObject> AtomIDToAtom = new();
 
         private static UInt16 _atomIDCounter = 0;
-        private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new Dictionary<DreamList, DreamObject>();
-        private static Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, IconVisualProperties)>> _atomOverlays = new Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, IconVisualProperties)>>();
+        private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
+        private static Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, IconVisualProperties)>> _atomOverlays = new();
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -56,8 +56,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            if (variableName == "icon_state") {
-                Program.DreamStateManager.AddAtomIconStateDelta(dreamObject);
+            if (variableName == "icon") {
+                Program.DreamStateManager.AddAtomIconDelta(dreamObject, variableValue.GetValueAsDreamResource().ResourcePath);
+            } else if (variableName == "icon_state") {
+                Program.DreamStateManager.AddAtomIconStateDelta(dreamObject, variableValue.GetValueAsString());
             } else if (variableName == "dir") {
                 Program.DreamStateManager.AddAtomDirectionDelta(dreamObject, (AtomDirection)variableValue.GetValueAsInteger());
             } else if (variableName == "overlays") {

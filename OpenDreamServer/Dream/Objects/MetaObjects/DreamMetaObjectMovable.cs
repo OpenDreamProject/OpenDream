@@ -6,6 +6,13 @@ using System.Text;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectMovable : DreamMetaObjectAtom {
+        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            base.OnObjectCreated(dreamObject, creationArguments);
+
+            DreamValue screenLocationValue = dreamObject.GetVariable("screen_loc");
+            if (screenLocationValue.Value != null)UpdateScreenLocation(dreamObject, screenLocationValue);
+        }
+
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
@@ -31,6 +38,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                     newLocContents.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
                 }
+            } else if (variableName == "screen_loc") {
+                UpdateScreenLocation(dreamObject, variableValue);
             }
         }
 
@@ -46,6 +55,18 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
+        }
+
+        private void UpdateScreenLocation(DreamObject movable, DreamValue screenLocationValue) {
+            ScreenLocation screenLocation;
+            if (screenLocationValue.Value != null) {
+                string screenLocationString = screenLocationValue.GetValueAsString();
+                screenLocation = new ScreenLocation(screenLocationString);
+            } else {
+                screenLocation = new ScreenLocation();
+            }
+
+            Program.DreamStateManager.AddAtomScreenLocationDelta(movable, screenLocation);
         }
     }
 }

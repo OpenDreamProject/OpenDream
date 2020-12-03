@@ -45,7 +45,7 @@ namespace OpenDreamShared.Net.Packets {
                 atom.VisualProperties = stream.ReadIconVisualProperties();
                 atom.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atom.BaseID].Type == ATOMType.Movable) {
-                    atom.ScreenLocation = new Point(stream.ReadUInt16(), stream.ReadUInt16());
+                    atom.ScreenLocation = stream.ReadScreenLocation();
                 }
 
                 FullState.Atoms[atom.AtomID] = atom;
@@ -62,8 +62,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteIconVisualProperties(atom.Value.VisualProperties, ATOMBase.AtomBases[atom.Value.BaseID].VisualProperties);
                 stream.WriteOverlays(atom.Value.Overlays);
                 if (ATOMBase.AtomBases[atom.Value.BaseID].Type == ATOMType.Movable) {
-                    stream.WriteUInt16(0);
-                    stream.WriteUInt16(0);
+                    stream.WriteScreenLocation(atom.Value.ScreenLocation);
                 }
             }
         }

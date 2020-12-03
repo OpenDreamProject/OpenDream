@@ -226,6 +226,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "splittext", "splittext");
             AddNativeProc(rootObject, "sleep", "sleep");
             AddNativeProc(rootObject, "sound", "sound");
+            AddNativeProc(rootObject, "text", "text");
             AddNativeProc(rootObject, "text2ascii", "text2ascii");
             AddNativeProc(rootObject, "text2num", "text2num");
             AddNativeProc(rootObject, "text2path", "text2path");

@@ -73,9 +73,15 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public void AddAtomIconStateDelta(DreamObject atom) {
+        public void AddAtomIconDelta(DreamObject atom, string icon) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomIconStateDelta(DreamMetaObjectAtom.AtomIDs[atom], atom.GetVariable("icon_state").GetValueAsString());
+                _currentDeltaState.AddAtomIconDelta(DreamMetaObjectAtom.AtomIDs[atom], icon);
+            }
+        }
+
+        public void AddAtomIconStateDelta(DreamObject atom, string iconState) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomIconStateDelta(DreamMetaObjectAtom.AtomIDs[atom], iconState);
             }
         }
 
@@ -94,6 +100,12 @@ namespace OpenDreamServer.Dream {
         public void RemoveAtomOverlay(DreamObject atom, UInt16 overlayID) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.RemoveAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID);
+            }
+        }
+
+        public void AddAtomScreenLocationDelta(DreamObject atom, ScreenLocation screenLocation) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomScreenLocDelta(DreamMetaObjectAtom.AtomIDs[atom], screenLocation);
             }
         }
 
@@ -118,6 +130,18 @@ namespace OpenDreamServer.Dream {
         public void AddClientEyeIDDelta(string ckey, UInt16 newEyeID) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddClientEyeIDDelta(ckey, newEyeID);
+            }
+        }
+
+        public void AddClientScreenObject(string ckey, DreamObject atom) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddClientScreenObject(ckey, DreamMetaObjectAtom.AtomIDs[atom]);
+            }
+        }
+
+        public void RemoveClientScreenObject(string ckey, DreamObject atom) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.RemoveClientScreenObject(ckey, DreamMetaObjectAtom.AtomIDs[atom]);
             }
         }
 

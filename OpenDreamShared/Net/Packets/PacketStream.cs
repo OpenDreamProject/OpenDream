@@ -27,6 +27,14 @@ namespace OpenDreamShared.Net.Packets {
             _binaryReader = new BinaryReader(this);
         }
 
+        public sbyte ReadSByte() {
+            return _binaryReader.ReadSByte();
+        }
+
+        public void WriteSByte(sbyte data) {
+            _binaryWriter.Write(data);
+        }
+
         public UInt16 ReadUInt16() {
             return _binaryReader.ReadUInt16();
         }
@@ -134,6 +142,17 @@ namespace OpenDreamShared.Net.Packets {
             }
 
             WriteByte((byte)PacketStreamVisualPropertyID.End);
+        }
+
+        public ScreenLocation ReadScreenLocation() {
+            return new ScreenLocation(ReadSByte(), ReadSByte(), ReadSByte(), ReadSByte());
+        }
+
+        public void WriteScreenLocation(ScreenLocation screenLocation) {
+            WriteSByte((sbyte)screenLocation.X);
+            WriteSByte((sbyte)screenLocation.Y);
+            WriteSByte((sbyte)screenLocation.PixelOffsetX);
+            WriteSByte((sbyte)screenLocation.PixelOffsetY);
         }
 
         public Dictionary<UInt16, IconVisualProperties> ReadOverlays() {

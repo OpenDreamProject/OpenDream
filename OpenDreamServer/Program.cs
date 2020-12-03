@@ -289,12 +289,13 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("params2list", new DreamProc(DreamProcNativeRoot.NativeProc_params2list, new List<string>() { "Params" }));
             DreamObjectTree.RegisterNativeProc("pick", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>() { "Val1" }));
             DreamObjectTree.RegisterNativeProc("prob", new DreamProc(DreamProcNativeRoot.NativeProc_prob, new List<string>() { "P" }));
-            DreamObjectTree.RegisterNativeProc("rand", new DreamProc(DreamProcNativeRoot.NativeProc_pick, new List<string>()));
+            DreamObjectTree.RegisterNativeProc("rand", new DreamProc(DreamProcNativeRoot.NativeProc_rand, new List<string>()));
             DreamObjectTree.RegisterNativeProc("replacetext", new DreamProc(DreamProcNativeRoot.NativeProc_replacetext, new List<string>() { "Haystack", "Needle", "Replacement", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("round", new DreamProc(DreamProcNativeRoot.NativeProc_round, new List<string>() { "A", "B" }));
             DreamObjectTree.RegisterNativeProc("sleep", new DreamProc(DreamProcNativeRoot.NativeProc_sleep, new List<string>() { "Delay" }));
             DreamObjectTree.RegisterNativeProc("sound", new DreamProc(DreamProcNativeRoot.NativeProc_sound, new List<string>() { "file", "repeat", "wait", "channel", "volume" }, new Dictionary<string, DreamValue>() { { "repeat", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("splittext", new DreamProc(DreamProcNativeRoot.NativeProc_splittext, new List<string>() { "Text", "Delimiter", "Start", "End", "include_delimiters" }));
+            DreamObjectTree.RegisterNativeProc("text", new DreamProc(DreamProcNativeRoot.NativeProc_text, new List<string>() { "FormatText" }));
             DreamObjectTree.RegisterNativeProc("text2ascii", new DreamProc(DreamProcNativeRoot.NativeProc_text2ascii, new List<string>() { "T", "pos" }, new Dictionary<string, DreamValue>() { { "pos", new DreamValue(1) } }));
             DreamObjectTree.RegisterNativeProc("text2num", new DreamProc(DreamProcNativeRoot.NativeProc_text2num, new List<string>() { "T", "radix" }, new Dictionary<string, DreamValue>() { { "radix", new DreamValue(10) } }));
             DreamObjectTree.RegisterNativeProc("text2path", new DreamProc(DreamProcNativeRoot.NativeProc_text2path, new List<string>() { "T" }));
@@ -361,15 +362,18 @@ namespace OpenDreamServer {
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
-            DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
 
-            if (clientMob.Value != null) {
-                connection.SendPacket(new PacketConnectionResult(true, ""));
-                connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
-                connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
-            } else {
-              connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
-            }
+            Task.Run(() => {
+                DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
+
+                if (clientMob.Value != null) {
+                    connection.SendPacket(new PacketConnectionResult(true, ""));
+                    connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
+                    connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
+                } else {
+                    connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
+                }
+            });
         }
     }
 }

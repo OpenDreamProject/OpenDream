@@ -16,7 +16,8 @@ namespace OpenDreamShared.Net.Packets {
 			Left = 0x7,
 			Right = 0x8,
 			IsVert = 0x9,
-			Text = 0xA
+			Text = 0xA,
+			BackgroundColor = 0xB
 		}
 
 		enum DescriptorType {
@@ -70,12 +71,12 @@ namespace OpenDreamShared.Net.Packets {
 					AttributeType valueType;
 					do {
 						valueType = (AttributeType)stream.ReadByte();
-
 						switch (valueType) {
 							case AttributeType.Pos: elementDescriptor.Pos = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
 							case AttributeType.Size: elementDescriptor.Size = new Size(stream.ReadUInt16(), stream.ReadUInt16()); break;
 							case AttributeType.Anchor1: elementDescriptor.Anchor1 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
 							case AttributeType.Anchor2: elementDescriptor.Anchor2 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
+							case AttributeType.BackgroundColor: elementDescriptor.BackgroundColor = Color.FromArgb(stream.ReadByte(), stream.ReadByte(), stream.ReadByte()); break;
 							case AttributeType.IsDefault: elementDescriptor.IsDefault = stream.ReadBool(); break;
 							case AttributeType.IsPane: ((ElementDescriptorMain)elementDescriptor).IsPane = stream.ReadBool(); break;
 							case AttributeType.Left: ((ElementDescriptorChild)elementDescriptor).Left = stream.ReadString(); break;
@@ -143,6 +144,13 @@ namespace OpenDreamShared.Net.Packets {
 						stream.WriteUInt16((UInt16)elementDescriptor.Anchor2.Value.X);
 						stream.WriteUInt16((UInt16)elementDescriptor.Anchor2.Value.Y);
 					}
+
+					if (elementDescriptor.BackgroundColor.HasValue) {
+						stream.WriteByte((byte)AttributeType.BackgroundColor);
+						stream.WriteByte(elementDescriptor.BackgroundColor.Value.R);
+						stream.WriteByte(elementDescriptor.BackgroundColor.Value.G);
+						stream.WriteByte(elementDescriptor.BackgroundColor.Value.B);
+                    }
 
 					if (elementDescriptor.IsDefault != default) {
 						stream.WriteByte((byte)AttributeType.IsDefault);

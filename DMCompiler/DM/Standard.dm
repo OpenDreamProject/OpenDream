@@ -103,6 +103,9 @@
 	var/maxy = 0
 	var/maxz = 0
 
+	proc/New()
+	proc/Del()
+
 /datum
 	var/type
 	var/parent_type

@@ -168,21 +168,30 @@ namespace DMCompiler.DM.Visitors {
 
             if (list.Values != null) {
                 foreach (DMASTCallParameter value in list.Values) {
-                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
+                    object associatedIndex = value.Name;
+                    object listValue = null;
 
+                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
                     if (associatedAssign != null) {
                         associatedAssign.Value.Visit(this);
+                        listValue = _valueStack.Pop();
 
                         if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
-                            associatedValues.Add(value.Name, _valueStack.Pop());
+                            associatedIndex = value.Name;
                         } else if (associatedAssign.Expression is DMASTConstantResource) {
-                            associatedValues.Add(new DMResource(((DMASTConstantResource)associatedAssign.Expression).Path), _valueStack.Pop());
+                            associatedIndex = new DMResource(((DMASTConstantResource)associatedAssign.Expression).Path);
                         } else {
                             throw new Exception("Associated value has an invalid index");
                         }
                     } else {
                         value.Visit(this);
-                        values.Add(_valueStack.Pop());
+                        listValue = _valueStack.Pop();
+                    }
+
+                    if (associatedIndex != null) {
+                        associatedValues.Add(associatedIndex, listValue);
+                    } else {
+                        values.Add(listValue);
                     }
                 }
 

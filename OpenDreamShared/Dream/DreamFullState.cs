@@ -9,15 +9,19 @@ namespace OpenDreamShared.Dream {
             public UInt16 BaseID;
             public UInt16 LocationID;
             public IconVisualProperties VisualProperties;
-            public Point ScreenLocation;
+            public ScreenLocation ScreenLocation;
             public Dictionary<UInt16, IconVisualProperties> Overlays;
         }
 
-        public struct Client {
-            public UInt16 EyeID;
+        public class Client {
+            public UInt16 EyeID = 0xFFFF;
+            public List<UInt16> ScreenObjects = new List<UInt16>();
 
-            public Client(UInt16 eyeID) {
-                EyeID = eyeID;
+            public Client CreateCopy() {
+                return new Client() {
+                    EyeID = this.EyeID,
+                    ScreenObjects = this.ScreenObjects
+                };
             }
         }
 
@@ -36,7 +40,7 @@ namespace OpenDreamShared.Dream {
             }
 
             foreach (KeyValuePair<string, Client> client in fullState.Clients) {
-                Clients.Add(client.Key, client.Value);
+                Clients.Add(client.Key, client.Value.CreateCopy());
             }
 
             Turfs = fullState.Turfs;
@@ -51,7 +55,7 @@ namespace OpenDreamShared.Dream {
                     atom.BaseID = atomCreation.BaseID;
                     atom.LocationID = atomCreation.LocationID;
                     atom.VisualProperties = atomCreation.VisualProperties;
-                    atom.ScreenLocation = new Point(0, 0);
+                    atom.ScreenLocation = atomCreation.ScreenLocation;
                     atom.Overlays = new Dictionary<ushort, IconVisualProperties>();
 
                     Atoms[atom.AtomID] = atom;
@@ -71,7 +75,13 @@ namespace OpenDreamShared.Dream {
                 foreach (DreamDeltaState.AtomDelta atomDelta in deltaState.AtomDeltas) {
                     Atom atom = Atoms[atomDelta.AtomID];
 
-                    if (!atomDelta.ChangedVisualProperties.IsDefault()) atom.VisualProperties = atom.VisualProperties.Merge(atomDelta.ChangedVisualProperties);
+                    if (atomDelta.ChangedVisualProperties.HasValue) {
+                        atom.VisualProperties = atom.VisualProperties.Merge(atomDelta.ChangedVisualProperties.Value);
+                    }
+
+                    if (atomDelta.ScreenLocation.HasValue) {
+                        atom.ScreenLocation = atomDelta.ScreenLocation.Value;
+                    }
 
                     if (atomDelta.OverlayRemovals.Count > 0) {
                         foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
@@ -93,17 +103,28 @@ namespace OpenDreamShared.Dream {
                 }
 
                 foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {
-                    if (!Clients.ContainsKey(clientDelta.Key)) {
-                        Clients[clientDelta.Key] = new Client(0xFFFF);
+                    Client client;
+                    if (!Clients.TryGetValue(clientDelta.Key, out client)) {
+                        client = new Client();
+
+                        Clients[clientDelta.Key] = client;
                     }
 
-                    Client client = Clients[clientDelta.Key];
-
-                    if (clientDelta.Value.NewEyeID != null) {
+                    if (clientDelta.Value.NewEyeID.HasValue) {
                         client.EyeID = clientDelta.Value.NewEyeID.Value;
                     }
 
-                    Clients[clientDelta.Key] = client;
+                    if (clientDelta.Value.ScreenObjectAdditions != null) {
+                        foreach (UInt16 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {
+                            client.ScreenObjects.Add(screenObjectID);
+                        }
+                    }
+
+                    if (clientDelta.Value.ScreenObjectRemovals != null) {
+                        foreach (UInt16 screenObjectID in clientDelta.Value.ScreenObjectRemovals) {
+                            client.ScreenObjects.Remove(screenObjectID);
+                        }
+                    }
                 }
             }
         }

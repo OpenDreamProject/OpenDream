@@ -574,7 +574,7 @@ namespace DMCompiler.DM {
                         body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                     }
 
-                    return new DMASTProcStatementForStandard(initializer, variable, comparator, incrementor, body);
+                    return new DMASTProcStatementForStandard(initializer, comparator, incrementor, body);
                 } else if (variableDeclaration != null) {
                     DMASTExpression rangeBegin = variableDeclaration.Value;
                     Whitespace();

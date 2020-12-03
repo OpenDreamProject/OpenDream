@@ -376,12 +376,10 @@ namespace DMCompiler.DM {
 
     class DMASTProcStatementFor : DMASTProcStatement {
         public DMASTProcStatement Initializer;
-        public DMASTCallableIdentifier Variable;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementFor(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTProcBlockInner body) {
+        public DMASTProcStatementFor(DMASTProcStatement initializer, DMASTProcBlockInner body) {
             Initializer = initializer;
-            Variable = variable;
             Body = body;
         }
 
@@ -393,7 +391,7 @@ namespace DMCompiler.DM {
     class DMASTProcStatementForStandard : DMASTProcStatementFor {
         public DMASTProcStatement Comparator, Incrementor;
 
-        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTProcStatement comparator, DMASTProcStatement incrementor, DMASTProcBlockInner body) : base(initializer, variable, body) {
+        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTProcStatement comparator, DMASTProcStatement incrementor, DMASTProcBlockInner body) : base(initializer, body) {
             Comparator = comparator;
             Incrementor = incrementor;
         }
@@ -404,9 +402,11 @@ namespace DMCompiler.DM {
     }
 
     class DMASTProcStatementForList : DMASTProcStatementFor {
+        public DMASTCallableIdentifier Variable;
         public DMASTExpression List;
 
-        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, variable, body) {
+        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, body) {
+            Variable = variable;
             List = list;
         }
 
@@ -416,9 +416,11 @@ namespace DMCompiler.DM {
     }
 
     class DMASTProcStatementForNumberRange : DMASTProcStatementFor {
+        public DMASTCallableIdentifier Variable;
         public DMASTExpression RangeBegin, RangeEnd, Step;
 
-        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, variable, body) {
+        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
+            Variable = variable;
             RangeBegin = rangeBegin;
             RangeEnd = rangeEnd;
             Step = step;

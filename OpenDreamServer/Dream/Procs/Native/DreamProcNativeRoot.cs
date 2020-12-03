@@ -522,7 +522,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 int low = arguments.GetArgument(0, "L").GetValueAsInteger();
                 int high = arguments.GetArgument(1, "H").GetValueAsInteger();
 
-                return new DreamValue(new Random().Next(low, high));
+                return new DreamValue(new Random().Next(Math.Min(low, high), Math.Max(low, high)));
             }
         }
 
@@ -582,6 +582,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(listObject);
+        }
+
+        public static DreamValue NativeProc_text(DreamProcScope scope, DreamProcArguments arguments) {
+            return scope.GetValue("FormatText"); //TODO: Format text
         }
 
         public static DreamValue NativeProc_text2ascii(DreamProcScope scope, DreamProcArguments arguments) {

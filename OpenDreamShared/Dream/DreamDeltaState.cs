@@ -186,18 +186,16 @@ namespace OpenDreamShared.Dream {
             ClientDelta clientDelta = GetClientDelta(ckey);
 
             if (clientDelta.ScreenObjectAdditions == null) clientDelta.ScreenObjectAdditions = new List<UInt16>();
+            if (clientDelta.ScreenObjectRemovals != null) clientDelta.ScreenObjectRemovals.Remove(screenObjectID);
             clientDelta.ScreenObjectAdditions.Add(screenObjectID);
         }
 
         public void RemoveClientScreenObject(string ckey, UInt16 screenObjectID) {
             ClientDelta clientDelta = GetClientDelta(ckey);
 
-            if (clientDelta.ScreenObjectAdditions != null && clientDelta.ScreenObjectAdditions.Contains(screenObjectID)) {
-                clientDelta.ScreenObjectAdditions.Remove(screenObjectID);
-            } else {
-                if (clientDelta.ScreenObjectRemovals == null) clientDelta.ScreenObjectRemovals = new List<UInt16>();
-                clientDelta.ScreenObjectRemovals.Add(screenObjectID);
-            } 
+            if (clientDelta.ScreenObjectRemovals == null) clientDelta.ScreenObjectRemovals = new List<UInt16>();
+            if (clientDelta.ScreenObjectAdditions != null) clientDelta.ScreenObjectAdditions.Remove(screenObjectID);
+            clientDelta.ScreenObjectRemovals.Add(screenObjectID);
         }
 
         public bool ContainsChanges() {

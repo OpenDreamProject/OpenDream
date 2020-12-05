@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace OpenDreamShared.Dream {
     public struct IconVisualProperties {
@@ -60,6 +61,10 @@ namespace OpenDreamShared.Dream {
             PixelOffsetY = y.PixelOffset;
         }
 
+        public Point GetScreenCoordinates(int iconSize) {
+            return new Point(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        }
+
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
             coordinate = coordinate.Trim();
             if (coordinate == String.Empty) throw new Exception("Invalid screen_loc coordinate");
@@ -67,7 +72,7 @@ namespace OpenDreamShared.Dream {
             coordinate = coordinate.Replace("WEST", "1");
             coordinate = coordinate.Replace("NORTH", "15");
             coordinate = coordinate.Replace("EAST", "15");
-            coordinate = coordinate.Replace("CENTER", "7.5");
+            coordinate = coordinate.Replace("CENTER", "8");
 
             List<(string Operation, float Number, int PixelOffset)> operations = new();
             string currentOperation = null;

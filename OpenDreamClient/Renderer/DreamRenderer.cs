@@ -125,10 +125,9 @@ namespace OpenDreamClient.Renderer {
 
             foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
                 ScreenLocation screenLocation = screenObject.ScreenLocation;
-                float screenX = screenLocation.X * 32.0f + screenLocation.PixelOffsetX - (8 * 32.0f);
-                float screenY = screenLocation.Y * 32.0f + screenLocation.PixelOffsetY - (8 * 32.0f);
+                System.Drawing.Point screenCoordinates = screenLocation.GetScreenCoordinates(32);
 
-                _gl.Uniform2(_shader.TranslationUniform, screenX, screenY);
+                _gl.Uniform2(_shader.TranslationUniform, (float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
                 DrawATOM(screenObject);
             }
         }

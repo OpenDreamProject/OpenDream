@@ -879,10 +879,14 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsInteger() < second.GetValueAsInteger();
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
                 return first.GetValueAsInteger() < second.GetValueAsDouble();
+            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
+                return first.GetValueAsInteger() < 0;
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsDouble() < second.GetValueAsInteger();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
                 return first.GetValueAsDouble() < second.GetValueAsDouble();
+            } else if (first.Type == DreamValue.DreamValueType.Double && second.Value == null) {
+                return first.GetValueAsDouble() < 0;
             } else {
                 throw new Exception("Invalid less than comparison between " + first + " and " + second);
             }
@@ -897,8 +901,10 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsDouble() > second.GetValueAsDouble();
             } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {
                 return first.GetValueAsDouble() > second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value == null) {
-                return false;
+            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Integer) {
+                return 0 > second.GetValueAsInteger();
+            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Double) {
+                return 0 > second.GetValueAsDouble();
             } else {
                 throw new Exception("Invalid greater than comparison on " + first + " and " + second);
             }

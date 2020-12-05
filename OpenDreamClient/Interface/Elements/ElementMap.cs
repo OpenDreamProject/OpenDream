@@ -97,7 +97,10 @@ namespace OpenDreamClient.Interface.Elements {
                 }
             }
 
-            Program.OpenDream.Connection.SendPacket(new PacketClickAtom(clickedATOM.ID, iconX, iconY));
+            PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY);
+            pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            Program.OpenDream.Connection.SendPacket(pClickAtom);
         }
     }
 }

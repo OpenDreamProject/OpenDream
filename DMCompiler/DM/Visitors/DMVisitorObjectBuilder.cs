@@ -93,6 +93,7 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Path.Path.LastElement;
             DreamPath objectPath = _currentObject.Path.Combine(procDefinition.Path.Path.FromElements(0, -2));
             int procElementIndex = objectPath.FindElement("proc");
+            if (procElementIndex == -1) procElementIndex = objectPath.FindElement("verb");
 
             if (procElementIndex != -1) {
                 objectPath = objectPath.RemoveElement(procElementIndex);

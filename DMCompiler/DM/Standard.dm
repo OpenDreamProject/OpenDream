@@ -252,3 +252,26 @@ proc/get_step(atom/Ref, Dir)
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	Ref.Move(get_step(Ref, Dir), Dir)
+
+/proc/turn(Dir, Angle)
+	var/dirAngle = 0
+
+	if (Dir == 1) dirAngle = 0
+	else if (Dir == (1 | 4)) dirAngle = 45
+	else if (Dir == 4) dirAngle = 90
+	else if (Dir == (2 | 4)) dirAngle = 135
+	else if (Dir == 2) dirAngle = 180
+	else if (Dir == (2 | 8)) dirAngle = 225
+	else if (Dir == 8) dirAngle = 270
+	else if (Dir == (1  | 8)) dirAngle = 315
+	else if (Angle != 0) return pick(1, 2, 4, 8)
+
+	dirAngle += round(Angle, 45)
+	if (dirAngle == 0 || dirAngle == 360) return 1
+	else if (dirAngle == 45) return 1 | 4
+	else if (dirAngle == 90) return 4
+	else if (dirAngle == 135) return 2 | 4
+	else if (dirAngle == 180) return 2
+	else if (dirAngle == 225) return 2 | 8
+	else if (dirAngle == 270) return 8
+	else if (dirAngle == 315) return 1 | 8

@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{723B93CA-7EDC-46CB-93DD-983F2061B14D}"
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
+		TestGame\interface.dmf = TestGame\interface.dmf
 		TestGame\map.dmm = TestGame\map.dmm
 	EndProjectSection
 EndProject

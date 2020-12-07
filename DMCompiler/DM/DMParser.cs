@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using DMCompiler.Compiler;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using DereferenceType = DMCompiler.DM.DMASTCallableDereference.DereferenceType;
 using Dereference = DMCompiler.DM.DMASTCallableDereference.Dereference;
@@ -1438,6 +1438,7 @@ namespace DMCompiler.DM {
                         case "num": type |= DMASTDefinitionParameter.ParameterType.Num; break;
                         case "message": type |= DMASTDefinitionParameter.ParameterType.Message; break;
                         case "area": type |= DMASTDefinitionParameter.ParameterType.Area; break;
+                        case "color": type |= DMASTDefinitionParameter.ParameterType.Color; break;
                         default: throw new Exception("Invalid parameter type '" + typeToken.Text + "'");
                     }
                 } while (Check(TokenType.DM_Bar));

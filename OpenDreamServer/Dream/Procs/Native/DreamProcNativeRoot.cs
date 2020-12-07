@@ -5,6 +5,7 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -55,6 +56,32 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string message = scope.GetValue("msg").GetValueAsString();
 
             throw new Exception(message);
+        }
+
+        public static DreamValue NativeProc_fcopy(DreamProcScope scope, DreamProcArguments arguments) {
+            string src = scope.GetValue("Src").GetValueAsString();
+            string dst = scope.GetValue("Dst").GetValueAsString();
+
+            return new DreamValue(Program.DreamResourceManager.CopyFile(src, dst) ? 1 : 0);
+        }
+
+        public static DreamValue NativeProc_fcopy_rsc(DreamProcScope scope, DreamProcArguments arguments) {
+            string filePath = scope.GetValue("File").GetValueAsString();
+
+            return new DreamValue(Program.DreamResourceManager.LoadResource(filePath));
+        }
+
+        public static DreamValue NativeProc_fdel(DreamProcScope scope, DreamProcArguments arguments) {
+            string filePath = scope.GetValue("File").GetValueAsString();
+
+            bool successful;
+            if (filePath.EndsWith("/")) {
+                successful = Program.DreamResourceManager.DeleteDirectory(filePath);
+            } else {
+                successful = Program.DreamResourceManager.DeleteFile(filePath);
+            }
+
+            return new DreamValue(successful ? 1 : 0);
         }
 
         public static DreamValue NativeProc_fexists(DreamProcScope scope, DreamProcArguments arguments) {
@@ -595,6 +622,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue((int)text[pos - 1]);
         }
 
+        public static DreamValue NativeProc_text2file(DreamProcScope scope, DreamProcArguments arguments) {
+            string text = scope.GetValue("Text").GetValueAsString();
+            string file = scope.GetValue("File").GetValueAsString();
+
+            return new DreamValue(Program.DreamResourceManager.SaveTextToFile(file, text) ? 1 : 0);
+        }
+
         public static DreamValue NativeProc_text2num(DreamProcScope scope, DreamProcArguments arguments) {
             string text = scope.GetValue("T").GetValueAsString();
             int radix = scope.GetValue("radix").GetValueAsInteger();
@@ -615,6 +649,23 @@ namespace OpenDreamServer.Dream.Procs.Native {
             } else {
                 return new DreamValue((DreamObject)null);
             }
+        }
+
+        public static DreamValue NativeProc_time2text(DreamProcScope scope, DreamProcArguments arguments) {
+            int timestamp = scope.GetValue("timestamp").GetValueAsInteger();
+            string format = scope.GetValue("format").GetValueAsString();
+            long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
+            if (timestamp >= 0 && timestamp <= 864000) ticks += DateTime.Today.Ticks;
+            DateTime time = new DateTime(ticks);
+
+            format = format.Replace("YYYY", "yyyy");
+            format = format.Replace("YY", "yy");
+            format = format.Replace("Month", "MMMM");
+            format = format.Replace("MM", "M");
+            format = format.Replace("Day", "dddd");
+            format = format.Replace("DDD", "ddd");
+            format = format.Replace("DD", "d");
+            return new DreamValue(time.ToString(format));
         }
 
         public static DreamValue NativeProc_typesof(DreamProcScope scope, DreamProcArguments arguments) {

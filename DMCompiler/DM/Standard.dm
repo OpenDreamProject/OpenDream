@@ -51,6 +51,20 @@
 	var/color = "#FFFFFF"
 	var/alpha = 255
 	var/layer = 0.0
+	var/pixel_x = 0
+	var/pixel_y = 0
+
+	proc/New(/mutable_appearance/appearance)
+		if (istype(appearance, /mutable_appearance))
+			src.icon = appearance.icon
+			src.icon_state = appearance.icon_state
+			src.color = appearance.color
+			src.alpha = appearance.alpha
+			src.layer = appearance.layer
+			src.pixel_x = appearance.pixel_x
+			src.pixel_y = appearance.pixel_y
+		else if (!isnull(appearance))
+			CRASH("Invalid arguments for /mutable_appearance/New()")
 
 /client
 	var/list/verbs = list()
@@ -94,6 +108,7 @@
 	var/name = "OpenDream World"
 	var/time
 	var/timeofday
+	var/realtime
 	var/tick_lag = 0.5
 	var/tick_usage
 
@@ -263,7 +278,7 @@ proc/get_step(atom/Ref, Dir)
 	else if (Dir == 2) dirAngle = 180
 	else if (Dir == (2 | 8)) dirAngle = 225
 	else if (Dir == 8) dirAngle = 270
-	else if (Dir == (1  | 8)) dirAngle = 315
+	else if (Dir == (1 | 8)) dirAngle = 315
 	else if (Angle != 0) return pick(1, 2, 4, 8)
 
 	dirAngle += round(Angle, 45)

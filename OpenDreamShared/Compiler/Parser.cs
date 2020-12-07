@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DMCompiler.Compiler {
+namespace OpenDreamShared.Compiler {
     class Parser {
         private Lexer _lexer;
         private Token _currentToken;

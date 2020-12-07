@@ -1,5 +1,5 @@
 ﻿using System;
-using DMCompiler.Compiler;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM {
@@ -1209,7 +1209,7 @@ namespace DMCompiler.DM {
         }
     }
 
-    class DMASTDefinitionParameter : DMASTNode{
+    class DMASTDefinitionParameter : DMASTNode {
         public enum ParameterType {
             Default = 0x0,
             Anything = 0x1,
@@ -1220,7 +1220,8 @@ namespace DMCompiler.DM {
             Turf = 0x20,
             Num = 0x40,
             Message = 0x80,
-            Area = 0x100
+            Area = 0x100,
+            Color = 0x200
         }
 
         public DMASTPath Path;

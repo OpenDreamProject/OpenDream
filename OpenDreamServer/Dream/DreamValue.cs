@@ -163,7 +163,15 @@ namespace OpenDreamServer.Dream {
                 return GetValueAsPath().PathString;
             } else if (Type == DreamValueType.DreamObject) {
                 if (Value == null) return "";
-                else return GetValueAsDreamObject().ObjectDefinition.Type.ToString();
+                else {
+                    DreamObject dreamObject = GetValueAsDreamObject();
+
+                    if (dreamObject.IsSubtypeOf(DreamPath.Atom)) {
+                        return dreamObject.GetVariable("name").Stringify();
+                    } else {
+                        return dreamObject.ObjectDefinition.Type.ToString();
+                    }
+                }
             } else {
                 throw new NotImplementedException("Cannot stringify " + this);
             }

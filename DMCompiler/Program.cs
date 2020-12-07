@@ -230,6 +230,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "text2ascii", "text2ascii");
             AddNativeProc(rootObject, "text2num", "text2num");
             AddNativeProc(rootObject, "text2path", "text2path");
+            AddNativeProc(rootObject, "time2text", "time2text");
             AddNativeProc(rootObject, "typesof", "typesof");
             AddNativeProc(rootObject, "uppertext", "uppertext");
             AddNativeProc(rootObject, "view", "view");

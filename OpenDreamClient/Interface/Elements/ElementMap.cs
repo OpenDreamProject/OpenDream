@@ -57,19 +57,21 @@ namespace OpenDreamClient.Interface.Elements {
 
             if (mousePosition.X < 0 || mousePosition.X > _dreamRenderer.OpenGLViewControl.Width || mousePosition.Y < 0 || mousePosition.Y > _dreamRenderer.OpenGLViewControl.Height) return;
 
-            int iconX = (int)mousePosition.X % 32;
-            int iconY = (int)mousePosition.Y % 32;
             ATOM clickedATOM = null;
+            int iconX = 0, iconY = 0;
 
             foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
                 System.Drawing.Point screenCoordinates = screenObject.ScreenLocation.GetScreenCoordinates(32);
                 System.Drawing.Rectangle iconRect = new(screenCoordinates, new System.Drawing.Size(32, 32));
 
                 if (iconRect.Contains(new System.Drawing.Point((int)mousePosition.X, (int)mousePosition.Y))) {
-                    bool isAbove = (clickedATOM == null || clickedATOM.Icon.VisualProperties.Layer <= screenObject.Icon.VisualProperties.Layer);
+                    int screenObjectIconX = (int)mousePosition.X - iconRect.X;
+                    int screenObjectIconY = 32 - ((int)mousePosition.Y - iconRect.Y);
 
-                    if (isAbove && screenObject.Icon.GetPixel(iconX, 32 - iconY).A != 0) {
+                    if (screenObject.Icon.GetPixel(screenObjectIconX, screenObjectIconY).A != 0) {
                         clickedATOM = screenObject;
+                        iconX = screenObjectIconX;
+                        iconY = screenObjectIconY;
                     }
                 }
                 
@@ -80,6 +82,9 @@ namespace OpenDreamClient.Interface.Elements {
                 int viewATOMY = (int)(mousePosition.Y / 32);
                 int atomX = (cameraPosition.Item1 - 7) + viewATOMX;
                 int atomY = (cameraPosition.Item2 - 7) + viewATOMY;
+
+                iconX = (int)mousePosition.X % 32;
+                iconY = (int)mousePosition.Y % 32;
                 if (atomX >= 0 && atomY >= 0 && atomX < Program.OpenDream.Map.Turfs.GetLength(0) && atomY < Program.OpenDream.Map.Turfs.GetLength(1)) {
                     ATOM turf = Program.OpenDream.Map.Turfs[atomX, atomY];
 

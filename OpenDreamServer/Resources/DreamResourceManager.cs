@@ -33,5 +33,45 @@ namespace OpenDreamServer.Resources {
 
             connection.SendPacket(new PacketResource(resource.ResourcePath, resource.ResourceData));
         }
+
+        public bool DeleteFile(string filePath) {
+            try {
+                File.Delete(Path.Combine(_rootPath, filePath));
+            } catch (Exception) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool DeleteDirectory(string directoryPath) {
+            try {
+                Directory.Delete(Path.Combine(_rootPath, directoryPath), true);
+            } catch (Exception) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool SaveTextToFile(string filePath, string text) {
+            try {
+                File.WriteAllText(Path.Combine(_rootPath, filePath), text);
+            } catch (Exception) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool CopyFile(string sourceFilePath, string destinationFilePath) {
+            try {
+                File.Copy(Path.Combine(_rootPath, sourceFilePath), Path.Combine(_rootPath, destinationFilePath));
+            } catch (Exception) {
+                return false;
+            }
+
+            return true;
+        }
     }
 }

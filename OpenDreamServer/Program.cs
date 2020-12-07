@@ -5,6 +5,7 @@ using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Dream.Procs.Native;
 using OpenDreamServer.Net;
 using OpenDreamServer.Resources;
+using OpenDreamShared.Compiler.DMF;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
@@ -33,14 +34,16 @@ namespace OpenDreamServer {
         private static InterfaceDescriptor _clientInterface = null;
 
         static void Main(string[] args) {
-            if (args.Length < 3) {
-                Console.WriteLine("Three arguments are required:");
+            if (args.Length < 4) {
+                Console.WriteLine("Four arguments are required:");
                 Console.WriteLine("\tResource Location");
                 Console.WriteLine("\t\tPath to the folder holding all the game's assets");
                 Console.WriteLine("\tObject Tree Location");
                 Console.WriteLine("\t\tPath to the JSON file holding a compiled form of the game's code, relative to the resource location");
                 Console.WriteLine("\tMap File Location");
                 Console.WriteLine("\t\tPath to the map's DMM file, relative to the resource location");
+                Console.WriteLine("\tInterface File Location");
+                Console.WriteLine("\t\tPath to the interface's DMF file, relative to the resource location");
 
                 return;
             }
@@ -48,9 +51,13 @@ namespace OpenDreamServer {
             string resourceLocation = args[0];
             string objectTreeFile = args[1];
             string mapFile = args[2];
+            string interfaceFile = args[3];
 
             DreamResourceManager = new DreamResourceManager(resourceLocation);
-            _clientInterface = CreateClientInterface();
+            DreamResource interfaceResource = DreamResourceManager.LoadResource(interfaceFile);
+            DMFLexer dmfLexer = new DMFLexer(interfaceResource.ReadAsString());
+            DMFParser dmfParser = new DMFParser(dmfLexer);
+            _clientInterface = dmfParser.Interface();
 
             DreamStateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             DreamServer.DreamConnectionRequest += OnDreamConnectionRequest;
@@ -161,98 +168,6 @@ namespace OpenDreamServer {
             }
         }
 
-        private static InterfaceDescriptor CreateClientInterface() {
-            WindowDescriptor mapwindow = new WindowDescriptor("mapwindow", new() {
-                new ElementDescriptorMain("mapwindow") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-
-                    IsPane = true
-                },
-                new ElementDescriptorMap("map") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-                    Anchor1 = new Point(0, 0),
-                    Anchor2 = new Point(100, 100),
-
-                    IsDefault = true
-                }
-            });
-
-            WindowDescriptor infowindow = new WindowDescriptor("infowindow", new() {
-                new ElementDescriptorMain("infowindow") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-
-                    IsPane = true
-                },
-                new ElementDescriptorChild("info") {
-                    Pos = new Point(0, 30),
-                    Size = new Size(640, 445),
-                    Anchor1 = new Point(0, 0),
-                    Anchor2 = new Point(100, 100),
-
-                    Left = "statwindow",
-                    Right = "outputwindow",
-                    IsVert = false
-                }
-            });
-
-            WindowDescriptor outputwindow = new WindowDescriptor("outputwindow", new() {
-                new ElementDescriptorMain("outputwindow") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-
-                    IsPane = true
-                },
-                new ElementDescriptorOutput("output") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-                    Anchor1 = new Point(0, 0),
-                    Anchor2 = new Point(100, 100),
-
-                    IsDefault = true
-                }
-            });
-
-            WindowDescriptor statwindow = new WindowDescriptor("statwindow", new() {
-                new ElementDescriptorMain("statwindow") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-
-                    IsPane = true
-                },
-                new ElementDescriptorInfo("output") {
-                    Pos = new Point(0, 0),
-                    Size = new Size(640, 480),
-                    Anchor1 = new Point(0, 0),
-                    Anchor2 = new Point(100, 100),
-
-                    IsDefault = true
-                }
-            });
-
-            WindowDescriptor mainwindow = new WindowDescriptor("mainwindow", new() {
-                new ElementDescriptorMain("mainwindow") {
-                    Size = new Size(640, 440),
-
-                    IsDefault = true
-                },
-                new ElementDescriptorChild("split") {
-                    Pos = new Point(3, 0),
-                    Size = new Size(634, 417),
-                    Anchor1 = new Point(0, 0),
-                    Anchor2 = new Point(100, 100),
-
-                    Left = "mapwindow",
-                    Right = "infowindow",
-                    IsVert = true
-                }
-            });
-            
-            return new InterfaceDescriptor(new List<WindowDescriptor>() { mainwindow, mapwindow, infowindow, outputwindow, statwindow });
-        }
-
         private static void RegisterNativeProcs() {
             DreamObjectTree.RegisterNativeProc("abs", new DreamProc(DreamProcNativeRoot.NativeProc_abs, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("animate", new DreamProc(DreamProcNativeRoot.NativeProc_animate, new List<string>() { "Object", "time", "loop", "easing", "flags" }));
@@ -261,6 +176,9 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("ckey", new DreamProc(DreamProcNativeRoot.NativeProc_ckey, new List<string>() { "Key" }));
             DreamObjectTree.RegisterNativeProc("copytext", new DreamProc(DreamProcNativeRoot.NativeProc_copytext, new List<string>() { "T", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("CRASH", new DreamProc(DreamProcNativeRoot.NativeProc_CRASH, new List<string>() { "msg" }));
+            DreamObjectTree.RegisterNativeProc("fcopy", new DreamProc(DreamProcNativeRoot.NativeProc_fcopy, new List<string>() { "Src", "Dst" }));
+            DreamObjectTree.RegisterNativeProc("fcopy_rsc", new DreamProc(DreamProcNativeRoot.NativeProc_fcopy_rsc, new List<string>() { "File" }));
+            DreamObjectTree.RegisterNativeProc("fdel", new DreamProc(DreamProcNativeRoot.NativeProc_fdel, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("fexists", new DreamProc(DreamProcNativeRoot.NativeProc_fexists, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("file2text", new DreamProc(DreamProcNativeRoot.NativeProc_file2text, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("findtext", new DreamProc(DreamProcNativeRoot.NativeProc_findtext, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
@@ -299,8 +217,10 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("splittext", new DreamProc(DreamProcNativeRoot.NativeProc_splittext, new List<string>() { "Text", "Delimiter", "Start", "End", "include_delimiters" }));
             DreamObjectTree.RegisterNativeProc("text", new DreamProc(DreamProcNativeRoot.NativeProc_text, new List<string>() { "FormatText" }));
             DreamObjectTree.RegisterNativeProc("text2ascii", new DreamProc(DreamProcNativeRoot.NativeProc_text2ascii, new List<string>() { "T", "pos" }, new Dictionary<string, DreamValue>() { { "pos", new DreamValue(1) } }));
+            DreamObjectTree.RegisterNativeProc("text2file", new DreamProc(DreamProcNativeRoot.NativeProc_text2file, new List<string>() { "Text", "File" }));
             DreamObjectTree.RegisterNativeProc("text2num", new DreamProc(DreamProcNativeRoot.NativeProc_text2num, new List<string>() { "T", "radix" }, new Dictionary<string, DreamValue>() { { "radix", new DreamValue(10) } }));
             DreamObjectTree.RegisterNativeProc("text2path", new DreamProc(DreamProcNativeRoot.NativeProc_text2path, new List<string>() { "T" }));
+            DreamObjectTree.RegisterNativeProc("time2text", new DreamProc(DreamProcNativeRoot.NativeProc_time2text, new List<string>() { "timestamp", "format" }));
             DreamObjectTree.RegisterNativeProc("typesof", new DreamProc(DreamProcNativeRoot.NativeProc_typesof, new List<string>() { "Item1" }));
             DreamObjectTree.RegisterNativeProc("uppertext", new DreamProc(DreamProcNativeRoot.NativeProc_uppertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("view", new DreamProc(DreamProcNativeRoot.NativeProc_view, new List<string>() { "Dist", "Center" }, new Dictionary<string, DreamValue>() { { "Dist", new DreamValue(4) } }));

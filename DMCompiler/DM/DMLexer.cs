@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using DMCompiler.Compiler;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMLexer : Lexer {
         public static List<string> ValidEscapeSequences = new List<string>() {
             "t", "n",
             "[", "]",
-            "\\", "\"",
+            "\\", "\"", "'",
 
             "icon",
             "Roman", "roman",
@@ -462,7 +462,7 @@ namespace DMCompiler.DM {
 
                             text += c;
                             escapeSequence += c;
-                            if (escapeSequence == "\"" || escapeSequence == "\\") {
+                            if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "'") {
                                 stringValue += escapeSequence;
                                 break;
                             } else if (escapeSequence == "n") {

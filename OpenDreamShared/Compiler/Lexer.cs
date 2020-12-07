@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DMCompiler.Compiler {
+namespace OpenDreamShared.Compiler {
     class Lexer {
         public string Source {
             get => _source;

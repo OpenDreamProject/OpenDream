@@ -29,6 +29,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
             } else if (variableName == "time") {
                 return new DreamValue(dreamObject.GetVariable("tick_lag").GetValueAsNumber() * Program.TickCount);
+            } else if (variableName == "realtime") {
+                return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
             } else if (variableName == "tick_usage") {
                 long currentTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
                 long elapsedTime = (currentTime - Program.TickStartTime);

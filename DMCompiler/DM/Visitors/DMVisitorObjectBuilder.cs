@@ -144,6 +144,32 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitBinaryNot(DMASTBinaryNot binaryNot) {
+            binaryNot.Value.Visit(this);
+            object value = _valueStack.Pop();
+
+            if (value is int) {
+                _valueStack.Push((~(int)value) & 0xFFFFFF);
+            } else {
+                throw new Exception("Invalid value");
+            }
+        }
+
+        public void VisitMultiply(DMASTMultiply multiply) {
+            multiply.B.Visit(this);
+            multiply.A.Visit(this);
+            object a = _valueStack.Pop();
+            object b = _valueStack.Pop();
+
+            if (a is int && b is int) {
+                _valueStack.Push((int)a * (int)b);
+            } else if (a is int && b is float) {
+                _valueStack.Push((int)a * (float)b);
+            } else {
+                throw new Exception("Invalid value");
+            }
+        }
+
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             leftShift.B.Visit(this);
             leftShift.A.Visit(this);

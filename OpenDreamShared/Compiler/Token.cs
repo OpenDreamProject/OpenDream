@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Compiler {
+﻿namespace OpenDreamShared.Compiler {
     enum TokenType {
         //Base lexer
         Error,
@@ -82,7 +82,33 @@
         DM_While,
         DM_Whitespace,
         DM_Xor,
-        DM_XorEquals
+        DM_XorEquals,
+
+        //DMF
+        DMF_Equals,
+        DMF_String,
+        DMF_Integer,
+        DMF_True,
+        DMF_False,
+        DMF_X,
+        DMF_Comma,
+        DMF_Window,
+        DMF_Elem,
+        DMF_Main,
+        DMF_Child,
+        DMF_Map,
+        DMF_Output,
+        DMF_Info,
+        DMF_Type,
+        DMF_Pos,
+        DMF_Size,
+        DMF_Anchor1,
+        DMF_Anchor2,
+        DMF_IsDefault,
+        DMF_IsPane,
+        DMF_IsVert,
+        DMF_Left,
+        DMF_Right
     }
 
     struct Token {

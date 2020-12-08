@@ -17,7 +17,8 @@ namespace OpenDreamShared.Net.Packets {
 			Right = 0x8,
 			IsVert = 0x9,
 			Text = 0xA,
-			BackgroundColor = 0xB
+			BackgroundColor = 0xB,
+			IsVisible = 0xC
 		}
 
 		enum DescriptorType {
@@ -77,6 +78,7 @@ namespace OpenDreamShared.Net.Packets {
 							case AttributeType.Anchor1: elementDescriptor.Anchor1 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
 							case AttributeType.Anchor2: elementDescriptor.Anchor2 = new Point(stream.ReadUInt16(), stream.ReadUInt16()); break;
 							case AttributeType.BackgroundColor: elementDescriptor.BackgroundColor = Color.FromArgb(stream.ReadByte(), stream.ReadByte(), stream.ReadByte()); break;
+							case AttributeType.IsVisible: elementDescriptor.IsVisible = stream.ReadBool(); break;
 							case AttributeType.IsDefault: elementDescriptor.IsDefault = stream.ReadBool(); break;
 							case AttributeType.IsPane: ((ElementDescriptorMain)elementDescriptor).IsPane = stream.ReadBool(); break;
 							case AttributeType.Left: ((ElementDescriptorChild)elementDescriptor).Left = stream.ReadString(); break;
@@ -150,6 +152,11 @@ namespace OpenDreamShared.Net.Packets {
 						stream.WriteByte(elementDescriptor.BackgroundColor.Value.R);
 						stream.WriteByte(elementDescriptor.BackgroundColor.Value.G);
 						stream.WriteByte(elementDescriptor.BackgroundColor.Value.B);
+                    }
+
+					if (elementDescriptor.IsVisible != default) {
+						stream.WriteByte((byte)AttributeType.IsVisible);
+						stream.WriteBool(elementDescriptor.IsVisible.Value);
                     }
 
 					if (elementDescriptor.IsDefault != default) {

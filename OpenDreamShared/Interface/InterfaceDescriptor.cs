@@ -35,6 +35,7 @@ namespace OpenDreamShared.Interface {
         public Point? Anchor1 = null;
         public Point? Anchor2 = null;
         public Color? BackgroundColor = null;
+        public bool? IsVisible = null;
 
         public bool IsDefault = false;
 

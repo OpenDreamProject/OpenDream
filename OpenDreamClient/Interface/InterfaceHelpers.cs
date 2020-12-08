@@ -79,6 +79,10 @@ namespace OpenDreamClient.Interface {
                     ((Control)uiElement).Background = brush;
                 }
             }
+
+            if (elementDescriptor.IsVisible.HasValue) {
+                uiElement.Visibility = elementDescriptor.IsVisible.Value ? Visibility.Visible : Visibility.Hidden;
+            }
         }
 
         private static void UpdateAnchors(ElementWindow elementWindow, List<IElement> elements) {

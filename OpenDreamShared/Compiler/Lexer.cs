@@ -62,6 +62,10 @@ namespace OpenDreamShared.Compiler {
             return IsAlphabetic(c) || IsNumeric(c);
         }
 
+        protected bool IsHex(char c) {
+            return IsNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        }
+
         protected bool IsAtEndOfFile() {
             return _currentPosition >= Source.Length;
         }

@@ -81,9 +81,9 @@ namespace OpenDreamServer.Net {
 
         public void OutputDreamValue(DreamValue value) {
             if (value.Type == DreamValue.DreamValueType.String) {
-                SendPacket(new PacketOutput(value.GetValueAsString()));
+                SendPacket(new PacketOutput(value.GetValueAsString(), null));
             } else if (value.Type == DreamValue.DreamValueType.Integer) {
-                SendPacket(new PacketOutput(value.GetValueAsInteger().ToString()));
+                SendPacket(new PacketOutput(value.GetValueAsInteger().ToString(), null));
             } else if (value.Type == DreamValue.DreamValueType.DreamObject) {
                 DreamObject outputObject = value.GetValueAsDreamObject();
 
@@ -136,6 +136,10 @@ namespace OpenDreamServer.Net {
 
         public void BrowseResource(DreamResource resource, string filename) {
             SendPacket(new PacketBrowseResource(filename, resource.ResourceData));
+        }
+
+        public void OutputControl(string message, string control) {
+            SendPacket(new PacketOutput(message, control));
         }
     }
 }

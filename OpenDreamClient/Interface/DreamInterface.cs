@@ -89,7 +89,19 @@ namespace OpenDreamClient.Interface {
         }
 
         public void HandlePacketOutput(PacketOutput pOutput) {
-            if (DefaultOutput != null) DefaultOutput.TextBox.AppendText(pOutput.Value + Environment.NewLine);
+            IElement interfaceElement;
+            string data = null;
+
+            if (pOutput.Control != null) {
+                string[] split = pOutput.Control.Split(":");
+
+                interfaceElement = FindElementWithName(split[0]);
+                if (split.Length > 1) data = split[1];
+            } else {
+                interfaceElement = DefaultOutput;
+            }
+
+            if (interfaceElement != null) interfaceElement.Output(pOutput.Value, data);
         }
 
         public void HandlePacketBrowse(PacketBrowse pBrowse) {

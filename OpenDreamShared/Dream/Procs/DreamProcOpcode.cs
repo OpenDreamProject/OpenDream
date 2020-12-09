@@ -61,7 +61,8 @@
         EnumerateList = 0x3B,
         DestroyListEnumerator = 0x3C,
         Browse = 0x3D,
-        BrowseResource = 0x3E
+        BrowseResource = 0x3E,
+        OutputControl = 0x3F
     }
 
     enum DreamProcOpcodeParameterType {

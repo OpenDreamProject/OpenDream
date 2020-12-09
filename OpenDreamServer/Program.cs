@@ -12,7 +12,6 @@ using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -172,7 +171,6 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("abs", new DreamProc(DreamProcNativeRoot.NativeProc_abs, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("animate", new DreamProc(DreamProcNativeRoot.NativeProc_animate, new List<string>() { "Object", "time", "loop", "easing", "flags" }));
             DreamObjectTree.RegisterNativeProc("ascii2text", new DreamProc(DreamProcNativeRoot.NativeProc_ascii2text, new List<string>() { "N" }));
-            DreamObjectTree.RegisterNativeProc("browse", new DreamProc(DreamProcNativeRoot.NativeProc_browse, new List<string>() { "Body", "Options" }));
             DreamObjectTree.RegisterNativeProc("ckey", new DreamProc(DreamProcNativeRoot.NativeProc_ckey, new List<string>() { "Key" }));
             DreamObjectTree.RegisterNativeProc("copytext", new DreamProc(DreamProcNativeRoot.NativeProc_copytext, new List<string>() { "T", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("CRASH", new DreamProc(DreamProcNativeRoot.NativeProc_CRASH, new List<string>() { "msg" }));
@@ -180,6 +178,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("fcopy_rsc", new DreamProc(DreamProcNativeRoot.NativeProc_fcopy_rsc, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("fdel", new DreamProc(DreamProcNativeRoot.NativeProc_fdel, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("fexists", new DreamProc(DreamProcNativeRoot.NativeProc_fexists, new List<string>() { "File" }));
+            DreamObjectTree.RegisterNativeProc("file", new DreamProc(DreamProcNativeRoot.NativeProc_file, new List<string>() { "Path" }));
             DreamObjectTree.RegisterNativeProc("file2text", new DreamProc(DreamProcNativeRoot.NativeProc_file2text, new List<string>() { "File" }));
             DreamObjectTree.RegisterNativeProc("findtext", new DreamProc(DreamProcNativeRoot.NativeProc_findtext, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("findtextEx", new DreamProc(DreamProcNativeRoot.NativeProc_findtextEx, new List<string>() { "Haystack", "Needle", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
@@ -199,6 +198,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("isturf", new DreamProc(DreamProcNativeRoot.NativeProc_isturf, new List<string>() { "Loc1" }));
             DreamObjectTree.RegisterNativeProc("istype", new DreamProc(DreamProcNativeRoot.NativeProc_istype, new List<string>() { "Val", "Type" }));
             DreamObjectTree.RegisterNativeProc("json_decode", new DreamProc(DreamProcNativeRoot.NativeProc_json_decode, new List<string>() { "JSON" }));
+            DreamObjectTree.RegisterNativeProc("json_encode", new DreamProc(DreamProcNativeRoot.NativeProc_json_encode, new List<string>() { "Value" }));
             DreamObjectTree.RegisterNativeProc("length", new DreamProc(DreamProcNativeRoot.NativeProc_length, new List<string>() { "E" }));
             DreamObjectTree.RegisterNativeProc("locate", new DreamProc(DreamProcNativeRoot.NativeProc_locate, new List<string>() { "X", "Y", "Z" }));
             DreamObjectTree.RegisterNativeProc("lowertext", new DreamProc(DreamProcNativeRoot.NativeProc_lowertext, new List<string>() { "T" }));
@@ -223,6 +223,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("time2text", new DreamProc(DreamProcNativeRoot.NativeProc_time2text, new List<string>() { "timestamp", "format" }));
             DreamObjectTree.RegisterNativeProc("typesof", new DreamProc(DreamProcNativeRoot.NativeProc_typesof, new List<string>() { "Item1" }));
             DreamObjectTree.RegisterNativeProc("uppertext", new DreamProc(DreamProcNativeRoot.NativeProc_uppertext, new List<string>() { "T" }));
+            DreamObjectTree.RegisterNativeProc("url_encode", new DreamProc(DreamProcNativeRoot.NativeProc_url_encode, new List<string>() { "PlainText", "format" }, new Dictionary<string, DreamValue>() { { "format", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("view", new DreamProc(DreamProcNativeRoot.NativeProc_view, new List<string>() { "Dist", "Center" }, new Dictionary<string, DreamValue>() { { "Dist", new DreamValue(4) } }));
             DreamObjectTree.RegisterNativeProc("viewers", new DreamProc(DreamProcNativeRoot.NativeProc_viewers, new List<string>() { "Depth", "Center" }));
             DreamObjectTree.RegisterNativeProc("walk", new DreamProc(DreamProcNativeRoot.NativeProc_walk, new List<string>() { "Ref", "Dir", "Lag", "Speed" }, new Dictionary<string, DreamValue>() { { "Lag", new DreamValue(0) }, { "Speed", new DreamValue(0) } }));
@@ -286,11 +287,11 @@ namespace OpenDreamServer {
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
 
             Task.Run(() => {
-                DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
+                connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
 
+                DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
                 if (clientMob.Value != null) {
                     connection.SendPacket(new PacketConnectionResult(true, ""));
-                    connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
                     connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
                 } else {
                     connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));

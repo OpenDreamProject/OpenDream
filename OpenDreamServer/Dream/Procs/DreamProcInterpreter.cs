@@ -72,7 +72,9 @@ namespace OpenDreamServer.Dream.Procs {
             while (bytecodeStream.Position < bytecodeStream.Length) {
                 if (Step(bytecodeStream) == 1) break;
             }
-            _scopeStack.Pop();
+            _scopeStack.Clear();
+            _stack.Clear();
+            _listEnumeratorStack.Clear();
 
             return DefaultReturnValue;
         }
@@ -141,7 +143,7 @@ namespace OpenDreamServer.Dream.Procs {
                         formattedString += c;
                     }
                 }
-                
+
                 Push(new DreamValue(formattedString));
             } else if (opcode == DreamProcOpcode.PushInt) {
                 int value = ReadInt(bytecodeStream);
@@ -573,16 +575,16 @@ namespace OpenDreamServer.Dream.Procs {
                 if (argListValue.Value != null) {
                     DreamList argList = DreamMetaObjectList.DreamLists[argListValue.GetValueAsDreamObjectOfType(DreamPath.List)];
                     List<DreamValue> argListValues = argList.GetValues();
-                    Dictionary<object, DreamValue> argListNamedValues = argList.GetAssociativeValues();
+                    Dictionary<DreamValue, DreamValue> argListNamedValues = argList.GetAssociativeValues();
 
                     foreach (DreamValue value in argListValues) {
-                        if (!argListNamedValues.ContainsKey(value.Value)) {
+                        if (!argListNamedValues.ContainsKey(value)) {
                             arguments.OrderedArguments.Add(value);
                         }
                     }
 
-                    foreach (KeyValuePair<object, DreamValue> namedValue in argListNamedValues) {
-                        string name = namedValue.Key as string;
+                    foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
+                        string name = namedValue.Key.Value as string;
 
                         if (name != null) {
                             arguments.NamedArguments.Add(name, namedValue.Value);
@@ -724,7 +726,14 @@ namespace OpenDreamServer.Dream.Procs {
                 if (client != null) {
                     DreamConnection connection = Program.ClientToConnection[client];
 
-                    connection.Browse((body.Value != null) ? body.GetValueAsString() : null, options);
+                    string browseValue;
+                    if (body.Type == DreamValue.DreamValueType.DreamResource) {
+                        browseValue = body.GetValueAsDreamResource().ReadAsString();
+                    } else {
+                        browseValue = (string)body.Value;
+                    }
+
+                    connection.Browse(browseValue, options);
                 }
             } else if (opcode == DreamProcOpcode.BrowseResource) {
                 DreamValue filename = PopDreamValue();
@@ -744,6 +753,26 @@ namespace OpenDreamServer.Dream.Procs {
                     DreamConnection connection = Program.ClientToConnection[client];
 
                     connection.BrowseResource(file, (filename.Value != null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
+                }
+            } else if (opcode == DreamProcOpcode.OutputControl) {
+                string control = PopDreamValue().GetValueAsString();
+                DreamValue message = PopDreamValue();
+                DreamObject receiver = PopDreamValue().GetValueAsDreamObject();
+
+                DreamObject client;
+                if (receiver.IsSubtypeOf(DreamPath.Mob)) {
+                    client = receiver.GetVariable("client").GetValueAsDreamObject();
+                } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
+                    client = receiver;
+                } else {
+                    throw new Exception("Invalid output() recipient");
+                }
+
+                if (client != null) {
+                    DreamConnection connection = Program.ClientToConnection[client];
+
+                    if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
+                    connection.OutputControl((string)message.Value, control);
                 }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");

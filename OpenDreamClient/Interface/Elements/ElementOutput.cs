@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Interface;
+using System;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -24,6 +25,10 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void UpdateVisuals() {
 
+        }
+
+        public void Output(string value, string data) {
+            TextBox.AppendText(value + Environment.NewLine);
         }
     }
 }

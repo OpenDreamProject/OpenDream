@@ -12,8 +12,12 @@ namespace OpenDreamServer.Dream {
         public event DreamListValueAssignedEventHandler ValueAssigned;
         public event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
-        private List<DreamValue> _values = new List<DreamValue>();
-        private Dictionary<object, DreamValue> _associativeValues = new Dictionary<object, DreamValue>();
+        private List<DreamValue> _values = new();
+        private Dictionary<DreamValue, DreamValue> _associativeValues = new();
+
+        public bool IsAssociative() {
+            return _associativeValues.Count > 0;
+        }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
             DreamList copy = new DreamList();
@@ -24,7 +28,7 @@ namespace OpenDreamServer.Dream {
                 copy._values.Add(_values[i - 1]);
             }
 
-            foreach (KeyValuePair<object, DreamValue> associativeValue in _associativeValues) {
+            foreach (KeyValuePair<DreamValue, DreamValue> associativeValue in _associativeValues) {
                 copy._associativeValues.Add(associativeValue.Key, associativeValue.Value);
             }
 
@@ -35,43 +39,19 @@ namespace OpenDreamServer.Dream {
             return _values;
         }
 
-        public Dictionary<object, DreamValue> GetAssociativeValues() {
+        public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
             return _associativeValues;
         }
 
         public DreamValue GetValue(DreamValue key) {
-            if (key.Type == DreamValue.DreamValueType.String) {
-                string keyString = key.GetValueAsString();
-
-                if (_associativeValues.ContainsKey(keyString)) {
-                    return _associativeValues[keyString];
-                } else {
-                    return new DreamValue((DreamObject)null);
-                }
-            } else if (key.Type == DreamValue.DreamValueType.DreamPath) {
-                DreamPath keyPath = key.GetValueAsPath();
-
-                if (_associativeValues.ContainsKey(keyPath)) {
-                    return _associativeValues[keyPath];
-                } else {
-                    return new DreamValue((DreamObject)null);
-                }
-            } else if (key.TryGetValueAsDreamObject(out DreamObject keyObject)) {
-                if (_associativeValues.ContainsKey(keyObject)) {
-                    return _associativeValues[keyObject];
-                } else {
-                    return new DreamValue((DreamObject)null);
-                }
-            } else if (key.Type == DreamValue.DreamValueType.DreamResource) {
-                DreamResource keyResource = key.GetValueAsDreamResource();
-
-                if (_associativeValues.ContainsKey(keyResource)) {
-                    return _associativeValues[keyResource];
-                } else {
-                    return new DreamValue((DreamObject)null);
-                }
-            } else if (key.Type == DreamValue.DreamValueType.Integer) {
+            if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
+            } else if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject | DreamValue.DreamValueType.DreamResource)) {
+                if (_associativeValues.ContainsKey(key)) {
+                    return _associativeValues[key];
+                } else {
+                    return new DreamValue((DreamObject)null);
+                }
             } else {
                 throw new ArgumentException("Invalid index " + key);
             }
@@ -82,7 +62,7 @@ namespace OpenDreamServer.Dream {
             if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject | DreamValue.DreamValueType.DreamResource) && key.Value != null) {
                 if (!ContainsValue(key)) _values.Add(key);
 
-                _associativeValues[key.Value] = value;
+                _associativeValues[key] = value;
             } else if (key.Type == DreamValue.DreamValueType.Integer) {
                 _values[key.GetValueAsInteger() - 1] = value;
             } else {

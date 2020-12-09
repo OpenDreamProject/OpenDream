@@ -312,6 +312,12 @@ namespace DMCompiler.DM {
                             DMASTExpression file = procCall.Parameters[0].Value;
                             DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull();
                             return new DMASTProcStatementBrowseResource(leftShift.A, file, filepath);
+                        } else if (identifier.Identifier == "output") {
+                            if (procCall.Parameters.Length != 2) throw new Exception("output() requires 2 parameters");
+
+                            DMASTExpression msg = procCall.Parameters[0].Value;
+                            DMASTExpression control = procCall.Parameters[1].Value;
+                            return new DMASTProcStatementOutputControl(leftShift.A, msg, control);
                         }
                     }
                 }
@@ -758,10 +764,10 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] ProcCall() {
+        public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
-                DMASTCallParameter[] callParameters = CallParameters();
+                DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
@@ -772,7 +778,7 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] CallParameters() {
+        public DMASTCallParameter[] CallParameters(bool includeEmpty) {
             List<DMASTCallParameter> parameters = new List<DMASTCallParameter>();
             DMASTCallParameter parameter = CallParameter();
 
@@ -783,7 +789,10 @@ namespace DMCompiler.DM {
                     Whitespace();
                     parameter = CallParameter();
 
-                    if (parameter == null) parameter = new DMASTCallParameter(new DMASTConstantNull());
+                    if (parameter == null) {
+                        if (includeEmpty) parameter = new DMASTCallParameter(new DMASTConstantNull());
+                        else while (Check(TokenType.DM_Comma)) Whitespace();
+                    }
                 } else {
                     parameter = null;
                 }
@@ -1242,7 +1251,7 @@ namespace DMCompiler.DM {
 
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
-                    parameters = CallParameters();
+                    parameters = CallParameters(true);
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                 }
@@ -1320,7 +1329,7 @@ namespace DMCompiler.DM {
 
                 if (primary == null && Check(TokenType.DM_List)) {
                     Whitespace();
-                    DMASTCallParameter[] values = ProcCall();
+                    DMASTCallParameter[] values = ProcCall(false);
 
                     primary = new DMASTList(values);
                 }

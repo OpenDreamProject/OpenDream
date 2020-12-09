@@ -29,10 +29,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(Convert.ToChar(ascii).ToString());
         }
 
-        public static DreamValue NativeProc_browse(DreamProcScope scope, DreamProcArguments arguments) {
-            return new DreamValue((DreamObject)null);
-        }
-
         public static DreamValue NativeProc_ckey(DreamProcScope scope, DreamProcArguments arguments) {
             string key = scope.GetValue("Key").GetValueAsString();
 
@@ -45,7 +41,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
 
-            if (end == 0 || end > text.Length + 1) {
+            if (end <= 0) {
+                end += text.Length + 1;
+            } else if (end > text.Length + 1) {
                 end = text.Length + 1;
             }
 
@@ -88,6 +86,20 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string filePath = scope.GetValue("File").GetValueAsString();
 
             return new DreamValue(Program.DreamResourceManager.DoesResourceExist(filePath) ? 1 : 0);
+        }
+
+        public static DreamValue NativeProc_file(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue path = scope.GetValue("Path");
+
+            if (path.Type == DreamValue.DreamValueType.String) {
+                DreamResource resource = Program.DreamResourceManager.LoadResource(path.GetValueAsString());
+
+                return new DreamValue(resource);
+            } else if (path.Type == DreamValue.DreamValueType.DreamResource) {
+                return path;
+            } else {
+                throw new Exception("Invalid path argument");
+            }
         }
 
         public static DreamValue NativeProc_file2text(DreamProcScope scope, DreamProcArguments arguments) {
@@ -348,11 +360,46 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
+        public static object CreateJsonElementFromValue(DreamValue value) {
+            if (value.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.Integer)) {
+                return value.Value;
+            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
+                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+
+                if (list.IsAssociative()) {
+                    Dictionary<object, object> jsonObject = new();
+
+                    foreach (KeyValuePair<DreamValue, DreamValue> listValue in list.GetAssociativeValues()) {
+                        jsonObject.Add(listValue.Key.Stringify(), CreateJsonElementFromValue(listValue.Value));
+                    }
+
+                    return jsonObject;
+                } else {
+                    List<object> jsonObject = new();
+
+                    foreach (DreamValue listValue in list.GetValues()) {
+                        jsonObject.Add(CreateJsonElementFromValue(listValue));
+                    }
+
+                    return jsonObject;
+                }
+            } else {
+                throw new Exception("Cannot json_encode " + value);
+            }
+        }
+
         public static DreamValue NativeProc_json_decode(DreamProcScope scope, DreamProcArguments arguments) {
             string jsonString = scope.GetValue("JSON").GetValueAsString();
             JsonElement jsonRoot = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
             return CreateValueFromJsonElement(jsonRoot);
+        }
+
+        public static DreamValue NativeProc_json_encode(DreamProcScope scope, DreamProcArguments arguments) {
+            object jsonObject = CreateJsonElementFromValue(scope.GetValue("Value"));
+            string result = JsonSerializer.Serialize(jsonObject);
+
+            return new DreamValue(result);
         }
 
         public static DreamValue NativeProc_length(DreamProcScope scope, DreamProcArguments arguments) {
@@ -699,6 +746,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string text = scope.GetValue("T").GetValueAsString();
 
             return new DreamValue(text.ToUpper());
+        }
+
+        public static DreamValue NativeProc_url_encode(DreamProcScope scope, DreamProcArguments arguments) {
+            string plainText = scope.GetValue("PlainText").GetValueAsString();
+            int format = scope.GetValue("format").GetValueAsInteger();
+
+            return new DreamValue(HttpUtility.UrlEncode(plainText));
         }
 
         public static DreamValue NativeProc_view(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)

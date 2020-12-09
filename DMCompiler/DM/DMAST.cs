@@ -31,6 +31,7 @@ namespace DMCompiler.DM {
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
+        public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -541,6 +542,22 @@ namespace DMCompiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBrowseResource(this);
+        }
+    }
+
+    class DMASTProcStatementOutputControl : DMASTProcStatement {
+        public DMASTExpression Receiver;
+        public DMASTExpression Message;
+        public DMASTExpression Control;
+
+        public DMASTProcStatementOutputControl(DMASTExpression receiver, DMASTExpression message, DMASTExpression control) {
+            Receiver = receiver;
+            Message = message;
+            Control = control;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementOutputControl(this);
         }
     }
 

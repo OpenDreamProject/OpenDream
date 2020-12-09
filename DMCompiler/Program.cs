@@ -186,11 +186,11 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "abs", "abs");
             AddNativeProc(rootObject, "animate", "animate");
             AddNativeProc(rootObject, "ascii2text", "ascii2text");
-            AddNativeProc(rootObject, "browse", "browse");
             AddNativeProc(rootObject, "ckey", "ckey");
             AddNativeProc(rootObject, "copytext", "copytext");
             AddNativeProc(rootObject, "CRASH", "CRASH");
             AddNativeProc(rootObject, "fexists", "fexists");
+            AddNativeProc(rootObject, "file", "file");
             AddNativeProc(rootObject, "file2text", "file2text");
             AddNativeProc(rootObject, "findlasttext", "findlasttext");
             AddNativeProc(rootObject, "findtext", "findtext");
@@ -210,6 +210,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "istype", "istype");
             AddNativeProc(rootObject, "isturf", "isturf");
             AddNativeProc(rootObject, "json_decode", "json_decode");
+            AddNativeProc(rootObject, "json_encode", "json_encode");
             AddNativeProc(rootObject, "length", "length");
             AddNativeProc(rootObject, "locate", "locate");
             AddNativeProc(rootObject, "lowertext", "lowertext");
@@ -233,6 +234,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "time2text", "time2text");
             AddNativeProc(rootObject, "typesof", "typesof");
             AddNativeProc(rootObject, "uppertext", "uppertext");
+            AddNativeProc(rootObject, "url_encode", "url_encode");
             AddNativeProc(rootObject, "view", "view");
             AddNativeProc(rootObject, "viewers", "viewers");
             AddNativeProc(rootObject, "walk", "walk");

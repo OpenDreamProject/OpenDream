@@ -5,5 +5,6 @@ namespace OpenDreamClient.Interface.Elements {
         public ElementDescriptor ElementDescriptor { get; set; }
 
         public void UpdateVisuals();
+        public void Output(string value, string data) { }
     }
 }

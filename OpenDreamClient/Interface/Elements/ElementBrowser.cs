@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using OpenDreamShared.Interface;
 using Microsoft.Web.WebView2.Core;
 using OpenDreamShared.Net.Packets;
+using System.Web;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementBrowser : DockPanel, IElement {
@@ -38,6 +39,16 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void UpdateVisuals() {
             
+        }
+
+        public void Output(string value, string jsFunction) {
+            if (WebView.CoreWebView2 != null) {
+                if (jsFunction == null) return;
+                value = HttpUtility.UrlDecode(value);
+
+                value = value.Replace("\"", "\\\"");
+                WebView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
+            }
         }
 
         private void OnWebView2Ready(object sender, EventArgs e) {

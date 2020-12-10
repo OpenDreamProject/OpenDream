@@ -119,6 +119,20 @@ namespace OpenDreamShared.Dream {
             }
         }
 
+        public void AddAtomColorDelta(UInt16 atomID, string color) {
+            AtomCreation atomCreation = GetAtomCreation(atomID);
+
+            if (atomCreation != null) {
+                atomCreation.VisualProperties.SetColor(color);
+            } else {
+                AtomDelta atomDelta = GetAtomDelta(atomID);
+                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
+
+                visualProperties.SetColor(color);
+                atomDelta.ChangedVisualProperties = visualProperties;
+            }
+        }
+
         public void AddAtomDirectionDelta(UInt16 atomID, AtomDirection direction) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 

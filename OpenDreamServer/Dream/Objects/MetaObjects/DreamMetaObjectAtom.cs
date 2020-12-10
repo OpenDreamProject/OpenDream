@@ -60,6 +60,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 Program.DreamStateManager.AddAtomIconDelta(dreamObject, variableValue.GetValueAsDreamResource().ResourcePath);
             } else if (variableName == "icon_state") {
                 Program.DreamStateManager.AddAtomIconStateDelta(dreamObject, variableValue.GetValueAsString());
+            } else if (variableName == "color") {
+                Program.DreamStateManager.AddAtomColorDelta(dreamObject, variableValue.GetValueAsString());
             } else if (variableName == "dir") {
                 Program.DreamStateManager.AddAtomDirectionDelta(dreamObject, (AtomDirection)variableValue.GetValueAsInteger());
             } else if (variableName == "overlays") {
@@ -123,6 +125,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
 
                 overlay.Item2.IconState = overlayValue.GetValueAsString();
+                overlay.Item2.SetColor("#FFFFFF");
             } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
@@ -132,6 +135,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
 
                 overlay.Item2.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
+                overlay.Item2.SetColor(mutableAppearance.GetVariable("color").GetValueAsString());
                 overlay.Item2.Layer = (float)mutableAppearance.GetVariable("layer").GetValueAsNumber();
             } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.Image, out DreamObject image)) {
                 DreamValue icon = image.GetVariable("icon");
@@ -144,6 +148,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
 
                 if (iconState.IsType(DreamValue.DreamValueType.String)) overlay.Item2.IconState = iconState.GetValueAsString();
+                overlay.Item2.SetColor(image.GetVariable("color").GetValueAsString());
                 overlay.Item2.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
                 overlay.Item2.Layer = (float)image.GetVariable("layer").GetValueAsNumber();
             } else {

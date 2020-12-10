@@ -248,6 +248,7 @@ namespace OpenDreamServer {
                 IconVisualProperties visualProperties = new IconVisualProperties();
                 DreamValue iconValue = objectDefinition.Variables["icon"];
                 DreamValue iconStateValue = objectDefinition.Variables["icon_state"];
+                DreamValue colorValue = objectDefinition.Variables["color"];
                 DreamValue iconLayer = objectDefinition.Variables["layer"];
 
                 if (iconValue.Type == DreamValue.DreamValueType.DreamResource) {
@@ -256,6 +257,10 @@ namespace OpenDreamServer {
                 
                 if (iconStateValue.Type == DreamValue.DreamValueType.String) {
                     visualProperties.IconState = (string)iconStateValue.Value;
+                }
+
+                if (colorValue.Type == DreamValue.DreamValueType.String) {
+                    visualProperties.SetColor((string)colorValue.Value);
                 }
 
                 visualProperties.Layer = (float)iconLayer.GetValueAsNumber();

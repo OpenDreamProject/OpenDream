@@ -5,6 +5,7 @@ using System.Drawing;
 namespace OpenDreamShared.Dream {
     public struct IconVisualProperties {
         public string Icon, IconState;
+        public UInt32 Color;
         public AtomDirection Direction;
         public float Layer;
 
@@ -12,6 +13,7 @@ namespace OpenDreamShared.Dream {
             if (other.Icon != Icon) return false;
             if (other.IconState != IconState) return false;
             if (other.Direction != Direction) return false;
+            if (other.Color != Color) return false;
             if (other.Layer != Layer) return false;
 
             return true;
@@ -23,6 +25,7 @@ namespace OpenDreamShared.Dream {
             if (other.Icon != default) newVisualProperties.Icon = other.Icon;
             if (other.IconState != default) newVisualProperties.IconState = other.IconState;
             if (other.Direction != default) newVisualProperties.Direction = other.Direction;
+            if (other.Color != default) newVisualProperties.Color = other.Color;
             if (other.Layer != default) newVisualProperties.Layer = other.Layer;
 
             return newVisualProperties;
@@ -32,9 +35,22 @@ namespace OpenDreamShared.Dream {
             if (Icon != default) return false;
             if (IconState != default) return false;
             if (Direction != default) return false;
+            if (Color != default) return false;
             if (Layer != default) return false;
 
             return true;
+        }
+
+        public void SetColor(string color) {
+            if (color.StartsWith("#")) {
+                color = color.Substring(1);
+
+                if (color.Length == 3) { //4-bit color; repeat each digit
+                    color = new string(color[0], 2) + new string(color[1], 2) + new string(color[2], 2);
+                }
+
+                Color = Convert.ToUInt32(color, 16);
+            }
         }
     }
 

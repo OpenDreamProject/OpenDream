@@ -145,6 +145,14 @@ namespace OpenDreamClient.Renderer {
             }
         }
 
+        private void SetColor(UInt32 color) {
+            float r = (float)((color & 0xFF0000) >> 16) / 255;
+            float g = (float)((color & 0xFF00) >> 8) / 255;
+            float b = (float)(color & 0xFF) / 255;
+
+            _gl.Uniform4(_shader.ColorUniform, r, g, b, 1.0f);
+        }
+
         private void DrawDreamIcon(DreamIcon icon) {
             DreamTexture texture = GetDreamTexture(icon);
 
@@ -156,6 +164,7 @@ namespace OpenDreamClient.Renderer {
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);
                 _gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture.TextureID);
                 _gl.Uniform1(_shader.TextureSamplerUniform, 0);
+                SetColor(icon.VisualProperties.Color);
                 _gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
             }
         }

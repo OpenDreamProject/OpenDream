@@ -9,9 +9,10 @@ namespace OpenDreamShared.Net.Packets {
         public enum PacketStreamVisualPropertyID {
             Icon = 0x0,
             IconState = 0x1,
-            Direction = 0x2,
-            Layer = 0x3,
-            End = 0x4
+            Color = 0x2,
+            Direction = 0x3,
+            Layer = 0x4,
+            End = 0x5
         }
 
         private BinaryWriter _binaryWriter;
@@ -106,6 +107,8 @@ namespace OpenDreamShared.Net.Packets {
                     visualProperties.IconState = ReadString();
                 } else if (propertyID == PacketStreamVisualPropertyID.Icon) {
                     visualProperties.Icon = ReadString();
+                } else if (propertyID == PacketStreamVisualPropertyID.Color) {
+                    visualProperties.Color = ReadUInt32();
                 } else if (propertyID == PacketStreamVisualPropertyID.Direction) {
                     visualProperties.Direction = (AtomDirection)ReadByte();
                 } else if (propertyID == PacketStreamVisualPropertyID.Layer) {
@@ -129,6 +132,11 @@ namespace OpenDreamShared.Net.Packets {
             if (visualProperties.IconState != default && visualProperties.IconState != defaultVisualProperties?.IconState) {
                 WriteByte((byte)PacketStreamVisualPropertyID.IconState);
                 WriteString(visualProperties.IconState);
+            }
+
+            if (visualProperties.Color != default && visualProperties.Color != defaultVisualProperties?.Color) {
+                WriteByte((byte)PacketStreamVisualPropertyID.Color);
+                WriteUInt32(visualProperties.Color);
             }
 
             if (visualProperties.Direction != default && visualProperties.Direction != defaultVisualProperties?.Direction) {
@@ -165,7 +173,8 @@ namespace OpenDreamShared.Net.Packets {
 
                 overlayVisualProperties.Icon = ReadString();
                 overlayVisualProperties.IconState = ReadString();
-                ReadString(); //TODO: Color
+                overlayVisualProperties.Direction = (AtomDirection)ReadByte();
+                overlayVisualProperties.Color = ReadUInt32();
                 overlayVisualProperties.Layer = ReadFloat();
                 overlays[overlayID] = overlayVisualProperties;
             }
@@ -182,7 +191,8 @@ namespace OpenDreamShared.Net.Packets {
 
                     WriteString(overlay.Value.Icon);
                     WriteString(overlay.Value.IconState);
-                    WriteString("#FFFFFF");
+                    WriteByte((byte)overlay.Value.Direction);
+                    WriteUInt32(overlay.Value.Color);
                     WriteFloat(overlay.Value.Layer);
                 }
             } else {

@@ -72,8 +72,6 @@ namespace OpenDreamClient.Dream {
         }
 
         public void AddOverlay(UInt16 id, IconVisualProperties visualProperties) {
-            visualProperties.Direction = VisualProperties.Direction;
-            
             Overlays.Add(id, new DreamIcon(visualProperties));
         }
 

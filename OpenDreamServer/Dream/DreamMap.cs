@@ -20,14 +20,14 @@ namespace OpenDreamServer.Dream {
             DMMParser dmmParser = new DMMParser(new DMLexer(dmmSource));
             DMMParser.Map map = dmmParser.ParseMap();
 
-            Turfs = new UInt16[map.MaxX, map.MaxY];
+            Turfs = new UInt16[map.MaxX - 1, map.MaxY - 1];
             foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
                 foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
                     DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
                     DreamObject turf = CreateMapObject(cellDefinition.Turf);
                     if (turf == null) turf = Program.DreamObjectTree.CreateObject(DreamPath.Turf);
 
-                    SetTurf(cell.Key.X, cell.Key.Y, turf);
+                    SetTurf(mapBlock.X + cell.Key.X - 1, mapBlock.Y + cell.Key.Y - 1, turf);
                     foreach (DMMParser.MapObject mapObject in cellDefinition.Objects) {
                         CreateMapObject(mapObject, turf);
                     }
@@ -86,6 +86,12 @@ namespace OpenDreamServer.Dream {
         private DreamObject CreateMapObject(DMMParser.MapObject mapObject, DreamObject loc = null) {
             if (!Program.DreamObjectTree.HasTreeEntry(mapObject.Type)) return null;
             DreamObject dreamObject = Program.DreamObjectTree.CreateObject(mapObject.Type, new DreamProcArguments(new() { new DreamValue(loc) }));
+
+            foreach (KeyValuePair<string, DreamValue> varOverride in mapObject.VarOverrides) {
+                if (dreamObject.HasVariable(varOverride.Key)) {
+                    dreamObject.SetVariable(varOverride.Key, varOverride.Value);
+                }
+            }
 
             return dreamObject;
         }

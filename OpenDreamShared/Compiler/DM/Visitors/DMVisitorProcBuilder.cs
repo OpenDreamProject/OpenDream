@@ -203,6 +203,7 @@ namespace OpenDreamShared.Compiler.DM.Visitors {
                 _proc.CreateScope();
                 {
                     statementWhile.Body.Visit(this);
+                    _proc.DestroyScope();
                     _proc.Continue();
                 }
                 _proc.DestroyScope();

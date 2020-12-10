@@ -35,15 +35,13 @@ namespace OpenDreamShared.Compiler.DMM {
 
         public class MapBlock {
             public int X, Y, Z;
-            public int MaxX, MaxY;
+            public int Width = 0, Height = 0;
             public Dictionary<(int X, int Y), string> Cells = new();
 
             public MapBlock(int x, int y, int z) {
                 X = x;
                 Y = y;
                 Z = z;
-                MaxX = X;
-                MaxY = Y;
             }
         }
 
@@ -68,8 +66,10 @@ namespace OpenDreamShared.Compiler.DMM {
 
                 MapBlock mapBlock = ParseMapBlock();
                 if (mapBlock != null) {
-                    if (map.MaxX < mapBlock.MaxX) map.MaxX = mapBlock.MaxX;
-                    if (map.MaxY < mapBlock.MaxY) map.MaxY = mapBlock.MaxY;
+                    int maxX = mapBlock.X + mapBlock.Width;
+                    int maxY = mapBlock.Y + mapBlock.Height;
+                    if (map.MaxX < maxX) map.MaxX = maxX;
+                    if (map.MaxY < maxY) map.MaxY = maxY;
 
                     map.Blocks.Add(mapBlock);
                 }
@@ -159,16 +159,16 @@ namespace OpenDreamShared.Compiler.DMM {
                 List<string> lines = new(blockString.Split("\n"));
                 lines.RemoveAll(line => String.IsNullOrEmpty(line));
 
-                mapBlock.MaxY = lines.Count + 1;
-                for (int y = 1; y < mapBlock.MaxY; y++) {
+                mapBlock.Height = lines.Count;
+                for (int y = 1; y <= mapBlock.Height; y++) {
                     string line = lines[y - 1];
-                    int maxX = (line.Length / _cellNameLength) + 1;
+                    int width = (line.Length / _cellNameLength);
 
-                    if (mapBlock.MaxX < maxX) mapBlock.MaxX = maxX;
+                    if (mapBlock.Width < width) mapBlock.Width = width;
                     if ((line.Length % _cellNameLength) != 0) throw new Exception("Invalid map block row");
 
-                    for (int x = 1; x < maxX; x++) {
-                        mapBlock.Cells.Add((x, y), line.Substring((x - 1) * _cellNameLength, _cellNameLength));
+                    for (int x = 1; x <= width; x++) {
+                        mapBlock.Cells.Add((x, mapBlock.Height - y + 1), line.Substring((x - 1) * _cellNameLength, _cellNameLength));
                     }
                 }
 

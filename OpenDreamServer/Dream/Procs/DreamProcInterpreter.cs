@@ -374,6 +374,9 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.CreateScope) {
                 _scopeStack.Push(new DreamProcScope(currentScope));
+                if (_scopeStack.Count > 1000) {
+                    Console.WriteLine("A");
+                }
             } else if (opcode == DreamProcOpcode.DestroyScope) {
                 _scopeStack.Pop();
             } else if (opcode == DreamProcOpcode.CompareLessThanOrEqual) {

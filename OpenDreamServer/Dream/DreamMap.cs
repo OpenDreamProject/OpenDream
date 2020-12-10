@@ -2,13 +2,12 @@
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Resources;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Compiler.DMM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Schema;
 
 namespace OpenDreamServer.Dream {
     class DreamMap {
@@ -18,24 +17,19 @@ namespace OpenDreamServer.Dream {
 
         public void LoadMap(DreamResource mapResource) {
             string dmmSource = mapResource.ReadAsString();
-            DMMParser.ParsedDMMMap parsedDMMMap = DMMParser.ParseDMMMap(dmmSource);
+            DMMParser dmmParser = new DMMParser(new DMLexer(dmmSource));
+            DMMParser.Map map = dmmParser.ParseMap();
 
-            Turfs = new UInt16[parsedDMMMap.Width, parsedDMMMap.Height];
-            foreach (KeyValuePair<(int, int, int), string[,]> coordinateAssignment in parsedDMMMap.CoordinateAssignments) {
-                (int, int, int) coordinates = coordinateAssignment.Key;
-                string[,] typeNames = coordinateAssignment.Value;
+            Turfs = new UInt16[map.MaxX, map.MaxY];
+            foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
+                foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
+                    DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
+                    DreamObject turf = CreateMapObject(cellDefinition.Turf);
+                    if (turf == null) turf = Program.DreamObjectTree.CreateObject(DreamPath.Turf);
 
-                for (int x = 0; x < typeNames.GetLength(0); x++) {
-                    for (int y = 0; y < typeNames.GetLength(1); y++) {
-                        DMMParser.ParsedDMMType parsedDMMType = parsedDMMMap.Types[typeNames[x, y]];
-                        DreamObject turf = CreateParsedDMMObject(parsedDMMType.Turf);
-
-                        if (turf == null) turf = Program.DreamObjectTree.CreateObject(DreamPath.Turf);
-
-                        SetTurf(x + 1, y + 1, turf);
-                        foreach (DMMParser.ParsedDMMObject parsedMovable in parsedDMMType.Movables) {
-                            CreateParsedDMMObject(parsedMovable, turf);
-                        }
+                    SetTurf(cell.Key.X, cell.Key.Y, turf);
+                    foreach (DMMParser.MapObject mapObject in cellDefinition.Objects) {
+                        CreateMapObject(mapObject, turf);
                     }
                 }
             }
@@ -89,11 +83,11 @@ namespace OpenDreamServer.Dream {
             Program.DreamStateManager.AddTurfDelta(x - 1, y - 1, turfAtomID);
         }
 
-        private DreamObject CreateParsedDMMObject(DMMParser.ParsedDMMObject parsedDMMObject, DreamObject location = null) {
-            if (!Program.DreamObjectTree.HasTreeEntry(parsedDMMObject.ObjectType)) return null;
-            DreamObject createdObject = Program.DreamObjectTree.CreateObject(parsedDMMObject.ObjectType, new DreamProcArguments(new List<DreamValue>() { new DreamValue(location) }));
+        private DreamObject CreateMapObject(DMMParser.MapObject mapObject, DreamObject loc = null) {
+            if (!Program.DreamObjectTree.HasTreeEntry(mapObject.Type)) return null;
+            DreamObject dreamObject = Program.DreamObjectTree.CreateObject(mapObject.Type, new DreamProcArguments(new() { new DreamValue(loc) }));
 
-            return createdObject;
+            return dreamObject;
         }
     }
 }

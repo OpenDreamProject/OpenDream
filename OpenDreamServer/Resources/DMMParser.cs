@@ -1,166 +1,207 @@
 ﻿using OpenDreamServer.Dream;
 using OpenDreamServer.Dream.Objects;
+using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
-//TODO: Parse DMM maps properly
-namespace OpenDreamServer.Resources {
-    static class DMMParser {
-        public struct ParsedDMMMap {
-            public int TypeNameWidth;
-            public Dictionary<string, ParsedDMMType> Types;
-            public Dictionary<(int, int, int), string[,]> CoordinateAssignments;
-            public int Width, Height;
+namespace OpenDreamShared.Compiler.DMM {
+    class DMMParser : DMParser {
+        public class Map {
+            public int MaxX, MaxY;
+            public Dictionary<string, CellDefinition> CellDefinitions = new();
+            public List<MapBlock> Blocks = new();
         }
 
-        public struct ParsedDMMType {
-            public ParsedDMMObject Area;
-            public ParsedDMMObject Turf;
-            public List<ParsedDMMObject> Movables;
+        public class CellDefinition {
+            public string Name;
+            public MapObject Turf = null;
+            public List<MapObject> Objects = new();
+
+            public CellDefinition(string name) {
+                Name = name;
+            }
         }
 
-        public struct ParsedDMMObject {
-            public DreamPath ObjectType;
-            public Dictionary<string, DreamValue> VariableModifications;
+        public class MapObject {
+            public DreamPath Type;
+            public Dictionary<string, DreamValue> VarOverrides = new();
+
+            public MapObject(DreamPath type) {
+                Type = type;
+            }
         }
 
-        public static ParsedDMMMap ParseDMMMap(string dmfSource) {
-            ParsedDMMMap parsedDMMMap = new ParsedDMMMap();
-            parsedDMMMap.TypeNameWidth = 1;
-            parsedDMMMap.Types = new Dictionary<string, ParsedDMMType>();
-            parsedDMMMap.CoordinateAssignments = new Dictionary<(int, int, int), string[,]>();
+        public class MapBlock {
+            public int X, Y, Z;
+            public int MaxX, MaxY;
+            public Dictionary<(int X, int Y), string> Cells = new();
 
-            dmfSource = dmfSource.Replace(" ", "");
+            public MapBlock(int x, int y, int z) {
+                X = x;
+                Y = y;
+                Z = z;
+                MaxX = X;
+                MaxY = Y;
+            }
+        }
 
-            string[] lines = dmfSource.Split("\n");
-            List<string> dmmLines = new List<string>();
-            for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++) {
-                string dmmLine = lines[lineIndex].Trim();
+        private int _cellNameLength = -1;
 
-                if (dmmLine.EndsWith("(")) {
-                    while (lines[lineIndex].IndexOf(")") == -1 && lineIndex < lines.Length) {
-                        lineIndex++;
-                        dmmLine += lines[lineIndex].Trim();
-                    }
-                } else if (dmmLine.EndsWith("{")) {
-                    while (lines[lineIndex].IndexOf("}") == -1 && lineIndex < lines.Length) {
-                        lineIndex++;
-                        dmmLine += lines[lineIndex].Trim();
-                    }
-                } else if (dmmLine.EndsWith("{\"")) {
-                    while (lines[lineIndex].IndexOf("}") == -1 && lineIndex < lines.Length) {
-                        lineIndex++;
-                        dmmLine += lines[lineIndex].Trim() + " ";
-                    }
+        public DMMParser(DMLexer lexer) : base(lexer) { }
 
-                    dmmLine = dmmLine.Remove(dmmLine.Length - 1);
+        public Map ParseMap() {
+            Map map = new Map();
+
+            _cellNameLength = -1;
+
+            bool parsing = true;
+            while (parsing) {
+                CellDefinition cellDefinition = ParseCellDefinition();
+                if (cellDefinition != null) {
+                    if (_cellNameLength == -1) _cellNameLength = cellDefinition.Name.Length;
+                    else if (cellDefinition.Name.Length != _cellNameLength) throw new Exception("Invalid cell definition name");
+
+                    map.CellDefinitions.Add(cellDefinition.Name, cellDefinition);
                 }
 
-                dmmLines.Add(dmmLine);
+                MapBlock mapBlock = ParseMapBlock();
+                if (mapBlock != null) {
+                    if (map.MaxX < mapBlock.MaxX) map.MaxX = mapBlock.MaxX;
+                    if (map.MaxY < mapBlock.MaxY) map.MaxY = mapBlock.MaxY;
+
+                    map.Blocks.Add(mapBlock);
+                }
+
+                if (cellDefinition == null && mapBlock == null) parsing = false;
             }
 
-            foreach (string line in dmmLines) {
-                int equalsIndex = line.IndexOf("=");
+            Consume(TokenType.EndOfFile, "Expected EOF");
+            return map;
+        }
 
-                if (equalsIndex != -1) {
-                    string key = line.Substring(0, equalsIndex);
-                    string value = line.Substring(equalsIndex + 1);
+        public CellDefinition ParseCellDefinition() {
+            Token currentToken = Current();
 
-                    if (key.StartsWith("\"") && key.EndsWith("\"")) {
-                        ParsedDMMType parsedDMMType = new ParsedDMMType();
-                        string typeName = key.Substring(1, key.Length - 2);
+            if (Check(TokenType.DM_String)) {
+                Consume(TokenType.DM_Equals, "Expected '='");
+                Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
-                        parsedDMMMap.TypeNameWidth = typeName.Length;
-                        parsedDMMType.Movables = new List<ParsedDMMObject>();
-                        if (value.StartsWith("(") && value.EndsWith(")")) {
-                            string[] dmmObjects = value.Substring(1, value.Length - 2).Split(",");
+                CellDefinition cellDefinition = new CellDefinition((string)currentToken.Value);
+                DMASTPath objectType = Path();
+                while (objectType != null) {
+                    MapObject mapObject = new MapObject(objectType.Path);
 
-                            foreach (string dmmObject in dmmObjects) {
-                                ParsedDMMObject parsedDMMObject = new ParsedDMMObject();
-                                int varModificationsIndex = dmmObject.IndexOf("{");
+                    if (Check(TokenType.DM_LeftCurlyBracket)) {
+                        DMASTStatement statement = Statement();
 
-                                if (varModificationsIndex != -1) {
-                                    string objectType = dmmObject.Substring(0, varModificationsIndex);
-                                    string[] varModifications = dmmObject.Substring(varModificationsIndex + 1, dmmObject.Length - varModificationsIndex - 2).Split(";");
+                        while (statement != null) {
+                            DMASTObjectVarOverride varOverride = statement as DMASTObjectVarOverride;
+                            DreamValue varValue;
 
-                                    parsedDMMObject.ObjectType = new DreamPath(objectType);
-                                    parsedDMMObject.VariableModifications = new Dictionary<string, DreamValue>();
-                                    foreach (string varModification in varModifications) {
-                                        string[] varModificationSplit = varModification.Split("=");
-                                        if (varModificationSplit.Length != 2) continue;
-                                        string varName = varModificationSplit[0];
-                                        string varValue = varModificationSplit[1];
-
-                                        if (int.TryParse(varValue, out int varValueInteger)) {
-                                            parsedDMMObject.VariableModifications[varName] = new DreamValue(varValueInteger);
-                                        } else if (double.TryParse(varValue, out double varValueDouble)) {
-                                            parsedDMMObject.VariableModifications[varName] = new DreamValue(varValueDouble);
-                                        } else if (varValue.StartsWith("\"") && varValue.EndsWith("\"") || varValue.StartsWith("'") && varValue.EndsWith("'")) {
-                                            parsedDMMObject.VariableModifications[varName] = new DreamValue(varValue.Substring(1, varValue.Length - 2));
-                                        } else if (varValue.StartsWith("/")) {
-                                            parsedDMMObject.VariableModifications[varName] = new DreamValue(new DreamPath(varValue));
-                                        } else if (varValue == "null") {
-                                            parsedDMMObject.VariableModifications[varName] = new DreamValue((DreamObject)null);
-                                        } else {
-                                            throw new Exception("Invalid var modification value (" + varModification + ")");
-                                        }
-                                    }
-                                } else {
-                                    parsedDMMObject.ObjectType = new DreamPath(dmmObject);
-                                    parsedDMMObject.VariableModifications = null;
-                                }
-
-                                if (parsedDMMObject.ObjectType.IsDescendantOf(DreamPath.Area)) {
-                                    parsedDMMType.Area = parsedDMMObject;
-                                } else if (parsedDMMObject.ObjectType.IsDescendantOf(DreamPath.Turf)) {
-                                    parsedDMMType.Turf = parsedDMMObject;
-                                } else {
-                                    parsedDMMType.Movables.Add(parsedDMMObject);
-                                }
+                            if (varOverride == null) throw new Exception("Expected a var override");
+                            if (varOverride.ObjectPath != null) throw new Exception("Invalid var name");
+                            if (varOverride.Value is DMASTConstantString) {
+                                varValue = new DreamValue(((DMASTConstantString)varOverride.Value).Value);
+                            } else if (varOverride.Value is DMASTConstantInteger) {
+                                varValue = new DreamValue(((DMASTConstantInteger)varOverride.Value).Value);
+                            } else if (varOverride.Value is DMASTConstantPath) {
+                                varValue = new DreamValue(((DMASTConstantPath)varOverride.Value).Value.Path);
+                            } else if (varOverride.Value is DMASTConstantNull) {
+                                varValue = new DreamValue((DreamObject)null);
+                            } else {
+                                throw new Exception("Invalid var value (" + varOverride.Value + ")");
                             }
 
-                        } else {
-                            throw new Exception("Invalid value \"" + value + "\"");
-                        }
-
-                        parsedDMMMap.Types[typeName] = parsedDMMType;
-                    } else if (key.StartsWith("(") && key.EndsWith(")")) {
-                        string[] coordinates = key.Substring(1, key.Length - 2).Split(",");
-                        int x = int.Parse(coordinates[0]);
-                        int y = int.Parse(coordinates[1]);
-                        int z = int.Parse(coordinates[2]);
-
-                        if (value.StartsWith("{\"") && value.EndsWith("\"}")) {
-                            string coordinateDefinition = value.Substring(2, value.Length - 4);
-                            coordinateDefinition = coordinateDefinition.Remove(coordinateDefinition.Length - 1);
-
-                            string[] yBreaks = coordinateDefinition.Split(" ");
-                            int definitionWidth = yBreaks[0].Length / parsedDMMMap.TypeNameWidth;
-                            int definitionHeight = yBreaks.Length;
-
-                            if (parsedDMMMap.Width < x + definitionWidth) parsedDMMMap.Width = x + definitionWidth;
-                            if (parsedDMMMap.Height < y + definitionHeight) parsedDMMMap.Height = y + definitionHeight;
-                            parsedDMMMap.CoordinateAssignments[(x, y, z)] = new string[definitionWidth, definitionHeight];
-                            for (int definitionY = 0; definitionY < definitionHeight; definitionY++) {
-                                string definitionLine = yBreaks[definitionY];
-
-                                for (int definitionX = 0; definitionX < definitionWidth; definitionX++) {
-                                    string typeName = definitionLine.Substring((definitionX * parsedDMMMap.TypeNameWidth), parsedDMMMap.TypeNameWidth);
-
-                                    parsedDMMMap.CoordinateAssignments[(x, y, z)][definitionX, definitionY] = typeName;
-                                }
+                            mapObject.VarOverrides.Add(varOverride.VarName, varValue);
+                            if (Check(TokenType.DM_Semicolon)) {
+                                statement = Statement();
+                            } else {
+                                statement = null;
                             }
-                        } else {
-                            throw new Exception("Invalid value \"" + value + "\"");
                         }
+
+                        Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    }
+
+                    if (mapObject.Type.IsDescendantOf(DreamPath.Turf)) {
+                        cellDefinition.Turf = mapObject;
                     } else {
-                        throw new Exception("Invalid key (" + key + ")");
+                        cellDefinition.Objects.Add(mapObject);
+                    }
+
+                    if (Check(TokenType.DM_Comma)) {
+                        objectType = Path();
+                    } else {
+                        objectType = null;
                     }
                 }
-            }
 
-            return parsedDMMMap;
+                Consume(TokenType.DM_RightParenthesis, "Expected ')'");
+                return cellDefinition;
+            } else {
+                return null;
+            }
+        }
+
+        public MapBlock ParseMapBlock() {
+            (int X, int Y, int Z)? coordinates = Coordinates();
+
+            if (coordinates.HasValue) {
+                MapBlock mapBlock = new MapBlock(coordinates.Value.X, coordinates.Value.Y, coordinates.Value.Z);
+
+                Consume(TokenType.DM_Equals, "Expected '='");
+                Token blockStringToken = Current();
+                Consume(TokenType.DM_String, "Expected a string");
+
+                string blockString = (string)blockStringToken.Value;
+                List<string> lines = new(blockString.Split("\n"));
+                lines.RemoveAll(line => String.IsNullOrEmpty(line));
+
+                mapBlock.MaxY = lines.Count + 1;
+                for (int y = 1; y < mapBlock.MaxY; y++) {
+                    string line = lines[y - 1];
+                    int maxX = (line.Length / _cellNameLength) + 1;
+
+                    if (mapBlock.MaxX < maxX) mapBlock.MaxX = maxX;
+                    if ((line.Length % _cellNameLength) != 0) throw new Exception("Invalid map block row");
+
+                    for (int x = 1; x < maxX; x++) {
+                        mapBlock.Cells.Add((x, y), line.Substring((x - 1) * _cellNameLength, _cellNameLength));
+                    }
+                }
+
+                return mapBlock;
+            } else {
+                return null;
+            }
+        }
+
+        private (int X, int Y, int Z)? Coordinates() {
+            if (Check(TokenType.DM_LeftParenthesis)) {
+                DMASTConstantInteger x = Constant() as DMASTConstantInteger;
+                if (x == null) throw new Exception("Expected an integer");
+                Consume(TokenType.DM_Comma, "Expected ','");
+                DMASTConstantInteger y = Constant() as DMASTConstantInteger;
+                if (y == null) throw new Exception("Expected an integer");
+                Consume(TokenType.DM_Comma, "Expected ','");
+                DMASTConstantInteger z = Constant() as DMASTConstantInteger;
+                if (z == null) throw new Exception("Expected an integer");
+                Consume(TokenType.DM_RightParenthesis, "Expected ')'");
+                
+                return (x.Value, y.Value, z.Value);
+            } else {
+                return null;
+            }
+        }
+
+        protected override Token Advance() {
+            //Throw out any newlines, indents, dedents, or whitespace
+            List<TokenType> ignoredTypes = new() { TokenType.Newline, TokenType.DM_Indent, TokenType.DM_Dedent, TokenType.DM_Whitespace };
+            while (ignoredTypes.Contains(base.Advance().Type)) ;
+            
+            return Current();
         }
     }
 }

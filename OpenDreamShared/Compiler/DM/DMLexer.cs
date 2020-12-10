@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenDreamShared.Compiler;
 
-namespace DMCompiler.DM {
+namespace OpenDreamShared.Compiler.DM {
     class DMLexer : Lexer {
         public static List<string> ValidEscapeSequences = new List<string>() {
             "t", "n",
@@ -363,7 +362,7 @@ namespace DMCompiler.DM {
                                         text += c;
                                         c = Advance();
 
-                                        if (!(IsNumeric(c) || c == '-')) throw new Exception("Invalid scientific notation");
+                                        if (!(IsNumeric(c) || c == '-' || c == '+')) throw new Exception("Invalid scientific notation");
                                     }
 
                                     text += c;

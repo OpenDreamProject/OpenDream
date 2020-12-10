@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DMCompiler.DM.Visitors {
+namespace OpenDreamShared.Compiler.DM.Visitors {
     class DMVisitorObjectBuilder : DMASTVisitor {
         private Stack<object> _valueStack = new Stack<object>();
         private Dictionary<DreamPath, DMObject> _dmObjects = new Dictionary<DreamPath, DMObject>();

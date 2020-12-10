@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using DMCompiler.DM;
-using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Compiler.DM.Visitors;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Objects;
 
@@ -21,7 +20,7 @@ namespace DMCompiler {
                 return;
             }
 
-            string source = File.ReadAllText("DM\\Standard.dm") + "\n" + File.ReadAllText(args[0]);
+            string source = File.ReadAllText("DMStandard\\Standard.dm") + "\n" + File.ReadAllText(args[0]);
             DMLexer dmLexer = new DMLexer(source);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();

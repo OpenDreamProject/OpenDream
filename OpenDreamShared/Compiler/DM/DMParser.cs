@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
-using DereferenceType = DMCompiler.DM.DMASTCallableDereference.DereferenceType;
-using Dereference = DMCompiler.DM.DMASTCallableDereference.Dereference;
+using DereferenceType = OpenDreamShared.Compiler.DM.DMASTCallableDereference.DereferenceType;
+using Dereference = OpenDreamShared.Compiler.DM.DMASTCallableDereference.Dereference;
 using OpenDreamShared.Dream.Procs;
 
-namespace DMCompiler.DM {
+namespace OpenDreamShared.Compiler.DM {
     class DMParser : Parser {
         public static char StringFormatCharacter = (char)0xFF;
 
@@ -1419,11 +1418,14 @@ namespace DMCompiler.DM {
             }
         }
 
-        private bool Newline() {
-            return Check(TokenType.Newline);
+        protected bool Newline() {
+            bool hasNewline = Check(TokenType.Newline);
+
+            while (Check(TokenType.Newline)) ;
+            return hasNewline;
         }
 
-        private bool Whitespace() {
+        protected bool Whitespace() {
             return Check(TokenType.DM_Whitespace);
         }
 

@@ -1,7 +1,7 @@
 ﻿using OpenDreamShared.Dream;
 using System.Collections.Generic;
 
-namespace DMCompiler.DM {
+namespace OpenDreamShared.Compiler.DM {
     struct DMList {
         public object[] Values;
         public Dictionary<object, object> AssociatedValues;

@@ -3,9 +3,8 @@ using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
-namespace DMCompiler.DM {
+namespace OpenDreamShared.Compiler.DM {
     class DMProc {
         public struct Parameter {
             public string Name;

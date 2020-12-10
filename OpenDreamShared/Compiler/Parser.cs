@@ -17,7 +17,7 @@ namespace OpenDreamShared.Compiler {
             return _currentToken;
         }
 
-        protected Token Advance() {
+        protected virtual Token Advance() {
             if (_tokenStack.Count > 0) {
                 _currentToken = _tokenStack.Pop();
             } else {

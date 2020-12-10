@@ -854,6 +854,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return true;
             } else if (value.Type == DreamValue.DreamValueType.Integer) {
                 return (value.GetValueAsInteger() != 0);
+            } else if (value.Type == DreamValue.DreamValueType.Double) {
+                return (value.GetValueAsDouble() != 0);
             } else if (value.Type == DreamValue.DreamValueType.String) {
                 return (value.GetValueAsString() != "");
             } else {

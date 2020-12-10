@@ -8,7 +8,7 @@
   <Import Project="..\OpenDreamShared\OpenDreamShared.projitems" Label="Shared" />
 
   <ItemGroup>
-    <None Update="DM\Standard.dm">
+    <None Update="DMStandard\Standard.dm">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

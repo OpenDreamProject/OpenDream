@@ -61,7 +61,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "icon_state") {
                 Program.DreamStateManager.AddAtomIconStateDelta(dreamObject, variableValue.GetValueAsString());
             } else if (variableName == "color") {
-                Program.DreamStateManager.AddAtomColorDelta(dreamObject, variableValue.GetValueAsString());
+                string color;
+                if (variableValue.Type == DreamValue.DreamValueType.String) {
+                    color = variableValue.GetValueAsString();
+                } else {
+                    color = "#FFFFFF";
+                }
+
+                Program.DreamStateManager.AddAtomColorDelta(dreamObject, color);
             } else if (variableName == "dir") {
                 Program.DreamStateManager.AddAtomDirectionDelta(dreamObject, (AtomDirection)variableValue.GetValueAsInteger());
             } else if (variableName == "overlays") {

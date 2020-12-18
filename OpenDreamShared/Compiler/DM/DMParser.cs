@@ -896,7 +896,9 @@ namespace OpenDreamShared.Compiler.DM {
                     TokenType.DM_BarEquals,
                     TokenType.DM_AndEquals,
                     TokenType.DM_StarEquals,
-                    TokenType.DM_SlashEquals
+                    TokenType.DM_SlashEquals,
+                    TokenType.DM_LeftShiftEquals,
+                    TokenType.DM_RightShiftEquals
                 };
 
                 if (Check(assignTypes)) {
@@ -912,6 +914,8 @@ namespace OpenDreamShared.Compiler.DM {
                             case TokenType.DM_AndEquals: return new DMASTMask(expression, value);
                             case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(expression, value);
                             case TokenType.DM_SlashEquals: return new DMASTDivideAssign(expression, value);
+                            case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(expression, value);
+                            case TokenType.DM_RightShiftEquals: return new DMASTRightShiftAssign(expression, value);
                         }
                     } else {
                         throw new Exception("Expected a value");
@@ -1187,8 +1191,10 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (expression != null) {
                     if (Check(TokenType.DM_PlusPlus)) {
+                        Whitespace();
                         expression = new DMASTPostIncrement(expression);
                     } else if (Check(TokenType.DM_MinusMinus)) {
+                        Whitespace();
                         expression = new DMASTPostDecrement(expression);
                     }
                 }

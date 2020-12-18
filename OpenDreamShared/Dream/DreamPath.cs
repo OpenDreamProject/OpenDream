@@ -99,7 +99,13 @@ namespace OpenDreamShared.Dream {
         }
 
         public bool IsDescendantOf(DreamPath path) {
-            return PathString.StartsWith(path.PathString);
+            if (path.Elements.Length > Elements.Length) return false;
+
+            for (int i = 0; i < path.Elements.Length; i++) {
+                if (Elements[i] != path.Elements[i]) return false;
+            }
+
+            return true;
         }
 
         public DreamPath AddToPath(string path) {

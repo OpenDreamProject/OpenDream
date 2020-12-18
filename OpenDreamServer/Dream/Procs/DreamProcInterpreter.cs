@@ -374,9 +374,6 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.CreateScope) {
                 _scopeStack.Push(new DreamProcScope(currentScope));
-                if (_scopeStack.Count > 1000) {
-                    Console.WriteLine("A");
-                }
             } else if (opcode == DreamProcOpcode.DestroyScope) {
                 _scopeStack.Pop();
             } else if (opcode == DreamProcOpcode.CompareLessThanOrEqual) {
@@ -459,6 +456,17 @@ namespace OpenDreamServer.Dream.Procs {
                     } else {
 
                         throw new Exception("Invalid proc (" + procId + ")");
+                    }
+                } else if (source.Type == DreamValue.DreamValueType.DreamPath) {
+                    DreamPath fullProcPath = source.GetValueAsPath();
+                    if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
+                    string procName = fullProcPath.LastElement;
+                    DreamProc proc = _topScope.GetValue(procName).GetValueAsProc();
+
+                    try {
+                        Push(proc.Run(_topScope.DreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
+                    } catch (Exception e) {
+                        throw new Exception("Exception while running proc " + fullProcPath + " on object of type '" + _topScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
                 } else {
                     throw new Exception("Call statement has an invalid source (" + source + ")");
@@ -776,6 +784,15 @@ namespace OpenDreamServer.Dream.Procs {
 
                     if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
                     connection.OutputControl((string)message.Value, control);
+                }
+            } else if (opcode == DreamProcOpcode.BitShiftRight) {
+                DreamValue second = PopDreamValue();
+                DreamValue first = PopDreamValue();
+
+                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                    Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
+                } else {
+                    throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
                 }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");

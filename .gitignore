@@ -5,8 +5,11 @@
 /.vs
 /OpenDreamClient/bin
 /OpenDreamClient/obj
+/OpenDreamClient/Properties
 /OpenDreamServer/bin
 /OpenDreamServer/obj
+/OpenDreamServer/Properties
 /DMCompiler/bin
 /DMCompiler/obj
+/DMCompiler/Properties
 /packages/System.Net.Sockets.4.3.0

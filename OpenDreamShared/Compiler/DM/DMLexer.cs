@@ -259,9 +259,15 @@ namespace OpenDreamShared.Compiler.DM {
                         c = Advance();
 
                         if (c == '<') {
-                            Advance();
+                            c = Advance();
 
-                            token = CreateToken(TokenType.DM_LeftShift, "<<");
+                            if (c == '=') {
+                                Advance();
+
+                                token = CreateToken(TokenType.DM_LeftShiftEquals, "<<=");
+                            } else {
+                                token = CreateToken(TokenType.DM_LeftShift, "<<");
+                            }
                         } else if (c == '=') {
                             Advance();
 
@@ -276,9 +282,15 @@ namespace OpenDreamShared.Compiler.DM {
                         c = Advance();
 
                         if (c == '>') {
-                            Advance();
+                            c = Advance();
 
-                            token = CreateToken(TokenType.DM_RightShift, ">>");
+                            if (c == '=') {
+                                Advance();
+
+                                token = CreateToken(TokenType.DM_RightShiftEquals, ">>=");
+                            } else {
+                                token = CreateToken(TokenType.DM_RightShift, ">>");
+                            }
                         } else if (c == '=') {
                             Advance();
 

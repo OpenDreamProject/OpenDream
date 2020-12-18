@@ -14,12 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMF\DMFParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMAST.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMLexer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMParser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMProc.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMValues.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\Visitors\DMVisitorObjectBuilder.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\Visitors\DMVisitorProcBuilder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Lexer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Token.cs" />

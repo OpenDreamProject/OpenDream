@@ -38,6 +38,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 } else {
                     return new DreamValue(0);
                 }
+            } else if (variableName == "z") {
+                return new DreamValue(1);
             } else if (variableName == "loc") {
                 return new DreamValue(_area);
             } else {

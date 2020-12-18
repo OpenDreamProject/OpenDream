@@ -59,6 +59,30 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(list.FindValue(element));
         }
 
+        public static DreamValue NativeProc_Insert(DreamProcScope scope, DreamProcArguments arguments) {
+            int index = scope.GetValue("Index").GetValueAsInteger(); //1-indexed
+            DreamObject listObject = scope.DreamObject;
+            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+
+            if (arguments.OrderedArguments.Count < 2) throw new Exception("No value given to insert");
+
+            for (int i = 1; i < arguments.OrderedArguments.Count; i++) {
+                DreamValue item = arguments.OrderedArguments[i];
+
+                if (item.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject valueListObject)) {
+                    DreamList valueList = DreamMetaObjectList.DreamLists[valueListObject];
+
+                    foreach (DreamValue value in valueList.GetValues()) {
+                        list.Insert(index++, value);
+                    }
+                } else {
+                    list.Insert(index++, item);
+                }
+            }
+
+            return new DreamValue(index);
+        }
+
         public static DreamValue NativeProc_Join(DreamProcScope scope, DreamProcArguments arguments) {
             DreamValue glue = scope.GetValue("Glue");
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
@@ -84,6 +108,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(itemRemoved ? 1 : 0);
+        }
+
+        public static DreamValue NativeProc_Swap(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamList list = DreamMetaObjectList.DreamLists[scope.DreamObject];
+            int index1 = scope.GetValue("Index1").GetValueAsInteger();
+            int index2 = scope.GetValue("Index2").GetValueAsInteger();
+
+            list.Swap(index1, index2);
+            return new DreamValue((DreamObject)null);
         }
     }
 }

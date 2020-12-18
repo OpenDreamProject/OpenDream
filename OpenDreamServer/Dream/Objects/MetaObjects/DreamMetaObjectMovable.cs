@@ -16,7 +16,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            if (variableName == "x" || variableName == "y") {
+            if (variableName == "x" || variableName == "y" || variableName == "z") {
                 int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
                 int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
                 DreamObject newLocation = Program.DreamMap.GetTurfAt(x, y);
@@ -44,7 +44,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "x" || variableName == "y") {
+            if (variableName == "x" || variableName == "y" || variableName == "z") {
                 DreamObject location = dreamObject.GetVariable("loc").GetValueAsDreamObject();
 
                 if (location != null) {

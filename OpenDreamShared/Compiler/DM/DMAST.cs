@@ -72,6 +72,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) { throw new NotImplementedException(); }
         public void VisitDivideAssign(DMASTDivideAssign divideAssign) { throw new NotImplementedException(); }
+        public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) { throw new NotImplementedException(); }
+        public void VisitRightShiftAssign(DMASTRightShiftAssign rightShiftAssign) { throw new NotImplementedException(); }
         public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
         public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
@@ -1063,6 +1065,32 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitDivideAssign(this);
+        }
+    }
+
+    class DMASTLeftShiftAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLeftShiftAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLeftShiftAssign(this);
+        }
+    }
+
+    class DMASTRightShiftAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTRightShiftAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitRightShiftAssign(this);
         }
     }
 

@@ -431,6 +431,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
         }
 
+        public static DreamValue NativeProc_log(DreamProcScope scope, DreamProcArguments arguments) {
+           double x = scope.GetValue("X").GetValueAsNumber();
+            DreamValue y = scope.GetValue("Y");
+
+            if (y.Value != null) {
+                return new DreamValue(Math.Log(y.GetValueAsNumber(), x));
+            } else {
+                return new DreamValue(Math.Log(x));
+            }
+        }
+
         public static DreamValue NativeProc_lowertext(DreamProcScope scope, DreamProcArguments arguments) {
             string text = scope.GetValue("T").GetValueAsString();
 

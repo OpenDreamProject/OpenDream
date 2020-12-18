@@ -22,29 +22,6 @@
 		if (channel != null) src.channel = channel
 		if (volume != null) src.volume = volume
 
-/image
-	var/icon = null
-	var/icon_state = null
-	var/loc = null
-	var/layer = -1
-	var/dir = 2
-	var/pixel_x = 0
-	var/pixel_y = 0
-	var/color = "#FFFFFF"
-	var/alpha = 255
-
-	proc/New(icon, loc, icon_state, layer, dir)
-		src.icon = icon
-		if (!istext(loc))
-			if (loc != null) src.loc = loc
-			if (icon_state != null) src.icon_state = icon_state
-			if (layer != null) src.layer = layer
-			if (dir != null) src.dir = dir
-		else
-			if (loc != null) src.icon_state = loc
-			if (icon_state != null) src.layer = icon_state
-			if (layer != null) src.dir = layer
-
 /mutable_appearance
 	var/icon = null
 	var/icon_state = ""
@@ -129,6 +106,31 @@
 	proc/Del()
 	proc/Topic(href, href_list)
 
+/image
+	parent_type = /datum
+
+	var/icon = null
+	var/icon_state = null
+	var/loc = null
+	var/layer = -1
+	var/dir = 2
+	var/pixel_x = 0
+	var/pixel_y = 0
+	var/color = "#FFFFFF"
+	var/alpha = 255
+
+	proc/New(icon, loc, icon_state, layer, dir)
+		src.icon = icon
+		if (!istext(loc))
+			if (loc != null) src.loc = loc
+			if (icon_state != null) src.icon_state = icon_state
+			if (layer != null) src.layer = layer
+			if (dir != null) src.dir = dir
+		else
+			if (loc != null) src.icon_state = loc
+			if (icon_state != null) src.layer = icon_state
+			if (layer != null) src.dir = layer
+
 /atom
 	parent_type = /datum
 
@@ -149,6 +151,7 @@
 	var/layer = 2.0
 	var/alpha = 255
 	var/color = "#FFFFFF"
+	var/invisibility = 0
 
 	var/gender = "neuter"
 	var/density = 0
@@ -236,18 +239,10 @@
 
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()
-	var/xStart = Start.x
-	var/yStart = Start.y
-	var/xEnd = End.x
-	var/yEnd = End.y
-
-	var/x = xStart
-	while (x <= xEnd)
-		var/y = yStart
-		while (y <= yEnd)
+	
+	for (var/x=Start.x; x<End.x; x++)
+		for (var/y=Start.y; y<End.y; y++)
 			atoms.Add(locate(x, y, Start.z))
-			y += 1
-		x += 1
 	
 	return atoms
 

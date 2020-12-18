@@ -211,6 +211,24 @@ namespace OpenDreamShared.Compiler.DM.Visitors {
             _proc.LoopEnd();
         }
 
+        public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
+            string loopLabel = NewLabelName();
+            string loopEndLabel = NewLabelName();
+
+            _proc.LoopStart(loopLabel);
+            {
+                statementDoWhile.Body.Visit(this);
+
+                statementDoWhile.Conditional.Visit(this);
+                _proc.JumpIfFalse(loopEndLabel);
+                _proc.Continue();
+
+                _proc.AddLabel(loopEndLabel);
+                _proc.Break();
+            }
+            _proc.LoopEnd();
+        }
+
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             string endLabel = NewLabelName();
             List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new List<(string, DMASTProcBlockInner)>();
@@ -440,10 +458,46 @@ namespace OpenDreamShared.Compiler.DM.Visitors {
             _proc.Mask();
         }
 
+        public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) {
+            multiplyAssign.A.Visit(this);
+
+            multiplyAssign.A.Visit(this);
+            multiplyAssign.B.Visit(this);
+            _proc.Multiply();
+
+            _proc.Assign();
+        }
+
+        public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) {
+            leftShiftAssign.A.Visit(this);
+
+            leftShiftAssign.A.Visit(this);
+            leftShiftAssign.B.Visit(this);
+            _proc.BitShiftLeft();
+
+            _proc.Assign();
+        }
+
+        public void VisitRightShiftAssign(DMASTRightShiftAssign rightShiftAssign) {
+            rightShiftAssign.A.Visit(this);
+
+            rightShiftAssign.A.Visit(this);
+            rightShiftAssign.B.Visit(this);
+            _proc.BitShiftRight();
+
+            _proc.Assign();
+        }
+
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             leftShift.A.Visit(this);
             leftShift.B.Visit(this);
             _proc.BitShiftLeft();
+        }
+
+        public void VisitRightShift(DMASTRightShift rightShift) {
+            rightShift.A.Visit(this);
+            rightShift.B.Visit(this);
+            _proc.BitShiftRight();
         }
 
         public void VisitBinaryNot(DMASTBinaryNot binaryNot) {

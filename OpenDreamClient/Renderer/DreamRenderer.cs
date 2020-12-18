@@ -86,8 +86,6 @@ namespace OpenDreamClient.Renderer {
                 1.0f, 0.0f
             }, OpenGL.GL_STATIC_DRAW);
             _gl.EnableVertexAttribArray(_shader.TextureCoordLocation);
-
-            _gl.Uniform1(_shader.LayerUniform, 1.0f); //TODO: Use atom icons' layers
         }
 
         private DreamTexture GetDreamTexture(DreamIcon icon) {

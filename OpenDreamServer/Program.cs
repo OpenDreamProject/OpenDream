@@ -201,6 +201,7 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("json_encode", new DreamProc(DreamProcNativeRoot.NativeProc_json_encode, new List<string>() { "Value" }));
             DreamObjectTree.RegisterNativeProc("length", new DreamProc(DreamProcNativeRoot.NativeProc_length, new List<string>() { "E" }));
             DreamObjectTree.RegisterNativeProc("locate", new DreamProc(DreamProcNativeRoot.NativeProc_locate, new List<string>() { "X", "Y", "Z" }));
+            DreamObjectTree.RegisterNativeProc("log", new DreamProc(DreamProcNativeRoot.NativeProc_log, new List<string>() { "X", "Y" }));
             DreamObjectTree.RegisterNativeProc("lowertext", new DreamProc(DreamProcNativeRoot.NativeProc_lowertext, new List<string>() { "T" }));
             DreamObjectTree.RegisterNativeProc("max", new DreamProc(DreamProcNativeRoot.NativeProc_max, new List<string>() { "A" }));
             DreamObjectTree.RegisterNativeProc("min", new DreamProc(DreamProcNativeRoot.NativeProc_min, new List<string>() { "A" }));
@@ -233,8 +234,10 @@ namespace OpenDreamServer {
             DreamObjectTree.RegisterNativeProc("list_Copy", new DreamProc(DreamProcNativeList.NativeProc_Copy, new List<string>() { "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Cut", new DreamProc(DreamProcNativeList.NativeProc_Cut, new List<string>() { "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Find", new DreamProc(DreamProcNativeList.NativeProc_Find, new List<string>() { "Elem", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
+            DreamObjectTree.RegisterNativeProc("list_Insert", new DreamProc(DreamProcNativeList.NativeProc_Insert, new List<string>() { "Index", "Item1" }));
             DreamObjectTree.RegisterNativeProc("list_Join", new DreamProc(DreamProcNativeList.NativeProc_Join, new List<string>() { "Glue", "Start", "End" }, new Dictionary<string, DreamValue>() { { "Start", new DreamValue(1) }, { "End", new DreamValue(0) } }));
             DreamObjectTree.RegisterNativeProc("list_Remove", new DreamProc(DreamProcNativeList.NativeProc_Remove, new List<string>() { "Item1" }));
+            DreamObjectTree.RegisterNativeProc("list_Swap", new DreamProc(DreamProcNativeList.NativeProc_Swap, new List<string>() { "Index1", "Index2" }));
         }
 
         private static void CreateAtomBases() {

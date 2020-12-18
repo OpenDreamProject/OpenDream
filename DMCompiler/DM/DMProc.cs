@@ -257,6 +257,10 @@ namespace OpenDreamShared.Compiler.DM {
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
         }
 
+        public void BitShiftRight() {
+            WriteOpcode(DreamProcOpcode.BitShiftRight);
+        }
+
         public void BinaryNot() {
             WriteOpcode(DreamProcOpcode.BitNot);
         }

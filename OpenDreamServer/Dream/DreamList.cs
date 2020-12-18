@@ -125,6 +125,17 @@ namespace OpenDreamServer.Dream {
             return result;
         }
 
+        public void Insert(int index, DreamValue value) {
+            _values.Insert(index - 1, value);
+        }
+
+        public void Swap(int index1, int index2) {
+            DreamValue temp = GetValue(new DreamValue(index1));
+
+            SetValue(new DreamValue(index1), GetValue(new DreamValue(index2)));
+            SetValue(new DreamValue(index2), temp);
+        }
+
         public int GetLength() {
             return _values.Count;
         }

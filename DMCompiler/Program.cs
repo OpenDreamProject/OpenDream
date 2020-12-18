@@ -212,6 +212,7 @@ namespace DMCompiler {
             AddNativeProc(rootObject, "json_encode", "json_encode");
             AddNativeProc(rootObject, "length", "length");
             AddNativeProc(rootObject, "locate", "locate");
+            AddNativeProc(rootObject, "log", "log");
             AddNativeProc(rootObject, "lowertext", "lowertext");
             AddNativeProc(rootObject, "max", "max");
             AddNativeProc(rootObject, "min", "min");
@@ -243,11 +244,13 @@ namespace DMCompiler {
                 return child.Name == "list";
             });
             AddNativeProc(listObject, "Add", "list_Add");
-            AddNativeProc(listObject, "Remove", "list_Remove");
             AddNativeProc(listObject, "Copy", "list_Copy");
             AddNativeProc(listObject, "Cut", "list_Cut");
             AddNativeProc(listObject, "Find", "list_Find");
+            AddNativeProc(listObject, "Insert", "list_Insert");
             AddNativeProc(listObject, "Join", "list_Join");
+            AddNativeProc(listObject, "Remove", "list_Remove");
+            AddNativeProc(listObject, "Swap", "list_Swap");
         }
 
         private static void AddNativeProc(DreamObjectJson objectJson, string procName, string nativeProcName) {

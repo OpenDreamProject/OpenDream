@@ -1,8 +1,10 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using DMCompiler.DM;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared.Compiler.DM.Visitors {
+namespace DMCompiler.Compiler.DM.Visitors {
     class DMVisitorProcBuilder : DMASTVisitor {
         private DMProc _proc;
         private Stack<object> _valueStack = new Stack<object>();

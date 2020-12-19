@@ -6,15 +6,22 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
         public static Dictionary<DreamObject, DreamList> DreamLists = new Dictionary<DreamObject, DreamList>();
 
+        private object _dreamListsLock = new object();
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList list = new DreamList();
 
-            DreamLists.Add(dreamObject, list);
+            lock (_dreamListsLock) {
+                DreamLists.Add(dreamObject, list);
+            }
+            
             base.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            DreamLists.Remove(dreamObject);
+            lock (_dreamListsLock) {
+                DreamLists.Remove(dreamObject);
+            }
 
             base.OnObjectDeleted(dreamObject);
         }

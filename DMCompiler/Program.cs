@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using DMCompiler.Compiler.DM;
+using DMCompiler.DM;
+using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Compiler.DM.Visitors;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Objects;
 
@@ -24,7 +26,10 @@ namespace DMCompiler {
             DMLexer dmLexer = new DMLexer(source);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
+            DMASTSimplifier astSimplifier = new DMASTSimplifier();
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
+
+            astSimplifier.SimplifyAST(astFile);
             Dictionary<DreamPath, DMObject> dmObjects = dmObjectBuilder.BuildObjects(astFile);
             DreamObjectJson objectTreeJson = CreateObjectTree(dmObjects);
             string json = JsonSerializer.Serialize(objectTreeJson, new JsonSerializerOptions() {

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.DM {
     class DMObject {
         public UInt32 Id;
         public DreamPath Path;

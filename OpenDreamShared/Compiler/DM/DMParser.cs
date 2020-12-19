@@ -430,8 +430,8 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Consume(new TokenType[] { TokenType.DM_Equals, TokenType.DM_In }, "Expected '=' or 'in'");
                     Whitespace();
-                    DMASTExpression value = Expression();
-                    if (value == null) throw new Exception("Expected an expression");
+                    DMASTExpressionConstant value = Expression() as DMASTExpressionConstant;
+                    if (value == null) throw new Exception("Expected a constant expression");
 
                     return new DMASTProcStatementSet(propertyToken.Text, value);
                 } else {

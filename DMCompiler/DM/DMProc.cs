@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.DM {
     class DMProc {
         public struct Parameter {
             public string Name;

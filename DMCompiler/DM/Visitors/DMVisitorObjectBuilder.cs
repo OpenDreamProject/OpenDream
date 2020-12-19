@@ -1,8 +1,11 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM.Visitors;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared.Compiler.DM.Visitors {
+namespace DMCompiler.DM.Visitors {
     class DMVisitorObjectBuilder : DMASTVisitor {
         private Stack<object> _valueStack = new Stack<object>();
         private Dictionary<DreamPath, DMObject> _dmObjects = new Dictionary<DreamPath, DMObject>();
@@ -118,69 +121,6 @@ namespace OpenDreamShared.Compiler.DM.Visitors {
             }
 
             dmObject.Procs[procName].Add(proc);
-        }
-
-        public void VisitNegate(DMASTNegate negate) {
-            negate.Expression.Visit(this);
-            object value = _valueStack.Pop();
-
-            if (value is int) {
-                _valueStack.Push(-(int)value);
-            } else {
-                throw new Exception("Invalid value");
-            }
-        }
-
-        public void VisitBinaryOr(DMASTBinaryOr binaryOr) {
-            binaryOr.B.Visit(this);
-            binaryOr.A.Visit(this);
-            object a = _valueStack.Pop();
-            object b = _valueStack.Pop();
-
-            if (a is int && b is int) {
-                _valueStack.Push((int)a | (int)b);
-            } else {
-                throw new Exception("Invalid value");
-            }
-        }
-
-        public void VisitBinaryNot(DMASTBinaryNot binaryNot) {
-            binaryNot.Value.Visit(this);
-            object value = _valueStack.Pop();
-
-            if (value is int) {
-                _valueStack.Push((~(int)value) & 0xFFFFFF);
-            } else {
-                throw new Exception("Invalid value");
-            }
-        }
-
-        public void VisitMultiply(DMASTMultiply multiply) {
-            multiply.B.Visit(this);
-            multiply.A.Visit(this);
-            object a = _valueStack.Pop();
-            object b = _valueStack.Pop();
-
-            if (a is int && b is int) {
-                _valueStack.Push((int)a * (int)b);
-            } else if (a is int && b is float) {
-                _valueStack.Push((int)a * (float)b);
-            } else {
-                throw new Exception("Invalid value");
-            }
-        }
-
-        public void VisitLeftShift(DMASTLeftShift leftShift) {
-            leftShift.B.Visit(this);
-            leftShift.A.Visit(this);
-            object a = _valueStack.Pop();
-            object b = _valueStack.Pop();
-
-            if (a is int && b is int) {
-                _valueStack.Push((int)a << (int)b);
-            } else {
-                throw new Exception("Invalid value");
-            }
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {

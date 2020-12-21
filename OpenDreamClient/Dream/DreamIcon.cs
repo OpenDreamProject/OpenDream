@@ -34,13 +34,15 @@ namespace OpenDreamClient.Dream {
             DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(VisualProperties.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(VisualProperties.Direction);
             double elapsedTime = DateTime.Now.Subtract(_animationStartTime).TotalMilliseconds / 100;
-            int animationFrame = (int)(elapsedTime / frames[0].Delay); //TODO: Don't just use the first frame's delay
 
-            if (dmiState.Loop) {
-                animationFrame %= frames.Length;
-            } else {
-                animationFrame = Math.Min(animationFrame, frames.Length - 1);
-            }
+            int animationFrame = -1;
+            float animationTime = 0;
+            do {
+                animationFrame = (animationFrame + 1) % frames.Length;
+                animationTime += frames[animationFrame].Delay;
+
+                if (!dmiState.Loop && animationFrame == frames.Length - 1) break;
+            } while (animationTime < elapsedTime);
 
             return animationFrame;
         }

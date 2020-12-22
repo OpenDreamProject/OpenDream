@@ -1,21 +1,21 @@
-﻿using System;
+﻿using OpenDreamShared.Dream.Objects;
+using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamShared.Dream {
     class DreamFullState {
         public struct Atom {
-            public UInt16 AtomID;
+            public AtomID AtomID;
             public UInt16 BaseID;
-            public UInt16 LocationID;
+            public AtomID LocationID;
             public IconVisualProperties VisualProperties;
             public ScreenLocation ScreenLocation;
             public Dictionary<UInt16, IconVisualProperties> Overlays;
         }
 
         public class Client {
-            public UInt16 EyeID = 0xFFFF;
-            public List<UInt16> ScreenObjects = new List<UInt16>();
+            public AtomID? EyeID = null;
+            public List<AtomID> ScreenObjects = new();
 
             public Client CreateCopy() {
                 return new Client() {
@@ -26,16 +26,16 @@ namespace OpenDreamShared.Dream {
         }
 
         public UInt32 ID;
-        public Dictionary<UInt16, Atom> Atoms = new Dictionary<UInt16, Atom>();
-        public Dictionary<string, Client> Clients = new Dictionary<string, Client>();
-        public UInt16[,] Turfs = new UInt16[0, 0];
+        public Dictionary<AtomID, Atom> Atoms = new();
+        public Dictionary<string, Client> Clients = new();
+        public AtomID[,] Turfs = new AtomID[0, 0];
 
         public DreamFullState(UInt32 id) {
             ID = id;
         }
 
         public void SetFromFullState(DreamFullState fullState) {
-            foreach (KeyValuePair<UInt16, Atom> atom in fullState.Atoms) {
+            foreach (KeyValuePair<AtomID, Atom> atom in fullState.Atoms) {
                 Atoms.Add(atom.Key, atom.Value);
             }
 
@@ -68,7 +68,7 @@ namespace OpenDreamShared.Dream {
                     Atoms[atomLocationDelta.AtomID] = atom;
                 }
 
-                foreach (UInt16 atomDeletion in deltaState.AtomDeletions) {
+                foreach (AtomID atomDeletion in deltaState.AtomDeletions) {
                     Atoms.Remove(atomDeletion);
                 }
 
@@ -115,13 +115,13 @@ namespace OpenDreamShared.Dream {
                     }
 
                     if (clientDelta.Value.ScreenObjectAdditions != null) {
-                        foreach (UInt16 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {
+                        foreach (AtomID screenObjectID in clientDelta.Value.ScreenObjectAdditions) {
                             client.ScreenObjects.Add(screenObjectID);
                         }
                     }
 
                     if (clientDelta.Value.ScreenObjectRemovals != null) {
-                        foreach (UInt16 screenObjectID in clientDelta.Value.ScreenObjectRemovals) {
+                        foreach (AtomID screenObjectID in clientDelta.Value.ScreenObjectRemovals) {
                             client.ScreenObjects.Remove(screenObjectID);
                         }
                     }

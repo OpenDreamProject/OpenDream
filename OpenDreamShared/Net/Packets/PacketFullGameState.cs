@@ -1,15 +1,15 @@
 ﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamShared.Net.Packets {
     class PacketFullGameState: IPacket {
         public PacketID PacketID => PacketID.FullGameState;
         public DreamFullState FullState;
         public UInt32 GameStateID;
-        public UInt16 EyeID;
-        public UInt16[] ScreenObjects;
+        public AtomID EyeID;
+        public AtomID[] ScreenObjects;
 
         public PacketFullGameState() { }
 
@@ -39,9 +39,9 @@ namespace OpenDreamShared.Net.Packets {
 
             for (int i = 0; i < atomCount; i++) {
                 DreamFullState.Atom atom = new DreamFullState.Atom();
-                atom.AtomID = stream.ReadUInt16();
+                atom.AtomID = stream.ReadAtomID();
                 atom.BaseID = stream.ReadUInt16();
-                atom.LocationID = stream.ReadUInt16();
+                atom.LocationID = stream.ReadAtomID();
                 atom.VisualProperties = stream.ReadIconVisualProperties();
                 atom.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atom.BaseID].Type == ATOMType.Movable) {
@@ -55,10 +55,10 @@ namespace OpenDreamShared.Net.Packets {
         private void WriteAtomsSection(PacketStream stream) {
             stream.WriteUInt16((UInt16)FullState.Atoms.Count);
 
-            foreach (KeyValuePair<UInt16, DreamFullState.Atom> atom in FullState.Atoms) {
-                stream.WriteUInt16(atom.Value.AtomID);
+            foreach (KeyValuePair<AtomID, DreamFullState.Atom> atom in FullState.Atoms) {
+                stream.WriteAtomID(atom.Value.AtomID);
                 stream.WriteUInt16(atom.Value.BaseID);
-                stream.WriteUInt16(atom.Value.LocationID);
+                stream.WriteAtomID(atom.Value.LocationID);
                 stream.WriteIconVisualProperties(atom.Value.VisualProperties, ATOMBase.AtomBases[atom.Value.BaseID].VisualProperties);
                 stream.WriteOverlays(atom.Value.Overlays);
                 if (ATOMBase.AtomBases[atom.Value.BaseID].Type == ATOMType.Movable) {
@@ -71,10 +71,10 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 MapWidth = stream.ReadUInt16();
             UInt16 MapHeight = stream.ReadUInt16();
 
-            FullState.Turfs = new UInt16[MapWidth, MapHeight];
+            FullState.Turfs = new AtomID[MapWidth, MapHeight];
             for (int x = 0; x < MapWidth; x++) {
                 for (int y = 0; y < MapHeight; y++) {
-                    FullState.Turfs[x, y] = stream.ReadUInt16();
+                    FullState.Turfs[x, y] = stream.ReadAtomID();
                 }
             }
         }
@@ -85,23 +85,23 @@ namespace OpenDreamShared.Net.Packets {
 
             for (int x = 0; x < FullState.Turfs.GetLength(0); x++) {
                 for (int y = 0; y < FullState.Turfs.GetLength(1); y++) {
-                    stream.WriteUInt16(FullState.Turfs[x, y]);
+                    stream.WriteAtomID(FullState.Turfs[x, y]);
                 }
             }
         }
 
         private void ReadClientSection(PacketStream stream) {
-            EyeID = stream.ReadUInt16();
+            EyeID = stream.ReadAtomID();
 
             UInt16 screenObjectCount = stream.ReadUInt16();
-            ScreenObjects = new UInt16[screenObjectCount];
+            ScreenObjects = new AtomID[screenObjectCount];
             for (int i = 0; i < screenObjectCount; i++) {
-                ScreenObjects[i] = stream.ReadUInt16();
+                ScreenObjects[i] = stream.ReadAtomID();
             }
         }
 
         private void WriteClientSection(PacketStream stream) {
-            stream.WriteUInt16(0xFFFF);
+            stream.WriteAtomID(AtomID.NullAtom);
 
             stream.WriteUInt16(0);
         }

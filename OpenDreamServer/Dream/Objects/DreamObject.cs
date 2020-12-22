@@ -67,6 +67,7 @@ namespace OpenDreamServer.Dream.Objects {
             int refID = _referenceIDs.IndexOf(this);
             if (refID != -1) _referenceIDs[refID] = null;
 
+            _variables.Clear();
             Deleted = true;
         }
 

@@ -4,6 +4,7 @@ using OpenDreamClient.Dream;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
+using OpenDreamShared.Dream.Objects;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace OpenDreamClient {
 
         public Map Map;
         public ATOM Eye;
-        public Dictionary<UInt16, ATOM> ATOMs { get; private set; } = null;
+        public Dictionary<AtomID, ATOM> ATOMs { get; private set; } = null;
         public List<ATOM> ScreenObjects { get; private set; } = null;
 
         private DispatcherTimer _updateTimer = new DispatcherTimer();
@@ -53,7 +54,7 @@ namespace OpenDreamClient {
             ResourceManager = new DreamResourceManager();
             StateManager = new DreamStateManager();
 
-            ATOMs = new Dictionary<UInt16, ATOM>();
+            ATOMs = new Dictionary<AtomID, ATOM>();
             ScreenObjects = new List<ATOM>();
 
             MainWindow.Hide();

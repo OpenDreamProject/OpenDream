@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Token.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\ATOMBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\AtomID.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowse.cs" />

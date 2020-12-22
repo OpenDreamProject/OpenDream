@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -85,17 +86,25 @@ namespace OpenDreamShared.Net.Packets {
             _binaryWriter.Write(data);
         }
 
-        public void WriteBuffer(byte[] data) {
-            _binaryWriter.Write((UInt32)data.Length);
-            this.Write(data);
-        }
-
         public byte[] ReadBuffer() {
             UInt32 length = _binaryReader.ReadUInt32();
             byte[] buffer = new byte[length];
 
             this.Read(buffer, 0, (int)length);
             return buffer;
+        }
+
+        public void WriteBuffer(byte[] data) {
+            _binaryWriter.Write((UInt32)data.Length);
+            this.Write(data);
+        }
+
+        public AtomID ReadAtomID() {
+            return new AtomID(ReadUInt32());
+        }
+
+        public void WriteAtomID(AtomID data) {
+            WriteUInt32(data.ID);
         }
 
         public IconVisualProperties ReadIconVisualProperties() {

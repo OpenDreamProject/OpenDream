@@ -5,13 +5,14 @@ using OpenDreamServer.Resources;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Compiler.DMM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 
 namespace OpenDreamServer.Dream {
     class DreamMap {
-        public UInt16[,] Turfs { get; private set; }
+        public AtomID[,] Turfs { get; private set; }
         public int Width { get => Turfs.GetLength(0); }
         public int Height { get => Turfs.GetLength(1); }
 
@@ -20,7 +21,7 @@ namespace OpenDreamServer.Dream {
             DMMParser dmmParser = new DMMParser(new DMLexer(dmmSource));
             DMMParser.Map map = dmmParser.ParseMap();
 
-            Turfs = new UInt16[map.MaxX - 1, map.MaxY - 1];
+            Turfs = new AtomID[map.MaxX - 1, map.MaxY - 1];
             foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
                 foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
                     DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
@@ -48,7 +49,7 @@ namespace OpenDreamServer.Dream {
                 throw new Exception("Turf is not a sub-type of " + DreamPath.Turf);
             }
 
-            UInt16 turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
+            AtomID turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
                     if (Turfs[x, y] == turfAtomID) return true;
@@ -63,7 +64,7 @@ namespace OpenDreamServer.Dream {
                 throw new Exception("Turf is not a sub-type of " + DreamPath.Turf);
             }
 
-            UInt16 turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
+            AtomID turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
                     if (Turfs[x, y] == turfAtomID) return new Point(x + 1, y + 1);
@@ -77,7 +78,7 @@ namespace OpenDreamServer.Dream {
             return DreamMetaObjectAtom.AtomIDToAtom[Turfs[x - 1, y - 1]];
         }
 
-        private void SetTurfUnsafe(int x, int y, UInt16 turfAtomID) {
+        private void SetTurfUnsafe(int x, int y, AtomID turfAtomID) {
             Turfs[x - 1, y - 1] = turfAtomID;
 
             Program.DreamStateManager.AddTurfDelta(x - 1, y - 1, turfAtomID);

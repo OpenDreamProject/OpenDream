@@ -1,21 +1,22 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
-        public static Dictionary<DreamObject, UInt16> AtomIDs = new();
-        public static Dictionary<UInt16, DreamObject> AtomIDToAtom = new();
+        public static Dictionary<DreamObject, AtomID> AtomIDs = new();
+        public static Dictionary<AtomID, DreamObject> AtomIDToAtom = new();
 
-        private static UInt16 _atomIDCounter = 0;
+        private static UInt32 _atomIDCounter = 0;
         private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
         private static Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, IconVisualProperties)>> _atomOverlays = new();
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             lock (_atomListsLock) {
-                UInt16 atomID = _atomIDCounter++;
+                AtomID atomID = new AtomID(_atomIDCounter++);
 
                 AtomIDs.Add(dreamObject, atomID);
                 AtomIDToAtom.Add(atomID, dreamObject);

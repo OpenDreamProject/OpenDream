@@ -1,5 +1,7 @@
-﻿using OpenDreamServer.Dream;
+﻿using OpenDreamServer;
+using OpenDreamServer.Dream;
 using OpenDreamServer.Dream.Objects;
+using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
@@ -104,10 +106,18 @@ namespace OpenDreamShared.Compiler.DMM {
                             if (varOverride.ObjectPath != null) throw new Exception("Invalid var name");
                             if (varOverride.Value is DMASTConstantString) {
                                 varValue = new DreamValue(((DMASTConstantString)varOverride.Value).Value);
+                            } else if (varOverride.Value is DMASTConstantResource) {
+                                varValue = new DreamValue(Program.DreamResourceManager.LoadResource(((DMASTConstantResource)varOverride.Value).Path));
                             } else if (varOverride.Value is DMASTConstantInteger) {
                                 varValue = new DreamValue(((DMASTConstantInteger)varOverride.Value).Value);
+                            } else if (varOverride.Value is DMASTConstantFloat) {
+                                varValue = new DreamValue(((DMASTConstantFloat)varOverride.Value).Value);
                             } else if (varOverride.Value is DMASTConstantPath) {
                                 varValue = new DreamValue(((DMASTConstantPath)varOverride.Value).Value.Path);
+                            } else if (varOverride.Value is DMASTList) {
+                                DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+
+                                varValue = new DreamValue(listObject);
                             } else if (varOverride.Value is DMASTConstantNull) {
                                 varValue = new DreamValue((DreamObject)null);
                             } else {

@@ -7,7 +7,6 @@ using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace OpenDreamServer.Dream.Procs {
     class DreamProcInterpreter {
@@ -50,38 +49,37 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamValue DefaultReturnValue = new DreamValue((DreamObject)null);
 
+        private MemoryStream _bytecodeStream;
+        private DreamProc _selfProc;
         private DreamProcArguments _arguments;
         private DreamProcScope _topScope;
-        private DreamProc _selfProc;
-        private byte[] _bytecode;
-        private Stack<object> _stack = new Stack<object>();
-        private Stack<DreamProcScope> _scopeStack = new Stack<DreamProcScope>();
-        private Stack<DreamProcListEnumerator> _listEnumeratorStack = new Stack<DreamProcListEnumerator>();
+        private Stack<object> _stack = new();
+        private Stack<DreamProcScope> _scopeStack = new();
+        private Stack<DreamProcListEnumerator> _listEnumeratorStack = new();
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
+            _bytecodeStream = new MemoryStream(bytecode);
             _selfProc = selfProc;
-            _bytecode = bytecode;
         }
 
         public DreamValue Run(DreamProcScope scope, DreamProcArguments arguments) {
-            MemoryStream bytecodeStream = new MemoryStream(_bytecode);
             _arguments = arguments;
             _topScope = scope;
 
             _scopeStack.Push(scope);
-            while (bytecodeStream.Position < bytecodeStream.Length) {
-                if (Step(bytecodeStream) == 1) break;
+            while (_bytecodeStream.Position < _bytecodeStream.Length) {
+                if (Step() == 1) break;
             }
-            _scopeStack.Clear();
-            _stack.Clear();
-            _listEnumeratorStack.Clear();
 
-            return DefaultReturnValue;
+            DreamValue returnValue = DefaultReturnValue;
+
+            ResetState();
+            return returnValue;
         }
 
-        private int Step(MemoryStream bytecodeStream) {
+        private int Step() {
             DreamProcScope currentScope = _scopeStack.Peek();
-            DreamProcOpcode opcode = (DreamProcOpcode)bytecodeStream.ReadByte();
+            DreamProcOpcode opcode = (DreamProcOpcode)_bytecodeStream.ReadByte();
 
             if (opcode == DreamProcOpcode.BitShiftLeft) {
                 DreamValue second = PopDreamValue();
@@ -101,7 +99,7 @@ namespace OpenDreamServer.Dream.Procs {
                     throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
                 }
             } else if (opcode == DreamProcOpcode.GetIdentifier) {
-                string identifierName = ReadString(bytecodeStream);
+                string identifierName = ReadString();
 
                 if (identifierName == "args") {
                     DreamObject argsListObject = _arguments.CreateDreamList();
@@ -113,9 +111,9 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(new DreamProcIdentifierVariable(currentScope, identifierName));
                 }
             } else if (opcode == DreamProcOpcode.PushString) {
-                Push(new DreamValue(ReadString(bytecodeStream)));
+                Push(new DreamValue(ReadString()));
             } else if (opcode == DreamProcOpcode.FormatString) {
-                string unformattedString = ReadString(bytecodeStream);
+                string unformattedString = ReadString();
                 string formattedString = String.Empty;
 
                 for (int i = 0; i < unformattedString.Length; i++) {
@@ -146,16 +144,16 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(new DreamValue(formattedString));
             } else if (opcode == DreamProcOpcode.PushInt) {
-                int value = ReadInt(bytecodeStream);
+                int value = ReadInt();
 
                 Push(new DreamValue(value));
             } else if (opcode == DreamProcOpcode.DefineVariable) {
-                string variableName = ReadString(bytecodeStream);
+                string variableName = ReadString();
                 DreamValue value = PopDreamValue();
 
                 currentScope.CreateVariable(variableName, value);
             } else if (opcode == DreamProcOpcode.PushPath) {
-                DreamPath path = new DreamPath(ReadString(bytecodeStream));
+                DreamPath path = new DreamPath(ReadString());
 
                 Push(new DreamValue(path));
             } else if (opcode == DreamProcOpcode.Add) {
@@ -240,7 +238,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.Dereference) {
                 DreamObject dreamObject = PopDreamValue().GetValueAsDreamObject();
-                string identifierName = ReadString(bytecodeStream);
+                string identifierName = ReadString();
 
                 if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
                 if (dreamObject.HasVariable(identifierName) || dreamObject.ObjectDefinition.HasGlobalVariable(identifierName) || dreamObject.HasProc(identifierName)) {
@@ -249,23 +247,23 @@ namespace OpenDreamServer.Dream.Procs {
                     throw new Exception("Object " + dreamObject + " has no identifier named '" + identifierName + "'");
                 }
             } else if (opcode == DreamProcOpcode.JumpIfFalse) {
-                int position = ReadInt(bytecodeStream);
+                int position = ReadInt();
                 DreamValue value = PopDreamValue();
 
                 if (!IsTruthy(value)) {
-                    bytecodeStream.Seek(position, SeekOrigin.Begin);
+                    _bytecodeStream.Seek(position, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.JumpIfTrue) {
-                int position = ReadInt(bytecodeStream);
+                int position = ReadInt();
                 DreamValue value = PopDreamValue();
 
                 if (IsTruthy(value)) {
-                    bytecodeStream.Seek(position, SeekOrigin.Begin);
+                    _bytecodeStream.Seek(position, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.Jump) {
-                int position = ReadInt(bytecodeStream);
+                int position = ReadInt();
 
-                bytecodeStream.Seek(position, SeekOrigin.Begin);
+                _bytecodeStream.Seek(position, SeekOrigin.Begin);
             } else if (opcode == DreamProcOpcode.CompareEquals) {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
@@ -313,11 +311,11 @@ namespace OpenDreamServer.Dream.Procs {
                 Push(new DreamValue(IsGreaterThan(first, second) ? 1 : 0));
             } else if (opcode == DreamProcOpcode.BooleanAnd) {
                 DreamValue a = PopDreamValue();
-                int jumpPosition = ReadInt(bytecodeStream);
+                int jumpPosition = ReadInt();
 
                 if (!IsTruthy(a)) {
                     Push(a);
-                    bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
+                    _bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.BooleanNot) {
                 DreamValue value = PopDreamValue();
@@ -419,7 +417,7 @@ namespace OpenDreamServer.Dream.Procs {
                     throw new Exception("Cannot delete a null value");
                 }
             } else if (opcode == DreamProcOpcode.PushResource) {
-                string resourcePath = ReadString(bytecodeStream);
+                string resourcePath = ReadString();
 
                 Push(new DreamValue(Program.DreamResourceManager.LoadResource(resourcePath)));
             } else if (opcode == DreamProcOpcode.CreateList) {
@@ -573,11 +571,11 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.BooleanOr) {
                 DreamValue a = PopDreamValue();
-                int jumpPosition = ReadInt(bytecodeStream);
+                int jumpPosition = ReadInt();
 
                 if (IsTruthy(a)) {
                     Push(a);
-                    bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
+                    _bytecodeStream.Seek(jumpPosition, SeekOrigin.Begin);
                 }
             } else if (opcode == DreamProcOpcode.PushArgumentList) {
                 DreamProcInterpreterArguments arguments = new DreamProcInterpreterArguments(new List<object>(), new Dictionary<string, object>());
@@ -612,12 +610,12 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0));
             } else if (opcode == DreamProcOpcode.SwitchCase) {
-                int casePosition = ReadInt(bytecodeStream);
+                int casePosition = ReadInt();
                 DreamValue testValue = PopDreamValue();
                 DreamValue value = PopDreamValue();
 
                 if (IsEqual(value, testValue)) {
-                    bytecodeStream.Seek(casePosition, SeekOrigin.Begin);
+                    _bytecodeStream.Seek(casePosition, SeekOrigin.Begin);
                 } else {
                     Push(value);
                 }
@@ -664,7 +662,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             } else if (opcode == DreamProcOpcode.PushArguments) {
                 DreamProcInterpreterArguments arguments = new DreamProcInterpreterArguments(new List<object>(), new Dictionary<string, object>());
-                int argumentCount = ReadInt(bytecodeStream);
+                int argumentCount = ReadInt();
                 object[] argumentValues = new object[argumentCount];
 
                 for (int i = argumentCount - 1; i >= 0; i--) {
@@ -672,10 +670,10 @@ namespace OpenDreamServer.Dream.Procs {
                 }
 
                 for (int i = 0; i < argumentCount; i++) {
-                    DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)bytecodeStream.ReadByte();
+                    DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)_bytecodeStream.ReadByte();
 
                     if (argumentType == DreamProcOpcodeParameterType.Named) {
-                        string argumentName = ReadString(bytecodeStream);
+                        string argumentName = ReadString();
 
                         arguments.NamedArguments[argumentName] = argumentValues[i];
                     } else if (argumentType == DreamProcOpcodeParameterType.Unnamed) {
@@ -687,7 +685,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(arguments);
             } else if (opcode == DreamProcOpcode.PushDouble) {
-                BinaryReader bytecodeBinaryReader = new BinaryReader(bytecodeStream);
+                BinaryReader bytecodeBinaryReader = new BinaryReader(_bytecodeStream);
 
                 Push(new DreamValue(bytecodeBinaryReader.ReadDouble()));
             } else if (opcode == DreamProcOpcode.PushSrc) {
@@ -710,7 +708,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 _listEnumeratorStack.Push(new DreamProcListEnumerator(list));
             } else if (opcode == DreamProcOpcode.EnumerateList) {
-                string outputVarName = ReadString(bytecodeStream);
+                string outputVarName = ReadString();
                 DreamProcListEnumerator listEnumerator = _listEnumeratorStack.Peek();
                 bool successfulEnumeration = listEnumerator.TryMoveNext(out DreamValue newValue);
 
@@ -801,11 +799,11 @@ namespace OpenDreamServer.Dream.Procs {
             return 0;
         }
 
-        private string ReadString(MemoryStream bytecodeStream) {
+        private string ReadString() {
             string value = String.Empty;
             int lastByte;
 
-            while ((lastByte = bytecodeStream.ReadByte()) != 0 && bytecodeStream.Position < bytecodeStream.Length) {
+            while ((lastByte = _bytecodeStream.ReadByte()) != 0 && _bytecodeStream.Position < _bytecodeStream.Length) {
                 value += (char)lastByte;
             }
 
@@ -816,11 +814,11 @@ namespace OpenDreamServer.Dream.Procs {
             return value;
         }
 
-        private int ReadInt(MemoryStream bytecodeStream) {
-            int value = (bytecodeStream.ReadByte() << 24);
-            value |= (bytecodeStream.ReadByte() << 16);
-            value |= (bytecodeStream.ReadByte() << 8);
-            value |= bytecodeStream.ReadByte();
+        private int ReadInt() {
+            int value = (_bytecodeStream.ReadByte() << 24);
+            value |= (_bytecodeStream.ReadByte() << 16);
+            value |= (_bytecodeStream.ReadByte() << 8);
+            value |= _bytecodeStream.ReadByte();
 
             return value;
         }
@@ -918,6 +916,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return false;
             } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.String) {
                 return false;
+            } else if (first.Type == DreamValue.DreamValueType.DreamResource && second.Type != DreamValue.DreamValueType.DreamResource) {
+                return false;
             } else if (first.Value == null) {
                 return second.Value == null;
             } else {
@@ -973,6 +973,16 @@ namespace OpenDreamServer.Dream.Procs {
             } else {
                 throw new Exception("Invalid key used on an args list");
             }
+        }
+
+        private void ResetState() {
+            _bytecodeStream.Seek(0, SeekOrigin.Begin);
+            DefaultReturnValue = new DreamValue((DreamObject)null);
+            _arguments = default;
+            _topScope = null;
+            _scopeStack.Clear();
+            _stack.Clear();
+            _listEnumeratorStack.Clear();
         }
     }
 }

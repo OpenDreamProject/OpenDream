@@ -1,7 +1,77 @@
 ﻿/var/global/world/world = null
 
+proc/abs(A)
+proc/animate(Object, time, loop, easing, flags)
+proc/ascii2text(N)
+proc/ckey(Key)
+proc/copytext(T, Start = 1, End = 0)
+proc/CRASH(msg)
+proc/fcopy(Src, Dst)
+proc/fcopy_rsc(File)
+proc/fdel(File)
+proc/fexists(File)
+proc/file(Path)
+proc/file2text(File)
+proc/findtext(Haystack, Needle, Start = 1, End = 0)
+proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
+proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
+proc/get_dist(Loc1, Loc2)
+proc/html_decode(HtmlText)
+proc/html_encode(PlainText)
+proc/image(icon, loc, icon_state, layer, dir)
+proc/isarea(Loc1)
+proc/isloc(Loc1)
+proc/ismob(Loc1)
+proc/isnull(Val)
+proc/isnum(Val)
+proc/ispath(Val, Type)
+proc/istext(Val)
+proc/isturf(Loc1)
+proc/istype(Val, Type)
+proc/json_decode(JSON)
+proc/json_encode(Value)
+proc/length(E)
+proc/locate(X, Y, Z)
+proc/log(X, Y)
+proc/lowertext(T)
+proc/max(A)
+proc/min(A)
+proc/num2text(N, Digits, Radix)
+proc/orange(Dist, Center = usr)
+proc/params2list(Params)
+proc/pick(Val1)
+proc/prob(P)
+proc/rand(L, H)
+proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
+proc/round(A, B)
+proc/sleep(Delay)
+proc/sound(file, repeat = 0, wait, channel, volume)
+proc/splittext(Text, Delimiter)
+proc/text(FormatText)
+proc/text2ascii(T, pos = 1)
+proc/text2file(Text, File)
+proc/text2num(T, radix = 10)
+proc/text2path(T)
+proc/time2text(timestamp, format)
+proc/typesof(Item1)
+proc/uppertext(T)
+proc/url_encode(PlainText, format = 0)
+proc/view(Dist = 4, Center = usr)
+proc/viewers(Depth, Center = usr)
+proc/walk(Ref, Dir, Lag = 0, Speed = 0)
+proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+
 /list
 	var/len
+
+	proc/Add(Item1)
+	proc/Copy(Start = 1, End = 0)
+	proc/Cut(Start = 1, End = 0)
+	proc/Find(Elem, Start = 1, End = 0)
+	proc/Insert(Index, Item1)
+	proc/Join(Glue, Start = 1, End = 0)
+	proc/Remove(Item1)
+	proc/Swap(Index1, Index2)
 
 /sound
 	var/file = null
@@ -259,6 +329,23 @@ proc/get_step(atom/Ref, Dir)
 	else if (Dir & 8) x -= 1
 
 	return locate(max(x, 1), max(y, 1), Ref.z)
+
+proc/get_dir(atom/Loc1, atom/Loc2)
+	var/loc1X = Loc1.x
+	var/loc2X = Loc2.x
+	var/loc1Y = Loc1.y
+	var/loc2Y = Loc2.y
+
+	if (loc2X < loc1X)
+		if (loc2Y == loc1Y) return 8
+		else if (loc2Y > loc1Y) return 9
+		else return 10
+	else if (loc2X > loc1X)
+		if (loc2Y == loc1Y) return 4
+		else if (loc2Y > loc1Y) return 5
+		else return 6
+	else if (loc2Y > loc1Y) return 1
+	else return 2
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	Ref.Move(get_step(Ref, Dir), Dir)

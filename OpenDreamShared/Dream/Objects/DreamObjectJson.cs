@@ -21,8 +21,6 @@ namespace OpenDreamShared.Dream.Objects {
 
     public class ProcDefinitionJson {
         public List<string> ArgumentNames { get; set; }
-        public Dictionary<string, object> DefaultArgumentValues { get; set; }
         public byte[] Bytecode { get; set; }
-        public string NativeProcName { get; set; }
     }
 }

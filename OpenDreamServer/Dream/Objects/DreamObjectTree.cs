@@ -51,12 +51,7 @@ namespace OpenDreamServer.Dream.Objects {
 
         public DreamObjectTreeEntry RootObject = new DreamObjectTreeEntry(DreamPath.Root);
 
-        private Dictionary<string, DreamProc> _nativeProcs = new Dictionary<string, DreamProc>();
         private List<(DreamGlobalVariable, DreamPath, DreamProcArguments)> _runtimeInstantiatedGlobalVariables = new List<(DreamGlobalVariable, DreamPath, DreamProcArguments)>();
-
-        public void RegisterNativeProc(string nativeProcName, DreamProc nativeProc) {
-            _nativeProcs.Add(nativeProcName, nativeProc);
-        }
 
         public bool HasTreeEntry(DreamPath path) {
             if (path.Type != DreamPath.PathType.Absolute) {
@@ -292,23 +287,10 @@ namespace OpenDreamServer.Dream.Objects {
                 string procName = jsonProc.Key;
 
                 foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    if (procDefinition.NativeProcName != null) {
-                        objectDefinition.SetProcDefinition(jsonProc.Key, _nativeProcs[procDefinition.NativeProcName]);
-                    } else {
-                        List<string> argumentNames = (procDefinition.ArgumentNames != null) ? procDefinition.ArgumentNames : new List<string>();
-                        Dictionary<string, DreamValue> defaultArgumentValues = null;
-                        byte[] bytecode = procDefinition.Bytecode != null ? procDefinition.Bytecode : new byte[0];
+                    List<string> argumentNames = (procDefinition.ArgumentNames != null) ? procDefinition.ArgumentNames : new List<string>();
+                    byte[] bytecode = procDefinition.Bytecode != null ? procDefinition.Bytecode : new byte[0];
 
-                        if (procDefinition.DefaultArgumentValues != null) {
-                            defaultArgumentValues = new Dictionary<string, DreamValue>();
-
-                            foreach (KeyValuePair<string, object> defaultArgumentValue in procDefinition.DefaultArgumentValues) {
-                                defaultArgumentValues[defaultArgumentValue.Key] = GetDreamValueFromJsonElement((JsonElement)defaultArgumentValue.Value);
-                            }
-                        }
-
-                        objectDefinition.SetProcDefinition(jsonProc.Key, new DreamProc(bytecode, argumentNames, defaultArgumentValues));
-                    }
+                    objectDefinition.SetProcDefinition(jsonProc.Key, new DreamProc(bytecode, argumentNames));
                 }
             }
         }

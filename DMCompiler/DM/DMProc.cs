@@ -6,23 +6,13 @@ using System.IO;
 
 namespace DMCompiler.DM {
     class DMProc {
-        public struct Parameter {
-            public string Name;
-            public object DefaultValue;
-
-            public Parameter(string name, object defaultValue) {
-                Name = name;
-                DefaultValue = defaultValue;
-            }
-        }
-
         public MemoryStream Bytecode = new MemoryStream();
-        public List<Parameter> Parameters = new List<Parameter>();
+        public List<string> Parameters = new();
 
         private BinaryWriter _bytecodeWriter = null;
-        private Dictionary<string, long> _labels = new Dictionary<string, long>();
-        private List<(long Position, string LabelName)> _unresolvedLabels = new List<(long, string)>();
-        private Stack<string> _loopStack = new Stack<string>();
+        private Dictionary<string, long> _labels = new();
+        private List<(long Position, string LabelName)> _unresolvedLabels = new();
+        private Stack<string> _loopStack = new();
 
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);

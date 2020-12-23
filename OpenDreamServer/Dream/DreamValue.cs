@@ -64,6 +64,28 @@ namespace OpenDreamServer.Dream {
             Value = value;
         }
 
+        public DreamValue(object value) {
+            Value = value;
+
+            if (value is string) {
+                Type = DreamValueType.String;
+            } else if (value is int) {
+                Type = DreamValueType.Integer;
+            } else if (value is double) {
+                Type = DreamValueType.Double;
+            } else if (value is DreamResource) {
+                Type = DreamValueType.DreamResource;
+            } else if (value is DreamObject) {
+                Type = DreamValueType.DreamObject;
+            } else if (value is DreamPath) {
+                Type = DreamValueType.DreamPath;
+            } else if (value is DreamProc) {
+                Type = DreamValueType.DreamProc;
+            } else {
+                throw new ArgumentException("Invalid DreamValue value");
+            }
+        }
+
         public override string ToString() {
             string value;
             if (Value == null) {

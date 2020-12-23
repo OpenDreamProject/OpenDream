@@ -69,7 +69,6 @@ namespace DMCompiler {
                 }
             }
 
-            AddNativeProcs(rootObject);
             return rootObject;
         }
 
@@ -105,19 +104,7 @@ namespace DMCompiler {
                         ProcDefinitionJson procDefinition = new ProcDefinitionJson();
 
                         if (proc.Bytecode.Length > 0) procDefinition.Bytecode = proc.Bytecode.ToArray();
-                        if (proc.Parameters.Count > 0) {
-                            procDefinition.ArgumentNames = new List<string>();
-
-                            foreach (DMProc.Parameter parameter in proc.Parameters) {
-                                procDefinition.ArgumentNames.Add(parameter.Name);
-
-                                if (parameter.DefaultValue != null) {
-                                    if (procDefinition.DefaultArgumentValues == null) procDefinition.DefaultArgumentValues = new Dictionary<string, object>();
-
-                                    procDefinition.DefaultArgumentValues.Add(parameter.Name, CreateDreamObjectJsonVariable(parameter.DefaultValue));
-                                }
-                            }
-                        }
+                        if (proc.Parameters.Count > 0) procDefinition.ArgumentNames = proc.Parameters;
                         procJson.Add(procDefinition);
                     }
 
@@ -184,88 +171,6 @@ namespace DMCompiler {
             } else {
                 throw new Exception("Invalid variable value");
             }
-        }
-
-        private static void AddNativeProcs(DreamObjectJson rootObject) {
-            AddNativeProc(rootObject, "abs", "abs");
-            AddNativeProc(rootObject, "animate", "animate");
-            AddNativeProc(rootObject, "ascii2text", "ascii2text");
-            AddNativeProc(rootObject, "ckey", "ckey");
-            AddNativeProc(rootObject, "copytext", "copytext");
-            AddNativeProc(rootObject, "CRASH", "CRASH");
-            AddNativeProc(rootObject, "fexists", "fexists");
-            AddNativeProc(rootObject, "file", "file");
-            AddNativeProc(rootObject, "file2text", "file2text");
-            AddNativeProc(rootObject, "findlasttext", "findlasttext");
-            AddNativeProc(rootObject, "findtext", "findtext");
-            AddNativeProc(rootObject, "findtextEx", "findtextEx");
-            AddNativeProc(rootObject, "get_dir", "get_dir");
-            AddNativeProc(rootObject, "get_dist", "get_dist");
-            AddNativeProc(rootObject, "html_decode", "html_decode");
-            AddNativeProc(rootObject, "html_encode", "html_encode");
-            AddNativeProc(rootObject, "image", "image");
-            AddNativeProc(rootObject, "isarea", "isarea");
-            AddNativeProc(rootObject, "isloc", "isloc");
-            AddNativeProc(rootObject, "ismob", "ismob");
-            AddNativeProc(rootObject, "isnull", "isnull");
-            AddNativeProc(rootObject, "isnum", "isnum");
-            AddNativeProc(rootObject, "ispath", "ispath");
-            AddNativeProc(rootObject, "istext", "istext");
-            AddNativeProc(rootObject, "istype", "istype");
-            AddNativeProc(rootObject, "isturf", "isturf");
-            AddNativeProc(rootObject, "json_decode", "json_decode");
-            AddNativeProc(rootObject, "json_encode", "json_encode");
-            AddNativeProc(rootObject, "length", "length");
-            AddNativeProc(rootObject, "locate", "locate");
-            AddNativeProc(rootObject, "log", "log");
-            AddNativeProc(rootObject, "lowertext", "lowertext");
-            AddNativeProc(rootObject, "max", "max");
-            AddNativeProc(rootObject, "min", "min");
-            AddNativeProc(rootObject, "num2text", "num2text");
-            AddNativeProc(rootObject, "orange", "orange");
-            AddNativeProc(rootObject, "params2list", "params2list");
-            AddNativeProc(rootObject, "pick", "pick");
-            AddNativeProc(rootObject, "prob", "prob");
-            AddNativeProc(rootObject, "replacetext", "replacetext");
-            AddNativeProc(rootObject, "rand", "rand");
-            AddNativeProc(rootObject, "round", "round");
-            AddNativeProc(rootObject, "splittext", "splittext");
-            AddNativeProc(rootObject, "sleep", "sleep");
-            AddNativeProc(rootObject, "sound", "sound");
-            AddNativeProc(rootObject, "text", "text");
-            AddNativeProc(rootObject, "text2ascii", "text2ascii");
-            AddNativeProc(rootObject, "text2num", "text2num");
-            AddNativeProc(rootObject, "text2path", "text2path");
-            AddNativeProc(rootObject, "time2text", "time2text");
-            AddNativeProc(rootObject, "typesof", "typesof");
-            AddNativeProc(rootObject, "uppertext", "uppertext");
-            AddNativeProc(rootObject, "url_encode", "url_encode");
-            AddNativeProc(rootObject, "view", "view");
-            AddNativeProc(rootObject, "viewers", "viewers");
-            AddNativeProc(rootObject, "walk", "walk");
-            AddNativeProc(rootObject, "walk_to", "walk_to");
-
-            DreamObjectJson listObject = rootObject.Children.Find((DreamObjectJson child) => {
-                return child.Name == "list";
-            });
-            AddNativeProc(listObject, "Add", "list_Add");
-            AddNativeProc(listObject, "Copy", "list_Copy");
-            AddNativeProc(listObject, "Cut", "list_Cut");
-            AddNativeProc(listObject, "Find", "list_Find");
-            AddNativeProc(listObject, "Insert", "list_Insert");
-            AddNativeProc(listObject, "Join", "list_Join");
-            AddNativeProc(listObject, "Remove", "list_Remove");
-            AddNativeProc(listObject, "Swap", "list_Swap");
-        }
-
-        private static void AddNativeProc(DreamObjectJson objectJson, string procName, string nativeProcName) {
-            if (objectJson.Procs == null) objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
-
-            objectJson.Procs[procName] = new List<ProcDefinitionJson>() {
-                new ProcDefinitionJson() {
-                    NativeProcName = nativeProcName
-                }
-            };
         }
     }
 }

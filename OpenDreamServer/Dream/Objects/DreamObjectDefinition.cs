@@ -3,7 +3,7 @@ using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
 
 namespace OpenDreamServer.Dream.Objects {
     class DreamObjectDefinition {
@@ -58,6 +58,26 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
+        public void SetNativeProc(Func<DreamProcScope, DreamProcArguments, DreamValue> nativeProc) {
+            List<Attribute> attributes = new(nativeProc.GetInvocationList()[0].Method.GetCustomAttributes());
+            DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
+            if (procAttribute == null) throw new ArgumentException();
+
+            Procs[procAttribute.Name] = new DreamProc(nativeProc);
+        }
+
+        public DreamProc GetProc(string procName) {
+            if (OverridingProcs.TryGetValue(procName, out DreamProc proc)) {
+                return proc;
+            } else if (Procs.TryGetValue(procName, out proc)) {
+                return proc;
+            } else if (_parentObjectDefinition != null) {
+                return _parentObjectDefinition.GetProc(procName);
+            } else {
+                throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
+            }
+        }
+
         public bool HasProc(string procName) {
             if (Procs.ContainsKey(procName)) {
                 return true;
@@ -74,18 +94,6 @@ namespace OpenDreamServer.Dream.Objects {
 
         public bool HasGlobalVariable(string globalVariableName) {
             return GlobalVariables.ContainsKey(globalVariableName);
-        }
-
-        public DreamProc GetProc(string procName) {
-            if (OverridingProcs.ContainsKey(procName)) {
-                return OverridingProcs[procName];
-            } else if (Procs.ContainsKey(procName)) {
-                return Procs[procName];
-            } else if (_parentObjectDefinition != null) {
-                return _parentObjectDefinition.GetProc(procName);
-            } else {
-                throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
-            }
         }
 
         public DreamGlobalVariable GetGlobalVariable(string globalVariableName) {

@@ -14,6 +14,24 @@ namespace DMCompiler.Compiler.DM.Visitors {
             _proc = new DMProc();
 
             if (procDefinition.Body != null) {
+                foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
+                    if (parameter.Value != null) {
+                        string afterDefaultValueCheck = NewLabelName();
+                        string parameterName = parameter.Path.Path.LastElement;
+
+                        _proc.GetIdentifier(parameterName);
+                        _proc.PushNull();
+                        _proc.Equal();
+                        _proc.JumpIfFalse(afterDefaultValueCheck);
+
+                        _proc.GetIdentifier(parameterName);
+                        parameter.Value.Visit(this);
+                        _proc.Assign();
+
+                        _proc.AddLabel(afterDefaultValueCheck);
+                    }
+                }
+
                 _valueStack.Clear();
                 procDefinition.Body.Visit(this);
                 _proc.ResolveLabels();

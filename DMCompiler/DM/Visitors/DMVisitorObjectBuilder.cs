@@ -107,17 +107,7 @@ namespace DMCompiler.DM.Visitors {
             if (!dmObject.Procs.ContainsKey(procName)) dmObject.Procs.Add(procName, new List<DMProc>());
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
-                object defaultValue;
-
-                if (parameter.Value != null) {
-                    parameter.Value.Visit(this);
-
-                    defaultValue = _valueStack.Pop();
-                } else {
-                    defaultValue = null;
-                }
-
-                proc.Parameters.Add(new DMProc.Parameter(parameter.Path.Path.LastElement, defaultValue));
+                proc.Parameters.Add(parameter.Path.Path.LastElement);
             }
 
             dmObject.Procs[procName].Add(proc);

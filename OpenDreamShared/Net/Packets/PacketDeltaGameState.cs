@@ -1,5 +1,4 @@
 ﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -74,9 +73,9 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomCreationsCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomCreationsCount; i++) {
-                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadAtomID(), stream.ReadUInt16());
+                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), stream.ReadUInt16());
 
-                atomCreation.LocationID = stream.ReadAtomID();
+                atomCreation.LocationID = stream.ReadUInt16();
                 atomCreation.VisualProperties = stream.ReadIconVisualProperties();
                 atomCreation.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
@@ -92,9 +91,9 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteUInt16((UInt16)DeltaState.AtomCreations.Count);
 
             foreach (DreamDeltaState.AtomCreation atomCreation in DeltaState.AtomCreations) {
-                stream.WriteAtomID(atomCreation.AtomID);
+                stream.WriteUInt16(atomCreation.AtomID);
                 stream.WriteUInt16(atomCreation.BaseID);
-                stream.WriteAtomID(atomCreation.LocationID);
+                stream.WriteUInt16(atomCreation.LocationID);
                 stream.WriteIconVisualProperties(atomCreation.VisualProperties);
                 stream.WriteOverlays(atomCreation.Overlays);
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
@@ -107,7 +106,7 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomDeletionsCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomDeletionsCount; i++) {
-                DeltaState.AtomDeletions.Add(stream.ReadAtomID());
+                DeltaState.AtomDeletions.Add(stream.ReadUInt16());
             }
         }
 
@@ -115,8 +114,8 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteByte((byte)SectionID.AtomDeletions);
             stream.WriteUInt16((UInt16)DeltaState.AtomDeletions.Count);
 
-            foreach (AtomID atomDeletion in DeltaState.AtomDeletions) {
-                stream.WriteAtomID(atomDeletion);
+            foreach (UInt16 atomDeletion in DeltaState.AtomDeletions) {
+                stream.WriteUInt16(atomDeletion);
             }
         }
 
@@ -124,7 +123,7 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomDeltasCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomDeltasCount; i++) {
-                DreamDeltaState.AtomDelta atomDelta = new DreamDeltaState.AtomDelta(stream.ReadAtomID());
+                DreamDeltaState.AtomDelta atomDelta = new DreamDeltaState.AtomDelta(stream.ReadUInt16());
 
                 AtomDeltaValueID valueID;
                 do {
@@ -157,7 +156,7 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteUInt16((UInt16)DeltaState.AtomDeltas.Count);
 
             foreach (DreamDeltaState.AtomDelta atomDelta in DeltaState.AtomDeltas) {
-                stream.WriteAtomID(atomDelta.AtomID);
+                stream.WriteUInt16(atomDelta.AtomID);
 
                 if (atomDelta.ChangedVisualProperties.HasValue) {
                     stream.WriteByte((byte)AtomDeltaValueID.VisualProperties);
@@ -194,8 +193,8 @@ namespace OpenDreamShared.Net.Packets {
             for (int i = 0; i < atomLocationDeltaCount; i++) {
                 DreamDeltaState.AtomLocationDelta atomLocationDelta = new DreamDeltaState.AtomLocationDelta();
 
-                atomLocationDelta.AtomID = stream.ReadAtomID();
-                atomLocationDelta.LocationID = stream.ReadAtomID();
+                atomLocationDelta.AtomID = stream.ReadUInt16();
+                atomLocationDelta.LocationID = stream.ReadUInt16();
                 DeltaState.AtomLocationDeltas.Add(atomLocationDelta);
             }
         }
@@ -205,8 +204,8 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteUInt16((UInt16)DeltaState.AtomLocationDeltas.Count);
 
             foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in DeltaState.AtomLocationDeltas) {
-                stream.WriteAtomID(atomLocationDelta.AtomID);
-                stream.WriteAtomID(atomLocationDelta.LocationID);
+                stream.WriteUInt16(atomLocationDelta.AtomID);
+                stream.WriteUInt16(atomLocationDelta.LocationID);
             }
         }
 
@@ -217,7 +216,7 @@ namespace OpenDreamShared.Net.Packets {
                 DreamDeltaState.TurfDelta turfDelta = new DreamDeltaState.TurfDelta();
                 turfDelta.X = stream.ReadUInt16();
                 turfDelta.Y = stream.ReadUInt16();
-                turfDelta.TurfAtomID = stream.ReadAtomID();
+                turfDelta.TurfAtomID = stream.ReadUInt16();
 
                 DeltaState.TurfDeltas.Add(turfDelta);
             }
@@ -230,7 +229,7 @@ namespace OpenDreamShared.Net.Packets {
             foreach (DreamDeltaState.TurfDelta turfDelta in DeltaState.TurfDeltas) {
                 stream.WriteUInt16((UInt16)turfDelta.X);
                 stream.WriteUInt16((UInt16)turfDelta.Y);
-                stream.WriteAtomID(turfDelta.TurfAtomID);
+                stream.WriteUInt16(turfDelta.TurfAtomID);
             }
         }
 
@@ -242,20 +241,20 @@ namespace OpenDreamShared.Net.Packets {
                 valueID = (ClientValueID)stream.ReadByte();
 
                 if (valueID == ClientValueID.Eye) {
-                    ClientDelta.NewEyeID = stream.ReadAtomID();
+                    ClientDelta.NewEyeID = stream.ReadUInt16();
                 } else if (valueID == ClientValueID.ScreenObjectAdditions) {
                     UInt16 screenObjectAdditionCount = stream.ReadUInt16();
 
-                    ClientDelta.ScreenObjectAdditions = new List<AtomID>();
+                    ClientDelta.ScreenObjectAdditions = new List<UInt16>();
                     for (int i = 0; i < screenObjectAdditionCount; i++) {
-                        ClientDelta.ScreenObjectAdditions.Add(stream.ReadAtomID());
+                        ClientDelta.ScreenObjectAdditions.Add(stream.ReadUInt16());
                     }
                 } else if (valueID == ClientValueID.ScreenObjectRemovals) {
                     UInt16 screenObjectRemovalCount = stream.ReadUInt16();
 
-                    ClientDelta.ScreenObjectRemovals = new List<AtomID>();
+                    ClientDelta.ScreenObjectRemovals = new List<UInt16>();
                     for (int i = 0; i < screenObjectRemovalCount; i++) {
-                        ClientDelta.ScreenObjectRemovals.Add(stream.ReadAtomID());
+                        ClientDelta.ScreenObjectRemovals.Add(stream.ReadUInt16());
                     }
                 } else if (valueID != ClientValueID.End) {
                     throw new Exception("Invalid client value ID in delta game state packet (" + valueID.ToString() + ")");
@@ -273,15 +272,15 @@ namespace OpenDreamShared.Net.Packets {
 
                 if (newEye) {
                     stream.WriteByte((byte)ClientValueID.Eye);
-                    stream.WriteAtomID(ClientDelta.NewEyeID.Value);
+                    stream.WriteUInt16(ClientDelta.NewEyeID.Value);
                 }
                 
                 if (screenAdditions) {
                     stream.WriteByte((byte)ClientValueID.ScreenObjectAdditions);
 
                     stream.WriteUInt16((UInt16)ClientDelta.ScreenObjectAdditions.Count);
-                    foreach (AtomID screenObjectID in ClientDelta.ScreenObjectAdditions) {
-                        stream.WriteAtomID(screenObjectID);
+                    foreach (UInt16 screenObjectID in ClientDelta.ScreenObjectAdditions) {
+                        stream.WriteUInt16(screenObjectID);
                     }
                 }
 
@@ -289,8 +288,8 @@ namespace OpenDreamShared.Net.Packets {
                     stream.WriteByte((byte)ClientValueID.ScreenObjectRemovals);
 
                     stream.WriteUInt16((UInt16)ClientDelta.ScreenObjectRemovals.Count);
-                    foreach (AtomID screenObjectID in ClientDelta.ScreenObjectRemovals) {
-                        stream.WriteAtomID(screenObjectID);
+                    foreach (UInt16 screenObjectID in ClientDelta.ScreenObjectRemovals) {
+                        stream.WriteUInt16(screenObjectID);
                     }
                 }
 

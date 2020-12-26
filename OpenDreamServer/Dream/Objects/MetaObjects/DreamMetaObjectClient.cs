@@ -1,7 +1,6 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Net;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,7 +21,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (variableName == "eye") {
                 string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
                 DreamObject eye = variableValue.GetValueAsDreamObject();
-                AtomID? eyeID = (eye != null) ? DreamMetaObjectAtom.AtomIDs[eye] : null;
+                UInt16 eyeID = (eye != null) ? DreamMetaObjectAtom.AtomIDs[eye] : (UInt16)0xFFFF;
 
                 Program.DreamStateManager.AddClientEyeIDDelta(ckey, eyeID);
             } else if (variableName == "mob") {

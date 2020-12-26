@@ -1,8 +1,10 @@
 ﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenDreamClient.Dream {
     class DreamStateManager {
@@ -10,7 +12,7 @@ namespace OpenDreamClient.Dream {
             DreamFullState fullState = pFullGameState.FullState;
 
             Program.OpenDream.ATOMs.Clear();
-            foreach (KeyValuePair<AtomID, DreamFullState.Atom> stateAtom in fullState.Atoms) {
+            foreach (KeyValuePair<UInt16, DreamFullState.Atom> stateAtom in fullState.Atoms) {
                 ATOM atom = new ATOM(stateAtom.Key, ATOMBase.AtomBases[stateAtom.Value.BaseID]);
 
                 atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(stateAtom.Value.VisualProperties);
@@ -20,7 +22,7 @@ namespace OpenDreamClient.Dream {
 
                 atom.ScreenLocation = stateAtom.Value.ScreenLocation;
 
-                if (stateAtom.Value.LocationID != AtomID.NullAtom) {
+                if (stateAtom.Value.LocationID != 0xFFFF) {
                     if (Program.OpenDream.ATOMs.ContainsKey(stateAtom.Value.LocationID)) {
                         atom.Loc = Program.OpenDream.ATOMs[stateAtom.Value.LocationID];
                     } else {
@@ -31,10 +33,10 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            ATOM[,] turfs = new ATOM[fullState.Turfs.GetLength(0), fullState.Turfs.GetLength(1)];
+            ATOM[,] turfs = new ATOM[fullState.Turfs.GetLength(0), fullState.Turfs.GetLength(0)];
             for (int x = 0; x < turfs.GetLength(0); x++) {
                 for (int y = 0; y < turfs.GetLength(1); y++) {
-                    AtomID turfAtomID = fullState.Turfs[x, y];
+                    UInt16 turfAtomID = fullState.Turfs[x, y];
 
                     if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
                         ATOM turf = Program.OpenDream.ATOMs[turfAtomID];
@@ -50,7 +52,7 @@ namespace OpenDreamClient.Dream {
 
             Program.OpenDream.Map = new Map(turfs);
 
-            if (pFullGameState.EyeID != AtomID.NullAtom) {
+            if (pFullGameState.EyeID != 0xFFFF) {
                 if (Program.OpenDream.ATOMs.ContainsKey(pFullGameState.EyeID)) {
                     Program.OpenDream.Eye = Program.OpenDream.ATOMs[pFullGameState.EyeID];
                 } else {
@@ -62,7 +64,7 @@ namespace OpenDreamClient.Dream {
             }
 
             Program.OpenDream.ScreenObjects.Clear();
-            foreach (AtomID screenObjectAtomID in pFullGameState.ScreenObjects) {
+            foreach (UInt16 screenObjectAtomID in pFullGameState.ScreenObjects) {
                 if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
                     Program.OpenDream.ScreenObjects.Add(Program.OpenDream.ATOMs[screenObjectAtomID]);
                 } else {
@@ -81,7 +83,7 @@ namespace OpenDreamClient.Dream {
                     atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomCreation.VisualProperties);
                     atom.ScreenLocation = atomCreation.ScreenLocation;
 
-                    if (atomCreation.LocationID != AtomID.NullAtom) {
+                    if (atomCreation.LocationID != 0xFFFF) {
                         if (Program.OpenDream.ATOMs.ContainsKey(atomCreation.LocationID)) {
                             atom.Loc = Program.OpenDream.ATOMs[atomCreation.LocationID];
                         } else {
@@ -100,7 +102,7 @@ namespace OpenDreamClient.Dream {
             }
 
             if (deltaState.AtomDeletions != null) {
-                foreach (AtomID atomID in deltaState.AtomDeletions) {
+                foreach (UInt16 atomID in deltaState.AtomDeletions) {
                     if (Program.OpenDream.ATOMs.ContainsKey(atomID)) {
                         ATOM atom = Program.OpenDream.ATOMs[atomID];
 
@@ -144,7 +146,7 @@ namespace OpenDreamClient.Dream {
                 if (Program.OpenDream.ATOMs.ContainsKey(atomLocationDelta.AtomID)) {
                     ATOM atom = Program.OpenDream.ATOMs[atomLocationDelta.AtomID];
 
-                    if (atomLocationDelta.LocationID != AtomID.NullAtom) {
+                    if (atomLocationDelta.LocationID != 0xFFFF) {
                         if (Program.OpenDream.ATOMs.ContainsKey(atomLocationDelta.LocationID)) {
                             atom.Loc = Program.OpenDream.ATOMs[atomLocationDelta.LocationID];
                         } else {
@@ -179,7 +181,7 @@ namespace OpenDreamClient.Dream {
             if (clientDelta.NewEyeID.HasValue) {
                 ATOM newEye = null;
 
-                if (clientDelta.NewEyeID.Value != AtomID.NullAtom) {
+                if (clientDelta.NewEyeID.Value != 0xFFFF) {
                     if (Program.OpenDream.ATOMs.ContainsKey(clientDelta.NewEyeID.Value)) {
                         newEye = Program.OpenDream.ATOMs[clientDelta.NewEyeID.Value];
                     } else {
@@ -191,7 +193,7 @@ namespace OpenDreamClient.Dream {
             }
 
             if (clientDelta.ScreenObjectAdditions != null) {
-                foreach (AtomID screenObjectAtomID in clientDelta.ScreenObjectAdditions) {
+                foreach (UInt16 screenObjectAtomID in clientDelta.ScreenObjectAdditions) {
                     if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
                         ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
 
@@ -207,7 +209,7 @@ namespace OpenDreamClient.Dream {
             }
 
             if (clientDelta.ScreenObjectRemovals != null) {
-                foreach (AtomID screenObjectAtomID in clientDelta.ScreenObjectRemovals) {
+                foreach (UInt16 screenObjectAtomID in clientDelta.ScreenObjectRemovals) {
                     if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
                         ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
 

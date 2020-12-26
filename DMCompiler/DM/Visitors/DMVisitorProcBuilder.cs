@@ -629,31 +629,22 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
             if (list.Values != null) {
                 foreach (DMASTCallParameter value in list.Values) {
-                    DMASTExpressionConstant associativeKey = null;
                     DMASTAssign associatedAssign = value.Value as DMASTAssign;
 
                     if (associatedAssign != null) {
                         associatedAssign.Value.Visit(this);
 
                         if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
-                            associativeKey = new DMASTConstantString(value.Name);
+                            _proc.PushString(value.Name);
+                            _proc.ListAppendAssociated();
                         } else if (associatedAssign.Expression is DMASTConstantResource || associatedAssign.Expression is DMASTConstantPath) {
-                            associativeKey = (DMASTExpressionConstant)associatedAssign.Expression;
+                            associatedAssign.Expression.Visit(this);
+                            _proc.ListAppendAssociated();
                         } else {
                             throw new Exception("Associated value has an invalid index");
                         }
                     } else {
-                        if (value.Name != null) {
-                            associativeKey = new DMASTConstantString(value.Name);
-                        }
-                        
                         value.Visit(this);
-                    }
-                    
-                    if (associativeKey != null) {
-                        associativeKey.Visit(this);
-                        _proc.ListAppendAssociated();
-                    } else {
                         _proc.ListAppend();
                     }
                 }

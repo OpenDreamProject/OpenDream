@@ -1,50 +1,51 @@
-﻿using OpenDreamShared.Dream.Objects;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
 
 namespace OpenDreamShared.Dream {
     class DreamDeltaState {
         public class AtomCreation {
-            public AtomID AtomID;
+            public UInt16 AtomID;
             public UInt16 BaseID;
-            public AtomID LocationID = AtomID.NullAtom;
+            public UInt16 LocationID = 0xFFFF;
             public IconVisualProperties VisualProperties = new IconVisualProperties();
             public Dictionary<UInt16, IconVisualProperties> Overlays = new();
             public ScreenLocation ScreenLocation = new ScreenLocation();
 
-            public AtomCreation(AtomID atomID, UInt16 baseID) {
+            public AtomCreation(UInt16 atomID, UInt16 baseID) {
                 AtomID = atomID;
                 BaseID = baseID;
             }
         }
 
         public struct AtomLocationDelta {
-            public AtomID AtomID;
-            public AtomID LocationID;
+            public UInt16 AtomID;
+            public UInt16 LocationID;
 
-            public AtomLocationDelta(AtomID atomID, AtomID locationID) {
+            public AtomLocationDelta(UInt16 atomID, UInt16 locationID) {
                 AtomID = atomID;
                 LocationID = locationID;
             }
         }
 
         public class AtomDelta {
-            public AtomID AtomID;
+            public UInt16 AtomID;
             public IconVisualProperties? ChangedVisualProperties = null;
             public Dictionary<UInt16, IconVisualProperties> OverlayAdditions = new();
             public List<UInt16> OverlayRemovals = new();
             public ScreenLocation? ScreenLocation;
 
-            public AtomDelta(AtomID atomID) {
+            public AtomDelta(UInt16 atomID) {
                 AtomID = atomID;
             }
         }
 
         public struct TurfDelta {
             public int X, Y;
-            public AtomID TurfAtomID;
+            public UInt16 TurfAtomID;
 
-            public TurfDelta(int x, int y, AtomID turfAtomID) {
+            public TurfDelta(int x, int y, UInt16 turfAtomID) {
                 X = x;
                 Y = y;
                 TurfAtomID = turfAtomID;
@@ -52,32 +53,32 @@ namespace OpenDreamShared.Dream {
         }
 
         public class ClientDelta {
-            public AtomID? NewEyeID;
-            public List<AtomID> ScreenObjectAdditions;
-            public List<AtomID> ScreenObjectRemovals;
+            public UInt16? NewEyeID;
+            public List<UInt16> ScreenObjectAdditions;
+            public List<UInt16> ScreenObjectRemovals;
         }
 
         public UInt32 ID;
-        public List<AtomCreation> AtomCreations = new();
-        public List<AtomID> AtomDeletions = new();
-        public List<AtomLocationDelta> AtomLocationDeltas = new();
-        public List<AtomDelta> AtomDeltas = new();
-        public List<TurfDelta> TurfDeltas = new();
-        public Dictionary<string, ClientDelta> ClientDeltas = new();
+        public List<AtomCreation> AtomCreations = new List<AtomCreation>();
+        public List<UInt16> AtomDeletions = new List<UInt16>();
+        public List<AtomLocationDelta> AtomLocationDeltas = new List<AtomLocationDelta>();
+        public List<AtomDelta> AtomDeltas = new List<AtomDelta>();
+        public List<TurfDelta> TurfDeltas = new List<TurfDelta>();
+        public Dictionary<string, ClientDelta> ClientDeltas = new Dictionary<string, ClientDelta>();
 
         public DreamDeltaState(UInt32 id) {
             ID = id;
         }
 
-        public void AddAtomCreation(AtomID atomID, UInt16 baseID) {
+        public void AddAtomCreation(UInt16 atomID, UInt16 baseID) {
             AtomCreations.Add(new AtomCreation(atomID, baseID));
         }
 
-        public void AddAtomDeletion(AtomID atomID) {
+        public void AddAtomDeletion(UInt16 atomID) {
             AtomDeletions.Add(atomID);
         }
 
-        public void AddAtomLocationDelta(AtomID atomID, AtomID newLocationID) {
+        public void AddAtomLocationDelta(UInt16 atomID, UInt16 newLocationID) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -90,7 +91,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomIconDelta(AtomID atomID, string icon) {
+        public void AddAtomIconDelta(UInt16 atomID, string icon) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -104,7 +105,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomIconStateDelta(AtomID atomID, string iconState) {
+        public void AddAtomIconStateDelta(UInt16 atomID, string iconState) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -118,7 +119,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomColorDelta(AtomID atomID, string color) {
+        public void AddAtomColorDelta(UInt16 atomID, string color) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -132,7 +133,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomDirectionDelta(AtomID atomID, AtomDirection direction) {
+        public void AddAtomDirectionDelta(UInt16 atomID, AtomDirection direction) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -146,7 +147,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomOverlay(AtomID atomID, UInt16 overlayID, IconVisualProperties overlay) {
+        public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, IconVisualProperties overlay) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -156,7 +157,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void RemoveAtomOverlay(AtomID atomID, UInt16 overlayID) {
+        public void RemoveAtomOverlay(UInt16 atomID, UInt16 overlayID) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -166,7 +167,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomScreenLocDelta(AtomID atomID, ScreenLocation newScreenLoc) {
+        public void AddAtomScreenLocDelta(UInt16 atomID, ScreenLocation newScreenLoc) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
@@ -176,7 +177,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddTurfDelta(int x, int y, AtomID newTurfAtomID) {
+        public void AddTurfDelta(int x, int y, UInt16 newTurfAtomID) {
             TurfDelta turfDelta = new TurfDelta(x, y, newTurfAtomID);
 
             RemoveExistingTurfDelta(x, y);
@@ -189,24 +190,24 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddClientEyeIDDelta(string ckey, AtomID? newClientEyeID) {
+        public void AddClientEyeIDDelta(string ckey, UInt16 newClientEyeID) {
             ClientDelta clientDelta = GetClientDelta(ckey);
 
             clientDelta.NewEyeID = newClientEyeID;
         }
 
-        public void AddClientScreenObject(string ckey, AtomID screenObjectID) {
+        public void AddClientScreenObject(string ckey, UInt16 screenObjectID) {
             ClientDelta clientDelta = GetClientDelta(ckey);
 
-            if (clientDelta.ScreenObjectAdditions == null) clientDelta.ScreenObjectAdditions = new List<AtomID>();
+            if (clientDelta.ScreenObjectAdditions == null) clientDelta.ScreenObjectAdditions = new List<UInt16>();
             if (clientDelta.ScreenObjectRemovals != null) clientDelta.ScreenObjectRemovals.Remove(screenObjectID);
             clientDelta.ScreenObjectAdditions.Add(screenObjectID);
         }
 
-        public void RemoveClientScreenObject(string ckey, AtomID screenObjectID) {
+        public void RemoveClientScreenObject(string ckey, UInt16 screenObjectID) {
             ClientDelta clientDelta = GetClientDelta(ckey);
 
-            if (clientDelta.ScreenObjectRemovals == null) clientDelta.ScreenObjectRemovals = new List<AtomID>();
+            if (clientDelta.ScreenObjectRemovals == null) clientDelta.ScreenObjectRemovals = new List<UInt16>();
             if (clientDelta.ScreenObjectAdditions != null) clientDelta.ScreenObjectAdditions.Remove(screenObjectID);
             clientDelta.ScreenObjectRemovals.Add(screenObjectID);
         }
@@ -220,7 +221,7 @@ namespace OpenDreamShared.Dream {
                     || (ClientDeltas.Count > 0);
         }
 
-        private void RemoveExistingAtomLocationDelta(AtomID atomID) {
+        private void RemoveExistingAtomLocationDelta(UInt16 atomID) {
             for (int i = 0; i < AtomLocationDeltas.Count; i++) {
                 AtomLocationDelta existingAtomLocationDelta = AtomLocationDeltas[i];
 
@@ -244,7 +245,7 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        private AtomCreation GetAtomCreation(AtomID atomID) {
+        private AtomCreation GetAtomCreation(UInt16 atomID) {
             foreach (AtomCreation atomCreation in AtomCreations) {
                 if (atomCreation.AtomID == atomID) return atomCreation;
             }
@@ -252,7 +253,7 @@ namespace OpenDreamShared.Dream {
             return null;
         }
 
-        private AtomDelta GetAtomDelta(AtomID atomID) {
+        private AtomDelta GetAtomDelta(UInt16 atomID) {
             foreach (AtomDelta existingAtomDelta in AtomDeltas) {
                 if (existingAtomDelta.AtomID == atomID) return existingAtomDelta;
             }

@@ -1,12 +1,12 @@
 ﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace OpenDreamClient.Dream {
     class ATOM {
-        public AtomID ID;
+        public UInt16 ID;
         public ATOMType Type;
         public DreamIcon Icon { get; } = new DreamIcon();
         public List<ATOM> Contents = new List<ATOM>();
@@ -63,7 +63,7 @@ namespace OpenDreamClient.Dream {
         private ATOM _loc = null;
         private int _x, _y; //Only used for turfs
 
-        public ATOM(AtomID id, ATOMBase atomBase) {
+        public ATOM(UInt16 id, ATOMBase atomBase) {
             ID = id;
             Type = atomBase.Type;
             Icon.VisualProperties = atomBase.VisualProperties;

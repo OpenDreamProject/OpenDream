@@ -1,7 +1,6 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,7 +52,7 @@ namespace OpenDreamServer.Dream {
                     fullState.SetFromFullState(lastFullState);
                     fullState.ApplyDeltaStates(GetDeltaStatesSince(lastFullState.ID));
                 } else {
-                    fullState.Turfs = new AtomID[Program.DreamMap.Width, Program.DreamMap.Height];
+                    fullState.Turfs = new UInt16[Program.DreamMap.Width, Program.DreamMap.Height];
                     fullState.ApplyDeltaStates(DeltaStates);
                 }
 
@@ -118,11 +117,11 @@ namespace OpenDreamServer.Dream {
 
         public void AddAtomLocationDelta(DreamObject atom, DreamObject newLocation) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomLocationDelta(DreamMetaObjectAtom.AtomIDs[atom], (newLocation != null) ? DreamMetaObjectAtom.AtomIDs[newLocation] : AtomID.NullAtom);
+                _currentDeltaState.AddAtomLocationDelta(DreamMetaObjectAtom.AtomIDs[atom], (newLocation != null) ? DreamMetaObjectAtom.AtomIDs[newLocation] : (UInt16)0xFFFF);
             }
         }
 
-        public void AddTurfDelta(int x, int y, AtomID newTurfAtomID) {
+        public void AddTurfDelta(int x, int y, UInt16 newTurfAtomID) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddTurfDelta(x, y, newTurfAtomID);
             }
@@ -134,7 +133,7 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public void AddClientEyeIDDelta(string ckey, AtomID? newEyeID) {
+        public void AddClientEyeIDDelta(string ckey, UInt16 newEyeID) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddClientEyeIDDelta(ckey, newEyeID);
             }

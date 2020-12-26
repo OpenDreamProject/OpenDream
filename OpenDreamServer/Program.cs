@@ -130,9 +130,7 @@ namespace OpenDreamServer {
             DreamObjectTree.InstantiateGlobalVariables();
 
             DreamMap = new DreamMap();
-            Console.WriteLine("Loading map...");
             DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));
-            Console.WriteLine("Map loaded!");
 
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
             Task.Run(() => WorldInstance.CallProc("New"));

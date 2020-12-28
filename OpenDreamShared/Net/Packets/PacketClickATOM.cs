@@ -5,7 +5,7 @@ namespace OpenDreamShared.Net.Packets {
         public PacketID PacketID => PacketID.ClickAtom;
         public UInt16 AtomID;
         public int IconX, IconY;
-        public bool ModifierShift, ModifierCtrl;
+        public bool ModifierShift, ModifierCtrl, ModifierAlt;
 
         public PacketClickAtom() { }
 
@@ -21,6 +21,7 @@ namespace OpenDreamShared.Net.Packets {
             IconY = stream.ReadByte();
             ModifierShift = stream.ReadBool();
             ModifierCtrl = stream.ReadBool();
+            ModifierAlt = stream.ReadBool();
         }
 
         public void WriteToStream(PacketStream stream) {
@@ -29,6 +30,7 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteByte((byte)IconY);
             stream.WriteBool(ModifierShift);
             stream.WriteBool(ModifierCtrl);
+            stream.WriteBool(ModifierAlt);
         }
     }
 }

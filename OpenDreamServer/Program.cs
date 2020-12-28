@@ -78,6 +78,7 @@ namespace OpenDreamServer {
                     paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
                     if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
                     if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
+                    if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
 
                     DreamProcArguments clickArguments = new DreamProcArguments(new() {
                         new DreamValue(atom),

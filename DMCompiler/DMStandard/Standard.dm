@@ -45,6 +45,8 @@ proc/rand(L, H)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/round(A, B)
 proc/sleep(Delay)
+proc/sorttext(T1, T2)
+proc/sorttextEx(T1, T2)
 proc/sound(file, repeat = 0, wait, channel, volume)
 proc/splittext(Text, Delimiter)
 proc/text(FormatText)
@@ -203,6 +205,9 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 
 /atom
 	parent_type = /datum
+
+	var/name = "atom"
+	var/desc = null
 
 	var/list/contents = list()
 	var/list/overlays = list()

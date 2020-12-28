@@ -132,10 +132,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         [DreamProc("file2text")]
-        [DreamProcParameter("File", Type = DreamValueType.String)]
+        [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_file2text(DreamProcScope scope, DreamProcArguments arguments) {
-            string filePath = scope.GetValue("File").GetValueAsString();
-            DreamResource resource = Program.DreamResourceManager.LoadResource(filePath);
+            DreamValue file = scope.GetValue("File");
+            DreamResource resource;
+
+            if (file.Type == DreamValueType.String) {
+                resource = Program.DreamResourceManager.LoadResource(file.GetValueAsString());
+            } else {
+                resource = file.GetValueAsDreamResource();
+            }
 
             return new DreamValue(resource.ReadAsString());
         }
@@ -420,6 +426,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static object CreateJsonElementFromValue(DreamValue value) {
             if (value.IsType(DreamValueType.String | DreamValueType.Integer)) {
                 return value.Value;
+            } else if (value.Value == null) {
+                return null;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
                 DreamList list = DreamMetaObjectList.DreamLists[listObject];
 
@@ -750,6 +758,26 @@ namespace OpenDreamServer.Dream.Procs.Native {
             tickEvent.Wait();
 
             return new DreamValue((DreamObject)null);
+        }
+
+        [DreamProc("sorttext")]
+        [DreamProcParameter("T1", Type = DreamValueType.String)]
+        [DreamProcParameter("T2", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_sorttext(DreamProcScope scope, DreamProcArguments arguments) {
+            string t1 = scope.GetValue("T1").GetValueAsString().ToLower();
+            string t2 = scope.GetValue("T2").GetValueAsString().ToLower();
+
+            return new DreamValue(string.Compare(t2, t1));
+        }
+
+        [DreamProc("sorttextEx")]
+        [DreamProcParameter("T1", Type = DreamValueType.String)]
+        [DreamProcParameter("T2", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_sorttextEx(DreamProcScope scope, DreamProcArguments arguments) {
+            string t1 = scope.GetValue("T1").GetValueAsString();
+            string t2 = scope.GetValue("T2").GetValueAsString();
+
+            return new DreamValue(string.Compare(t2, t1));
         }
 
         [DreamProc("sound")]

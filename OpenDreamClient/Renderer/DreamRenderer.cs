@@ -144,11 +144,12 @@ namespace OpenDreamClient.Renderer {
         }
 
         private void SetColor(UInt32 color) {
-            float r = (float)((color & 0xFF0000) >> 16) / 255;
-            float g = (float)((color & 0xFF00) >> 8) / 255;
-            float b = (float)(color & 0xFF) / 255;
+            float r = (float)((color & 0xFF000000) >> 24) / 255;
+            float g = (float)((color & 0xFF0000) >> 16) / 255;
+            float b = (float)((color & 0xFF00) >> 8) / 255;
+            float a = (float)(color & 0xFF) / 255;
 
-            _gl.Uniform4(_shader.ColorUniform, r, g, b, 1.0f);
+            _gl.Uniform4(_shader.ColorUniform, r, g, b, a);
         }
 
         private void DrawDreamIcon(DreamIcon icon) {

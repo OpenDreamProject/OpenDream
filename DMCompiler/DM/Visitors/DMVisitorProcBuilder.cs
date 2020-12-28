@@ -634,18 +634,22 @@ namespace DMCompiler.Compiler.DM.Visitors {
                     if (associatedAssign != null) {
                         associatedAssign.Value.Visit(this);
 
-                        if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
+                        if (associatedAssign.Expression is DMASTCallableIdentifier) {
                             _proc.PushString(value.Name);
                             _proc.ListAppendAssociated();
-                        } else if (associatedAssign.Expression is DMASTConstantResource || associatedAssign.Expression is DMASTConstantPath) {
+                        } else {
                             associatedAssign.Expression.Visit(this);
                             _proc.ListAppendAssociated();
-                        } else {
-                            throw new Exception("Associated value has an invalid index");
                         }
                     } else {
                         value.Visit(this);
-                        _proc.ListAppend();
+
+                        if (value.Name != null) {
+                            _proc.PushString(value.Name);
+                            _proc.ListAppendAssociated();
+                        } else {
+                            _proc.ListAppend();
+                        }
                     }
                 }
             }

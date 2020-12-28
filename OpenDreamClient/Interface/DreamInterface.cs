@@ -36,10 +36,32 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        public IElement FindElementWithName(string elementName) {
-            foreach (ElementWindow window in Windows.Values) {
-                foreach (IElement element in window.ChildElements) {
-                    if (element.ElementDescriptor.Name == elementName) return element;
+        public IElement FindElementWithName(string name) {
+            string[] split = name.Split(".");
+
+            if (split.Length == 2) {
+                string windowName = split[0];
+                string elementName = split[1];
+                ElementWindow window = null;
+
+                if (Windows.ContainsKey(windowName)) {
+                    window = Windows[windowName];
+                } else if (PopupWindows.ContainsKey(windowName)) {
+                    window = (ElementWindow)PopupWindows[windowName].Content;
+                }
+                
+                if (window != null) {
+                    foreach (IElement element in window.ChildElements) {
+                        if (element.ElementDescriptor.Name == elementName) return element;
+                    }
+                }
+            } else {
+                string elementName = split[0];
+
+                foreach (ElementWindow window in Windows.Values) {
+                    foreach (IElement element in window.ChildElements) {
+                        if (element.ElementDescriptor.Name == elementName) return element;
+                    }
                 }
             }
 
@@ -59,10 +81,10 @@ namespace OpenDreamClient.Interface {
 
         public Window CreatePopupWindow(string windowName, System.Drawing.Size windowSize) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(windowName, new() {
-                new ElementDescriptorMain(windowName + "Main") {
+                new ElementDescriptorMain("main") {
                     Size = new System.Drawing.Size(480, 480)
                 },
-                new ElementDescriptorBrowser(windowName + "Browser") {
+                new ElementDescriptorBrowser("browser") {
                     Size = new System.Drawing.Size(480, 480),
                     Anchor1 = new System.Drawing.Point(0, 0),
                     Anchor2 = new System.Drawing.Point(100, 100)

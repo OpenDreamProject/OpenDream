@@ -1234,13 +1234,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression ExpressionListIndex() {
             DMASTExpression expression = ExpressionNew();
 
-            if (Check(TokenType.DM_LeftBracket)) {
+            while (Check(TokenType.DM_LeftBracket)) {
                 Whitespace();
                 DMASTExpression index = Expression();
                 Consume(TokenType.DM_RightBracket, "Expected ']'");
                 Whitespace();
 
-                return new DMASTListIndex(expression, index);
+                expression = new DMASTListIndex(expression, index);
             }
 
             return expression;

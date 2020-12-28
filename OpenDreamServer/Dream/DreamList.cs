@@ -97,7 +97,7 @@ namespace OpenDreamServer.Dream {
         public int FindValue(DreamValue value, int start = 1, int end = 0) {
             if (end == 0 || end > _values.Count) end = _values.Count;
 
-            for (int i = start; i < end; i++) {
+            for (int i = start; i <= end; i++) {
                 if (_values[i - 1].Equals(value)) return i;
             }
 

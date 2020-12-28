@@ -361,6 +361,8 @@ namespace OpenDreamServer.Dream.Procs {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Double) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsDouble()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
+
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Double) {
                     identifier.Assign(new DreamValue(first.GetValueAsDouble() + second.GetValueAsDouble()));
                 } else if (first.Type == DreamValue.DreamValueType.Double && second.Type == DreamValue.DreamValueType.Integer) {

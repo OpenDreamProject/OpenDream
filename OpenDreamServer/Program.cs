@@ -214,6 +214,8 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sound);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_splittext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_text);

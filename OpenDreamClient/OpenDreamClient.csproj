@@ -13,7 +13,7 @@
     <PackageReference Include="NAudio.Vorbis" Version="1.2.0" />
     <PackageReference Include="SharpGL" Version="3.1.1" />
     <PackageReference Include="SharpGL.WPF" Version="3.1.1" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

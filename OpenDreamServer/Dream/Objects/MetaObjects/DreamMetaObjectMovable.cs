@@ -14,9 +14,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            DreamObject loc = dreamObject.GetVariable("loc").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamList contents = DreamMetaObjectList.DreamLists[loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List)];
-            contents.RemoveValue(new DreamValue(dreamObject));
+            if (dreamObject.GetVariable("loc").TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
+                DreamList contents = DreamMetaObjectList.DreamLists[loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List)];
+                contents.RemoveValue(new DreamValue(dreamObject));
+            }
 
             base.OnObjectDeleted(dreamObject);
         }

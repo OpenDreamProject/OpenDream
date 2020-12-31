@@ -119,6 +119,34 @@ namespace OpenDreamShared.Dream {
             }
         }
 
+        public void AddAtomPixelXDelta(UInt16 atomID, int pixelX) {
+            AtomCreation atomCreation = GetAtomCreation(atomID);
+
+            if (atomCreation != null) {
+                atomCreation.VisualProperties.PixelX = pixelX;
+            } else {
+                AtomDelta atomDelta = GetAtomDelta(atomID);
+                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
+
+                visualProperties.PixelX = pixelX;
+                atomDelta.ChangedVisualProperties = visualProperties;
+            }
+        }
+        
+        public void AddAtomPixelYDelta(UInt16 atomID, int pixelY) {
+            AtomCreation atomCreation = GetAtomCreation(atomID);
+
+            if (atomCreation != null) {
+                atomCreation.VisualProperties.PixelY = pixelY;
+            } else {
+                AtomDelta atomDelta = GetAtomDelta(atomID);
+                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
+
+                visualProperties.PixelY = pixelY;
+                atomDelta.ChangedVisualProperties = visualProperties;
+            }
+        }
+
         public void AddAtomColorDelta(UInt16 atomID, string color) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 

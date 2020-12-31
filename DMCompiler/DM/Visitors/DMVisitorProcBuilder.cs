@@ -488,6 +488,16 @@ namespace DMCompiler.Compiler.DM.Visitors {
             _proc.Assign();
         }
 
+        public void VisitDivideAssign(DMASTDivideAssign divideAssign) {
+            divideAssign.A.Visit(this);
+
+            divideAssign.A.Visit(this);
+            divideAssign.B.Visit(this);
+            _proc.Divide();
+
+            _proc.Assign();
+        }
+
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) {
             leftShiftAssign.A.Visit(this);
 

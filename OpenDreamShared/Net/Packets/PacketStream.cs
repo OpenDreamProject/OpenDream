@@ -12,7 +12,9 @@ namespace OpenDreamShared.Net.Packets {
             Color = 0x2,
             Direction = 0x3,
             Layer = 0x4,
-            End = 0x5
+            End = 0x5,
+            PixelX = 0x6,
+            PixelY = 0x7
         }
 
         private BinaryWriter _binaryWriter;
@@ -33,6 +35,14 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void WriteSByte(sbyte data) {
+            _binaryWriter.Write(data);
+        }
+
+        public Int16 ReadInt16() {
+            return _binaryReader.ReadInt16();
+        }
+
+        public void WriteInt16(Int16 data) {
             _binaryWriter.Write(data);
         }
 
@@ -103,18 +113,15 @@ namespace OpenDreamShared.Net.Packets {
             PacketStreamVisualPropertyID propertyID = (PacketStreamVisualPropertyID)ReadByte();
 
             while (propertyID != PacketStreamVisualPropertyID.End) {
-                if (propertyID == PacketStreamVisualPropertyID.IconState) {
-                    visualProperties.IconState = ReadString();
-                } else if (propertyID == PacketStreamVisualPropertyID.Icon) {
-                    visualProperties.Icon = ReadString();
-                } else if (propertyID == PacketStreamVisualPropertyID.Color) {
-                    visualProperties.Color = ReadUInt32();
-                } else if (propertyID == PacketStreamVisualPropertyID.Direction) {
-                    visualProperties.Direction = (AtomDirection)ReadByte();
-                } else if (propertyID == PacketStreamVisualPropertyID.Layer) {
-                    visualProperties.Layer = ReadFloat();
-                } else if (propertyID != PacketStreamVisualPropertyID.End) {
-                    throw new Exception("Invalid visual property ID (" + propertyID.ToString() + ")");
+                switch (propertyID) {
+                    case PacketStreamVisualPropertyID.IconState: visualProperties.IconState = ReadString(); break;
+                    case PacketStreamVisualPropertyID.Icon: visualProperties.Icon = ReadString(); break;
+                    case PacketStreamVisualPropertyID.Color: visualProperties.Color = ReadUInt32(); break;
+                    case PacketStreamVisualPropertyID.Direction: visualProperties.Direction = (AtomDirection)ReadByte(); break;
+                    case PacketStreamVisualPropertyID.Layer: visualProperties.Layer = ReadFloat(); break;
+                    case PacketStreamVisualPropertyID.PixelX: visualProperties.PixelX = ReadInt16(); break;
+                    case PacketStreamVisualPropertyID.PixelY: visualProperties.PixelY = ReadInt16(); break;
+                    default: throw new Exception("Invalid visual property ID (" + propertyID.ToString() + ")");
                 }
 
                 propertyID = (PacketStreamVisualPropertyID)ReadByte();
@@ -147,6 +154,16 @@ namespace OpenDreamShared.Net.Packets {
             if (visualProperties.Layer != default && visualProperties.Layer != defaultVisualProperties?.Layer) {
                 WriteByte((byte)PacketStreamVisualPropertyID.Layer);
                 WriteFloat(visualProperties.Layer);
+            }
+
+            if (visualProperties.PixelX != default && visualProperties.PixelX != defaultVisualProperties?.PixelX) {
+                WriteByte((byte)PacketStreamVisualPropertyID.PixelX);
+                WriteInt16((Int16)visualProperties.PixelX);
+            }
+            
+            if (visualProperties.PixelY != default && visualProperties.PixelY != defaultVisualProperties?.PixelY) {
+                WriteByte((byte)PacketStreamVisualPropertyID.PixelY);
+                WriteInt16((Int16)visualProperties.PixelY);
             }
 
             WriteByte((byte)PacketStreamVisualPropertyID.End);

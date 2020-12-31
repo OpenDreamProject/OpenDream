@@ -31,7 +31,7 @@ namespace OpenDreamClient.Interface.Elements {
 
             this.Loaded += OnLoaded;
             this.Unloaded += OnUnloaded;
-            this.MouseDown += OnMouseDown;
+            this.MouseLeftButtonDown += OnLeftMouseDown;
         }
 
         public void UpdateVisuals() {
@@ -46,7 +46,7 @@ namespace OpenDreamClient.Interface.Elements {
             
         }
 
-        private void OnMouseDown(object sender, MouseEventArgs e) {
+        private void OnLeftMouseDown(object sender, MouseEventArgs e) {
             e.Handled = true;
             this.Focus();
 

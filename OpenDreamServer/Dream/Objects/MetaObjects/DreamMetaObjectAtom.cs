@@ -60,6 +60,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 Program.DreamStateManager.AddAtomIconDelta(dreamObject, variableValue.GetValueAsDreamResource().ResourcePath);
             } else if (variableName == "icon_state") {
                 Program.DreamStateManager.AddAtomIconStateDelta(dreamObject, variableValue.GetValueAsString());
+            } else if (variableName == "pixel_x") {
+                Program.DreamStateManager.AddAtomPixelXDelta(dreamObject, variableValue.GetValueAsInteger());
+            } else if (variableName == "pixel_y") {
+                Program.DreamStateManager.AddAtomPixelYDelta(dreamObject, variableValue.GetValueAsInteger());
             } else if (variableName == "color") {
                 string color;
                 if (variableValue.Type == DreamValue.DreamValueType.String) {
@@ -144,6 +148,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 overlay.Item2.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
                 overlay.Item2.SetColor(mutableAppearance.GetVariable("color").GetValueAsString());
                 overlay.Item2.Layer = (float)mutableAppearance.GetVariable("layer").GetValueAsNumber();
+                overlay.Item2.PixelX = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
+                overlay.Item2.PixelY = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();
             } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.Image, out DreamObject image)) {
                 DreamValue icon = image.GetVariable("icon");
                 DreamValue iconState = image.GetVariable("icon_state");
@@ -158,6 +164,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 overlay.Item2.SetColor(image.GetVariable("color").GetValueAsString());
                 overlay.Item2.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
                 overlay.Item2.Layer = (float)image.GetVariable("layer").GetValueAsNumber();
+                overlay.Item2.PixelX = image.GetVariable("pixel_x").GetValueAsInteger();
+                overlay.Item2.PixelY = image.GetVariable("pixel_y").GetValueAsInteger();
             } else {
                 return;
             }

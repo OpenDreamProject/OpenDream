@@ -31,6 +31,7 @@ namespace OpenDreamShared.Dream {
         public UInt32 Color;
         public AtomDirection Direction;
         public float Layer;
+        public int PixelX, PixelY;
 
         public bool Equals(IconVisualProperties other) {
             if (other.Icon != Icon) return false;
@@ -38,6 +39,8 @@ namespace OpenDreamShared.Dream {
             if (other.Direction != Direction) return false;
             if (other.Color != Color) return false;
             if (other.Layer != Layer) return false;
+            if (other.PixelX != PixelX) return false;
+            if (other.PixelY != PixelY) return false;
 
             return true;
         }
@@ -50,6 +53,8 @@ namespace OpenDreamShared.Dream {
             if (other.Direction != default) newVisualProperties.Direction = other.Direction;
             if (other.Color != default) newVisualProperties.Color = other.Color;
             if (other.Layer != default) newVisualProperties.Layer = other.Layer;
+            if (other.PixelX != default) newVisualProperties.PixelX = other.PixelX;
+            if (other.PixelY != default) newVisualProperties.PixelY = other.PixelY;
 
             return newVisualProperties;
         }
@@ -60,6 +65,8 @@ namespace OpenDreamShared.Dream {
             if (Direction != default) return false;
             if (Color != default) return false;
             if (Layer != default) return false;
+            if (PixelX != default) return false;
+            if (PixelY != default) return false;
 
             return true;
         }

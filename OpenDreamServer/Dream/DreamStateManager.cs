@@ -85,6 +85,18 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public void AddAtomPixelXDelta(DreamObject atom, int pixelX) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomPixelXDelta(DreamMetaObjectAtom.AtomIDs[atom], pixelX);
+            }
+        }
+        
+        public void AddAtomPixelYDelta(DreamObject atom, int pixelY) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddAtomPixelYDelta(DreamMetaObjectAtom.AtomIDs[atom], pixelY);
+            }
+        }
+
         public void AddAtomColorDelta(DreamObject atom, string color) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddAtomColorDelta(DreamMetaObjectAtom.AtomIDs[atom], color);

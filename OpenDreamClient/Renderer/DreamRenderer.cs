@@ -158,6 +158,7 @@ namespace OpenDreamClient.Renderer {
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
                 _gl.VertexAttribPointer(_shader.VertexLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
+                _gl.Uniform2(_shader.PixelOffsetUniform, (float)icon.VisualProperties.PixelX, (float)icon.VisualProperties.PixelY);
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconTextureCoordBuffer);
                 _gl.VertexAttribPointer(_shader.TextureCoordLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);

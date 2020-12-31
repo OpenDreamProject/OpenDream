@@ -13,6 +13,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (screenLocationValue.Value != null)UpdateScreenLocation(dreamObject, screenLocationValue);
         }
 
+        public override void OnObjectDeleted(DreamObject dreamObject) {
+            DreamObject loc = dreamObject.GetVariable("loc").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            DreamList contents = DreamMetaObjectList.DreamLists[loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List)];
+            contents.RemoveValue(new DreamValue(dreamObject));
+
+            base.OnObjectDeleted(dreamObject);
+        }
+
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 

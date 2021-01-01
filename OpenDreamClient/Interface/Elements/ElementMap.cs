@@ -7,6 +7,7 @@ using OpenDreamShared.Interface;
 using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
+using System.Collections.Generic;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementMap : Grid, IElement {
@@ -51,7 +52,6 @@ namespace OpenDreamClient.Interface.Elements {
             this.Focus();
 
             Point mousePosition = e.GetPosition(_dreamRenderer.OpenGLViewControl);
-            (int, int) cameraPosition = _dreamRenderer.GetCameraPosition();
             mousePosition.X = Math.Floor(mousePosition.X);
             mousePosition.Y = _dreamRenderer.OpenGLViewControl.Height - Math.Floor(mousePosition.Y);
 
@@ -80,8 +80,8 @@ namespace OpenDreamClient.Interface.Elements {
             if (clickedATOM == null) {
                 int viewATOMX = (int)(mousePosition.X / 32);
                 int viewATOMY = (int)(mousePosition.Y / 32);
-                int atomX = (cameraPosition.Item1 - 7) + viewATOMX;
-                int atomY = (cameraPosition.Item2 - 7) + viewATOMY;
+                int atomX = (_dreamRenderer.CameraX - 7) + viewATOMX;
+                int atomY = (_dreamRenderer.CameraY - 7) + viewATOMY;
 
                 iconX = (int)mousePosition.X % 32;
                 iconY = (int)mousePosition.Y % 32;

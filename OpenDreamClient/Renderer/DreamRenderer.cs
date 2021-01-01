@@ -11,12 +11,20 @@ namespace OpenDreamClient.Renderer {
     class DreamRenderer {
         public OpenGLControl OpenGLViewControl;
 
+        public int CameraX {
+            get => (Program.OpenDream.Eye != null) ? Program.OpenDream.Eye.X : 0;
+        }
+
+        public int CameraY {
+            get => (Program.OpenDream.Eye != null) ? Program.OpenDream.Eye.Y : 0;
+        }
+
         private OpenGL _gl;
         private OpenGLShader _shader;
         private uint _iconVerticesBuffer;
         private uint _iconTextureCoordBuffer;
 
-        private static Dictionary<(string, Rectangle), DreamTexture> _textureCache = new Dictionary<(string, Rectangle), DreamTexture>();
+        private static Dictionary<(string, Rectangle), DreamTexture> _textureCache = new();
 
         public DreamRenderer() {
             OpenGLViewControl = new OpenGLControl();
@@ -36,16 +44,6 @@ namespace OpenDreamClient.Renderer {
             OpenGLViewControl.Height = height;
             OpenGLViewControl.OpenGL.Viewport(0, 0, width, height);
             _gl.Uniform2(_shader.ViewportSizeUniform, (float)width, (float)height);
-        }
-
-        public (int, int) GetCameraPosition() {
-            ATOM eye = Program.OpenDream.Eye;
-
-            if (eye != null) {
-                return (eye.X, eye.Y);
-            } else {
-                return (0, 0);
-            }
         }
 
         private void InitOpenGL(object sender, OpenGLRoutedEventArgs args) {
@@ -108,39 +106,18 @@ namespace OpenDreamClient.Renderer {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {
-                Map map = Program.OpenDream.Map;
-                (int, int) cameraPosition = GetCameraPosition();
-                
-                for (int x = Math.Max(cameraPosition.Item1 - 8, 0); x < Math.Min(cameraPosition.Item1 + 8, map.Width); x++) {
-                    for (int y = Math.Max(cameraPosition.Item2 - 8, 0); y < Math.Min(cameraPosition.Item2 + 8, map.Height); y++) {
-                        ATOM atom = Program.OpenDream.Map.Turfs[x, y];
+                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 8, CameraY - 8, 16, 16);
+                List<ATOM> mapAtoms = new();
 
-                        _gl.Uniform2(_shader.TranslationUniform, (-cameraPosition.Item1 + x) * 32.0f, (-cameraPosition.Item2 + y) * 32.0f);
-                        DrawATOM(atom);
-                    }
+                foreach (ATOM turf in turfs) {
+                    mapAtoms.Add(turf);
+                    mapAtoms.AddRange(turf.Contents);
                 }
+
+                DrawAtoms(mapAtoms, false);
             }
 
-            foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
-                ScreenLocation screenLocation = screenObject.ScreenLocation;
-                System.Drawing.Point screenCoordinates = screenLocation.GetScreenCoordinates(32);
-
-                _gl.Uniform2(_shader.TranslationUniform, (float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
-                DrawATOM(screenObject);
-            }
-        }
-
-        private void DrawATOM(ATOM atom) {
-            DrawDreamIcon(atom.Icon);
-            foreach (DreamIcon overlayIcon in atom.Icon.Overlays.Values) {
-                DrawDreamIcon(overlayIcon);
-            }
-
-            if (atom.Type == ATOMType.Turf) {
-                foreach (ATOM contentATOM in atom.Contents) {
-                    DrawATOM(contentATOM);
-                }
-            }
+            DrawAtoms(Program.OpenDream.ScreenObjects, true);
         }
 
         private void SetColor(UInt32 color) {
@@ -150,6 +127,38 @@ namespace OpenDreamClient.Renderer {
             float a = (float)(color & 0xFF) / 255;
 
             _gl.Uniform4(_shader.ColorUniform, r, g, b, a);
+        }
+
+        private void SetTranslation(float x, float y) {
+            _gl.Uniform2(_shader.TranslationUniform, x, y);
+        }
+
+        private void DrawAtoms(List<ATOM> atoms, bool useScreenLocation) {
+            //Sort by layer
+            atoms.Sort(
+                new Comparison<ATOM>((ATOM first, ATOM second) => {
+                    float diff = first.Icon.Appearance.Layer - second.Icon.Appearance.Layer;
+
+                    if (diff < 0) return -1;
+                    else if (diff > 0) return 1;
+                    return 0;
+                })
+            );
+
+            foreach (ATOM atom in atoms) {
+                if (useScreenLocation) {
+                    System.Drawing.Point screenCoordinates = atom.ScreenLocation.GetScreenCoordinates(32);
+
+                    SetTranslation((float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
+                } else {
+                    SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
+                }
+
+                DrawDreamIcon(atom.Icon);
+                foreach (DreamIcon overlayIcon in atom.Icon.Overlays.Values) {
+                    DrawDreamIcon(overlayIcon);
+                }
+            }
         }
 
         private void DrawDreamIcon(DreamIcon icon) {

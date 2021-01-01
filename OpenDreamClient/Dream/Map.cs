@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
-using System.Xaml;
 
 namespace OpenDreamClient.Dream {
     class Map {
@@ -12,6 +9,22 @@ namespace OpenDreamClient.Dream {
 
         public Map(ATOM[,] turfs) {
             Turfs = turfs;
+        }
+
+        public List<ATOM> GetTurfs(int x, int y, int width, int height) {
+            int startX = Math.Max(x, 0);
+            int startY = Math.Max(y, 0);
+            int endX = Math.Min(x + width, Width);
+            int endY = Math.Min(y + height, Height);
+            List<ATOM> turfs = new();
+
+            for (x = startX; x < endX; x++) {
+                for (y = startY; y < endY; y++) {
+                    turfs.Add(Turfs[x, y]);
+                }
+            }
+
+            return turfs;
         }
     }
 }

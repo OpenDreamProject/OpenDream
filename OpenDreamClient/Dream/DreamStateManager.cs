@@ -2,22 +2,24 @@
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDreamClient.Dream {
     class DreamStateManager {
         public void HandlePacketFullGameState(PacketFullGameState pFullGameState) {
             DreamFullState fullState = pFullGameState.FullState;
 
+            Program.OpenDream.IconAppearances.Clear();
+            foreach (IconAppearance iconAppearance in fullState.IconAppearances) {
+                Program.OpenDream.IconAppearances.Add(iconAppearance);
+            }
+
             Program.OpenDream.ATOMs.Clear();
             foreach (KeyValuePair<UInt16, DreamFullState.Atom> stateAtom in fullState.Atoms) {
                 ATOM atom = new ATOM(stateAtom.Key, ATOMBase.AtomBases[stateAtom.Value.BaseID]);
 
-                atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(stateAtom.Value.VisualProperties);
-                foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in stateAtom.Value.Overlays) {
-                    atom.Icon.AddOverlay(overlay.Key, overlay.Value);
+                atom.Icon.Appearance = Program.OpenDream.IconAppearances[stateAtom.Value.IconAppearanceID];
+                foreach (KeyValuePair<UInt16, int> overlay in stateAtom.Value.Overlays) {
+                    atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
                 }
 
                 atom.ScreenLocation = stateAtom.Value.ScreenLocation;
@@ -76,11 +78,15 @@ namespace OpenDreamClient.Dream {
         public void HandlePacketDeltaGameState(PacketDeltaGameState pDeltaGameState) {
             DreamDeltaState deltaState = pDeltaGameState.DeltaState;
 
+            foreach (IconAppearance appearance in deltaState.NewIconAppearances) {
+                Program.OpenDream.IconAppearances.Add(appearance);
+            }
+
             foreach (DreamDeltaState.AtomCreation atomCreation in deltaState.AtomCreations) {
                 if (!Program.OpenDream.ATOMs.ContainsKey(atomCreation.AtomID)) {
                     ATOM atom = new ATOM(atomCreation.AtomID, ATOMBase.AtomBases[atomCreation.BaseID]);
 
-                    atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomCreation.VisualProperties);
+                    atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomCreation.IconAppearanceID];
                     atom.ScreenLocation = atomCreation.ScreenLocation;
 
                     if (atomCreation.LocationID != 0xFFFF) {
@@ -93,8 +99,8 @@ namespace OpenDreamClient.Dream {
                         atom.Loc = null;
                     }
 
-                    foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomCreation.Overlays) {
-                        atom.Icon.AddOverlay(overlay.Key, overlay.Value);
+                    foreach (KeyValuePair<UInt16, int> overlay in atomCreation.Overlays) {
+                        atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
                     }
                 } else {
                     Console.WriteLine("Delta state packet created a new atom that already exists, and was ignored (ID " + atomCreation.AtomID + ")");
@@ -118,8 +124,12 @@ namespace OpenDreamClient.Dream {
                 if (Program.OpenDream.ATOMs.ContainsKey(atomDelta.AtomID)) {
                     ATOM atom = Program.OpenDream.ATOMs[atomDelta.AtomID];
 
-                    if (atomDelta.ChangedVisualProperties.HasValue) {
-                        atom.Icon.VisualProperties = atom.Icon.VisualProperties.Merge(atomDelta.ChangedVisualProperties.Value);
+                    if (atomDelta.NewIconAppearanceID.HasValue) {
+                        if (Program.OpenDream.IconAppearances.Count > atomDelta.NewIconAppearanceID.Value) {
+                            atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomDelta.NewIconAppearanceID.Value];
+                        } else {
+                            Console.WriteLine("Invalid appearance ID " + atomDelta.NewIconAppearanceID.Value);
+                        }
                     }
 
                     if (atomDelta.OverlayRemovals != null) {
@@ -129,8 +139,8 @@ namespace OpenDreamClient.Dream {
                     }
 
                     if (atomDelta.OverlayAdditions != null) {
-                        foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomDelta.OverlayAdditions) {
-                            atom.Icon.AddOverlay(overlay.Key, overlay.Value);
+                        foreach (KeyValuePair<UInt16, int> overlay in atomDelta.OverlayAdditions) {
+                            atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
                         }
                     }
 

@@ -1,16 +1,18 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         public static Dictionary<DreamObject, UInt16> AtomIDs = new();
         public static Dictionary<UInt16, DreamObject> AtomIDToAtom = new();
+        public static ConcurrentDictionary<DreamObject, int> AtomToAppearanceID = new();
 
         private static UInt16 _atomIDCounter = 0;
         private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
-        private static Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, IconVisualProperties)>> _atomOverlays = new();
+        private static Dictionary<DreamObject, Dictionary<DreamValue, (UInt16, ServerIconAppearance)>> _atomOverlays = new();
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -22,6 +24,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             }
 
             Program.DreamStateManager.AddAtomCreation(dreamObject);
+
+            ATOMBase atomBase = ATOMBase.AtomBases[Program.AtomBaseIDs[dreamObject.ObjectDefinition]];
+            ServerIconAppearance atomAppearance = ServerIconAppearance.GetAppearance(atomBase.IconAppearanceID);
+            UpdateAppearance(dreamObject, atomAppearance);
 
             DreamObject locArgument = FindLocArgument(creationArguments);
             if (locArgument != null) {
@@ -46,6 +52,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             lock (_atomListsLock) {
                 AtomIDToAtom.Remove(AtomIDs[dreamObject]);
                 AtomIDs.Remove(dreamObject);
+                AtomToAppearanceID.Remove(dreamObject, out _);
                 _overlaysListToAtom.Remove(DreamMetaObjectList.DreamLists[dreamObject.GetVariable("overlays").GetValueAsDreamObjectOfType(DreamPath.List)]);
                 _atomOverlays.Remove(dreamObject);
             }
@@ -57,24 +64,41 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "icon") {
-                Program.DreamStateManager.AddAtomIconDelta(dreamObject, variableValue.GetValueAsDreamResource().ResourcePath);
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.Icon = variableValue.GetValueAsDreamResource().ResourcePath;
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "icon_state") {
-                Program.DreamStateManager.AddAtomIconStateDelta(dreamObject, variableValue.GetValueAsString());
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.IconState = variableValue.GetValueAsString();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "pixel_x") {
-                Program.DreamStateManager.AddAtomPixelXDelta(dreamObject, variableValue.GetValueAsInteger());
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.PixelX = variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "pixel_y") {
-                Program.DreamStateManager.AddAtomPixelYDelta(dreamObject, variableValue.GetValueAsInteger());
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.PixelY = variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
                 if (variableValue.Type == DreamValue.DreamValueType.String) {
                     color = variableValue.GetValueAsString();
                 } else {
-                    color = "#FFFFFF";
+                    color = "white";
                 }
 
-                Program.DreamStateManager.AddAtomColorDelta(dreamObject, color);
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.SetColor(color);
             } else if (variableName == "dir") {
-                Program.DreamStateManager.AddAtomDirectionDelta(dreamObject, (AtomDirection)variableValue.GetValueAsInteger());
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "overlays") {
                 if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject oldListObject)) {
                     DreamList oldList = DreamMetaObjectList.DreamLists[oldListObject];
@@ -97,7 +121,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             }
         }
 
-        public static DreamObject FindLocArgument(DreamProcArguments arguments) {
+        protected static DreamObject FindLocArgument(DreamProcArguments arguments) {
             if (arguments.ArgumentCount >= 1) {
                 DreamValue loc = arguments.GetArgument(0, "loc");
 
@@ -109,10 +133,24 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             return null;
         }
 
-        private Dictionary<DreamValue, (UInt16, IconVisualProperties)> GetAtomOverlays(DreamObject atom) {
-            Dictionary<DreamValue, (UInt16, IconVisualProperties)> overlays;
+        protected static ServerIconAppearance GetAppearance(DreamObject atom) {
+            return ServerIconAppearance.GetAppearance(AtomToAppearanceID[atom]);
+        }
+
+        protected static void UpdateAppearance(DreamObject atom, ServerIconAppearance newAppearance) {
+            int appearanceID = newAppearance.GetID();
+
+            if (!AtomToAppearanceID.ContainsKey(atom) || AtomToAppearanceID[atom] != appearanceID) {
+                AtomToAppearanceID[atom] = appearanceID;
+
+                Program.DreamStateManager.AddAtomIconAppearanceDelta(atom, newAppearance);
+            }
+        }
+
+        private Dictionary<DreamValue, (UInt16, ServerIconAppearance)> GetAtomOverlays(DreamObject atom) {
+            Dictionary<DreamValue, (UInt16, ServerIconAppearance)> overlays;
             if (!_atomOverlays.TryGetValue(atom, out overlays)) {
-                overlays = new Dictionary<DreamValue, (UInt16, IconVisualProperties)>();
+                overlays = new Dictionary<DreamValue, (UInt16, ServerIconAppearance)>();
                 _atomOverlays[atom] = overlays;
             }
 
@@ -123,10 +161,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (overlayValue.Value == null) return;
 
             DreamObject atom = _overlaysListToAtom[overlayList];
-            Dictionary<DreamValue, (UInt16, IconVisualProperties)> overlays = GetAtomOverlays(atom);
-            (UInt16, IconVisualProperties) overlay = overlays.GetValueOrDefault(overlayValue);
+            Dictionary<DreamValue, (UInt16, ServerIconAppearance)> overlays = GetAtomOverlays(atom);
+            (UInt16, ServerIconAppearance) overlay = overlays.GetValueOrDefault(overlayValue);
 
             if (overlay.Item1 == default) overlay.Item1 = (UInt16)overlays.Count;
+            if (overlay.Item2 == null) overlay.Item2 = new ServerIconAppearance();
             if (overlayValue.IsType(DreamValue.DreamValueType.String)) {
                 DreamValue icon = atom.GetVariable("icon");
                 if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
@@ -136,7 +175,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
 
                 overlay.Item2.IconState = overlayValue.GetValueAsString();
-                overlay.Item2.SetColor("#FFFFFF");
             } else if (overlayValue.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
@@ -178,10 +216,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (overlayValue.Value == null) return;
 
             DreamObject atom = _overlaysListToAtom[overlayList];
-            Dictionary<DreamValue, (UInt16, IconVisualProperties)> overlays = GetAtomOverlays(atom);
+            Dictionary<DreamValue, (UInt16, ServerIconAppearance)> overlays = GetAtomOverlays(atom);
 
             if (overlays.ContainsKey(overlayValue)) {
-                (UInt16, IconVisualProperties) overlay = overlays[overlayValue];
+                (UInt16, ServerIconAppearance) overlay = overlays[overlayValue];
 
                 Program.DreamStateManager.RemoveAtomOverlay(atom, overlay.Item1);
             }

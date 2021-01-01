@@ -8,9 +8,9 @@ namespace OpenDreamShared.Dream {
             public UInt16 AtomID;
             public UInt16 BaseID;
             public UInt16 LocationID;
-            public IconVisualProperties VisualProperties;
+            public int IconAppearanceID;
             public ScreenLocation ScreenLocation;
-            public Dictionary<UInt16, IconVisualProperties> Overlays;
+            public Dictionary<UInt16, int> Overlays;
         }
 
         public class Client {
@@ -26,8 +26,9 @@ namespace OpenDreamShared.Dream {
         }
 
         public UInt32 ID;
-        public Dictionary<UInt16, Atom> Atoms = new Dictionary<UInt16, Atom>();
-        public Dictionary<string, Client> Clients = new Dictionary<string, Client>();
+        public List<IconAppearance> IconAppearances = new();
+        public Dictionary<UInt16, Atom> Atoms = new();
+        public Dictionary<string, Client> Clients = new();
         public UInt16[,] Turfs = new UInt16[0, 0];
 
         public DreamFullState(UInt32 id) {
@@ -35,6 +36,10 @@ namespace OpenDreamShared.Dream {
         }
 
         public void SetFromFullState(DreamFullState fullState) {
+            foreach (IconAppearance iconAppearance in fullState.IconAppearances) {
+                IconAppearances.Add(iconAppearance);
+            }
+
             foreach (KeyValuePair<UInt16, Atom> atom in fullState.Atoms) {
                 Atoms.Add(atom.Key, atom.Value);
             }
@@ -48,15 +53,19 @@ namespace OpenDreamShared.Dream {
 
         public void ApplyDeltaStates(List<DreamDeltaState> deltaStates) {
             foreach (DreamDeltaState deltaState in deltaStates) {
+                foreach (IconAppearance iconAppearance in deltaState.NewIconAppearances) {
+                    IconAppearances.Add(iconAppearance);
+                }
+
                 foreach (DreamDeltaState.AtomCreation atomCreation in deltaState.AtomCreations) {
                     Atom atom = new Atom();
 
                     atom.AtomID = atomCreation.AtomID;
                     atom.BaseID = atomCreation.BaseID;
                     atom.LocationID = atomCreation.LocationID;
-                    atom.VisualProperties = atomCreation.VisualProperties;
+                    atom.IconAppearanceID = atomCreation.IconAppearanceID;
                     atom.ScreenLocation = atomCreation.ScreenLocation;
-                    atom.Overlays = new Dictionary<ushort, IconVisualProperties>();
+                    atom.Overlays = new Dictionary<UInt16, int>();
 
                     Atoms[atom.AtomID] = atom;
                 }
@@ -75,8 +84,8 @@ namespace OpenDreamShared.Dream {
                 foreach (DreamDeltaState.AtomDelta atomDelta in deltaState.AtomDeltas) {
                     Atom atom = Atoms[atomDelta.AtomID];
 
-                    if (atomDelta.ChangedVisualProperties.HasValue) {
-                        atom.VisualProperties = atom.VisualProperties.Merge(atomDelta.ChangedVisualProperties.Value);
+                    if (atomDelta.NewIconAppearanceID.HasValue) {
+                        atom.IconAppearanceID = atomDelta.NewIconAppearanceID.Value;
                     }
 
                     if (atomDelta.ScreenLocation.HasValue) {
@@ -90,7 +99,7 @@ namespace OpenDreamShared.Dream {
                     }
 
                     if (atomDelta.OverlayAdditions.Count > 0) {
-                        foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in atomDelta.OverlayAdditions) {
+                        foreach (KeyValuePair<UInt16, int> overlay in atomDelta.OverlayAdditions) {
                             atom.Overlays.Add(overlay.Key, overlay.Value);
                         }
                     }

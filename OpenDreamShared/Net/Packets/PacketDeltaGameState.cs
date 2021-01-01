@@ -11,15 +11,16 @@ namespace OpenDreamShared.Net.Packets {
             AtomDeltas = 0x2,
             AtomLocationDeltas = 0x3,
             TurfDeltas = 0x4,
-            Client = 0x5
+            Client = 0x5,
+            NewIconAppearances = 0x6
         }
 
         private enum AtomDeltaValueID {
             End = 0x0,
-            VisualProperties = 0x1,
-            OverlayAdditions = 0x2,
-            OverlayRemovals = 0x3,
-            ScreenLocation = 0x4
+            OverlayAdditions = 0x1,
+            OverlayRemovals = 0x2,
+            ScreenLocation = 0x3,
+            IconAppearance = 0x4
         }
 
         private enum ClientValueID {
@@ -53,6 +54,7 @@ namespace OpenDreamShared.Net.Packets {
                     case SectionID.AtomLocationDeltas: ReadAtomLocationDeltasSection(stream); break;
                     case SectionID.TurfDeltas: ReadTurfDeltasSection(stream); break;
                     case SectionID.Client: ReadClientSection(stream); break;
+                    case SectionID.NewIconAppearances: ReadNewIconAppearancesSection(stream); break;
                     default: throw new Exception("Invalid section ID in delta game state packet (" + sectionID + ")");
                 }
             }
@@ -66,6 +68,7 @@ namespace OpenDreamShared.Net.Packets {
             if (DeltaState.AtomDeltas.Count > 0) WriteAtomDeltasSection(stream);
             if (DeltaState.AtomLocationDeltas.Count > 0) WriteAtomLocationDeltasSection(stream);
             if (DeltaState.TurfDeltas.Count > 0) WriteTurfDeltasSection(stream);
+            if (DeltaState.NewIconAppearances.Count > 0) WriteNewIconAppearancesSection(stream);
             WriteClientSection(stream);
         }
 
@@ -76,7 +79,7 @@ namespace OpenDreamShared.Net.Packets {
                 DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), stream.ReadUInt16());
 
                 atomCreation.LocationID = stream.ReadUInt16();
-                atomCreation.VisualProperties = stream.ReadIconVisualProperties();
+                atomCreation.IconAppearanceID = (int)stream.ReadUInt32();
                 atomCreation.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
                     atomCreation.ScreenLocation = stream.ReadScreenLocation();
@@ -94,7 +97,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteUInt16(atomCreation.AtomID);
                 stream.WriteUInt16(atomCreation.BaseID);
                 stream.WriteUInt16(atomCreation.LocationID);
-                stream.WriteIconVisualProperties(atomCreation.VisualProperties);
+                stream.WriteUInt32((UInt32)atomCreation.IconAppearanceID);
                 stream.WriteOverlays(atomCreation.Overlays);
                 if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
                     stream.WriteScreenLocation(atomCreation.ScreenLocation);
@@ -129,9 +132,7 @@ namespace OpenDreamShared.Net.Packets {
                 do {
                     valueID = (AtomDeltaValueID)stream.ReadByte();
 
-                    if (valueID == AtomDeltaValueID.VisualProperties) {
-                        atomDelta.ChangedVisualProperties = stream.ReadIconVisualProperties();
-                    } else if (valueID == AtomDeltaValueID.OverlayAdditions) {
+                    if (valueID == AtomDeltaValueID.OverlayAdditions) {
                         atomDelta.OverlayAdditions = stream.ReadOverlays();
                     } else if (valueID == AtomDeltaValueID.OverlayRemovals) {
                         int overlayRemovalCount = stream.ReadByte();
@@ -142,6 +143,8 @@ namespace OpenDreamShared.Net.Packets {
                         }
                     } else if (valueID == AtomDeltaValueID.ScreenLocation) {
                         atomDelta.ScreenLocation = stream.ReadScreenLocation();
+                    } else if (valueID == AtomDeltaValueID.IconAppearance) {
+                        atomDelta.NewIconAppearanceID = (int)stream.ReadUInt32();
                     } else if (valueID != AtomDeltaValueID.End) {
                         throw new Exception("Invalid atom delta value ID in delta game state packet (" + valueID.ToString() + ")");
                     }
@@ -157,11 +160,6 @@ namespace OpenDreamShared.Net.Packets {
 
             foreach (DreamDeltaState.AtomDelta atomDelta in DeltaState.AtomDeltas) {
                 stream.WriteUInt16(atomDelta.AtomID);
-
-                if (atomDelta.ChangedVisualProperties.HasValue) {
-                    stream.WriteByte((byte)AtomDeltaValueID.VisualProperties);
-                    stream.WriteIconVisualProperties(atomDelta.ChangedVisualProperties.Value);
-                }
 
                 if (atomDelta.ScreenLocation.HasValue) {
                     stream.WriteByte((byte)AtomDeltaValueID.ScreenLocation);
@@ -180,6 +178,12 @@ namespace OpenDreamShared.Net.Packets {
                     foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
                         stream.WriteByte((byte)overlayID);
                     }
+                }
+
+                if (atomDelta.NewIconAppearanceID.HasValue) {
+                    stream.WriteByte((byte)AtomDeltaValueID.IconAppearance);
+
+                    stream.WriteUInt32((UInt32)atomDelta.NewIconAppearanceID.Value);
                 }
 
                 stream.WriteByte((byte)AtomDeltaValueID.End);
@@ -294,6 +298,23 @@ namespace OpenDreamShared.Net.Packets {
                 }
 
                 stream.WriteByte((byte)ClientValueID.End);
+            }
+        }
+        
+        private void ReadNewIconAppearancesSection(PacketStream stream) {
+            UInt32 newIconAppearancesCount = stream.ReadUInt32();
+
+            for (int i = 0; i < newIconAppearancesCount; i++) {
+                DeltaState.NewIconAppearances.Add(IconAppearance.ReadFromPacket(stream));
+            }
+        }
+
+        private void WriteNewIconAppearancesSection(PacketStream stream) {
+            stream.WriteByte((byte)SectionID.NewIconAppearances);
+
+            stream.WriteUInt32((UInt32)DeltaState.NewIconAppearances.Count);
+            foreach (IconAppearance iconAppearance in DeltaState.NewIconAppearances) {
+                iconAppearance.WriteToPacket(stream);
             }
         }
     }

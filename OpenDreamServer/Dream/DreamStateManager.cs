@@ -61,6 +61,12 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public void AddIconAppearance(IconAppearance iconAppearance) {
+            lock (_dreamStateManagerLock) {
+                _currentDeltaState.AddIconAppearance(iconAppearance);
+            }
+        }
+
         public void AddAtomCreation(DreamObject atom) {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState.AddAtomCreation(DreamMetaObjectAtom.AtomIDs[atom], Program.AtomBaseIDs[atom.ObjectDefinition]);
@@ -73,45 +79,15 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public void AddAtomIconDelta(DreamObject atom, string icon) {
+        public void AddAtomIconAppearanceDelta(DreamObject atom, ServerIconAppearance appearance) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomIconDelta(DreamMetaObjectAtom.AtomIDs[atom], icon);
+                _currentDeltaState.AddAtomIconAppearanceDelta(DreamMetaObjectAtom.AtomIDs[atom], appearance.GetID());
             }
         }
 
-        public void AddAtomIconStateDelta(DreamObject atom, string iconState) {
+        public void AddAtomOverlay(DreamObject atom, UInt16 overlayID, ServerIconAppearance overlay) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomIconStateDelta(DreamMetaObjectAtom.AtomIDs[atom], iconState);
-            }
-        }
-
-        public void AddAtomPixelXDelta(DreamObject atom, int pixelX) {
-            lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomPixelXDelta(DreamMetaObjectAtom.AtomIDs[atom], pixelX);
-            }
-        }
-        
-        public void AddAtomPixelYDelta(DreamObject atom, int pixelY) {
-            lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomPixelYDelta(DreamMetaObjectAtom.AtomIDs[atom], pixelY);
-            }
-        }
-
-        public void AddAtomColorDelta(DreamObject atom, string color) {
-            lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomColorDelta(DreamMetaObjectAtom.AtomIDs[atom], color);
-            }
-        }
-
-        public void AddAtomDirectionDelta(DreamObject atom, AtomDirection direction) {
-            lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomDirectionDelta(DreamMetaObjectAtom.AtomIDs[atom], direction);
-            }
-        }
-
-        public void AddAtomOverlay(DreamObject atom, UInt16 overlayID, IconVisualProperties overlay) {
-            lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID, overlay);
+                _currentDeltaState.AddAtomOverlay(DreamMetaObjectAtom.AtomIDs[atom], overlayID, overlay.GetID());
             }
         }
 

@@ -9,17 +9,17 @@ namespace OpenDreamShared.Dream {
         Movable = 0x3
     }
 
-    public struct ATOMBase {
+    struct ATOMBase {
         public UInt16 ID;
         public ATOMType Type;
-        public IconVisualProperties VisualProperties;
+        public int IconAppearanceID;
 
         public static Dictionary<UInt16, ATOMBase> AtomBases;
 
-        public ATOMBase(UInt16 id, ATOMType type, IconVisualProperties visualProperties) {
+        public ATOMBase(UInt16 id, ATOMType type, int iconAppearanceID) {
             ID = id;
             Type = type;
-            VisualProperties = visualProperties;
+            IconAppearanceID = iconAppearanceID;
         }
     }
 }

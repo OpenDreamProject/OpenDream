@@ -252,25 +252,25 @@ namespace OpenDreamServer {
             ATOMBase.AtomBases = new Dictionary<UInt16, ATOMBase>();
             foreach (DreamObjectTree.DreamObjectTreeEntry treeEntry in atomDescendants) {
                 DreamObjectDefinition objectDefinition = treeEntry.ObjectDefinition;
-                IconVisualProperties visualProperties = new IconVisualProperties();
+                ServerIconAppearance appearance = new ServerIconAppearance();
                 DreamValue iconValue = objectDefinition.Variables["icon"];
                 DreamValue iconStateValue = objectDefinition.Variables["icon_state"];
                 DreamValue colorValue = objectDefinition.Variables["color"];
                 DreamValue iconLayer = objectDefinition.Variables["layer"];
 
                 if (iconValue.Type == DreamValue.DreamValueType.DreamResource) {
-                    visualProperties.Icon = ((DreamResource)iconValue.Value).ResourcePath;
+                    appearance.Icon = ((DreamResource)iconValue.Value).ResourcePath;
                 }
                 
                 if (iconStateValue.Type == DreamValue.DreamValueType.String) {
-                    visualProperties.IconState = (string)iconStateValue.Value;
+                    appearance.IconState = (string)iconStateValue.Value;
                 }
 
                 if (colorValue.Type == DreamValue.DreamValueType.String) {
-                    visualProperties.SetColor((string)colorValue.Value);
+                    appearance.SetColor((string)colorValue.Value);
                 }
 
-                visualProperties.Layer = (float)iconLayer.GetValueAsNumber();
+                appearance.Layer = (float)iconLayer.GetValueAsNumber();
 
                 ATOMType atomType = ATOMType.Atom;
                 if (objectDefinition.IsSubtypeOf(DreamPath.Area)) atomType = ATOMType.Area;
@@ -278,7 +278,7 @@ namespace OpenDreamServer {
                 else if (objectDefinition.IsSubtypeOf(DreamPath.Mob)) atomType = ATOMType.Movable;
                 else if (objectDefinition.IsSubtypeOf(DreamPath.Obj)) atomType = ATOMType.Movable;
 
-                ATOMBase atomBase = new ATOMBase(atomBaseIDCounter++, atomType, visualProperties);
+                ATOMBase atomBase = new ATOMBase(atomBaseIDCounter++, atomType, appearance.GetID());
                 ATOMBase.AtomBases.Add(atomBase.ID, atomBase);
                 AtomBaseIDs.Add(objectDefinition, atomBase.ID);
             }
@@ -297,14 +297,13 @@ namespace OpenDreamServer {
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
+            connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
+            connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
 
             Task.Run(() => {
-                connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
-
                 DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
                 if (clientMob.Value != null) {
                     connection.SendPacket(new PacketConnectionResult(true, ""));
-                    connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
                 } else {
                     connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
                 }

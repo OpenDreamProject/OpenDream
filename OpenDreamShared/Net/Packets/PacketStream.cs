@@ -6,16 +6,6 @@ using System.Text;
 
 namespace OpenDreamShared.Net.Packets {
     class PacketStream : MemoryStream {
-        public enum PacketStreamVisualPropertyID {
-            Icon = 0x0,
-            IconState = 0x1,
-            Color = 0x2,
-            Direction = 0x3,
-            Layer = 0x4,
-            End = 0x5,
-            PixelX = 0x6,
-            PixelY = 0x7
-        }
 
         private BinaryWriter _binaryWriter;
         private BinaryReader _binaryReader;
@@ -108,67 +98,6 @@ namespace OpenDreamShared.Net.Packets {
             return buffer;
         }
 
-        public IconVisualProperties ReadIconVisualProperties() {
-            IconVisualProperties visualProperties = new IconVisualProperties();
-            PacketStreamVisualPropertyID propertyID = (PacketStreamVisualPropertyID)ReadByte();
-
-            while (propertyID != PacketStreamVisualPropertyID.End) {
-                switch (propertyID) {
-                    case PacketStreamVisualPropertyID.IconState: visualProperties.IconState = ReadString(); break;
-                    case PacketStreamVisualPropertyID.Icon: visualProperties.Icon = ReadString(); break;
-                    case PacketStreamVisualPropertyID.Color: visualProperties.Color = ReadUInt32(); break;
-                    case PacketStreamVisualPropertyID.Direction: visualProperties.Direction = (AtomDirection)ReadByte(); break;
-                    case PacketStreamVisualPropertyID.Layer: visualProperties.Layer = ReadFloat(); break;
-                    case PacketStreamVisualPropertyID.PixelX: visualProperties.PixelX = ReadInt16(); break;
-                    case PacketStreamVisualPropertyID.PixelY: visualProperties.PixelY = ReadInt16(); break;
-                    default: throw new Exception("Invalid visual property ID (" + propertyID.ToString() + ")");
-                }
-
-                propertyID = (PacketStreamVisualPropertyID)ReadByte();
-            }
-
-            return visualProperties;
-        }
-
-        public void WriteIconVisualProperties(IconVisualProperties visualProperties, IconVisualProperties? defaultVisualProperties = null) {
-            if (visualProperties.Icon != default && visualProperties.Icon != defaultVisualProperties?.Icon) {
-                WriteByte((byte)PacketStreamVisualPropertyID.Icon);
-                WriteString(visualProperties.Icon);
-            }
-
-            if (visualProperties.IconState != default && visualProperties.IconState != defaultVisualProperties?.IconState) {
-                WriteByte((byte)PacketStreamVisualPropertyID.IconState);
-                WriteString(visualProperties.IconState);
-            }
-
-            if (visualProperties.Color != default && visualProperties.Color != defaultVisualProperties?.Color) {
-                WriteByte((byte)PacketStreamVisualPropertyID.Color);
-                WriteUInt32(visualProperties.Color);
-            }
-
-            if (visualProperties.Direction != default && visualProperties.Direction != defaultVisualProperties?.Direction) {
-                WriteByte((byte)PacketStreamVisualPropertyID.Direction);
-                WriteByte((byte)visualProperties.Direction);
-            }
-
-            if (visualProperties.Layer != default && visualProperties.Layer != defaultVisualProperties?.Layer) {
-                WriteByte((byte)PacketStreamVisualPropertyID.Layer);
-                WriteFloat(visualProperties.Layer);
-            }
-
-            if (visualProperties.PixelX != default && visualProperties.PixelX != defaultVisualProperties?.PixelX) {
-                WriteByte((byte)PacketStreamVisualPropertyID.PixelX);
-                WriteInt16((Int16)visualProperties.PixelX);
-            }
-            
-            if (visualProperties.PixelY != default && visualProperties.PixelY != defaultVisualProperties?.PixelY) {
-                WriteByte((byte)PacketStreamVisualPropertyID.PixelY);
-                WriteInt16((Int16)visualProperties.PixelY);
-            }
-
-            WriteByte((byte)PacketStreamVisualPropertyID.End);
-        }
-
         public ScreenLocation ReadScreenLocation() {
             return new ScreenLocation(ReadSByte(), ReadSByte(), ReadSByte(), ReadSByte());
         }
@@ -180,37 +109,26 @@ namespace OpenDreamShared.Net.Packets {
             WriteSByte((sbyte)screenLocation.PixelOffsetY);
         }
 
-        public Dictionary<UInt16, IconVisualProperties> ReadOverlays() {
-            Dictionary<UInt16, IconVisualProperties> overlays = new Dictionary<UInt16, IconVisualProperties>();
+        public Dictionary<UInt16, int> ReadOverlays() {
+            Dictionary<UInt16, int> overlays = new();
             int overlayCount = ReadByte();
 
             for (int i = 0; i < overlayCount; i++) {
-                IconVisualProperties overlayVisualProperties = new IconVisualProperties();
-                UInt16 overlayID = (UInt16)ReadByte();
+                UInt16 overlayID = ReadUInt16();
 
-                overlayVisualProperties.Icon = ReadString();
-                overlayVisualProperties.IconState = ReadString();
-                overlayVisualProperties.Direction = (AtomDirection)ReadByte();
-                overlayVisualProperties.Color = ReadUInt32();
-                overlayVisualProperties.Layer = ReadFloat();
-                overlays[overlayID] = overlayVisualProperties;
+                overlays[overlayID] = (int)ReadUInt32();
             }
 
             return overlays;
         }
 
-        public void WriteOverlays(Dictionary<UInt16, IconVisualProperties> overlays) {
+        public void WriteOverlays(Dictionary<UInt16, int> overlays) {
             if (overlays != null) {
                 WriteByte((byte)overlays.Count);
 
-                foreach (KeyValuePair<UInt16, IconVisualProperties> overlay in overlays) {
-                    WriteByte((byte)overlay.Key);
-
-                    WriteString(overlay.Value.Icon);
-                    WriteString(overlay.Value.IconState);
-                    WriteByte((byte)overlay.Value.Direction);
-                    WriteUInt32(overlay.Value.Color);
-                    WriteFloat(overlay.Value.Layer);
+                foreach (KeyValuePair<UInt16, int> overlay in overlays) {
+                    WriteUInt16(overlay.Key);
+                    WriteUInt32((UInt32)overlay.Value);
                 }
             } else {
                 WriteByte(0);

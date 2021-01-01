@@ -21,6 +21,7 @@ namespace OpenDreamShared.Net.Packets {
             GameStateID = stream.ReadUInt32();
             FullState = new DreamFullState(GameStateID);
 
+            ReadIconAppearancesSection(stream);
             ReadAtomsSection(stream);
             ReadMapSection(stream);
             ReadClientSection(stream);
@@ -29,9 +30,26 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteToStream(PacketStream stream) {
             stream.WriteUInt32(FullState.ID);
 
+            WriteIconAppearancesSection(stream);
             WriteAtomsSection(stream);
             WriteMapSection(stream);
             WriteClientSection(stream);
+        }
+
+        private void ReadIconAppearancesSection(PacketStream stream) {
+            UInt32 appearancesCount = stream.ReadUInt32();
+
+            for (int i = 0; i < appearancesCount; i++) {
+                FullState.IconAppearances.Add(IconAppearance.ReadFromPacket(stream));
+            }
+        }
+
+        private void WriteIconAppearancesSection(PacketStream stream) {
+            stream.WriteUInt32((UInt32)FullState.IconAppearances.Count);
+
+            foreach (IconAppearance iconAppearance in FullState.IconAppearances) {
+                iconAppearance.WriteToPacket(stream);
+            }
         }
 
         private void ReadAtomsSection(PacketStream stream) {
@@ -42,7 +60,7 @@ namespace OpenDreamShared.Net.Packets {
                 atom.AtomID = stream.ReadUInt16();
                 atom.BaseID = stream.ReadUInt16();
                 atom.LocationID = stream.ReadUInt16();
-                atom.VisualProperties = stream.ReadIconVisualProperties();
+                atom.IconAppearanceID = (int)stream.ReadUInt32();
                 atom.Overlays = stream.ReadOverlays();
                 if (ATOMBase.AtomBases[atom.BaseID].Type == ATOMType.Movable) {
                     atom.ScreenLocation = stream.ReadScreenLocation();
@@ -59,7 +77,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteUInt16(atom.Value.AtomID);
                 stream.WriteUInt16(atom.Value.BaseID);
                 stream.WriteUInt16(atom.Value.LocationID);
-                stream.WriteIconVisualProperties(atom.Value.VisualProperties, ATOMBase.AtomBases[atom.Value.BaseID].VisualProperties);
+                stream.WriteUInt32((UInt32)atom.Value.IconAppearanceID);
                 stream.WriteOverlays(atom.Value.Overlays);
                 if (ATOMBase.AtomBases[atom.Value.BaseID].Type == ATOMType.Movable) {
                     stream.WriteScreenLocation(atom.Value.ScreenLocation);

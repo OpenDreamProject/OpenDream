@@ -92,7 +92,7 @@ namespace OpenDreamClient.Renderer {
             DreamTexture texture = null;
             
             if (icon != null && icon.IsValidIcon()) {
-                Rectangle textureRect = icon.DMI.GetTextureRect(icon.VisualProperties.IconState, icon.VisualProperties.Direction, icon.GetCurrentAnimationFrame());
+                Rectangle textureRect = icon.DMI.GetTextureRect(icon.Appearance.IconState, icon.Appearance.Direction, icon.GetCurrentAnimationFrame());
 
                 if (!_textureCache.TryGetValue((icon.DMI.ResourcePath, textureRect), out texture)) {
                     texture = new DreamTexture(_gl, icon.DMI, textureRect);
@@ -158,13 +158,13 @@ namespace OpenDreamClient.Renderer {
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
                 _gl.VertexAttribPointer(_shader.VertexLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
-                _gl.Uniform2(_shader.PixelOffsetUniform, (float)icon.VisualProperties.PixelX, (float)icon.VisualProperties.PixelY);
+                _gl.Uniform2(_shader.PixelOffsetUniform, (float)icon.Appearance.PixelX, (float)icon.Appearance.PixelY);
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconTextureCoordBuffer);
                 _gl.VertexAttribPointer(_shader.TextureCoordLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);
                 _gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture.TextureID);
                 _gl.Uniform1(_shader.TextureSamplerUniform, 0);
-                SetColor(icon.VisualProperties.Color);
+                SetColor(icon.Appearance.Color);
                 _gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
             }
         }

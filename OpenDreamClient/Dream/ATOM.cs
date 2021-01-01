@@ -66,7 +66,7 @@ namespace OpenDreamClient.Dream {
         public ATOM(UInt16 id, ATOMBase atomBase) {
             ID = id;
             Type = atomBase.Type;
-            Icon.VisualProperties = atomBase.VisualProperties;
+            Icon.Appearance = Program.OpenDream.IconAppearances[atomBase.IconAppearanceID];
 
             Program.OpenDream.AddATOM(this);
         }

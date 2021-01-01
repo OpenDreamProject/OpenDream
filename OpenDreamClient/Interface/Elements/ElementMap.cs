@@ -90,7 +90,7 @@ namespace OpenDreamClient.Interface.Elements {
 
                     if (turf != null) {
                         foreach (ATOM atom in turf.Contents) {
-                            bool isAbove = (clickedATOM == null || clickedATOM.Icon.VisualProperties.Layer <= atom.Icon.VisualProperties.Layer);
+                            bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
 
                             if (isAbove && atom.Icon.GetPixel(iconX, 32 - iconY).A != 0) {
                                 clickedATOM = atom;

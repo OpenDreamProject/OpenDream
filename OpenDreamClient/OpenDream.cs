@@ -4,6 +4,7 @@ using OpenDreamClient.Dream;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,12 @@ namespace OpenDreamClient {
         public IDreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
-        public DreamInterface  Interface = null;
+        public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
 
         public Map Map;
         public ATOM Eye;
+        public List<IconAppearance> IconAppearances { get; private set; } = null;
         public Dictionary<UInt16, ATOM> ATOMs { get; private set; } = null;
         public List<ATOM> ScreenObjects { get; private set; } = null;
 
@@ -53,6 +55,7 @@ namespace OpenDreamClient {
             ResourceManager = new DreamResourceManager();
             StateManager = new DreamStateManager();
 
+            IconAppearances = new List<IconAppearance>();
             ATOMs = new Dictionary<UInt16, ATOM>();
             ScreenObjects = new List<ATOM>();
 
@@ -75,6 +78,7 @@ namespace OpenDreamClient {
             Map = null;
             ATOMs = null;
             ScreenObjects = null;
+            IconAppearances = null;
 
             MainWindow.Show();
         }

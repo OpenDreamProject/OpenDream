@@ -9,30 +9,28 @@ namespace OpenDreamClient.Dream {
     class DreamIcon {
         public ResourceDMI DMI { get; private set; } = null;
         public Dictionary<UInt16, DreamIcon> Overlays { get; } = new Dictionary<UInt16, DreamIcon>();
-        public IconVisualProperties VisualProperties {
-            get => _visualProperties;
+        public IconAppearance Appearance {
+            get => _appearance;
             set {
-                if (!_visualProperties.Equals(value)) {
-                    _visualProperties = value;
-                    UpdateIcon();
-                }
+                _appearance = value;
+                UpdateIcon();
             }
         }
 
-        private IconVisualProperties _visualProperties;
+        private IconAppearance _appearance;
         private DateTime _animationStartTime = DateTime.Now;
 
         public DreamIcon() {
 
         }
 
-        public DreamIcon(IconVisualProperties visualProperties) {
-            VisualProperties = visualProperties;
+        public DreamIcon(IconAppearance appearance) {
+            Appearance = appearance;
         }
 
         public int GetCurrentAnimationFrame() {
-            DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(VisualProperties.IconState);
-            DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(VisualProperties.Direction);
+            DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
+            DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
             double elapsedTime = DateTime.Now.Subtract(_animationStartTime).TotalMilliseconds / 100;
 
             int animationFrame = -1;
@@ -48,7 +46,7 @@ namespace OpenDreamClient.Dream {
         }
 
         public Color GetPixel(int x, int y) {
-            Rectangle textureRect = DMI.GetTextureRect(VisualProperties.IconState, VisualProperties.Direction, GetCurrentAnimationFrame());
+            Rectangle textureRect = DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, GetCurrentAnimationFrame());
 
             if (x > 0 && x < textureRect.Width && y > 0 && y < textureRect.Height) {
                 Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
@@ -70,11 +68,11 @@ namespace OpenDreamClient.Dream {
         }
 
         public bool IsValidIcon() {
-            return DMI != null && DMI.Description.States.ContainsKey(VisualProperties.IconState);
+            return DMI != null && DMI.Description.States.ContainsKey(Appearance.IconState);
         }
 
-        public void AddOverlay(UInt16 id, IconVisualProperties visualProperties) {
-            Overlays.Add(id, new DreamIcon(visualProperties));
+        public void AddOverlay(UInt16 id, IconAppearance appearance) {
+            Overlays.Add(id, new DreamIcon(appearance));
         }
 
         public void RemoveOverlay(UInt16 id) {
@@ -87,13 +85,13 @@ namespace OpenDreamClient.Dream {
         }
 
         private void UpdateTexture() {
-            if (VisualProperties.Icon == null) {
+            if (Appearance.Icon == null) {
                 DMI = null;
                 return;
             }
 
-            Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(VisualProperties.Icon, (ResourceDMI dmi) => {
-                if (dmi.ResourcePath != VisualProperties.Icon) return; //Icon changed while resource was loading
+            Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(Appearance.Icon, (ResourceDMI dmi) => {
+                if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
                 _animationStartTime = DateTime.Now;
@@ -102,12 +100,7 @@ namespace OpenDreamClient.Dream {
 
         private void UpdateOverlays() {
             foreach (DreamIcon overlay in Overlays.Values) {
-                IconVisualProperties visualProperties = overlay.VisualProperties;
-
-                if (visualProperties.Direction != VisualProperties.Direction) {
-                    visualProperties.Direction = VisualProperties.Direction;
-                    overlay.VisualProperties = visualProperties;
-                }
+                overlay.Appearance = new IconAppearance(overlay.Appearance) { Direction = Appearance.Direction };
             }
         }
     }

@@ -9,8 +9,8 @@ namespace OpenDreamShared.Dream {
             public UInt16 AtomID;
             public UInt16 BaseID;
             public UInt16 LocationID = 0xFFFF;
-            public IconVisualProperties VisualProperties = new IconVisualProperties();
-            public Dictionary<UInt16, IconVisualProperties> Overlays = new();
+            public int IconAppearanceID;
+            public Dictionary<UInt16, int> Overlays = new();
             public ScreenLocation ScreenLocation = new ScreenLocation();
 
             public AtomCreation(UInt16 atomID, UInt16 baseID) {
@@ -31,8 +31,8 @@ namespace OpenDreamShared.Dream {
 
         public class AtomDelta {
             public UInt16 AtomID;
-            public IconVisualProperties? ChangedVisualProperties = null;
-            public Dictionary<UInt16, IconVisualProperties> OverlayAdditions = new();
+            public int? NewIconAppearanceID = null;
+            public Dictionary<UInt16, int> OverlayAdditions = new();
             public List<UInt16> OverlayRemovals = new();
             public ScreenLocation? ScreenLocation;
 
@@ -59,15 +59,20 @@ namespace OpenDreamShared.Dream {
         }
 
         public UInt32 ID;
-        public List<AtomCreation> AtomCreations = new List<AtomCreation>();
-        public List<UInt16> AtomDeletions = new List<UInt16>();
-        public List<AtomLocationDelta> AtomLocationDeltas = new List<AtomLocationDelta>();
-        public List<AtomDelta> AtomDeltas = new List<AtomDelta>();
-        public List<TurfDelta> TurfDeltas = new List<TurfDelta>();
-        public Dictionary<string, ClientDelta> ClientDeltas = new Dictionary<string, ClientDelta>();
+        public List<IconAppearance> NewIconAppearances = new();
+        public List<AtomCreation> AtomCreations = new();
+        public List<UInt16> AtomDeletions = new();
+        public List<AtomLocationDelta> AtomLocationDeltas = new();
+        public List<AtomDelta> AtomDeltas = new();
+        public List<TurfDelta> TurfDeltas = new();
+        public Dictionary<string, ClientDelta> ClientDeltas = new();
 
         public DreamDeltaState(UInt32 id) {
             ID = id;
+        }
+
+        public void AddIconAppearance(IconAppearance iconAppearance) {
+            NewIconAppearances.Add(iconAppearance);
         }
 
         public void AddAtomCreation(UInt16 atomID, UInt16 baseID) {
@@ -91,97 +96,25 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddAtomIconDelta(UInt16 atomID, string icon) {
+        public void AddAtomIconAppearanceDelta(UInt16 atomID, int iconAppearanceID) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
-                atomCreation.VisualProperties.Icon = icon;
+                atomCreation.IconAppearanceID = iconAppearanceID;
             } else {
                 AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
 
-                visualProperties.Icon = icon;
-                atomDelta.ChangedVisualProperties = visualProperties;
+                atomDelta.NewIconAppearanceID = iconAppearanceID;
             }
         }
 
-        public void AddAtomIconStateDelta(UInt16 atomID, string iconState) {
+        public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, int iconAppearanceID) {
             AtomCreation atomCreation = GetAtomCreation(atomID);
 
             if (atomCreation != null) {
-                atomCreation.VisualProperties.IconState = iconState;
+                atomCreation.Overlays[overlayID] = iconAppearanceID;
             } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
-
-                visualProperties.IconState = iconState;
-                atomDelta.ChangedVisualProperties = visualProperties;
-            }
-        }
-
-        public void AddAtomPixelXDelta(UInt16 atomID, int pixelX) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.VisualProperties.PixelX = pixelX;
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
-
-                visualProperties.PixelX = pixelX;
-                atomDelta.ChangedVisualProperties = visualProperties;
-            }
-        }
-        
-        public void AddAtomPixelYDelta(UInt16 atomID, int pixelY) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.VisualProperties.PixelY = pixelY;
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
-
-                visualProperties.PixelY = pixelY;
-                atomDelta.ChangedVisualProperties = visualProperties;
-            }
-        }
-
-        public void AddAtomColorDelta(UInt16 atomID, string color) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.VisualProperties.SetColor(color);
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
-
-                visualProperties.SetColor(color);
-                atomDelta.ChangedVisualProperties = visualProperties;
-            }
-        }
-
-        public void AddAtomDirectionDelta(UInt16 atomID, AtomDirection direction) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.VisualProperties.Direction = direction;
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-                IconVisualProperties visualProperties = atomDelta.ChangedVisualProperties ?? new IconVisualProperties();
-
-                visualProperties.Direction = direction;
-                atomDelta.ChangedVisualProperties = visualProperties;
-            }
-        }
-
-        public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, IconVisualProperties overlay) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.Overlays[overlayID] = overlay;
-            } else {
-                GetAtomDelta(atomID).OverlayAdditions[overlayID] = overlay;
+                GetAtomDelta(atomID).OverlayAdditions[overlayID] = iconAppearanceID;
             }
         }
 
@@ -241,7 +174,8 @@ namespace OpenDreamShared.Dream {
         }
 
         public bool ContainsChanges() {
-            return (AtomCreations.Count > 0)
+            return (NewIconAppearances.Count > 0)
+                    || (AtomCreations.Count > 0)
                     ||(AtomDeletions.Count > 0)
                     || (AtomLocationDeltas.Count > 0)
                     || (AtomDeltas.Count > 0)

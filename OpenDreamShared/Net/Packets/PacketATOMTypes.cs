@@ -20,9 +20,9 @@ namespace OpenDreamShared.Net.Packets {
 			for (int i = 0; i < atomBaseCount; i++) {
 				UInt16 baseID = stream.ReadUInt16();
 				ATOMType type = (ATOMType)stream.ReadByte();
-				IconVisualProperties visualProperties = stream.ReadIconVisualProperties();
+				int iconAppearanceID = (int)stream.ReadUInt32();
 
-				AtomBases[baseID] = new ATOMBase(baseID, type, visualProperties);
+				AtomBases[baseID] = new ATOMBase(baseID, type, iconAppearanceID);
 			}
 		}
 
@@ -32,7 +32,7 @@ namespace OpenDreamShared.Net.Packets {
 			foreach (KeyValuePair<UInt16, ATOMBase> atomBase in AtomBases) {
 				stream.WriteUInt16(atomBase.Key);
 				stream.WriteByte((byte)atomBase.Value.Type);
-				stream.WriteIconVisualProperties(atomBase.Value.VisualProperties);
+				stream.WriteUInt32((UInt32)atomBase.Value.IconAppearanceID);
 			}
         }
     }

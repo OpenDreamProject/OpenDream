@@ -26,21 +26,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "x") {
-                if (Program.DreamMap.IsTurfOnMap(dreamObject)) {
-                    return new DreamValue(Program.DreamMap.GetTurfLocation(dreamObject).X);
-                } else {
-                    return new DreamValue(0);
-                }
-            } else if (variableName == "y") {
-                if (Program.DreamMap.IsTurfOnMap(dreamObject)) {
-                    return new DreamValue(Program.DreamMap.GetTurfLocation(dreamObject).Y);
-                } else {
-                    return new DreamValue(0);
-                }
-            } else if (variableName == "z") {
-                return new DreamValue(1);
-            } else if (variableName == "loc") {
+            if (variableName == "loc") {
                 return new DreamValue(_area);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);

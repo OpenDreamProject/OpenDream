@@ -1326,8 +1326,6 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    
-
     class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSuper(this);

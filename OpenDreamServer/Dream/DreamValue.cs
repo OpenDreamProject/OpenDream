@@ -136,8 +136,13 @@ namespace OpenDreamServer.Dream {
         public DreamObject GetValueAsDreamObject() {
             DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
 
-            //return (dreamObject != null && dreamObject.Deleted) ? null : dreamObject;
-            return dreamObject;
+            if (dreamObject != null && dreamObject.Deleted) {
+                Value = null;
+
+                return null;
+            } else {
+                return dreamObject;
+            }
         }
 
         public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {

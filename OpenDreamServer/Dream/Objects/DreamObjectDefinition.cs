@@ -106,13 +106,8 @@ namespace OpenDreamServer.Dream.Objects {
 
         public bool IsSubtypeOf(DreamPath path) {
             if (Type.IsDescendantOf(path)) return true;
-
-            List<DreamObjectTree.DreamObjectTreeEntry> treeEntries = Program.DreamObjectTree.GetTreeEntryFromPath(path).GetAllDescendants(true, false);
-            foreach (DreamObjectTree.DreamObjectTreeEntry treeEntry in treeEntries) {
-                if (treeEntry.ObjectDefinition == this) return true;
-            }
-
-            return false;
+            else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);
+            else return false;
         }
     }
 }

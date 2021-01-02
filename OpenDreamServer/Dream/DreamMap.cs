@@ -40,22 +40,10 @@ namespace OpenDreamServer.Dream {
                 throw new Exception("Turf was not a sub-type of " + DreamPath.Turf);
             }
 
+            turf.SetVariable("x", new DreamValue(x));
+            turf.SetVariable("y", new DreamValue(y));
+            turf.SetVariable("z", new DreamValue(1));
             SetTurfUnsafe(x, y, DreamMetaObjectAtom.AtomIDs[turf]);
-        }
-
-        public bool IsTurfOnMap(DreamObject turf) {
-            if (!turf.IsSubtypeOf(DreamPath.Turf)) {
-                throw new Exception("Turf is not a sub-type of " + DreamPath.Turf);
-            }
-
-            UInt16 turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
-            for (int x = 0; x < Width; x++) {
-                for (int y = 0; y < Height; y++) {
-                    if (Turfs[x, y] == turfAtomID) return true;
-                }
-            }
-
-            return false;
         }
 
         public Point GetTurfLocation(DreamObject turf) {
@@ -70,7 +58,7 @@ namespace OpenDreamServer.Dream {
                 }
             }
 
-            throw new Exception("Turf does not have a location");
+            return new Point(0, 0); //Not on the map
         }
 
         public DreamObject GetTurfAt(int x, int y) {

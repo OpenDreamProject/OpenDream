@@ -107,6 +107,8 @@ namespace OpenDreamServer.Dream.Procs {
 
                     argsList.ValueAssigned += OnArgsListValueAssigned;
                     Push(new DreamValue(argsListObject));
+                } else if (identifierName == "usr") {
+                    Push(new DreamValue(currentScope.Usr));
                 } else {
                     Push(new DreamProcIdentifierVariable(currentScope, identifierName));
                 }
@@ -222,14 +224,14 @@ namespace OpenDreamServer.Dream.Procs {
                         if (identifier.IdentifierName == ".." && procArguments.ArgumentCount == 0) procArguments = _arguments;
 
                         try {
-                            Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments, _topScope.GetValue("usr").GetValueAsDreamObject()));
+                            Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments, currentScope.Usr));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc '" + identifier.IdentifierName + "' on object of type '" + identifier.HoldingScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
                     }
                 } else if (procIdentifier is DreamProcIdentifierSelfProc) {
                     try {
-                        Push(_selfProc.Run(currentScope.DreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
+                        Push(_selfProc.Run(currentScope.DreamObject, arguments.CreateProcArguments(), currentScope.Usr));
                     } catch (Exception e) {
                         throw new Exception("Exception while running proc '.' on object of type '" + currentScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
@@ -242,7 +244,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
                 if (dreamObject.HasVariable(identifierName) || dreamObject.ObjectDefinition.HasGlobalVariable(identifierName) || dreamObject.HasProc(identifierName)) {
-                    Push(new DreamProcIdentifierVariable(new DreamProcScope(dreamObject), identifierName));
+                    Push(new DreamProcIdentifierVariable(new DreamProcScope(dreamObject, currentScope.Usr), identifierName));
                 } else {
                     throw new Exception("Object " + dreamObject + " has no identifier named '" + identifierName + "'");
                 }
@@ -449,7 +451,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                     if (proc != null) {
                         try {
-                            Push(proc.Run(dreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
+                            Push(proc.Run(dreamObject, arguments.CreateProcArguments(), currentScope.Usr));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc " + procId + " on object of type '" + dreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
@@ -464,7 +466,7 @@ namespace OpenDreamServer.Dream.Procs {
                     DreamProc proc = _topScope.GetValue(procName).GetValueAsProc();
 
                     try {
-                        Push(proc.Run(_topScope.DreamObject, arguments.CreateProcArguments(), _topScope.GetValue("usr").GetValueAsDreamObject()));
+                        Push(proc.Run(_topScope.DreamObject, arguments.CreateProcArguments(), currentScope.Usr));
                     } catch (Exception e) {
                         throw new Exception("Exception while running proc " + fullProcPath + " on object of type '" + _topScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
@@ -809,10 +811,6 @@ namespace OpenDreamServer.Dream.Procs {
                 value += (char)lastByte;
             }
 
-            if (lastByte != 0) {
-                throw new Exception("String was not null-terminated");
-            }
-
             return value;
         }
 
@@ -825,22 +823,20 @@ namespace OpenDreamServer.Dream.Procs {
             return value;
         }
 
-        private void Push(object value) {
-            if (!(value is DreamValue || value is IDreamProcIdentifier || value is DreamProcInterpreterArguments)) {
-                throw new Exception("Value being pushed onto the stack must be a " + nameof(DreamValue) + ", " + nameof(IDreamProcIdentifier) + " or " + nameof(DreamProcInterpreterArguments));
-            }
+        private void Push(DreamValue value) {
+            _stack.Push(value);
+        }
 
+        private void Push(IDreamProcIdentifier value) {
+            _stack.Push(value);
+        }
+
+        private void Push(DreamProcInterpreterArguments value) {
             _stack.Push(value);
         }
 
         private IDreamProcIdentifier PopIdentifier() {
-            IDreamProcIdentifier value = _stack.Pop() as IDreamProcIdentifier;
-
-            if (value == null) {
-                throw new Exception("Last object on stack was not an identifier");
-            }
-
-            return value;
+            return (IDreamProcIdentifier)_stack.Pop();
         }
 
         private DreamValue PopDreamValue() {
@@ -856,13 +852,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         private DreamProcInterpreterArguments PopArguments() {
-            object value = _stack.Pop();
-
-            if (value is DreamProcInterpreterArguments) {
-                return (DreamProcInterpreterArguments)value;
-            } else {
-                throw new Exception("Last object on stack was not " + nameof(DreamProcInterpreterArguments));
-            }
+            return (DreamProcInterpreterArguments)_stack.Pop();
         }
 
         private bool IsTruthy(DreamValue value) {

@@ -2,14 +2,16 @@
 using OpenDreamServer.Net;
 using OpenDreamShared.Dream;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
+        public static DreamList ContentsList;
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
+
+            DreamObject contentsListObject = dreamObject.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
+            ContentsList = DreamMetaObjectList.DreamLists[contentsListObject];
 
             //New() is not called here
         }

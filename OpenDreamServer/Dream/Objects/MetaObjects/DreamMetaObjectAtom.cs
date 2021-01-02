@@ -16,9 +16,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            UInt16 atomID = _atomIDCounter++;
             lock (_atomListsLock) {
-                UInt16 atomID = _atomIDCounter++;
-
                 AtomIDs.Add(dreamObject, atomID);
                 AtomIDToAtom.Add(atomID, dreamObject);
             }
@@ -36,17 +35,12 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 creationArguments.OrderedArguments.Add(new DreamValue(locArgument)); //First argument is loc, which is null
             }
 
-            DreamObject worldContents = Program.WorldInstance.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
-            worldContents.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
-
+            DreamMetaObjectWorld.ContentsList.AddValue(new DreamValue(dreamObject));
             base.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            if (Program.WorldInstance.GetVariable("contents").TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject worldContents)) {
-                worldContents.CallProc("Remove", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
-            }
-
+            DreamMetaObjectWorld.ContentsList.RemoveValue(new DreamValue(dreamObject));
             Program.DreamStateManager.AddAtomDeletion(dreamObject);
 
             lock (_atomListsLock) {
@@ -82,6 +76,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 
                 newAppearance.PixelY = variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, newAppearance);
+            } else if (variableName == "layer") {
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.Layer = (float)variableValue.GetValueAsNumber();
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
@@ -125,7 +124,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (arguments.ArgumentCount >= 1) {
                 DreamValue loc = arguments.GetArgument(0, "loc");
 
-                if (loc.Value != null && loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
+                if (loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
                     return locValue;
                 }
             }

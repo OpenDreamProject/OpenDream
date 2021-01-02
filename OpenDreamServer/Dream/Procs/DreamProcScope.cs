@@ -6,17 +6,20 @@ namespace OpenDreamServer.Dream.Procs {
     class DreamProcScope {
         public DreamProcScope ParentScope;
         public DreamObject DreamObject;
+        public DreamObject Usr;
 
         private Dictionary<string, DreamValue> Variables = new Dictionary<string, DreamValue>();
 
-        public DreamProcScope(DreamObject dreamObject) {
+        public DreamProcScope(DreamObject dreamObject, DreamObject usr) {
             ParentScope = null;
             DreamObject = dreamObject;
+            Usr = usr;
         }
 
         public DreamProcScope(DreamProcScope parentScope) {
             ParentScope = parentScope;
             DreamObject = parentScope.DreamObject;
+            Usr = parentScope.Usr;
         }
 
         public DreamValue GetValue(string valueName) {

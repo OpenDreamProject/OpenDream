@@ -7,7 +7,6 @@ using OpenDreamShared.Interface;
 using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
-using System.Collections.Generic;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementMap : Grid, IElement {

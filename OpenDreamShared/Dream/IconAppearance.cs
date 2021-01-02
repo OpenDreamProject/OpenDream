@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    record IconAppearance {
+    class IconAppearance {
         public enum AppearanceProperty {
             End,
             Icon,
@@ -45,6 +45,8 @@ namespace OpenDreamShared.Dream {
         public UInt32 Color = 0xFFFFFFFF;
         public float Layer;
 
+        public IconAppearance() { }
+
         public IconAppearance(IconAppearance appearance) {
             Icon = appearance.Icon;
             IconState = appearance.IconState;
@@ -53,6 +55,25 @@ namespace OpenDreamShared.Dream {
             PixelY = appearance.PixelY;
             Color = appearance.Color;
             Layer = appearance.Layer;
+        }
+
+        public override bool Equals(object obj) {
+            IconAppearance appearance = obj as IconAppearance;
+            if (appearance == null) return false;
+
+            if (appearance.Icon != Icon) return false;
+            if (appearance.IconState != IconState) return false;
+            if (appearance.Direction != Direction) return false;
+            if (appearance.PixelX != PixelX) return false;
+            if (appearance.PixelY != PixelY) return false;
+            if (appearance.Color != Color) return false;
+            if (appearance.Layer != Layer) return false;
+
+            return true;
+        }
+
+        public override int GetHashCode() {
+            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer).GetHashCode();
         }
 
         public void SetColor(string color) {

@@ -384,8 +384,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 throw new NotImplementedException("Implicit type checking is not implemented");
             }
 
-            if (value.TryGetValueAsDreamObject(out DreamObject valueObject) && valueObject != null) {
-                return new DreamValue(valueObject.IsSubtypeOf(type.GetValueAsPath()) ? 1 : 0);
+            if (value.TryGetValueAsDreamObjectOfType(type.GetValueAsPath(), out _)) {
+                return new DreamValue(1);
             } else {
                 return new DreamValue(0);
             }
@@ -934,7 +934,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_view(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int distance = 5;
-            DreamObject center = scope.GetValue("usr").GetValueAsDreamObject();
+            DreamObject center = scope.Usr;
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {
@@ -975,7 +975,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_viewers(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int depth = 5; //TODO: Default to world.view
-            DreamObject center = scope.GetValue("usr").GetValueAsDreamObject();
+            DreamObject center = scope.Usr;
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {

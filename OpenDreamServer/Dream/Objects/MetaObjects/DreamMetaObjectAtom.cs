@@ -82,6 +82,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 newAppearance.Layer = (float)variableValue.GetValueAsNumber();
                 UpdateAppearance(dreamObject, newAppearance);
+            } else if (variableName == "invisibility") {
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.Invisibility = variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
                 if (variableValue.Type == DreamValue.DreamValueType.String) {

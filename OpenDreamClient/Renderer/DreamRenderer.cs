@@ -154,9 +154,11 @@ namespace OpenDreamClient.Renderer {
                     SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
                 }
 
-                DrawDreamIcon(atom.Icon);
-                foreach (DreamIcon overlayIcon in atom.Icon.Overlays.Values) {
-                    DrawDreamIcon(overlayIcon);
+                if (atom.Icon.Appearance.Invisibility <= 0) { //0 is the default invisibility a mob can see
+                    DrawDreamIcon(atom.Icon);
+                    foreach (DreamIcon overlayIcon in atom.Icon.Overlays.Values) {
+                        DrawDreamIcon(overlayIcon);
+                    }
                 }
             }
         }

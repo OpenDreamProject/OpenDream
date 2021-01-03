@@ -12,7 +12,8 @@ namespace OpenDreamShared.Dream {
             PixelX,
             PixelY,
             Color,
-            Layer
+            Layer,
+            Invisibility
         }
 
         public static Dictionary<string, UInt32> Colors = new() {
@@ -44,6 +45,7 @@ namespace OpenDreamShared.Dream {
         public int PixelX, PixelY;
         public UInt32 Color = 0xFFFFFFFF;
         public float Layer;
+        public int Invisibility;
 
         public IconAppearance() { }
 
@@ -55,6 +57,7 @@ namespace OpenDreamShared.Dream {
             PixelY = appearance.PixelY;
             Color = appearance.Color;
             Layer = appearance.Layer;
+            Invisibility = appearance.Invisibility;
         }
 
         public override bool Equals(object obj) {
@@ -68,12 +71,13 @@ namespace OpenDreamShared.Dream {
             if (appearance.PixelY != PixelY) return false;
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
+            if (appearance.Invisibility != Invisibility) return false;
 
             return true;
         }
 
         public override int GetHashCode() {
-            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer).GetHashCode();
+            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer + Invisibility).GetHashCode();
         }
 
         public void SetColor(string color) {
@@ -130,6 +134,11 @@ namespace OpenDreamShared.Dream {
                 packetStream.WriteFloat(Layer);
             }
 
+            if (Invisibility != default) {
+                packetStream.WriteByte((byte)AppearanceProperty.Invisibility);
+                packetStream.WriteByte((byte)Invisibility);
+            }
+
             packetStream.WriteByte((byte)AppearanceProperty.End);
         }
 
@@ -146,6 +155,7 @@ namespace OpenDreamShared.Dream {
                     case AppearanceProperty.PixelY: appearance.PixelY = packetStream.ReadInt16(); break;
                     case AppearanceProperty.Color: appearance.Color = packetStream.ReadUInt32(); break;
                     case AppearanceProperty.Layer: appearance.Layer = packetStream.ReadFloat(); break;
+                    case AppearanceProperty.Invisibility: appearance.Invisibility = (int)packetStream.ReadByte(); break;
                     default: throw new Exception("Invalid appearnce property '" + property + "'");
                 }
 

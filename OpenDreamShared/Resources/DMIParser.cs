@@ -38,9 +38,9 @@ namespace OpenDreamShared.Resources {
 
         public class ParsedDMIState {
             public string Name;
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new Dictionary<AtomDirection, ParsedDMIFrame[]>();
+            public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
             public bool Loop = true;
-            public bool Rewind = true;
+            public bool Rewind = false;
 
             public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
                 if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();

@@ -450,10 +450,10 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            DMASTNewDereference newDereference = expression as DMASTNewDereference;
-            if (newDereference != null) {
-                if (newDereference.Parameters != null) {
-                    foreach (DMASTCallParameter parameter in newDereference.Parameters) {
+            DMASTNewCallable newCallable = expression as DMASTNewCallable;
+            if (newCallable != null) {
+                if (newCallable.Parameters != null) {
+                    foreach (DMASTCallParameter parameter in newCallable.Parameters) {
                         SimplifyExpression(ref parameter.Value);
                     }
                 }

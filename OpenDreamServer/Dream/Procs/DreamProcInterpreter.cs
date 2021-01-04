@@ -56,6 +56,7 @@ namespace OpenDreamServer.Dream.Procs {
         private Stack<object> _stack = new();
         private Stack<DreamProcScope> _scopeStack = new();
         private Stack<DreamProcListEnumerator> _listEnumeratorStack = new();
+        private Dictionary<int, DreamValue> _localVariables = new();
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
             _bytecodeStream = new MemoryStream(bytecode);
@@ -149,11 +150,11 @@ namespace OpenDreamServer.Dream.Procs {
                 int value = ReadInt();
 
                 Push(new DreamValue(value));
-            } else if (opcode == DreamProcOpcode.DefineVariable) {
-                string variableName = ReadString();
+            } else if (opcode == DreamProcOpcode.SetLocalVariable) {
+                int variableId = ReadByte();
                 DreamValue value = PopDreamValue();
 
-                currentScope.CreateVariable(variableName, value);
+                _localVariables[variableId] = value;
             } else if (opcode == DreamProcOpcode.PushPath) {
                 DreamPath path = new DreamPath(ReadString());
 
@@ -712,13 +713,13 @@ namespace OpenDreamServer.Dream.Procs {
 
                 _listEnumeratorStack.Push(new DreamProcListEnumerator(list));
             } else if (opcode == DreamProcOpcode.EnumerateList) {
-                string outputVarName = ReadString();
+                int outputVarId = ReadByte();
                 DreamProcListEnumerator listEnumerator = _listEnumeratorStack.Peek();
                 bool successfulEnumeration = listEnumerator.TryMoveNext(out DreamValue newValue);
 
                 Push(new DreamValue(successfulEnumeration ? 1 : 0));
                 if (successfulEnumeration) {
-                    currentScope.AssignValue(outputVarName, newValue);
+                    _localVariables[outputVarId] = newValue;
                 }
             } else if (opcode == DreamProcOpcode.DestroyListEnumerator) {
                 _listEnumeratorStack.Pop();
@@ -796,6 +797,10 @@ namespace OpenDreamServer.Dream.Procs {
                 } else {
                     throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
                 }
+            } else if (opcode == DreamProcOpcode.GetLocalVariable) {
+                int localVariableId = ReadByte();
+
+                Push(new DreamProcIdentifierLocalVariable(_localVariables, localVariableId));
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");
             }
@@ -812,6 +817,10 @@ namespace OpenDreamServer.Dream.Procs {
             }
 
             return value;
+        }
+
+        private int ReadByte() {
+            return _bytecodeStream.ReadByte();
         }
 
         private int ReadInt() {
@@ -975,6 +984,7 @@ namespace OpenDreamServer.Dream.Procs {
             _scopeStack.Clear();
             _stack.Clear();
             _listEnumeratorStack.Clear();
+            _localVariables.Clear();
         }
     }
 }

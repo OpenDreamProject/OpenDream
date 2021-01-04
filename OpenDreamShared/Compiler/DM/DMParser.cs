@@ -1249,8 +1249,8 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression ExpressionNew() {
             if (Check(TokenType.DM_New)) {
                 Whitespace();
-                DMASTCallableDereference dereference = Dereference();
-                DMASTPath path = (dereference == null) ? Path() : null;
+                DMASTCallable callable = Callable();
+                DMASTPath path = (callable == null) ? Path(true) : null;
                 Whitespace();
                 DMASTCallParameter[] parameters = null;
 
@@ -1261,8 +1261,8 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                 }
 
-                if (dereference != null) {
-                    return new DMASTNewDereference(dereference, parameters);
+                if (callable != null) {
+                    return new DMASTNewCallable(callable, parameters);
                 } else if (path != null) {
                     return new DMASTNewPath(path, parameters);
                 } else {

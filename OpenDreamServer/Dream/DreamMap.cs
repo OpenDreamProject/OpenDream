@@ -72,7 +72,12 @@ namespace OpenDreamServer.Dream {
         }
 
         private DreamObject CreateMapObject(DMMParser.MapObject mapObject, DreamObject loc = null) {
-            if (!Program.DreamObjectTree.HasTreeEntry(mapObject.Type)) return null;
+            if (!Program.DreamObjectTree.HasTreeEntry(mapObject.Type)) {
+                Console.WriteLine("MAP LOAD: Skipping " + mapObject.Type);
+
+                return null;
+            }
+
             DreamObject dreamObject = Program.DreamObjectTree.CreateObject(mapObject.Type, new DreamProcArguments(new() { new DreamValue(loc) }));
 
             foreach (KeyValuePair<string, DreamValue> varOverride in mapObject.VarOverrides) {

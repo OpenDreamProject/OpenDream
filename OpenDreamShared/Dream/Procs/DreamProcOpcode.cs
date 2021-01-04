@@ -5,7 +5,7 @@
         PushString = 0x3,
         FormatString = 0x4,
         PushInt = 0x5,
-        DefineVariable = 0x6,
+        SetLocalVariable = 0x6,
         PushPath = 0x7,
         Add = 0x8,
         Assign = 0x9,
@@ -63,7 +63,8 @@
         Browse = 0x3D,
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
-        BitShiftRight = 0x40
+        BitShiftRight = 0x40,
+        GetLocalVariable = 0x41
     }
 
     enum DreamProcOpcodeParameterType {

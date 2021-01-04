@@ -6,6 +6,10 @@ using System.IO;
 
 namespace DMCompiler.DM {
     class DMProc {
+        private class DMProcScope {
+            public Dictionary<string, int> LocalVariables = new();
+        }
+
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
 
@@ -13,9 +17,12 @@ namespace DMCompiler.DM {
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
         private Stack<string> _loopStack = new();
+        private Stack<DMProcScope> _scopes = new();
+        private int _localVariableIdCounter = 0;
 
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);
+            _scopes.Push(new DMProcScope());
         }
 
         public void ResolveLabels() {
@@ -41,8 +48,15 @@ namespace DMCompiler.DM {
         }
 
         public void GetIdentifier(string identifier) {
-            WriteOpcode(DreamProcOpcode.GetIdentifier);
-            WriteString(identifier);
+            int localVarId = GetLocalVariableId(identifier);
+
+            if (localVarId != -1) {
+                WriteOpcode(DreamProcOpcode.GetLocalVariable);
+                WriteByte((byte)localVarId);
+            } else {
+                WriteOpcode(DreamProcOpcode.GetIdentifier);
+                WriteString(identifier);
+            }
         }
 
         public void CreateListEnumerator() {
@@ -51,7 +65,7 @@ namespace DMCompiler.DM {
 
         public void EnumerateList(string outputVariableName) {
             WriteOpcode(DreamProcOpcode.EnumerateList);
-            WriteString(outputVariableName);
+            WriteByte((byte)GetLocalVariableId(outputVariableName));
         }
 
         public void DestroyListEnumerator() {
@@ -74,12 +88,12 @@ namespace DMCompiler.DM {
             _loopStack.Push(loopLabel);
 
             AddLabel(loopLabel + "_start");
-            CreateScope();
+            StartScope();
         }
 
         public void LoopEnd() {
             AddLabel(_loopStack.Pop() + "_end");
-            DestroyScope();
+            EndScope();
         }
 
         public void SwitchCase(string caseLabel) {
@@ -142,6 +156,18 @@ namespace DMCompiler.DM {
             WriteLabel(endLabel);
         }
 
+        public void StartScope() {
+            CreateScope();
+            _scopes.Push(new DMProcScope());
+        }
+
+        public void EndScope() {
+            DestroyScope();
+
+            DMProcScope destroyedScope = _scopes.Pop();
+            _localVariableIdCounter -= destroyedScope.LocalVariables.Count;
+        }
+
         public void CreateScope() {
             WriteOpcode(DreamProcOpcode.CreateScope);
         }
@@ -181,9 +207,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Assign);
         }
 
-        public void DefineVariable(string name) {
-            WriteOpcode(DreamProcOpcode.DefineVariable);
-            WriteString(name);
+        public void SetLocalVariable(string name) {
+            WriteOpcode(DreamProcOpcode.SetLocalVariable);
+            WriteByte((byte)GetLocalVariableId(name, true));
         }
 
         public void Dereference(string identifier) {
@@ -347,6 +373,27 @@ namespace DMCompiler.DM {
 
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
+        }
+
+        private int GetLocalVariableId(string name, bool create = false) {
+            int localVarId = -1;
+            foreach (DMProcScope scope in _scopes) {
+                if (scope.LocalVariables.TryGetValue(name, out int foundLocalVarId)) {
+                    localVarId = foundLocalVarId;
+                    break;
+                }
+            }
+
+            if (localVarId == -1 && create) {
+                localVarId = _localVariableIdCounter++;
+                _scopes.Peek().LocalVariables.Add(name, localVarId);
+            }
+
+            return localVarId;
+        }
+
+        private void WriteByte(byte value) {
+            _bytecodeWriter.Write(value);
         }
 
         private void WriteInt(int value) {

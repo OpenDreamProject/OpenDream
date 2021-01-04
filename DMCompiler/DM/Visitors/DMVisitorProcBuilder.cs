@@ -16,9 +16,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
             if (procDefinition.Body != null) {
                 foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                     if (parameter.Value != null) {
-                        string afterDefaultValueCheck = NewLabelName();
                         string parameterName = parameter.Path.Path.LastElement;
-
+                        string afterDefaultValueCheck = NewLabelName();
+                        
                         _proc.GetIdentifier(parameterName);
                         _proc.PushNull();
                         _proc.Equal();
@@ -74,7 +74,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 _proc.PushNull();
             }
 
-            _proc.DefineVariable(varDeclaration.Name);
+            _proc.SetLocalVariable(varDeclaration.Name);
         }
 
         public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
@@ -94,9 +94,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 string endLabel = NewLabelName();
 
                 _proc.JumpIfFalse(endLabel);
-                _proc.CreateScope();
+                _proc.StartScope();
                 statement.Body.Visit(this);
-                _proc.DestroyScope();
+                _proc.EndScope();
                 _proc.AddLabel(endLabel);
             } else {
                 string elseLabel = NewLabelName();
@@ -104,9 +104,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
                 _proc.JumpIfFalse(elseLabel);
 
-                _proc.CreateScope();
+                _proc.StartScope();
                 statement.Body.Visit(this);
-                _proc.DestroyScope();
+                _proc.EndScope();
                 _proc.Jump(endLabel);
 
                 _proc.AddLabel(elseLabel);
@@ -116,7 +116,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
         }
 
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
-            _proc.CreateScope();
+            _proc.StartScope();
             {
                 if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
 
@@ -135,13 +135,13 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 }
                 _proc.LoopEnd();
             }
-            _proc.DestroyScope();
+            _proc.EndScope();
         }
 
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
             statementForList.List.Visit(this);
             _proc.CreateListEnumerator();
-            _proc.CreateScope();
+            _proc.StartScope();
             {
                 if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
 
@@ -174,12 +174,12 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 }
                 _proc.LoopEnd();
             }
-            _proc.DestroyScope();
+            _proc.EndScope();
             _proc.DestroyListEnumerator();
         }
 
         public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) {
-            _proc.CreateScope();
+            _proc.StartScope();
             {
                 if (statementForNumberRange.Initializer != null) statementForNumberRange.Initializer.Visit(this);
                 statementForNumberRange.Variable.Visit(this);
@@ -206,7 +206,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 }
                 _proc.LoopEnd();
             }
-            _proc.DestroyScope();
+            _proc.EndScope();
         }
 
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
@@ -220,13 +220,13 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 _proc.Break();
 
                 _proc.AddLabel(bodyLabel);
-                _proc.CreateScope();
+                _proc.StartScope();
                 {
                     statementWhile.Body.Visit(this);
                     _proc.DestroyScope();
                     _proc.Continue();
                 }
-                _proc.DestroyScope();
+                _proc.EndScope();
             }
             _proc.LoopEnd();
         }
@@ -351,9 +351,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
             _proc.CreateObject();
         }
 
-        public void VisitNewDereference(DMASTNewDereference newDereference) {
-            newDereference.Dereference.Visit(this);
-            PushCallParameters(newDereference.Parameters);
+        public void VisitNewCallable(DMASTNewCallable newCallable) {
+            newCallable.Callable.Visit(this);
+            PushCallParameters(newCallable.Parameters);
             _proc.CreateObject();
         }
 

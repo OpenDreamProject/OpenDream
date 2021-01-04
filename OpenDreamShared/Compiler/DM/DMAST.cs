@@ -45,7 +45,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
-        public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
+        public void VisitNewCallable(DMASTNewCallable newCallable) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
         public void VisitNot(DMASTNot not) { throw new NotImplementedException(); }
         public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
@@ -722,17 +722,17 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewDereference : DMASTExpression {
-        public DMASTCallableDereference Dereference;
+    class DMASTNewCallable : DMASTExpression {
+        public DMASTCallable Callable;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewDereference(DMASTCallableDereference dereference, DMASTCallParameter[] parameters) {
-            Dereference = dereference;
+        public DMASTNewCallable(DMASTCallable callable, DMASTCallParameter[] parameters) {
+            Callable = callable;
             Parameters = parameters;
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewDereference(this);
+            visitor.VisitNewCallable(this);
         }
     }
 

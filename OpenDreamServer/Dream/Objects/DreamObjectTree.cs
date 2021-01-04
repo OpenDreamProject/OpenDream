@@ -61,14 +61,8 @@ namespace OpenDreamServer.Dream.Objects {
             if (path.Equals(DreamPath.Root) && RootObject != null) return true;
 
             DreamObjectTreeEntry treeEntry = RootObject;
-            for (int i = 0; i < path.Elements.Length; i++) {
-                string element = path.Elements[i];
-
-                if (treeEntry.Children.ContainsKey(element)) {
-                    treeEntry = treeEntry.Children[element];
-                } else {
-                    return false;
-                }
+            foreach (string element in path.Elements) {
+                if (!treeEntry.Children.TryGetValue(element, out treeEntry)) return false;
             }
 
             return true;
@@ -82,12 +76,8 @@ namespace OpenDreamServer.Dream.Objects {
             if (path.Equals(DreamPath.Root)) return RootObject;
 
             DreamObjectTreeEntry treeEntry = RootObject;
-            for (int i = 0; i < path.Elements.Length; i++) {
-                string element = path.Elements[i];
-
-                if (treeEntry.Children.ContainsKey(element)) {
-                    treeEntry = treeEntry.Children[element];
-                } else {
+            foreach (string element in path.Elements) {
+                if (!treeEntry.Children.TryGetValue(element, out treeEntry)) {
                     throw new Exception("Object '" + path + "' does not exist");
                 }
             }

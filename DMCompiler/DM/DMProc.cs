@@ -308,9 +308,9 @@ namespace DMCompiler.DM {
             WriteInt(value);
         }
 
-        public void PushDouble(double value) {
-            WriteOpcode(DreamProcOpcode.PushDouble);
-            WriteDouble(value);
+        public void PushFloat(float value) {
+            WriteOpcode(DreamProcOpcode.PushFloat);
+            WriteFloat(value);
         }
 
         public void PushString(string value) {
@@ -358,7 +358,7 @@ namespace DMCompiler.DM {
             _bytecodeWriter.Write((byte)(value & 0x000000FF));
         }
 
-        private void WriteDouble(double value) {
+        private void WriteFloat(float value) {
             _bytecodeWriter.Write(value);
         }
 

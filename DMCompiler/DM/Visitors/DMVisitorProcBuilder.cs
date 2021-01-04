@@ -81,7 +81,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
             if (statement.Value != null) {
                 statement.Value.Visit(this);
             } else {
-                _proc.PushNull();
+                _proc.PushSelf(); //Default return value
             }
 
             _proc.Return();
@@ -670,7 +670,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {
-            _proc.PushDouble(constant.Value);
+            _proc.PushFloat(constant.Value);
         }
 
         public void VisitConstantString(DMASTConstantString constant) {

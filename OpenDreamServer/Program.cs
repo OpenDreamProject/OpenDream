@@ -270,7 +270,7 @@ namespace OpenDreamServer {
                     appearance.SetColor((string)colorValue.Value);
                 }
 
-                appearance.Layer = (float)iconLayer.GetValueAsNumber();
+                appearance.Layer = iconLayer.GetValueAsNumber();
 
                 ATOMType atomType = ATOMType.Atom;
                 if (objectDefinition.IsSubtypeOf(DreamPath.Area)) atomType = ATOMType.Area;

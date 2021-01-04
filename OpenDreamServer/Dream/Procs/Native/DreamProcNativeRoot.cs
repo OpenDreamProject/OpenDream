@@ -16,7 +16,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("abs")]
         [DreamProcParameter("A")]
         public static DreamValue NativeProc_abs(DreamProcScope scope, DreamProcArguments arguments) {
-            double number = scope.GetValue("A").GetValueAsNumber();
+            float number = scope.GetValue("A").GetValueAsNumber();
 
             return new DreamValue(Math.Abs(number));
         }
@@ -255,7 +255,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("icon", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("loc", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("icon_state", Type = DreamValueType.String)]
-        [DreamProcParameter("layer", Type = DreamValueType.Integer | DreamValueType.Double)]
+        [DreamProcParameter("layer", Type = DreamValueType.Number)]
         [DreamProcParameter("dir", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_image(DreamProcScope scope, DreamProcArguments arguments) {
             DreamObject imageObject = Program.DreamObjectTree.CreateObject(DreamPath.Image, arguments);
@@ -328,7 +328,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_isnum(DreamProcScope scope, DreamProcArguments arguments) {
             DreamValue value = scope.GetValue("Val");
 
-            return new DreamValue(value.IsType(DreamValueType.Integer | DreamValueType.Double) ? 1 : 0);
+            return new DreamValue(value.IsType(DreamValueType.Number) ? 1 : 0);
         }
 
         [DreamProc("ispath")]
@@ -508,14 +508,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         [DreamProc("log")]
-        [DreamProcParameter("X", Type = DreamValueType.Integer | DreamValueType.Double)]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
         [DreamProcParameter("Y")]
         public static DreamValue NativeProc_log(DreamProcScope scope, DreamProcArguments arguments) {
-            double x = scope.GetValue("X").GetValueAsNumber();
+            float x = scope.GetValue("X").GetValueAsNumber();
             DreamValue y = scope.GetValue("Y");
 
             if (y.Value != null) {
-                return new DreamValue(Math.Log(y.GetValueAsNumber(), x));
+                return new DreamValue((float)Math.Log(y.GetValueAsNumber(), x));
             } else {
                 return new DreamValue(Math.Log(x));
             }
@@ -553,15 +553,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 } else if (value.Type == currentMax.Type) {
                     if (value.Type == DreamValueType.Integer) {
                         if (value.GetValueAsInteger() > currentMax.GetValueAsInteger()) currentMax = value;
-                    } else if (value.Type == DreamValueType.Double) {
-                        if (value.GetValueAsDouble() < currentMax.GetValueAsDouble()) currentMax = value;
+                    } else if (value.Type == DreamValueType.Float) {
+                        if (value.GetValueAsFloat() < currentMax.GetValueAsFloat()) currentMax = value;
                     } else if (value.Type == DreamValueType.String) {
                         if (String.Compare(value.GetValueAsString(), currentMax.GetValueAsString()) > 0) currentMax = value;
                     }
-                } else if (value.Type == DreamValueType.Integer && currentMax.Type == DreamValueType.Double) {
-                    if (value.GetValueAsInteger() > currentMax.GetValueAsDouble()) currentMax = value;
-                } else if (value.Type == DreamValueType.Double && currentMax.Type == DreamValueType.Integer) {
-                    if (value.GetValueAsDouble() > currentMax.GetValueAsInteger()) currentMax = value;
+                } else if (value.Type == DreamValueType.Integer && currentMax.Type == DreamValueType.Float) {
+                    if (value.GetValueAsInteger() > currentMax.GetValueAsFloat()) currentMax = value;
+                } else if (value.Type == DreamValueType.Float && currentMax.Type == DreamValueType.Integer) {
+                    if (value.GetValueAsFloat() > currentMax.GetValueAsInteger()) currentMax = value;
                 } else {
                     throw new Exception("Cannot compare " + currentMax + " and " + value);
                 }
@@ -593,15 +593,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 if (value.Type == currentMin.Type) {
                     if (value.Type == DreamValueType.Integer) {
                         if (value.GetValueAsInteger() < currentMin.GetValueAsInteger()) currentMin = value;
-                    } else if (value.Type == DreamValueType.Double) {
-                        if (value.GetValueAsDouble() < currentMin.GetValueAsDouble()) currentMin = value;
+                    } else if (value.Type == DreamValueType.Float) {
+                        if (value.GetValueAsFloat() < currentMin.GetValueAsFloat()) currentMin = value;
                     } else if (value.Type == DreamValueType.String) {
                         if (String.Compare(value.GetValueAsString(), currentMin.GetValueAsString()) < 0) currentMin = value;
                     }
-                } else if (value.Type == DreamValueType.Integer && currentMin.Type == DreamValueType.Double) {
-                    if (value.GetValueAsInteger() < currentMin.GetValueAsDouble()) currentMin = value;
-                } else if (value.Type == DreamValueType.Double && currentMin.Type == DreamValueType.Integer) {
-                    if (value.GetValueAsDouble() < currentMin.GetValueAsInteger()) currentMin = value;
+                } else if (value.Type == DreamValueType.Integer && currentMin.Type == DreamValueType.Float) {
+                    if (value.GetValueAsInteger() < currentMin.GetValueAsFloat()) currentMin = value;
+                } else if (value.Type == DreamValueType.Float && currentMin.Type == DreamValueType.Integer) {
+                    if (value.GetValueAsFloat() < currentMin.GetValueAsInteger()) currentMin = value;
                 } else if (value.Value == null) {
                     return value;
                 } else {
@@ -619,7 +619,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_num2text(DreamProcScope scope, DreamProcArguments arguments) {
             DreamValue number = scope.GetValue("N");
 
-            if (number.IsType(DreamValueType.Integer | DreamValueType.Double)) {
+            if (number.IsType(DreamValueType.Number)) {
                 return new DreamValue(number.GetValueAsNumber().ToString());
             } else {
                 return new DreamValue("0");
@@ -690,9 +690,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         [DreamProc("prob")]
-        [DreamProcParameter("P", Type = DreamValueType.Integer | DreamValueType.Double)]
+        [DreamProcParameter("P", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_prob(DreamProcScope scope, DreamProcArguments arguments) {
-            double probability = scope.GetValue("P").GetValueAsNumber();
+            float probability = scope.GetValue("P").GetValueAsNumber();
 
             return new DreamValue((new Random().Next(0, 100) <= probability) ? 1 : 0);
         }
@@ -732,24 +732,24 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         [DreamProc("round")]
-        [DreamProcParameter("A", Type = DreamValueType.Integer | DreamValueType.Double)]
-        [DreamProcParameter("B", Type = DreamValueType.Integer | DreamValueType.Double)]
+        [DreamProcParameter("A", Type = DreamValueType.Number)]
+        [DreamProcParameter("B", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_round(DreamProcScope scope, DreamProcArguments arguments) {
-            double a = scope.GetValue("A").GetValueAsNumber();
+            float a = scope.GetValue("A").GetValueAsNumber();
 
             if (arguments.ArgumentCount == 1) {
                 return new DreamValue((int)Math.Floor(a));
             } else {
-                double b = scope.GetValue("B").GetValueAsNumber();
+                float b = scope.GetValue("B").GetValueAsNumber();
 
-                return new DreamValue(Math.Round(a / b) * b);
+                return new DreamValue((float)Math.Round(a / b) * b);
             }
         }
 
         [DreamProc("sleep")]
-        [DreamProcParameter("Delay", Type = DreamValueType.Integer | DreamValueType.Double)]
+        [DreamProcParameter("Delay", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_sleep(DreamProcScope scope, DreamProcArguments arguments) {
-            double delay = scope.GetValue("Delay").GetValueAsNumber();
+            float delay = scope.GetValue("Delay").GetValueAsNumber();
             int delayMilliseconds = (int)(delay * 100);
             int ticksToSleep = (int)Math.Ceiling(delayMilliseconds / (Program.WorldInstance.GetVariable("tick_lag").GetValueAsNumber() * 100));
 
@@ -843,7 +843,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int radix = scope.GetValue("radix").GetValueAsInteger();
 
             if (text.Length != 0) {
-                return new DreamValue(Convert.ToInt32(text, radix));
+                if (text.Contains(".") && radix == 10) {
+                    return new DreamValue(Convert.ToSingle(text));
+                } else {
+                    return new DreamValue(Convert.ToInt32(text, radix));
+                }
             } else {
                 return new DreamValue((DreamObject)null);
             }

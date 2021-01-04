@@ -9,7 +9,8 @@ namespace OpenDreamServer.Dream {
         public enum DreamValueType {
             String = 1,
             Integer = 2,
-            Double = 4,
+            Float = 4,
+            Number = Integer | Float,
             DreamResource = 8,
             DreamObject = 16,
             DreamPath = 32,
@@ -34,9 +35,9 @@ namespace OpenDreamServer.Dream {
             Value = (Int32)value;
         }
 
-        public DreamValue(double value) {
+        public DreamValue(float value) {
             if (Math.Floor(value) != value) {
-                Type = DreamValueType.Double;
+                Type = DreamValueType.Float;
                 Value = value;
             } else {
                 Type = DreamValueType.Integer;
@@ -71,8 +72,8 @@ namespace OpenDreamServer.Dream {
                 Type = DreamValueType.String;
             } else if (value is int) {
                 Type = DreamValueType.Integer;
-            } else if (value is double) {
-                Type = DreamValueType.Double;
+            } else if (value is float) {
+                Type = DreamValueType.Float;
             } else if (value is DreamResource) {
                 Type = DreamValueType.DreamResource;
             } else if (value is DreamObject) {
@@ -121,12 +122,12 @@ namespace OpenDreamServer.Dream {
             return (int)GetValueExpectingType(DreamValueType.Integer);
         }
 
-        public double GetValueAsDouble() {
-            return (double)GetValueExpectingType(DreamValueType.Double);
+        public float GetValueAsFloat() {
+            return (float)GetValueExpectingType(DreamValueType.Float);
         }
 
-        public double GetValueAsNumber() {
-            return Convert.ToDouble(GetValueExpectingType(DreamValueType.Integer | DreamValueType.Double));
+        public float GetValueAsNumber() {
+            return Convert.ToSingle(GetValueExpectingType(DreamValueType.Integer | DreamValueType.Float));
         }
 
         public DreamResource GetValueAsDreamResource() {
@@ -182,8 +183,8 @@ namespace OpenDreamServer.Dream {
                 return GetValueAsString();
             } else if (Type == DreamValueType.Integer) {
                 return GetValueAsInteger().ToString();
-            } else if (Type == DreamValueType.Double) {
-                return GetValueAsDouble().ToString();
+            } else if (Type == DreamValueType.Float) {
+                return GetValueAsFloat().ToString();
             } else if (Type == DreamValueType.DreamResource) {
                 return GetValueAsDreamResource().ResourcePath;
             } else if (Type == DreamValueType.DreamPath) {

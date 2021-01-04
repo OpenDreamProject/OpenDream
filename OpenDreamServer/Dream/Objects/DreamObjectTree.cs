@@ -166,7 +166,7 @@ namespace OpenDreamServer.Dream.Objects {
                 return new DreamValue(jsonElement.GetString());
             } else if (jsonElement.ValueKind == JsonValueKind.Number) {
                 if (jsonElement.GetRawText().Contains(".")) {
-                    return new DreamValue(jsonElement.GetDouble());
+                    return new DreamValue(jsonElement.GetSingle());
                 } else {
                     Int32 value = 0x7FFFFFFF;
 

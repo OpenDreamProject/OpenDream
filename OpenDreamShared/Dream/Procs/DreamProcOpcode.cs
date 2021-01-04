@@ -55,7 +55,7 @@
         Error = 0x35,
         IsInList = 0x36,
         PushArguments = 0x37,
-        PushDouble = 0x38,
+        PushFloat = 0x38,
         PushSrc = 0x39,
         CreateListEnumerator = 0x3A,
         EnumerateList = 0x3B,

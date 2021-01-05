@@ -76,15 +76,14 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 atomCreationsCount = stream.ReadUInt16();
 
             for (int i = 0; i < atomCreationsCount; i++) {
-                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), stream.ReadUInt16());
+                DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), (AtomType)stream.ReadByte(), (int)stream.ReadUInt32());
 
                 atomCreation.LocationID = stream.ReadUInt16();
-                atomCreation.IconAppearanceID = (int)stream.ReadUInt32();
                 atomCreation.Overlays = stream.ReadOverlays();
-                if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
+                if (atomCreation.Type == AtomType.Movable) {
                     atomCreation.ScreenLocation = stream.ReadScreenLocation();
                 }
-                
+
                 DeltaState.AtomCreations.Add(atomCreation);
             }
         }
@@ -95,11 +94,11 @@ namespace OpenDreamShared.Net.Packets {
 
             foreach (DreamDeltaState.AtomCreation atomCreation in DeltaState.AtomCreations) {
                 stream.WriteUInt16(atomCreation.AtomID);
-                stream.WriteUInt16(atomCreation.BaseID);
-                stream.WriteUInt16(atomCreation.LocationID);
+                stream.WriteByte((byte)atomCreation.Type);
                 stream.WriteUInt32((UInt32)atomCreation.IconAppearanceID);
+                stream.WriteUInt16(atomCreation.LocationID);
                 stream.WriteOverlays(atomCreation.Overlays);
-                if (ATOMBase.AtomBases[atomCreation.BaseID].Type == ATOMType.Movable) {
+                if (atomCreation.Type == AtomType.Movable) {
                     stream.WriteScreenLocation(atomCreation.ScreenLocation);
                 }
             }

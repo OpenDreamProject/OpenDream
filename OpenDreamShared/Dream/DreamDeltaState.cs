@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 
 namespace OpenDreamShared.Dream {
     class DreamDeltaState {
         public class AtomCreation {
             public UInt16 AtomID;
-            public UInt16 BaseID;
+            public AtomType Type;
             public UInt16 LocationID = 0xFFFF;
             public int IconAppearanceID;
             public Dictionary<UInt16, int> Overlays = new();
             public ScreenLocation ScreenLocation = new ScreenLocation();
 
-            public AtomCreation(UInt16 atomID, UInt16 baseID) {
+            public AtomCreation(UInt16 atomID, AtomType type, int appearanceID) {
                 AtomID = atomID;
-                BaseID = baseID;
+                Type = type;
+                IconAppearanceID = appearanceID;
             }
         }
 
@@ -75,8 +74,8 @@ namespace OpenDreamShared.Dream {
             NewIconAppearances.Add(iconAppearance);
         }
 
-        public void AddAtomCreation(UInt16 atomID, UInt16 baseID) {
-            AtomCreations.Add(new AtomCreation(atomID, baseID));
+        public void AddAtomCreation(UInt16 atomID, AtomType type, int appearanceId) {
+            AtomCreations.Add(new AtomCreation(atomID, type, appearanceId));
         }
 
         public void AddAtomDeletion(UInt16 atomID) {

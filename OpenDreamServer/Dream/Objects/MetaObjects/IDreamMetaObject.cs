@@ -14,5 +14,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public DreamValue OperatorAppend(DreamValue a, DreamValue b);
         public DreamValue OperatorRemove(DreamValue a, DreamValue b);
         public DreamValue OperatorCombine(DreamValue a, DreamValue b);
+        public DreamValue OperatorMask(DreamValue a, DreamValue b);
     }
 }

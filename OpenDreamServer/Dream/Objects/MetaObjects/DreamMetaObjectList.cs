@@ -16,6 +16,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             }
             
             base.OnObjectCreated(dreamObject, creationArguments);
+
+            dreamObject.CallProc("New", creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
@@ -175,6 +177,34 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
             } else if (!list.ContainsValue(b)) {
                 list.AddValue(b);
+            }
+
+            return a;
+        }
+
+        public override DreamValue OperatorMask(DreamValue a, DreamValue b) {
+            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
+            DreamList list = DreamLists[listObject];
+
+            if (b.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject bValue)) {
+                DreamList bList = DreamLists[bValue];
+                int len = list.GetLength();
+
+                for (int i = 1; i <= len; i++) {
+                    if (!bList.ContainsValue(list.GetValue(new DreamValue(i)))) {
+                        list.Cut(i, i + 1);
+                        i--;
+                    }
+                }
+            } else {
+                int len = list.GetLength();
+
+                for (int i = 1; i <= len; i++) {
+                    if (list.GetValue(new DreamValue(i)) != b) {
+                        list.Cut(i, i + 1);
+                        i--;
+                    }
+                }
             }
 
             return a;

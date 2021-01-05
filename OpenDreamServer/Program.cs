@@ -24,8 +24,8 @@ namespace OpenDreamServer {
         public static DreamMap DreamMap = null;
         public static DreamServer DreamServer = new DreamServer(25566);
         public static DreamObject WorldInstance = null;
-        public static Dictionary<DreamObjectDefinition, UInt16> AtomBaseIDs = new Dictionary<DreamObjectDefinition, UInt16>();
-        public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new Dictionary<DreamObject, DreamConnection>();
+        public static Dictionary<DreamObjectDefinition, UInt16> AtomBaseIDs = new();
+        public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new();
         public static List<CountdownEvent> TickEvents = new List<CountdownEvent>();
         public static int TickCount = 0;
         public static long TickStartTime = 0;
@@ -124,7 +124,6 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             SetNativeProcs();
-            CreateAtomBases();
             
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World);
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
@@ -244,46 +243,6 @@ namespace OpenDreamServer {
             list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
         }
 
-        private static void CreateAtomBases() {
-            DreamObjectTree.DreamObjectTreeEntry atomTreeEntry = DreamObjectTree.GetTreeEntryFromPath(DreamPath.Atom);
-            List<DreamObjectTree.DreamObjectTreeEntry> atomDescendants = atomTreeEntry.GetAllDescendants(true, true);
-            UInt16 atomBaseIDCounter = 0;
-
-            ATOMBase.AtomBases = new Dictionary<UInt16, ATOMBase>();
-            foreach (DreamObjectTree.DreamObjectTreeEntry treeEntry in atomDescendants) {
-                DreamObjectDefinition objectDefinition = treeEntry.ObjectDefinition;
-                ServerIconAppearance appearance = new ServerIconAppearance();
-                DreamValue iconValue = objectDefinition.Variables["icon"];
-                DreamValue iconStateValue = objectDefinition.Variables["icon_state"];
-                DreamValue colorValue = objectDefinition.Variables["color"];
-                DreamValue iconLayer = objectDefinition.Variables["layer"];
-
-                if (iconValue.Type == DreamValue.DreamValueType.DreamResource) {
-                    appearance.Icon = ((DreamResource)iconValue.Value).ResourcePath;
-                }
-                
-                if (iconStateValue.Type == DreamValue.DreamValueType.String) {
-                    appearance.IconState = (string)iconStateValue.Value;
-                }
-
-                if (colorValue.Type == DreamValue.DreamValueType.String) {
-                    appearance.SetColor((string)colorValue.Value);
-                }
-
-                appearance.Layer = iconLayer.GetValueAsNumber();
-
-                ATOMType atomType = ATOMType.Atom;
-                if (objectDefinition.IsSubtypeOf(DreamPath.Area)) atomType = ATOMType.Area;
-                else if (objectDefinition.IsSubtypeOf(DreamPath.Turf)) atomType = ATOMType.Turf;
-                else if (objectDefinition.IsSubtypeOf(DreamPath.Mob)) atomType = ATOMType.Movable;
-                else if (objectDefinition.IsSubtypeOf(DreamPath.Obj)) atomType = ATOMType.Movable;
-
-                ATOMBase atomBase = new ATOMBase(atomBaseIDCounter++, atomType, appearance.GetID());
-                ATOMBase.AtomBases.Add(atomBase.ID, atomBase);
-                AtomBaseIDs.Add(objectDefinition, atomBase.ID);
-            }
-        }
-
         private static void OnDeltaStateFinalized(DreamDeltaState deltaState) {
             foreach (DreamConnection dreamConnection in DreamServer.DreamConnections) {
                 dreamConnection.SendPacket(new PacketDeltaGameState(deltaState, dreamConnection.CKey));
@@ -297,7 +256,6 @@ namespace OpenDreamServer {
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
-            connection.SendPacket(new PacketATOMTypes(ATOMBase.AtomBases));
             connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
 
             Task.Run(() => {

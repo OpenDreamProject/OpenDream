@@ -118,8 +118,28 @@ namespace OpenDreamServer.Dream {
             return (string)GetValueExpectingType(DreamValueType.String);
         }
 
+        public bool TryGetValueAsString(out string value) {
+            if (IsType(DreamValueType.String)) {
+                value = (string)Value;
+                return true;
+            } else {
+                value = null;
+                return false;
+            }
+        }
+
         public int GetValueAsInteger() {
             return (int)GetValueExpectingType(DreamValueType.Integer);
+        }
+
+        public bool TryGetValueAsInteger(out int value) {
+            if (IsType(DreamValueType.Integer)) {
+                value = (int)Value;
+                return true;
+            } else {
+                value = 0;
+                return false;
+            }
         }
 
         public float GetValueAsFloat() {
@@ -132,6 +152,16 @@ namespace OpenDreamServer.Dream {
 
         public DreamResource GetValueAsDreamResource() {
             return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
+        }
+
+        public bool TryGetValueAsDreamResource(out DreamResource value) {
+            if (IsType(DreamValueType.DreamResource)) {
+                value = (DreamResource)Value;
+                return true;
+            } else {
+                value = null;
+                return false;
+            }
         }
 
         public DreamObject GetValueAsDreamObject() {

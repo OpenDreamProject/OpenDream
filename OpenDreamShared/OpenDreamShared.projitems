@@ -18,7 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Lexer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Token.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dream\ATOMBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\AtomType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\IconAppearance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
@@ -33,7 +33,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Dream\ScreenLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interface\InterfaceDescriptor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\IPacket.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketATOMTypes.cs" />
     <Compile Include="..\OpenDreamShared\Net\Packets\PacketClickAtom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketConnectionResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketDeltaGameState.cs" />

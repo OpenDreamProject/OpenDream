@@ -15,7 +15,7 @@ namespace OpenDreamClient.Dream {
 
             Program.OpenDream.ATOMs.Clear();
             foreach (KeyValuePair<UInt16, DreamFullState.Atom> stateAtom in fullState.Atoms) {
-                ATOM atom = new ATOM(stateAtom.Key, ATOMBase.AtomBases[stateAtom.Value.BaseID]);
+                ATOM atom = new ATOM(stateAtom.Key, stateAtom.Value.Type, stateAtom.Value.IconAppearanceID);
 
                 atom.Icon.Appearance = Program.OpenDream.IconAppearances[stateAtom.Value.IconAppearanceID];
                 foreach (KeyValuePair<UInt16, int> overlay in stateAtom.Value.Overlays) {
@@ -84,7 +84,7 @@ namespace OpenDreamClient.Dream {
 
             foreach (DreamDeltaState.AtomCreation atomCreation in deltaState.AtomCreations) {
                 if (!Program.OpenDream.ATOMs.ContainsKey(atomCreation.AtomID)) {
-                    ATOM atom = new ATOM(atomCreation.AtomID, ATOMBase.AtomBases[atomCreation.BaseID]);
+                    ATOM atom = new ATOM(atomCreation.AtomID, atomCreation.Type, atomCreation.IconAppearanceID);
 
                     atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomCreation.IconAppearanceID];
                     atom.ScreenLocation = atomCreation.ScreenLocation;

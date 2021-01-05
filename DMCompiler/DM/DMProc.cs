@@ -397,12 +397,7 @@ namespace DMCompiler.DM {
         }
 
         private void WriteInt(int value) {
-            if (value > Int32.MaxValue && value < Int32.MinValue) throw new ArgumentOutOfRangeException("Integer cannot be represented by an Int32");
-
-            _bytecodeWriter.Write((byte)((value & 0xFF000000) >> 24));
-            _bytecodeWriter.Write((byte)((value & 0x00FF0000) >> 16));
-            _bytecodeWriter.Write((byte)((value & 0x0000FF00) >> 8));
-            _bytecodeWriter.Write((byte)(value & 0x000000FF));
+            _bytecodeWriter.Write(value);
         }
 
         private void WriteFloat(float value) {

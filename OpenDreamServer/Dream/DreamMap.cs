@@ -78,15 +78,18 @@ namespace OpenDreamServer.Dream {
                 return null;
             }
 
-            DreamObject dreamObject = Program.DreamObjectTree.CreateObject(mapObject.Type, new DreamProcArguments(new() { new DreamValue(loc) }));
+            DreamObjectDefinition definition = Program.DreamObjectTree.GetObjectDefinitionFromPath(mapObject.Type);
+            if (mapObject.VarOverrides.Count > 0) {
+                definition = new DreamObjectDefinition(definition);
 
-            foreach (KeyValuePair<string, DreamValue> varOverride in mapObject.VarOverrides) {
-                if (dreamObject.HasVariable(varOverride.Key)) {
-                    dreamObject.SetVariable(varOverride.Key, varOverride.Value);
+                foreach (KeyValuePair<string, DreamValue> varOverride in mapObject.VarOverrides) {
+                    if (definition.HasVariable(varOverride.Key)) {
+                        definition.Variables[varOverride.Key] = varOverride.Value;
+                    }
                 }
             }
 
-            return dreamObject;
+            return new DreamObject(definition, new DreamProcArguments(new() { new DreamValue(loc) }));
         }
     }
 }

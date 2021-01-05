@@ -66,6 +66,9 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 /list
 	var/len
 
+	proc/New(Size)
+		if (Size != null) len = Size
+
 	proc/Add(Item1)
 	proc/Copy(Start = 1, End = 0)
 	proc/Cut(Start = 1, End = 0)
@@ -204,6 +207,7 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 			if (loc != null) src.icon_state = loc
 			if (icon_state != null) src.layer = icon_state
 			if (layer != null) src.dir = layer
+			if (dir != null) src.dir = dir
 
 /atom
 	parent_type = /datum
@@ -371,6 +375,9 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	else if (Angle != 0) return pick(1, 2, 4, 8)
 
 	dirAngle += round(Angle, 45)
+	if (dirAngle > 360) dirAngle -= 360
+	else if (dirAngle < 0) dirAngle += 360
+
 	if (dirAngle == 0 || dirAngle == 360) return 1
 	else if (dirAngle == 45) return 1 | 4
 	else if (dirAngle == 90) return 4

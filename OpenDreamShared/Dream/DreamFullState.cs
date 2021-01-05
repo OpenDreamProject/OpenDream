@@ -6,7 +6,7 @@ namespace OpenDreamShared.Dream {
     class DreamFullState {
         public struct Atom {
             public UInt16 AtomID;
-            public UInt16 BaseID;
+            public AtomType Type;
             public UInt16 LocationID;
             public int IconAppearanceID;
             public ScreenLocation ScreenLocation;
@@ -61,7 +61,7 @@ namespace OpenDreamShared.Dream {
                     Atom atom = new Atom();
 
                     atom.AtomID = atomCreation.AtomID;
-                    atom.BaseID = atomCreation.BaseID;
+                    atom.Type = atomCreation.Type;
                     atom.LocationID = atomCreation.LocationID;
                     atom.IconAppearanceID = atomCreation.IconAppearanceID;
                     atom.ScreenLocation = atomCreation.ScreenLocation;

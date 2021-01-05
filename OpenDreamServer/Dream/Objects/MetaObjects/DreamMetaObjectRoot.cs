@@ -44,5 +44,9 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public virtual DreamValue OperatorCombine(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot combine " + a + " and " + b);
         }
+        
+        public virtual DreamValue OperatorMask(DreamValue a, DreamValue b) {
+            throw new InvalidOperationException("Cannot mask " + a + " and " + b);
+        }
     }
 }

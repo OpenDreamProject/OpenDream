@@ -5,7 +5,7 @@
 		RequestConnect = 0x2,
 		InterfaceData = 0x3,
 		Output = 0x4,
-		AtomTypes = 0x5,
+		//0x5
 		RequestResource = 0x6,
 		Resource = 0x7,
 		FullGameState = 0x8,

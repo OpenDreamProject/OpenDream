@@ -7,14 +7,14 @@ using System.Drawing;
 namespace OpenDreamClient.Dream {
     class ATOM {
         public UInt16 ID;
-        public ATOMType Type;
+        public AtomType Type;
         public DreamIcon Icon { get; } = new DreamIcon();
         public List<ATOM> Contents = new List<ATOM>();
         public ScreenLocation ScreenLocation = new ScreenLocation();
 
         public ATOM Loc {
             get {
-                if (Type == ATOMType.Turf) {
+                if (Type == AtomType.Turf) {
                     return null;
                 } else {
                     return _loc;
@@ -32,14 +32,14 @@ namespace OpenDreamClient.Dream {
 
         public int X {
             get {
-                if (Type == ATOMType.Turf) {
+                if (Type == AtomType.Turf) {
                     return _x;
                 } else {
                     return (Loc != null) ? Loc.X : 0;
                 }
             }
             set {
-                if (Type == ATOMType.Turf) {
+                if (Type == AtomType.Turf) {
                     _x = value;
                 }
             }
@@ -47,14 +47,14 @@ namespace OpenDreamClient.Dream {
 
         public int Y {
             get {
-                if (Type == ATOMType.Turf) {
+                if (Type == AtomType.Turf) {
                     return _y;
                 } else {
                     return (Loc != null) ? Loc.Y : 0;
                 }
             }
             set {
-                if (Type == ATOMType.Turf) {
+                if (Type == AtomType.Turf) {
                     _y = value;
                 }
             }
@@ -63,16 +63,12 @@ namespace OpenDreamClient.Dream {
         private ATOM _loc = null;
         private int _x, _y; //Only used for turfs
 
-        public ATOM(UInt16 id, ATOMBase atomBase) {
+        public ATOM(UInt16 id, AtomType type, int appearanceId) {
             ID = id;
-            Type = atomBase.Type;
-            Icon.Appearance = Program.OpenDream.IconAppearances[atomBase.IconAppearanceID];
+            Type = type;
+            Icon.Appearance = Program.OpenDream.IconAppearances[appearanceId];
 
             Program.OpenDream.AddATOM(this);
-        }
-
-        public static void HandlePacketAtomBases(PacketATOMTypes pAtomBases) {
-            ATOMBase.AtomBases = pAtomBases.AtomBases;
         }
     }
 }

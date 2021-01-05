@@ -58,11 +58,11 @@ namespace OpenDreamShared.Net.Packets {
             for (int i = 0; i < atomCount; i++) {
                 DreamFullState.Atom atom = new DreamFullState.Atom();
                 atom.AtomID = stream.ReadUInt16();
-                atom.BaseID = stream.ReadUInt16();
+                atom.Type = (AtomType)stream.ReadByte();
                 atom.LocationID = stream.ReadUInt16();
                 atom.IconAppearanceID = (int)stream.ReadUInt32();
                 atom.Overlays = stream.ReadOverlays();
-                if (ATOMBase.AtomBases[atom.BaseID].Type == ATOMType.Movable) {
+                if (atom.Type == AtomType.Movable) {
                     atom.ScreenLocation = stream.ReadScreenLocation();
                 }
 
@@ -75,11 +75,11 @@ namespace OpenDreamShared.Net.Packets {
 
             foreach (KeyValuePair<UInt16, DreamFullState.Atom> atom in FullState.Atoms) {
                 stream.WriteUInt16(atom.Value.AtomID);
-                stream.WriteUInt16(atom.Value.BaseID);
+                stream.WriteByte((byte)atom.Value.Type);
                 stream.WriteUInt16(atom.Value.LocationID);
                 stream.WriteUInt32((UInt32)atom.Value.IconAppearanceID);
                 stream.WriteOverlays(atom.Value.Overlays);
-                if (ATOMBase.AtomBases[atom.Value.BaseID].Type == ATOMType.Movable) {
+                if (atom.Value.Type == AtomType.Movable) {
                     stream.WriteScreenLocation(atom.Value.ScreenLocation);
                 }
             }

@@ -50,6 +50,7 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamValue DefaultReturnValue = new DreamValue((DreamObject)null);
 
         private MemoryStream _bytecodeStream;
+        private BinaryReader _binaryReader;
         private DreamProc _selfProc;
         private DreamProcArguments _arguments;
         private DreamProcScope _topScope;
@@ -60,6 +61,7 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
             _bytecodeStream = new MemoryStream(bytecode);
+            _binaryReader = new BinaryReader(_bytecodeStream);
             _selfProc = selfProc;
         }
 
@@ -410,6 +412,8 @@ namespace OpenDreamServer.Dream.Procs {
                     }
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsInteger()));
+                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                    identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
                 } else {
                     throw new Exception("Invalid remove operation on " + first + " and " + second);
                 }
@@ -629,7 +633,19 @@ namespace OpenDreamServer.Dream.Procs {
                 IDreamProcIdentifier identifier = PopIdentifier();
                 DreamValue first = identifier.GetValue();
 
-                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                if (first.Type == DreamValue.DreamValueType.DreamObject) {
+                    if (first.Value != null) {
+                        IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+
+                        if (metaObject != null) {
+                            Push(metaObject.OperatorMask(first, second));
+                        } else {
+                            throw new Exception("Invalid mask operation on " + first + " and " + second);
+                        }
+                    } else {
+                        identifier.Assign(new DreamValue(0));
+                    }
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
                 } else {
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
@@ -690,9 +706,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(arguments);
             } else if (opcode == DreamProcOpcode.PushFloat) {
-                BinaryReader bytecodeBinaryReader = new BinaryReader(_bytecodeStream);
-
-                Push(new DreamValue(bytecodeBinaryReader.ReadSingle()));
+                Push(new DreamValue(_binaryReader.ReadSingle()));
             } else if (opcode == DreamProcOpcode.PushSrc) {
                 Push(new DreamValue(currentScope.DreamObject));
             } else if (opcode == DreamProcOpcode.CreateListEnumerator) {
@@ -824,12 +838,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         private int ReadInt() {
-            int value = (_bytecodeStream.ReadByte() << 24);
-            value |= (_bytecodeStream.ReadByte() << 16);
-            value |= (_bytecodeStream.ReadByte() << 8);
-            value |= _bytecodeStream.ReadByte();
-
-            return value;
+            return _binaryReader.ReadInt32();
         }
 
         private void Push(DreamValue value) {

@@ -9,10 +9,10 @@ namespace OpenDreamServer.Dream.Objects {
     class DreamObjectDefinition {
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
-        public Dictionary<string, DreamProc> Procs { get; private set; } = new Dictionary<string, DreamProc>();
-        public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new Dictionary<string, DreamProc>();
-        public Dictionary<string, DreamValue> Variables { get; private set; } = new Dictionary<string, DreamValue>();
-        public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new Dictionary<string, DreamGlobalVariable>();
+        public Dictionary<string, DreamProc> Procs { get; private set; } = new();
+        public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new();
+        public Dictionary<string, DreamValue> Variables { get; private set; } = new();
+        public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new();
 
         //DreamObject variables that need instantiated at object creation
         public Dictionary<string, (DreamPath, DreamProcArguments)> RuntimeInstantiatedVariables = new Dictionary<string, (DreamPath, DreamProcArguments)>();
@@ -24,25 +24,27 @@ namespace OpenDreamServer.Dream.Objects {
             Type = type;
         }
 
+        public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
+            Type = copyFrom.Type;
+            MetaObject = copyFrom.MetaObject;
+            _parentObjectDefinition = copyFrom._parentObjectDefinition;
+
+            CopyVariablesFrom(copyFrom);
+
+            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.Procs) {
+                Procs.Add(proc.Key, proc.Value);
+            }
+
+            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.OverridingProcs) {
+                OverridingProcs.Add(proc.Key, proc.Value);
+            }
+        }
+
         public DreamObjectDefinition(DreamPath type, DreamObjectDefinition parentObjectDefinition) {
+            CopyVariablesFrom(parentObjectDefinition);
+
             Type = type;
             _parentObjectDefinition = parentObjectDefinition;
-
-            foreach (KeyValuePair<string, DreamValue> variable in parentObjectDefinition.Variables) {
-                Variables.Add(variable.Key, variable.Value);
-            }
-
-            foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in parentObjectDefinition.GlobalVariables) {
-                GlobalVariables.Add(globalVariable.Key, globalVariable.Value);
-            }
-
-            foreach (KeyValuePair<string, (DreamPath, DreamProcArguments)> runtimeInstantiatedVariable in parentObjectDefinition.RuntimeInstantiatedVariables) {
-                RuntimeInstantiatedVariables.Add(runtimeInstantiatedVariable.Key, runtimeInstantiatedVariable.Value);
-            }
-
-            foreach ((string, List<(DreamValue, DreamValue)>) runtimeInstantiatedList in parentObjectDefinition.RuntimeInstantiatedLists) {
-                RuntimeInstantiatedLists.Add((runtimeInstantiatedList.Item1, runtimeInstantiatedList.Item2));
-            }
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {
@@ -108,6 +110,24 @@ namespace OpenDreamServer.Dream.Objects {
             if (Type.IsDescendantOf(path)) return true;
             else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);
             else return false;
+        }
+
+        private void CopyVariablesFrom(DreamObjectDefinition definition) {
+            foreach (KeyValuePair<string, DreamValue> variable in definition.Variables) {
+                Variables.Add(variable.Key, variable.Value);
+            }
+
+            foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in definition.GlobalVariables) {
+                GlobalVariables.Add(globalVariable.Key, globalVariable.Value);
+            }
+
+            foreach (KeyValuePair<string, (DreamPath, DreamProcArguments)> runtimeInstantiatedVariable in definition.RuntimeInstantiatedVariables) {
+                RuntimeInstantiatedVariables.Add(runtimeInstantiatedVariable.Key, runtimeInstantiatedVariable.Value);
+            }
+
+            foreach ((string, List<(DreamValue, DreamValue)>) runtimeInstantiatedList in definition.RuntimeInstantiatedLists) {
+                RuntimeInstantiatedLists.Add((runtimeInstantiatedList.Item1, runtimeInstantiatedList.Item2));
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using OpenDreamServer.Dream.Procs;
+using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Concurrent;
@@ -22,10 +23,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 AtomIDToAtom.Add(atomID, dreamObject);
             }
 
-            Program.DreamStateManager.AddAtomCreation(dreamObject);
-
-            ATOMBase atomBase = ATOMBase.AtomBases[Program.AtomBaseIDs[dreamObject.ObjectDefinition]];
-            ServerIconAppearance atomAppearance = ServerIconAppearance.GetAppearance(atomBase.IconAppearanceID);
+            ServerIconAppearance atomAppearance = BuildAtomAppearance(dreamObject);
+            Program.DreamStateManager.AddAtomCreation(dreamObject, atomAppearance);
             UpdateAppearance(dreamObject, atomAppearance);
 
             DreamObject locArgument = FindLocArgument(creationArguments);
@@ -149,6 +148,42 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 Program.DreamStateManager.AddAtomIconAppearanceDelta(atom, newAppearance);
             }
+        }
+
+        private ServerIconAppearance BuildAtomAppearance(DreamObject atom) {
+            ServerIconAppearance appearance = new ServerIconAppearance();
+
+            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource resource)) {
+                appearance.Icon = resource.ResourcePath;
+            }
+
+            if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
+                appearance.IconState = iconState;
+            }
+
+            if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
+                appearance.SetColor(color);
+            }
+
+            if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
+                appearance.Direction = (AtomDirection)dir;
+            }
+            
+            if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
+                appearance.Invisibility = invisibility;
+            }
+            
+            if (atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX)) {
+                appearance.PixelX = pixelX;
+            }
+            
+            if (atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY)) {
+                appearance.PixelY = pixelY;
+            }
+
+            appearance.Layer = atom.GetVariable("layer").GetValueAsNumber();
+
+            return appearance;
         }
 
         private Dictionary<DreamValue, (UInt16, ServerIconAppearance)> GetAtomOverlays(DreamObject atom) {

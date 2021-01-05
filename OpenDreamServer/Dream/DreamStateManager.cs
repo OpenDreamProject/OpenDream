@@ -67,9 +67,15 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public void AddAtomCreation(DreamObject atom) {
+        public void AddAtomCreation(DreamObject atom, ServerIconAppearance appearance) {
+            AtomType atomType = AtomType.Atom;
+            if (atom.IsSubtypeOf(DreamPath.Area)) atomType = AtomType.Area;
+            else if (atom.IsSubtypeOf(DreamPath.Turf)) atomType = AtomType.Turf;
+            else if (atom.IsSubtypeOf(DreamPath.Mob)) atomType = AtomType.Movable;
+            else if (atom.IsSubtypeOf(DreamPath.Obj)) atomType = AtomType.Movable;
+
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomCreation(DreamMetaObjectAtom.AtomIDs[atom], Program.AtomBaseIDs[atom.ObjectDefinition]);
+                _currentDeltaState.AddAtomCreation(DreamMetaObjectAtom.AtomIDs[atom], atomType, appearance.GetID());
             }
         }
 

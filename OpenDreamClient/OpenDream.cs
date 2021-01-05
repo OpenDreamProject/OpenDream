@@ -87,7 +87,6 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
             Connection.RegisterPacketCallback<PacketInterfaceData>(PacketID.InterfaceData, packet => Interface.HandlePacketInterfaceData(packet));
             Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
-            Connection.RegisterPacketCallback<PacketATOMTypes>(PacketID.AtomTypes, packet => ATOM.HandlePacketAtomBases(packet));
             Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => ResourceManager.HandlePacketResource(packet));
             Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => StateManager.HandlePacketFullGameState(packet));
             Connection.RegisterPacketCallback<PacketDeltaGameState>(PacketID.DeltaGameState, packet => StateManager.HandlePacketDeltaGameState(packet));

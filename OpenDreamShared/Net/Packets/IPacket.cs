@@ -15,7 +15,6 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketRequestConnect>(PacketID.RequestConnect);
             RegisterPacket<PacketInterfaceData>(PacketID.InterfaceData);
             RegisterPacket<PacketOutput>(PacketID.Output);
-            RegisterPacket<PacketATOMTypes>(PacketID.AtomTypes);
             RegisterPacket<PacketRequestResource>(PacketID.RequestResource);
             RegisterPacket<PacketResource>(PacketID.Resource);
             RegisterPacket<PacketFullGameState>(PacketID.FullGameState);

@@ -70,8 +70,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
-            if (statementForStandard.Comparator != null) statementForStandard.Comparator.Visit(this);
-            if (statementForStandard.Incrementor != null) statementForStandard.Incrementor.Visit(this);
+            if (statementForStandard.Comparator != null) SimplifyExpression(ref statementForStandard.Comparator);
+            if (statementForStandard.Incrementor != null) SimplifyExpression(ref statementForStandard.Incrementor);
             if (statementForStandard.Body != null) statementForStandard.Body.Visit(this);
         }
 

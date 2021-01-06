@@ -391,9 +391,9 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementForStandard : DMASTProcStatementFor {
-        public DMASTProcStatement Comparator, Incrementor;
+        public DMASTExpression Comparator, Incrementor;
 
-        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTProcStatement comparator, DMASTProcStatement incrementor, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTExpression comparator, DMASTExpression incrementor, DMASTProcBlockInner body) : base(initializer, body) {
             Comparator = comparator;
             Incrementor = incrementor;
         }

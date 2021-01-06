@@ -130,8 +130,10 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
                     _proc.AddLabel(loopBodyLabel);
                     statementForStandard.Body.Visit(this);
+
+                    _proc.LoopContinue(loopLabel);
                     statementForStandard.Incrementor.Visit(this);
-                    _proc.Continue();
+                    _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
@@ -170,7 +172,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
                     _proc.AddLabel(loopBodyLabel);
                     statementForList.Body.Visit(this);
-                    _proc.Continue();
+
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
@@ -199,10 +203,11 @@ namespace DMCompiler.Compiler.DM.Visitors {
                     _proc.AddLabel(loopBodyLabel);
                     statementForNumberRange.Body.Visit(this);
 
+                    _proc.LoopContinue(loopLabel);
                     statementForNumberRange.Variable.Visit(this);
                     statementForNumberRange.Step.Visit(this);
                     _proc.Append();
-                    _proc.Continue();
+                    _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
@@ -224,7 +229,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 {
                     statementWhile.Body.Visit(this);
                     _proc.DestroyScope();
-                    _proc.Continue();
+
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.EndScope();
             }
@@ -239,9 +246,10 @@ namespace DMCompiler.Compiler.DM.Visitors {
             {
                 statementDoWhile.Body.Visit(this);
 
+                _proc.LoopContinue(loopLabel);
                 statementDoWhile.Conditional.Visit(this);
                 _proc.JumpIfFalse(loopEndLabel);
-                _proc.Continue();
+                _proc.LoopJumpToStart(loopLabel);
 
                 _proc.AddLabel(loopEndLabel);
                 _proc.Break();

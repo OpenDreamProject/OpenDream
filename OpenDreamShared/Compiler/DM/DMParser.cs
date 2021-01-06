@@ -563,10 +563,10 @@ namespace OpenDreamShared.Compiler.DM {
                     return new DMASTProcStatementForList(initializer, variable, list, body);
                 } else if (Check(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
                     Whitespace();
-                    DMASTProcStatement comparator = ProcStatement();
+                    DMASTExpression comparator = Expression();
                     Consume(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon }, "Expected ','");
                     Whitespace();
-                    DMASTProcStatement incrementor = ProcStatement();
+                    DMASTExpression incrementor = Expression();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                     Newline();

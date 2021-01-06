@@ -424,7 +424,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         public static object CreateJsonElementFromValue(DreamValue value) {
-            if (value.IsType(DreamValueType.String | DreamValueType.Integer)) {
+            if (value.IsType(DreamValueType.String | DreamValueType.Integer | DreamValueType.Float)) {
                 return value.Value;
             } else if (value.Value == null) {
                 return null;

@@ -224,6 +224,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 overlay.Item2.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
                 overlay.Item2.SetColor(mutableAppearance.GetVariable("color").GetValueAsString());
+                overlay.Item2.Direction = (AtomDirection)atom.GetVariable("dir").GetValueAsInteger();
                 overlay.Item2.Layer = mutableAppearance.GetVariable("layer").GetValueAsNumber();
                 overlay.Item2.PixelX = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
                 overlay.Item2.PixelY = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();

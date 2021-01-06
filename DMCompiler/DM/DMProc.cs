@@ -91,6 +91,15 @@ namespace DMCompiler.DM {
             StartScope();
         }
 
+        public void LoopContinue(string loopLabel) {
+            AddLabel(loopLabel + "_continue");
+        }
+
+        public void LoopJumpToStart(string loopLabel) {
+            DestroyScope();
+            Jump(loopLabel + "_start");
+        }
+
         public void LoopEnd() {
             AddLabel(_loopStack.Pop() + "_end");
             EndScope();
@@ -118,8 +127,7 @@ namespace DMCompiler.DM {
         }
 
         public void Continue() {
-            DestroyScope();
-            Jump(_loopStack.Peek() + "_start");
+            Jump(_loopStack.Peek() + "_continue");
         }
 
         public void PushArgumentList() {

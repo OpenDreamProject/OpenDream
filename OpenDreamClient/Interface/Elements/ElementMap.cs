@@ -101,6 +101,8 @@ namespace OpenDreamClient.Interface.Elements {
                 }
             }
 
+            if (clickedATOM == null) return;
+
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY);
             pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
             pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);

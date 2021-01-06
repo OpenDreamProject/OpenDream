@@ -247,6 +247,9 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	proc/Cross(atom/movable/O)
 		return !(src.density && O.density)
 
+	proc/Uncross(atom/movable/O)
+		return 1
+
 	proc/Enter(atom/movable/O, atom/oldloc)
 		return 1
 
@@ -259,29 +262,19 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 /atom/movable
 	var/screen_loc
 
-	proc/Move(NewLoc, Dir=0)
-		loc = NewLoc
-
 	proc/Bump(atom/Obstacle)
-		return
 	
 	proc/Move(NewLoc, Dir=0)
+		if (Dir != 0)
+				dir = Dir
+
+		if (loc == NewLoc || !loc.Exit(src, NewLoc)) return 0
 		if (NewLoc.Enter(src, loc))
 			loc = NewLoc
-			if (Dir != 0)
-				dir = Dir
-		else
-			var/atom/Obstacle = null
 
-			if (!NewLoc.Cross(src))
-				Obstacle = NewLoc
-			else
-				for (var/atom/content in NewLoc.contents)
-					if (!content.Cross(src))
-						Obstacle = content
-						break
-		
-			Bump(Obstacle)
+			return 1
+		else
+			return 0
 
 /area
 	parent_type = /atom
@@ -297,8 +290,18 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 		if (!src.Cross(O)) return 0
 
 		for (var/atom/content in src.contents)
-			if (!content.Cross(O)) return 0
+			if (!content.Cross(O))
+				O.Bump(content)
+				return 0
 		
+		return 1
+
+	Exit(atom/movable/O, atom/newloc)
+		if (!src.Uncross(O)) return 0
+
+		for(var/atom/content in src.contents)
+			if (content != O && !content.Uncross(O)) return 0
+
 		return 1
 
 /obj
@@ -342,6 +345,8 @@ proc/get_step(atom/Ref, Dir)
 	return locate(max(x, 1), max(y, 1), Ref.z)
 
 proc/get_dir(atom/Loc1, atom/Loc2)
+	if (Loc1 == null || Loc2 == null) return 0
+
 	var/loc1X = Loc1.x
 	var/loc2X = Loc2.x
 	var/loc1Y = Loc1.y

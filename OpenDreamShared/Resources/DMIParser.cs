@@ -109,6 +109,7 @@ namespace OpenDreamShared.Resources {
                                         frame.X = currentFrameX;
                                         frame.Y = currentFrameY;
                                         frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
+                                        frame.Delay *= 100; //Convert from deciseconds to milliseconds
                                         currentState.Directions[direction][i] = frame;
 
                                         currentFrameX += description.Width;
@@ -181,6 +182,7 @@ namespace OpenDreamShared.Resources {
                     frame.X = currentFrameX;
                     frame.Y = currentFrameY;
                     frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
+                    frame.Delay *= 100; //Convert from deciseconds to milliseconds
                     currentState.Directions[direction][i] = frame;
 
                     currentFrameX += description.Width;

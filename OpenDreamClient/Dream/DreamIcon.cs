@@ -9,6 +9,14 @@ namespace OpenDreamClient.Dream {
     class DreamIcon {
         public ResourceDMI DMI { get; private set; } = null;
         public Dictionary<UInt16, DreamIcon> Overlays { get; } = new Dictionary<UInt16, DreamIcon>();
+
+        public int AnimationFrame {
+            get {
+                UpdateAnimation();
+                return _animationFrame;
+            }
+        }
+
         public IconAppearance Appearance {
             get => _appearance;
             set {
@@ -18,36 +26,35 @@ namespace OpenDreamClient.Dream {
         }
 
         private IconAppearance _appearance;
-        private DateTime _animationStartTime = DateTime.Now;
+        private int _animationFrame;
+        private DateTime _animationFrameTime = DateTime.Now;
 
-        public DreamIcon() {
-
-        }
+        public DreamIcon() { }
 
         public DreamIcon(IconAppearance appearance) {
             Appearance = appearance;
         }
 
-        public int GetCurrentAnimationFrame() {
+        public void UpdateAnimation() {
             DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
-            double elapsedTime = DateTime.Now.Subtract(_animationStartTime).TotalMilliseconds / 100;
 
-            int animationFrame = -1;
-            float animationTime = 0;
-            do {
-                animationFrame = (animationFrame + 1) % frames.Length;
-                animationTime += frames[animationFrame].Delay;
+            if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
 
-                if (!dmiState.Loop && animationFrame == frames.Length - 1) break;
-            } while (animationTime < elapsedTime);
+            double elapsedTime = DateTime.Now.Subtract(_animationFrameTime).TotalMilliseconds;
+            while (elapsedTime >= frames[_animationFrame].Delay) {
+                elapsedTime -= frames[_animationFrame].Delay;
+                _animationFrameTime = _animationFrameTime.AddMilliseconds(frames[_animationFrame].Delay);
+                _animationFrame++;
 
-            return animationFrame;
+                if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
+            }
         }
 
         public Color GetPixel(int x, int y) {
-            Rectangle textureRect = DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, GetCurrentAnimationFrame());
+            UpdateAnimation();
 
+            Rectangle textureRect = DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
             if (x > 0 && x < textureRect.Width && y > 0 && y < textureRect.Height) {
                 Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
 
@@ -94,7 +101,8 @@ namespace OpenDreamClient.Dream {
                 if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
-                _animationStartTime = DateTime.Now;
+                _animationFrame = 0;
+                _animationFrameTime = DateTime.Now;
             });
         }
 

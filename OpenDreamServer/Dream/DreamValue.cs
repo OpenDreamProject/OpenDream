@@ -169,7 +169,7 @@ namespace OpenDreamServer.Dream {
 
             if (dreamObject != null && dreamObject.Deleted) {
                 Value = null;
-
+            
                 return null;
             } else {
                 return dreamObject;

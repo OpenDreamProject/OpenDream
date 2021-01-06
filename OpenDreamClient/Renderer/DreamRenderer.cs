@@ -1,5 +1,4 @@
 ﻿using OpenDreamClient.Dream;
-using OpenDreamShared.Dream;
 using SharpGL;
 using SharpGL.WPF;
 using System;
@@ -28,6 +27,7 @@ namespace OpenDreamClient.Renderer {
 
         public DreamRenderer() {
             OpenGLViewControl = new OpenGLControl();
+            OpenGLViewControl.FrameRate = 60;
             OpenGLViewControl.RenderContextType = RenderContextType.FBO;
             OpenGLViewControl.HorizontalAlignment = HorizontalAlignment.Center;
             OpenGLViewControl.VerticalAlignment = VerticalAlignment.Center;
@@ -90,7 +90,7 @@ namespace OpenDreamClient.Renderer {
             DreamTexture texture = null;
             
             if (icon != null && icon.IsValidIcon()) {
-                Rectangle textureRect = icon.DMI.GetTextureRect(icon.Appearance.IconState, icon.Appearance.Direction, icon.GetCurrentAnimationFrame());
+                Rectangle textureRect = icon.DMI.GetTextureRect(icon.Appearance.IconState, icon.Appearance.Direction, icon.AnimationFrame);
 
                 if (!_textureCache.TryGetValue((icon.DMI.ResourcePath, textureRect), out texture)) {
                     texture = new DreamTexture(_gl, icon.DMI, textureRect);

@@ -26,7 +26,7 @@ namespace OpenDreamServer {
         public static DreamObject WorldInstance = null;
         public static Dictionary<DreamObjectDefinition, UInt16> AtomBaseIDs = new();
         public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new();
-        public static List<CountdownEvent> TickEvents = new List<CountdownEvent>();
+        public static List<CountdownEvent> TickEvents = new();
         public static int TickCount = 0;
         public static long TickStartTime = 0;
 
@@ -207,17 +207,20 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_orange);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_params2list);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_pick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_prob);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sound);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_splittext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2ascii);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2file);

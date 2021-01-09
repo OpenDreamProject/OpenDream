@@ -11,6 +11,11 @@ namespace OpenDreamClient.Dream {
             Turfs = turfs;
         }
 
+        public bool IsValidCoordinate(int x, int y) {
+            return  x >= 0 && x < Turfs.GetLength(0) &&
+                    y >= 0 && y < Turfs.GetLength(1);
+        }
+
         public List<ATOM> GetTurfs(int x, int y, int width, int height) {
             int startX = Math.Max(x, 0);
             int startY = Math.Max(y, 0);

@@ -636,9 +636,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
-                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
-                    if (x != centerX && y != centerY) {
+            for (int x = Math.Max(centerX - distance, 1); x <= Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y <= Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
+                    if (x != centerX || y != centerY) {
                         DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
 
                         orangeList.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(turf), turf.GetVariable("contents") }));
@@ -647,6 +647,49 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(orangeList);
+        }
+
+        [DreamProc("oview")]
+        [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 5)]
+        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_oview(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+            int distance = 5;
+            DreamObject center = scope.Usr;
+
+            //Arguments are optional and can be passed in any order
+            if (arguments.ArgumentCount > 0) {
+                DreamValue firstArgument = arguments.GetArgument(0, "Dist");
+
+                if (firstArgument.Type == DreamValueType.DreamObject) {
+                    center = firstArgument.GetValueAsDreamObject();
+
+                    if (arguments.ArgumentCount > 1) {
+                        distance = arguments.GetArgument(1, "Center").GetValueAsInteger();
+                    }
+                } else {
+                    distance = firstArgument.GetValueAsInteger();
+
+                    if (arguments.ArgumentCount > 1) {
+                        center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+                    }
+                }
+            }
+
+            DreamObject viewList = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            int centerX = center.GetVariable("x").GetValueAsInteger();
+            int centerY = center.GetVariable("y").GetValueAsInteger();
+
+            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
+                    if (x == centerX && y == centerY) continue;
+
+                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
+
+                    viewList.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(turf), turf.GetVariable("contents") }));
+                }
+            }
+
+            return new DreamValue(viewList);
         }
 
         public static DreamObject params2list(string queryString) {
@@ -730,6 +773,26 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.OrdinalIgnoreCase));
         }
+        
+        [DreamProc("replacetextEx")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Replacement", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
+        public static DreamValue NativeProc_replacetextEx(DreamProcScope scope, DreamProcArguments arguments) {
+            string text = scope.GetValue("Haystack").GetValueAsString();
+            string needle = scope.GetValue("Needle").GetValueAsString();
+            string replacement = scope.GetValue("Replacement").GetValueAsString();
+            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
+            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+
+            if (end == 0) {
+                end = text.Length + 1;
+            }
+
+            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
+        }
 
         [DreamProc("round")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
@@ -807,6 +870,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(listObject);
+        }
+
+        [DreamProc("sqrt")]
+        [DreamProcParameter("A", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_sqrt(DreamProcScope scope, DreamProcArguments arguments) {
+            double a = scope.GetValue("A").GetValueAsNumber();
+
+            return new DreamValue(Math.Sqrt(a));
         }
 
         [DreamProc("text")]
@@ -934,7 +1005,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         [DreamProc("view")]
-        [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 4)]
+        [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_view(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int distance = 5;

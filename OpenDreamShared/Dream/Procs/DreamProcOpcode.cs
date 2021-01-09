@@ -64,7 +64,8 @@
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
         BitShiftRight = 0x40,
-        GetLocalVariable = 0x41
+        GetLocalVariable = 0x41,
+        Power = 0x42
     }
 
     enum DreamProcOpcodeParameterType {

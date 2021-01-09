@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace DMCompiler.Compiler.DM.Visitors {
     class DMVisitorProcBuilder : DMASTVisitor {
         private DMProc _proc;
-        private Stack<object> _valueStack = new Stack<object>();
+        private Stack<object> _valueStack = new();
         private int _labelIdCounter = 0;
 
         public DMProc BuildProc(DMASTProcDefinition procDefinition) {
@@ -68,7 +68,12 @@ namespace DMCompiler.Compiler.DM.Visitors {
         }
 
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            if (varDeclaration.Value != null) {
+            if (varDeclaration.Value is DMASTNewInferred) {
+                if (varDeclaration.Type == null) throw new Exception("An inferred new requires a type!");
+                DMASTCallParameter[] parameters = ((DMASTNewInferred)varDeclaration.Value).Parameters;
+
+                new DMASTNewPath(varDeclaration.Type, parameters).Visit(this);
+            } else if (varDeclaration.Value != null) {
                 varDeclaration.Value.Visit(this);
             } else {
                 _proc.PushNull();
@@ -460,6 +465,12 @@ namespace DMCompiler.Compiler.DM.Visitors {
             modulus.A.Visit(this);
             modulus.B.Visit(this);
             _proc.Modulus();
+        }
+
+        public void VisitPower(DMASTPower power) {
+            power.A.Visit(this);
+            power.B.Visit(this);
+            _proc.Power();
         }
 
         public void VisitAppend(DMASTAppend append) {

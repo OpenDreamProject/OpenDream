@@ -199,6 +199,7 @@ namespace OpenDreamServer.Dream.Procs {
                 IDreamProcIdentifier identifier = PopIdentifier();
 
                 identifier.Assign(value);
+                Push(value);
             } else if (opcode == DreamProcOpcode.Call) {
                 DreamProcInterpreterArguments arguments = PopArguments();
                 IDreamProcIdentifier procIdentifier = PopIdentifier();
@@ -293,6 +294,8 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
                     Push(new DreamValue(first.GetValueAsFloat() - second.GetValueAsInteger()));
+                } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Integer) {
+                    Push(new DreamValue(-second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value != null) {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
@@ -422,8 +425,6 @@ namespace OpenDreamServer.Dream.Procs {
 
                 if (dreamObject != null) {
                     dreamObject.Delete();
-                } else {
-                    throw new Exception("Cannot delete a null value");
                 }
             } else if (opcode == DreamProcOpcode.PushResource) {
                 string resourcePath = ReadString();
@@ -479,11 +480,11 @@ namespace OpenDreamServer.Dream.Procs {
                     throw new Exception("Call statement has an invalid source (" + source + ")");
                 }
             } else if (opcode == DreamProcOpcode.BitAnd) {
-                int second = PopDreamValue().GetValueAsInteger();
+                DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
 
-                if (first.Value != null) {
-                    Push(new DreamValue(first.GetValueAsInteger() & second));
+                if (first.Value != null && second.Value != null) {
+                    Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
                 } else {
                     Push(new DreamValue(0));
                 }
@@ -815,6 +816,17 @@ namespace OpenDreamServer.Dream.Procs {
                 int localVariableId = ReadByte();
 
                 Push(new DreamProcIdentifierLocalVariable(_localVariables, localVariableId));
+            } else if (opcode == DreamProcOpcode.Power) {
+                DreamValue second = PopDreamValue();
+                DreamValue first = PopDreamValue();
+                
+                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
+                    Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsFloat())));
+                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                    Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
+                } else {
+                    throw new Exception("Invalid power operation on " + first + " and " + second);
+                }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");
             }
@@ -948,6 +960,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsFloat() < second.GetValueAsFloat();
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Value == null) {
                 return first.GetValueAsFloat() < 0;
+            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Integer) {
+                return 0 < second.GetValueAsInteger();
             } else {
                 throw new Exception("Invalid less than comparison between " + first + " and " + second);
             }

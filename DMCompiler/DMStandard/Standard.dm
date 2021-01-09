@@ -37,18 +37,21 @@ proc/lowertext(T)
 proc/max(A)
 proc/min(A)
 proc/num2text(N, Digits, Radix)
-proc/orange(Dist, Center = usr)
+proc/orange(Dist = 5, Center = usr)
+proc/oview(Dist = 5, Center = usr)
 proc/params2list(Params)
 proc/pick(Val1)
 proc/prob(P)
 proc/rand(L, H)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
+proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/round(A, B)
 proc/sleep(Delay)
 proc/sorttext(T1, T2)
 proc/sorttextEx(T1, T2)
 proc/sound(file, repeat = 0, wait, channel, volume)
 proc/splittext(Text, Delimiter)
+proc/sqrt(A)
 proc/text(FormatText)
 proc/text2ascii(T, pos = 1)
 proc/text2file(Text, File)
@@ -136,18 +139,23 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 /world
 	var/list/contents = list()
 
+	var/area = /area
+	var/turf = /turf
+	var/mob = /mob
+
 	var/name = "OpenDream World"
 	var/time
 	var/timeofday
 	var/realtime
-	var/tick_lag = 0.5
+	var/tick_lag = 1
+	var/fps = 10
 	var/tick_usage
-
-	var/mob/mob = /mob
 
 	var/maxx = 0
 	var/maxy = 0
 	var/maxz = 0
+	var/icon_size = 32
+	var/view = 5
 
 	proc/New()
 	proc/Del()
@@ -230,6 +238,7 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	var/icon = null
 	var/icon_state = ""
 	var/layer = 2.0
+	var/plane = -32767
 	var/alpha = 255
 	var/color = "#FFFFFF"
 	var/invisibility = 0

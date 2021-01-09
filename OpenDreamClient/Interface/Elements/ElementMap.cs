@@ -38,6 +38,15 @@ namespace OpenDreamClient.Interface.Elements {
             
         }
 
+        private (int X, int Y) ControlToWorldCoordinates(double x, double y) {
+            x = Math.Floor(x);
+            y = _dreamRenderer.OpenGLViewControl.Height - Math.Floor(y);
+            int viewATOMX = (int)(x / 32);
+            int viewATOMY = (int)(y / 32);
+
+            return (_dreamRenderer.CameraX - 7 + viewATOMX, _dreamRenderer.CameraY - 7 + viewATOMY);
+        }
+
         private void OnLoaded(object sender, RoutedEventArgs e) {
             _dreamRenderer.SetViewportSize(480, 480);
         }
@@ -47,14 +56,9 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private void OnLeftMouseDown(object sender, MouseEventArgs e) {
-            e.Handled = true;
-            this.Focus();
-
             Point mousePosition = e.GetPosition(_dreamRenderer.OpenGLViewControl);
-            mousePosition.X = Math.Floor(mousePosition.X);
-            mousePosition.Y = _dreamRenderer.OpenGLViewControl.Height - Math.Floor(mousePosition.Y);
-
-            if (mousePosition.X < 0 || mousePosition.X > _dreamRenderer.OpenGLViewControl.Width || mousePosition.Y < 0 || mousePosition.Y > _dreamRenderer.OpenGLViewControl.Height) return;
+            if (mousePosition.X < 0 || mousePosition.X > _dreamRenderer.OpenGLViewControl.Width ||
+                mousePosition.Y < 0 || mousePosition.Y > _dreamRenderer.OpenGLViewControl.Height) return;
 
             ATOM clickedATOM = null;
             int iconX = 0, iconY = 0;
@@ -62,10 +66,11 @@ namespace OpenDreamClient.Interface.Elements {
             foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
                 System.Drawing.Point screenCoordinates = screenObject.ScreenLocation.GetScreenCoordinates(32);
                 System.Drawing.Rectangle iconRect = new(screenCoordinates, new System.Drawing.Size(32, 32));
+                int mouseY = (int)_dreamRenderer.OpenGLViewControl.Height - (int)mousePosition.Y;
 
-                if (iconRect.Contains(new System.Drawing.Point((int)mousePosition.X, (int)mousePosition.Y))) {
+                if (iconRect.Contains(new System.Drawing.Point((int)mousePosition.X, mouseY))) {
                     int screenObjectIconX = (int)mousePosition.X - iconRect.X;
-                    int screenObjectIconY = 32 - ((int)mousePosition.Y - iconRect.Y);
+                    int screenObjectIconY = 32 - (mouseY - iconRect.Y);
 
                     if (screenObject.Icon.GetPixel(screenObjectIconX, screenObjectIconY).A != 0) {
                         clickedATOM = screenObject;
@@ -77,17 +82,15 @@ namespace OpenDreamClient.Interface.Elements {
             }
 
             if (clickedATOM == null) {
-                int viewATOMX = (int)(mousePosition.X / 32);
-                int viewATOMY = (int)(mousePosition.Y / 32);
-                int atomX = (_dreamRenderer.CameraX - 7) + viewATOMX;
-                int atomY = (_dreamRenderer.CameraY - 7) + viewATOMY;
+                (int X, int Y) worldCoordinates = ControlToWorldCoordinates(mousePosition.X, mousePosition.Y);
 
-                iconX = (int)mousePosition.X % 32;
-                iconY = (int)mousePosition.Y % 32;
-                if (atomX >= 0 && atomY >= 0 && atomX < Program.OpenDream.Map.Turfs.GetLength(0) && atomY < Program.OpenDream.Map.Turfs.GetLength(1)) {
-                    ATOM turf = Program.OpenDream.Map.Turfs[atomX, atomY];
+                if (Program.OpenDream.Map.IsValidCoordinate(worldCoordinates.X, worldCoordinates.Y)) {
+                    ATOM turf = Program.OpenDream.Map.Turfs[worldCoordinates.X, worldCoordinates.Y];
 
                     if (turf != null) {
+                        iconX = (int)mousePosition.X % 32;
+                        iconY = 32 - ((int)mousePosition.Y % 32);
+
                         foreach (ATOM atom in turf.Contents) {
                             bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
 
@@ -102,6 +105,8 @@ namespace OpenDreamClient.Interface.Elements {
             }
 
             if (clickedATOM == null) return;
+            e.Handled = true;
+            this.Focus();
 
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY);
             pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);

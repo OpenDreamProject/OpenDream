@@ -401,6 +401,20 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
+            DMASTPower power = expression as DMASTPower;
+            if (modulus != null) {
+                SimplifyExpression(ref modulus.A);
+                SimplifyExpression(ref modulus.B);
+                if (modulus.A is not DMASTExpressionConstant || modulus.B is not DMASTExpressionConstant) return;
+
+                DMASTConstantInteger aInteger = modulus.A as DMASTConstantInteger;
+                DMASTConstantInteger bInteger = modulus.B as DMASTConstantInteger;
+
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger((int)Math.Pow(aInteger.Value, bInteger.Value));
+
+                return;
+            }
+
             DMASTAppend append = expression as DMASTAppend;
             if (append != null) {
                 SimplifyExpression(ref append.A);

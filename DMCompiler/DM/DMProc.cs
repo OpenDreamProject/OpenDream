@@ -261,6 +261,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
+        public void Power() {
+            WriteOpcode(DreamProcOpcode.Power);
+        }
+
         public void Append() {
             WriteOpcode(DreamProcOpcode.Append);
         }

@@ -83,7 +83,7 @@ namespace OpenDreamServer.Dream {
             } else if (value is DreamProc) {
                 Type = DreamValueType.DreamProc;
             } else {
-                throw new ArgumentException("Invalid DreamValue value");
+                throw new ArgumentException("Invalid DreamValue value (" + value + ")");
             }
         }
 

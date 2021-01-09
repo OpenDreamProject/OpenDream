@@ -74,6 +74,10 @@ namespace OpenDreamClient.Dream {
             }
         }
 
+        public Rectangle GetTextureRect() {
+            return DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
+        }
+
         public bool IsValidIcon() {
             return DMI != null && DMI.Description.States.ContainsKey(Appearance.IconState);
         }

@@ -81,16 +81,16 @@ namespace DMCompiler {
             if (dmObject.Variables.Count > 0) {
                 objectJson.Variables = new Dictionary<string, object>();
 
-                foreach (KeyValuePair<string, object> variable in dmObject.Variables) {
-                    objectJson.Variables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value));
+                foreach (KeyValuePair<string, DMVariable> variable in dmObject.Variables) {
+                    objectJson.Variables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
                 }
             }
 
             if (dmObject.GlobalVariables.Count > 0) {
                 objectJson.GlobalVariables = new Dictionary<string, object>();
 
-                foreach (KeyValuePair<string, object> variable in dmObject.GlobalVariables) {
-                    objectJson.GlobalVariables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value));
+                foreach (KeyValuePair<string, DMVariable> variable in dmObject.GlobalVariables) {
+                    objectJson.GlobalVariables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
                 }
             }
 

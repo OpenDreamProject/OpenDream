@@ -79,6 +79,14 @@ namespace OpenDreamShared.Dream {
         }
 
         public void AddAtomDeletion(UInt16 atomID) {
+            foreach (AtomCreation atomCreation in AtomCreations) {
+                if (atomCreation.AtomID == atomID) {
+                    AtomCreations.Remove(atomCreation);
+
+                    break;
+                }
+            }
+
             AtomDeletions.Add(atomID);
         }
 
@@ -113,7 +121,10 @@ namespace OpenDreamShared.Dream {
             if (atomCreation != null) {
                 atomCreation.Overlays[overlayID] = iconAppearanceID;
             } else {
-                GetAtomDelta(atomID).OverlayAdditions[overlayID] = iconAppearanceID;
+                AtomDelta atomDelta = GetAtomDelta(atomID);
+
+                atomDelta.OverlayRemovals.Remove(overlayID);
+                atomDelta.OverlayAdditions[overlayID] = iconAppearanceID;
             }
         }
 
@@ -123,7 +134,10 @@ namespace OpenDreamShared.Dream {
             if (atomCreation != null) {
                 atomCreation.Overlays.Remove(overlayID);
             } else {
-                GetAtomDelta(atomID).OverlayRemovals.Add(overlayID);
+                AtomDelta atomDelta = GetAtomDelta(atomID);
+
+                atomDelta.OverlayAdditions.Remove(overlayID);
+                atomDelta.OverlayRemovals.Add(overlayID);
             }
         }
 

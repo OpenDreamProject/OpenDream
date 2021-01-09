@@ -158,9 +158,9 @@ namespace OpenDreamServer.Dream.Objects {
                 if (jsonElement.GetRawText().Contains(".")) {
                     return new DreamValue(jsonElement.GetSingle());
                 } else {
-                    Int32 value = 0x7FFFFFFF;
+                    int value;
+                    if (!jsonElement.TryGetInt32(out value)) value = Int32.MaxValue;
 
-                    jsonElement.TryGetInt32(out value);
                     return new DreamValue(value);
                 }
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {

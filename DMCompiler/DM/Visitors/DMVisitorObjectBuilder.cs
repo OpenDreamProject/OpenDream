@@ -7,8 +7,8 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorObjectBuilder : DMASTVisitor {
-        private Stack<object> _valueStack = new Stack<object>();
-        private Dictionary<DreamPath, DMObject> _dmObjects = new Dictionary<DreamPath, DMObject>();
+        private Stack<object> _valueStack = new();
+        private Dictionary<DreamPath, DMObject> _dmObjects = new();
         private UInt32 _dmObjectIdCounter = 0;
         private DMObject _currentObject = null;
         private DMVisitorProcBuilder _procBuilder = new DMVisitorProcBuilder();
@@ -67,10 +67,11 @@ namespace DMCompiler.DM.Visitors {
                 value = _valueStack.Pop();
             }
 
+            DMVariable variable = new DMVariable((varDefinition.Type != null) ? varDefinition.Type.Path : null, value);
             if (varDefinition.IsGlobal) {
-                dmObject.GlobalVariables[varDefinition.Name] = value;
+                dmObject.GlobalVariables[varDefinition.Name] = variable;
             } else {
-                dmObject.Variables[varDefinition.Name] = value;
+                dmObject.Variables[varDefinition.Name] = variable;
             }
         }
 
@@ -88,7 +89,7 @@ namespace DMCompiler.DM.Visitors {
                 dmObject.Parent = parentType.Value.Path;
             } else {
                 varOverride.Value.Visit(this);
-                dmObject.Variables[varOverride.VarName] = _valueStack.Pop();
+                dmObject.Variables[varOverride.VarName] = new DMVariable(null, _valueStack.Pop()); //TODO: Find the type
             }
         }
 
@@ -184,10 +185,11 @@ namespace DMCompiler.DM.Visitors {
         private DMObject GetDMObject(DreamPath path) {
             DMObject dmObject;
             if (!_dmObjects.TryGetValue(path, out dmObject)) {
-                DreamPath parentType = path.FromElements(0, -2);
+                DreamPath? parentType = null;
 
-                if (parentType.Elements.Length >= 1) {
-                    GetDMObject(parentType); //Make sure the parent exists
+                if (path.Elements.Length >= 2) {
+                    parentType = path.FromElements(0, -2);
+                    GetDMObject(parentType.Value); //Make sure the parent exists
                 }
 
                 dmObject = new DMObject(_dmObjectIdCounter++, path, parentType);
@@ -195,6 +197,20 @@ namespace DMCompiler.DM.Visitors {
             }
 
             return dmObject;
+        }
+
+        private DMVariable GetVariable(DMObject dmObject, string variableName) {
+            DMVariable variable = null;
+
+            while (variable == null) {
+                if (!dmObject.Variables.TryGetValue(variableName, out variable)) {
+                    if (dmObject.Parent == null) break;
+
+                    dmObject = GetDMObject(dmObject.Parent.Value);
+                }
+            }
+
+            return variable;
         }
     }
 }

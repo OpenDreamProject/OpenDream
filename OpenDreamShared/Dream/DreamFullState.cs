@@ -100,7 +100,7 @@ namespace OpenDreamShared.Dream {
 
                     if (atomDelta.OverlayAdditions.Count > 0) {
                         foreach (KeyValuePair<UInt16, int> overlay in atomDelta.OverlayAdditions) {
-                            atom.Overlays.Add(overlay.Key, overlay.Value);
+                            atom.Overlays[overlay.Key] = overlay.Value;
                         }
                     }
 

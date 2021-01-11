@@ -10,7 +10,6 @@ namespace OpenDreamShared.Dream {
             public UInt16 LocationID;
             public int IconAppearanceID;
             public ScreenLocation ScreenLocation;
-            public Dictionary<UInt16, int> Overlays;
         }
 
         public class Client {
@@ -65,7 +64,6 @@ namespace OpenDreamShared.Dream {
                     atom.LocationID = atomCreation.LocationID;
                     atom.IconAppearanceID = atomCreation.IconAppearanceID;
                     atom.ScreenLocation = atomCreation.ScreenLocation;
-                    atom.Overlays = new Dictionary<UInt16, int>();
 
                     Atoms[atom.AtomID] = atom;
                 }
@@ -90,18 +88,6 @@ namespace OpenDreamShared.Dream {
 
                     if (atomDelta.ScreenLocation.HasValue) {
                         atom.ScreenLocation = atomDelta.ScreenLocation.Value;
-                    }
-
-                    if (atomDelta.OverlayRemovals.Count > 0) {
-                        foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
-                            atom.Overlays.Remove(overlayID);
-                        }
-                    }
-
-                    if (atomDelta.OverlayAdditions.Count > 0) {
-                        foreach (KeyValuePair<UInt16, int> overlay in atomDelta.OverlayAdditions) {
-                            atom.Overlays[overlay.Key] = overlay.Value;
-                        }
                     }
 
                     Atoms[atomDelta.AtomID] = atom;

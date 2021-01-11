@@ -8,7 +8,7 @@ using OpenDreamShared.Resources;
 namespace OpenDreamClient.Dream {
     class DreamIcon {
         public ResourceDMI DMI { get; private set; } = null;
-        public Dictionary<UInt16, DreamIcon> Overlays { get; } = new Dictionary<UInt16, DreamIcon>();
+        public List<DreamIcon> Overlays { get; } = new();
 
         public int AnimationFrame {
             get {
@@ -59,7 +59,7 @@ namespace OpenDreamClient.Dream {
                 Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
 
                 if (pixel.A == Color.Transparent.A || !IsValidIcon()) {
-                    foreach (DreamIcon overlay in Overlays.Values) {
+                    foreach (DreamIcon overlay in Overlays) {
                         pixel = overlay.GetPixel(x, y);
 
                         if (pixel.A != Color.Transparent.A) return pixel;
@@ -82,20 +82,7 @@ namespace OpenDreamClient.Dream {
             return DMI != null && DMI.Description.States.ContainsKey(Appearance.IconState);
         }
 
-        public void AddOverlay(UInt16 id, IconAppearance appearance) {
-            Overlays.Add(id, new DreamIcon(appearance));
-        }
-
-        public void RemoveOverlay(UInt16 id) {
-            Overlays.Remove(id);
-        }
-
         private void UpdateIcon() {
-            UpdateTexture();
-            UpdateOverlays();
-        }
-
-        private void UpdateTexture() {
             if (Appearance.Icon == null) {
                 DMI = null;
                 return;
@@ -108,12 +95,27 @@ namespace OpenDreamClient.Dream {
                 _animationFrame = 0;
                 _animationFrameTime = DateTime.Now;
             });
-        }
 
-        private void UpdateOverlays() {
-            foreach (DreamIcon overlay in Overlays.Values) {
-                overlay.Appearance = new IconAppearance(overlay.Appearance) { Direction = Appearance.Direction };
+            Overlays.Clear();
+            foreach (int overlayId in Appearance.Overlays) {
+                IconAppearance appearance = Program.OpenDream.IconAppearances[overlayId];
+
+                if (appearance.Direction == AtomDirection.None) {
+                    appearance = new IconAppearance(appearance) { Direction = Appearance.Direction };
+                }
+
+                Overlays.Add(new DreamIcon(appearance));
             }
+
+            Overlays.Sort(
+                new Comparison<DreamIcon>((DreamIcon first, DreamIcon second) => {
+                    float diff = first.Appearance.Layer - second.Appearance.Layer;
+
+                    if (diff < 0) return -1;
+                    else if (diff > 0) return 1;
+                    return 0;
+                })
+            );
         }
     }
 }

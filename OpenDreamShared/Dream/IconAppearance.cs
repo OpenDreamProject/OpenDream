@@ -13,7 +13,8 @@ namespace OpenDreamShared.Dream {
             PixelY,
             Color,
             Layer,
-            Invisibility
+            Invisibility,
+            Overlays
         }
 
         public static Dictionary<string, UInt32> Colors = new() {
@@ -46,6 +47,7 @@ namespace OpenDreamShared.Dream {
         public UInt32 Color = 0xFFFFFFFF;
         public float Layer;
         public int Invisibility;
+        public List<int> Overlays = new();
 
         public IconAppearance() { }
 
@@ -58,6 +60,10 @@ namespace OpenDreamShared.Dream {
             Color = appearance.Color;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
+            
+            foreach (int overlay in appearance.Overlays) {
+                Overlays.Add(overlay);
+            }
         }
 
         public override bool Equals(object obj) {
@@ -72,12 +78,17 @@ namespace OpenDreamShared.Dream {
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Invisibility != Invisibility) return false;
+            if (appearance.Overlays.Count != Overlays.Count) return false;
+
+            for (int i = 0; i < Overlays.Count; i++) {
+                if (appearance.Overlays[i] != Overlays[i]) return false;
+            }
 
             return true;
         }
 
         public override int GetHashCode() {
-            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer + Invisibility).GetHashCode();
+            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer + Invisibility + Overlays.GetHashCode()).GetHashCode();
         }
 
         public void SetColor(string color) {
@@ -139,6 +150,15 @@ namespace OpenDreamShared.Dream {
                 packetStream.WriteByte((byte)Invisibility);
             }
 
+            if (Overlays.Count > 0) {
+                packetStream.WriteByte((byte)AppearanceProperty.Overlays);
+                packetStream.WriteByte((byte)Overlays.Count);
+
+                foreach (int overlay in Overlays) {
+                    packetStream.WriteUInt32((UInt32)overlay);
+                }
+            }
+
             packetStream.WriteByte((byte)AppearanceProperty.End);
         }
 
@@ -155,7 +175,16 @@ namespace OpenDreamShared.Dream {
                     case AppearanceProperty.PixelY: appearance.PixelY = packetStream.ReadInt16(); break;
                     case AppearanceProperty.Color: appearance.Color = packetStream.ReadUInt32(); break;
                     case AppearanceProperty.Layer: appearance.Layer = packetStream.ReadFloat(); break;
-                    case AppearanceProperty.Invisibility: appearance.Invisibility = (int)packetStream.ReadByte(); break;
+                    case AppearanceProperty.Invisibility: appearance.Invisibility = packetStream.ReadByte(); break;
+                    case AppearanceProperty.Overlays: {
+                        int overlayCount = packetStream.ReadByte();
+
+                        for (int i = 0; i < overlayCount; i++) {
+                            appearance.Overlays.Add((int)packetStream.ReadUInt32());
+                        }
+
+                        break;
+                    }
                     default: throw new Exception("Invalid appearnce property '" + property + "'");
                 }
 

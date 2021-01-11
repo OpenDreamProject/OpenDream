@@ -16,10 +16,8 @@ namespace OpenDreamShared.Net.Packets {
 
         private enum AtomDeltaValueID {
             End = 0x0,
-            OverlayAdditions = 0x1,
-            OverlayRemovals = 0x2,
-            ScreenLocation = 0x3,
-            IconAppearance = 0x4
+            ScreenLocation = 0x1,
+            IconAppearance = 0x2
         }
 
         private enum ClientValueID {
@@ -78,7 +76,6 @@ namespace OpenDreamShared.Net.Packets {
                 DreamDeltaState.AtomCreation atomCreation = new DreamDeltaState.AtomCreation(stream.ReadUInt16(), (AtomType)stream.ReadByte(), (int)stream.ReadUInt32());
 
                 atomCreation.LocationID = stream.ReadUInt16();
-                atomCreation.Overlays = stream.ReadOverlays();
                 if (atomCreation.Type == AtomType.Movable) {
                     atomCreation.ScreenLocation = stream.ReadScreenLocation();
                 }
@@ -96,7 +93,6 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteByte((byte)atomCreation.Type);
                 stream.WriteUInt32((UInt32)atomCreation.IconAppearanceID);
                 stream.WriteUInt16(atomCreation.LocationID);
-                stream.WriteOverlays(atomCreation.Overlays);
                 if (atomCreation.Type == AtomType.Movable) {
                     stream.WriteScreenLocation(atomCreation.ScreenLocation);
                 }
@@ -130,16 +126,7 @@ namespace OpenDreamShared.Net.Packets {
                 do {
                     valueID = (AtomDeltaValueID)stream.ReadByte();
 
-                    if (valueID == AtomDeltaValueID.OverlayAdditions) {
-                        atomDelta.OverlayAdditions = stream.ReadOverlays();
-                    } else if (valueID == AtomDeltaValueID.OverlayRemovals) {
-                        int overlayRemovalCount = stream.ReadByte();
-
-                        atomDelta.OverlayRemovals = new List<UInt16>();
-                        for (int k = 0; k < overlayRemovalCount; k++) {
-                            atomDelta.OverlayRemovals.Add((UInt16)stream.ReadByte());
-                        }
-                    } else if (valueID == AtomDeltaValueID.ScreenLocation) {
+                    if (valueID == AtomDeltaValueID.ScreenLocation) {
                         atomDelta.ScreenLocation = stream.ReadScreenLocation();
                     } else if (valueID == AtomDeltaValueID.IconAppearance) {
                         atomDelta.NewIconAppearanceID = (int)stream.ReadUInt32();
@@ -164,23 +151,8 @@ namespace OpenDreamShared.Net.Packets {
                     stream.WriteScreenLocation(atomDelta.ScreenLocation.Value);
                 }
 
-                if (atomDelta.OverlayAdditions.Count > 0) {
-                    stream.WriteByte((byte)AtomDeltaValueID.OverlayAdditions);
-                    stream.WriteOverlays(atomDelta.OverlayAdditions);
-                }
-
-                if (atomDelta.OverlayRemovals.Count > 0) {
-                    stream.WriteByte((byte)AtomDeltaValueID.OverlayRemovals);
-
-                    stream.WriteByte((byte)atomDelta.OverlayRemovals.Count);
-                    foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
-                        stream.WriteByte((byte)overlayID);
-                    }
-                }
-
                 if (atomDelta.NewIconAppearanceID.HasValue) {
                     stream.WriteByte((byte)AtomDeltaValueID.IconAppearance);
-
                     stream.WriteUInt32((UInt32)atomDelta.NewIconAppearanceID.Value);
                 }
 

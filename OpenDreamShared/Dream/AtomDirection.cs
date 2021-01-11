@@ -1,5 +1,7 @@
 ﻿namespace OpenDreamShared.Dream {
     public enum AtomDirection {
+        None = 0,
+
         North = 1,
         South = 2,
         East = 4,

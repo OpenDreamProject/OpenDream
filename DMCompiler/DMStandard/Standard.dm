@@ -2,9 +2,11 @@
 
 proc/abs(A)
 proc/animate(Object, time, loop, easing, flags)
+proc/arctan(A)
 proc/ascii2text(N)
 proc/ckey(Key)
 proc/copytext(T, Start = 1, End = 0)
+proc/cos(X)
 proc/CRASH(msg)
 proc/fcopy(Src, Dst)
 proc/fcopy_rsc(File)
@@ -46,6 +48,7 @@ proc/rand(L, H)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/round(A, B)
+proc/sin(X)
 proc/sleep(Delay)
 proc/sorttext(T1, T2)
 proc/sorttextEx(T1, T2)
@@ -164,6 +167,8 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	var/type
 	var/parent_type
 
+	var/tag = null
+
 	proc/New()
 	proc/Del()
 	proc/Topic(href, href_list)
@@ -279,7 +284,13 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 
 		if (loc == NewLoc || !loc.Exit(src, NewLoc)) return 0
 		if (NewLoc.Enter(src, loc))
+			var/atom/oldloc = loc
 			loc = NewLoc
+			
+			for (var/atom/uncrossed in oldloc)
+				uncrossed.Uncrossed(src)
+			for (var/atom/crossed in loc)
+				crossed.Crossed(src)
 
 			return 1
 		else
@@ -400,3 +411,8 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	else if (dirAngle == 225) return 2 | 8
 	else if (dirAngle == 270) return 8
 	else if (dirAngle == 315) return 1 | 8
+
+proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
+	var/dir = get_dir(Ref, Trg)
+
+	Ref.Move(get_step(Ref, dir), dir)

@@ -8,7 +8,6 @@ namespace OpenDreamShared.Dream {
             public AtomType Type;
             public UInt16 LocationID = 0xFFFF;
             public int IconAppearanceID;
-            public Dictionary<UInt16, int> Overlays = new();
             public ScreenLocation ScreenLocation = new ScreenLocation();
 
             public AtomCreation(UInt16 atomID, AtomType type, int appearanceID) {
@@ -31,8 +30,6 @@ namespace OpenDreamShared.Dream {
         public class AtomDelta {
             public UInt16 AtomID;
             public int? NewIconAppearanceID = null;
-            public Dictionary<UInt16, int> OverlayAdditions = new();
-            public List<UInt16> OverlayRemovals = new();
             public ScreenLocation? ScreenLocation;
 
             public AtomDelta(UInt16 atomID) {
@@ -112,32 +109,6 @@ namespace OpenDreamShared.Dream {
                 AtomDelta atomDelta = GetAtomDelta(atomID);
 
                 atomDelta.NewIconAppearanceID = iconAppearanceID;
-            }
-        }
-
-        public void AddAtomOverlay(UInt16 atomID, UInt16 overlayID, int iconAppearanceID) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.Overlays[overlayID] = iconAppearanceID;
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-
-                atomDelta.OverlayRemovals.Remove(overlayID);
-                atomDelta.OverlayAdditions[overlayID] = iconAppearanceID;
-            }
-        }
-
-        public void RemoveAtomOverlay(UInt16 atomID, UInt16 overlayID) {
-            AtomCreation atomCreation = GetAtomCreation(atomID);
-
-            if (atomCreation != null) {
-                atomCreation.Overlays.Remove(overlayID);
-            } else {
-                AtomDelta atomDelta = GetAtomDelta(atomID);
-
-                atomDelta.OverlayAdditions.Remove(overlayID);
-                atomDelta.OverlayRemovals.Add(overlayID);
             }
         }
 

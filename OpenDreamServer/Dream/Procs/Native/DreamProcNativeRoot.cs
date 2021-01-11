@@ -31,6 +31,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue((DreamObject)null);
         }
 
+        [DreamProc("arctan")]
+        [DreamProcParameter("A", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_arctan(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue aValue = scope.GetValue("A");
+            float a = (aValue.Value == null) ? 0 : aValue.GetValueAsNumber();
+            double rad = a * Math.PI / 180;
+            double atan = Math.Atan(rad);
+
+            return new DreamValue((float)(atan * 180 / Math.PI));
+        }
+
         [DreamProc("ascii2text")]
         [DreamProcParameter("N", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_ascii2text(DreamProcScope scope, DreamProcArguments arguments) {
@@ -64,6 +75,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(text.Substring(start - 1, end - start));
+        }
+
+        [DreamProc("cos")]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_cos(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue xValue = scope.GetValue("X");
+            float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
+            double rad = x * Math.PI / 180;
+
+            return new DreamValue((float)Math.Cos(rad));
         }
 
         [DreamProc("CRASH")]
@@ -745,7 +766,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("H", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_rand(DreamProcScope scope, DreamProcArguments arguments) {
             if (arguments.ArgumentCount == 0) {
-                return new DreamValue(new Random().NextDouble());
+                return new DreamValue((float)new Random().NextDouble());
             } else {
                 int low = arguments.GetArgument(0, "L").GetValueAsInteger();
                 int high = arguments.GetArgument(1, "H").GetValueAsInteger();
@@ -807,6 +828,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
+        }
+
+        [DreamProc("sin")]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_sin(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue xValue = scope.GetValue("X");
+            float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
+            double rad = x * Math.PI / 180;
+
+            return new DreamValue((float)Math.Sin(rad));
         }
 
         [DreamProc("sleep")]

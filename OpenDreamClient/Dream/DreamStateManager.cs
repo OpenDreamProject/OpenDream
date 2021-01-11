@@ -18,9 +18,6 @@ namespace OpenDreamClient.Dream {
                 ATOM atom = new ATOM(stateAtom.Key, stateAtom.Value.Type, stateAtom.Value.IconAppearanceID);
 
                 atom.Icon.Appearance = Program.OpenDream.IconAppearances[stateAtom.Value.IconAppearanceID];
-                foreach (KeyValuePair<UInt16, int> overlay in stateAtom.Value.Overlays) {
-                    atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
-                }
 
                 atom.ScreenLocation = stateAtom.Value.ScreenLocation;
 
@@ -98,10 +95,6 @@ namespace OpenDreamClient.Dream {
                     } else {
                         atom.Loc = null;
                     }
-
-                    foreach (KeyValuePair<UInt16, int> overlay in atomCreation.Overlays) {
-                        atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
-                    }
                 } else {
                     Console.WriteLine("Delta state packet created a new atom that already exists, and was ignored (ID " + atomCreation.AtomID + ")");
                 }
@@ -129,18 +122,6 @@ namespace OpenDreamClient.Dream {
                             atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomDelta.NewIconAppearanceID.Value];
                         } else {
                             Console.WriteLine("Invalid appearance ID " + atomDelta.NewIconAppearanceID.Value);
-                        }
-                    }
-
-                    if (atomDelta.OverlayRemovals != null) {
-                        foreach (UInt16 overlayID in atomDelta.OverlayRemovals) {
-                            atom.Icon.RemoveOverlay(overlayID);
-                        }
-                    }
-
-                    if (atomDelta.OverlayAdditions != null) {
-                        foreach (KeyValuePair<UInt16, int> overlay in atomDelta.OverlayAdditions) {
-                            atom.Icon.AddOverlay(overlay.Key, Program.OpenDream.IconAppearances[overlay.Value]);
                         }
                     }
 

@@ -108,31 +108,5 @@ namespace OpenDreamShared.Net.Packets {
             WriteSByte((sbyte)screenLocation.PixelOffsetX);
             WriteSByte((sbyte)screenLocation.PixelOffsetY);
         }
-
-        public Dictionary<UInt16, int> ReadOverlays() {
-            Dictionary<UInt16, int> overlays = new();
-            int overlayCount = ReadByte();
-
-            for (int i = 0; i < overlayCount; i++) {
-                UInt16 overlayID = ReadUInt16();
-
-                overlays[overlayID] = (int)ReadUInt32();
-            }
-
-            return overlays;
-        }
-
-        public void WriteOverlays(Dictionary<UInt16, int> overlays) {
-            if (overlays != null) {
-                WriteByte((byte)overlays.Count);
-
-                foreach (KeyValuePair<UInt16, int> overlay in overlays) {
-                    WriteUInt16(overlay.Key);
-                    WriteUInt32((UInt32)overlay.Value);
-                }
-            } else {
-                WriteByte(0);
-            }
-        }
     }
 }

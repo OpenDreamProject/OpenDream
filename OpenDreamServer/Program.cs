@@ -171,9 +171,11 @@ namespace OpenDreamServer {
             DreamObjectDefinition root = DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_arctan);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ckey);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_copytext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_cos);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_CRASH);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_fcopy);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_fcopy_rsc);
@@ -215,6 +217,7 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sin);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);

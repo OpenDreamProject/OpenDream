@@ -133,6 +133,10 @@ namespace OpenDreamClient.Renderer {
             _gl.Uniform2(_shader.TranslationUniform, x, y);
         }
 
+        private void SetPixelOffset(int x, int y) {
+            _gl.Uniform2(_shader.PixelOffsetUniform, (float)x, (float)y);
+        }
+
         private void DrawAtoms(List<ATOM> atoms, bool useScreenLocation) {
             //Sort by layer
             atoms.Sort(
@@ -156,20 +160,19 @@ namespace OpenDreamClient.Renderer {
 
                 if (atom.Icon.Appearance.Invisibility <= 0) { //0 is the default invisibility a mob can see
                     DrawDreamIcon(atom.Icon);
-                    foreach (DreamIcon overlayIcon in atom.Icon.Overlays.Values) {
-                        DrawDreamIcon(overlayIcon);
-                    }
                 }
             }
         }
 
-        private void DrawDreamIcon(DreamIcon icon) {
+        private void DrawDreamIcon(DreamIcon icon, int pixelX = 0, int pixelY = 0) {
             DreamTexture texture = GetDreamTexture(icon);
+            pixelX += icon.Appearance.PixelX;
+            pixelY += icon.Appearance.PixelY;
 
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
                 _gl.VertexAttribPointer(_shader.VertexLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
-                _gl.Uniform2(_shader.PixelOffsetUniform, (float)icon.Appearance.PixelX, (float)icon.Appearance.PixelY);
+                SetPixelOffset(pixelX, pixelY);
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconTextureCoordBuffer);
                 _gl.VertexAttribPointer(_shader.TextureCoordLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);
@@ -177,6 +180,10 @@ namespace OpenDreamClient.Renderer {
                 _gl.Uniform1(_shader.TextureSamplerUniform, 0);
                 SetColor(icon.Appearance.Color);
                 _gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
+            }
+
+            foreach (DreamIcon overlay in icon.Overlays) {
+                DrawDreamIcon(overlay, pixelX, pixelY);
             }
         }
     }

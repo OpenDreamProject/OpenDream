@@ -61,7 +61,6 @@ namespace OpenDreamShared.Net.Packets {
                 atom.Type = (AtomType)stream.ReadByte();
                 atom.LocationID = stream.ReadUInt16();
                 atom.IconAppearanceID = (int)stream.ReadUInt32();
-                atom.Overlays = stream.ReadOverlays();
                 if (atom.Type == AtomType.Movable) {
                     atom.ScreenLocation = stream.ReadScreenLocation();
                 }
@@ -78,7 +77,6 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteByte((byte)atom.Value.Type);
                 stream.WriteUInt16(atom.Value.LocationID);
                 stream.WriteUInt32((UInt32)atom.Value.IconAppearanceID);
-                stream.WriteOverlays(atom.Value.Overlays);
                 if (atom.Value.Type == AtomType.Movable) {
                     stream.WriteScreenLocation(atom.Value.ScreenLocation);
                 }

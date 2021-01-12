@@ -67,12 +67,12 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "pixel_x") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 
-                newAppearance.PixelX = variableValue.GetValueAsInteger();
+                newAppearance.PixelX = (int)variableValue.GetValueAsNumber();
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "pixel_y") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 
-                newAppearance.PixelY = variableValue.GetValueAsInteger();
+                newAppearance.PixelY = (int)variableValue.GetValueAsNumber();
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "layer") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));

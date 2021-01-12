@@ -31,13 +31,22 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue((DreamObject)null);
         }
 
+        [DreamProc("arccos")]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_arccos(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamValue xValue = scope.GetValue("X");
+            float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
+            double acos = Math.Acos(x);
+
+            return new DreamValue((float)(acos * 180 / Math.PI));
+        }
+
         [DreamProc("arctan")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_arctan(DreamProcScope scope, DreamProcArguments arguments) {
             DreamValue aValue = scope.GetValue("A");
             float a = (aValue.Value == null) ? 0 : aValue.GetValueAsNumber();
-            double rad = a * Math.PI / 180;
-            double atan = Math.Atan(rad);
+            double atan = Math.Atan(a);
 
             return new DreamValue((float)(atan * 180 / Math.PI));
         }
@@ -908,7 +917,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_sqrt(DreamProcScope scope, DreamProcArguments arguments) {
             double a = scope.GetValue("A").GetValueAsNumber();
 
-            return new DreamValue(Math.Sqrt(a));
+            return new DreamValue((float)Math.Sqrt(a));
         }
 
         [DreamProc("text")]

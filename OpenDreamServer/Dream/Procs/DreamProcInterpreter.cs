@@ -365,20 +365,20 @@ namespace OpenDreamServer.Dream.Procs {
                     } else {
                         identifier.Assign(second);
                     }
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsFloat()));
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
-
-                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
-                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsInteger()));
-                } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
-                    identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
-                } else {
-                    throw new Exception("Invalid append operation on " + first + " and " + second);
+                } else if (second.Value != null) {
+                    if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                        identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
+                    } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
+                        identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsFloat()));
+                    } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                        identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
+                    } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
+                        identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsInteger()));
+                    } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
+                        identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
+                    } else {
+                        throw new Exception("Invalid append operation on " + first + " and " + second);
+                    }
                 }
             } else if (opcode == DreamProcOpcode.CreateScope) {
                 _scopeStack.Push(new DreamProcScope(currentScope));
@@ -572,12 +572,14 @@ namespace OpenDreamServer.Dream.Procs {
                     } else {
                         identifier.Assign(second);
                     }
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
-                } else if (first.Value == null) {
-                    identifier.Assign(second);
-                } else {
-                    throw new Exception("Invalid combine operation on " + first + " and " + second);
+                } else if (second.Value != null) {
+                    if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                        identifier.Assign(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
+                    } else if (first.Value == null) {
+                        identifier.Assign(second);
+                    } else {
+                        throw new Exception("Invalid combine operation on " + first + " and " + second);
+                    }
                 }
             } else if (opcode == DreamProcOpcode.BooleanOr) {
                 DreamValue a = PopDreamValue();

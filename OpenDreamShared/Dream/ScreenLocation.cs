@@ -14,6 +14,14 @@ namespace OpenDreamShared.Dream {
             PixelOffsetY = pixelOffsetY;
         }
 
+        public ScreenLocation(int x, int y, int iconSize) {
+            X = x / iconSize + 1;
+            Y = y / iconSize + 1;
+
+            PixelOffsetX = x % iconSize;
+            PixelOffsetY = y % iconSize;
+        }
+
         public ScreenLocation(string screenLocation) {
             string[] coordinateSplit = screenLocation.Split(",");
             if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
@@ -28,6 +36,10 @@ namespace OpenDreamShared.Dream {
 
         public Point GetScreenCoordinates(int iconSize) {
             return new Point(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        }
+
+        public override string ToString() {
+            return X + ":" + PixelOffsetX + "," + Y + ":" + PixelOffsetY;
         }
 
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {

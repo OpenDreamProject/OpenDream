@@ -76,6 +76,7 @@ namespace OpenDreamServer {
                     NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
                     paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
                     paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
+                    paramsBuilder.Add("screen-loc", pClickAtom.ScreenLocation.ToString());
                     if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
                     if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
                     if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
@@ -171,6 +172,7 @@ namespace OpenDreamServer {
             DreamObjectDefinition root = DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_arccos);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arctan);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ckey);

@@ -2,6 +2,7 @@
 
 proc/abs(A)
 proc/animate(Object, time, loop, easing, flags)
+proc/arccos(X)
 proc/arctan(A)
 proc/ascii2text(N)
 proc/ckey(Key)
@@ -107,12 +108,20 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	var/list/verbs = list()
 	var/list/screen = list()
 	var/list/images = list()
+
 	var/mob/mob
-	var/atom/eye
 	var/key
 	var/ckey
 
+	var/atom/eye
+	var/view
+	var/pixel_x = 0
+	var/pixel_y = 0
+	var/pixel_z = 0
+	var/pixel_w = 0
+
 	proc/New(TopicData)
+		view = world.view
 		mob = new world.mob(null)
 
 		return mob

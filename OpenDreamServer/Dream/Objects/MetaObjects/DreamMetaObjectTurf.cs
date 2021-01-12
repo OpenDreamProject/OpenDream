@@ -3,16 +3,10 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectTurf : DreamMetaObjectAtom {
-        private static DreamObject _area = null; //TODO: Actual areas
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamObject loc = DreamMetaObjectAtom.FindLocArgument(creationArguments);
 
             base.OnObjectCreated(dreamObject, creationArguments);
-
-            if (_area == null) {
-                _area = Program.DreamObjectTree.CreateObject(DreamPath.Area);
-            }
 
             if (loc != null && loc.IsSubtypeOf(DreamPath.Turf)) {
                 DreamObject contents = loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
@@ -27,7 +21,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "loc") {
-                return new DreamValue(_area);
+                int x = dreamObject.GetVariable("x").GetValueAsInteger();
+                int y = dreamObject.GetVariable("y").GetValueAsInteger();
+                int z = dreamObject.GetVariable("z").GetValueAsInteger();
+
+                return new DreamValue(Program.DreamMap.GetAreaAt(x, y, z));
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

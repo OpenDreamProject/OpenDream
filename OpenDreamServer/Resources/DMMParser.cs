@@ -17,6 +17,7 @@ namespace OpenDreamShared.Compiler.DMM {
         public class CellDefinition {
             public string Name;
             public MapObject Turf = null;
+            public MapObject Area = null;
             public List<MapObject> Objects = new();
 
             public CellDefinition(string name) {
@@ -127,6 +128,8 @@ namespace OpenDreamShared.Compiler.DMM {
 
                     if (mapObject.Type.IsDescendantOf(DreamPath.Turf)) {
                         cellDefinition.Turf = mapObject;
+                    } else if (mapObject.Type.IsDescendantOf(DreamPath.Area)) {
+                        cellDefinition.Area = mapObject;
                     } else {
                         cellDefinition.Objects.Add(mapObject);
                     }

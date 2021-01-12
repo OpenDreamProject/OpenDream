@@ -299,13 +299,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
-                if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
-                    if (!locObject.IsSubtypeOf(DreamPath.Area)) {
-                        return new DreamValue(0);
-                    }
-                } else {
-                    return new DreamValue(0);
-                }
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Area, out _)) return new DreamValue(0);
             }
 
             return new DreamValue(1);

@@ -329,12 +329,15 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 		if (loc == NewLoc || !loc.Exit(src, NewLoc)) return 0
 		if (NewLoc.Enter(src, loc))
 			var/atom/oldloc = loc
+			var/area/oldarea = oldloc.loc
+			var/area/newarea = NewLoc.loc
 			loc = NewLoc
 			
-			for (var/atom/uncrossed in oldloc)
-				uncrossed.Uncrossed(src)
-			for (var/atom/crossed in loc)
-				crossed.Crossed(src)
+			oldloc.Exited(src, loc)
+			loc.Entered(src, oldloc)
+			if (newarea != oldarea)
+				oldarea.Exited(src, loc)
+				newarea.Entered(src, oldloc)
 
 			return 1
 		else
@@ -367,6 +370,14 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 			if (content != O && !content.Uncross(O)) return 0
 
 		return 1
+
+	Entered(atom/movable/Obj, atom/OldLoc)
+		for (var/atom/crossed in src)
+			crossed.Crossed(Obj)
+
+	Exited(atom/movable/Obj, atom/newloc)
+		for (var/atom/uncrossed in src)
+			uncrossed.Uncrossed(Obj)
 
 /obj
 	parent_type = /atom/movable

@@ -14,7 +14,8 @@ namespace OpenDreamShared.Dream {
             Color,
             Layer,
             Invisibility,
-            Overlays
+            Overlays,
+            Transform
         }
 
         public static Dictionary<string, UInt32> Colors = new() {
@@ -48,6 +49,9 @@ namespace OpenDreamShared.Dream {
         public float Layer;
         public int Invisibility;
         public List<int> Overlays = new();
+        public float[] Transform = new float[6] {   1, 0,
+                                                    0, 1,
+                                                    0, 0 };
 
         public IconAppearance() { }
 
@@ -63,6 +67,10 @@ namespace OpenDreamShared.Dream {
             
             foreach (int overlay in appearance.Overlays) {
                 Overlays.Add(overlay);
+            }
+
+            for (int i = 0; i < 6; i++) {
+                Transform[i] = appearance.Transform[i];
             }
         }
 
@@ -84,11 +92,15 @@ namespace OpenDreamShared.Dream {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
             }
 
+            for (int i = 0; i < 6; i++) {
+                if (appearance.Transform[i] != Transform[i]) return false;
+            }
+
             return true;
         }
 
         public override int GetHashCode() {
-            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer + Invisibility + Overlays.GetHashCode()).GetHashCode();
+            return (Icon + IconState + Direction + PixelX + PixelY + Color + Layer + Invisibility + Overlays.GetHashCode() + Transform.GetHashCode()).GetHashCode();
         }
 
         public void SetColor(string color) {
@@ -159,6 +171,13 @@ namespace OpenDreamShared.Dream {
                 }
             }
 
+            if (!IsTransformIdentity()) {
+                packetStream.WriteByte((byte)AppearanceProperty.Transform);
+                for (int i = 0; i < 6; i++) {
+                    packetStream.WriteFloat(Transform[i]);
+                }
+            }
+
             packetStream.WriteByte((byte)AppearanceProperty.End);
         }
 
@@ -185,6 +204,13 @@ namespace OpenDreamShared.Dream {
 
                         break;
                     }
+                    case AppearanceProperty.Transform: {
+                        for (int i = 0; i < 6; i++) {
+                            appearance.Transform[i] = packetStream.ReadFloat();
+                        }
+
+                        break;
+                    }
                     default: throw new Exception("Invalid appearnce property '" + property + "'");
                 }
 
@@ -192,6 +218,17 @@ namespace OpenDreamShared.Dream {
             }
             
             return appearance;
+        }
+
+        private bool IsTransformIdentity() {
+            if (Transform[0] != 1.0f) return false;
+            if (Transform[1] != 0.0f) return false;
+            if (Transform[2] != 0.0f) return false;
+            if (Transform[3] != 1.0f) return false;
+            if (Transform[4] != 0.0f) return false;
+            if (Transform[5] != 0.0f) return false;
+
+            return true;
         }
     }
 }

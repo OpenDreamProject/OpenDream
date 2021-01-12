@@ -12,6 +12,7 @@ namespace OpenDreamShared.Dream {
         public static DreamPath World = new DreamPath("/world");
         public static DreamPath Client = new DreamPath("/client");
         public static DreamPath Datum = new DreamPath("/datum");
+        public static DreamPath Matrix = new DreamPath("/matrix");
         public static DreamPath Atom = new DreamPath("/atom");
         public static DreamPath Area = new DreamPath("/area");
         public static DreamPath Turf = new DreamPath("/turf");

@@ -8,7 +8,7 @@ namespace OpenDreamClient.Renderer {
         public uint VertexShader, FragmentShader;
         public uint ShaderProgram;
         public uint VertexLocation, TextureCoordLocation;
-        public int ViewportSizeUniform, TranslationUniform, PixelOffsetUniform, TextureSamplerUniform, ColorUniform;
+        public int ViewportSizeUniform, TranslationUniform, TransformUniform, PixelOffsetUniform, TextureSamplerUniform, ColorUniform;
 
         public OpenGLShader(OpenGL gl, string vertexShaderPath, string fragmentShaderPath) {
             VertexShader = CreateShader(gl, OpenGL.GL_VERTEX_SHADER, vertexShaderPath);
@@ -23,6 +23,7 @@ namespace OpenDreamClient.Renderer {
             TextureCoordLocation = (uint)gl.GetAttribLocation(ShaderProgram, "textureCoord");
             ViewportSizeUniform = gl.GetUniformLocation(ShaderProgram, "viewportSize");
             TranslationUniform = gl.GetUniformLocation(ShaderProgram, "translation");
+            TransformUniform = gl.GetUniformLocation(ShaderProgram, "transform");
             PixelOffsetUniform = gl.GetUniformLocation(ShaderProgram, "pixelOffset");
             TextureSamplerUniform = gl.GetUniformLocation(ShaderProgram, "textureSampler");
             ColorUniform = gl.GetUniformLocation(ShaderProgram, "color");

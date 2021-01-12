@@ -133,6 +133,14 @@ namespace OpenDreamClient.Renderer {
             _gl.Uniform2(_shader.TranslationUniform, x, y);
         }
 
+        private void SetTransform(float[] transform) {
+            _gl.UniformMatrix3(_shader.TransformUniform, 1, false, new float[] {
+                transform[0], transform[1], 0,
+                transform[2], transform[3], 0,
+                transform[4], transform[5], 1
+            });
+        }
+
         private void SetPixelOffset(int x, int y) {
             _gl.Uniform2(_shader.PixelOffsetUniform, (float)x, (float)y);
         }
@@ -164,14 +172,16 @@ namespace OpenDreamClient.Renderer {
             }
         }
 
-        private void DrawDreamIcon(DreamIcon icon, int pixelX = 0, int pixelY = 0) {
+        private void DrawDreamIcon(DreamIcon icon, int pixelX = 0, int pixelY = 0, float[] transform = null) {
             DreamTexture texture = GetDreamTexture(icon);
             pixelX += icon.Appearance.PixelX;
             pixelY += icon.Appearance.PixelY;
+            if (transform == null) transform = icon.Appearance.Transform;
 
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
                 _gl.VertexAttribPointer(_shader.VertexLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
+                SetTransform(transform);
                 SetPixelOffset(pixelX, pixelY);
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconTextureCoordBuffer);
                 _gl.VertexAttribPointer(_shader.TextureCoordLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
@@ -183,7 +193,7 @@ namespace OpenDreamClient.Renderer {
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {
-                DrawDreamIcon(overlay, pixelX, pixelY);
+                DrawDreamIcon(overlay, pixelX, pixelY, transform);
             }
         }
     }

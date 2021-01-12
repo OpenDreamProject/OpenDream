@@ -100,16 +100,14 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            if (deltaState.AtomDeletions != null) {
-                foreach (UInt16 atomID in deltaState.AtomDeletions) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(atomID)) {
-                        ATOM atom = Program.OpenDream.ATOMs[atomID];
+            foreach (UInt16 atomID in deltaState.AtomDeletions) {
+                if (Program.OpenDream.ATOMs.ContainsKey(atomID)) {
+                    ATOM atom = Program.OpenDream.ATOMs[atomID];
 
-                        atom.Loc = null;
-                        Program.OpenDream.ATOMs.Remove(atomID);
-                    } else {
-                        Console.WriteLine("Delta state packet gives an atom deletion for an invalid atom, and was ignored (ID " + atomID + ")");
-                    }
+                    atom.Loc = null;
+                    Program.OpenDream.ATOMs.Remove(atomID);
+                } else {
+                    Console.WriteLine("Delta state packet gives an atom deletion for an invalid atom, and was ignored (ID " + atomID + ")");
                 }
             }
 

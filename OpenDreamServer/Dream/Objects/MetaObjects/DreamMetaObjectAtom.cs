@@ -100,6 +100,17 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 newAppearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
                 UpdateAppearance(dreamObject, newAppearance);
+            } else if (variableName == "transform") {
+                DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
+                ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
+
+                newAppearance.Transform[0] = matrix.GetVariable("a").GetValueAsNumber();
+                newAppearance.Transform[1] = matrix.GetVariable("d").GetValueAsNumber();
+                newAppearance.Transform[2] = matrix.GetVariable("b").GetValueAsNumber();
+                newAppearance.Transform[3] = matrix.GetVariable("e").GetValueAsNumber();
+                newAppearance.Transform[4] = matrix.GetVariable("c").GetValueAsNumber();
+                newAppearance.Transform[5] = matrix.GetVariable("f").GetValueAsNumber();
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "overlays") {
                 if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject oldListObject)) {
                     DreamList oldList = DreamMetaObjectList.DreamLists[oldListObject];
@@ -119,6 +130,16 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 overlayList.ValueAssigned += OverlayValueAssigned;
                 overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
                 _overlaysListToAtom[overlayList] = dreamObject;
+            }
+        }
+
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
+            if (variableName == "transform") {
+                DreamObject matrix = Program.DreamObjectTree.CreateObject(DreamPath.Matrix, new DreamProcArguments(new() { variableValue })); //Clone the matrix
+
+                return new DreamValue(matrix);
+            } else {
+                return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

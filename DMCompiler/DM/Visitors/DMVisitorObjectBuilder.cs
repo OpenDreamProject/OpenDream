@@ -134,7 +134,7 @@ namespace DMCompiler.DM.Visitors {
                         associatedAssign.Value.Visit(this);
                         listValue = _valueStack.Pop();
 
-                        if (associatedAssign.Expression is DMASTCallableIdentifier || associatedAssign.Expression is DMASTConstantString) {
+                        if (associatedAssign.Expression is DMASTIdentifier || associatedAssign.Expression is DMASTConstantString) {
                             associatedIndex = value.Name;
                         } else if (associatedAssign.Expression is DMASTConstantResource) {
                             associatedIndex = new DMResource(((DMASTConstantResource)associatedAssign.Expression).Path);

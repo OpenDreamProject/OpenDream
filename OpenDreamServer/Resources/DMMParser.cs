@@ -107,6 +107,8 @@ namespace OpenDreamShared.Compiler.DMM {
                                 varValue = new DreamValue(((DMASTConstantString)varOverride.Value).Value);
                             } else if (varOverride.Value is DMASTConstantInteger) {
                                 varValue = new DreamValue(((DMASTConstantInteger)varOverride.Value).Value);
+                            } else if (varOverride.Value is DMASTConstantFloat) {
+                                varValue = new DreamValue(((DMASTConstantFloat)varOverride.Value).Value);
                             } else if (varOverride.Value is DMASTConstantPath) {
                                 varValue = new DreamValue(((DMASTConstantPath)varOverride.Value).Value.Path);
                             } else if (varOverride.Value is DMASTConstantNull) {

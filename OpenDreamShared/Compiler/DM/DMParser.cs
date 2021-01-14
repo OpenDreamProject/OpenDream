@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
-using DereferenceType = OpenDreamShared.Compiler.DM.DMASTCallableDereference.DereferenceType;
-using Dereference = OpenDreamShared.Compiler.DM.DMASTCallableDereference.Dereference;
+using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
+using Dereference = OpenDreamShared.Compiler.DM.DMASTDereference.Dereference;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Compiler.DM {
@@ -136,26 +136,23 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTCallable Callable() {
-            DMASTCallable callable = Dereference();
+            if (Check(TokenType.DM_SuperProc)) return new DMASTCallableSuper();
+            if (Check(TokenType.DM_Period)) return new DMASTCallableSelf();
 
-            if (callable == null && Check(TokenType.DM_SuperProc)) callable = new DMASTCallableSuper();
-            if (callable == null && Check(TokenType.DM_Period)) callable = new DMASTCallableSelf();
-            if (callable == null) callable = Identifier();
-            
-            return callable;
+            return null;
         }
 
-        public DMASTCallableIdentifier Identifier() {
+        public DMASTIdentifier Identifier() {
             Token token = Current();
 
             if (Check(TokenType.DM_Identifier)) {
-                return new DMASTCallableIdentifier(token.Text);
+                return new DMASTIdentifier(token.Text);
             }
 
             return null;
         }
 
-        public DMASTCallableDereference Dereference() {
+        public DMASTDereference Dereference() {
             Token leftToken = Current();
 
             if (Check(TokenType.DM_Identifier)) {
@@ -167,7 +164,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (Check(dereferenceTokenTypes)) {
                     List<Dereference> dereferences = new List<Dereference>();
-                    DMASTCallableIdentifier identifier = Identifier();
+                    DMASTIdentifier identifier = Identifier();
 
                     if (identifier != null) {
                         do {
@@ -183,7 +180,7 @@ namespace OpenDreamShared.Compiler.DM {
                             }
                         } while (identifier != null);
 
-                        return new DMASTCallableDereference(new DMASTCallableIdentifier(leftToken.Text), dereferences.ToArray());
+                        return new DMASTDereference(new DMASTIdentifier(leftToken.Text), dereferences.ToArray());
                     } else {
                         ReuseToken(dereferenceToken);
                         ReuseToken(leftToken);
@@ -288,16 +285,16 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression expression = Expression();
 
             if (expression != null) {
-                if (expression is DMASTCallableIdentifier) {
+                if (expression is DMASTIdentifier) {
                     Check(TokenType.DM_Colon);
 
-                    return new DMASTProcStatementLabel(((DMASTCallableIdentifier)expression).Identifier);
+                    return new DMASTProcStatementLabel(((DMASTIdentifier)expression).Identifier);
                 } else if (expression is DMASTLeftShift) {
                     DMASTLeftShift leftShift = (DMASTLeftShift)expression;
                     DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
-                    if (procCall != null && procCall.Callable is DMASTCallableIdentifier) {
-                        DMASTCallableIdentifier identifier = (DMASTCallableIdentifier)procCall.Callable;
+                    if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier) {
+                        DMASTCallableProcIdentifier identifier = (DMASTCallableProcIdentifier)procCall.Callable;
 
                         if (identifier.Identifier == "browse") {
                             if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) throw new Exception("browse() requires 1 or 2 parameters");
@@ -398,7 +395,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementGoto Goto() {
             if (Check(TokenType.DM_Goto)) {
                 Whitespace();
-                DMASTCallableIdentifier label = Identifier();
+                DMASTIdentifier label = Identifier();
 
                 return new DMASTProcStatementGoto(label);
             } else {
@@ -521,12 +518,12 @@ namespace OpenDreamShared.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
                 DMASTProcStatement initializer = null;
-                DMASTCallableIdentifier variable;
+                DMASTIdentifier variable;
 
                 DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration();
                 if (variableDeclaration != null) {
                     initializer = variableDeclaration;
-                    variable = new DMASTCallableIdentifier(variableDeclaration.Name);
+                    variable = new DMASTIdentifier(variableDeclaration.Name);
                 } else {
                     variable = Identifier();
                     if (variable == null) throw new Exception("Expected an identifier");
@@ -813,8 +810,8 @@ namespace OpenDreamShared.Compiler.DM {
                 if (assign != null) {
                     if (assign.Expression is DMASTConstantString) {
                         return new DMASTCallParameter(assign.Value, ((DMASTConstantString)assign.Expression).Value);
-                    } else if (assign.Expression is DMASTCallableIdentifier) {
-                        return new DMASTCallParameter(assign.Value, ((DMASTCallableIdentifier)assign.Expression).Identifier);
+                    } else if (assign.Expression is DMASTIdentifier) {
+                        return new DMASTCallParameter(assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
                     }
                 }
                 
@@ -1249,8 +1246,9 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression ExpressionNew() {
             if (Check(TokenType.DM_New)) {
                 Whitespace();
-                DMASTCallable callable = Callable();
-                DMASTPath path = (callable == null) ? Path(true) : null;
+                DMASTDereference dereference = Dereference();
+                DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
+                DMASTPath path = (dereference == null && identifier == null ) ? Path(true) : null;
                 Whitespace();
                 DMASTCallParameter[] parameters = null;
 
@@ -1261,8 +1259,10 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                 }
 
-                if (callable != null) {
-                    return new DMASTNewCallable(callable, parameters);
+                if (dereference != null) {
+                    return new DMASTNewDereference(dereference, parameters);
+                } else if (identifier != null) {
+                    return new DMASTNewIdentifier(identifier, parameters);
                 } else if (path != null) {
                     return new DMASTNewPath(path, parameters);
                 } else {
@@ -1291,14 +1291,14 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 if (primary == null) {
-                    DMASTCallable callable = Callable();
+                    DMASTDereference dereference = Dereference();
+                    DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
 
-                    if (callable != null) {
+                    if (dereference != null || identifier != null) {
                         Whitespace();
                         DMASTCallParameter[] callParameters = ProcCall();
 
                         if (callParameters != null) {
-                            DMASTCallableIdentifier identifier = callable as DMASTCallableIdentifier;
                             Whitespace();
 
                             if (identifier != null && identifier.Identifier == "input") {
@@ -1313,8 +1313,31 @@ namespace OpenDreamShared.Compiler.DM {
 
                                 return new DMASTInput(callParameters, types, list);
                             } else {
+                                DMASTCallable callable;
+
+                                if (dereference != null) {
+                                    callable = new DMASTDereferenceProc(dereference.Expression, dereference.Dereferences);
+                                } else {
+                                    callable = new DMASTCallableProcIdentifier(identifier.Identifier);
+                                }
+
                                 primary = new DMASTProcCall(callable, callParameters);
                             }
+                        } else {
+                            primary = (dereference != null) ? dereference : identifier;
+                        }
+                    }
+                }
+
+                if (primary == null) {
+                    DMASTCallable callable = Callable();
+
+                    if (callable != null) {
+                        Whitespace();
+                        DMASTCallParameter[] callParameters = ProcCall();
+                        
+                        if (callParameters != null) {
+                            primary = new DMASTProcCall(callable, callParameters);
                         } else {
                             primary = callable;
                         }

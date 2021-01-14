@@ -28,6 +28,25 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("easing", Type = DreamValueType.String)]
         [DreamProcParameter("flags", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_animate(DreamProcScope scope, DreamProcArguments arguments) {
+            DreamObject obj = scope.GetValue("Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
+
+            //TODO: Animate
+            if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
+                obj.SetVariable("pixel_x", pixelX);
+            }
+
+            if (arguments.NamedArguments.TryGetValue("pixel_y", out DreamValue pixelY)) {
+                obj.SetVariable("pixel_y", pixelY);
+            }
+
+            if (arguments.NamedArguments.TryGetValue("dir", out DreamValue dir)) {
+                obj.SetVariable("dir", dir);
+            }
+
+            if (arguments.NamedArguments.TryGetValue("transform", out DreamValue transform)) {
+                obj.SetVariable("transform", transform);
+            }
+
             return new DreamValue((DreamObject)null);
         }
 

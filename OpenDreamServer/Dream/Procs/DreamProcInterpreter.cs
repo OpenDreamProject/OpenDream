@@ -204,8 +204,8 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamProcInterpreterArguments arguments = PopArguments();
                 IDreamProcIdentifier procIdentifier = PopIdentifier();
 
-                if (procIdentifier is DreamProcIdentifierVariable) {
-                    DreamProcIdentifierVariable identifier = (DreamProcIdentifierVariable)procIdentifier;
+                if (procIdentifier is DreamProcIdentifierProc) {
+                    DreamProcIdentifierProc identifier = (DreamProcIdentifierProc)procIdentifier;
 
                     if (identifier.IdentifierName == "initial") {
                         object argument = arguments.OrderedArguments[0];
@@ -225,7 +225,7 @@ namespace OpenDreamServer.Dream.Procs {
                     } else {
                         DreamProc proc = identifier.GetValue().GetValueAsProc();
                         DreamProcArguments procArguments = arguments.CreateProcArguments();
-                        if (identifier.IdentifierName == ".." && procArguments.ArgumentCount == 0) procArguments = _arguments;
+                        if (proc == currentScope.SuperProc && procArguments.ArgumentCount == 0) procArguments = _arguments;
 
                         try {
                             Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments, currentScope.Usr));
@@ -330,7 +330,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 Push(new DreamValue(IsTruthy(value) ? 0 : 1));
             } else if (opcode == DreamProcOpcode.PushSuperProc) {
-                Push(new DreamProcIdentifierVariable(currentScope, ".."));
+                Push(new DreamProcIdentifierProc(currentScope, ".."));
             } else if (opcode == DreamProcOpcode.Negate) {
                 DreamValue value = PopDreamValue();
 
@@ -417,6 +417,9 @@ namespace OpenDreamServer.Dream.Procs {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
+                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
+                    identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsInteger
+                        ()));
                 } else {
                     throw new Exception("Invalid remove operation on " + first + " and " + second);
                 }
@@ -469,7 +472,7 @@ namespace OpenDreamServer.Dream.Procs {
                     DreamPath fullProcPath = source.GetValueAsPath();
                     if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
                     string procName = fullProcPath.LastElement;
-                    DreamProc proc = _topScope.GetValue(procName).GetValueAsProc();
+                    DreamProc proc = _topScope.GetProc(procName).GetValueAsProc();
 
                     try {
                         Push(proc.Run(_topScope.DreamObject, arguments.CreateProcArguments(), currentScope.Usr));
@@ -518,7 +521,9 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
 
-                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                if (first.Value == null || second.Value == null) {
+                    Push(new DreamValue(0));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     Push(new DreamValue(first.GetValueAsInteger() * second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
                     Push(new DreamValue(first.GetValueAsInteger() * second.GetValueAsFloat()));
@@ -821,7 +826,7 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (opcode == DreamProcOpcode.Power) {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
-                
+
                 if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
                     Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsFloat())));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
@@ -829,6 +834,20 @@ namespace OpenDreamServer.Dream.Procs {
                 } else {
                     throw new Exception("Invalid power operation on " + first + " and " + second);
                 }
+            } else if (opcode == DreamProcOpcode.DereferenceProc) {
+                DreamObject dreamObject = PopDreamValue().GetValueAsDreamObject();
+                string identifierName = ReadString();
+
+                if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
+                if (dreamObject.HasProc(identifierName)) {
+                    Push(new DreamProcIdentifierProc(new DreamProcScope(dreamObject, currentScope.Usr), identifierName));
+                } else {
+                    throw new Exception("Object " + dreamObject + " has no identifier named '" + identifierName + "'");
+                }
+            } else if (opcode == DreamProcOpcode.GetProc) {
+                string identifierName = ReadString();
+
+                Push(new DreamProcIdentifierProc(currentScope, identifierName));
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");
             }

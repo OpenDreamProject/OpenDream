@@ -45,7 +45,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
-        public void VisitNewCallable(DMASTNewCallable newCallable) { throw new NotImplementedException(); }
+        public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
+        public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
         public void VisitNot(DMASTNot not) { throw new NotImplementedException(); }
         public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
@@ -87,8 +88,9 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }
         public void VisitCallParameter(DMASTCallParameter callParameter) { throw new NotImplementedException(); }
         public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter) { throw new NotImplementedException(); }
-        public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) { throw new NotImplementedException(); }
-        public void VisitCallableDereference(DMASTCallableDereference dereference) { throw new NotImplementedException(); }
+        public void VisitDereference(DMASTDereference dereference) { throw new NotImplementedException(); }
+        public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) { throw new NotImplementedException(); }
+        public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) { throw new NotImplementedException(); }
         public void VisitCallableSuper(DMASTCallableSuper super) { throw new NotImplementedException(); }
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
     }
@@ -297,9 +299,9 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementGoto : DMASTProcStatement {
-        public DMASTCallableIdentifier Label;
+        public DMASTIdentifier Label;
 
-        public DMASTProcStatementGoto(DMASTCallableIdentifier label) {
+        public DMASTProcStatementGoto(DMASTIdentifier label) {
             Label = label;
         }
 
@@ -404,10 +406,10 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementForList : DMASTProcStatementFor {
-        public DMASTCallableIdentifier Variable;
+        public DMASTIdentifier Variable;
         public DMASTExpression List;
 
-        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, body) {
             Variable = variable;
             List = list;
         }
@@ -418,10 +420,10 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementForNumberRange : DMASTProcStatementFor {
-        public DMASTCallableIdentifier Variable;
+        public DMASTIdentifier Variable;
         public DMASTExpression RangeBegin, RangeEnd, Step;
 
-        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTCallableIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
             Variable = variable;
             RangeBegin = rangeBegin;
             RangeEnd = rangeEnd;
@@ -563,9 +565,9 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTIdentifier : DMASTExpression {
-        public DMASTCallable Identifier;
+        public string Identifier;
 
-        public DMASTIdentifier(DMASTCallable identifier) {
+        public DMASTIdentifier(string identifier) {
             Identifier = identifier;
         }
 
@@ -722,17 +724,31 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewCallable : DMASTExpression {
-        public DMASTCallable Callable;
+    class DMASTNewIdentifier : DMASTExpression {
+        public DMASTIdentifier Identifier;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewCallable(DMASTCallable callable, DMASTCallParameter[] parameters) {
-            Callable = callable;
+        public DMASTNewIdentifier(DMASTIdentifier identifier, DMASTCallParameter[] parameters) {
+            Identifier = identifier;
             Parameters = parameters;
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewCallable(this);
+            visitor.VisitNewIdentifier(this);
+        }
+    }
+
+    class DMASTNewDereference : DMASTExpression {
+        public DMASTDereference Dereference;
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewDereference(DMASTDereference dereference, DMASTCallParameter[] parameters) {
+            Dereference = dereference;
+            Parameters = parameters;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewDereference(this);
         }
     }
 
@@ -1285,19 +1301,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCallableIdentifier : DMASTCallable {
-        public string Identifier;
-
-        public DMASTCallableIdentifier(string identifier) {
-            Identifier = identifier;
-        }
-
-        public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableIdentifier(this);
-        }
-    }
-
-    class DMASTCallableDereference : DMASTCallable {
+    class DMASTDereference : DMASTCallable {
         public enum DereferenceType {
             Direct,
             Search
@@ -1316,13 +1320,33 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Expression;
         public Dereference[] Dereferences;
 
-        public DMASTCallableDereference(DMASTExpression expression, Dereference[] dereferences) {
+        public DMASTDereference(DMASTExpression expression, Dereference[] dereferences) {
             Expression = expression;
             Dereferences = dereferences;
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableDereference(this);
+            visitor.VisitDereference(this);
+        }
+    }
+
+    class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
+        public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitDereferenceProc(this);
+        }
+    }
+
+    class DMASTCallableProcIdentifier : DMASTCallable {
+        public string Identifier;
+
+        public DMASTCallableProcIdentifier(string identifier) {
+            Identifier = identifier;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitCallableProcIdentifier(this);
         }
     }
 

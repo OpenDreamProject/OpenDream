@@ -54,8 +54,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            scope.CreateVariable("..", new DreamValue(SuperProc));
-
+            scope.SuperProc = SuperProc;
             return _runAction(scope, arguments);
         }
     }

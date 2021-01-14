@@ -48,6 +48,26 @@ namespace OpenDreamServer.Dream.Procs {
         }
     }
 
+    struct DreamProcIdentifierProc : IDreamProcIdentifier {
+        public DreamProcScope HoldingScope;
+        public string IdentifierName;
+
+        public DreamProcIdentifierProc(DreamProcScope holdingScope, string identifierName) {
+            HoldingScope = holdingScope;
+            IdentifierName = identifierName;
+        }
+
+        public DreamValue GetValue() {
+            if (IdentifierName == "..") return new DreamValue(HoldingScope.SuperProc);
+
+            return HoldingScope.GetProc(IdentifierName);
+        }
+
+        public void Assign(DreamValue value) {
+            throw new Exception("Cannot assign to a proc");
+        }
+    }
+
     struct DreamProcIdentifierListIndex : IDreamProcIdentifier {
         public DreamObject List;
         public DreamValue ListIndex;

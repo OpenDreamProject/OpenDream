@@ -164,7 +164,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
                     _proc.AddLabel(typeCheckLabel);
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null) {
-                        _proc.GetIdentifier("istype");
+                        _proc.GetProc("istype");
                         PushCallParameters(new DMASTCallParameter[] {
                             new DMASTCallParameter(statementForList.Variable),
                             new DMASTCallParameter(new DMASTConstantPath(varDeclaration.Type))
@@ -329,12 +329,16 @@ namespace DMCompiler.Compiler.DM.Visitors {
             parameter.Value.Visit(this);
         }
 
-        public void VisitCallableIdentifier(DMASTCallableIdentifier identifier) {
+        public void VisitIdentifier(DMASTIdentifier identifier) {
             if (identifier.Identifier == "src") {
                 _proc.PushSrc();
             } else {
                 _proc.GetIdentifier(identifier.Identifier);
             }
+        }
+
+        public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
+            _proc.GetProc(procIdentifier.Identifier);
         }
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
@@ -364,19 +368,43 @@ namespace DMCompiler.Compiler.DM.Visitors {
             _proc.CreateObject();
         }
 
-        public void VisitNewCallable(DMASTNewCallable newCallable) {
-            newCallable.Callable.Visit(this);
-            PushCallParameters(newCallable.Parameters);
+        public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) {
+            newIdentifier.Identifier.Visit(this);
+            PushCallParameters(newIdentifier.Parameters);
             _proc.CreateObject();
         }
 
-        public void VisitCallableDereference(DMASTCallableDereference dereference) {
+        public void VisitNewDereference(DMASTNewDereference newDereference) {
+            newDereference.Dereference.Visit(this);
+            PushCallParameters(newDereference.Parameters);
+            _proc.CreateObject();
+        }
+
+        public void VisitDereference(DMASTDereference dereference) {
             dereference.Expression.Visit(this);
 
-            foreach (DMASTCallableDereference.Dereference deref in dereference.Dereferences) {
-                if (deref.Type == DMASTCallableDereference.DereferenceType.Direct) {
+            foreach (DMASTDereference.Dereference deref in dereference.Dereferences) {
+                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
                     _proc.Dereference(deref.Property);
-                } else if (deref.Type == DMASTCallableDereference.DereferenceType.Search) {
+                } else if (deref.Type == DMASTDereference.DereferenceType.Search) {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
+            dereferenceProc.Expression.Visit(this);
+
+            for (int i = 0; i < dereferenceProc.Dereferences.Length; i++) {
+                DMASTDereference.Dereference deref = dereferenceProc.Dereferences[i];
+
+                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
+                    if (i < dereferenceProc.Dereferences.Length - 1) { //Last deref is dereferencing a proc
+                        _proc.Dereference(deref.Property);
+                    } else {
+                        _proc.DereferenceProc(deref.Property);
+                    }
+                } else if (deref.Type == DMASTDereference.DereferenceType.Search) {
                     throw new NotImplementedException();
                 }
             }
@@ -663,7 +691,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
                     if (associatedAssign != null) {
                         associatedAssign.Value.Visit(this);
 
-                        if (associatedAssign.Expression is DMASTCallableIdentifier) {
+                        if (associatedAssign.Expression is DMASTIdentifier) {
                             _proc.PushString(value.Name);
                             _proc.ListAppendAssociated();
                         } else {
@@ -717,8 +745,8 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 if (parameters.Length > 0 && parameters[0].Value is DMASTProcCall) {
                     DMASTProcCall procCallParameter = (DMASTProcCall)parameters[0].Value;
 
-                    if (procCallParameter.Callable is DMASTCallableIdentifier) {
-                        DMASTCallableIdentifier procCallIdentifier = (DMASTCallableIdentifier)procCallParameter.Callable;
+                    if (procCallParameter.Callable is DMASTCallableProcIdentifier) {
+                        DMASTCallableProcIdentifier procCallIdentifier = (DMASTCallableProcIdentifier)procCallParameter.Callable;
 
                         if (procCallIdentifier.Identifier == "arglist") {
                             if (parameters.Length != 1) throw new Exception("arglist must be the only argument");

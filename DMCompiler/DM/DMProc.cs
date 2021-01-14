@@ -59,6 +59,11 @@ namespace DMCompiler.DM {
             }
         }
 
+        public void GetProc(string identifier) {
+            WriteOpcode(DreamProcOpcode.GetProc);
+            WriteString(identifier);
+        }
+
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
@@ -222,6 +227,11 @@ namespace DMCompiler.DM {
 
         public void Dereference(string identifier) {
             WriteOpcode(DreamProcOpcode.Dereference);
+            WriteString(identifier);
+        }
+
+        public void DereferenceProc(string identifier) {
+            WriteOpcode(DreamProcOpcode.DereferenceProc);
             WriteString(identifier);
         }
 

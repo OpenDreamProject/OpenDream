@@ -383,15 +383,12 @@ namespace OpenDreamShared.Compiler.DM {
                                 }
                             } while (!IsAtEndOfFile());
 
-                            if (text.Contains('.')) {
+                            if (text.Contains('.') || text.Contains("e")) {
                                 token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
-                            } else {
-                                int value;
-                                if (!Int32.TryParse(text, out value)) {
-                                    value = Int32.MaxValue;
-                                }
-
+                            } else if (Int32.TryParse(text, out int value)) {
                                 token = CreateToken(TokenType.DM_Integer, text, value);
+                            } else {
+                                throw new Exception("Invalid number '" + text + "'");
                             }
                         } else { //Not a known token, advance over it
                             Advance();

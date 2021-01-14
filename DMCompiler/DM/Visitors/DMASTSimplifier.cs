@@ -469,7 +469,7 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            DMASTNewCallable newCallable = expression as DMASTNewCallable;
+            DMASTNewIdentifier newCallable = expression as DMASTNewIdentifier;
             if (newCallable != null) {
                 if (newCallable.Parameters != null) {
                     foreach (DMASTCallParameter parameter in newCallable.Parameters) {

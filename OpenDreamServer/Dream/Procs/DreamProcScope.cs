@@ -5,6 +5,7 @@ using System.Collections.Generic;
 namespace OpenDreamServer.Dream.Procs {
     class DreamProcScope {
         public DreamProcScope ParentScope;
+        public DreamProc SuperProc;
         public DreamObject DreamObject;
         public DreamObject Usr;
 
@@ -12,12 +13,14 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamProcScope(DreamObject dreamObject, DreamObject usr) {
             ParentScope = null;
+            SuperProc = null;
             DreamObject = dreamObject;
             Usr = usr;
         }
 
         public DreamProcScope(DreamProcScope parentScope) {
             ParentScope = parentScope;
+            SuperProc = parentScope.SuperProc;
             DreamObject = parentScope.DreamObject;
             Usr = parentScope.Usr;
         }
@@ -31,10 +34,16 @@ namespace OpenDreamServer.Dream.Procs {
                 return DreamObject.GetVariable(valueName);
             } else if (DreamObject != null && DreamObject.ObjectDefinition.HasGlobalVariable(valueName)) {
                 return DreamObject.ObjectDefinition.GetGlobalVariable(valueName).Value;
-            } else if (DreamObject != null && DreamObject.HasProc(valueName)) {
-                return new DreamValue(DreamObject.GetProc(valueName));
             } else {
                 throw new Exception("Value '" + valueName + "' doesn't exist");
+            }
+        }
+
+        public DreamValue GetProc(string procName) {
+            if (DreamObject != null && DreamObject.HasProc(procName)) {
+                return new DreamValue(DreamObject.GetProc(procName));
+            } else {
+                throw new Exception("Proc '" + procName + "' doesn't exist");
             }
         }
 

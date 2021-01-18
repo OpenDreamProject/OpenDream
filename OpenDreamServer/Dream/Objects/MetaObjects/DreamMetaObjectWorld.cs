@@ -10,8 +10,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            DreamObject contentsListObject = dreamObject.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
-            ContentsList = DreamMetaObjectList.DreamLists[contentsListObject];
+            ContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
             //New() is not called here
         }

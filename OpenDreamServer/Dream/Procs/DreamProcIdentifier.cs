@@ -69,10 +69,10 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierListIndex : IDreamProcIdentifier {
-        public DreamObject List;
+        public DreamList List;
         public DreamValue ListIndex;
 
-        public DreamProcIdentifierListIndex(DreamObject list, DreamValue listIndex) {
+        public DreamProcIdentifierListIndex(DreamList list, DreamValue listIndex) {
             List = list;
             ListIndex = listIndex;
 
@@ -82,11 +82,11 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue GetValue() {
-            return DreamMetaObjectList.DreamLists[List].GetValue(ListIndex);
+            return List.GetValue(ListIndex);
         }
 
         public void Assign(DreamValue value) {
-            DreamMetaObjectList.DreamLists[List].SetValue(ListIndex, value);
+            List.SetValue(ListIndex, value);
         }
     }
 

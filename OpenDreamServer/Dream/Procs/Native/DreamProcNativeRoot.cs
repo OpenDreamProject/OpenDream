@@ -87,6 +87,19 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(key);
         }
 
+        [DreamProc("cmptext")]
+        [DreamProcParameter("T1", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_cmptext(DreamProcScope scope, DreamProcArguments arguments) {
+            List<DreamValue> values = arguments.GetAllArguments();
+            string t1 = values[0].GetValueAsString().ToLower();
+
+            for (int i = 1; i < values.Count; i++) {
+                if (values[i].GetValueAsString().ToLower() != t1) return new DreamValue(0);
+            }
+
+            return new DreamValue(1);
+        }
+
         [DreamProc("copytext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
@@ -436,8 +449,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
             if (jsonElement.ValueKind == JsonValueKind.Array) {
-                DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+                DreamList list = Program.DreamObjectTree.CreateList();
 
                 foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                     DreamValue value = CreateValueFromJsonElement(childElement);
@@ -445,10 +457,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     list.AddValue(value);
                 }
 
-                return new DreamValue(listObject);
+                return new DreamValue(list);
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {
-                DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+                DreamList list = Program.DreamObjectTree.CreateList();
 
                 foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                     DreamValue value = CreateValueFromJsonElement(childProperty.Value);
@@ -456,7 +467,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     list.SetValue(new DreamValue(childProperty.Name), value);
                 }
 
-                return new DreamValue(listObject);
+                return new DreamValue(list);
             } else if (jsonElement.ValueKind == JsonValueKind.String) {
                 return new DreamValue(jsonElement.GetString());
             } else if (jsonElement.ValueKind == JsonValueKind.Number) {
@@ -469,11 +480,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static object CreateJsonElementFromValue(DreamValue value) {
             if (value.IsType(DreamValueType.String | DreamValueType.Integer | DreamValueType.Float)) {
                 return value.Value;
-            } else if (value.Value == null) {
-                return null;
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
-
+            } else if (value.Type == DreamValueType.DreamPath) {
+                return value.GetValueAsPath().ToString();
+            } else if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative()) {
                     Dictionary<object, object> jsonObject = new();
 
@@ -491,6 +500,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
                     return jsonObject;
                 }
+            } else if (value.Type == DreamValueType.DreamObject) {
+                if (value.Value == null) return null;
+
+                return value.Stringify();
             } else {
                 throw new Exception("Cannot json_encode " + value);
             }
@@ -521,13 +534,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             if (value.Type == DreamValueType.String) {
                 return new DreamValue(value.GetValueAsString().Length);
+            } else if (value.Type == DreamValueType.Integer) {
+                return new DreamValue(0);
             } else if (value.Type == DreamValueType.DreamObject) {
-                if (value.Value != null) {
-                    DreamObject dreamObject = value.GetValueAsDreamObject();
-
-                    if (dreamObject.IsSubtypeOf(DreamPath.List)) {
-                        return dreamObject.GetVariable("len");
-                    }
+                if (value.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
+                    return listObject.GetVariable("len");
                 } else {
                     return new DreamValue(0);
                 }
@@ -578,8 +589,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamObject listObject = scope.GetValue("A").GetValueAsDreamObjectOfType(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+                DreamList list = scope.GetValue("A").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -619,8 +629,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamObject listObject = scope.GetValue("A").GetValueAsDreamObjectOfType(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+                DreamList list = scope.GetValue("A").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -735,11 +744,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(viewList);
         }
 
-        public static DreamObject params2list(string queryString) {
+        public static DreamList params2list(string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = Program.DreamObjectTree.CreateList();
 
             foreach (string queryKey in query.AllKeys) {
                 string queryValue = query.Get(queryKey);
@@ -747,7 +755,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
             }
 
-            return listObject;
+            return list;
         }
 
         [DreamProc("params2list")]
@@ -764,8 +772,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamObject listObject = scope.GetValue("Val1").GetValueAsDreamObjectOfType(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[listObject];
+                DreamList list = scope.GetValue("Val1").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -844,7 +851,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             float a = scope.GetValue("A").GetValueAsNumber();
 
             if (arguments.ArgumentCount == 1) {
-                return new DreamValue((int)Math.Floor(a));
+                return new DreamValue((float)Math.Round(a));
             } else {
                 float b = scope.GetValue("B").GetValueAsNumber();
 
@@ -915,14 +922,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string text = scope.GetValue("Text").GetValueAsString();
             string delimiter = scope.GetValue("Delimiter").GetValueAsString();
             string[] splitText = text.Split(delimiter);
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = Program.DreamObjectTree.CreateList();
 
             foreach (string value in splitText) {
                 list.AddValue(new DreamValue(value));
             }
 
-            return new DreamValue(listObject);
+            return new DreamValue(list);
         }
 
         [DreamProc("sqrt")]
@@ -1013,8 +1019,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_typesof(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject listObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = Program.DreamObjectTree.CreateList();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 DreamPath typePath = type.GetValueAsPath();
@@ -1036,7 +1041,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             }
 
-            return new DreamValue(listObject);
+            return new DreamValue(list);
         }
 
         [DreamProc("uppertext")]
@@ -1102,7 +1107,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Depth", Type = DreamValueType.Integer)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_viewers(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
-            int depth = 5; //TODO: Default to world.view
+            DreamValue depthValue = new DreamValue(5);
             DreamObject center = scope.Usr;
 
             //Arguments are optional and can be passed in any order
@@ -1113,10 +1118,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     center = firstArgument.GetValueAsDreamObject();
 
                     if (arguments.ArgumentCount > 1) {
-                        depth = arguments.GetArgument(1, "Center").GetValueAsInteger();
+                        depthValue = arguments.GetArgument(1, "Center");
                     }
                 } else {
-                    depth = firstArgument.GetValueAsInteger();
+                    depthValue = firstArgument;
 
                     if (arguments.ArgumentCount > 1) {
                         center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
@@ -1125,6 +1130,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             DreamObject viewList = Program.DreamObjectTree.CreateObject(DreamPath.List);
+            int depth = (depthValue.Type == DreamValueType.Integer) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 

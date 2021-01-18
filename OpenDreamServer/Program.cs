@@ -92,8 +92,7 @@ namespace OpenDreamServer {
                 }
             });
             DreamServer.RegisterPacketCallback<PacketTopic>(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => {
-                DreamObject hrefListObject = DreamProcNativeRoot.params2list(pTopic.Query);
-                DreamList hrefList = DreamMetaObjectList.DreamLists[hrefListObject];
+                DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
                 DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
                 DreamObject src = null;
 
@@ -105,7 +104,7 @@ namespace OpenDreamServer {
 
                 DreamProcArguments topicArguments = new DreamProcArguments(new() {
                     new DreamValue(pTopic.Query),
-                    new DreamValue(hrefListObject),
+                    new DreamValue(hrefList),
                     new DreamValue(src)
                 });
 
@@ -126,6 +125,8 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             SetNativeProcs();
             
+            TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
+
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World);
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             DreamObjectTree.InstantiateGlobalVariables();
@@ -133,7 +134,6 @@ namespace OpenDreamServer {
             DreamMap = new DreamMap();
             DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));
 
-            TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
             Task.Run(() => WorldInstance.CallProc("New"));
             DreamServer.Start();
             while (true) {
@@ -176,6 +176,7 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arctan);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ckey);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_cmptext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_copytext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_cos);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_CRASH);

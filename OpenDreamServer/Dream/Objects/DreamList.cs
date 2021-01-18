@@ -1,19 +1,32 @@
-﻿using OpenDreamServer.Dream.Objects;
-using OpenDreamServer.Resources;
+﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamServer.Dream {
+namespace OpenDreamServer.Dream.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
     delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 
-    class DreamList {
+    class DreamList : DreamObject {
         public event DreamListValueAssignedEventHandler ValueAssigned;
         public event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
+        public static DreamObjectDefinition ListDefinition {
+            get {
+                if (_listDefinition == null) _listDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
+
+                return _listDefinition;
+            }
+        }
+
+        private static DreamObjectDefinition _listDefinition = null;
+
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = new();
+
+        public DreamList() : base(ListDefinition, new DreamProcArguments(null)) { }
+
+        public DreamList(DreamProcArguments creationArguments) : base(ListDefinition, creationArguments) { }
 
         public bool IsAssociative() {
             return _associativeValues.Count > 0;
@@ -46,7 +59,7 @@ namespace OpenDreamServer.Dream {
         public DreamValue GetValue(DreamValue key) {
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
-            } else if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject | DreamValue.DreamValueType.DreamResource)) {
+            } else if (IsValidAssociativeKey(key)) {
                 if (_associativeValues.ContainsKey(key)) {
                     return _associativeValues[key];
                 } else {
@@ -59,7 +72,7 @@ namespace OpenDreamServer.Dream {
 
         public void SetValue(DreamValue key, DreamValue value) {
             if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
-            if (key.IsType(DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamPath | DreamValue.DreamValueType.DreamObject | DreamValue.DreamValueType.DreamResource) && key.Value != null) {
+            if (IsValidAssociativeKey(key)) {
                 if (!ContainsValue(key)) _values.Add(key);
 
                 _associativeValues[key] = value;
@@ -83,6 +96,13 @@ namespace OpenDreamServer.Dream {
         public void AddValue(DreamValue value) {
             _values.Add(value);
             if (ValueAssigned != null) ValueAssigned.Invoke(this, new DreamValue(_values.Count), value);
+        }
+
+        public bool IsValidAssociativeKey(DreamValue key) {
+            return key.Value != null && key.IsType( DreamValue.DreamValueType.String |
+                                                    DreamValue.DreamValueType.DreamPath |
+                                                    DreamValue.DreamValueType.DreamObject |
+                                                    DreamValue.DreamValueType.DreamResource);
         }
 
         //Does not include associations

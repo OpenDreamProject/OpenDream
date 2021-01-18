@@ -73,10 +73,11 @@ namespace OpenDreamShared.Resources {
 
             string[] lines = dmiDescription.Split("\n");
             foreach (string line in lines) {
-                if (line.Contains("=")) {
-                    string[] split = line.Split("=");
-                    string key = split[0].Trim();
-                    string value = split[1].Trim();
+                int equalsIndex = line.IndexOf('=');
+
+                if (equalsIndex != -1) {
+                    string key = line.Substring(0, equalsIndex).Trim();
+                    string value = line.Substring(equalsIndex + 1).Trim();
 
                     switch (key) {
                         case "version":

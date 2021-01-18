@@ -45,7 +45,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 AtomIDToAtom.Remove(AtomIDs[dreamObject]);
                 AtomIDs.Remove(dreamObject);
                 AtomToAppearanceID.Remove(dreamObject, out _);
-                _overlaysListToAtom.Remove(DreamMetaObjectList.DreamLists[dreamObject.GetVariable("overlays").GetValueAsDreamObjectOfType(DreamPath.List)]);
+                _overlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             }
 
             base.OnObjectDeleted(dreamObject);
@@ -112,21 +112,18 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 newAppearance.Transform[5] = matrix.GetVariable("f").GetValueAsNumber();
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "overlays") {
-                if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject oldListObject)) {
-                    DreamList oldList = DreamMetaObjectList.DreamLists[oldListObject];
-
+                if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
                     oldList.Cut();
                     oldList.ValueAssigned -= OverlayValueAssigned;
                     oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
                     _overlaysListToAtom.Remove(oldList);
                 }
 
-                DreamObject overlayListObject;
-                if (!variableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out overlayListObject)) {
-                    overlayListObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+                DreamList overlayList;
+                if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
+                    overlayList = Program.DreamObjectTree.CreateList();
                 }
 
-                DreamList overlayList = DreamMetaObjectList.DreamLists[overlayListObject];
                 overlayList.ValueAssigned += OverlayValueAssigned;
                 overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
                 _overlaysListToAtom[overlayList] = dreamObject;

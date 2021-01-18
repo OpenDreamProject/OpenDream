@@ -29,8 +29,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 connection.MobDreamObject = variableValue.GetValueAsDreamObject();
             } else if (variableName == "screen") {
-                if (oldVariableValue.Value != null && oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject oldListObject)) {
-                    DreamList oldList = DreamMetaObjectList.DreamLists[oldListObject];
+                if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
 
                     oldList.Cut();
                     oldList.ValueAssigned -= ScreenValueAssigned;
@@ -38,12 +37,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                     _screenListToClient.Remove(oldList);
                 }
 
-                DreamObject screenListObject;
-                if (!variableValue.TryGetValueAsDreamObjectOfType(DreamPath.List, out screenListObject)) {
-                    screenListObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
+                DreamList screenList;
+                if (!variableValue.TryGetValueAsDreamList(out screenList)) {
+                    screenList = Program.DreamObjectTree.CreateList();
                 }
 
-                DreamList screenList = DreamMetaObjectList.DreamLists[screenListObject];
                 screenList.ValueAssigned += ScreenValueAssigned;
                 screenList.BeforeValueRemoved += ScreenBeforeValueRemoved;
                 _screenListToClient[screenList] = dreamObject;

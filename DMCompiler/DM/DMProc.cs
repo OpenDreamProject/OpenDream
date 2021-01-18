@@ -427,11 +427,7 @@ namespace DMCompiler.DM {
         }
 
         private void WriteString(string value) {
-            foreach (char character in value.ToCharArray()) {
-                _bytecodeWriter.Write((byte)character);
-            }
-
-            _bytecodeWriter.Write((byte)0);
+            _bytecodeWriter.Write(value);
         }
 
         private void WriteLabel(string labelName) {

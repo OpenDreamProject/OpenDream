@@ -4,35 +4,17 @@ using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
-        public static Dictionary<DreamObject, DreamList> DreamLists = new Dictionary<DreamObject, DreamList>();
-
-        private object _dreamListsLock = new object();
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamList list = new DreamList();
-
-            lock (_dreamListsLock) {
-                DreamLists.Add(dreamObject, list);
-            }
-            
             base.OnObjectCreated(dreamObject, creationArguments);
 
             dreamObject.CallProc("New", creationArguments);
-        }
-
-        public override void OnObjectDeleted(DreamObject dreamObject) {
-            lock (_dreamListsLock) {
-                DreamLists.Remove(dreamObject);
-            }
-
-            base.OnObjectDeleted(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
             
             if (variableName == "len") {
-                DreamList list = DreamLists[dreamObject];
+                DreamList list = (DreamList)dreamObject;
                 int newLen = variableValue.GetValueAsInteger();
                 
                 if (newLen > list.GetLength()) {
@@ -47,7 +29,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "len") {
-                DreamList list = DreamLists[dreamObject];
+                DreamList list = (DreamList)dreamObject;
 
                 return new DreamValue(list.GetLength());
             } else {
@@ -57,15 +39,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
         public override DreamValue OperatorAdd(DreamValue a, DreamValue b) {
             DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamObject listCopyObject = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList listCopy = DreamLists[listCopyObject];
+            DreamList listCopy = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamList();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject bValue = b.GetValueAsDreamObject();
-
-                if (bValue != null && bValue.IsSubtypeOf(DreamPath.List)) {
-                    DreamList bList = DreamLists[bValue];
-
+                if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
                         listCopy.AddValue(value);
                     }
@@ -76,20 +53,15 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 listCopy.AddValue(b);
             }
 
-            return new DreamValue(listCopyObject);
+            return new DreamValue(listCopy);
         }
 
         public override DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
             DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamObject listCopyObject = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList listCopy = DreamLists[listCopyObject];
+            DreamList listCopy = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamList();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject bValue = b.GetValueAsDreamObject();
-
-                if (bValue != null && bValue.IsSubtypeOf(DreamPath.List)) {
-                    DreamList bList = DreamLists[bValue];
-
+                if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
                         if (listCopy.ContainsValue(value)) {
                             listCopy.RemoveValue(value);
@@ -104,19 +76,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 }
             }
 
-            return new DreamValue(listCopyObject);
+            return new DreamValue(listCopy);
         }
 
         public override DreamValue OperatorAppend(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList list = DreamLists[listObject];
+            DreamList list = a.GetValueAsDreamList();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject bValue = b.GetValueAsDreamObject();
-
-                if (bValue != null && bValue.IsSubtypeOf(DreamPath.List)) {
-                    DreamList bList = DreamLists[bValue];
-
+                if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
                         list.AddValue(value);
                     }
@@ -131,15 +98,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorRemove(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList list = DreamLists[listObject];
+            DreamList list = a.GetValueAsDreamList();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject bValue = b.GetValueAsDreamObject();
-
-                if (bValue != null && bValue.IsSubtypeOf(DreamPath.List)) {
-                    DreamList bList = DreamLists[bValue];
-
+                if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
                         if (list.ContainsValue(value)) {
                             list.RemoveValue(value);
@@ -158,15 +120,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorCombine(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList list = DreamLists[listObject];
+            DreamList list = a.GetValueAsDreamList();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject bValue = b.GetValueAsDreamObject();
-
-                if (bValue != null && bValue.IsSubtypeOf(DreamPath.List)) {
-                    DreamList bList = DreamLists[bValue];
-
+                if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
                         if (!list.ContainsValue(value)) {
                             list.AddValue(value);
@@ -183,11 +140,9 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorMask(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList list = DreamLists[listObject];
+            DreamList list = a.GetValueAsDreamList();
 
-            if (b.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject bValue)) {
-                DreamList bList = DreamLists[bValue];
+            if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 int len = list.GetLength();
 
                 for (int i = 1; i <= len; i++) {

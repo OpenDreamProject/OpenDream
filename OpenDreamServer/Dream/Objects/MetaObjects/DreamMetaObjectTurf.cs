@@ -9,10 +9,9 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             base.OnObjectCreated(dreamObject, creationArguments);
 
             if (loc != null && loc.IsSubtypeOf(DreamPath.Turf)) {
-                DreamObject contents = loc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
-                DreamList contentsList = DreamMetaObjectList.DreamLists[contents];
-                while (contentsList.GetLength() > 0) { //Transfer all the old turf's contents
-                    contentsList.GetValue(new DreamValue(1)).GetValueAsDreamObjectOfType(DreamPath.Atom).SetVariable("loc", new DreamValue(dreamObject));
+                DreamList contents = loc.GetVariable("contents").GetValueAsDreamList();
+                while (contents.GetLength() > 0) { //Transfer all the old turf's contents
+                    contents.GetValue(new DreamValue(1)).GetValueAsDreamObjectOfType(DreamPath.Atom).SetVariable("loc", new DreamValue(dreamObject));
                 }
 
                 Program.DreamMap.SetTurf(loc.GetVariable("x").GetValueAsInteger(), loc.GetVariable("y").GetValueAsInteger(), dreamObject);

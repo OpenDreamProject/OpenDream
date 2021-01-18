@@ -28,8 +28,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
 
             foreach ((string VariableName, List<(DreamValue, DreamValue)> Values) runtimeInstantiatedList in ObjectDefinition.RuntimeInstantiatedLists) {
-                DreamObject instantiatedList = Program.DreamObjectTree.CreateObject(DreamPath.List);
-                DreamList list = DreamMetaObjectList.DreamLists[instantiatedList];
+                DreamList list = Program.DreamObjectTree.CreateList();
 
                 foreach ((DreamValue Index, DreamValue Value) value in runtimeInstantiatedList.Values) {
                     if (value.Index.Value != null) {
@@ -39,7 +38,7 @@ namespace OpenDreamServer.Dream.Objects {
                     }
                 }
 
-                SetVariable(runtimeInstantiatedList.VariableName, new DreamValue(instantiatedList));
+                SetVariable(runtimeInstantiatedList.VariableName, new DreamValue(list));
             }
 
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectCreated(this, creationArguments);

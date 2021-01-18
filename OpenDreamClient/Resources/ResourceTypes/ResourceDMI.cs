@@ -91,7 +91,6 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             try {
                 return DMIParser.ParseDMIDescription(dmiDescription, ImageBitmap.Width);
             } catch (Exception e) {
-            Console.WriteLine(dmiDescription);
                 Console.WriteLine("Error while parsing dmi '" + ResourcePath + "': " + e.Message);
             }
 

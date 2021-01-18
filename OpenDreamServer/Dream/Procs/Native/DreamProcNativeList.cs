@@ -10,13 +10,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("Add")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Add(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject listObject = scope.DreamObject;
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = (DreamList)scope.DreamObject;
 
             foreach (DreamValue argument in arguments.OrderedArguments) {
-                if (argument.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject argumentListObject)) {
-                    DreamList argumentList = DreamMetaObjectList.DreamLists[argumentListObject];
-
+                if (argument.TryGetValueAsDreamList(out DreamList argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         list.AddValue(value);
                     }
@@ -34,13 +31,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_Copy(DreamProcScope scope, DreamProcArguments arguments) {
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
-            DreamObject listObject = scope.DreamObject;
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = (DreamList)scope.DreamObject;
             DreamList listCopy = list.CreateCopy(start, end);
-            DreamObject newListObject = Program.DreamObjectTree.CreateObject(DreamPath.List);
 
-            DreamMetaObjectList.DreamLists[newListObject] = listCopy;
-            return new DreamValue(newListObject);
+            return new DreamValue(listCopy);
         }
 
         [DreamProc("Cut")]
@@ -49,7 +43,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_Cut(DreamProcScope scope, DreamProcArguments arguments) {
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
-            DreamList list = DreamMetaObjectList.DreamLists[scope.DreamObject];
+            DreamList list = (DreamList)scope.DreamObject;
 
             list.Cut(start, end);
             return new DreamValue((DreamObject)null);
@@ -63,8 +57,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamValue element = scope.GetValue("Elem");
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
-            DreamObject listObject = scope.DreamObject;
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = (DreamList)scope.DreamObject;
 
             if (start != 1 || end != 0) throw new NotImplementedException("Ranged /list.Find() is not implemented");
             return new DreamValue(list.FindValue(element));
@@ -75,17 +68,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Insert(DreamProcScope scope, DreamProcArguments arguments) {
             int index = scope.GetValue("Index").GetValueAsInteger(); //1-indexed
-            DreamObject listObject = scope.DreamObject;
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = (DreamList)scope.DreamObject;
 
             if (arguments.OrderedArguments.Count < 2) throw new Exception("No value given to insert");
 
             for (int i = 1; i < arguments.OrderedArguments.Count; i++) {
                 DreamValue item = arguments.OrderedArguments[i];
 
-                if (item.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject valueListObject)) {
-                    DreamList valueList = DreamMetaObjectList.DreamLists[valueListObject];
-
+                if (item.TryGetValueAsDreamList(out DreamList valueList)) {
                     foreach (DreamValue value in valueList.GetValues()) {
                         list.Insert(index++, value);
                     }
@@ -105,8 +95,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamValue glue = scope.GetValue("Glue");
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
-            DreamObject listObject = scope.DreamObject;
-            DreamList list = DreamMetaObjectList.DreamLists[listObject];
+            DreamList list = (DreamList)scope.DreamObject;
 
             string glueValue = (glue.Type == DreamValueType.String) ? glue.GetValueAsString() : "";
             return new DreamValue(list.Join(glueValue, start, end));
@@ -115,7 +104,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("Remove")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamList list = DreamMetaObjectList.DreamLists[scope.DreamObject];
+            DreamList list = (DreamList)scope.DreamObject;
             List<DreamValue> argumentValues = arguments.GetAllArguments();
             bool itemRemoved = false;
 
@@ -134,7 +123,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Index1", Type = DreamValueType.Integer)]
         [DreamProcParameter("Index2", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_Swap(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamList list = DreamMetaObjectList.DreamLists[scope.DreamObject];
+            DreamList list = (DreamList)scope.DreamObject;
             int index1 = scope.GetValue("Index1").GetValueAsInteger();
             int index2 = scope.GetValue("Index2").GetValueAsInteger();
 

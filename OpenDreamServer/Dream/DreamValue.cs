@@ -36,12 +36,12 @@ namespace OpenDreamServer.Dream {
         }
 
         public DreamValue(float value) {
-            if (Math.Floor(value) != value) {
-                Type = DreamValueType.Float;
-                Value = value;
-            } else {
+            if (Math.Floor(value) == value && value <= Int32.MaxValue && value >= Int32.MinValue) {
                 Type = DreamValueType.Integer;
                 Value = (Int32)value;
+            } else {
+                Type = DreamValueType.Float;
+                Value = value;
             }
         }
 
@@ -176,6 +176,10 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public DreamList GetValueAsDreamList() {
+            return (DreamList)GetValueAsDreamObject();
+        }
+
         public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {
             if (IsType(DreamValueType.DreamObject)) {
                 dreamObject = GetValueAsDreamObject();
@@ -198,6 +202,18 @@ namespace OpenDreamServer.Dream {
 
         public bool TryGetValueAsDreamObjectOfType(DreamPath type, out DreamObject dreamObject) {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
+        }
+
+        public bool TryGetValueAsDreamList(out DreamList list) {
+            if (TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
+                list = (DreamList)listObject;
+
+                return true;
+            } else {
+                list = null;
+
+                return false;
+            }
         }
 
         public DreamPath GetValueAsPath() {

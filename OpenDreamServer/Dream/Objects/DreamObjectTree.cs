@@ -90,11 +90,19 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public DreamObject CreateObject(DreamPath path, DreamProcArguments creationArguments) {
-            return new DreamObject(GetObjectDefinitionFromPath(path), creationArguments);
+            if (path.Equals(DreamPath.List)) {
+                return new DreamList(creationArguments);
+            } else {
+                return new DreamObject(GetObjectDefinitionFromPath(path), creationArguments);
+            }
         }
 
         public DreamObject CreateObject(DreamPath path) {
             return CreateObject(path, new DreamProcArguments(null));
+        }
+
+        public DreamList CreateList() {
+            return (DreamList)CreateObject(DreamPath.List);
         }
         
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {

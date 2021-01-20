@@ -851,7 +851,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             float a = scope.GetValue("A").GetValueAsNumber();
 
             if (arguments.ArgumentCount == 1) {
-                return new DreamValue((float)Math.Round(a));
+                return new DreamValue((float)Math.Floor(a));
             } else {
                 float b = scope.GetValue("B").GetValueAsNumber();
 

@@ -184,6 +184,8 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	proc/Topic(href, href_list)
 
 /matrix
+	parent_type = /datum
+
 	var/a = 1
 	var/b = 0
 	var/c = 0
@@ -391,6 +393,8 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 	var/client/client
 	var/key
 	var/ckey
+
+	var/see_invisible = 0
 
 	layer = 4.0
 

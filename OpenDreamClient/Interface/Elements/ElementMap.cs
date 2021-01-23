@@ -8,6 +8,7 @@ using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
 using OpenDreamShared.Dream;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementMap : Grid, IElement {
@@ -31,7 +32,6 @@ namespace OpenDreamClient.Interface.Elements {
             this.Background = Brushes.Black;
 
             this.Loaded += OnLoaded;
-            this.Unloaded += OnUnloaded;
             this.MouseLeftButtonDown += OnLeftMouseDown;
         }
 
@@ -43,19 +43,21 @@ namespace OpenDreamClient.Interface.Elements {
             return ((int)Math.Floor(x), (int)_dreamRenderer.OpenGLViewControl.Height - (int)Math.Floor(y));
         }
 
-        private (int X, int Y) ScreenToWorldCoordinates(int x, int y) {
-            int viewATOMX = (int)(x / 32);
-            int viewATOMY = (int)(y / 32);
+        private bool IsOverAtom(ATOM atom, (int X, int Y) screenCoordinates, bool isScreenAtom) {
+            Rectangle iconRect = _dreamRenderer.GetIconRect(atom, isScreenAtom);
+            
+            if (_dreamRenderer.IsAtomVisible(atom, isScreenAtom) && iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
+                int atomIconX = screenCoordinates.X - iconRect.X;
+                int atomIconY = screenCoordinates.Y - iconRect.Y;
 
-            return (_dreamRenderer.CameraX - 7 + viewATOMX, _dreamRenderer.CameraY - 7 + viewATOMY);
+                return atom.Icon.GetPixel(atomIconX, 32 - atomIconY).A != 0;
+            }
+
+            return false;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             _dreamRenderer.SetViewportSize(480, 480);
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e) {
-            
         }
 
         private void OnLeftMouseDown(object sender, MouseEventArgs e) {
@@ -69,40 +71,33 @@ namespace OpenDreamClient.Interface.Elements {
             ScreenLocation screenLocation = new ScreenLocation(screenCoordinates.X, screenCoordinates.Y, 32);
 
             foreach (ATOM screenObject in Program.OpenDream.ScreenObjects) {
-                System.Drawing.Point atomScreenCoordinates = screenObject.ScreenLocation.GetScreenCoordinates(32);
-                System.Drawing.Rectangle iconRect = new(atomScreenCoordinates, new System.Drawing.Size(32, 32));
+                Rectangle iconRect = _dreamRenderer.GetIconRect(screenObject, true);
 
-                if (iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
-                    int screenObjectIconX = screenCoordinates.X - iconRect.X;
-                    int screenObjectIconY = 32 - (screenCoordinates.Y - iconRect.Y);
-
-                    if (screenObject.Icon.GetPixel(screenObjectIconX, screenObjectIconY).A != 0) {
-                        clickedATOM = screenObject;
-                        iconX = screenObjectIconX;
-                        iconY = 32 - screenObjectIconY;
-                    }
+                if (IsOverAtom(screenObject, screenCoordinates, true)) {
+                    clickedATOM = screenObject;
+                    iconX = screenCoordinates.X - iconRect.X;
+                    iconY = screenCoordinates.Y - iconRect.Y;
                 }
             }
 
             if (clickedATOM == null) {
-                (int X, int Y) worldCoordinates = ScreenToWorldCoordinates(screenCoordinates.X, screenCoordinates.Y);
+                foreach (ATOM turf in Program.OpenDream.Map.Turfs) {
+                    foreach (ATOM atom in turf.Contents) {
+                        bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
 
-                if (Program.OpenDream.Map.IsValidCoordinate(worldCoordinates.X, worldCoordinates.Y)) {
-                    ATOM turf = Program.OpenDream.Map.Turfs[worldCoordinates.X, worldCoordinates.Y];
+                        if (isAbove && IsOverAtom(atom, screenCoordinates, false)) {
+                            Rectangle iconRect = _dreamRenderer.GetIconRect(atom, false);
 
-                    if (turf != null) {
-                        iconX = (int)mousePosition.X % 32;
-                        iconY = 32 - ((int)mousePosition.Y % 32);
-
-                        foreach (ATOM atom in turf.Contents) {
-                            bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
-
-                            if (isAbove && atom.Icon.Appearance.Invisibility <= 0 && atom.Icon.GetPixel(iconX, 32 - iconY).A != 0) {
-                                clickedATOM = atom;
-                            }
+                            clickedATOM = atom;
+                            iconX = screenCoordinates.X - iconRect.X;
+                            iconY = screenCoordinates.Y - iconRect.Y;
                         }
+                    }
 
-                        if (clickedATOM == null) clickedATOM = turf;
+                    if (clickedATOM == null && IsOverAtom(turf, screenCoordinates, false)) {
+                        clickedATOM = turf;
+                        iconX = screenCoordinates.X % 32;
+                        iconY = screenCoordinates.Y % 32;
                     }
                 }
             }

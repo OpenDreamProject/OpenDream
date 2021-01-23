@@ -43,7 +43,30 @@ namespace OpenDreamClient.Renderer {
             OpenGLViewControl.Width = width;
             OpenGLViewControl.Height = height;
             OpenGLViewControl.OpenGL.Viewport(0, 0, width, height);
-            _gl.Uniform2(_shader.ViewportSizeUniform, (float)width, (float)height);
+            _shader.SetViewportSize((float)width, (float)height);
+        }
+
+        public Rectangle GetIconRect(ATOM atom, bool useScreenLocation) {
+            System.Drawing.Point position;
+            if (useScreenLocation) {
+                position = atom.ScreenLocation.GetScreenCoordinates(32);
+            }  else {
+                int tileX = atom.X - CameraX + 7;
+                int tileY = atom.Y - CameraY + 7;
+
+                position = new System.Drawing.Point(tileX * 32 + atom.Icon.Appearance.PixelX, tileY * 32 + atom.Icon.Appearance.PixelY);
+            }
+
+            return new Rectangle(position, new System.Drawing.Size(32, 32));
+        }
+
+        public bool IsAtomVisible(ATOM atom, bool useScreenLocation) {
+            Rectangle iconRect = GetIconRect(atom, useScreenLocation);
+
+            if (atom.Icon.Appearance.Invisibility > 0) return false; //0 is the default invisibility a mob can see
+
+            return (iconRect.X >= 0 && iconRect.X <= OpenGLViewControl.Width &&
+                    iconRect.Y >= 0 && iconRect.Y <= OpenGLViewControl.Height);
         }
 
         private void InitOpenGL(object sender, OpenGLRoutedEventArgs args) {
@@ -106,7 +129,7 @@ namespace OpenDreamClient.Renderer {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {
-                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 8, CameraY - 8, 16, 16);
+                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(0, 0, Program.OpenDream.Map.Width, Program.OpenDream.Map.Height);
                 List<ATOM> mapAtoms = new();
 
                 foreach (ATOM turf in turfs) {
@@ -118,31 +141,6 @@ namespace OpenDreamClient.Renderer {
             }
 
             DrawAtoms(Program.OpenDream.ScreenObjects, true);
-        }
-
-        private void SetColor(UInt32 color) {
-            float r = (float)((color & 0xFF000000) >> 24) / 255;
-            float g = (float)((color & 0xFF0000) >> 16) / 255;
-            float b = (float)((color & 0xFF00) >> 8) / 255;
-            float a = (float)(color & 0xFF) / 255;
-
-            _gl.Uniform4(_shader.ColorUniform, r, g, b, a);
-        }
-
-        private void SetTranslation(float x, float y) {
-            _gl.Uniform2(_shader.TranslationUniform, x, y);
-        }
-
-        private void SetTransform(float[] transform) {
-            _gl.UniformMatrix3(_shader.TransformUniform, 1, false, new float[] {
-                transform[0], transform[1], 0,
-                transform[2], transform[3], 0,
-                transform[4], transform[5], 1
-            });
-        }
-
-        private void SetPixelOffset(int x, int y) {
-            _gl.Uniform2(_shader.PixelOffsetUniform, (float)x, (float)y);
         }
 
         private void DrawAtoms(List<ATOM> atoms, bool useScreenLocation) {
@@ -161,14 +159,12 @@ namespace OpenDreamClient.Renderer {
                 if (useScreenLocation) {
                     System.Drawing.Point screenCoordinates = atom.ScreenLocation.GetScreenCoordinates(32);
 
-                    SetTranslation((float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
+                    _shader.SetTranslation((float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
                 } else {
-                    SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
+                    _shader.SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
                 }
 
-                if (atom.Icon.Appearance.Invisibility <= 0) { //0 is the default invisibility a mob can see
-                    DrawDreamIcon(atom.Icon);
-                }
+                if (IsAtomVisible(atom, useScreenLocation)) DrawDreamIcon(atom.Icon);
             }
         }
 
@@ -181,14 +177,14 @@ namespace OpenDreamClient.Renderer {
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
                 _gl.VertexAttribPointer(_shader.VertexLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
-                SetTransform(transform);
-                SetPixelOffset(pixelX, pixelY);
+                _shader.SetTransform(transform);
+                _shader.SetPixelOffset(pixelX, pixelY);
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconTextureCoordBuffer);
                 _gl.VertexAttribPointer(_shader.TextureCoordLocation, 2, OpenGL.GL_FLOAT, false, 0, IntPtr.Zero);
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);
                 _gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture.TextureID);
                 _gl.Uniform1(_shader.TextureSamplerUniform, 0);
-                SetColor(icon.Appearance.Color);
+                _shader.SetColor(icon.Appearance.Color);
                 _gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
             }
 

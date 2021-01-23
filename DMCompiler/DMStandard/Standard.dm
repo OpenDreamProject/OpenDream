@@ -407,8 +407,12 @@ proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()
 	
-	for (var/x=Start.x; x<End.x; x++)
-		for (var/y=Start.y; y<End.y; y++)
+	var/startX = min(Start.x, End.x)
+	var/startY = min(Start.y, End.y)
+	var/endX = max(Start.x, End.x)
+	var/endY = max(Start.y, End.y)
+	for (var/y=startY; y<=endY; y++)
+		for (var/x=startX; x<=endX; x++)
 			atoms.Add(locate(x, y, Start.z))
 	
 	return atoms

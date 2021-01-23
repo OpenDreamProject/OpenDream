@@ -10,38 +10,71 @@ namespace OpenDreamClient.Renderer {
         public uint VertexLocation, TextureCoordLocation;
         public int ViewportSizeUniform, TranslationUniform, TransformUniform, PixelOffsetUniform, TextureSamplerUniform, ColorUniform;
 
+        private OpenGL _gl;
+
         public OpenGLShader(OpenGL gl, string vertexShaderPath, string fragmentShaderPath) {
-            VertexShader = CreateShader(gl, OpenGL.GL_VERTEX_SHADER, vertexShaderPath);
-            FragmentShader = CreateShader(gl, OpenGL.GL_FRAGMENT_SHADER, fragmentShaderPath);
+            this._gl = gl;
 
-            ShaderProgram = gl.CreateProgram();
-            gl.AttachShader(ShaderProgram, VertexShader);
-            gl.AttachShader(ShaderProgram, FragmentShader);
-            gl.LinkProgram(ShaderProgram);
+            VertexShader = CreateShader(OpenGL.GL_VERTEX_SHADER, vertexShaderPath);
+            FragmentShader = CreateShader(OpenGL.GL_FRAGMENT_SHADER, fragmentShaderPath);
 
-            VertexLocation = (uint)gl.GetAttribLocation(ShaderProgram, "vertexPosition");
-            TextureCoordLocation = (uint)gl.GetAttribLocation(ShaderProgram, "textureCoord");
-            ViewportSizeUniform = gl.GetUniformLocation(ShaderProgram, "viewportSize");
-            TranslationUniform = gl.GetUniformLocation(ShaderProgram, "translation");
-            TransformUniform = gl.GetUniformLocation(ShaderProgram, "transform");
-            PixelOffsetUniform = gl.GetUniformLocation(ShaderProgram, "pixelOffset");
-            TextureSamplerUniform = gl.GetUniformLocation(ShaderProgram, "textureSampler");
-            ColorUniform = gl.GetUniformLocation(ShaderProgram, "color");
+            ShaderProgram = _gl.CreateProgram();
+            _gl.AttachShader(ShaderProgram, VertexShader);
+            _gl.AttachShader(ShaderProgram, FragmentShader);
+            _gl.LinkProgram(ShaderProgram);
+
+            VertexLocation = (uint)_gl.GetAttribLocation(ShaderProgram, "vertexPosition");
+            TextureCoordLocation = (uint)_gl.GetAttribLocation(ShaderProgram, "textureCoord");
+            ViewportSizeUniform = _gl.GetUniformLocation(ShaderProgram, "viewportSize");
+            TranslationUniform = _gl.GetUniformLocation(ShaderProgram, "translation");
+            TransformUniform = _gl.GetUniformLocation(ShaderProgram, "transform");
+            PixelOffsetUniform = _gl.GetUniformLocation(ShaderProgram, "pixelOffset");
+            TextureSamplerUniform = _gl.GetUniformLocation(ShaderProgram, "textureSampler");
+            ColorUniform = _gl.GetUniformLocation(ShaderProgram, "color");
         }
 
-        private uint CreateShader(OpenGL gl, uint shaderType, string shaderFilePath) {
-            uint shader = gl.CreateShader(shaderType);
+        public void SetViewportSize(float width, float height) {
+            _gl.Uniform2(ViewportSizeUniform, (float)width, (float)height);
+        }
 
-            gl.ShaderSource(shader, File.ReadAllText(shaderFilePath));
-            gl.CompileShader(shader);
+        public void SetColor(UInt32 color) {
+            float r = (float)((color & 0xFF000000) >> 24) / 255;
+            float g = (float)((color & 0xFF0000) >> 16) / 255;
+            float b = (float)((color & 0xFF00) >> 8) / 255;
+            float a = (float)(color & 0xFF) / 255;
+
+            _gl.Uniform4(ColorUniform, r, g, b, a);
+        }
+
+        public void SetTranslation(float x, float y) {
+            _gl.Uniform2(TranslationUniform, x, y);
+        }
+
+        public void SetTransform(float[] transform) {
+            _gl.UniformMatrix3(TransformUniform, 1, false, new float[] {
+                transform[0], transform[1], 0,
+                transform[2], transform[3], 0,
+                transform[4], transform[5], 1
+            });
+        }
+
+        public void SetPixelOffset(int x, int y) {
+            _gl.Uniform2(PixelOffsetUniform, (float)x, (float)y);
+        }
+
+        private uint CreateShader(uint shaderType, string shaderFilePath) {
+            uint shader = _gl.CreateShader(shaderType);
+
+            _gl.ShaderSource(shader, File.ReadAllText(shaderFilePath));
+            _gl.CompileShader(shader);
 
             int[] shaderParameters = new int[] { 0 };
-            gl.GetShader(shader, OpenGL.GL_COMPILE_STATUS, shaderParameters);
+            _gl.GetShader(shader, OpenGL.GL_COMPILE_STATUS, shaderParameters);
             if (shaderParameters[0] != OpenGL.GL_TRUE) {
-                gl.GetShader(shader, OpenGL.GL_INFO_LOG_LENGTH, shaderParameters);
+                _gl.GetShader(shader, OpenGL.GL_INFO_LOG_LENGTH, shaderParameters);
                 StringBuilder shaderError = new StringBuilder(shaderParameters[0]);
 
-                gl.GetShaderInfoLog(shader, shaderError.Capacity, IntPtr.Zero, shaderError);
+                _gl.GetShaderInfoLog(shader, shaderError.Capacity, IntPtr.Zero, shaderError);
                 throw new Exception(shaderError.ToString());
             }
 

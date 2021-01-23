@@ -565,6 +565,16 @@ namespace DMCompiler.Compiler.DM.Visitors {
             _proc.Assign();
         }
 
+        public void VisitXorAssign(DMASTXorAssign xorAssign) {
+            xorAssign.A.Visit(this);
+
+            xorAssign.A.Visit(this);
+            xorAssign.B.Visit(this);
+            _proc.BinaryXor();
+
+            _proc.Assign();
+        }
+
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             leftShift.A.Visit(this);
             leftShift.B.Visit(this);

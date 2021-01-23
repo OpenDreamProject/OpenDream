@@ -8,8 +8,8 @@ using System.Windows;
 
 namespace OpenDreamClient.Interface {
     class DreamInterface {
-        public Dictionary<string, ElementWindow> Windows = new Dictionary<string, ElementWindow>();
-        public Dictionary<string, Window> PopupWindows = new Dictionary<string, Window>();
+        public Dictionary<string, ElementWindow> Windows = new();
+        public Dictionary<string, Window> PopupWindows = new();
         public InterfaceDescriptor InterfaceDescriptor { get; private set; } = null;
 
         public ElementWindow DefaultWindow;

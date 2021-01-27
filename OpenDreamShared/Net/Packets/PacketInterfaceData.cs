@@ -33,6 +33,7 @@ namespace OpenDreamShared.Net.Packets {
 		}
 
 		public PacketID PacketID => PacketID.InterfaceData;
+
 		public InterfaceDescriptor InterfaceDescriptor;
 
         public PacketInterfaceData() { }

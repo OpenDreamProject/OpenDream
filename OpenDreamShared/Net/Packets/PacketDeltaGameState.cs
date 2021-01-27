@@ -28,6 +28,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public PacketID PacketID => PacketID.DeltaGameState;
+
         public DreamDeltaState DeltaState;
         public DreamDeltaState.ClientDelta ClientDelta;
 

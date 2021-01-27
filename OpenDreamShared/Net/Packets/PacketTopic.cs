@@ -5,6 +5,7 @@ using System.Text;
 namespace OpenDreamShared.Net.Packets {
     class PacketTopic : IPacket {
         public PacketID PacketID => PacketID.Topic;
+
         public string Query;
 
         public PacketTopic() { }

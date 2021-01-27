@@ -3,6 +3,7 @@
 namespace OpenDreamShared.Net.Packets {
     class PacketSound : IPacket {
         public PacketID PacketID => PacketID.Sound;
+
         public UInt16 Channel;
         public string File;
         public int Volume;

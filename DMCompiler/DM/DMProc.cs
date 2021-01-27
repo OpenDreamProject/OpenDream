@@ -212,6 +212,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CallStatement);
         }
 
+        public void Prompt(DMValueType types) {
+            WriteOpcode(DreamProcOpcode.Prompt);
+            WriteInt((int)types);
+        }
+
         public void Return() {
             WriteOpcode(DreamProcOpcode.Return);
         }

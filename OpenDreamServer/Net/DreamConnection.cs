@@ -2,12 +2,15 @@
 using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace OpenDreamServer.Net {
     class DreamConnection {
@@ -35,6 +38,7 @@ namespace OpenDreamServer.Net {
         }
 
         private DreamObject _mobDreamObject = null;
+        private Dictionary<int, Action<DreamValue>> _promptEvents = new();
 
         private TcpClient _tcpClient;
         private NetworkStream _tcpStream;
@@ -140,6 +144,39 @@ namespace OpenDreamServer.Net {
 
         public void OutputControl(string message, string control) {
             SendPacket(new PacketOutput(message, control));
+        }
+
+        public Task<DreamValue> Prompt(DMValueType types, string message) {
+            return new Task<DreamValue>(() => {
+                ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
+                int promptId = _promptEvents.Count;
+
+                DreamValue promptResponse = new DreamValue((DreamObject)null);
+                _promptEvents[promptId] = (DreamValue response) => {
+                    promptResponse = response;
+                    promptWaitHandle.Set();
+                };
+
+                SendPacket(new PacketPrompt(promptId, types, message));
+                promptWaitHandle.WaitOne();
+                return promptResponse;
+            });
+        }
+
+        public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
+            if (_promptEvents.TryGetValue(pPromptResponse.PromptId, out Action<DreamValue> promptEvent)) {
+                DreamValue value;
+
+                switch (pPromptResponse.Type) {
+                    case DMValueType.Null: value = new DreamValue((DreamObject)null); break;
+                    case DMValueType.Text: value = new DreamValue((string)pPromptResponse.Value); break;
+                    case DMValueType.Num: value = new DreamValue((int)pPromptResponse.Value); break;
+                    default: throw new Exception("Invalid prompt response '" + pPromptResponse.Type + "'");
+                }
+
+                promptEvent.Invoke(value);
+                _promptEvents[pPromptResponse.PromptId] = null;
+            }
         }
     }
 }

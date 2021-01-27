@@ -687,8 +687,8 @@ namespace DMCompiler.Compiler.DM.Visitors {
         }
 
         public void VisitInput(DMASTInput input) {
-            //TODO
-            _proc.Error();
+            PushCallParameters(input.Parameters);
+            _proc.Prompt(input.Types);
         }
 
         public void VisitList(DMASTList list) {

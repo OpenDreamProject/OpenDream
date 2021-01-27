@@ -93,6 +93,7 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketSound>(PacketID.Sound, packet => SoundEngine.HandlePacketSound(packet));
             Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
             Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => ResourceManager.HandlePacketBrowseResource(packet));
+            Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
         }
 
         private void UpdateTimerTick(object sender, EventArgs e) {

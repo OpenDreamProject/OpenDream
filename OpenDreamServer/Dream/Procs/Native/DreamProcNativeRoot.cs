@@ -29,8 +29,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("flags", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_animate(DreamProcScope scope, DreamProcArguments arguments) {
             DreamObject obj = scope.GetValue("Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
-
-            //TODO: Animate
+            
             if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
                 obj.SetVariable("pixel_x", pixelX);
             }
@@ -434,13 +433,21 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Type", Type = DreamValueType.DreamPath)]
         public static DreamValue NativeProc_istype(DreamProcScope scope, DreamProcArguments arguments) {
             DreamValue value = scope.GetValue("Val");
-            DreamValue type = scope.GetValue("Type");
+            DreamValue typeValue = scope.GetValue("Type");
+            DreamPath type;
 
-            if (type.Value == null) {
-                throw new NotImplementedException("Implicit type checking is not implemented");
+            if (typeValue.Type == DreamValueType.DreamPath) type = typeValue.GetValueAsPath();
+            else if (typeValue.Type == DreamValueType.DreamObject) {
+                if (typeValue.Value != null) {
+                    type = typeValue.GetValueAsDreamObject().ObjectDefinition.Type;
+                } else {
+                    throw new NotImplementedException("Implicit type checking is not implemented");
+                }
+            } else {
+                throw new ArgumentException("Invalid type");
             }
 
-            if (value.TryGetValueAsDreamObjectOfType(type.GetValueAsPath(), out _)) {
+            if (value.TryGetValueAsDreamObjectOfType(type, out _)) {
                 return new DreamValue(1);
             } else {
                 return new DreamValue(0);
@@ -969,17 +976,24 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("radix", Type = DreamValueType.Integer, DefaultValue = 10)]
         public static DreamValue NativeProc_text2num(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
-            int radix = scope.GetValue("radix").GetValueAsInteger();
+            DreamValue value = scope.GetValue("T");
 
-            if (text.Length != 0) {
-                if (text.Contains(".") && radix == 10) {
-                    return new DreamValue(Convert.ToSingle(text));
+            if (value.TryGetValueAsString(out string text)) {
+                int radix = scope.GetValue("radix").GetValueAsInteger();
+
+                if (text.Length != 0) {
+                    if (text.Contains(".") && radix == 10) {
+                        return new DreamValue(Convert.ToSingle(text));
+                    } else {
+                        return new DreamValue(Convert.ToInt32(text, radix));
+                    }
                 } else {
-                    return new DreamValue(Convert.ToInt32(text, radix));
+                    return new DreamValue((DreamObject)null);
                 }
+            } else if (value.IsType(DreamValueType.Number)) {
+                return new DreamValue(value.Value);
             } else {
-                return new DreamValue((DreamObject)null);
+                throw new Exception("Invalid argument to text2num: " + value);
             }
         }
 

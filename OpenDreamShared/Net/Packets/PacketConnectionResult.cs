@@ -3,6 +3,7 @@
 namespace OpenDreamShared.Net.Packets {
     class PacketConnectionResult : IPacket {
         public PacketID PacketID => PacketID.ConnectionResult;
+
         public bool ConnectionSuccessful;
         public string ErrorMessage = String.Empty;
 

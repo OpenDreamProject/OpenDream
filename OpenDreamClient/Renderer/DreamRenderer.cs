@@ -65,8 +65,8 @@ namespace OpenDreamClient.Renderer {
 
             if (atom.Icon.Appearance.Invisibility > 0) return false; //0 is the default invisibility a mob can see
 
-            return (iconRect.X >= 0 && iconRect.X <= OpenGLViewControl.Width &&
-                    iconRect.Y >= 0 && iconRect.Y <= OpenGLViewControl.Height);
+            return (iconRect.X >= -iconRect.Width && iconRect.X <= OpenGLViewControl.Width &&
+                    iconRect.Y >= -iconRect.Height && iconRect.Y <= OpenGLViewControl.Height);
         }
 
         private void InitOpenGL(object sender, OpenGLRoutedEventArgs args) {

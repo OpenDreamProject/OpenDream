@@ -855,7 +855,7 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 DMASTExpression value = null;
-                DMASTDefinitionParameter.ParameterType type;
+                DMValueType type;
                 DMASTExpression possibleValues = null;
 
                 if (Check(TokenType.DM_Equals)) {
@@ -1304,7 +1304,7 @@ namespace OpenDreamShared.Compiler.DM {
                             Whitespace();
 
                             if (identifier != null && identifier.Identifier == "input") {
-                                DMASTDefinitionParameter.ParameterType types = AsTypes();
+                                DMValueType types = AsTypes();
                                 Whitespace();
                                 DMASTExpression list = null;
 
@@ -1460,8 +1460,8 @@ namespace OpenDreamShared.Compiler.DM {
             return Check(TokenType.DM_Whitespace);
         }
 
-        private DMASTDefinitionParameter.ParameterType AsTypes() {
-            DMASTDefinitionParameter.ParameterType type = DMASTDefinitionParameter.ParameterType.Default;
+        private DMValueType AsTypes() {
+            DMValueType type = DMValueType.Default;
 
             if (Check(TokenType.DM_As)) {
                 Whitespace();
@@ -1471,16 +1471,16 @@ namespace OpenDreamShared.Compiler.DM {
 
                     Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected parameter type");
                     switch (typeToken.Text) {
-                        case "anything": type |= DMASTDefinitionParameter.ParameterType.Anything; break;
-                        case "null": type |= DMASTDefinitionParameter.ParameterType.Null; break;
-                        case "text": type |= DMASTDefinitionParameter.ParameterType.Text; break;
-                        case "obj": type |= DMASTDefinitionParameter.ParameterType.Obj; break;
-                        case "mob": type |= DMASTDefinitionParameter.ParameterType.Mob; break;
-                        case "turf": type |= DMASTDefinitionParameter.ParameterType.Turf; break;
-                        case "num": type |= DMASTDefinitionParameter.ParameterType.Num; break;
-                        case "message": type |= DMASTDefinitionParameter.ParameterType.Message; break;
-                        case "area": type |= DMASTDefinitionParameter.ParameterType.Area; break;
-                        case "color": type |= DMASTDefinitionParameter.ParameterType.Color; break;
+                        case "anything": type |= DMValueType.Anything; break;
+                        case "null": type |= DMValueType.Null; break;
+                        case "text": type |= DMValueType.Text; break;
+                        case "obj": type |= DMValueType.Obj; break;
+                        case "mob": type |= DMValueType.Mob; break;
+                        case "turf": type |= DMValueType.Turf; break;
+                        case "num": type |= DMValueType.Num; break;
+                        case "message": type |= DMValueType.Message; break;
+                        case "area": type |= DMValueType.Area; break;
+                        case "color": type |= DMValueType.Color; break;
                         default: throw new Exception("Invalid parameter type '" + typeToken.Text + "'");
                     }
                 } while (Check(TokenType.DM_Bar));

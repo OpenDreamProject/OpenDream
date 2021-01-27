@@ -7,6 +7,7 @@ using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Procs {
     class DreamProcInterpreter {
@@ -877,6 +878,29 @@ namespace OpenDreamServer.Dream.Procs {
                 string identifierName = ReadString();
 
                 Push(new DreamProcIdentifierProc(_currentScope, identifierName));
+            } else if (opcode == DreamProcOpcode.Prompt) {
+                DMValueType types = (DMValueType)ReadInt();
+                DreamProcArguments arguments = PopArguments().CreateProcArguments();
+                DreamValue firstArg = arguments.OrderedArguments[0];
+                DreamObject recipientMob;
+                string message;
+
+                if (firstArg.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out recipientMob)) {
+                    message = arguments.OrderedArguments[1].GetValueAsString();
+                } else {
+                    recipientMob = _topScope.Usr;
+                    message = arguments.OrderedArguments[0].GetValueAsString();
+                }
+
+                DreamObject clientObject;
+                if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
+                    DreamConnection connection = Program.ClientToConnection[clientObject];
+                    Task<DreamValue> promptTask = connection.Prompt(types, message);
+
+                    promptTask.Start();
+                    promptTask.Wait();
+                    Push(promptTask.Result);
+                }
             } else {
                 throw new Exception("Invalid opcode (" + opcode + ")");
             }

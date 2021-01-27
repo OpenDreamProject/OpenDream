@@ -6,6 +6,7 @@ using System.Drawing;
 namespace OpenDreamShared.Net.Packets {
     class PacketFullGameState: IPacket {
         public PacketID PacketID => PacketID.FullGameState;
+
         public DreamFullState FullState;
         public UInt32 GameStateID;
         public UInt16 EyeID;

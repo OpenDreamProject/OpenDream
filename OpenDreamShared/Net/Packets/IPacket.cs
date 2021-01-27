@@ -25,6 +25,8 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketSound>(PacketID.Sound);
             RegisterPacket<PacketBrowse>(PacketID.Browse);
             RegisterPacket<PacketBrowseResource>(PacketID.BrowseResource);
+            RegisterPacket<PacketPrompt>(PacketID.Prompt);
+            RegisterPacket<PacketPromptResponse>(PacketID.PromptResponse);
         }
 
         public static IPacket CreatePacketFromData(byte[] packetData) {

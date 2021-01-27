@@ -212,8 +212,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
                     appearance.Icon = icon.GetValueAsDreamResource().ResourcePath;
-                } else {
+                } else if (icon.IsType(DreamValue.DreamValueType.String)) {
                     appearance.Icon = icon.GetValueAsString();
+                } else if (icon.Value == null) {
+                    appearance.Icon = GetAppearance(atom).Icon;
                 }
 
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();

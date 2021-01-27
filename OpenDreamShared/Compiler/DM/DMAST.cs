@@ -1,5 +1,6 @@
 ﻿using System;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Compiler.DM {
     interface DMASTVisitor {
@@ -671,10 +672,10 @@ namespace OpenDreamShared.Compiler.DM {
 
     class DMASTInput : DMASTExpression {
         public DMASTCallParameter[] Parameters;
-        public DMASTDefinitionParameter.ParameterType Types;
+        public DMValueType Types;
         public DMASTExpression List;
 
-        public DMASTInput(DMASTCallParameter[] parameters, DMASTDefinitionParameter.ParameterType types, DMASTExpression list) {
+        public DMASTInput(DMASTCallParameter[] parameters, DMValueType types, DMASTExpression list) {
             Parameters = parameters;
             Types = types;
             List = list;
@@ -1284,26 +1285,12 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTDefinitionParameter : DMASTNode {
-        public enum ParameterType {
-            Default = 0x0,
-            Anything = 0x1,
-            Null = 0x2,
-            Text = 0x4,
-            Obj = 0x8,
-            Mob = 0x10,
-            Turf = 0x20,
-            Num = 0x40,
-            Message = 0x80,
-            Area = 0x100,
-            Color = 0x200
-        }
-
         public DMASTPath Path;
         public DMASTExpression Value;
-        public ParameterType Type;
+        public DMValueType Type;
         public DMASTExpression PossibleValues;
 
-        public DMASTDefinitionParameter(DMASTPath path, DMASTExpression value, ParameterType type, DMASTExpression possibleValues) {
+        public DMASTDefinitionParameter(DMASTPath path, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) {
             Path = path;
             Value = value;
             Type = type;

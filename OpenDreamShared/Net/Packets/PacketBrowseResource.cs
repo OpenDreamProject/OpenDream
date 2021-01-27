@@ -3,6 +3,7 @@
 namespace OpenDreamShared.Net.Packets {
     class PacketBrowseResource : IPacket {
         public PacketID PacketID => PacketID.BrowseResource;
+
         public string Filename;
         public byte[] Data;
 

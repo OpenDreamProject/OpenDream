@@ -1,15 +1,13 @@
 ﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamClient.Dream {
     class ATOM {
         public UInt16 ID;
         public AtomType Type;
         public DreamIcon Icon { get; } = new DreamIcon();
-        public List<ATOM> Contents = new List<ATOM>();
+        public List<ATOM> Contents = new();
         public ScreenLocation ScreenLocation = new ScreenLocation();
 
         public ATOM Loc {

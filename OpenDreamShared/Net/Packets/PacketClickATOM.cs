@@ -4,6 +4,7 @@ using System;
 namespace OpenDreamShared.Net.Packets {
     class PacketClickAtom : IPacket {
         public PacketID PacketID => PacketID.ClickAtom;
+
         public UInt16 AtomID;
         public int IconX, IconY;
         public ScreenLocation ScreenLocation;

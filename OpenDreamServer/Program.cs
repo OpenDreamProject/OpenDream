@@ -61,55 +61,7 @@ namespace OpenDreamServer {
             DreamStateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             DreamServer.DreamConnectionRequest += OnDreamConnectionRequest;
 
-            DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
-            DreamServer.RegisterPacketCallback<PacketKeyboardInput>(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => {
-                foreach (int key in pKeyboardInput.KeysDown) {
-                    if (!connection.PressedKeys.Contains(key)) connection.PressedKeys.Add(key);
-                }
-
-                foreach (int key in pKeyboardInput.KeysUp) {
-                    connection.PressedKeys.Remove(key);
-                }
-            });
-            DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
-                if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
-                    NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
-                    paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
-                    paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
-                    paramsBuilder.Add("screen-loc", pClickAtom.ScreenLocation.ToString());
-                    if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
-                    if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
-                    if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
-
-                    DreamProcArguments clickArguments = new DreamProcArguments(new() {
-                        new DreamValue(atom),
-                        new DreamValue((DreamObject)null),
-                        new DreamValue((DreamObject)null),
-                        new DreamValue(paramsBuilder.ToString())
-                    });
-                    
-                    Task.Run(() => connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject));
-                }
-            });
-            DreamServer.RegisterPacketCallback<PacketTopic>(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => {
-                DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
-                DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-                DreamObject src = null;
-
-                if (srcRefValue.Value != null) {
-                    int srcRef = int.Parse(srcRefValue.GetValueAsString());
-
-                    src = DreamObject.GetFromReferenceID(srcRef);
-                }
-
-                DreamProcArguments topicArguments = new DreamProcArguments(new() {
-                    new DreamValue(pTopic.Query),
-                    new DreamValue(hrefList),
-                    new DreamValue(src)
-                });
-
-                Task.Run(() => connection.ClientDreamObject?.CallProc("Topic", topicArguments, connection.MobDreamObject));
-            });
+            RegisterPacketCallbacks();
 
             DreamObjectTree.LoadFromJson(DreamResourceManager.LoadResource(objectTreeFile).ReadAsString());
             DreamObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
@@ -250,6 +202,59 @@ namespace OpenDreamServer {
             list.SetNativeProc(DreamProcNativeList.NativeProc_Join);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
+        }
+
+        private static void RegisterPacketCallbacks() {
+            DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
+            DreamServer.RegisterPacketCallback<PacketKeyboardInput>(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => {
+                foreach (int key in pKeyboardInput.KeysDown) {
+                    if (!connection.PressedKeys.Contains(key)) connection.PressedKeys.Add(key);
+                }
+
+                foreach (int key in pKeyboardInput.KeysUp) {
+                    connection.PressedKeys.Remove(key);
+                }
+            });
+            DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
+                if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
+                    NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
+                    paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
+                    paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
+                    paramsBuilder.Add("screen-loc", pClickAtom.ScreenLocation.ToString());
+                    if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
+                    if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
+                    if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
+
+                    DreamProcArguments clickArguments = new DreamProcArguments(new() {
+                        new DreamValue(atom),
+                        new DreamValue((DreamObject)null),
+                        new DreamValue((DreamObject)null),
+                        new DreamValue(paramsBuilder.ToString())
+                    });
+
+                    Task.Run(() => connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject));
+                }
+            });
+            DreamServer.RegisterPacketCallback<PacketTopic>(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => {
+                DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
+                DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
+                DreamObject src = null;
+
+                if (srcRefValue.Value != null) {
+                    int srcRef = int.Parse(srcRefValue.GetValueAsString());
+
+                    src = DreamObject.GetFromReferenceID(srcRef);
+                }
+
+                DreamProcArguments topicArguments = new DreamProcArguments(new() {
+                    new DreamValue(pTopic.Query),
+                    new DreamValue(hrefList),
+                    new DreamValue(src)
+                });
+
+                Task.Run(() => connection.ClientDreamObject?.CallProc("Topic", topicArguments, connection.MobDreamObject));
+            });
+            DreamServer.RegisterPacketCallback<PacketPromptResponse>(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
         }
 
         private static void OnDeltaStateFinalized(DreamDeltaState deltaState) {

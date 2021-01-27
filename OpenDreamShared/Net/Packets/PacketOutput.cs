@@ -3,6 +3,7 @@
 namespace OpenDreamShared.Net.Packets {
     class PacketOutput : IPacket {
         public PacketID PacketID => PacketID.Output;
+
         public string Value;
         public string Control;
 

@@ -323,6 +323,7 @@ namespace DMCompiler.DM.Visitors {
                 if (add.A is not DMASTExpressionConstant || add.B is not DMASTExpressionConstant) return;
 
                 DMASTConstantInteger aInteger = add.A as DMASTConstantInteger;
+                DMASTConstantFloat aFloat = add.A as DMASTConstantFloat;
                 DMASTConstantString aString = add.A as DMASTConstantString;
                 DMASTConstantInteger bInteger = add.B as DMASTConstantInteger;
                 DMASTConstantFloat bFloat = add.B as DMASTConstantFloat;
@@ -330,6 +331,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value + bInteger.Value);
                 else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(aInteger.Value + bFloat.Value);
+                else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(aFloat.Value + bInteger.Value);
                 else if (aString != null && bString != null) expression = new DMASTConstantString(aString.Value + bString.Value);
 
                 return;

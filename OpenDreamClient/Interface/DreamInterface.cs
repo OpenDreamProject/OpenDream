@@ -1,4 +1,6 @@
 ﻿using OpenDreamClient.Interface.Elements;
+using OpenDreamClient.Interface.Prompts;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
 using System;
@@ -157,6 +159,22 @@ namespace OpenDreamClient.Interface {
 
                 FileInfo cacheFile = Program.OpenDream.ResourceManager.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
                 if (outputBrowser != null) outputBrowser.SetFileSource(cacheFile.FullName);
+            }
+        }
+
+        public void HandlePacketPrompt(PacketPrompt pPrompt) {
+            PromptWindow prompt = null;
+            int promptTypeBitflag = (int)pPrompt.Types;
+
+            if ((promptTypeBitflag & (int)DMValueType.Text) != 0) {
+                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Message);
+            } else if ((promptTypeBitflag & (int)DMValueType.Num) != 0) {
+                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Message);
+            }
+
+            if (prompt != null) {
+                prompt.Owner = _defaultWindow;
+                prompt.Show();
             }
         }
 

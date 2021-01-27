@@ -67,7 +67,8 @@
         GetLocalVariable = 0x41,
         Power = 0x42,
         DereferenceProc = 0x43,
-        GetProc = 0x44
+        GetProc = 0x44,
+        Prompt = 0x45
     }
 
     enum DreamProcOpcodeParameterType {
@@ -75,9 +76,22 @@
         Unnamed = 0xFD
     }
 
-    public enum StringFormatTypes {
-        //0x0 is skipped because it's used to signal the end of a string
-        Stringify = 0x1,
-        Ref = 0x2
+    enum StringFormatTypes {
+        Stringify = 0x0,
+        Ref = 0x1
+    }
+
+    enum DMValueType {
+        Default = 0x0,
+        Anything = 0x1,
+        Null = 0x2,
+        Text = 0x4,
+        Obj = 0x8,
+        Mob = 0x10,
+        Turf = 0x20,
+        Num = 0x40,
+        Message = 0x80,
+        Area = 0x100,
+        Color = 0x200
     }
 }

@@ -4,6 +4,7 @@ using System.Drawing;
 namespace OpenDreamShared.Net.Packets {
     class PacketBrowse : IPacket {
         public PacketID PacketID => PacketID.Browse;
+
         public string Window;
         public string HtmlSource;
         public Size Size;

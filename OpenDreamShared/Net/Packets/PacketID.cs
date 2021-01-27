@@ -5,17 +5,18 @@
 		RequestConnect = 0x2,
 		InterfaceData = 0x3,
 		Output = 0x4,
-		//0x5
-		RequestResource = 0x6,
-		Resource = 0x7,
-		FullGameState = 0x8,
-		DeltaGameState = 0x9,
-		KeyboardInput = 0xA,
-		Topic = 0xB,
-		ClickAtom = 0xC,
-		ScreenViewChanges = 0xD,
-		Sound = 0xE,
-		Browse = 0xF,
-		BrowseResource = 0x10
+		RequestResource = 0x5,
+		Resource = 0x6,
+		FullGameState = 0x7,
+		DeltaGameState = 0x8,
+		KeyboardInput = 0x9,
+		Topic = 0xA,
+		ClickAtom = 0xB,
+		ScreenViewChanges = 0xC,
+		Sound = 0xD,
+		Browse = 0xE,
+		BrowseResource = 0xF,
+		Prompt = 0x10,
+		PromptResponse = 0x11
     }
 }

@@ -51,6 +51,14 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteUInt32(UInt32 data) {
             _binaryWriter.Write(data);
         }
+        
+        public Int32 ReadInt32() {
+            return _binaryReader.ReadInt32();
+        }
+
+        public void WriteInt32(Int32 data) {
+            _binaryWriter.Write(data);
+        }
 
         public string ReadString() {
             string data = String.Empty;
@@ -82,6 +90,14 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void WriteFloat(float data) {
+            _binaryWriter.Write(data);
+        }
+
+        public long ReadLong() {
+            return _binaryReader.ReadInt64();
+        }
+
+        public void WriteLong(long data) {
             _binaryWriter.Write(data);
         }
 

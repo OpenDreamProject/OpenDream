@@ -120,13 +120,13 @@ namespace DMCompiler {
                 return value;
             } else if (value is null) {
                 return new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.Object }
+                    { "type", JsonVariableType.Object }
                 };
             } else if (value is DMList) {
                 DMList dmList = (DMList)value;
                 List<object> dmListValues = new List<object>();
                 Dictionary<string, object> jsonVariable = new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.List }
+                    { "type", JsonVariableType.List }
                 };
 
                 foreach (object dmListValue in dmList.Values) {
@@ -155,17 +155,17 @@ namespace DMCompiler {
                 return jsonVariable;
             } else if (value is DMNewInstance) {
                 return new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.Object },
+                    { "type", JsonVariableType.Object },
                     { "path", ((DMNewInstance)value).Path.PathString }
                 };
             } else if (value is DMResource) {
                 return new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.Resource },
+                    { "type", JsonVariableType.Resource },
                     { "resourcePath", ((DMResource)value).ResourcePath }
                 };
             } else if (value is DreamPath) {
                 return new Dictionary<string, object>() {
-                    { "type", DreamObjectJsonVariableType.Path },
+                    { "type", JsonVariableType.Path },
                     { "value", ((DreamPath)value).PathString }
                 };
             } else {

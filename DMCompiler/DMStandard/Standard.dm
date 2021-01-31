@@ -479,7 +479,15 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	else if (dirAngle == 270) return 8
 	else if (dirAngle == 315) return 1 | 8
 
-proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
+proc/get_step_towards(atom/movable/Ref, /atom/Trg)
 	var/dir = get_dir(Ref, Trg)
 
-	Ref.Move(get_step(Ref, dir), dir)
+	return get_step(Ref, dir)
+
+proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
+	if (get_dist(Ref, Trg) > Max) return 0
+
+	return turn(get_step_towards(Ref, Trg), 180)
+
+proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
+	Ref.Move(get_step_towards(Ref, Trg), dir)

@@ -25,6 +25,7 @@ namespace OpenDreamShared.Net.Packets {
                 case DMValueType.Null: Value = null; break;
                 case DMValueType.Text: Value = stream.ReadString(); break;
                 case DMValueType.Num: Value = stream.ReadInt32(); break;
+                case DMValueType.Message: Value = stream.ReadString(); break;
                 default: throw new Exception("Invalid prompt response type '" + Type + "'");
             }
         }
@@ -37,6 +38,7 @@ namespace OpenDreamShared.Net.Packets {
                 case DMValueType.Null: break;
                 case DMValueType.Text: stream.WriteString((string)Value); break;
                 case DMValueType.Num: stream.WriteInt32((Int32)Value); break;
+                case DMValueType.Message: stream.WriteString((string)Value); break;
                 default: throw new Exception("Invalid prompt response type '" + Type + "'");
             }
         }

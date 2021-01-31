@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace OpenDreamShared.Dream.Objects {
-    public enum DreamObjectJsonVariableType {
+    enum JsonVariableType {
         Resource = 0,
         Object = 1,
         Path = 2,
         List = 3
     }
 
-    public class DreamObjectJson {
+    class DreamObjectJson {
         public string Name { get; set; }
         public string Parent { get; set; }
         public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
@@ -19,7 +18,7 @@ namespace OpenDreamShared.Dream.Objects {
         public List<DreamObjectJson> Children { get; set; }
     }
 
-    public class ProcDefinitionJson {
+    class ProcDefinitionJson {
         public List<string> ArgumentNames { get; set; }
         public byte[] Bytecode { get; set; }
     }

@@ -172,9 +172,9 @@ namespace OpenDreamServer.Dream.Objects {
                     return new DreamValue(value);
                 }
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {
-                DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
+                JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                if (variableType == DreamObjectJsonVariableType.Resource) {
+                if (variableType == JsonVariableType.Resource) {
                     JsonElement resourcePathElement = jsonElement.GetProperty("resourcePath");
 
                     if (resourcePathElement.ValueKind == JsonValueKind.String) {
@@ -186,11 +186,11 @@ namespace OpenDreamServer.Dream.Objects {
                     } else {
                         throw new Exception("Property 'resourcePath' must be a string or null");
                     }
-                } else if (variableType == DreamObjectJsonVariableType.Object) {
+                } else if (variableType == JsonVariableType.Object) {
                     return new DreamValue((DreamObject)null);
-                } else if (variableType == DreamObjectJsonVariableType.Path) {
+                } else if (variableType == JsonVariableType.Path) {
                     return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
-                } else if (variableType == DreamObjectJsonVariableType.List) {
+                } else if (variableType == JsonVariableType.List) {
                     return new DreamValue((DreamObject)null);
                 } else {
                     throw new Exception("Invalid variable type (" + variableType + ")");
@@ -209,9 +209,9 @@ namespace OpenDreamServer.Dream.Objects {
                     objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
 
                     if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
+                        JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                        if (variableType == DreamObjectJsonVariableType.Object) {
+                        if (variableType == JsonVariableType.Object) {
                             if (jsonElement.TryGetProperty("path", out JsonElement objectPath)) {
                                 DreamPath path = new DreamPath(objectPath.GetString());
                                 DreamProcArguments creationArguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
@@ -231,7 +231,7 @@ namespace OpenDreamServer.Dream.Objects {
 
                                 objectDefinition.RuntimeInstantiatedVariables[jsonVariable.Key] = (path, creationArguments);
                             }
-                        } else if (variableType == DreamObjectJsonVariableType.List) {
+                        } else if (variableType == JsonVariableType.List) {
                             List<(DreamValue Index, DreamValue Value)> listValues = new List<(DreamValue, DreamValue)>();
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
@@ -263,9 +263,9 @@ namespace OpenDreamServer.Dream.Objects {
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);
 
                     if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        DreamObjectJsonVariableType variableType = (DreamObjectJsonVariableType)jsonElement.GetProperty("type").GetByte();
+                        JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
 
-                        if (variableType == DreamObjectJsonVariableType.Object) {
+                        if (variableType == JsonVariableType.Object) {
                             JsonElement objectPath;
 
                             if (jsonElement.TryGetProperty("path", out objectPath)) {

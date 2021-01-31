@@ -108,11 +108,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
             int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
 
-            if (end <= 0) {
-                end += text.Length + 1;
-            } else if (end > text.Length + 1) {
-                end = text.Length + 1;
-            }
+            if (end <= 0) end += text.Length + 1;
+            else if (end > text.Length + 1) end = text.Length + 1;
+
+            if (start == 0) return new DreamValue("");
+            else if (start < 0) start += text.Length + 1;
 
             return new DreamValue(text.Substring(start - 1, end - start));
         }
@@ -565,7 +565,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int y = scope.GetValue("Y").GetValueAsInteger(); //1-indexed
             int z = scope.GetValue("Z").GetValueAsInteger(); //1-indexed
 
-            return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
+            if (x >= 1 && x <= Program.DreamMap.Width + 1 && y >= 1 && x <= Program.DreamMap.Height + 1) {
+                return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
+            } else {
+                return new DreamValue((DreamObject)null);
+            }
         }
 
         [DreamProc("log")]
@@ -804,8 +808,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
             if (arguments.ArgumentCount == 0) {
                 return new DreamValue((float)new Random().NextDouble());
             } else {
-                int low = arguments.GetArgument(0, "L").GetValueAsInteger();
-                int high = arguments.GetArgument(1, "H").GetValueAsInteger();
+                int low = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsNumber());
+                int high = (int)Math.Floor(arguments.GetArgument(1, "H").GetValueAsNumber());
 
                 return new DreamValue(new Random().Next(Math.Min(low, high), Math.Max(low, high)));
             }

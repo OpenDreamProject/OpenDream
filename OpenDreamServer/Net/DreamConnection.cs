@@ -147,7 +147,7 @@ namespace OpenDreamServer.Net {
         }
 
         public Task<DreamValue> Prompt(DMValueType types, string message) {
-            return new Task<DreamValue>(() => {
+            Task <DreamValue> promptTask = new Task<DreamValue>(() => {
                 ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
                 int promptId = _promptEvents.Count;
 
@@ -161,6 +161,9 @@ namespace OpenDreamServer.Net {
                 promptWaitHandle.WaitOne();
                 return promptResponse;
             });
+
+            promptTask.Start();
+            return promptTask;
         }
 
         public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
@@ -171,6 +174,7 @@ namespace OpenDreamServer.Net {
                     case DMValueType.Null: value = new DreamValue((DreamObject)null); break;
                     case DMValueType.Text: value = new DreamValue((string)pPromptResponse.Value); break;
                     case DMValueType.Num: value = new DreamValue((int)pPromptResponse.Value); break;
+                    case DMValueType.Message: value = new DreamValue((string)pPromptResponse.Value); break;
                     default: throw new Exception("Invalid prompt response '" + pPromptResponse.Type + "'");
                 }
 

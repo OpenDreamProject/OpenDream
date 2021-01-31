@@ -1,8 +1,8 @@
 ﻿using OpenDreamShared.Dream.Procs;
 using System;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace OpenDreamClient.Interface.Prompts {
     class NumberPrompt : PromptWindow {
@@ -15,7 +15,7 @@ namespace OpenDreamClient.Interface.Prompts {
             return numberInput;
         }
 
-        private void NumberInput_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e) {
+        private void NumberInput_PreviewTextInput(object sender, TextCompositionEventArgs e) {
             //Only allow numbers
             foreach (char c in e.Text) {
                 if (!(c >= '0' && c <= '9')) {

@@ -228,14 +228,14 @@ namespace OpenDreamServer.Dream.Procs {
                         if (proc == _currentScope.SuperProc && procArguments.ArgumentCount == 0) procArguments = _arguments;
 
                         try {
-                            Push(proc.Run(identifier.HoldingScope.DreamObject, procArguments, _currentScope.Usr));
+                            Push(RunProc(proc, identifier.HoldingScope.DreamObject, procArguments));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc '" + identifier.IdentifierName + "' on object of type '" + identifier.HoldingScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
                     }
                 } else if (procIdentifier is DreamProcIdentifierSelfProc) {
                     try {
-                        Push(_selfProc.Run(_currentScope.DreamObject, arguments.CreateProcArguments(), _currentScope.Usr));
+                        Push(RunProc(_selfProc, _currentScope.DreamObject, arguments.CreateProcArguments()));
                     } catch (Exception e) {
                         throw new Exception("Exception while running proc '.' on object of type '" + _currentScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
@@ -459,7 +459,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                     if (proc != null) {
                         try {
-                            Push(proc.Run(dreamObject, arguments.CreateProcArguments(), _currentScope.Usr));
+                            Push(RunProc(proc, dreamObject, arguments.CreateProcArguments()));
                         } catch (Exception e) {
                             throw new Exception("Exception while running proc " + procId + " on object of type '" + dreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                         }
@@ -474,7 +474,7 @@ namespace OpenDreamServer.Dream.Procs {
                     DreamProc proc = _topScope.GetProc(procName).GetValueAsProc();
 
                     try {
-                        Push(proc.Run(_topScope.DreamObject, arguments.CreateProcArguments(), _currentScope.Usr));
+                        Push(RunProc(proc, _topScope.DreamObject, arguments.CreateProcArguments()));
                     } catch (Exception e) {
                         throw new Exception("Exception while running proc " + fullProcPath + " on object of type '" + _topScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
                     }
@@ -857,7 +857,9 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamValue second = PopDreamValue();
                 DreamValue first = PopDreamValue();
 
-                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
+                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                    Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsInteger())));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
                     Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsFloat())));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
@@ -896,8 +898,7 @@ namespace OpenDreamServer.Dream.Procs {
                 if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                     DreamConnection connection = Program.ClientToConnection[clientObject];
                     Task<DreamValue> promptTask = connection.Prompt(types, message);
-
-                    promptTask.Start();
+                    
                     promptTask.Wait();
                     Push(promptTask.Result);
                 }
@@ -1060,6 +1061,10 @@ namespace OpenDreamServer.Dream.Procs {
             } else {
                 throw new Exception("Invalid greater than comparison on " + first + " and " + second);
             }
+        }
+
+        private DreamValue RunProc(DreamProc proc, DreamObject instance, DreamProcArguments arguments) {
+            return proc.Run(instance, arguments, _currentScope.Usr);
         }
 
         private void OnArgsListValueAssigned(DreamList argsList, DreamValue key, DreamValue value) {

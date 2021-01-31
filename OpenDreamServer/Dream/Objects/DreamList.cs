@@ -57,6 +57,8 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public DreamValue GetValue(DreamValue key) {
+            if (key.Value == null) return new DreamValue((DreamObject)null);//TODO: Null key
+
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
             } else if (IsValidAssociativeKey(key)) {

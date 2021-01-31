@@ -25,7 +25,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "fps") {
-                return new DreamValue(10.0 / dreamObject.GetVariable("tick_lag").GetValueAsNumber());
+                return new DreamValue((float)10.0 / dreamObject.GetVariable("tick_lag").GetValueAsNumber());
             } else if (variableName == "timeofday") {
                 return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
             } else if (variableName == "time") {

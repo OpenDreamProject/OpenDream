@@ -127,6 +127,7 @@ namespace OpenDreamClient.Interface {
                 case Key.Down: keyCode = 40; break;
                 case Key.Left: keyCode = 37; break;
                 case Key.Right: keyCode = 39; break;
+                case Key.T: keyCode = 84; break;
             }
 
             return keyCode;

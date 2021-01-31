@@ -421,7 +421,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementSet Set() {
             if (Check(TokenType.DM_Set)) {
                 Whitespace();
-                Token propertyToken = Current();
+                Token attributeToken = Current();
 
                 if (Check(TokenType.DM_Identifier)) {
                     Whitespace();
@@ -430,7 +430,7 @@ namespace OpenDreamShared.Compiler.DM {
                     DMASTExpressionConstant value = Expression() as DMASTExpressionConstant;
                     if (value == null) throw new Exception("Expected a constant expression");
 
-                    return new DMASTProcStatementSet(propertyToken.Text, value);
+                    return new DMASTProcStatementSet(attributeToken.Text, value);
                 } else {
                     throw new Exception("Expected property name");
                 }

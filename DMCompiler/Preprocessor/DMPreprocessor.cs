@@ -20,6 +20,7 @@ namespace DMCompiler.Preprocessor {
             string source = File.ReadAllText(Path.Combine(includePath, filePath));
             source = source.Replace("\r\n", "\n");
             source = Regex.Replace(source, @"\\\n", String.Empty); //Combine all lines ending with a backslash
+            source += '\n';
 
             _lexerStack.Push(new DMPreprocessorLexer(source));
 

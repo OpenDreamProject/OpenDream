@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
     class DMLexer : Lexer {
@@ -48,6 +49,7 @@ namespace OpenDreamShared.Compiler.DM {
         };
 
         private bool _checkingIndentation = true;
+        private int bracketNesting = 0;
         private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
 
         public DMLexer(string source) : base(source) { }
@@ -67,26 +69,24 @@ namespace OpenDreamShared.Compiler.DM {
                         token = CreateToken(TokenType.DM_Whitespace, ' ');
                         break;
                     }
-                    case '(': Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, c); break;
-                    case ')': Advance(); token = CreateToken(TokenType.DM_RightParenthesis, c); break;
-                    case '[': Advance(); token = CreateToken(TokenType.DM_LeftBracket, c); break;
-                    case ']': Advance(); token = CreateToken(TokenType.DM_RightBracket, c); break;
+                    case '(': Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, c); bracketNesting++; break;
+                    case ')': Advance(); token = CreateToken(TokenType.DM_RightParenthesis, c); bracketNesting--; break;
+                    case '[': Advance(); token = CreateToken(TokenType.DM_LeftBracket, c); bracketNesting++; break;
+                    case ']': Advance(); token = CreateToken(TokenType.DM_RightBracket, c); bracketNesting--; break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Comma, c); break;
                     case ';': Advance(); token = CreateToken(TokenType.DM_Semicolon, c); break;
                     case ':': Advance(); token = CreateToken(TokenType.DM_Colon, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Question, c); break;
                     case '{': {
                         c = Advance();
-                        
+
                         if (c == '"') {
                             token = LexString(true);
-                            if (GetCurrent() != '}') throw new Exception("Expected '}' to end long string");
-                            Advance();
                             token.Text = "{" + token.Text + "}";
                         } else {
                             token = CreateToken(TokenType.DM_LeftCurlyBracket, '{');
                         }
-                        
+
                         break;
                     }
                     case '}': {
@@ -319,23 +319,24 @@ namespace OpenDreamShared.Compiler.DM {
                         break;
                     }
                     case '\'': {
-                        string text = Convert.ToString(c);
-                        string resourcePath = String.Empty;
+                        StringBuilder resourcePathBuilder = new StringBuilder(Convert.ToString(c));
 
                         do {
                             c = Advance();
 
-                            text += c;
                             if (c != '\'' && c != '\n') {
-                                resourcePath += c;
+                                resourcePathBuilder.Append(c);
                             } else {
                                 break;
                             }
                         } while (!IsAtEndOfFile());
                         if (c != '\'') throw new Exception("Expected \"\'\" to end resource path");
+                        resourcePathBuilder.Append('\'');
 
                         Advance();
-                        token = CreateToken(TokenType.DM_Resource, text, resourcePath);
+
+                        string text = resourcePathBuilder.ToString();
+                        token = CreateToken(TokenType.DM_Resource, text, text.Substring(1, text.Length - 2));
                         break;
                     }
                     case '"': {
@@ -345,45 +346,53 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                     default: {
                         if (IsAlphabetic(c) || c == '_') {
-                            string text = Convert.ToString(c);
+                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
 
                             do {
                                 c = Advance();
 
                                 if (IsAlphanumeric(c) || c == '_') {
-                                    text += c;
+                                    textBuilder.Append(c);
                                 } else {
                                     break;
                                 }
                             } while (!IsAtEndOfFile());
 
+                            string text = textBuilder.ToString();
                             if (Keywords.TryGetValue(text, out TokenType keywordType)) {
                                 token = CreateToken(keywordType, text);
                             } else {
                                 token = CreateToken(TokenType.DM_Identifier, text);
                             }
                         } else if (IsNumeric(c)) {
-                            string text = Convert.ToString(c);
+                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
+                            bool containsDecimal = false;
 
                             do {
                                 c = Advance();
 
                                 if (IsNumeric(c) || c == '.' || c == 'E' || c == 'e') {
-                                    if (c == '.' && text.Contains('.')) throw new Exception("Multiple decimals in number");
+                                    if (c == '.') {
+                                        if (containsDecimal) throw new Exception("Multiple decimals in number");
+
+                                        containsDecimal = true;
+                                    }
+
                                     if (c == 'E' || c == 'e') {
-                                        text += c;
+                                        textBuilder.Append(c);
                                         c = Advance();
 
                                         if (!(IsNumeric(c) || c == '-' || c == '+')) throw new Exception("Invalid scientific notation");
                                     }
 
-                                    text += c;
+                                    textBuilder.Append(c);
                                 } else {
                                     break;
                                 }
                             } while (!IsAtEndOfFile());
 
-                            if (text.Contains('.') || text.Contains("e")) {
+                            string text = textBuilder.ToString();
+                            if (containsDecimal || text.Contains("e")) {
                                 token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
                             } else if (Int32.TryParse(text, out int value)) {
                                 token = CreateToken(TokenType.DM_Integer, text, value);
@@ -397,6 +406,8 @@ namespace OpenDreamShared.Compiler.DM {
                         break;
                     }
                 }
+            } else if (token.Type == TokenType.Newline && bracketNesting != 0) { //Don't emit newlines within brackets
+                token = CreateToken(TokenType.Skip, '\n');
             } else if (token.Type == TokenType.EndOfFile) {
                 while (_indentationStack.Peek() > 0) {
                     _indentationStack.Pop();
@@ -421,12 +432,13 @@ namespace OpenDreamShared.Compiler.DM {
             char c = GetCurrent();
             int indentationLevel = 0;
 
-            while (c == '\t') {
+            while (c == '\t' || c == ' ') {
                 indentationLevel++;
 
                 c = Advance();
             }
 
+            if (bracketNesting != 0) return; //Don't emit identation when inside brackets
             if (Lines[_currentLine - 1].Trim() == "") //Don't emit indentation tokens on empty lines
                 return;
 
@@ -447,61 +459,52 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         private Token LexString(bool isLong) {
-            char c = GetCurrent();
-            string text = Convert.ToString(c);
-            string stringValue = String.Empty;
-            int bracketNesting = 0;
-
+            StringBuilder textBuilder = new StringBuilder(Convert.ToString(GetCurrent()));
+            int stringBracketNesting = 0;
+            
             if (isLong) _checkingIndentation = false;
+
+            char c;
+            Advance();
             do {
-                c = Advance();
+                c = GetCurrent();
 
-                text += c;
+                textBuilder.Append(c);
 
-                if (c == '[') bracketNesting++;
-                else if (c == ']') bracketNesting--;
+                if (c == '\\') { // So \" doesn't end the string
+                    textBuilder.Append(Advance());
+                    c = Advance();
+                    textBuilder.Append(c);
+                }
 
-                if (bracketNesting == 0) {
-                    if (c == '\\') {
-                        string escapeSequence = String.Empty;
+                if (c == '[') stringBracketNesting++;
+                else if (c == ']') stringBracketNesting--;
 
-                        while (Advance() != ' ') {
-                            c = GetCurrent();
+                if (stringBracketNesting == 0) {
+                    if (c == '"' || (!isLong && c == '\n')) {
+                        if (isLong) {
+                            c = Advance();
 
-                            text += c;
-                            escapeSequence += c;
-                            if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "'") {
-                                stringValue += escapeSequence;
-                                break;
-                            } else if (escapeSequence == "n") {
-                                stringValue += '\n';
-                                break;
-                            } else if (escapeSequence == "t") {
-                                stringValue += '\t';
-                                break;
-                            } else if (ValidEscapeSequences.Contains(escapeSequence)) { //Handled in the parser
-                                stringValue += '\\' + escapeSequence;
-                                break;
-                            }
+                            if (c == '}') break;
+                        } else {
+                            break;
                         }
-
-                        if (!ValidEscapeSequences.Contains(escapeSequence)) {
-                            throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
-                        }
-                    } else if (c != '"' && !(!isLong && c == '\n')) {
-                        stringValue += c;
                     } else {
-                        break;
+                        Advance();
                     }
                 } else {
-                    stringValue += c;
+                    Advance();
                 }
-        } while (!IsAtEndOfFile());
-            if (c != '"') throw new Exception("Expected '\"' to end string");
+            } while (!IsAtEndOfFile());
+
+            if (isLong && c != '}') throw new Exception("Expected \"\"}\" to end long string");
+            else if (!isLong && c != '"') throw new Exception("Expected '\"' to end string");
 
             Advance();
             if (isLong) _checkingIndentation = true;
-            return CreateToken(TokenType.DM_String, text, stringValue);
+
+            string text = textBuilder.ToString();
+            return CreateToken(TokenType.DM_String, text, text.Substring(1, text.Length - 2));
         }
     }
 }

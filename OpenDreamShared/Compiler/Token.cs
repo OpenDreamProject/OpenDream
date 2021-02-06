@@ -7,6 +7,25 @@
         Unknown,
         Skip, //Internally skipped by the lexer
 
+        //DM Preprocessor
+        DM_Preproc_ConstantString,
+        DM_Preproc_Define,
+        DM_Preproc_Identifier,
+        DM_Preproc_Include,
+        DM_Preproc_Number,
+        DM_Preproc_ParameterStringify,
+        DM_Preproc_Punctuator,
+        DM_Preproc_Punctuator_Comma,
+        DM_Preproc_Punctuator_LeftBracket,
+        DM_Preproc_Punctuator_LeftParenthesis,
+        DM_Preproc_Punctuator_Period,
+        DM_Preproc_Punctuator_RightBracket,
+        DM_Preproc_Punctuator_RightParenthesis,
+        DM_Preproc_String,
+        DM_Preproc_TokenConcat,
+        DM_Preproc_Undefine,
+        DM_Preproc_Whitespace,
+
         //DM
         DM_And,
         DM_AndAnd,

@@ -5,6 +5,7 @@ using System.Text.Json;
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
+using DMCompiler.Preprocessor;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Objects;
@@ -13,30 +14,36 @@ namespace DMCompiler {
     class Program {
         static void Main(string[] args) {
             if (args.Length < 2) {
-                Console.WriteLine("Two arguments are required:");
-                Console.WriteLine("\tDM File");
-                Console.WriteLine("\t\tPath to the DM file to be compiled");
+                Console.WriteLine("Three arguments are required:");
+                Console.WriteLine("\tInclude Path");
+                Console.WriteLine("\t\tPath to the folder containing the code");
+                Console.WriteLine("\tDME File");
+                Console.WriteLine("\t\tPath to the DME file to be compiled");
                 Console.WriteLine("\tOutput File");
                 Console.WriteLine("\t\tPath to the output file");
 
                 return;
             }
 
-            string source = File.ReadAllText("DMStandard\\Standard.dm") + "\n" + File.ReadAllText(args[0]);
+            DMPreprocessor preprocessor = new DMPreprocessor();
+            preprocessor.IncludeFile("DMStandard", "_Standard.dm");
+            preprocessor.IncludeFile(args[0], args[1]);
+
+            string source = preprocessor.GetResult();
             DMLexer dmLexer = new DMLexer(source);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
-
+            
             astSimplifier.SimplifyAST(astFile);
             Dictionary<DreamPath, DMObject> dmObjects = dmObjectBuilder.BuildObjects(astFile);
             DreamObjectJson objectTreeJson = CreateObjectTree(dmObjects);
             string json = JsonSerializer.Serialize(objectTreeJson, new JsonSerializerOptions() {
                 IgnoreNullValues = true
             });
-
-            File.WriteAllText(args[1], json);
+            
+            File.WriteAllText(args[2], json);
         }
 
         private static DreamObjectJson CreateObjectTree(Dictionary<DreamPath, DMObject> dmObjects) {

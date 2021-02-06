@@ -9,7 +9,7 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamObject DreamObject;
         public DreamObject Usr;
 
-        private Dictionary<string, DreamValue> Variables = new Dictionary<string, DreamValue>();
+        private Dictionary<string, DreamValue> Variables = null;
 
         public DreamProcScope(DreamObject dreamObject, DreamObject usr) {
             ParentScope = null;
@@ -26,8 +26,8 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue GetValue(string valueName) {
-            if (Variables.ContainsKey(valueName)) {
-                return Variables[valueName];
+            if (Variables != null && Variables.TryGetValue(valueName, out DreamValue value)) {
+                return value;
             } else if (ParentScope != null) {
                 return ParentScope.GetValue(valueName);
             } else if (DreamObject != null && DreamObject.HasVariable(valueName)) {
@@ -48,7 +48,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public void AssignValue(string valueName, DreamValue value) {
-            if (Variables.ContainsKey(valueName)) {
+            if (Variables != null && Variables.ContainsKey(valueName)) {
                 Variables[valueName] = value;
             } else if (ParentScope != null) {
                 ParentScope.AssignValue(valueName, value);
@@ -62,6 +62,8 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public void CreateVariable(string name, DreamValue value) {
+            if (Variables == null) Variables = new Dictionary<string, DreamValue>();
+
             Variables.Add(name, value);
         }
     }

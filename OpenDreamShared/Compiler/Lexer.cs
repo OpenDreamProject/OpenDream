@@ -20,7 +20,7 @@ namespace OpenDreamShared.Compiler {
         private string _source = null;
 
         public Lexer(string source) {
-            Source = source.Replace("\r\n", "\n");
+            Source = source;
 
             Advance();
         }

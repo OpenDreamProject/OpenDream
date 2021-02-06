@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
 using Dereference = OpenDreamShared.Compiler.DM.DMASTDereference.Dereference;
 using OpenDreamShared.Dream.Procs;
+using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
     class DMParser : Parser {
@@ -489,6 +490,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (body == null) body = new DMASTProcBlockInner(new DMASTProcStatement[0]);
                 Token afterIfBody = Current();
                 bool newLineAfterIf = Newline();
+                if (newLineAfterIf) Whitespace();
                 if (Check(TokenType.DM_Else)) {
                     Whitespace();
                     Check(TokenType.DM_Colon);
@@ -1379,17 +1381,19 @@ namespace OpenDreamShared.Compiler.DM {
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull();
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
-                    string stringValue = String.Empty;
+                    StringBuilder stringBuilder = new StringBuilder(); ;
                     List<DMASTExpression> interpolationValues = new List<DMASTExpression>();
                     Advance();
 
                     int bracketNesting = 0;
-                    string insideBrackets = String.Empty;
+                    StringBuilder insideBrackets = new StringBuilder();
                     StringFormatTypes currentInterpolationType = StringFormatTypes.Stringify;
                     for (int i = 0; i < tokenValue.Length; i++) {
                         char c = tokenValue[i];
 
-                        if (bracketNesting > 0) insideBrackets += c;
+                        if (bracketNesting > 0) {
+                            insideBrackets.Append(c);
+                        }
 
                         if (c == '[') {
                             bracketNesting++;
@@ -1397,7 +1401,7 @@ namespace OpenDreamShared.Compiler.DM {
                             bracketNesting--;
 
                             if (bracketNesting == 0) { //End of expression
-                                DMLexer expressionLexer = new DMLexer(insideBrackets);
+                                DMLexer expressionLexer = new DMLexer(insideBrackets.ToString());
                                 DMParser expressionParser = new DMParser(expressionLexer);
 
                                 expressionParser.Whitespace();
@@ -1405,11 +1409,11 @@ namespace OpenDreamShared.Compiler.DM {
                                 if (expression == null) throw new Exception("Expected an expression");
 
                                 interpolationValues.Add(expression);
-                                stringValue += StringFormatCharacter;
-                                stringValue += (char)currentInterpolationType;
+                                stringBuilder.Append(StringFormatCharacter);
+                                stringBuilder.Append((char)currentInterpolationType);
                                 currentInterpolationType = StringFormatTypes.Stringify;
 
-                                insideBrackets = String.Empty;
+                                insideBrackets.Clear();
                             }
                         } else if (c == '\\' && bracketNesting == 0) {
                             string escapeSequence = String.Empty;
@@ -1419,7 +1423,16 @@ namespace OpenDreamShared.Compiler.DM {
                                 escapeSequence += c;
 
                                 if (escapeSequence == "[" || escapeSequence == "]") {
-                                    stringValue += escapeSequence;
+                                    stringBuilder.Append(escapeSequence);
+                                    break;
+                                } else if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "'") {
+                                    stringBuilder.Append(escapeSequence);
+                                    break;
+                                } else if (escapeSequence == "n") {
+                                    stringBuilder.Append('\n');
+                                    break;
+                                } else if (escapeSequence == "t") {
+                                    stringBuilder.Append('\t');
                                     break;
                                 } else if (escapeSequence == "ref") {
                                     currentInterpolationType = StringFormatTypes.Ref;
@@ -1433,12 +1446,13 @@ namespace OpenDreamShared.Compiler.DM {
                                 throw new Exception("Invalid escape sequence \"\\" + escapeSequence + "\"");
                             }
                         } else if (bracketNesting == 0) {
-                            stringValue += c;
+                            stringBuilder.Append(c);
                         }
                     }
 
                     if (bracketNesting > 0) throw new Exception("Expected ']'");
 
+                    string stringValue = stringBuilder.ToString();
                     if (interpolationValues.Count == 0) {
                         return new DMASTConstantString(stringValue);
                     } else {

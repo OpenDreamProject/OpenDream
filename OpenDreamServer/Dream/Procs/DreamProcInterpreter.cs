@@ -415,6 +415,8 @@ namespace OpenDreamServer.Dream.Procs {
                     }
                 } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsInteger()));
+                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
+                    identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsFloat()));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
@@ -518,7 +520,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                     Push(new DreamValue(newList));
                 } else if (first.Value != null && second.Value != null) {
-                    Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
+                    Push(new DreamValue((int)first.GetValueAsNumber() & (int)second.GetValueAsNumber()));
                 } else {
                     Push(new DreamValue(0));
                 }
@@ -863,6 +865,8 @@ namespace OpenDreamServer.Dream.Procs {
                     Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsFloat())));
                 } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
+                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
+                    Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsInteger())));
                 } else {
                     throw new Exception("Invalid power operation on " + first + " and " + second);
                 }

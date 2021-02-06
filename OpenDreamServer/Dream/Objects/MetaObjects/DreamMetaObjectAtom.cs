@@ -62,7 +62,9 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "icon_state") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 
-                newAppearance.IconState = variableValue.GetValueAsString();
+                if (variableValue.Value != null) newAppearance.IconState = variableValue.GetValueAsString();
+                else newAppearance.IconState = "";
+
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "pixel_x") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
@@ -95,6 +97,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 
                 newAppearance.SetColor(color);
+                UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "dir") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(GetAppearance(dreamObject));
 

@@ -24,7 +24,6 @@ namespace OpenDreamServer {
         public static DreamMap DreamMap = null;
         public static DreamServer DreamServer = new DreamServer(25566);
         public static DreamObject WorldInstance = null;
-        public static Dictionary<DreamObjectDefinition, UInt16> AtomBaseIDs = new();
         public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new();
         public static List<CountdownEvent> TickEvents = new();
         public static int TickCount = 0;

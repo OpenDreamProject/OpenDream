@@ -22,7 +22,7 @@ namespace OpenDreamClient {
         public Map Map;
         public ATOM Eye;
         public List<IconAppearance> IconAppearances { get; private set; } = null;
-        public Dictionary<UInt16, ATOM> ATOMs { get; private set; } = null;
+        public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = null;
         public List<ATOM> ScreenObjects { get; private set; } = null;
 
         private DispatcherTimer _updateTimer = new DispatcherTimer();
@@ -56,7 +56,7 @@ namespace OpenDreamClient {
             StateManager = new DreamStateManager();
 
             IconAppearances = new List<IconAppearance>();
-            ATOMs = new Dictionary<UInt16, ATOM>();
+            ATOMs = new Dictionary<UInt32, ATOM>();
             ScreenObjects = new List<ATOM>();
 
             MainWindow.Hide();

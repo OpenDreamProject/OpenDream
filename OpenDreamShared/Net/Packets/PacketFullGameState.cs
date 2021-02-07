@@ -9,8 +9,8 @@ namespace OpenDreamShared.Net.Packets {
 
         public DreamFullState FullState;
         public UInt32 GameStateID;
-        public UInt16 EyeID;
-        public UInt16[] ScreenObjects;
+        public UInt32 EyeID;
+        public UInt32[] ScreenObjects;
 
         public PacketFullGameState() { }
 
@@ -54,13 +54,13 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void ReadAtomsSection(PacketStream stream) {
-            UInt16 atomCount = stream.ReadUInt16();
+            UInt32 atomCount = stream.ReadUInt32();
 
             for (int i = 0; i < atomCount; i++) {
                 DreamFullState.Atom atom = new DreamFullState.Atom();
-                atom.AtomID = stream.ReadUInt16();
+                atom.AtomID = stream.ReadUInt32();
                 atom.Type = (AtomType)stream.ReadByte();
-                atom.LocationID = stream.ReadUInt16();
+                atom.LocationID = stream.ReadUInt32();
                 atom.IconAppearanceID = (int)stream.ReadUInt32();
                 if (atom.Type == AtomType.Movable) {
                     atom.ScreenLocation = stream.ReadScreenLocation();
@@ -71,12 +71,12 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void WriteAtomsSection(PacketStream stream) {
-            stream.WriteUInt16((UInt16)FullState.Atoms.Count);
+            stream.WriteUInt32((UInt32)FullState.Atoms.Count);
 
-            foreach (KeyValuePair<UInt16, DreamFullState.Atom> atom in FullState.Atoms) {
-                stream.WriteUInt16(atom.Value.AtomID);
+            foreach (KeyValuePair<UInt32, DreamFullState.Atom> atom in FullState.Atoms) {
+                stream.WriteUInt32(atom.Value.AtomID);
                 stream.WriteByte((byte)atom.Value.Type);
-                stream.WriteUInt16(atom.Value.LocationID);
+                stream.WriteUInt32(atom.Value.LocationID);
                 stream.WriteUInt32((UInt32)atom.Value.IconAppearanceID);
                 if (atom.Value.Type == AtomType.Movable) {
                     stream.WriteScreenLocation(atom.Value.ScreenLocation);
@@ -88,10 +88,10 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 MapWidth = stream.ReadUInt16();
             UInt16 MapHeight = stream.ReadUInt16();
 
-            FullState.Turfs = new UInt16[MapWidth, MapHeight];
+            FullState.Turfs = new UInt32[MapWidth, MapHeight];
             for (int x = 0; x < MapWidth; x++) {
                 for (int y = 0; y < MapHeight; y++) {
-                    FullState.Turfs[x, y] = stream.ReadUInt16();
+                    FullState.Turfs[x, y] = stream.ReadUInt32();
                 }
             }
         }
@@ -102,25 +102,25 @@ namespace OpenDreamShared.Net.Packets {
 
             for (int x = 0; x < FullState.Turfs.GetLength(0); x++) {
                 for (int y = 0; y < FullState.Turfs.GetLength(1); y++) {
-                    stream.WriteUInt16(FullState.Turfs[x, y]);
+                    stream.WriteUInt32(FullState.Turfs[x, y]);
                 }
             }
         }
 
         private void ReadClientSection(PacketStream stream) {
-            EyeID = stream.ReadUInt16();
+            EyeID = stream.ReadUInt32();
 
-            UInt16 screenObjectCount = stream.ReadUInt16();
-            ScreenObjects = new UInt16[screenObjectCount];
+            UInt32 screenObjectCount = stream.ReadUInt32();
+            ScreenObjects = new UInt32[screenObjectCount];
             for (int i = 0; i < screenObjectCount; i++) {
-                ScreenObjects[i] = stream.ReadUInt16();
+                ScreenObjects[i] = stream.ReadUInt32();
             }
         }
 
         private void WriteClientSection(PacketStream stream) {
-            stream.WriteUInt16(0xFFFF);
+            stream.WriteUInt32(UInt32.MaxValue);
 
-            stream.WriteUInt16(0);
+            stream.WriteUInt32(0);
         }
     }
 }

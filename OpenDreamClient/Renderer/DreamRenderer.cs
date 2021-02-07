@@ -129,12 +129,14 @@ namespace OpenDreamClient.Renderer {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {
-                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(0, 0, Program.OpenDream.Map.Width, Program.OpenDream.Map.Height);
+                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 9, CameraY - 9, 18, 18);
                 List<ATOM> mapAtoms = new();
 
                 foreach (ATOM turf in turfs) {
-                    mapAtoms.Add(turf);
-                    mapAtoms.AddRange(turf.Contents);
+                    if (IsAtomVisible(turf, false)) {
+                        mapAtoms.Add(turf);
+                        mapAtoms.AddRange(turf.Contents);
+                    }
                 }
 
                 DrawAtoms(mapAtoms, false);

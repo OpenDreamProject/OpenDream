@@ -1,4 +1,5 @@
-﻿using OpenDreamServer.Dream;
+﻿using OpenDreamServer;
+using OpenDreamServer.Dream;
 using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -103,16 +104,24 @@ namespace OpenDreamShared.Compiler.DMM {
 
                             if (varOverride == null) throw new Exception("Expected a var override");
                             if (varOverride.ObjectPath != null) throw new Exception("Invalid var name");
-                            if (varOverride.Value is DMASTConstantString) {
-                                varValue = new DreamValue(((DMASTConstantString)varOverride.Value).Value);
-                            } else if (varOverride.Value is DMASTConstantInteger) {
-                                varValue = new DreamValue(((DMASTConstantInteger)varOverride.Value).Value);
-                            } else if (varOverride.Value is DMASTConstantFloat) {
-                                varValue = new DreamValue(((DMASTConstantFloat)varOverride.Value).Value);
-                            } else if (varOverride.Value is DMASTConstantPath) {
-                                varValue = new DreamValue(((DMASTConstantPath)varOverride.Value).Value.Path);
+                            if (varOverride.Value is DMASTConstantString dmastString) {
+                                varValue = new DreamValue(dmastString.Value);
+                            } else if (varOverride.Value is DMASTConstantResource dmastResource) {
+                                varValue = new DreamValue(Program.DreamResourceManager.LoadResource(dmastResource.Path));
+                            } else if (varOverride.Value is DMASTConstantInteger dmastInteger) {
+                                varValue = new DreamValue(dmastInteger.Value);
+                            } else if (varOverride.Value is DMASTConstantFloat dmastFloat) {
+                                varValue = new DreamValue(dmastFloat.Value);
+                            } else if (varOverride.Value is DMASTConstantPath dmastPath) {
+                                varValue = new DreamValue(dmastPath.Value.Path);
                             } else if (varOverride.Value is DMASTConstantNull) {
                                 varValue = new DreamValue((DreamObject)null);
+                            } else if (varOverride.Value is DMASTList dmastList) {
+                                DreamList list = Program.DreamObjectTree.CreateList();
+
+                                //TODO: Fill list
+
+                                varValue = new DreamValue(list);
                             } else {
                                 throw new Exception("Invalid var value (" + varOverride.Value + ")");
                             }

@@ -1026,6 +1026,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             if (value.TryGetValueAsString(out string text)) {
                 int radix = scope.GetValue("radix").GetValueAsInteger();
 
+                text = text.Trim();
                 if (text.Length != 0) {
                     if (text.Contains(".") && radix == 10) {
                         return new DreamValue(Convert.ToSingle(text));

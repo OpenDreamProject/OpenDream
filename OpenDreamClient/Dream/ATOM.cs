@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamClient.Dream {
     class ATOM {
-        public UInt16 ID;
+        public UInt32 ID;
         public AtomType Type;
         public DreamIcon Icon { get; } = new DreamIcon();
         public List<ATOM> Contents = new();
@@ -61,7 +61,7 @@ namespace OpenDreamClient.Dream {
         private ATOM _loc = null;
         private int _x, _y; //Only used for turfs
 
-        public ATOM(UInt16 id, AtomType type, int appearanceId) {
+        public ATOM(UInt32 id, AtomType type, int appearanceId) {
             ID = id;
             Type = type;
             Icon.Appearance = Program.OpenDream.IconAppearances[appearanceId];

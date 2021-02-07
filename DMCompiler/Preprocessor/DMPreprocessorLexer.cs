@@ -143,6 +143,11 @@ namespace DMCompiler.Preprocessor {
             return token;
         }
 
+        //Lexes a string
+        //If it contains string interpolations, it splits the string tokens into parts and lexes the expressions as normal
+        //For example, "There are [amount] of them" becomes:
+        //    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String( of them")
+        //If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
         private Token LexString(bool isLong) {
             char terminator = GetCurrent();
             StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : Convert.ToString(terminator));

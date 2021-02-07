@@ -21,7 +21,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (variableName == "eye") {
                 string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
                 DreamObject eye = variableValue.GetValueAsDreamObject();
-                UInt16 eyeID = (eye != null) ? DreamMetaObjectAtom.AtomIDs[eye] : (UInt16)0xFFFF;
+                UInt32 eyeID = (eye != null) ? DreamMetaObjectAtom.AtomIDs[eye] : UInt32.MaxValue;
 
                 Program.DreamStateManager.AddClientEyeIDDelta(ckey, eyeID);
             } else if (variableName == "mob") {

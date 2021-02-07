@@ -7,16 +7,16 @@ using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
-        public static Dictionary<DreamObject, UInt16> AtomIDs = new();
-        public static Dictionary<UInt16, DreamObject> AtomIDToAtom = new();
+        public static Dictionary<DreamObject, UInt32> AtomIDs = new();
+        public static Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
         public static ConcurrentDictionary<DreamObject, int> AtomToAppearanceID = new();
 
-        private static UInt16 _atomIDCounter = 0;
+        private static UInt32 _atomIDCounter = 0;
         private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            UInt16 atomID = _atomIDCounter++;
+            UInt32 atomID = _atomIDCounter++;
             lock (_atomListsLock) {
                 AtomIDs.Add(dreamObject, atomID);
                 AtomIDToAtom.Add(atomID, dreamObject);

@@ -5,14 +5,14 @@ namespace OpenDreamShared.Net.Packets {
     class PacketClickAtom : IPacket {
         public PacketID PacketID => PacketID.ClickAtom;
 
-        public UInt16 AtomID;
+        public UInt32 AtomID;
         public int IconX, IconY;
         public ScreenLocation ScreenLocation;
         public bool ModifierShift, ModifierCtrl, ModifierAlt;
 
         public PacketClickAtom() { }
 
-        public PacketClickAtom(UInt16 atomID, int iconX, int iconY, ScreenLocation screenLocation) {
+        public PacketClickAtom(UInt32 atomID, int iconX, int iconY, ScreenLocation screenLocation) {
             AtomID = atomID;
             IconX = iconX;
             IconY = iconY;
@@ -20,7 +20,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void ReadFromStream(PacketStream stream) {
-            AtomID = stream.ReadUInt16();
+            AtomID = stream.ReadUInt32();
             IconX = stream.ReadByte();
             IconY = stream.ReadByte();
             ScreenLocation = stream.ReadScreenLocation();
@@ -30,7 +30,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void WriteToStream(PacketStream stream) {
-            stream.WriteUInt16(AtomID);
+            stream.WriteUInt32(AtomID);
             stream.WriteByte((byte)IconX);
             stream.WriteByte((byte)IconY);
             stream.WriteScreenLocation(ScreenLocation);

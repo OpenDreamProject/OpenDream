@@ -13,7 +13,7 @@ namespace OpenDreamServer.Dream {
     class DreamMap {
         public struct MapCell {
             public DreamObject Area;
-            public UInt16 Turf;
+            public UInt32 Turf;
         }
 
         public Dictionary<DreamPath, DreamObject> Areas = new();
@@ -61,9 +61,8 @@ namespace OpenDreamServer.Dream {
             turf.SetVariable("y", new DreamValue(y));
             turf.SetVariable("z", new DreamValue(1));
 
-            UInt16 turfId = DreamMetaObjectAtom.AtomIDs[turf];
-            Cells[x - 1, y - 1].Turf = turfId;
-            Program.DreamStateManager.AddTurfDelta(x - 1, y - 1, turfId);
+            Cells[x - 1, y - 1].Turf = DreamMetaObjectAtom.AtomIDs[turf];
+            Program.DreamStateManager.AddTurfDelta(x - 1, y - 1, turf);
         }
 
         public void SetArea(int x, int y, DreamPath areaPath) {
@@ -89,7 +88,7 @@ namespace OpenDreamServer.Dream {
                 throw new Exception("Turf is not a sub-type of " + DreamPath.Turf);
             }
 
-            UInt16 turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
+            UInt32 turfAtomID = DreamMetaObjectAtom.AtomIDs[turf];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
                     if (Cells[x, y].Turf == turfAtomID) return new Point(x + 1, y + 1);

@@ -914,7 +914,9 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         private string ReadString() {
-            return _binaryReader.ReadString();
+            int stringID = ReadInt();
+
+            return Program.CompiledJson.Strings[stringID];
         }
 
         private int ReadByte() {

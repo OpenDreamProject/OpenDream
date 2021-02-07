@@ -2,7 +2,7 @@
 using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -121,9 +121,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void LoadFromJson(string json) {
-            DreamObjectJson rootJsonObject = JsonSerializer.Deserialize<DreamObjectJson>(json);
-
+        public void LoadFromJson(DreamObjectJson rootJsonObject) {
             if (rootJsonObject.Name != "") {
                 throw new Exception("Root object in json should have an empty name");
             }

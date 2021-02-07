@@ -8,10 +8,13 @@ using DMCompiler.DM.Visitors;
 using DMCompiler.Preprocessor;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Objects;
+using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
+        public static List<string> StringTable = new();
+        public static Dictionary<string, int> StringToStringID = new();
+
         static void Main(string[] args) {
             if (args.Length < 2) {
                 Console.WriteLine("Three arguments are required:");
@@ -33,13 +36,18 @@ namespace DMCompiler {
             DMLexer dmLexer = new DMLexer(source);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
-            DMASTSimplifier astSimplifier = new DMASTSimplifier();
-            DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             
+            DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);
+
+            DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             Dictionary<DreamPath, DMObject> dmObjects = dmObjectBuilder.BuildObjects(astFile);
-            DreamObjectJson objectTreeJson = CreateObjectTree(dmObjects);
-            string json = JsonSerializer.Serialize(objectTreeJson, new JsonSerializerOptions() {
+
+            DreamCompiledJson compiledDream = new DreamCompiledJson();
+            compiledDream.Strings = StringTable;
+            compiledDream.RootObject = CreateObjectTree(dmObjects);
+
+            string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true
             });
             

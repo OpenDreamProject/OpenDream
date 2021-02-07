@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace OpenDreamShared.Dream.Objects {
+namespace OpenDreamShared.Json {
     enum JsonVariableType {
         Resource = 0,
         Object = 1,

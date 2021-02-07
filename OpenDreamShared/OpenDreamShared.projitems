@@ -20,7 +20,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Token.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\AtomType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\IconAppearance.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Dream\Objects\DreamObjectJson.cs" />
+    <Compile Include="..\OpenDreamShared\Json\DreamCompiledJson.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\DreamObjectJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowseResource.cs" />

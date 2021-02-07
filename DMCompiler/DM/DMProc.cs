@@ -432,7 +432,16 @@ namespace DMCompiler.DM {
         }
 
         private void WriteString(string value) {
-            _bytecodeWriter.Write(value);
+            int stringID;
+
+            if (!Program.StringToStringID.TryGetValue(value, out stringID)) {
+                stringID = Program.StringTable.Count;
+
+                Program.StringTable.Add(value);
+                Program.StringToStringID.Add(value, stringID);
+            }
+
+            WriteInt(stringID);
         }
 
         private void WriteLabel(string labelName) {

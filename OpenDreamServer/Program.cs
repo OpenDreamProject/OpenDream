@@ -8,16 +8,19 @@ using OpenDreamServer.Resources;
 using OpenDreamShared.Compiler.DMF;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Interface;
+using OpenDreamShared.Json;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
 namespace OpenDreamServer {
     class Program {
+        public static DreamCompiledJson CompiledJson = null;
         public static DreamResourceManager DreamResourceManager = null;
         public static DreamStateManager DreamStateManager = new DreamStateManager();
         public static DreamObjectTree DreamObjectTree = new DreamObjectTree();
@@ -62,7 +65,10 @@ namespace OpenDreamServer {
 
             RegisterPacketCallbacks();
 
-            DreamObjectTree.LoadFromJson(DreamResourceManager.LoadResource(objectTreeFile).ReadAsString());
+            DreamResource compiledJsonResource = DreamResourceManager.LoadResource(objectTreeFile);
+            CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonResource.ReadAsString());
+
+            DreamObjectTree.LoadFromJson(CompiledJson.RootObject);
             DreamObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
             DreamObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
             DreamObjectTree.SetMetaObject(DreamPath.Sound, new DreamMetaObjectSound());

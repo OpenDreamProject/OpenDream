@@ -565,7 +565,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int y = scope.GetValue("Y").GetValueAsInteger(); //1-indexed
             int z = scope.GetValue("Z").GetValueAsInteger(); //1-indexed
 
-            if (x >= 1 && x <= Program.DreamMap.Width + 1 && y >= 1 && x <= Program.DreamMap.Height + 1) {
+            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
                 return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
             } else {
                 return new DreamValue((DreamObject)null);

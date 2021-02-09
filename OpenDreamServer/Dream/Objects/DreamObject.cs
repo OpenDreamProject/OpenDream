@@ -14,9 +14,9 @@ namespace OpenDreamServer.Dream.Objects {
         /// <summary>
         /// Any variables that may differ from the default
         /// </summary>
-        private readonly Dictionary<string, DreamValue> _variables = new Dictionary<string, DreamValue>();
+        private readonly Dictionary<string, DreamValue> _variables = new();
 
-        private static readonly List<DreamObject> _referenceIDs = new List<DreamObject>();
+        private static readonly Dictionary<DreamObject, int> _referenceIDs = new();
 
         public DreamObject(DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             ObjectDefinition = objectDefinition;
@@ -49,24 +49,30 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public static int CreateReferenceID(DreamObject dreamObject) {
-            if (!_referenceIDs.Contains(dreamObject)) {
-               _referenceIDs.Add(dreamObject);
+            int referenceID;
+
+            if (!_referenceIDs.TryGetValue(dreamObject, out referenceID)) {
+                referenceID = _referenceIDs.Count;
+
+                _referenceIDs.Add(dreamObject, referenceID);
             }
 
-            return _referenceIDs.IndexOf(dreamObject);
+            return referenceID;
         }
 
         public static DreamObject GetFromReferenceID(int refID) {
-            return _referenceIDs[refID];
+            foreach (KeyValuePair<DreamObject, int> referenceIDPair in _referenceIDs) {
+                if (referenceIDPair.Value == refID) return referenceIDPair.Key;
+            }
+
+            return null;
         }
 
         public void Delete() {
             if (Deleted) return;
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectDeleted(this);
 
-            int refID = _referenceIDs.IndexOf(this);
-            if (refID != -1) _referenceIDs[refID] = null;
-
+            _referenceIDs.Remove(this);
             Deleted = true;
         }
 

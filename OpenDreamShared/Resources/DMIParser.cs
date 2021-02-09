@@ -92,7 +92,6 @@ namespace OpenDreamShared.Resources {
                         case "state":
                             string stateName = ParseString(value);
 
-                            if (description.States.ContainsKey(stateName)) description.States.Remove(stateName);
                             if (currentState != null) {
                                 for (int i = 0; i < currentStateDirectionCount; i++) {
                                     ParsedDMIFrame[] frames = new ParsedDMIFrame[currentStateFrameCount];
@@ -129,7 +128,7 @@ namespace OpenDreamShared.Resources {
 
                             currentState = new ParsedDMIState();
                             currentState.Name = stateName;
-                            description.States.Add(stateName, currentState);
+                            if (!description.States.ContainsKey(stateName)) description.States.Add(stateName, currentState);
 
                             break;
                         case "dirs":

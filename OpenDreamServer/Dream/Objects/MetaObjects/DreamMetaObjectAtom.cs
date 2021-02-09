@@ -9,7 +9,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         public static Dictionary<DreamObject, UInt32> AtomIDs = new();
         public static Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
-        public static ConcurrentDictionary<DreamObject, int> AtomToAppearanceID = new();
+        public static ConcurrentDictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new();
 
         private static UInt32 _atomIDCounter = 0;
         private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
@@ -44,7 +44,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             lock (_atomListsLock) {
                 AtomIDToAtom.Remove(AtomIDs[dreamObject]);
                 AtomIDs.Remove(dreamObject);
-                AtomToAppearanceID.Remove(dreamObject, out _);
+                AtomToAppearance.Remove(dreamObject, out _);
                 _overlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             }
 
@@ -156,14 +156,12 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         protected static ServerIconAppearance GetAppearance(DreamObject atom) {
-            return ServerIconAppearance.GetAppearance(AtomToAppearanceID[atom]);
+            return AtomToAppearance[atom];
         }
 
         protected static void UpdateAppearance(DreamObject atom, ServerIconAppearance newAppearance) {
-            int appearanceID = newAppearance.GetID();
-
-            if (!AtomToAppearanceID.ContainsKey(atom) || AtomToAppearanceID[atom] != appearanceID) {
-                AtomToAppearanceID[atom] = appearanceID;
+            if (!AtomToAppearance.ContainsKey(atom) || AtomToAppearance[atom].GetID() != newAppearance.GetID()) {
+                AtomToAppearance[atom] = newAppearance;
 
                 Program.DreamStateManager.AddAtomIconAppearanceDelta(atom, newAppearance);
             }
@@ -221,8 +219,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                     appearance.Icon = GetAppearance(atom).Icon;
                 }
 
+                DreamValue colorValue = mutableAppearance.GetVariable("color");
+                if (colorValue.TryGetValueAsString(out string color)) {
+                    appearance.SetColor(color);
+                } else {
+                    appearance.SetColor("white");
+                }
+
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
-                appearance.SetColor(mutableAppearance.GetVariable("color").GetValueAsString());
                 appearance.Layer = mutableAppearance.GetVariable("layer").GetValueAsNumber();
                 appearance.PixelX = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelY = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();

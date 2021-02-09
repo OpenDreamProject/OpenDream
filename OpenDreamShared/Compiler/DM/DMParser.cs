@@ -202,6 +202,18 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTBlockInner BracedBlock() {
+            if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                bool isIndented = Check(TokenType.DM_Indent);
+                Newline();
+                DMASTBlockInner blockInner = BlockInner();
+                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                Newline();
+                Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+
+                return blockInner;
+            }
+
             return null;
         }
 

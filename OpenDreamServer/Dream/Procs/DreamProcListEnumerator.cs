@@ -1,22 +1,18 @@
 ﻿using OpenDreamServer.Dream.Objects;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamServer.Dream.Procs {
     class DreamProcListEnumerator {
-        public DreamList List;
+        public List<DreamValue> Values;
         public int CurrentIndex = 0;
 
-        public DreamProcListEnumerator(DreamList list) {
-            List = list;
+        public DreamProcListEnumerator(List<DreamValue> values) {
+            Values = values;
         }
 
         public bool TryMoveNext(out DreamValue value) {
-            CurrentIndex++;
-
-            if (List != null && CurrentIndex <= List.GetLength()) {
-                value = List.GetValue(new DreamValue(CurrentIndex));
+            if (CurrentIndex < Values.Count) {
+                value = Values[CurrentIndex++];
 
                 return true;
             } else {

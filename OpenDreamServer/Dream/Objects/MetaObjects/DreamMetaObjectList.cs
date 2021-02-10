@@ -38,8 +38,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorAdd(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList listCopy = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamList();
+            DreamList list = a.GetValueAsDreamList();
+            DreamList listCopy = list.CreateCopy();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
                 if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -57,23 +57,19 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
-            DreamObject listObject = a.GetValueAsDreamObjectOfType(DreamPath.List);
-            DreamList listCopy = listObject.CallProc("Copy", new DreamProcArguments(null)).GetValueAsDreamList();
+            DreamList list = a.GetValueAsDreamList();
+            DreamList listCopy = list.CreateCopy();
 
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
                 if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
-                        if (listCopy.ContainsValue(value)) {
-                            listCopy.RemoveValue(value);
-                        }
+                        listCopy.RemoveValue(value);
                     }
-                } else if (listCopy.ContainsValue(b)) {
+                } else {
                     listCopy.RemoveValue(b);
                 }
             } else {
-                if (listCopy.ContainsValue(b)) {
-                    listCopy.RemoveValue(b);
-                }
+                listCopy.RemoveValue(b);
             }
 
             return new DreamValue(listCopy);
@@ -103,17 +99,13 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (b.Type == DreamValue.DreamValueType.DreamObject) {
                 if (b.TryGetValueAsDreamList(out DreamList bList)) {
                     foreach (DreamValue value in bList.GetValues()) {
-                        if (list.ContainsValue(value)) {
-                            list.RemoveValue(value);
-                        }
+                        list.RemoveValue(value);
                     }
-                } else if (list.ContainsValue(b)) {
+                } else {
                     list.RemoveValue(b);
                 }
             } else {
-                if (list.ContainsValue(b)) {
-                    list.RemoveValue(b);
-                }
+                list.RemoveValue(b);
             }
 
             return a;

@@ -68,7 +68,10 @@
         Power = 0x42,
         DereferenceProc = 0x43,
         GetProc = 0x44,
-        Prompt = 0x45
+        Prompt = 0x45,
+        PushProcArguments = 0x46,
+        Initial = 0x47,
+        CallSelf = 0x48
     }
 
     enum DreamProcOpcodeParameterType {

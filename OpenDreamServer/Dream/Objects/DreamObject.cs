@@ -84,10 +84,6 @@ namespace OpenDreamServer.Dream.Objects {
             return ObjectDefinition.HasVariable(name); ;
         }
 
-        public bool HasProc(string name) {
-            return ObjectDefinition.HasProc(name);
-        }
-
         public DreamValue GetVariable(string name) {
             if (!HasVariable(name)) throw new Exception("Variable '" + name + "' doesn't exist");
 
@@ -97,6 +93,16 @@ namespace OpenDreamServer.Dream.Objects {
             } else {
                 return variableValue;
             }
+        }
+
+        public bool TryGetVariable(string name, out DreamValue variableValue) {
+            if (_variables.TryGetValue(name, out variableValue) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
+                if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
+
+                return true;
+            }
+
+            return false;
         }
 
         public void SetVariable(string name, DreamValue value) {
@@ -109,6 +115,10 @@ namespace OpenDreamServer.Dream.Objects {
 
         public DreamProc GetProc(string procName) {
             return ObjectDefinition.GetProc(procName);
+        }
+
+        public bool TryGetProc(string procName, out DreamProc proc) {
+            return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
         public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {

@@ -30,8 +30,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return value;
             } else if (ParentScope != null) {
                 return ParentScope.GetValue(valueName);
-            } else if (DreamObject != null && DreamObject.HasVariable(valueName)) {
-                return DreamObject.GetVariable(valueName);
+            } else if (DreamObject != null && DreamObject.TryGetVariable(valueName, out value)) {
+                return value;
             } else if (DreamObject != null && DreamObject.ObjectDefinition.HasGlobalVariable(valueName)) {
                 return DreamObject.ObjectDefinition.GetGlobalVariable(valueName).Value;
             } else {
@@ -40,8 +40,8 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue GetProc(string procName) {
-            if (DreamObject != null && DreamObject.HasProc(procName)) {
-                return new DreamValue(DreamObject.GetProc(procName));
+            if (DreamObject != null && DreamObject.TryGetProc(procName, out DreamProc proc)) {
+                return new DreamValue(proc);
             } else {
                 throw new Exception("Proc '" + procName + "' doesn't exist");
             }

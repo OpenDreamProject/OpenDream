@@ -37,16 +37,16 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 if (oldVariableValue.Value != null) {
                     DreamObject oldLoc = oldVariableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                    DreamObject oldLocContents = oldLoc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
+                    DreamList oldLocContents = oldLoc.GetVariable("contents").GetValueAsDreamList();
 
-                    oldLocContents.CallProc("Remove", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
+                    oldLocContents.RemoveValue(new DreamValue(dreamObject));
                 }
 
                 if (variableValue.Value != null) {
                     DreamObject newLoc = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                    DreamObject newLocContents = newLoc.GetVariable("contents").GetValueAsDreamObjectOfType(DreamPath.List);
+                    DreamList newLocContents = newLoc.GetVariable("contents").GetValueAsDreamList();
 
-                    newLocContents.CallProc("Add", new DreamProcArguments(new List<DreamValue>() { new DreamValue(dreamObject) }));
+                    newLocContents.AddValue(new DreamValue(dreamObject));
                 }
             } else if (variableName == "screen_loc") {
                 UpdateScreenLocation(dreamObject, variableValue);

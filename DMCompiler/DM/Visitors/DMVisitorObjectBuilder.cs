@@ -136,8 +136,10 @@ namespace DMCompiler.DM.Visitors {
 
                         if (associatedAssign.Expression is DMASTIdentifier || associatedAssign.Expression is DMASTConstantString) {
                             associatedIndex = value.Name;
-                        } else if (associatedAssign.Expression is DMASTConstantResource) {
-                            associatedIndex = new DMResource(((DMASTConstantResource)associatedAssign.Expression).Path);
+                        } else if (associatedAssign.Expression is DMASTConstantResource constantResource) {
+                            associatedIndex = new DMResource(constantResource.Path);
+                        } else if (associatedAssign.Expression is DMASTConstantPath constantPath) {
+                            associatedIndex = constantPath.Value.Path;
                         } else {
                             throw new Exception("Associated value has an invalid index");
                         }

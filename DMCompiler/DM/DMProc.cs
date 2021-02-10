@@ -135,6 +135,10 @@ namespace DMCompiler.DM {
             Jump(_loopStack.Peek() + "_continue");
         }
 
+        public void PushProcArguments() {
+            WriteOpcode(DreamProcOpcode.PushProcArguments);
+        }
+
         public void PushArgumentList() {
             WriteOpcode(DreamProcOpcode.PushArgumentList);
         }
@@ -207,6 +211,10 @@ namespace DMCompiler.DM {
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
         }
+        
+        public void CallSelf() {
+            WriteOpcode(DreamProcOpcode.CallSelf);
+        }
 
         public void CallStatement() {
             WriteOpcode(DreamProcOpcode.CallStatement);
@@ -215,6 +223,10 @@ namespace DMCompiler.DM {
         public void Prompt(DMValueType types) {
             WriteOpcode(DreamProcOpcode.Prompt);
             WriteInt((int)types);
+        }
+
+        public void Initial() {
+            WriteOpcode(DreamProcOpcode.Initial);
         }
 
         public void Return() {

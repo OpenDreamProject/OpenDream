@@ -137,8 +137,7 @@ namespace DMCompiler {
                 return new Dictionary<string, object>() {
                     { "type", JsonVariableType.Object }
                 };
-            } else if (value is DMList) {
-                DMList dmList = (DMList)value;
+            } else if (value is DMList dmList) {
                 List<object> dmListValues = new List<object>();
                 Dictionary<string, object> jsonVariable = new Dictionary<string, object>() {
                     { "type", JsonVariableType.List }
@@ -152,7 +151,7 @@ namespace DMCompiler {
 
                 foreach (KeyValuePair<object, object> dmAssociatedListValue in dmList.AssociatedValues) {
                     object key;
-                    if (dmAssociatedListValue.Key is DMResource) {
+                    if (dmAssociatedListValue.Key is DMResource || dmAssociatedListValue.Key is DreamPath) {
                         key = CreateDreamObjectJsonVariable(dmAssociatedListValue.Key);
                     } else if (dmAssociatedListValue.Key is string) {
                         key = dmAssociatedListValue.Key;
@@ -168,20 +167,20 @@ namespace DMCompiler {
 
                 if (dmListValues.Count > 0) jsonVariable.Add("values", dmListValues);
                 return jsonVariable;
-            } else if (value is DMNewInstance) {
+            } else if (value is DMNewInstance newInstance) {
                 return new Dictionary<string, object>() {
                     { "type", JsonVariableType.Object },
-                    { "path", ((DMNewInstance)value).Path.PathString }
+                    { "path", newInstance.Path.PathString }
                 };
-            } else if (value is DMResource) {
+            } else if (value is DMResource resource) {
                 return new Dictionary<string, object>() {
                     { "type", JsonVariableType.Resource },
-                    { "resourcePath", ((DMResource)value).ResourcePath }
+                    { "resourcePath", resource.ResourcePath }
                 };
-            } else if (value is DreamPath) {
+            } else if (value is DreamPath path) {
                 return new Dictionary<string, object>() {
                     { "type", JsonVariableType.Path },
-                    { "value", ((DreamPath)value).PathString }
+                    { "value", path.PathString }
                 };
             } else {
                 throw new Exception("Invalid variable value");

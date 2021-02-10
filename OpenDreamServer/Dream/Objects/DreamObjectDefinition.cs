@@ -69,14 +69,22 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public DreamProc GetProc(string procName) {
-            if (OverridingProcs.TryGetValue(procName, out DreamProc proc)) {
+            if (TryGetProc(procName, out DreamProc proc)) {
                 return proc;
-            } else if (Procs.TryGetValue(procName, out proc)) {
-                return proc;
-            } else if (_parentObjectDefinition != null) {
-                return _parentObjectDefinition.GetProc(procName);
             } else {
                 throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
+            }
+        }
+
+        public bool TryGetProc(string procName, out DreamProc proc) {
+            if (OverridingProcs.TryGetValue(procName, out proc)) {
+                return true;
+            } else if (Procs.TryGetValue(procName, out proc)) {
+                return true;
+            } else if (_parentObjectDefinition != null) {
+                return _parentObjectDefinition.TryGetProc(procName, out proc);
+            } else {
+                return false;
             }
         }
 

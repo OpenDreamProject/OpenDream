@@ -1328,6 +1328,10 @@ namespace OpenDreamShared.Compiler.DM {
                                 }
 
                                 return new DMASTInput(callParameters, types, list);
+                            } else if (identifier != null && identifier.Identifier == "initial") {
+                                if (callParameters.Length != 1) throw new Exception("initial() requires 1 argument");
+
+                                return new DMASTInitial(callParameters[0].Value);
                             } else {
                                 DMASTCallable callable;
 

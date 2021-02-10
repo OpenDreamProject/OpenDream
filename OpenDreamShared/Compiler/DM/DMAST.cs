@@ -43,6 +43,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
+        public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -683,6 +684,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitInput(this);
+        }
+    }
+    
+    class DMASTInitial: DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTInitial(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitInitial(this);
         }
     }
 

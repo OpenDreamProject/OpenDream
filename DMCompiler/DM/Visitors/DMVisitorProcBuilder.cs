@@ -320,8 +320,22 @@ namespace DMCompiler.Compiler.DM.Visitors {
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {
-            procCall.Callable.Visit(this);
-            PushCallParameters(procCall.Parameters);
+            if (procCall.Callable is DMASTCallableSuper) {
+                _proc.PushSuperProc();
+
+                if (procCall.Parameters.Length == 0) {
+                    _proc.PushProcArguments();
+                } else {
+                    PushCallParameters(procCall.Parameters);
+                }
+            } else if (procCall.Callable is DMASTCallableSelf) {
+                _proc.CallSelf();
+                PushCallParameters(procCall.Parameters);
+            } else {
+                procCall.Callable.Visit(this);
+                PushCallParameters(procCall.Parameters);
+            }
+            
             _proc.Call();
         }
 
@@ -339,10 +353,6 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
             _proc.GetProc(procIdentifier.Identifier);
-        }
-
-        public void VisitCallableSuper(DMASTCallableSuper super) {
-            _proc.PushSuperProc();
         }
 
         public void VisitCallableSelf(DMASTCallableSelf self) {
@@ -689,6 +699,11 @@ namespace DMCompiler.Compiler.DM.Visitors {
         public void VisitInput(DMASTInput input) {
             PushCallParameters(input.Parameters);
             _proc.Prompt(input.Types);
+        }
+        
+        public void VisitInitial(DMASTInitial initial) {
+            initial.Expression.Visit(this);
+            _proc.Initial();
         }
 
         public void VisitList(DMASTList list) {

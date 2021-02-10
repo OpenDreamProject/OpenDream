@@ -52,15 +52,18 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamProcScope HoldingScope;
         public string IdentifierName;
 
+        private DreamValue _proc;
+
         public DreamProcIdentifierProc(DreamProcScope holdingScope, string identifierName) {
             HoldingScope = holdingScope;
             IdentifierName = identifierName;
+
+            if (identifierName == "..") _proc = new DreamValue(HoldingScope.SuperProc);
+            else _proc = HoldingScope.GetProc(identifierName);
         }
 
         public DreamValue GetValue() {
-            if (IdentifierName == "..") return new DreamValue(HoldingScope.SuperProc);
-
-            return HoldingScope.GetProc(IdentifierName);
+            return _proc;
         }
 
         public void Assign(DreamValue value) {

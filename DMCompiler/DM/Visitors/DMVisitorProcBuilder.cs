@@ -164,12 +164,9 @@ namespace DMCompiler.Compiler.DM.Visitors {
                     _proc.AddLabel(typeCheckLabel);
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null) {
-                        _proc.GetProc("istype");
-                        PushCallParameters(new DMASTCallParameter[] {
-                            new DMASTCallParameter(statementForList.Variable),
-                            new DMASTCallParameter(new DMASTConstantPath(varDeclaration.Type))
-                        });
-                        _proc.Call();
+                        statementForList.Variable.Visit(this);
+                        _proc.PushPath(varDeclaration.Type.Path);
+                        _proc.IsType();
 
                         _proc.JumpIfTrue(loopBodyLabel);
                         _proc.Continue();
@@ -700,10 +697,16 @@ namespace DMCompiler.Compiler.DM.Visitors {
             PushCallParameters(input.Parameters);
             _proc.Prompt(input.Types);
         }
-        
+
         public void VisitInitial(DMASTInitial initial) {
             initial.Expression.Visit(this);
             _proc.Initial();
+        }
+
+        public void VisitIsType(DMASTIsType isType) {
+            isType.Value.Visit(this);
+            isType.Type.Visit(this);
+            _proc.IsType();
         }
 
         public void VisitList(DMASTList list) {

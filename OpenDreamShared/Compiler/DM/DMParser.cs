@@ -1332,6 +1332,10 @@ namespace OpenDreamShared.Compiler.DM {
                                 if (callParameters.Length != 1) throw new Exception("initial() requires 1 argument");
 
                                 return new DMASTInitial(callParameters[0].Value);
+                            } else if (identifier != null && identifier.Identifier == "istype") {
+                                if (callParameters.Length != 2) throw new Exception("istype() requires 2 arguments");
+
+                                return new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
                             } else {
                                 DMASTCallable callable;
 
@@ -1417,6 +1421,8 @@ namespace OpenDreamShared.Compiler.DM {
                             bracketNesting--;
 
                             if (bracketNesting == 0) { //End of expression
+                                insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
+
                                 DMLexer expressionLexer = new DMLexer(insideBrackets.ToString());
                                 DMParser expressionParser = new DMParser(expressionLexer);
 
@@ -1511,6 +1517,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case "message": type |= DMValueType.Message; break;
                         case "area": type |= DMValueType.Area; break;
                         case "color": type |= DMValueType.Color; break;
+                        case "file": type |= DMValueType.File; break;
                         default: throw new Exception("Invalid parameter type '" + typeToken.Text + "'");
                     }
                 } while (Check(TokenType.DM_Bar));

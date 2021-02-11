@@ -12,7 +12,7 @@ namespace OpenDreamShared.Compiler {
         }
         public string[] Lines { get; private set; }
 
-        protected Queue<Token> _pendingTokenQueue = new Queue<Token>();
+        protected Queue<Token> _pendingTokenQueue = new();
         protected int _currentPosition = -1;
         protected int _currentLine = 1;
         protected int _currentColumn = 0;

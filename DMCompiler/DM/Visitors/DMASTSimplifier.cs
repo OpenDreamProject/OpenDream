@@ -379,12 +379,15 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = divide.A as DMASTConstantInteger;
                 DMASTConstantFloat aFloat = divide.A as DMASTConstantFloat;
                 DMASTConstantInteger bInteger = divide.B as DMASTConstantInteger;
+                DMASTConstantFloat bFloat = divide.B as DMASTConstantFloat;
 
                 if (aInteger != null && bInteger != null) {
                     if (aInteger.Value % bInteger.Value == 0) expression = new DMASTConstantFloat(aInteger.Value / bInteger.Value);
                     else expression = new DMASTConstantFloat((float)aInteger.Value / (float)bInteger.Value);
                 } else if (aFloat != null && bInteger != null) {
                     expression = new DMASTConstantFloat(aFloat.Value / bInteger.Value);
+                } else if (aFloat != null && bFloat != null) {
+                    expression = new DMASTConstantFloat(aFloat.Value / bFloat.Value);
                 }
 
                 return;

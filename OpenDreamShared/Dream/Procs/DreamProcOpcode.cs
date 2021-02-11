@@ -71,7 +71,8 @@
         Prompt = 0x45,
         PushProcArguments = 0x46,
         Initial = 0x47,
-        CallSelf = 0x48
+        CallSelf = 0x48,
+        IsType = 0x49
     }
 
     enum DreamProcOpcodeParameterType {
@@ -95,6 +96,7 @@
         Num = 0x40,
         Message = 0x80,
         Area = 0x100,
-        Color = 0x200
+        Color = 0x200,
+        File = 0x400
     }
 }

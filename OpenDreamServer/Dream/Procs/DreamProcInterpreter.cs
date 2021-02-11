@@ -60,6 +60,7 @@ namespace OpenDreamServer.Dream.Procs {
             { DreamProcOpcode.IndexList, DreamProcInterpreterOpcodes.IndexList },
             { DreamProcOpcode.Initial, DreamProcInterpreterOpcodes.Initial },
             { DreamProcOpcode.IsInList, DreamProcInterpreterOpcodes.IsInList },
+            { DreamProcOpcode.IsType, DreamProcInterpreterOpcodes.IsType },
             { DreamProcOpcode.Jump, DreamProcInterpreterOpcodes.Jump },
             { DreamProcOpcode.JumpIfFalse, DreamProcInterpreterOpcodes.JumpIfFalse },
             { DreamProcOpcode.JumpIfTrue, DreamProcInterpreterOpcodes.JumpIfTrue },

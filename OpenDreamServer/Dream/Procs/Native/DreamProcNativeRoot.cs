@@ -428,32 +428,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(1);
         }
 
-        [DreamProc("istype")]
-        [DreamProcParameter("Val")]
-        [DreamProcParameter("Type", Type = DreamValueType.DreamPath)]
-        public static DreamValue NativeProc_istype(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("Val");
-            DreamValue typeValue = scope.GetValue("Type");
-            DreamPath type;
-
-            if (typeValue.Type == DreamValueType.DreamPath) type = typeValue.GetValueAsPath();
-            else if (typeValue.Type == DreamValueType.DreamObject) {
-                if (typeValue.Value != null) {
-                    type = typeValue.GetValueAsDreamObject().ObjectDefinition.Type;
-                } else {
-                    throw new NotImplementedException("Implicit type checking is not implemented");
-                }
-            } else {
-                throw new ArgumentException("Invalid type");
-            }
-
-            if (value.TryGetValueAsDreamObjectOfType(type, out _)) {
-                return new DreamValue(1);
-            } else {
-                return new DreamValue(0);
-            }
-        }
-
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
             if (jsonElement.ValueKind == JsonValueKind.Array) {
                 DreamList list = Program.DreamObjectTree.CreateList();

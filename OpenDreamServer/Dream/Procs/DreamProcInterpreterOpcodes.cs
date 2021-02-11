@@ -777,6 +777,24 @@ namespace OpenDreamServer.Dream.Procs {
 
             interpreter.Push(new DreamValue(IsEqual(first, second) ? 0 : 1));
         }
+
+        public static void IsType(DreamProcInterpreter interpreter) {
+            DreamValue typeValue = interpreter.PopDreamValue();
+            DreamValue value = interpreter.PopDreamValue();
+            DreamPath type;
+
+            if (typeValue.TryGetValueAsDreamObject(out DreamObject typeObject)) {
+                type = typeObject.ObjectDefinition.Type;
+            } else {
+                type = typeValue.GetValueAsPath();
+            }
+
+            if (value.TryGetValueAsDreamObject(out DreamObject dreamObject) && dreamObject != null) {
+                interpreter.Push(new DreamValue(dreamObject.IsSubtypeOf(type) ? 1 : 0));
+            } else {
+                interpreter.Push(new DreamValue(0));
+            }
+        }
         #endregion Comparisons
 
         #region Flow

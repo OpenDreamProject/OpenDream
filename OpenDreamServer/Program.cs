@@ -158,7 +158,6 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ispath);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_istext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isturf);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_istype);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);

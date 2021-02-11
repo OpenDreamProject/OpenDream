@@ -51,11 +51,13 @@ namespace DMCompiler.Preprocessor {
                             token = CreateToken(TokenType.Skip, "//");
                         } else if (GetCurrent() == '*') {
                             //Skip everything up to the "*/"
+                            Advance();
                             while (true) {
-                                Advance();
+                                bool isStar = GetCurrent() == '*';
 
-                                if (GetCurrent() == '*' && Advance() == '/') break;
+                                if (isStar && Advance() == '/') break;
                                 else if (IsAtEndOfFile()) throw new Exception("Expected \"*/\" to end multiline comment");
+                                else if (!isStar) Advance();
                             }
 
                             Advance();

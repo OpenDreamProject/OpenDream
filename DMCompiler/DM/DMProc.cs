@@ -410,6 +410,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsInList);
         }
 
+        public void IsType() {
+            WriteOpcode(DreamProcOpcode.IsType);
+        }
+
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
         }

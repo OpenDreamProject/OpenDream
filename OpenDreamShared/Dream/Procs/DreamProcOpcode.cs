@@ -26,8 +26,8 @@
         Negate = 0x18,
         Modulus = 0x19,
         Append = 0x1A,
-        CreateScope = 0x1B,
-        DestroyScope = 0x1C,
+        //0x1B
+        //0x1C
         CompareLessThanOrEqual = 0x1D,
         IndexList = 0x1E,
         Remove = 0x1F,

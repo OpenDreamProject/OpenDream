@@ -12,20 +12,32 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierVariable : IDreamProcIdentifier {
-        public DreamProcScope HoldingScope;
+        public DreamObject Instance;
         public string IdentifierName;
 
-        public DreamProcIdentifierVariable(DreamProcScope holdingScope, string identifierName) {
-            HoldingScope = holdingScope;
+        public DreamProcIdentifierVariable(DreamObject instance, string identifierName) {
+            Instance = instance;
             IdentifierName = identifierName;
         }
 
         public DreamValue GetValue() {
-            return HoldingScope.GetValue(IdentifierName);
+            if (Instance.TryGetVariable(IdentifierName, out DreamValue value)) {
+                return value;
+            } else if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
+                return Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value;
+            } else {
+                throw new Exception("Value '" + IdentifierName + "' doesn't exist");
+            }
         }
 
         public void Assign(DreamValue value) {
-            HoldingScope.AssignValue(IdentifierName, value);
+            if (Instance.HasVariable(IdentifierName)) {
+                Instance.SetVariable(IdentifierName, value);
+            } else if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
+                Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value = value;
+            } else {
+                throw new Exception("Value '" + IdentifierName + "' doesn't exist");
+            }
         }
     }
 
@@ -49,17 +61,15 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierProc : IDreamProcIdentifier {
-        public DreamProcScope HoldingScope;
-        public string IdentifierName;
+        public DreamObject Instance;
+        public string ProcName;
 
         private DreamValue _proc;
 
-        public DreamProcIdentifierProc(DreamProcScope holdingScope, string identifierName) {
-            HoldingScope = holdingScope;
-            IdentifierName = identifierName;
-
-            if (identifierName == "..") _proc = new DreamValue(HoldingScope.SuperProc);
-            else _proc = HoldingScope.GetProc(identifierName);
+        public DreamProcIdentifierProc(DreamProc proc, DreamObject instance, string procName) {
+            _proc = new DreamValue(proc);
+            Instance = instance;
+            ProcName = procName;
         }
 
         public DreamValue GetValue() {

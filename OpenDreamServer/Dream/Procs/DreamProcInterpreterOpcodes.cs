@@ -54,10 +54,6 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcArguments arguments = interpreter.PopArguments();
             DreamPath objectPath = interpreter.PopDreamValue().GetValueAsPath();
 
-            if (objectPath.Type == DreamPath.PathType.Relative && objectPath.Elements.Length == 1) {
-                objectPath = interpreter.CurrentScope.GetValue(objectPath.LastElement).GetValueAsPath();
-            }
-
             DreamObject newObject = Program.DreamObjectTree.CreateObject(objectPath, arguments);
             interpreter.Push(new DreamValue(newObject));
         }
@@ -67,7 +63,7 @@ namespace OpenDreamServer.Dream.Procs {
             string identifierName = interpreter.ReadString();
 
             if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
-            interpreter.Push(new DreamProcIdentifierVariable(new DreamProcScope(dreamObject, interpreter.CurrentScope.Usr), identifierName));
+            interpreter.Push(new DreamProcIdentifierVariable(dreamObject, identifierName));
         }
 
         public static void DereferenceProc(DreamProcInterpreter interpreter) {
@@ -75,7 +71,12 @@ namespace OpenDreamServer.Dream.Procs {
             string identifierName = interpreter.ReadString();
 
             if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
-            interpreter.Push(new DreamProcIdentifierProc(new DreamProcScope(dreamObject, interpreter.CurrentScope.Usr), identifierName));
+
+            if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
+                interpreter.Push(new DreamProcIdentifierProc(proc, dreamObject, identifierName));
+            } else {
+                throw new Exception("Proc '" + identifierName + "' doesn't exist");
+            }
         }
 
         public static void DestroyListEnumerator(DreamProcInterpreter interpreter) {
@@ -137,10 +138,12 @@ namespace OpenDreamServer.Dream.Procs {
                         string argumentName = key.GetValueAsString();
 
                         interpreter.Arguments.NamedArguments[argumentName] = value;
-                        interpreter.TopScope.AssignValue(argumentName, value);
+                        interpreter.LocalVariables[interpreter.ArgumentNames.IndexOf(argumentName)] = value;
                     } else if (key.Type == DreamValue.DreamValueType.Integer) {
-                        interpreter.Arguments.OrderedArguments[key.GetValueAsInteger() - 1] = value;
-                        //TODO: _topScope.AssignValue(argName, value);
+                        int argumentIndex = key.GetValueAsInteger() - 1;
+
+                        interpreter.Arguments.OrderedArguments[argumentIndex] = value;
+                        interpreter.LocalVariables[argumentIndex] = value;
                     } else {
                         throw new Exception("Invalid key used on an args list");
                     }
@@ -148,9 +151,9 @@ namespace OpenDreamServer.Dream.Procs {
 
                 interpreter.Push(new DreamValue(argsList));
             } else if (identifierName == "usr") {
-                interpreter.Push(new DreamValue(interpreter.CurrentScope.Usr));
+                interpreter.Push(new DreamValue(interpreter.Usr));
             } else {
-                interpreter.Push(new DreamProcIdentifierVariable(interpreter.CurrentScope, identifierName));
+                interpreter.Push(new DreamProcIdentifierVariable(interpreter.Instance, identifierName));
             }
         }
 
@@ -163,7 +166,11 @@ namespace OpenDreamServer.Dream.Procs {
         public static void GetProc(DreamProcInterpreter interpreter) {
             string identifierName = interpreter.ReadString();
 
-            interpreter.Push(new DreamProcIdentifierProc(interpreter.CurrentScope, identifierName));
+            if (interpreter.Instance.TryGetProc(identifierName, out DreamProc proc)) {
+                interpreter.Push(new DreamProcIdentifierProc(proc, interpreter.Instance, identifierName));
+            } else {
+                throw new Exception("Proc '" + identifierName + "' doesn't exist");
+            }
         }
 
         public static void IndexList(DreamProcInterpreter interpreter) {
@@ -177,7 +184,7 @@ namespace OpenDreamServer.Dream.Procs {
             IDreamProcIdentifier identifier = interpreter.PopIdentifier();
 
             if (identifier is DreamProcIdentifierVariable varIdentifier) {
-                DreamObjectDefinition objectDefinition = varIdentifier.HoldingScope.DreamObject.ObjectDefinition;
+                DreamObjectDefinition objectDefinition = varIdentifier.Instance.ObjectDefinition;
 
                 if (objectDefinition.Variables.TryGetValue(varIdentifier.IdentifierName, out DreamValue initialValue)) {
                     interpreter.Push(initialValue);
@@ -320,7 +327,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void PushSrc(DreamProcInterpreter interpreter) {
-            interpreter.Push(new DreamValue(interpreter.CurrentScope.DreamObject));
+            interpreter.Push(new DreamValue(interpreter.Instance));
         }
 
         public static void PushString(DreamProcInterpreter interpreter) {
@@ -328,7 +335,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void PushSuperProc(DreamProcInterpreter interpreter) {
-            interpreter.Push(new DreamProcIdentifierProc(interpreter.CurrentScope, ".."));
+            interpreter.Push(new DreamProcIdentifierProc(interpreter.SuperProc, interpreter.Instance, ".."));
         }
 
         public static void SetLocalVariable(DreamProcInterpreter interpreter) {
@@ -804,9 +811,9 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProc proc = procIdentifier.GetValue().GetValueAsProc();
 
             try {
-                interpreter.Push(interpreter.RunProc(proc, procIdentifier.HoldingScope.DreamObject, arguments));
+                interpreter.Push(interpreter.RunProc(proc, procIdentifier.Instance, arguments));
             } catch (Exception e) {
-                throw new Exception("Exception while running proc '" + procIdentifier.IdentifierName + "' on object of type '" + procIdentifier.HoldingScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
+                throw new Exception("Exception while running proc '" + procIdentifier.ProcName + "' on object of type '" + procIdentifier.Instance.ObjectDefinition.Type + "': " + e.Message, e);
             }
         }
         
@@ -814,9 +821,9 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcArguments arguments = interpreter.PopArguments();
 
             try {
-                interpreter.Push(interpreter.RunProc(interpreter.SelfProc, interpreter.CurrentScope.DreamObject, arguments));
+                interpreter.Push(interpreter.RunProc(interpreter.SelfProc, interpreter.Instance, arguments));
             } catch (Exception e) {
-                throw new Exception("Exception while running proc '.' on object of type '" + interpreter.CurrentScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
+                throw new Exception("Exception while running proc '.' on object of type '" + interpreter.Instance.ObjectDefinition.Type + "': " + e.Message, e);
             }
         }
 
@@ -857,24 +864,16 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamPath fullProcPath = source.GetValueAsPath();
                 if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
                 string procName = fullProcPath.LastElement;
-                DreamProc proc = interpreter.TopScope.GetProc(procName).GetValueAsProc();
+                DreamProc proc = interpreter.Instance.GetProc(procName);
 
                 try {
-                    interpreter.Push(interpreter.RunProc(proc, interpreter.TopScope.DreamObject, arguments));
+                    interpreter.Push(interpreter.RunProc(proc, interpreter.Instance, arguments));
                 } catch (Exception e) {
-                    throw new Exception("Exception while running proc " + fullProcPath + " on object of type '" + interpreter.TopScope.DreamObject.ObjectDefinition.Type + "': " + e.Message, e);
+                    throw new Exception("Exception while running proc " + fullProcPath + " on object of type '" + interpreter.Instance.ObjectDefinition.Type + "': " + e.Message, e);
                 }
             } else {
                 throw new Exception("Call statement has an invalid source (" + source + ")");
             }
-        }
-
-        public static void CreateScope(DreamProcInterpreter interpreter) {
-            interpreter.PushScope(new DreamProcScope(interpreter.CurrentScope));
-        }
-
-        public static void DestroyScope(DreamProcInterpreter interpreter) {
-            interpreter.PopScope();
         }
 
         public static void Error(DreamProcInterpreter interpreter) {
@@ -1008,7 +1007,7 @@ namespace OpenDreamServer.Dream.Procs {
             if (firstArg.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out recipientMob)) {
                 message = arguments.OrderedArguments[1].GetValueAsString();
             } else {
-                recipientMob = interpreter.TopScope.Usr;
+                recipientMob = interpreter.Usr;
                 message = arguments.OrderedArguments[0].GetValueAsString();
             }
 

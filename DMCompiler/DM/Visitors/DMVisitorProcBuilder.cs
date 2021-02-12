@@ -15,8 +15,10 @@ namespace DMCompiler.Compiler.DM.Visitors {
 
             if (procDefinition.Body != null) {
                 foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
+                    string parameterName = parameter.Path.Path.LastElement;
+
+                    _proc.AddLocalVariable(parameterName);
                     if (parameter.Value != null) {
-                        string parameterName = parameter.Path.Path.LastElement;
                         string afterDefaultValueCheck = NewLabelName();
                         
                         _proc.GetIdentifier(parameterName);
@@ -230,7 +232,6 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 _proc.StartScope();
                 {
                     statementWhile.Body.Visit(this);
-                    _proc.DestroyScope();
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);

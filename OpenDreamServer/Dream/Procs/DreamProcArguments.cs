@@ -28,12 +28,12 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
-            if (NamedArguments.ContainsKey(argumentName)) {
-                return NamedArguments[argumentName];
+            if (NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
+                return argumentValue;
             } else if (OrderedArguments.Count > argumentPosition) {
                 return OrderedArguments[argumentPosition];
             } else {
-                throw new Exception("No argument named '" + argumentName + "' or argument at position " + argumentPosition);
+                return new DreamValue((DreamObject)null);
             }
         }
 

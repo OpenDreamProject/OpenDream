@@ -60,7 +60,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void SetNativeProc(Func<DreamProcScope, DreamProcArguments, DreamValue> nativeProc) {
+        public void SetNativeProc(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
             List<Attribute> attributes = new(nativeProc.GetInvocationList()[0].Method.GetCustomAttributes());
             DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
             if (procAttribute == null) throw new ArgumentException();

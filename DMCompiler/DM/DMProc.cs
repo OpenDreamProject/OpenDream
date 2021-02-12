@@ -43,6 +43,13 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
+        public int AddLocalVariable(string name) {
+            int localVarId = _localVariableIdCounter++;
+
+            _scopes.Peek().LocalVariables.Add(name, localVarId);
+            return localVarId;
+        }
+
         public void Error() {
             WriteOpcode(DreamProcOpcode.Error);
         }
@@ -101,7 +108,6 @@ namespace DMCompiler.DM {
         }
 
         public void LoopJumpToStart(string loopLabel) {
-            DestroyScope();
             Jump(loopLabel + "_start");
         }
 
@@ -174,23 +180,12 @@ namespace DMCompiler.DM {
         }
 
         public void StartScope() {
-            CreateScope();
             _scopes.Push(new DMProcScope());
         }
 
         public void EndScope() {
-            DestroyScope();
-
             DMProcScope destroyedScope = _scopes.Pop();
             _localVariableIdCounter -= destroyedScope.LocalVariables.Count;
-        }
-
-        public void CreateScope() {
-            WriteOpcode(DreamProcOpcode.CreateScope);
-        }
-
-        public void DestroyScope() {
-            WriteOpcode(DreamProcOpcode.DestroyScope);
         }
 
         public void Jump(string label) {
@@ -428,8 +423,7 @@ namespace DMCompiler.DM {
             }
 
             if (localVarId == -1 && create) {
-                localVarId = _localVariableIdCounter++;
-                _scopes.Peek().LocalVariables.Add(name, localVarId);
+                localVarId = AddLocalVariable(name);
             }
 
             return localVarId;

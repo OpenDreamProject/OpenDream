@@ -15,8 +15,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
     static class DreamProcNativeRoot {
         [DreamProc("abs")]
         [DreamProcParameter("A")]
-        public static DreamValue NativeProc_abs(DreamProcScope scope, DreamProcArguments arguments) {
-            float number = scope.GetValue("A").GetValueAsNumber();
+        public static DreamValue NativeProc_abs(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float number = arguments.GetArgument(0, "A").GetValueAsNumber();
 
             return new DreamValue(Math.Abs(number));
         }
@@ -27,8 +27,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("loop", Type = DreamValueType.Integer)]
         [DreamProcParameter("easing", Type = DreamValueType.String)]
         [DreamProcParameter("flags", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_animate(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject obj = scope.GetValue("Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
+        public static DreamValue NativeProc_animate(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamObject obj = arguments.GetArgument(0, "Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
             
             if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
                 obj.SetVariable("pixel_x", pixelX);
@@ -51,8 +51,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("arccos")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_arccos(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue xValue = scope.GetValue("X");
+        public static DreamValue NativeProc_arccos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
             float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
             double acos = Math.Acos(x);
 
@@ -61,8 +61,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("arctan")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_arctan(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue aValue = scope.GetValue("A");
+        public static DreamValue NativeProc_arctan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue aValue = arguments.GetArgument(0, "A");
             float a = (aValue.Value == null) ? 0 : aValue.GetValueAsNumber();
             double atan = Math.Atan(a);
 
@@ -71,16 +71,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("ascii2text")]
         [DreamProcParameter("N", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_ascii2text(DreamProcScope scope, DreamProcArguments arguments) {
-            int ascii = scope.GetValue("N").GetValueAsInteger();
+        public static DreamValue NativeProc_ascii2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int ascii = arguments.GetArgument(0, "N").GetValueAsInteger();
 
             return new DreamValue(Convert.ToChar(ascii).ToString());
         }
 
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_ckey(DreamProcScope scope, DreamProcArguments arguments) {
-            string key = scope.GetValue("Key").GetValueAsString();
+        public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string key = arguments.GetArgument(0, "Key").GetValueAsString();
 
             key = Regex.Replace(key.ToLower(), "[^a-z]", ""); //Remove all punctuation and make lowercase
             return new DreamValue(key);
@@ -88,7 +88,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("cmptext")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_cmptext(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_cmptext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> values = arguments.GetAllArguments();
             string t1 = values[0].GetValueAsString().ToLower();
 
@@ -103,10 +103,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_copytext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_copytext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "T").GetValueAsString();
+            int start = arguments.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(2, "End").GetValueAsInteger(); //1-indexed
 
             if (end <= 0) end += text.Length + 1;
             else if (end > text.Length + 1) end = text.Length + 1;
@@ -119,8 +119,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("cos")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_cos(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue xValue = scope.GetValue("X");
+        public static DreamValue NativeProc_cos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
             float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
             double rad = x * Math.PI / 180;
 
@@ -129,8 +129,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("CRASH")]
         [DreamProcParameter("msg", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_CRASH(DreamProcScope scope, DreamProcArguments arguments) {
-            string message = scope.GetValue("msg").GetValueAsString();
+        public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string message = arguments.GetArgument(0, "msg").GetValueAsString();
 
             throw new Exception(message);
         }
@@ -138,25 +138,25 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("fcopy")]
         [DreamProcParameter("Src", Type = DreamValueType.String)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy(DreamProcScope scope, DreamProcArguments arguments) {
-            string src = scope.GetValue("Src").GetValueAsString();
-            string dst = scope.GetValue("Dst").GetValueAsString();
+        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string src = arguments.GetArgument(0, "Src").GetValueAsString();
+            string dst = arguments.GetArgument(1, "Dst").GetValueAsString();
 
             return new DreamValue(Program.DreamResourceManager.CopyFile(src, dst) ? 1 : 0);
         }
 
         [DreamProc("fcopy_rsc")]
         [DreamProcParameter("File", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy_rsc(DreamProcScope scope, DreamProcArguments arguments) {
-            string filePath = scope.GetValue("File").GetValueAsString();
+        public static DreamValue NativeProc_fcopy_rsc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
             return new DreamValue(Program.DreamResourceManager.LoadResource(filePath));
         }
 
         [DreamProc("fdel")]
         [DreamProcParameter("File", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fdel(DreamProcScope scope, DreamProcArguments arguments) {
-            string filePath = scope.GetValue("File").GetValueAsString();
+        public static DreamValue NativeProc_fdel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
             bool successful;
             if (filePath.EndsWith("/")) {
@@ -170,16 +170,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("fexists")]
         [DreamProcParameter("File", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fexists(DreamProcScope scope, DreamProcArguments arguments) {
-            string filePath = scope.GetValue("File").GetValueAsString();
+        public static DreamValue NativeProc_fexists(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
             return new DreamValue(Program.DreamResourceManager.DoesResourceExist(filePath) ? 1 : 0);
         }
 
         [DreamProc("file")]
         [DreamProcParameter("Path", Type = DreamValueType.String | DreamValueType.DreamResource)]
-        public static DreamValue NativeProc_file(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue path = scope.GetValue("Path");
+        public static DreamValue NativeProc_file(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue path = arguments.GetArgument(0, "Path");
 
             if (path.Type == DreamValueType.String) {
                 DreamResource resource = Program.DreamResourceManager.LoadResource(path.GetValueAsString());
@@ -194,8 +194,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("file2text")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
-        public static DreamValue NativeProc_file2text(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue file = scope.GetValue("File");
+        public static DreamValue NativeProc_file2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
             DreamResource resource;
 
             if (file.Type == DreamValueType.String) {
@@ -212,11 +212,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_findtext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Haystack").GetValueAsString().ToLower();
-            string needle = scope.GetValue("Needle").GetValueAsString().ToLower();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_findtext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString().ToLower();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString().ToLower();
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -235,11 +235,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_findtextEx(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Haystack").GetValueAsString();
-            string needle = scope.GetValue("Needle").GetValueAsString();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_findtextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -258,11 +258,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_findlasttext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Haystack").GetValueAsString().ToLower();
-            string needle = scope.GetValue("Needle").GetValueAsString().ToLower();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_findlasttext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString().ToLower();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString().ToLower();
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -279,9 +279,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("get_dist")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_get_dist(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamObject loc1 = scope.GetValue("Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamObject loc2 = scope.GetValue("Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
+        public static DreamValue NativeProc_get_dist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamObject loc1 = arguments.GetArgument(0, "Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            DreamObject loc2 = arguments.GetArgument(1, "Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
             
             if (loc1 != loc2) {
                 int x1 = loc1.GetVariable("x").GetValueAsInteger();
@@ -298,16 +298,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("html_decode")]
         [DreamProcParameter("HtmlText", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_html_decode(DreamProcScope scope, DreamProcArguments arguments) {
-            string htmlText = scope.GetValue("HtmlText").GetValueAsString();
+        public static DreamValue NativeProc_html_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string htmlText = arguments.GetArgument(0, "HtmlText").GetValueAsString();
 
             return new DreamValue(HttpUtility.HtmlDecode(htmlText));
         }
 
         [DreamProc("html_encode")]
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_html_encode(DreamProcScope scope, DreamProcArguments arguments) {
-            string plainText = scope.GetValue("PlainText").GetValueAsString();
+        public static DreamValue NativeProc_html_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string plainText = arguments.GetArgument(0, "PlainText").GetValueAsString();
 
             return new DreamValue(HttpUtility.HtmlEncode(plainText));
         }
@@ -318,7 +318,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("icon_state", Type = DreamValueType.String)]
         [DreamProcParameter("layer", Type = DreamValueType.Number)]
         [DreamProcParameter("dir", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_image(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_image(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject imageObject = Program.DreamObjectTree.CreateObject(DreamPath.Image, arguments);
 
             return new DreamValue(imageObject);
@@ -326,7 +326,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("isarea")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_isarea(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_isarea(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
@@ -338,7 +338,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("isloc")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_isloc(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_isloc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
@@ -358,7 +358,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("ismob")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_ismob(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_ismob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
@@ -372,16 +372,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("isnull")]
         [DreamProcParameter("Val")]
-        public static DreamValue NativeProc_isnull(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("Val");
+        public static DreamValue NativeProc_isnull(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "Val");
 
             return new DreamValue((value.Value == null) ? 1 : 0);
         }
 
         [DreamProc("isnum")]
         [DreamProcParameter("Val")]
-        public static DreamValue NativeProc_isnum(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("Val");
+        public static DreamValue NativeProc_isnum(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "Val");
 
             return new DreamValue(value.IsType(DreamValueType.Number) ? 1 : 0);
         }
@@ -389,9 +389,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("ispath")]
         [DreamProcParameter("Val")]
         [DreamProcParameter("Type", Type = DreamValueType.DreamPath)]
-        public static DreamValue NativeProc_ispath(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("Val");
-            DreamValue type = scope.GetValue("Type");
+        public static DreamValue NativeProc_ispath(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "Val");
+            DreamValue type = arguments.GetArgument(1, "Type");
 
             if (value.Type == DreamValueType.DreamPath) {
                 if (type.Value != null) {
@@ -408,15 +408,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("istext")]
         [DreamProcParameter("Val")]
-        public static DreamValue NativeProc_istext(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("Val");
+        public static DreamValue NativeProc_istext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "Val");
             
             return new DreamValue((value.Type == DreamValueType.String) ? 1 : 0);
         }
         
         [DreamProc("isturf")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_isturf(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_isturf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
@@ -492,8 +492,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("json_decode")]
         [DreamProcParameter("JSON", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_json_decode(DreamProcScope scope, DreamProcArguments arguments) {
-            string jsonString = scope.GetValue("JSON").GetValueAsString();
+        public static DreamValue NativeProc_json_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string jsonString = arguments.GetArgument(0, "JSON").GetValueAsString();
             JsonElement jsonRoot = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
             return CreateValueFromJsonElement(jsonRoot);
@@ -501,8 +501,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("json_encode")]
         [DreamProcParameter("Value")]
-        public static DreamValue NativeProc_json_encode(DreamProcScope scope, DreamProcArguments arguments) {
-            object jsonObject = CreateJsonElementFromValue(scope.GetValue("Value"));
+        public static DreamValue NativeProc_json_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            object jsonObject = CreateJsonElementFromValue(arguments.GetArgument(0, "Value"));
             string result = JsonSerializer.Serialize(jsonObject);
 
             return new DreamValue(result);
@@ -510,8 +510,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("length")]
         [DreamProcParameter("E")]
-        public static DreamValue NativeProc_length(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("E");
+        public static DreamValue NativeProc_length(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "E");
 
             if (value.Type == DreamValueType.String) {
                 return new DreamValue(value.GetValueAsString().Length);
@@ -534,12 +534,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("X", Type = DreamValueType.Integer | DreamValueType.String)]
         [DreamProcParameter("Y", Type = DreamValueType.Integer)]
         [DreamProcParameter("Z", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_locate(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue xValue = scope.GetValue("X");
+        public static DreamValue NativeProc_locate(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
 
             if (xValue.TryGetValueAsInteger(out int x)) {
-                int y = scope.GetValue("Y").GetValueAsInteger(); //1-indexed
-                int z = scope.GetValue("Z").GetValueAsInteger(); //1-indexed
+                int y = arguments.GetArgument(1, "Y").GetValueAsInteger(); //1-indexed
+                int z = arguments.GetArgument(2, "Z").GetValueAsInteger(); //1-indexed
 
                 if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
                     return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
@@ -558,9 +558,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("log")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]
         [DreamProcParameter("Y")]
-        public static DreamValue NativeProc_log(DreamProcScope scope, DreamProcArguments arguments) {
-            float x = scope.GetValue("X").GetValueAsNumber();
-            DreamValue y = scope.GetValue("Y");
+        public static DreamValue NativeProc_log(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float x = arguments.GetArgument(0, "X").GetValueAsNumber();
+            DreamValue y = arguments.GetArgument(1, "Y");
 
             if (y.Value != null) {
                 return new DreamValue((float)Math.Log(y.GetValueAsNumber(), x));
@@ -571,19 +571,19 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("lowertext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_lowertext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
+        public static DreamValue NativeProc_lowertext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "T").GetValueAsString();
 
             return new DreamValue(text.ToLower());
         }
 
         [DreamProc("max")]
         [DreamProcParameter("A")]
-        public static DreamValue NativeProc_max(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_max(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamList list = scope.GetValue("A").GetValueAsDreamList();
+                DreamList list = arguments.GetArgument(0, "A").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -619,11 +619,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("min")]
         [DreamProcParameter("A")]
-        public static DreamValue NativeProc_min(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_min(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamList list = scope.GetValue("A").GetValueAsDreamList();
+                DreamList list = arguments.GetArgument(0, "A").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -662,8 +662,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("N")]
         [DreamProcParameter("Digits", Type = DreamValueType.Integer)]
         [DreamProcParameter("Radix", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_num2text(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue number = scope.GetValue("N");
+        public static DreamValue NativeProc_num2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue number = arguments.GetArgument(0, "N");
 
             if (number.IsType(DreamValueType.Number)) {
                 return new DreamValue(number.GetValueAsNumber().ToString());
@@ -675,9 +675,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("orange")]
         [DreamProcParameter("Dist", Type = DreamValueType.Integer)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)] //TODO: Default to usr
-        public static DreamValue NativeProc_orange(DreamProcScope scope, DreamProcArguments arguments) {
-            int distance = scope.GetValue("Dist").GetValueAsInteger();
-            DreamObject center = scope.GetValue("Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
+        public static DreamValue NativeProc_orange(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int distance = arguments.GetArgument(0, "Dist").GetValueAsInteger();
+            DreamObject center = arguments.GetArgument(1, "Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
             DreamList orange = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
@@ -701,9 +701,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("oview")]
         [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_oview(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_oview(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int distance = 5;
-            DreamObject center = scope.Usr;
+            DreamObject center = usr;
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {
@@ -760,19 +760,19 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("params2list")]
         [DreamProcParameter("Params", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_params2list(DreamProcScope scope, DreamProcArguments arguments) {
-            string paramsString = scope.GetValue("Params").GetValueAsString();
+        public static DreamValue NativeProc_params2list(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string paramsString = arguments.GetArgument(0, "Params").GetValueAsString();
             
             return new DreamValue(params2list(paramsString));
         }
 
         [DreamProc("pick")]
         [DreamProcParameter("Val1")]
-        public static DreamValue NativeProc_pick(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_pick(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
-                DreamList list = scope.GetValue("Val1").GetValueAsDreamList();
+                DreamList list = arguments.GetArgument(0, "Val1").GetValueAsDreamList();
 
                 values = list.GetValues();
             } else {
@@ -784,8 +784,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("prob")]
         [DreamProcParameter("P", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_prob(DreamProcScope scope, DreamProcArguments arguments) {
-            float probability = scope.GetValue("P").GetValueAsNumber();
+        public static DreamValue NativeProc_prob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float probability = arguments.GetArgument(0, "P").GetValueAsNumber();
 
             return new DreamValue((new Random().Next(0, 100) <= probability) ? 1 : 0);
         }
@@ -793,7 +793,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("rand")]
         [DreamProcParameter("L", Type = DreamValueType.Integer)]
         [DreamProcParameter("H", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_rand(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_rand(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (arguments.ArgumentCount == 0) {
                 return new DreamValue((float)new Random().NextDouble());
             } else {
@@ -807,9 +807,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("range")]
         [DreamProcParameter("Dist", Type = DreamValueType.Integer)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)] //TODO: Default to usr
-        public static DreamValue NativeProc_range(DreamProcScope scope, DreamProcArguments arguments) {
-            int distance = scope.GetValue("Dist").GetValueAsInteger();
-            DreamObject center = scope.GetValue("Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
+        public static DreamValue NativeProc_range(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int distance = arguments.GetArgument(0, "Dist").GetValueAsInteger();
+            DreamObject center = arguments.GetArgument(1, "Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
             DreamList range = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
@@ -834,12 +834,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Haystack").GetValueAsString();
-            string needle = scope.GetValue("Needle").GetValueAsString();
-            string replacement = scope.GetValue("Replacement").GetValueAsString();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
+            string replacement = arguments.GetArgument(2, "Replacement").GetValueAsString();
+            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -853,11 +853,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("G", Type = DreamValueType.Number)]
         [DreamProcParameter("B", Type = DreamValueType.Number)]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_rgb(DreamProcScope scope, DreamProcArguments arguments) {
-            int r = (int)scope.GetValue("R").GetValueAsNumber();
-            int g = (int)scope.GetValue("G").GetValueAsNumber();
-            int b = (int)scope.GetValue("B").GetValueAsNumber();
-            DreamValue aValue = scope.GetValue("A");
+        public static DreamValue NativeProc_rgb(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int r = (int)arguments.GetArgument(0, "R").GetValueAsNumber();
+            int g = (int)arguments.GetArgument(1, "G").GetValueAsNumber();
+            int b = (int)arguments.GetArgument(2, "B").GetValueAsNumber();
+            DreamValue aValue = arguments.GetArgument(3, "A");
 
             if (aValue.Value == null) {
                 return new DreamValue(String.Format("#{0:X2}{1:X2}{2:X2}", r, g, b));
@@ -874,12 +874,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetextEx(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Haystack").GetValueAsString();
-            string needle = scope.GetValue("Needle").GetValueAsString();
-            string replacement = scope.GetValue("Replacement").GetValueAsString();
-            int start = scope.GetValue("Start").GetValueAsInteger(); //1-indexed
-            int end = scope.GetValue("End").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_replacetextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
+            string replacement = arguments.GetArgument(2, "Replacement").GetValueAsString();
+            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -891,13 +891,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("round")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
         [DreamProcParameter("B", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_round(DreamProcScope scope, DreamProcArguments arguments) {
-            float a = scope.GetValue("A").GetValueAsNumber();
+        public static DreamValue NativeProc_round(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float a = arguments.GetArgument(0, "A").GetValueAsNumber();
 
             if (arguments.ArgumentCount == 1) {
                 return new DreamValue((float)Math.Floor(a));
             } else {
-                float b = scope.GetValue("B").GetValueAsNumber();
+                float b = arguments.GetArgument(1, "B").GetValueAsNumber();
 
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
@@ -905,8 +905,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("sin")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_sin(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue xValue = scope.GetValue("X");
+        public static DreamValue NativeProc_sin(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
             float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
             double rad = x * Math.PI / 180;
 
@@ -915,8 +915,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("sleep")]
         [DreamProcParameter("Delay", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_sleep(DreamProcScope scope, DreamProcArguments arguments) {
-            float delay = scope.GetValue("Delay").GetValueAsNumber();
+        public static DreamValue NativeProc_sleep(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float delay = arguments.GetArgument(0, "Delay").GetValueAsNumber();
             int delayMilliseconds = (int)(delay * 100);
             int ticksToSleep = (int)Math.Ceiling(delayMilliseconds / (Program.WorldInstance.GetVariable("tick_lag").GetValueAsNumber() * 100));
 
@@ -930,9 +930,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("sorttext")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
         [DreamProcParameter("T2", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_sorttext(DreamProcScope scope, DreamProcArguments arguments) {
-            string t1 = scope.GetValue("T1").GetValueAsString().ToLower();
-            string t2 = scope.GetValue("T2").GetValueAsString().ToLower();
+        public static DreamValue NativeProc_sorttext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string t1 = arguments.GetArgument(0, "T1").GetValueAsString().ToLower();
+            string t2 = arguments.GetArgument(1, "T2").GetValueAsString().ToLower();
 
             return new DreamValue(string.Compare(t2, t1));
         }
@@ -940,9 +940,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("sorttextEx")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
         [DreamProcParameter("T2", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_sorttextEx(DreamProcScope scope, DreamProcArguments arguments) {
-            string t1 = scope.GetValue("T1").GetValueAsString();
-            string t2 = scope.GetValue("T2").GetValueAsString();
+        public static DreamValue NativeProc_sorttextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string t1 = arguments.GetArgument(0, "T1").GetValueAsString();
+            string t2 = arguments.GetArgument(1, "T2").GetValueAsString();
 
             return new DreamValue(string.Compare(t2, t1));
         }
@@ -953,7 +953,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("wait", Type = DreamValueType.Integer)]
         [DreamProcParameter("channel", Type = DreamValueType.Integer)]
         [DreamProcParameter("volume", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_sound(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_sound(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject soundObject = Program.DreamObjectTree.CreateObject(DreamPath.Sound, arguments);
 
             return new DreamValue(soundObject);
@@ -962,9 +962,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_splittext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Text").GetValueAsString();
-            string delimiter = scope.GetValue("Delimiter").GetValueAsString();
+        public static DreamValue NativeProc_splittext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Text").GetValueAsString();
+            string delimiter = arguments.GetArgument(1, "Delimiter").GetValueAsString();
             string[] splitText = text.Split(delimiter);
             DreamList list = Program.DreamObjectTree.CreateList();
 
@@ -977,24 +977,24 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("sqrt")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_sqrt(DreamProcScope scope, DreamProcArguments arguments) {
-            double a = scope.GetValue("A").GetValueAsNumber();
+        public static DreamValue NativeProc_sqrt(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            double a = arguments.GetArgument(0, "A").GetValueAsNumber();
 
             return new DreamValue((float)Math.Sqrt(a));
         }
 
         [DreamProc("text")]
         [DreamProcParameter("FormatText", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_text(DreamProcScope scope, DreamProcArguments arguments) {
-            return scope.GetValue("FormatText"); //TODO: Format text
+        public static DreamValue NativeProc_text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            return arguments.GetArgument(0, "FormatText"); //TODO: Format text
         }
 
         [DreamProc("text2ascii")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("pos", Type = DreamValueType.Integer, DefaultValue = 1)]
-        public static DreamValue NativeProc_text2ascii(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
-            int pos = scope.GetValue("pos").GetValueAsInteger(); //1-indexed
+        public static DreamValue NativeProc_text2ascii(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "T").GetValueAsString();
+            int pos = arguments.GetArgument(1, "pos").GetValueAsInteger(); //1-indexed
 
             return new DreamValue((int)text[pos - 1]);
         }
@@ -1002,9 +1002,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("text2file")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("File", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_text2file(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("Text").GetValueAsString();
-            string file = scope.GetValue("File").GetValueAsString();
+        public static DreamValue NativeProc_text2file(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Text").GetValueAsString();
+            string file = arguments.GetArgument(1, "File").GetValueAsString();
 
             return new DreamValue(Program.DreamResourceManager.SaveTextToFile(file, text) ? 1 : 0);
         }
@@ -1012,11 +1012,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("text2num")]
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.Number | DreamValueType.DreamObject)]
         [DreamProcParameter("radix", Type = DreamValueType.Integer, DefaultValue = 10)]
-        public static DreamValue NativeProc_text2num(DreamProcScope scope, DreamProcArguments arguments) {
-            DreamValue value = scope.GetValue("T");
+        public static DreamValue NativeProc_text2num(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue value = arguments.GetArgument(0, "T");
 
             if (value.TryGetValueAsString(out string text)) {
-                int radix = scope.GetValue("radix").GetValueAsInteger();
+                int radix = arguments.GetArgument(1, "radix").GetValueAsInteger();
 
                 text = text.Trim();
                 if (text.Length != 0) {
@@ -1039,8 +1039,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_text2path(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
+        public static DreamValue NativeProc_text2path(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "T").GetValueAsString();
             DreamPath path = new DreamPath(text);
 
             if (Program.DreamObjectTree.HasTreeEntry(path)) {
@@ -1053,9 +1053,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("time2text")]
         [DreamProcParameter("timestamp", Type = DreamValueType.Integer)]
         [DreamProcParameter("format", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_time2text(DreamProcScope scope, DreamProcArguments arguments) {
-            int timestamp = scope.GetValue("timestamp").GetValueAsInteger();
-            string format = scope.GetValue("format").GetValueAsString();
+        public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int timestamp = arguments.GetArgument(0, "timestamp").GetValueAsInteger();
+            string format = arguments.GetArgument(1, "format").GetValueAsString();
             long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
             if (timestamp >= 0 && timestamp <= 864000) ticks += DateTime.Today.Ticks;
             DateTime time = new DateTime(ticks);
@@ -1072,7 +1072,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
-        public static DreamValue NativeProc_typesof(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = Program.DreamObjectTree.CreateList();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
@@ -1100,8 +1100,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         [DreamProc("uppertext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_uppertext(DreamProcScope scope, DreamProcArguments arguments) {
-            string text = scope.GetValue("T").GetValueAsString();
+        public static DreamValue NativeProc_uppertext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "T").GetValueAsString();
 
             return new DreamValue(text.ToUpper());
         }
@@ -1109,9 +1109,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("url_encode")]
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
         [DreamProcParameter("format", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_url_encode(DreamProcScope scope, DreamProcArguments arguments) {
-            string plainText = scope.GetValue("PlainText").GetValueAsString();
-            int format = scope.GetValue("format").GetValueAsInteger();
+        public static DreamValue NativeProc_url_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string plainText = arguments.GetArgument(0, "PlainText").GetValueAsString();
+            int format = arguments.GetArgument(1, "format").GetValueAsInteger();
 
             return new DreamValue(HttpUtility.UrlEncode(plainText));
         }
@@ -1119,9 +1119,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("view")]
         [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_view(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_view(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             int distance = 5;
-            DreamObject center = scope.Usr;
+            DreamObject center = usr;
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {
@@ -1163,9 +1163,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("viewers")]
         [DreamProcParameter("Depth", Type = DreamValueType.Integer)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_viewers(DreamProcScope scope, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_viewers(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = scope.Usr;
+            DreamObject center = usr;
 
             //Arguments are optional and can be passed in any order
             if (arguments.ArgumentCount > 0) {
@@ -1208,7 +1208,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Dir", Type = DreamValueType.Integer)]
         [DreamProcParameter("Lag", Type = DreamValueType.Integer, DefaultValue = 0)]
         [DreamProcParameter("Speed", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_walk(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_walk(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO: Implement walk()
 
             return new DreamValue((DreamObject)null);
@@ -1220,7 +1220,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Min", Type = DreamValueType.Integer, DefaultValue = 0)]
         [DreamProcParameter("Lag", Type = DreamValueType.Integer, DefaultValue = 0)]
         [DreamProcParameter("Speed", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_walk_to(DreamProcScope scope, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_walk_to(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO: Implement walk_to()
 
             return new DreamValue((DreamObject)null);

@@ -85,13 +85,10 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public DreamValue GetVariable(string name) {
-            if (!HasVariable(name)) throw new Exception("Variable '" + name + "' doesn't exist");
-
-            DreamValue variableValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
-            if (ObjectDefinition.MetaObject != null) {
-                return ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
-            } else {
+            if (TryGetVariable(name, out DreamValue variableValue)) {
                 return variableValue;
+            } else {
+                throw new Exception("Variable " + name + " doesn't exist");
             }
         }
 
@@ -106,9 +103,8 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public void SetVariable(string name, DreamValue value) {
-            if (!HasVariable(name)) throw new Exception("Variable '" + name + "' doesn't exist");
-
             DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
+
             _variables[name] = value;
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
         }

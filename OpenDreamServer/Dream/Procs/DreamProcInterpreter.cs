@@ -8,13 +8,14 @@ namespace OpenDreamServer.Dream.Procs {
     delegate void InterpreterOpcode(DreamProcInterpreter interpreter);
 
     class DreamProcInterpreter {
+        public DreamObject Instance, Usr;
         public DreamValue DefaultReturnValue = new DreamValue((DreamObject)null);
         public DreamProcArguments Arguments;
-        public DreamProcScope TopScope;
-        public DreamProcScope CurrentScope = null;
+        public List<string> ArgumentNames;
         public Dictionary<int, DreamValue> LocalVariables = new();
         public Stack<DreamProcListEnumerator> ListEnumeratorStack = new();
         public DreamProc SelfProc;
+        public DreamProc SuperProc;
 
         private static Dictionary<DreamProcOpcode, InterpreterOpcode> _opcodeHandlers = new() {
             { DreamProcOpcode.Add, DreamProcInterpreterOpcodes.Add },
@@ -44,12 +45,10 @@ namespace OpenDreamServer.Dream.Procs {
             { DreamProcOpcode.CreateList, DreamProcInterpreterOpcodes.CreateList },
             { DreamProcOpcode.CreateListEnumerator, DreamProcInterpreterOpcodes.CreateListEnumerator },
             { DreamProcOpcode.CreateObject, DreamProcInterpreterOpcodes.CreateObject },
-            { DreamProcOpcode.CreateScope, DreamProcInterpreterOpcodes.CreateScope },
             { DreamProcOpcode.DeleteObject, DreamProcInterpreterOpcodes.DeleteObject },
             { DreamProcOpcode.Dereference, DreamProcInterpreterOpcodes.Dereference },
             { DreamProcOpcode.DereferenceProc, DreamProcInterpreterOpcodes.DereferenceProc },
             { DreamProcOpcode.DestroyListEnumerator, DreamProcInterpreterOpcodes.DestroyListEnumerator },
-            { DreamProcOpcode.DestroyScope, DreamProcInterpreterOpcodes.DestroyScope },
             { DreamProcOpcode.Divide, DreamProcInterpreterOpcodes.Divide },
             { DreamProcOpcode.EnumerateList, DreamProcInterpreterOpcodes.EnumerateList },
             { DreamProcOpcode.Error, DreamProcInterpreterOpcodes.Error },
@@ -94,7 +93,6 @@ namespace OpenDreamServer.Dream.Procs {
         private MemoryStream _bytecodeStream;
         private BinaryReader _binaryReader;
         private Stack<object> _stack = new();
-        private Stack<DreamProcScope> _scopeStack = new();
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
             _bytecodeStream = new MemoryStream(bytecode);
@@ -102,11 +100,25 @@ namespace OpenDreamServer.Dream.Procs {
             SelfProc = selfProc;
         }
 
-        public DreamValue Run(DreamProcScope scope, DreamProcArguments arguments) {
+        public DreamValue Run(DreamObject instance, DreamObject usr, DreamProc superProc, DreamProcArguments arguments, List<string> argumentNames) {
+            Instance = instance;
+            Usr = usr;
+            SuperProc = superProc;
             Arguments = arguments;
-            TopScope = scope;
+            ArgumentNames = argumentNames;
 
-            PushScope(scope);
+            for (int i = 0; i < ArgumentNames.Count; i++) {
+                string argumentName = ArgumentNames[i];
+
+                if (arguments.NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
+                    LocalVariables[i] = argumentValue;
+                } else if (i < arguments.OrderedArguments.Count) {
+                    LocalVariables[i] = arguments.OrderedArguments[i];
+                } else {
+                    LocalVariables[i] = new DreamValue((DreamObject)null);
+                }
+            }
+
             while (_bytecodeStream.Position < _bytecodeStream.Length) {
                 DreamProcOpcode opcode = (DreamProcOpcode)_bytecodeStream.ReadByte();
 
@@ -146,16 +158,6 @@ namespace OpenDreamServer.Dream.Procs {
             return _binaryReader.ReadSingle();
         }
 
-        public void PushScope(DreamProcScope scope) {
-            _scopeStack.Push(scope);
-            CurrentScope = scope;
-        }
-
-        public void PopScope() {
-            _scopeStack.Pop();
-            CurrentScope = _scopeStack.Peek();
-        }
-
         public void Push(DreamValue value) {
             _stack.Push(value);
         }
@@ -189,7 +191,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue RunProc(DreamProc proc, DreamObject instance, DreamProcArguments arguments) {
-            return proc.Run(instance, arguments, CurrentScope.Usr);
+            return proc.Run(instance, arguments, Usr);
         }
     }
 }

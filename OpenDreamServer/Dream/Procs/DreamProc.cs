@@ -7,19 +7,32 @@ namespace OpenDreamServer.Dream.Procs {
     class DreamProc {
         public DreamProc SuperProc = null;
 
-        private Func<DreamProcScope, DreamProcArguments, DreamValue> _runAction;
+        private Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> _runAction;
         private List<string> _argumentNames;
         private Dictionary<string, DreamValue> _defaultArgumentValues;
 
         public DreamProc(byte[] bytecode, List<string> argumentNames) {
             _argumentNames = argumentNames;
-            _runAction = (DreamProcScope scope, DreamProcArguments arguments) => {
-                return new DreamProcInterpreter(this, bytecode).Run(scope, arguments);
+            _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
+                return new DreamProcInterpreter(this, bytecode).Run(instance, usr, SuperProc, arguments, _argumentNames);
             };
         }
 
-        public DreamProc(Func<DreamProcScope, DreamProcArguments, DreamValue> nativeProc) {
-            _runAction = nativeProc;
+        public DreamProc(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
+            _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
+                for (int i = 0; i < _argumentNames.Count; i++) {
+                    string argumentName = _argumentNames[i];
+
+                    if (arguments.GetArgument(i, argumentName).Value == null) {
+                        if (_defaultArgumentValues != null && _defaultArgumentValues.TryGetValue(argumentName, out DreamValue defaultValue)) {
+                            arguments.NamedArguments.Add(argumentName, defaultValue);
+                        }
+                    }
+                }
+
+                return nativeProc(instance, usr, arguments);
+            };
+
             _argumentNames = new List<string>();
             _defaultArgumentValues = null;
 
@@ -38,24 +51,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamValue Run(DreamObject instance, DreamProcArguments arguments, DreamObject usr = null) {
-            DreamProcScope scope = new DreamProcScope(instance, usr);
-
-            for (int i = 0; i < _argumentNames.Count; i++) {
-                string argumentName = _argumentNames[i];
-
-                if (arguments.NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
-                    scope.CreateVariable(argumentName, argumentValue);
-                } else if (i < arguments.OrderedArguments.Count) {
-                    scope.CreateVariable(argumentName, arguments.OrderedArguments[i]);
-                } else if (_defaultArgumentValues != null && _defaultArgumentValues.TryGetValue(argumentName, out DreamValue defaultValue)) {
-                    scope.CreateVariable(argumentName, defaultValue);
-                } else {
-                    scope.CreateVariable(argumentName, new DreamValue((DreamObject)null));
-                }
-            }
-
-            scope.SuperProc = SuperProc;
-            return _runAction(scope, arguments);
+            return _runAction(instance, usr, arguments);
         }
     }
 }

@@ -335,6 +335,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(1);
         }
+        
+        [DreamProc("isfile")]
+        [DreamProcParameter("File")]
+        public static DreamValue NativeProc_isfile(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
+
+            return new DreamValue(file.IsType(DreamValueType.DreamResource) ? 1 : 0);
+        }
 
         [DreamProc("isloc")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]

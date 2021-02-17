@@ -67,6 +67,15 @@ namespace DMCompiler.DM.Visitors {
             if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
             if (statementForList.Body != null) statementForList.Body.Visit(this);
         }
+        
+        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
+            SimplifyExpression(ref statementForRange.RangeStart);
+            SimplifyExpression(ref statementForRange.RangeEnd);
+            SimplifyExpression(ref statementForRange.Step);
+
+            if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
+            if (statementForRange.Body != null) statementForRange.Body.Visit(this);
+        }
 
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);

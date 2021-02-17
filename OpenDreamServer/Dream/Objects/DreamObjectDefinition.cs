@@ -15,8 +15,8 @@ namespace OpenDreamServer.Dream.Objects {
         public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new();
 
         //DreamObject variables that need instantiated at object creation
-        public Dictionary<string, (DreamPath, DreamProcArguments)> RuntimeInstantiatedVariables = new Dictionary<string, (DreamPath, DreamProcArguments)>();
-        public List<(string VariableName, List<(DreamValue Index, DreamValue Value)> Values)> RuntimeInstantiatedLists = new List<(string, List<(DreamValue, DreamValue)>)>();
+        public Dictionary<string, (DreamPath, DreamProcArguments)> RuntimeInstantiatedVariables = new();
+        public List<(string VariableName, List<(DreamValue Index, DreamValue Value)> Values)> RuntimeInstantiatedLists = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 

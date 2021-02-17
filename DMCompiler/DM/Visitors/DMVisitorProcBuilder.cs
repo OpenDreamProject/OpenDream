@@ -159,7 +159,7 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    _proc.EnumerateList(statementForList.Variable.Identifier);
+                    _proc.Enumerate(statementForList.Variable.Identifier);
                     _proc.JumpIfTrue(typeCheckLabel);
                     _proc.Break();
 
@@ -183,39 +183,36 @@ namespace DMCompiler.Compiler.DM.Visitors {
                 _proc.LoopEnd();
             }
             _proc.EndScope();
-            _proc.DestroyListEnumerator();
+            _proc.DestroyEnumerator();
         }
 
-        public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) {
+        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
+            statementForRange.RangeStart.Visit(this);
+            statementForRange.RangeEnd.Visit(this);
+            statementForRange.Step.Visit(this);
+            _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
-                if (statementForNumberRange.Initializer != null) statementForNumberRange.Initializer.Visit(this);
-                statementForNumberRange.Variable.Visit(this);
-                statementForNumberRange.RangeBegin.Visit(this);
-                _proc.Assign();
+                if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
 
                 string loopLabel = NewLabelName();
                 string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    statementForNumberRange.Variable.Visit(this);
-                    statementForNumberRange.RangeEnd.Visit(this);
-                    _proc.LessThanOrEqual();
+                    _proc.Enumerate(statementForRange.Variable.Identifier);
                     _proc.JumpIfTrue(loopBodyLabel);
                     _proc.Break();
 
                     _proc.AddLabel(loopBodyLabel);
-                    statementForNumberRange.Body.Visit(this);
+                    statementForRange.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
-                    statementForNumberRange.Variable.Visit(this);
-                    statementForNumberRange.Step.Visit(this);
-                    _proc.Append();
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
             _proc.EndScope();
+            _proc.DestroyEnumerator();
         }
 
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {

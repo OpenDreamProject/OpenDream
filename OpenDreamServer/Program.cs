@@ -151,6 +151,7 @@ namespace OpenDreamServer {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isarea);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isfile);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismob);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnull);

@@ -131,6 +131,7 @@ namespace OpenDreamClient.Interface {
         public void HandlePacketBrowse(PacketBrowse pBrowse) {
             if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
                 if (PopupWindows.TryGetValue(pBrowse.Window, out Window popup)) {
+                    popup.Owner = null; //Without this, the main window ends up minimized
                     popup.Close();
                 }
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser

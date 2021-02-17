@@ -45,7 +45,8 @@ namespace OpenDreamShared.Compiler.DM {
             { "call", TokenType.DM_Call },
             { "spawn", TokenType.DM_Spawn },
             { "list", TokenType.DM_List },
-            { "goto", TokenType.DM_Goto }
+            { "goto", TokenType.DM_Goto },
+            { "step", TokenType.DM_Step }
         };
 
         private bool _checkingIndentation = true;

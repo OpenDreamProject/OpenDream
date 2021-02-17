@@ -47,7 +47,15 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            interpreter.ListEnumeratorStack.Push(new DreamProcListEnumerator(values));
+            interpreter.EnumeratorStack.Push(new DreamProcListEnumerator(values));
+        }
+
+        public static void CreateRangeEnumerator(DreamProcInterpreter interpreter) {
+            float step = interpreter.PopDreamValue().GetValueAsNumber();
+            float rangeEnd = interpreter.PopDreamValue().GetValueAsNumber();
+            float rangeStart = interpreter.PopDreamValue().GetValueAsNumber();
+
+            interpreter.EnumeratorStack.Push(new DreamProcRangeEnumerator(rangeStart, rangeEnd, step));
         }
 
         public static void CreateObject(DreamProcInterpreter interpreter) {
@@ -79,19 +87,17 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
-        public static void DestroyListEnumerator(DreamProcInterpreter interpreter) {
-            interpreter.ListEnumeratorStack.Pop();
+        public static void DestroyEnumerator(DreamProcInterpreter interpreter) {
+            interpreter.EnumeratorStack.Pop();
         }
 
-        public static void EnumerateList(DreamProcInterpreter interpreter) {
+        public static void Enumerate(DreamProcInterpreter interpreter) {
             int outputVarId = interpreter.ReadByte();
-            DreamProcListEnumerator listEnumerator = interpreter.ListEnumeratorStack.Peek();
-            bool successfulEnumeration = listEnumerator.TryMoveNext(out DreamValue newValue);
+            IDreamProcEnumerator enumerator = interpreter.EnumeratorStack.Peek();
+            bool successfulEnumeration = enumerator.TryMoveNext(out DreamValue newValue);
 
             interpreter.Push(new DreamValue(successfulEnumeration ? 1 : 0));
-            if (successfulEnumeration) {
-                interpreter.LocalVariables[outputVarId] = newValue;
-            }
+            interpreter.LocalVariables[outputVarId] = newValue;
         }
 
         public static void FormatString(DreamProcInterpreter interpreter) {
@@ -902,6 +908,12 @@ namespace OpenDreamServer.Dream.Procs {
             if (IsTruthy(value)) {
                 interpreter.SeekTo(position);
             }
+        }
+
+        public static void Return(DreamProcInterpreter interpreter) {
+            interpreter.DefaultReturnValue = interpreter.PopDreamValue();
+
+            interpreter.Return();
         }
 
         public static void SwitchCase(DreamProcInterpreter interpreter) {

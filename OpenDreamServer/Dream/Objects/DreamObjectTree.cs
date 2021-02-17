@@ -11,12 +11,12 @@ namespace OpenDreamServer.Dream.Objects {
     class DreamObjectTree {
         public class DreamObjectTreeEntry {
             public DreamObjectDefinition ObjectDefinition;
-            public Dictionary<string, DreamObjectTreeEntry> Children = new Dictionary<string, DreamObjectTreeEntry>();
+            public Dictionary<string, DreamObjectTreeEntry> Children = new();
             public DreamObjectTreeEntry ParentEntry = null;
 
             //Children that exist on another branch of the tree
-            //Ex: /movable is a parent of /obj, but /obj's path isn't /movable/obj
-            public Dictionary<string, DreamObjectTreeEntry> BranchBreakingChildren = new Dictionary<string, DreamObjectTreeEntry>();
+            //Ex: /obj is a child of /atom/movable, but /obj's path isn't /atom/movable/obj
+            public Dictionary<string, DreamObjectTreeEntry> BranchBreakingChildren = new();
 
             public DreamObjectTreeEntry(DreamPath path) {
                 ObjectDefinition = new DreamObjectDefinition(path);
@@ -136,7 +136,7 @@ namespace OpenDreamServer.Dream.Objects {
             if (jsonObject.Procs != null) {
                 LoadProcsFromJson(treeEntry.ObjectDefinition, jsonObject.Procs);
             }
-            
+
             if (jsonObject.Children != null) {
                 foreach (DreamObjectJson childJsonObject in jsonObject.Children) {
                     DreamObjectTreeEntry childObjectTreeEntry;

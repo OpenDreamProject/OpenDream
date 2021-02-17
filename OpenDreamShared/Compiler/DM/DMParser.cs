@@ -129,7 +129,7 @@ namespace OpenDreamShared.Compiler.DM {
         public string PathElement() {
             Token elementToken = Current();
 
-            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Var, TokenType.DM_Proc, TokenType.DM_List })) {
+            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Var, TokenType.DM_Proc, TokenType.DM_List, TokenType.DM_Step })) {
                 return elementToken.Text;
             } else {
                 return null;
@@ -146,7 +146,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTIdentifier Identifier() {
             Token token = Current();
 
-            if (Check(TokenType.DM_Identifier)) {
+            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Step })) {
                 return new DMASTIdentifier(token.Text);
             }
 
@@ -558,7 +558,24 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (Check(TokenType.DM_In)) {
                     Whitespace();
-                    DMASTExpression list = Expression();
+                    DMASTExpression enumerateValue = Expression();
+                    DMASTExpression toValue = null;
+                    DMASTExpression step = new DMASTConstantInteger(1);
+
+                    if (Check(TokenType.DM_To)) {
+                        Whitespace();
+
+                        toValue = Expression();
+                        if (toValue == null) throw new Exception("Expected an end to the range");
+
+                        if (Check(TokenType.DM_Step)) {
+                            Whitespace();
+
+                            step = Expression();
+                            if (step == null) throw new Exception("Expected a step value");
+                        }
+                    }
+
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                     Newline();
@@ -571,7 +588,11 @@ namespace OpenDreamShared.Compiler.DM {
                         body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                     }
 
-                    return new DMASTProcStatementForList(initializer, variable, list, body);
+                    if (toValue == null) {
+                        return new DMASTProcStatementForList(initializer, variable, enumerateValue, body);
+                    } else {
+                        return new DMASTProcStatementForRange(initializer, variable, enumerateValue, toValue, step, body);
+                    }
                 } else if (Check(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
                     Whitespace();
                     DMASTExpression comparator = Expression();
@@ -598,6 +619,15 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     DMASTExpression rangeEnd = Expression();
                     if (rangeEnd == null) throw new Exception("Expected an expression");
+                    DMASTExpression step = new DMASTConstantInteger(1);
+                    
+                    if (Check(TokenType.DM_Step)) {
+                        Whitespace();
+
+                        step = Expression();
+                        if (step == null) throw new Exception("Expected a step value");
+                    }
+
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                     Newline();
@@ -610,7 +640,7 @@ namespace OpenDreamShared.Compiler.DM {
                         body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                     }
 
-                    return new DMASTProcStatementForNumberRange(initializer, variable, rangeBegin, rangeEnd, new DMASTConstantInteger(1), body);
+                    return new DMASTProcStatementForRange(initializer, variable, rangeBegin, rangeEnd, step, body);
                 } else {
                     throw new Exception("Expected 'in'");
                 }

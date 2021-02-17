@@ -24,7 +24,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) { throw new NotImplementedException(); }
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
-        public void VisitProcStatementForNumberRange(DMASTProcStatementForNumberRange statementForNumberRange) { throw new NotImplementedException(); }
+        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) { throw new NotImplementedException(); }
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
@@ -423,19 +423,19 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementForNumberRange : DMASTProcStatementFor {
+    class DMASTProcStatementForRange : DMASTProcStatementFor {
         public DMASTIdentifier Variable;
-        public DMASTExpression RangeBegin, RangeEnd, Step;
+        public DMASTExpression RangeStart, RangeEnd, Step;
 
-        public DMASTProcStatementForNumberRange(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeBegin, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForRange(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
             Variable = variable;
-            RangeBegin = rangeBegin;
+            RangeStart = rangeStart;
             RangeEnd = rangeEnd;
             Step = step;
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForNumberRange(this);
+            visitor.VisitProcStatementForRange(this);
         }
     }
 

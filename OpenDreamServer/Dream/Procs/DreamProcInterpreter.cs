@@ -1,5 +1,4 @@
 ﻿using OpenDreamServer.Dream.Objects;
-using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,81 +12,86 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamProcArguments Arguments;
         public List<string> ArgumentNames;
         public Dictionary<int, DreamValue> LocalVariables = new();
-        public Stack<DreamProcListEnumerator> ListEnumeratorStack = new();
+        public Stack<IDreamProcEnumerator> EnumeratorStack = new();
         public DreamProc SelfProc;
         public DreamProc SuperProc;
 
-        private static Dictionary<DreamProcOpcode, InterpreterOpcode> _opcodeHandlers = new() {
-            { DreamProcOpcode.Add, DreamProcInterpreterOpcodes.Add },
-            { DreamProcOpcode.Append, DreamProcInterpreterOpcodes.Append },
-            { DreamProcOpcode.Assign, DreamProcInterpreterOpcodes.Assign },
-            { DreamProcOpcode.BitAnd, DreamProcInterpreterOpcodes.BitAnd },
-            { DreamProcOpcode.BitNot, DreamProcInterpreterOpcodes.BitNot },
-            { DreamProcOpcode.BitOr, DreamProcInterpreterOpcodes.BitOr },
-            { DreamProcOpcode.BitShiftLeft, DreamProcInterpreterOpcodes.BitShiftLeft },
-            { DreamProcOpcode.BitShiftRight, DreamProcInterpreterOpcodes.BitShiftRight },
-            { DreamProcOpcode.BitXor, DreamProcInterpreterOpcodes.BitXor },
-            { DreamProcOpcode.BooleanAnd, DreamProcInterpreterOpcodes.BooleanAnd },
-            { DreamProcOpcode.BooleanNot, DreamProcInterpreterOpcodes.BooleanNot },
-            { DreamProcOpcode.BooleanOr, DreamProcInterpreterOpcodes.BooleanOr },
-            { DreamProcOpcode.Browse, DreamProcInterpreterOpcodes.Browse },
-            { DreamProcOpcode.BrowseResource, DreamProcInterpreterOpcodes.BrowseResource },
-            { DreamProcOpcode.Call, DreamProcInterpreterOpcodes.Call },
-            { DreamProcOpcode.CallSelf, DreamProcInterpreterOpcodes.CallSelf },
-            { DreamProcOpcode.CallStatement, DreamProcInterpreterOpcodes.CallStatement },
-            { DreamProcOpcode.Combine, DreamProcInterpreterOpcodes.Combine },
-            { DreamProcOpcode.CompareEquals, DreamProcInterpreterOpcodes.CompareEquals },
-            { DreamProcOpcode.CompareGreaterThan, DreamProcInterpreterOpcodes.CompareGreaterThan },
-            { DreamProcOpcode.CompareGreaterThanOrEqual, DreamProcInterpreterOpcodes.CompareGreaterThanOrEqual },
-            { DreamProcOpcode.CompareLessThan, DreamProcInterpreterOpcodes.CompareLessThan },
-            { DreamProcOpcode.CompareLessThanOrEqual, DreamProcInterpreterOpcodes.CompareLessThanOrEqual },
-            { DreamProcOpcode.CompareNotEquals, DreamProcInterpreterOpcodes.CompareNotEquals },
-            { DreamProcOpcode.CreateList, DreamProcInterpreterOpcodes.CreateList },
-            { DreamProcOpcode.CreateListEnumerator, DreamProcInterpreterOpcodes.CreateListEnumerator },
-            { DreamProcOpcode.CreateObject, DreamProcInterpreterOpcodes.CreateObject },
-            { DreamProcOpcode.DeleteObject, DreamProcInterpreterOpcodes.DeleteObject },
-            { DreamProcOpcode.Dereference, DreamProcInterpreterOpcodes.Dereference },
-            { DreamProcOpcode.DereferenceProc, DreamProcInterpreterOpcodes.DereferenceProc },
-            { DreamProcOpcode.DestroyListEnumerator, DreamProcInterpreterOpcodes.DestroyListEnumerator },
-            { DreamProcOpcode.Divide, DreamProcInterpreterOpcodes.Divide },
-            { DreamProcOpcode.EnumerateList, DreamProcInterpreterOpcodes.EnumerateList },
-            { DreamProcOpcode.Error, DreamProcInterpreterOpcodes.Error },
-            { DreamProcOpcode.FormatString, DreamProcInterpreterOpcodes.FormatString },
-            { DreamProcOpcode.GetIdentifier, DreamProcInterpreterOpcodes.GetIdentifier },
-            { DreamProcOpcode.GetLocalVariable, DreamProcInterpreterOpcodes.GetLocalVariable },
-            { DreamProcOpcode.GetProc, DreamProcInterpreterOpcodes.GetProc },
-            { DreamProcOpcode.IndexList, DreamProcInterpreterOpcodes.IndexList },
-            { DreamProcOpcode.Initial, DreamProcInterpreterOpcodes.Initial },
-            { DreamProcOpcode.IsInList, DreamProcInterpreterOpcodes.IsInList },
-            { DreamProcOpcode.IsType, DreamProcInterpreterOpcodes.IsType },
-            { DreamProcOpcode.Jump, DreamProcInterpreterOpcodes.Jump },
-            { DreamProcOpcode.JumpIfFalse, DreamProcInterpreterOpcodes.JumpIfFalse },
-            { DreamProcOpcode.JumpIfTrue, DreamProcInterpreterOpcodes.JumpIfTrue },
-            { DreamProcOpcode.ListAppend, DreamProcInterpreterOpcodes.ListAppend },
-            { DreamProcOpcode.ListAppendAssociated, DreamProcInterpreterOpcodes.ListAppendAssociated },
-            { DreamProcOpcode.Mask, DreamProcInterpreterOpcodes.Mask },
-            { DreamProcOpcode.Modulus, DreamProcInterpreterOpcodes.Modulus },
-            { DreamProcOpcode.Multiply, DreamProcInterpreterOpcodes.Multiply },
-            { DreamProcOpcode.Negate, DreamProcInterpreterOpcodes.Negate },
-            { DreamProcOpcode.OutputControl, DreamProcInterpreterOpcodes.OutputControl },
-            { DreamProcOpcode.Power, DreamProcInterpreterOpcodes.Power },
-            { DreamProcOpcode.Prompt, DreamProcInterpreterOpcodes.Prompt },
-            { DreamProcOpcode.PushArgumentList, DreamProcInterpreterOpcodes.PushArgumentList },
-            { DreamProcOpcode.PushArguments, DreamProcInterpreterOpcodes.PushArguments },
-            { DreamProcOpcode.PushFloat, DreamProcInterpreterOpcodes.PushFloat },
-            { DreamProcOpcode.PushInt, DreamProcInterpreterOpcodes.PushInt },
-            { DreamProcOpcode.PushNull, DreamProcInterpreterOpcodes.PushNull },
-            { DreamProcOpcode.PushPath, DreamProcInterpreterOpcodes.PushPath },
-            { DreamProcOpcode.PushProcArguments, DreamProcInterpreterOpcodes.PushProcArguments },
-            { DreamProcOpcode.PushResource, DreamProcInterpreterOpcodes.PushResource },
-            { DreamProcOpcode.PushSelf, DreamProcInterpreterOpcodes.PushSelf },
-            { DreamProcOpcode.PushSrc, DreamProcInterpreterOpcodes.PushSrc },
-            { DreamProcOpcode.PushString, DreamProcInterpreterOpcodes.PushString },
-            { DreamProcOpcode.PushSuperProc, DreamProcInterpreterOpcodes.PushSuperProc },
-            { DreamProcOpcode.Remove, DreamProcInterpreterOpcodes.Remove },
-            { DreamProcOpcode.SetLocalVariable, DreamProcInterpreterOpcodes.SetLocalVariable },
-            { DreamProcOpcode.Subtract, DreamProcInterpreterOpcodes.Subtract },
-            { DreamProcOpcode.SwitchCase, DreamProcInterpreterOpcodes.SwitchCase }
+        //In the same order as the DreamProcOpcode enum
+        private static List<InterpreterOpcode> _opcodeHandlers = new() {
+            null, //0x0
+            DreamProcInterpreterOpcodes.BitShiftLeft,
+            DreamProcInterpreterOpcodes.GetIdentifier,
+            DreamProcInterpreterOpcodes.PushString,
+            DreamProcInterpreterOpcodes.FormatString,
+            DreamProcInterpreterOpcodes.PushInt,
+            DreamProcInterpreterOpcodes.SetLocalVariable,
+            DreamProcInterpreterOpcodes.PushPath,
+            DreamProcInterpreterOpcodes.Add,
+            DreamProcInterpreterOpcodes.Assign,
+            DreamProcInterpreterOpcodes.Call,
+            DreamProcInterpreterOpcodes.Dereference,
+            DreamProcInterpreterOpcodes.JumpIfFalse,
+            DreamProcInterpreterOpcodes.JumpIfTrue,
+            DreamProcInterpreterOpcodes.Jump,
+            DreamProcInterpreterOpcodes.CompareEquals,
+            DreamProcInterpreterOpcodes.Return,
+            DreamProcInterpreterOpcodes.PushNull,
+            DreamProcInterpreterOpcodes.Subtract,
+            DreamProcInterpreterOpcodes.CompareLessThan,
+            DreamProcInterpreterOpcodes.CompareGreaterThan,
+            DreamProcInterpreterOpcodes.BooleanAnd,
+            DreamProcInterpreterOpcodes.BooleanNot,
+            DreamProcInterpreterOpcodes.PushSuperProc,
+            DreamProcInterpreterOpcodes.Negate,
+            DreamProcInterpreterOpcodes.Modulus,
+            DreamProcInterpreterOpcodes.Append,
+            DreamProcInterpreterOpcodes.CreateRangeEnumerator,
+            null, //0x1C
+            DreamProcInterpreterOpcodes.CompareLessThanOrEqual,
+            DreamProcInterpreterOpcodes.IndexList,
+            DreamProcInterpreterOpcodes.Remove,
+            DreamProcInterpreterOpcodes.DeleteObject,
+            DreamProcInterpreterOpcodes.PushResource,
+            DreamProcInterpreterOpcodes.CreateList,
+            DreamProcInterpreterOpcodes.CallStatement,
+            DreamProcInterpreterOpcodes.BitAnd,
+            DreamProcInterpreterOpcodes.CompareNotEquals,
+            DreamProcInterpreterOpcodes.ListAppend,
+            DreamProcInterpreterOpcodes.Divide,
+            DreamProcInterpreterOpcodes.Multiply,
+            DreamProcInterpreterOpcodes.PushSelf,
+            DreamProcInterpreterOpcodes.BitXor,
+            DreamProcInterpreterOpcodes.BitOr,
+            DreamProcInterpreterOpcodes.BitNot,
+            DreamProcInterpreterOpcodes.Combine,
+            DreamProcInterpreterOpcodes.CreateObject,
+            DreamProcInterpreterOpcodes.BooleanOr,
+            DreamProcInterpreterOpcodes.PushArgumentList,
+            DreamProcInterpreterOpcodes.CompareGreaterThanOrEqual,
+            DreamProcInterpreterOpcodes.SwitchCase,
+            DreamProcInterpreterOpcodes.Mask,
+            DreamProcInterpreterOpcodes.ListAppendAssociated,
+            DreamProcInterpreterOpcodes.Error,
+            DreamProcInterpreterOpcodes.IsInList,
+            DreamProcInterpreterOpcodes.PushArguments,
+            DreamProcInterpreterOpcodes.PushFloat,
+            DreamProcInterpreterOpcodes.PushSrc,
+            DreamProcInterpreterOpcodes.CreateListEnumerator,
+            DreamProcInterpreterOpcodes.Enumerate,
+            DreamProcInterpreterOpcodes.DestroyEnumerator,
+            DreamProcInterpreterOpcodes.Browse,
+            DreamProcInterpreterOpcodes.BrowseResource,
+            DreamProcInterpreterOpcodes.OutputControl,
+            DreamProcInterpreterOpcodes.BitShiftRight,
+            DreamProcInterpreterOpcodes.GetLocalVariable,
+            DreamProcInterpreterOpcodes.Power,
+            DreamProcInterpreterOpcodes.DereferenceProc,
+            DreamProcInterpreterOpcodes.GetProc,
+            DreamProcInterpreterOpcodes.Prompt,
+            DreamProcInterpreterOpcodes.PushProcArguments,
+            DreamProcInterpreterOpcodes.Initial,
+            DreamProcInterpreterOpcodes.CallSelf,
+            DreamProcInterpreterOpcodes.IsType
         };
 
         private MemoryStream _bytecodeStream;
@@ -120,17 +124,7 @@ namespace OpenDreamServer.Dream.Procs {
             }
 
             while (_bytecodeStream.Position < _bytecodeStream.Length) {
-                DreamProcOpcode opcode = (DreamProcOpcode)_bytecodeStream.ReadByte();
-
-                if (opcode == DreamProcOpcode.Return) {
-                    DefaultReturnValue = PopDreamValue();
-
-                    break;
-                } else {
-                    InterpreterOpcode opcodeHandler = _opcodeHandlers[opcode];
-
-                    opcodeHandler.Invoke(this);
-                }
+                _opcodeHandlers[_bytecodeStream.ReadByte()].Invoke(this);
             }
 
             return DefaultReturnValue;
@@ -192,6 +186,10 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamValue RunProc(DreamProc proc, DreamObject instance, DreamProcArguments arguments) {
             return proc.Run(instance, arguments, Usr);
+        }
+
+        public void Return() {
+            _bytecodeStream.Seek(0, SeekOrigin.End); //End the proc by moving to the end
         }
     }
 }

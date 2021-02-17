@@ -74,14 +74,18 @@ namespace DMCompiler.DM {
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
+        
+        public void CreateRangeEnumerator() {
+            WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
+        }
 
-        public void EnumerateList(string outputVariableName) {
-            WriteOpcode(DreamProcOpcode.EnumerateList);
+        public void Enumerate(string outputVariableName) {
+            WriteOpcode(DreamProcOpcode.Enumerate);
             WriteByte((byte)GetLocalVariableId(outputVariableName));
         }
 
-        public void DestroyListEnumerator() {
-            WriteOpcode(DreamProcOpcode.DestroyListEnumerator);
+        public void DestroyEnumerator() {
+            WriteOpcode(DreamProcOpcode.DestroyEnumerator);
         }
 
         public void CreateList() {

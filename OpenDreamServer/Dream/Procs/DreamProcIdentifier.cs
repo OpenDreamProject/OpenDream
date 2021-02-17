@@ -1,9 +1,7 @@
 ﻿using OpenDreamServer.Dream.Objects;
-using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamServer.Dream.Procs {
     interface IDreamProcIdentifier {

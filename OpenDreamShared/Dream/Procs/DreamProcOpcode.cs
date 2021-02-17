@@ -26,7 +26,7 @@
         Negate = 0x18,
         Modulus = 0x19,
         Append = 0x1A,
-        //0x1B
+        CreateRangeEnumerator = 0x1B,
         //0x1C
         CompareLessThanOrEqual = 0x1D,
         IndexList = 0x1E,
@@ -58,8 +58,8 @@
         PushFloat = 0x38,
         PushSrc = 0x39,
         CreateListEnumerator = 0x3A,
-        EnumerateList = 0x3B,
-        DestroyListEnumerator = 0x3C,
+        Enumerate = 0x3B,
+        DestroyEnumerator = 0x3C,
         Browse = 0x3D,
         BrowseResource = 0x3E,
         OutputControl = 0x3F,

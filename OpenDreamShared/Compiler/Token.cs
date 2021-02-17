@@ -93,6 +93,7 @@
         DM_Star,
         DM_StarEquals,
         DM_StarStar,
+        DM_Step,
         DM_String,
         DM_SuperProc,
         DM_Switch,

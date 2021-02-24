@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects {
-    delegate void DreamObjectCreatedDelegate(DreamObject dreamObject);
-
     class DreamObject {
         public DreamObjectDefinition ObjectDefinition;
         public bool Deleted = false;
@@ -21,24 +19,8 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObject(DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             ObjectDefinition = objectDefinition;
 
-            foreach (KeyValuePair<string, (DreamPath, DreamProcArguments)> runtimeInstantiatedVariable in ObjectDefinition.RuntimeInstantiatedVariables) {
-                DreamObject instantiatedObject = Program.DreamObjectTree.CreateObject(runtimeInstantiatedVariable.Value.Item1, runtimeInstantiatedVariable.Value.Item2);
-
-                SetVariable(runtimeInstantiatedVariable.Key, new DreamValue(instantiatedObject));
-            }
-
-            foreach ((string VariableName, List<(DreamValue, DreamValue)> Values) in ObjectDefinition.RuntimeInstantiatedLists) {
-                DreamList list = Program.DreamObjectTree.CreateList();
-
-                foreach ((DreamValue Index, DreamValue Value) value in Values) {
-                    if (value.Index.Value != null) {
-                        list.SetValue(value.Index, value.Value);
-                    } else {
-                        list.AddValue(value.Value);
-                    }
-                }
-
-                SetVariable(VariableName, new DreamValue(list));
+            if (ObjectDefinition.InitializionProc != null) {
+                ObjectDefinition.InitializionProc.Run(this, new DreamProcArguments(new(), new()));
             }
 
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectCreated(this, creationArguments);
@@ -48,24 +30,24 @@ namespace OpenDreamServer.Dream.Objects {
             Delete();
         }
 
-        public static int CreateReferenceID(DreamObject dreamObject) {
-            int referenceID;
-
-            if (!_referenceIDs.TryGetValue(dreamObject, out referenceID)) {
-                referenceID = _referenceIDs.Count;
-
-                _referenceIDs.Add(dreamObject, referenceID);
-            }
-
-            return referenceID;
-        }
-
         public static DreamObject GetFromReferenceID(int refID) {
             foreach (KeyValuePair<DreamObject, int> referenceIDPair in _referenceIDs) {
                 if (referenceIDPair.Value == refID) return referenceIDPair.Key;
             }
 
             return null;
+        }
+
+        public int CreateReferenceID() {
+            int referenceID;
+
+            if (!_referenceIDs.TryGetValue(this, out referenceID)) {
+                referenceID = _referenceIDs.Count;
+
+                _referenceIDs.Add(this, referenceID);
+            }
+
+            return referenceID;
         }
 
         public void Delete() {

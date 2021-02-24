@@ -120,7 +120,7 @@ namespace OpenDreamServer.Dream.Procs {
                         case StringFormatTypes.Ref: {
                             DreamObject refObject = interpreter.PopDreamValue().GetValueAsDreamObject();
 
-                            formattedString.Append(DreamObject.CreateReferenceID(refObject));
+                            formattedString.Append(refObject.CreateReferenceID());
                             break;
                         }
                         default: throw new Exception("Invalid special character");
@@ -1048,6 +1048,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return (value.GetValueAsFloat() != 0);
             } else if (value.Type == DreamValue.DreamValueType.String) {
                 return (value.GetValueAsString() != "");
+            } else if (value.Type == DreamValue.DreamValueType.DreamProc) {
+                return value.Value != null;
             } else {
                 throw new NotImplementedException("Truthy evaluation for " + value.Type + " is not implemented");
             }

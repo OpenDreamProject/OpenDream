@@ -12,11 +12,9 @@ using OpenDreamShared.Json;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace OpenDreamServer {
     class Program {
@@ -80,13 +78,15 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             DreamObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-            SetNativeProcs();
+            DreamProcNative.SetupNativeProcs();
             
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World);
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
-            DreamObjectTree.InstantiateGlobalVariables();
+
+            DreamProc globalInitProc = new DreamProc(CompiledJson.GlobalInitProc.Bytecode);
+            globalInitProc.Run(WorldInstance, new DreamProcArguments(new(), new()));
 
             DreamMap = new DreamMap();
             DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));
@@ -125,143 +125,12 @@ namespace OpenDreamServer {
             }
         }
 
-        private static void SetNativeProcs() {
-            DreamObjectDefinition root = DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_arccos);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_arctan);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ckey);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_cmptext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_copytext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_cos);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_CRASH);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_fcopy);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_fcopy_rsc);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_fdel);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_fexists);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_file);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_file2text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_get_dist);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isarea);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isfile);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isloc);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismob);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnull);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnum);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ispath);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_istext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_isturf);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_locate);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_log);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_orange);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_params2list);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_pick);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_prob);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_range);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sin);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sound);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_splittext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2ascii);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2file);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2num);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_text2path);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_time2text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_typesof);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_url_encode);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_view);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_viewers);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
-
-            DreamObjectDefinition list = DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Add);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Copy);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Cut);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Find);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Insert);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Join);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
-        }
-
         private static void RegisterPacketCallbacks() {
             DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
-            DreamServer.RegisterPacketCallback<PacketKeyboardInput>(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => {
-                foreach (int key in pKeyboardInput.KeysDown) {
-                    if (!connection.PressedKeys.Contains(key)) connection.PressedKeys.Add(key);
-                }
-
-                foreach (int key in pKeyboardInput.KeysUp) {
-                    connection.PressedKeys.Remove(key);
-                }
-            });
-            DreamServer.RegisterPacketCallback<PacketClickAtom>(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => {
-                if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
-                    NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
-                    paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
-                    paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
-                    paramsBuilder.Add("screen-loc", pClickAtom.ScreenLocation.ToString());
-                    if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
-                    if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
-                    if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
-
-                    DreamProcArguments clickArguments = new DreamProcArguments(new() {
-                        new DreamValue(atom),
-                        new DreamValue((DreamObject)null),
-                        new DreamValue((DreamObject)null),
-                        new DreamValue(paramsBuilder.ToString())
-                    });
-
-                    Task.Run(() => connection.ClientDreamObject?.CallProc("Click", clickArguments, connection.MobDreamObject));
-                }
-            });
-            DreamServer.RegisterPacketCallback<PacketTopic>(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => {
-                DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
-                DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-                DreamObject src = null;
-
-                if (srcRefValue.Value != null) {
-                    int srcRef = int.Parse(srcRefValue.GetValueAsString());
-
-                    src = DreamObject.GetFromReferenceID(srcRef);
-                }
-
-                DreamProcArguments topicArguments = new DreamProcArguments(new() {
-                    new DreamValue(pTopic.Query),
-                    new DreamValue(hrefList),
-                    new DreamValue(src)
-                });
-
-                Task.Run(() => connection.ClientDreamObject?.CallProc("Topic", topicArguments, connection.MobDreamObject));
-            });
-            DreamServer.RegisterPacketCallback<PacketPromptResponse>(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
+            DreamServer.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));;
+            DreamServer.RegisterPacketCallback(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => connection.HandlePacketClickAtom(pClickAtom)); ;
+            DreamServer.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic)); ;
+            DreamServer.RegisterPacketCallback(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
         }
 
         private static void OnDeltaStateFinalized(DreamDeltaState deltaState) {

@@ -9,14 +9,11 @@ namespace OpenDreamServer.Dream.Objects {
     class DreamObjectDefinition {
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
+        public DreamProc InitializionProc = null;
         public Dictionary<string, DreamProc> Procs { get; private set; } = new();
         public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new();
         public Dictionary<string, DreamValue> Variables { get; private set; } = new();
         public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new();
-
-        //DreamObject variables that need instantiated at object creation
-        public Dictionary<string, (DreamPath, DreamProcArguments)> RuntimeInstantiatedVariables = new();
-        public List<(string VariableName, List<(DreamValue Index, DreamValue Value)> Values)> RuntimeInstantiatedLists = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
@@ -27,6 +24,7 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
             Type = copyFrom.Type;
             MetaObject = copyFrom.MetaObject;
+            InitializionProc = copyFrom.InitializionProc;
             _parentObjectDefinition = copyFrom._parentObjectDefinition;
 
             CopyVariablesFrom(copyFrom);
@@ -44,6 +42,7 @@ namespace OpenDreamServer.Dream.Objects {
             CopyVariablesFrom(parentObjectDefinition);
 
             Type = type;
+            InitializionProc = parentObjectDefinition.InitializionProc;
             _parentObjectDefinition = parentObjectDefinition;
         }
 
@@ -127,14 +126,6 @@ namespace OpenDreamServer.Dream.Objects {
 
             foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in definition.GlobalVariables) {
                 GlobalVariables.Add(globalVariable.Key, globalVariable.Value);
-            }
-
-            foreach (KeyValuePair<string, (DreamPath, DreamProcArguments)> runtimeInstantiatedVariable in definition.RuntimeInstantiatedVariables) {
-                RuntimeInstantiatedVariables.Add(runtimeInstantiatedVariable.Key, runtimeInstantiatedVariable.Value);
-            }
-
-            foreach ((string, List<(DreamValue, DreamValue)>) runtimeInstantiatedList in definition.RuntimeInstantiatedLists) {
-                RuntimeInstantiatedLists.Add((runtimeInstantiatedList.Item1, runtimeInstantiatedList.Item2));
             }
         }
     }

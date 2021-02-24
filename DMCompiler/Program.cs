@@ -14,6 +14,7 @@ namespace DMCompiler {
     class Program {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
+        public static DMProc GlobalInitProc = new();
 
         static void Main(string[] args) {
             if (args.Length < 2) {
@@ -45,6 +46,7 @@ namespace DMCompiler {
 
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = StringTable;
+            compiledDream.GlobalInitProc = new ProcDefinitionJson() { Bytecode = GlobalInitProc.Bytecode.ToArray() };
             compiledDream.RootObject = CreateObjectTree(dmObjects);
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
@@ -109,6 +111,12 @@ namespace DMCompiler {
                 }
             }
 
+            if (dmObject.InitializationProc != null) {
+                objectJson.InitProc = new ProcDefinitionJson() {
+                    Bytecode = dmObject.InitializationProc.Bytecode.ToArray()
+                };
+            }
+
             if (dmObject.Procs.Count > 0) {
                 objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
 
@@ -135,42 +143,7 @@ namespace DMCompiler {
                 return value;
             } else if (value is null) {
                 return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Object }
-                };
-            } else if (value is DMList dmList) {
-                List<object> dmListValues = new List<object>();
-                Dictionary<string, object> jsonVariable = new Dictionary<string, object>() {
-                    { "type", JsonVariableType.List }
-                };
-
-                foreach (object dmListValue in dmList.Values) {
-                    dmListValues.Add(new Dictionary<string, object>() {
-                        { "value",  CreateDreamObjectJsonVariable(dmListValue) }
-                    });
-                }
-
-                foreach (KeyValuePair<object, object> dmAssociatedListValue in dmList.AssociatedValues) {
-                    object key;
-                    if (dmAssociatedListValue.Key is DMResource || dmAssociatedListValue.Key is DreamPath) {
-                        key = CreateDreamObjectJsonVariable(dmAssociatedListValue.Key);
-                    } else if (dmAssociatedListValue.Key is string) {
-                        key = dmAssociatedListValue.Key;
-                    } else {
-                        throw new Exception("Invalid list index");
-                    }
-
-                    dmListValues.Add(new Dictionary<string, object>() {
-                        { "key", key },
-                        { "value",  CreateDreamObjectJsonVariable(dmAssociatedListValue.Value) }
-                    });
-                }
-
-                if (dmListValues.Count > 0) jsonVariable.Add("values", dmListValues);
-                return jsonVariable;
-            } else if (value is DMNewInstance newInstance) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Object },
-                    { "path", newInstance.Path.PathString }
+                    { "type", JsonVariableType.Null }
                 };
             } else if (value is DMResource resource) {
                 return new Dictionary<string, object>() {

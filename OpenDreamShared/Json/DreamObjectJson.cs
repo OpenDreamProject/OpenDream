@@ -3,14 +3,14 @@
 namespace OpenDreamShared.Json {
     enum JsonVariableType {
         Resource = 0,
-        Object = 1,
-        Path = 2,
-        List = 3
+        Null = 1,
+        Path = 2
     }
 
     class DreamObjectJson {
         public string Name { get; set; }
         public string Parent { get; set; }
+        public ProcDefinitionJson InitProc { get; set; }
         public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
         public Dictionary<string, object> GlobalVariables { get; set; }

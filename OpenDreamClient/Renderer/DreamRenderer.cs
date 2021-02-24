@@ -166,15 +166,18 @@ namespace OpenDreamClient.Renderer {
                     _shader.SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
                 }
 
-                if (IsAtomVisible(atom, useScreenLocation)) DrawDreamIcon(atom.Icon);
+                if (IsAtomVisible(atom, useScreenLocation)) DrawDreamIcon(atom.Icon, !useScreenLocation);
             }
         }
 
-        private void DrawDreamIcon(DreamIcon icon, int pixelX = 0, int pixelY = 0, float[] transform = null) {
+        private void DrawDreamIcon(DreamIcon icon, bool usePixelOffsets, int pixelX = 0, int pixelY = 0, float[] transform = null) {
             DreamTexture texture = GetDreamTexture(icon);
-            pixelX += icon.Appearance.PixelX;
-            pixelY += icon.Appearance.PixelY;
+
             if (transform == null) transform = icon.Appearance.Transform;
+            if (usePixelOffsets) {
+                pixelX += icon.Appearance.PixelX;
+                pixelY += icon.Appearance.PixelY;
+            }
 
             if (texture != null) {
                 _gl.BindBuffer(OpenGL.GL_ARRAY_BUFFER, _iconVerticesBuffer);
@@ -191,7 +194,7 @@ namespace OpenDreamClient.Renderer {
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {
-                DrawDreamIcon(overlay, pixelX, pixelY, transform);
+                DrawDreamIcon(overlay, usePixelOffsets, pixelX, pixelY, transform);
             }
         }
     }

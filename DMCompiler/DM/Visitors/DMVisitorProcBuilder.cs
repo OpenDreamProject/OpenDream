@@ -10,6 +10,12 @@ namespace DMCompiler.Compiler.DM.Visitors {
         private Stack<object> _valueStack = new();
         private int _labelIdCounter = 0;
 
+        public DMVisitorProcBuilder() { }
+
+        public DMVisitorProcBuilder(DMProc proc) {
+            _proc = proc;
+        }
+
         public DMProc BuildProc(DMASTProcDefinition procDefinition) {
             _proc = new DMProc();
 

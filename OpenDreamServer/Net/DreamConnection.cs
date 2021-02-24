@@ -1,16 +1,21 @@
 ﻿using OpenDreamServer.Dream;
 using OpenDreamServer.Dream.Objects;
+using OpenDreamServer.Dream.Objects.MetaObjects;
+using OpenDreamServer.Dream.Procs;
+using OpenDreamServer.Dream.Procs.Native;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenDreamServer.Net {
     class DreamConnection {
@@ -181,6 +186,57 @@ namespace OpenDreamServer.Net {
                 promptEvent.Invoke(value);
                 _promptEvents[pPromptResponse.PromptId] = null;
             }
+        }
+
+        public void HandlePacketKeyboardInput(PacketKeyboardInput pKeyboardInput) {
+            foreach (int key in pKeyboardInput.KeysDown) {
+                if (!PressedKeys.Contains(key)) PressedKeys.Add(key);
+            }
+
+            foreach (int key in pKeyboardInput.KeysUp) {
+                PressedKeys.Remove(key);
+            }
+        }
+
+        public void HandlePacketClickAtom(PacketClickAtom pClickAtom) {
+            if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
+                NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
+                paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
+                paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
+                paramsBuilder.Add("screen-loc", pClickAtom.ScreenLocation.ToString());
+                if (pClickAtom.ModifierShift) paramsBuilder.Add("shift", "1");
+                if (pClickAtom.ModifierCtrl) paramsBuilder.Add("ctrl", "1");
+                if (pClickAtom.ModifierAlt) paramsBuilder.Add("alt", "1");
+
+                DreamProcArguments clickArguments = new DreamProcArguments(new() {
+                    new DreamValue(atom),
+                    new DreamValue((DreamObject)null),
+                    new DreamValue((DreamObject)null),
+                    new DreamValue(paramsBuilder.ToString())
+                });
+
+                Task.Run(() => ClientDreamObject?.CallProc("Click", clickArguments, MobDreamObject));
+            }
+        }
+
+        public void HandlePacketTopic(PacketTopic pTopic) {
+            DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
+            DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
+            DreamObject src = null;
+
+            if (srcRefValue.Value != null) {
+                int srcRef = int.Parse(srcRefValue.GetValueAsString());
+
+                src = DreamObject.GetFromReferenceID(srcRef);
+            }
+
+            DreamProcArguments topicArguments = new DreamProcArguments(new() {
+                new DreamValue(pTopic.Query),
+                new DreamValue(hrefList),
+                new DreamValue(src)
+            });
+
+            Task.Run(() => ClientDreamObject?.CallProc("Topic", topicArguments, MobDreamObject));
         }
     }
 }

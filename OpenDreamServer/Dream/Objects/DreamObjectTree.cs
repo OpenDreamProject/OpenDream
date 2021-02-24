@@ -51,8 +51,6 @@ namespace OpenDreamServer.Dream.Objects {
 
         public DreamObjectTreeEntry RootObject = new DreamObjectTreeEntry(DreamPath.Root);
 
-        private List<(DreamGlobalVariable, DreamPath, DreamProcArguments)> _runtimeInstantiatedGlobalVariables = new List<(DreamGlobalVariable, DreamPath, DreamProcArguments)>();
-
         public bool HasTreeEntry(DreamPath path) {
             if (path.Type != DreamPath.PathType.Absolute) {
                 throw new Exception("Path must be an absolute path");
@@ -113,14 +111,6 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void InstantiateGlobalVariables() {
-            foreach ((DreamGlobalVariable, DreamPath, DreamProcArguments) runtimeInstantiatedGlobalVariable in _runtimeInstantiatedGlobalVariables) {
-                DreamObject instantiatedObject = CreateObject(runtimeInstantiatedGlobalVariable.Item2, runtimeInstantiatedGlobalVariable.Item3);
-
-                runtimeInstantiatedGlobalVariable.Item1.Value = new DreamValue(instantiatedObject);
-            }
-        }
-
         public void LoadFromJson(DreamObjectJson rootJsonObject) {
             if (rootJsonObject.Name != "") {
                 throw new Exception("Root object in json should have an empty name");
@@ -132,6 +122,13 @@ namespace OpenDreamServer.Dream.Objects {
 
         private void LoadTreeEntryFromJson(DreamObjectTreeEntry treeEntry, DreamObjectJson jsonObject) {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
+
+            if (jsonObject.InitProc != null) {
+                DreamProc initProc = new DreamProc(jsonObject.InitProc.Bytecode, new List<string>() { });
+
+                initProc.SuperProc = treeEntry.ObjectDefinition.InitializionProc;
+                treeEntry.ObjectDefinition.InitializionProc = initProc;
+            }
 
             if (jsonObject.Procs != null) {
                 LoadProcsFromJson(treeEntry.ObjectDefinition, jsonObject.Procs);
@@ -184,12 +181,10 @@ namespace OpenDreamServer.Dream.Objects {
                     } else {
                         throw new Exception("Property 'resourcePath' must be a string or null");
                     }
-                } else if (variableType == JsonVariableType.Object) {
+                } else if (variableType == JsonVariableType.Null) {
                     return new DreamValue((DreamObject)null);
                 } else if (variableType == JsonVariableType.Path) {
                     return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
-                } else if (variableType == JsonVariableType.List) {
-                    return new DreamValue((DreamObject)null);
                 } else {
                     throw new Exception("Invalid variable type (" + variableType + ")");
                 }
@@ -205,50 +200,6 @@ namespace OpenDreamServer.Dream.Objects {
                     DreamValue value = GetDreamValueFromJsonElement(jsonElement);
 
                     objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
-
-                    if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
-
-                        if (variableType == JsonVariableType.Object) {
-                            if (jsonElement.TryGetProperty("path", out JsonElement objectPath)) {
-                                DreamPath path = new DreamPath(objectPath.GetString());
-                                DreamProcArguments creationArguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
-                                JsonElement arguments;
-
-                                if (jsonElement.TryGetProperty("arguments", out arguments)) {
-                                    foreach (JsonElement jsonCreationArgument in arguments.EnumerateArray()) {
-                                        creationArguments.OrderedArguments.Add(GetDreamValueFromJsonElement(jsonCreationArgument));
-                                    }
-                                }
-
-                                if (jsonElement.TryGetProperty("namedArguments", out arguments)) {
-                                    foreach (JsonProperty jsonCreationArgument in arguments.EnumerateObject()) {
-                                        creationArguments.NamedArguments.Add(jsonCreationArgument.Name, GetDreamValueFromJsonElement(jsonCreationArgument.Value));
-                                    }
-                                }
-
-                                objectDefinition.RuntimeInstantiatedVariables[jsonVariable.Key] = (path, creationArguments);
-                            }
-                        } else if (variableType == JsonVariableType.List) {
-                            List<(DreamValue Index, DreamValue Value)> listValues = new List<(DreamValue, DreamValue)>();
-
-                            if (jsonElement.TryGetProperty("values", out JsonElement values)) {
-                                for (int i = 0; i < values.GetArrayLength(); i++) {
-                                    JsonElement jsonListValue = values[i];
-                                    JsonElement jsonValue = jsonListValue.GetProperty("value");
-                                    DreamValue listValue = GetDreamValueFromJsonElement(jsonValue);
-
-                                    if (jsonListValue.TryGetProperty("key", out JsonElement jsonKey)) {
-                                        listValues.Add((GetDreamValueFromJsonElement(jsonKey), listValue));
-                                    } else {
-                                        listValues.Add((new DreamValue((DreamObject)null), listValue));
-                                    }
-                                }
-                            }
-
-                            objectDefinition.RuntimeInstantiatedLists.Add((jsonVariable.Key, listValues));
-                        }
-                    }
                 }
             }
 
@@ -259,21 +210,6 @@ namespace OpenDreamServer.Dream.Objects {
                     DreamGlobalVariable globalVariable = new DreamGlobalVariable(value);
 
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);
-
-                    if (jsonElement.ValueKind == JsonValueKind.Object) {
-                        JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
-
-                        if (variableType == JsonVariableType.Object) {
-                            JsonElement objectPath;
-
-                            if (jsonElement.TryGetProperty("path", out objectPath)) {
-                                DreamPath path = new DreamPath(objectPath.GetString());
-                                DreamProcArguments creationArguments = new DreamProcArguments(new List<DreamValue>());
-
-                                _runtimeInstantiatedGlobalVariables.Add((globalVariable, path, creationArguments));
-                            }
-                        }
-                    }
                 }
             }
         }

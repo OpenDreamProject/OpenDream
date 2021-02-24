@@ -11,8 +11,8 @@ namespace OpenDreamServer.Dream.Procs {
         private List<string> _argumentNames;
         private Dictionary<string, DreamValue> _defaultArgumentValues;
 
-        public DreamProc(byte[] bytecode, List<string> argumentNames) {
-            _argumentNames = argumentNames;
+        public DreamProc(byte[] bytecode, List<string> argumentNames = null) {
+            _argumentNames = (argumentNames != null) ? argumentNames : new List<string>();
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
                 return new DreamProcInterpreter(this, bytecode).Run(instance, usr, SuperProc, arguments, _argumentNames);
             };

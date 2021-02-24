@@ -12,6 +12,7 @@ namespace DMCompiler.DM.Visitors {
         private UInt32 _dmObjectIdCounter = 0;
         private DMObject _currentObject = null;
         private DMVisitorProcBuilder _procBuilder = new DMVisitorProcBuilder();
+        private DMVariable _currentVariable = null;
 
         public Dictionary<DreamPath, DMObject> BuildObjects(DMASTFile astFile) {
             _valueStack.Clear();
@@ -56,22 +57,14 @@ namespace DMCompiler.DM.Visitors {
                 dmObject = GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Path));
             }
 
-            object value;
+            _currentVariable = new DMVariable((varDefinition.Type != null) ? varDefinition.Type.Path : null, varDefinition.Name, varDefinition.IsGlobal);
+            varDefinition.Value.Visit(this);
+            _currentVariable.Value = _valueStack.Pop();
 
-            if (varDefinition.Value is DMASTNewInferred) {
-                //TODO: Arguments
-
-                value = new DMNewInstance(varDefinition.Type.Path);
+            if (_currentVariable.IsGlobal) {
+                dmObject.GlobalVariables[_currentVariable.Name] = _currentVariable;
             } else {
-                varDefinition.Value.Visit(this);
-                value = _valueStack.Pop();
-            }
-
-            DMVariable variable = new DMVariable((varDefinition.Type != null) ? varDefinition.Type.Path : null, value);
-            if (varDefinition.IsGlobal) {
-                dmObject.GlobalVariables[varDefinition.Name] = variable;
-            } else {
-                dmObject.Variables[varDefinition.Name] = variable;
+                dmObject.Variables[_currentVariable.Name] = _currentVariable;
             }
         }
 
@@ -88,8 +81,11 @@ namespace DMCompiler.DM.Visitors {
                 if (parentType == null) throw new Exception("Expected a constant path");
                 dmObject.Parent = parentType.Value.Path;
             } else {
+                _currentVariable = new DMVariable(null, varOverride.VarName, false); //TODO: Find the type
                 varOverride.Value.Visit(this);
-                dmObject.Variables[varOverride.VarName] = new DMVariable(null, _valueStack.Pop()); //TODO: Find the type
+                _currentVariable.Value = _valueStack.Pop();
+
+                dmObject.Variables[_currentVariable.Name] = _currentVariable;
             }
         }
 
@@ -115,49 +111,34 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {
-            //TODO: Arguments
+            DMProc initProc = _currentVariable.IsGlobal ? Program.GlobalInitProc : _currentObject.CreateInitializationProc();
+            DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(initProc);
 
-            _valueStack.Push(new DMNewInstance(newPath.Path.Path));
+            new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), newPath).Visit(initProcBuilder);
+
+            _valueStack.Push(null);
+        }
+
+        public void VisitNewInferred(DMASTNewInferred newInferred) {
+            if (_currentVariable.Type == null) throw new Exception("Implicit new() requires a type");
+
+            DMProc initProc = _currentVariable.IsGlobal ? Program.GlobalInitProc : _currentObject.CreateInitializationProc();
+            DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(initProc);
+
+            DMASTPath path = new DMASTPath(_currentVariable.Type.Value);
+            DMASTNewPath newPath = new DMASTNewPath(path, newInferred.Parameters);
+            new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), newPath).Visit(initProcBuilder);
+
+            _valueStack.Push(null);
         }
 
         public void VisitList(DMASTList list) {
-            List<object> values = new List<object>();
-            Dictionary<object, object> associatedValues = new Dictionary<object, object>();
+            DMProc initProc = _currentVariable.IsGlobal ? Program.GlobalInitProc : _currentObject.CreateInitializationProc();
+            DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(initProc);
 
-            if (list.Values != null) {
-                foreach (DMASTCallParameter value in list.Values) {
-                    object associatedIndex = value.Name;
-                    object listValue = null;
+            new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), list).Visit(initProcBuilder);
 
-                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
-                    if (associatedAssign != null) {
-                        associatedAssign.Value.Visit(this);
-                        listValue = _valueStack.Pop();
-
-                        if (associatedAssign.Expression is DMASTIdentifier || associatedAssign.Expression is DMASTConstantString) {
-                            associatedIndex = value.Name;
-                        } else if (associatedAssign.Expression is DMASTConstantResource constantResource) {
-                            associatedIndex = new DMResource(constantResource.Path);
-                        } else if (associatedAssign.Expression is DMASTConstantPath constantPath) {
-                            associatedIndex = constantPath.Value.Path;
-                        } else {
-                            throw new Exception("Associated value has an invalid index");
-                        }
-                    } else {
-                        value.Visit(this);
-                        listValue = _valueStack.Pop();
-                    }
-
-                    if (associatedIndex != null) {
-                        associatedValues.Add(associatedIndex, listValue);
-                    } else {
-                        values.Add(listValue);
-                    }
-                }
-
-            }
-
-            _valueStack.Push(new DMList(values.ToArray(), associatedValues));
+            _valueStack.Push(null);
         }
 
         public void VisitConstantNull(DMASTConstantNull constantNull) {

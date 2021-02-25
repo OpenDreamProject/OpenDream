@@ -141,28 +141,32 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 /proc/turn(Dir, Angle)
 	var/dirAngle = 0
 
-	if (Dir == NORTH) dirAngle = 0
-	else if (Dir == NORTHEAST) dirAngle = 45
-	else if (Dir == EAST) dirAngle = 90
-	else if (Dir == SOUTHEAST) dirAngle = 135
-	else if (Dir == SOUTH) dirAngle = 180
-	else if (Dir == SOUTHWEST) dirAngle = 225
-	else if (Dir == WEST) dirAngle = 270
-	else if (Dir == NORTHWEST) dirAngle = 315
-	else if (Angle != 0) return pick(NORTH, SOUTH, EAST, WEST)
+	switch (Dir)
+		if (EAST) dirAngle = 0
+		if (NORTHEAST) dirAngle = 45
+		if (NORTH) dirAngle = 90
+		if (NORTHWEST) dirAngle = 135
+		if (WEST) dirAngle = 180
+		if (SOUTHWEST) dirAngle = 225
+		if (SOUTH) dirAngle = 270
+		if (SOUTHEAST) dirAngle = 315
+		else
+			if (Angle != 0)
+				return pick(NORTH, SOUTH, EAST, WEST)
 
 	dirAngle += round(Angle, 45)
 	if (dirAngle > 360) dirAngle -= 360
 	else if (dirAngle < 0) dirAngle += 360
 
-	if (dirAngle == 0 || dirAngle == 360) return NORTH
-	else if (dirAngle == 45) return NORTHEAST
-	else if (dirAngle == 90) return EAST
-	else if (dirAngle == 135) return SOUTHEAST
-	else if (dirAngle == 180) return SOUTH
-	else if (dirAngle == 225) return SOUTHWEST
-	else if (dirAngle == 270) return WEST
-	else if (dirAngle == 315) return NORTHWEST
+	switch (dirAngle)
+		if (0, 360) return EAST
+		if (45) return NORTHEAST
+		if (90) return NORTH
+		if (135) return NORTHWEST
+		if (180) return WEST
+		if (225) return SOUTHWEST
+		if (270) return SOUTH
+		if (315) return SOUTHEAST
 
 proc/get_step_towards(atom/movable/Ref, /atom/Trg)
 	var/dir = get_dir(Ref, Trg)

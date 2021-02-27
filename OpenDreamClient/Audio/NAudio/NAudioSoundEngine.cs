@@ -8,12 +8,8 @@ namespace OpenDreamClient.Audio.NAudio {
     class NAudioSoundEngine : IDreamSoundEngine {
         private NAudioSoundEngineData[] _channels = new NAudioSoundEngineData[1024];
 
-        public ISoundEngineData CreateSoundEngineData(ResourceSound sound) {
-            return new NAudioSoundEngineData(sound.Data);
-        }
-
         public void PlaySound(int channel, ResourceSound sound) {
-            NAudioSoundEngineData nAudioData = sound.SoundEngineData as NAudioSoundEngineData;
+            NAudioSoundEngineData nAudioData = CreateSoundEngineData(sound) as NAudioSoundEngineData;
 
             if (nAudioData != null) {
                 if (channel == 0) { //First available channel
@@ -58,6 +54,10 @@ namespace OpenDreamClient.Audio.NAudio {
             } else {
                 Program.OpenDream.SoundEngine.StopChannel(pSound.Channel);
             }
+        }
+
+        private NAudioSoundEngineData CreateSoundEngineData(ResourceSound sound) {
+            return new NAudioSoundEngineData(sound.Data);
         }
     }
 }

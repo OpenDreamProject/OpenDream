@@ -516,10 +516,35 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void BitXor(DreamProcInterpreter interpreter) {
-            int second = interpreter.PopDreamValue().GetValueAsInteger();
-            int first = interpreter.PopDreamValue().GetValueAsInteger();
+            DreamValue second = interpreter.PopDreamValue();
+            DreamValue first = interpreter.PopDreamValue();
 
-            interpreter.Push(new DreamValue(first ^ second));
+            if (first.TryGetValueAsDreamList(out DreamList list)) {
+                DreamList newList = Program.DreamObjectTree.CreateList();
+                List<DreamValue> values;
+
+                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
+                    values = secondList.GetValues();
+                } else {
+                    values = new List<DreamValue>() { second };
+                }
+
+                foreach (DreamValue value in values) {
+                    bool inFirstList = list.ContainsValue(value);
+                    bool inSecondList = secondList.ContainsValue(value);
+
+                    if (inFirstList ^ inSecondList) {
+                        newList.AddValue(value);
+
+                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
+                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
+                    }
+                }
+
+                interpreter.Push(new DreamValue(newList));
+            } else {
+                interpreter.Push(new DreamValue(first.GetValueAsInteger() ^ second.GetValueAsInteger()));
+            }
         }
 
         public static void BooleanAnd(DreamProcInterpreter interpreter) {

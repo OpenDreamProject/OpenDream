@@ -3,7 +3,7 @@ using NAudio.Wave;
 using System.IO;
 
 namespace OpenDreamClient.Audio.NAudio {
-    class NAudioSoundEngineData : ISoundEngineData {
+    class NAudioSoundEngineData {
         public WaveOutEvent OutputDevice { get; private set; } = null;
         public VorbisWaveReader WaveReader { get; private set; } = null;
 

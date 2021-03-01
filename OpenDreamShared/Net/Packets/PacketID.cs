@@ -17,6 +17,8 @@
 		Browse = 0xE,
 		BrowseResource = 0xF,
 		Prompt = 0x10,
-		PromptResponse = 0x11
+		PromptResponse = 0x11,
+		CallVerb = 0x12,
+		UpdateAvailableVerbs = 0x13
     }
 }

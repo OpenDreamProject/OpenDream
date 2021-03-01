@@ -2,6 +2,7 @@
 using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
@@ -219,10 +220,18 @@ namespace OpenDreamServer.Dream.Objects {
                 string procName = jsonProc.Key;
 
                 foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    List<string> argumentNames = (procDefinition.ArgumentNames != null) ? procDefinition.ArgumentNames : new List<string>();
                     byte[] bytecode = procDefinition.Bytecode != null ? procDefinition.Bytecode : new byte[0];
+                    List<string> argumentNames = new();
+                    List<DMValueType> argumentTypes = new();
 
-                    objectDefinition.SetProcDefinition(jsonProc.Key, new DreamProc(bytecode, argumentNames));
+                    if (procDefinition.Arguments != null) {
+                        foreach (ProcArgumentJson argument in procDefinition.Arguments) {
+                            argumentNames.Add(argument.Name);
+                            argumentTypes.Add(argument.Type);
+                        }
+                    }
+
+                    objectDefinition.SetProcDefinition(jsonProc.Key, new DreamProc(bytecode, argumentNames, argumentTypes));
                 }
             }
         }

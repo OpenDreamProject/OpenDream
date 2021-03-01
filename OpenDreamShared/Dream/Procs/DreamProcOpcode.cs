@@ -86,17 +86,16 @@
     }
 
     enum DMValueType {
-        Default = 0x0,
-        Anything = 0x1,
-        Null = 0x2,
-        Text = 0x4,
-        Obj = 0x8,
-        Mob = 0x10,
-        Turf = 0x20,
-        Num = 0x40,
-        Message = 0x80,
-        Area = 0x100,
-        Color = 0x200,
-        File = 0x400
+        Anything = 0x0,
+        Null = 0x1,
+        Text = 0x2,
+        Obj = 0x4,
+        Mob = 0x8,
+        Turf = 0x10,
+        Num = 0x20,
+        Message = 0x40,
+        Area = 0x80,
+        Color = 0x100,
+        File = 0x200
     }
 }

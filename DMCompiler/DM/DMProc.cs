@@ -12,6 +12,7 @@ namespace DMCompiler.DM {
 
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
+        public List<DMValueType> ParameterTypes = new();
 
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
@@ -23,6 +24,11 @@ namespace DMCompiler.DM {
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
+        }
+
+        public void AddParameter(string name, DMValueType type) {
+            Parameters.Add(name);
+            ParameterTypes.Add(type);
         }
 
         public void ResolveLabels() {

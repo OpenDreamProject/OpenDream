@@ -1161,16 +1161,18 @@ namespace OpenDreamShared.Compiler.DM {
                     TokenType.DM_Modulus
                 };
 
-                if (Check(types)) {
+                while (Check(types)) {
                     Whitespace();
-                    DMASTExpression b = ExpressionMultiplicationDivisionModulus();
+                    DMASTExpression b = ExpressionPower();
                     if (b == null) throw new Exception("Expected an expression");
 
                     switch (token.Type) {
-                        case TokenType.DM_Star: return new DMASTMultiply(a, b);
-                        case TokenType.DM_Slash: return new DMASTDivide(a, b);
-                        case TokenType.DM_Modulus: return new DMASTModulus(a, b);
+                        case TokenType.DM_Star: a = new DMASTMultiply(a, b); break;
+                        case TokenType.DM_Slash: a = new DMASTDivide(a, b); break;
+                        case TokenType.DM_Modulus: a = new DMASTModulus(a, b); break;
                     }
+
+                    token = Current();
                 }
             }
 
@@ -1527,7 +1529,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         private DMValueType AsTypes() {
-            DMValueType type = DMValueType.Default;
+            DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
                 Whitespace();

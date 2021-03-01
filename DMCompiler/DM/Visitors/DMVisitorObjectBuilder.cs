@@ -93,7 +93,12 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Path.Path.LastElement;
             DreamPath objectPath = _currentObject.Path.Combine(procDefinition.Path.Path.FromElements(0, -2));
             int procElementIndex = objectPath.FindElement("proc");
-            if (procElementIndex == -1) procElementIndex = objectPath.FindElement("verb");
+            bool isVerb = false;
+            if (procElementIndex == -1) {
+                procElementIndex = objectPath.FindElement("verb");
+
+                isVerb = procElementIndex != -1;
+            }
 
             if (procElementIndex != -1) {
                 objectPath = objectPath.RemoveElement(procElementIndex);
@@ -104,10 +109,17 @@ namespace DMCompiler.DM.Visitors {
             if (!dmObject.Procs.ContainsKey(procName)) dmObject.Procs.Add(procName, new List<DMProc>());
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
-                proc.Parameters.Add(parameter.Path.Path.LastElement);
+                proc.AddParameter(parameter.Path.Path.LastElement, parameter.Type);
             }
 
             dmObject.Procs[procName].Add(proc);
+            if (isVerb) {
+                DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(dmObject.CreateInitializationProc());
+
+                DMASTPath procPath = new DMASTPath(new DreamPath(".proc/" + procName));
+                DMASTAppend verbAppend = new DMASTAppend(new DMASTIdentifier("verbs"), new DMASTConstantPath(procPath));
+                verbAppend.Visit(initProcBuilder);
+            }
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {

@@ -16,6 +16,7 @@ namespace OpenDreamClient.Interface {
 
         public ElementWindow DefaultWindow;
         public ElementOutput DefaultOutput;
+        public ElementInfo DefaultInfo;
 
         private Window _defaultWindow;
 
@@ -32,7 +33,8 @@ namespace OpenDreamClient.Interface {
 
                 foreach (IElement element in window.ChildElements) {
                     if (element.ElementDescriptor.IsDefault) {
-                        if (element is ElementOutput) DefaultOutput = (ElementOutput)element;
+                        if (element is ElementOutput elementOutput) DefaultOutput = elementOutput;
+                        else if (element is ElementInfo elementInfo) DefaultInfo = elementInfo;
                     }
                 }
             }
@@ -179,6 +181,10 @@ namespace OpenDreamClient.Interface {
                 prompt.Owner = _defaultWindow;
                 prompt.Show();
             }
+        }
+        
+        public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
+            if (DefaultInfo != null) DefaultInfo.Verbs = pUpdateAvailableVerbs.AvailableVerbs;
         }
 
         private Window CreateDefaultWindow() {

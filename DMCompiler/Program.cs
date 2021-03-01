@@ -8,6 +8,7 @@ using DMCompiler.DM.Visitors;
 using DMCompiler.Preprocessor;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 
 namespace DMCompiler {
@@ -127,7 +128,20 @@ namespace DMCompiler {
                         ProcDefinitionJson procDefinition = new ProcDefinitionJson();
 
                         if (proc.Bytecode.Length > 0) procDefinition.Bytecode = proc.Bytecode.ToArray();
-                        if (proc.Parameters.Count > 0) procDefinition.ArgumentNames = proc.Parameters;
+                        if (proc.Parameters.Count > 0) {
+                            procDefinition.Arguments = new List<ProcArgumentJson>();
+                            
+                            for (int i = 0; i < proc.Parameters.Count; i++) {
+                                string argumentName = proc.Parameters[i];
+                                DMValueType argumentType = proc.ParameterTypes[i];
+
+                                procDefinition.Arguments.Add(new ProcArgumentJson() {
+                                    Name = argumentName,
+                                    Type = argumentType
+                                });
+                            }
+                        }
+
                         procJson.Add(procDefinition);
                     }
 

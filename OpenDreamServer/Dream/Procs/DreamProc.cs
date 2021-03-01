@@ -1,4 +1,5 @@
 ﻿using OpenDreamServer.Dream.Objects;
+using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -6,22 +7,24 @@ using System.Reflection;
 namespace OpenDreamServer.Dream.Procs {
     class DreamProc {
         public DreamProc SuperProc = null;
+        public List<string> ArgumentNames;
+        public List<DMValueType> ArgumentTypes;
 
         private Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> _runAction;
-        private List<string> _argumentNames;
         private Dictionary<string, DreamValue> _defaultArgumentValues;
 
-        public DreamProc(byte[] bytecode, List<string> argumentNames = null) {
-            _argumentNames = (argumentNames != null) ? argumentNames : new List<string>();
+        public DreamProc(byte[] bytecode, List<string> argumentNames = null, List<DMValueType> argumentTypes = null) {
+            ArgumentNames = (argumentNames != null) ? argumentNames : new List<string>();
+            ArgumentTypes = (argumentTypes != null) ? argumentTypes : new List<DMValueType>();
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
-                return new DreamProcInterpreter(this, bytecode).Run(instance, usr, SuperProc, arguments, _argumentNames);
+                return new DreamProcInterpreter(this, bytecode).Run(instance, usr, SuperProc, arguments, ArgumentNames);
             };
         }
 
         public DreamProc(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
-                for (int i = 0; i < _argumentNames.Count; i++) {
-                    string argumentName = _argumentNames[i];
+                for (int i = 0; i < ArgumentNames.Count; i++) {
+                    string argumentName = ArgumentNames[i];
 
                     if (arguments.GetArgument(i, argumentName).Value == null) {
                         if (_defaultArgumentValues != null && _defaultArgumentValues.TryGetValue(argumentName, out DreamValue defaultValue)) {
@@ -33,7 +36,7 @@ namespace OpenDreamServer.Dream.Procs {
                 return nativeProc(instance, usr, arguments);
             };
 
-            _argumentNames = new List<string>();
+            ArgumentNames = new List<string>();
             _defaultArgumentValues = null;
 
             List<Attribute> attributes = new(nativeProc.GetInvocationList()[0].Method.GetCustomAttributes());
@@ -41,7 +44,7 @@ namespace OpenDreamServer.Dream.Procs {
             foreach (Attribute attribute in parameterAttributes) {
                 DreamProcParameterAttribute parameterAttribute = (DreamProcParameterAttribute)attribute;
 
-                _argumentNames.Add(parameterAttribute.Name);
+                ArgumentNames.Add(parameterAttribute.Name);
                 if (parameterAttribute.DefaultValue != default) {
                     if (_defaultArgumentValues == null) _defaultArgumentValues = new Dictionary<string, DreamValue>();
 

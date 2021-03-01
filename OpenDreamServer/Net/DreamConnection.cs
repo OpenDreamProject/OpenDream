@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,12 +39,15 @@ namespace OpenDreamServer.Net {
                     } else {
                         _mobDreamObject = null;
                     }
+
+                    UpdateAvailableVerbs();
                 }
             }
         }
 
         private DreamObject _mobDreamObject = null;
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
+        private Dictionary<string, DreamProc> _availableVerbs = new();
 
         private TcpClient _tcpClient;
         private NetworkStream _tcpStream;
@@ -151,6 +155,21 @@ namespace OpenDreamServer.Net {
             SendPacket(new PacketOutput(message, control));
         }
 
+        public void UpdateAvailableVerbs() {
+            _availableVerbs.Clear();
+
+            if (MobDreamObject != null) {
+                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+                foreach (DreamValue mobVerbPath in mobVerbPaths) {
+                    DreamPath path = mobVerbPath.GetValueAsPath();
+
+                    _availableVerbs.Add(path.LastElement, MobDreamObject.GetProc(path.LastElement));
+                }
+            }
+
+            SendPacket(new PacketUpdateAvailableVerbs(_availableVerbs.Keys.ToArray()));
+        }
+
         public Task<DreamValue> Prompt(DMValueType types, string message) {
             Task <DreamValue> promptTask = new Task<DreamValue>(() => {
                 ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
@@ -237,6 +256,28 @@ namespace OpenDreamServer.Net {
             });
 
             Task.Run(() => ClientDreamObject?.CallProc("Topic", topicArguments, MobDreamObject));
+        }
+
+        public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
+            if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
+                Task.Run(async () => {
+                    Dictionary<string, DreamValue> arguments = new();
+
+                    for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                        string argumentName = verb.ArgumentNames[i];
+                        DMValueType argumentType = verb.ArgumentTypes[i];
+                        DreamValue value = await Prompt(argumentType, argumentName);
+
+                        arguments.Add(argumentName, value);
+                    }
+
+                    try {
+                        verb.Run(MobDreamObject, new DreamProcArguments(new(), arguments), MobDreamObject);
+                    } catch (Exception e) {
+                        Console.WriteLine("Exception while running verb \"" + pCallVerb.VerbName + "\": " + e.Message);
+                    }
+                });
+            }
         }
     }
 }

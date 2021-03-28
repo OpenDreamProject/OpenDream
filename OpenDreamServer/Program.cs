@@ -147,7 +147,7 @@ namespace OpenDreamServer {
             connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
             ClientToConnection[connection.ClientDreamObject] = connection;
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
-            connection.SendPacket(new PacketFullGameState(DreamStateManager.CreateLatestFullState()));
+            connection.SendPacket(new PacketFullGameState(DreamStateManager.FullState));
 
             Task.Run(() => {
                 DreamValue clientMob = connection.ClientDreamObject.CallProc("New");

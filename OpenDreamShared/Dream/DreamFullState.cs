@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamShared.Dream {
     class DreamFullState {
-        public struct Atom {
+        public class Atom {
             public UInt32 AtomID;
             public AtomType Type;
             public UInt32 LocationID;
@@ -15,13 +14,6 @@ namespace OpenDreamShared.Dream {
         public class Client {
             public UInt32 EyeID = UInt32.MaxValue;
             public List<UInt32> ScreenObjects = new();
-
-            public Client CreateCopy() {
-                return new Client() {
-                    EyeID = this.EyeID,
-                    ScreenObjects = this.ScreenObjects
-                };
-            }
         }
 
         public UInt32 ID;
@@ -34,94 +26,71 @@ namespace OpenDreamShared.Dream {
             ID = id;
         }
 
-        public void SetFromFullState(DreamFullState fullState) {
-            foreach (IconAppearance iconAppearance in fullState.IconAppearances) {
+        public void ApplyDeltaState(DreamDeltaState deltaState) {
+            foreach (IconAppearance iconAppearance in deltaState.NewIconAppearances) {
                 IconAppearances.Add(iconAppearance);
             }
 
-            foreach (KeyValuePair<UInt32, Atom> atom in fullState.Atoms) {
-                Atoms.Add(atom.Key, atom.Value);
+            foreach (KeyValuePair<UInt32, DreamDeltaState.AtomCreation> atomCreationPair in deltaState.AtomCreations) {
+                DreamDeltaState.AtomCreation atomCreation = atomCreationPair.Value;
+                Atom atom = new Atom();
+
+                atom.AtomID = atomCreationPair.Key;
+                atom.Type = atomCreation.Type;
+                atom.LocationID = atomCreation.LocationID;
+                atom.IconAppearanceID = atomCreation.IconAppearanceID;
+                atom.ScreenLocation = atomCreation.ScreenLocation;
+
+                Atoms[atom.AtomID] = atom;
             }
 
-            foreach (KeyValuePair<string, Client> client in fullState.Clients) {
-                Clients.Add(client.Key, client.Value.CreateCopy());
+            foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in deltaState.AtomLocationDeltas) {
+                Atoms[atomLocationDelta.AtomID].LocationID = atomLocationDelta.LocationID;
             }
 
-            Turfs = fullState.Turfs;
-        }
+            foreach (UInt32 atomDeletion in deltaState.AtomDeletions) {
+                Atoms.Remove(atomDeletion);
+            }
 
-        public void ApplyDeltaStates(List<DreamDeltaState> deltaStates) {
-            foreach (DreamDeltaState deltaState in deltaStates) {
-                foreach (IconAppearance iconAppearance in deltaState.NewIconAppearances) {
-                    IconAppearances.Add(iconAppearance);
+            foreach (KeyValuePair<UInt32, DreamDeltaState.AtomDelta> atomDeltaPair in deltaState.AtomDeltas) {
+                UInt32 atomID = atomDeltaPair.Key;
+                DreamDeltaState.AtomDelta atomDelta = atomDeltaPair.Value;
+                Atom atom = Atoms[atomID];
+
+                if (atomDelta.NewIconAppearanceID.HasValue) {
+                    atom.IconAppearanceID = atomDelta.NewIconAppearanceID.Value;
                 }
 
-                foreach (KeyValuePair<UInt32, DreamDeltaState.AtomCreation> atomCreationPair in deltaState.AtomCreations) {
-                    DreamDeltaState.AtomCreation atomCreation = atomCreationPair.Value;
-                    Atom atom = new Atom();
+                if (atomDelta.ScreenLocation.HasValue) {
+                    atom.ScreenLocation = atomDelta.ScreenLocation.Value;
+                }
+            }
 
-                    atom.AtomID = atomCreationPair.Key;
-                    atom.Type = atomCreation.Type;
-                    atom.LocationID = atomCreation.LocationID;
-                    atom.IconAppearanceID = atomCreation.IconAppearanceID;
-                    atom.ScreenLocation = atomCreation.ScreenLocation;
+            foreach (KeyValuePair<(int X, int Y), UInt32> turfDelta in deltaState.TurfDeltas) {
+                Turfs[turfDelta.Key.X, turfDelta.Key.Y] = turfDelta.Value;
+            }
 
-                    Atoms[atom.AtomID] = atom;
+            foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {
+                Client client;
+                if (!Clients.TryGetValue(clientDelta.Key, out client)) {
+                    client = new Client();
+
+                    Clients[clientDelta.Key] = client;
                 }
 
-                foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in deltaState.AtomLocationDeltas) {
-                    Atom atom = Atoms[atomLocationDelta.AtomID];
-
-                    atom.LocationID = atomLocationDelta.LocationID;
-                    Atoms[atomLocationDelta.AtomID] = atom;
+                if (clientDelta.Value.NewEyeID.HasValue) {
+                    client.EyeID = clientDelta.Value.NewEyeID.Value;
                 }
 
-                foreach (UInt32 atomDeletion in deltaState.AtomDeletions) {
-                    Atoms.Remove(atomDeletion);
-                }
-
-                foreach (KeyValuePair<UInt32, DreamDeltaState.AtomDelta> atomDeltaPair in deltaState.AtomDeltas) {
-                    UInt32 atomID = atomDeltaPair.Key;
-                    DreamDeltaState.AtomDelta atomDelta = atomDeltaPair.Value;
-                    Atom atom = Atoms[atomID];
-
-                    if (atomDelta.NewIconAppearanceID.HasValue) {
-                        atom.IconAppearanceID = atomDelta.NewIconAppearanceID.Value;
+                if (clientDelta.Value.ScreenObjectAdditions != null) {
+                    foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {
+                        client.ScreenObjects.Add(screenObjectID);
                     }
-
-                    if (atomDelta.ScreenLocation.HasValue) {
-                        atom.ScreenLocation = atomDelta.ScreenLocation.Value;
-                    }
-
-                    Atoms[atomID] = atom;
                 }
 
-                foreach (KeyValuePair<(int X, int Y), UInt32> turfDelta in deltaState.TurfDeltas) {
-                    Turfs[turfDelta.Key.X, turfDelta.Key.Y] = turfDelta.Value;
-                }
-
-                foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {
-                    Client client;
-                    if (!Clients.TryGetValue(clientDelta.Key, out client)) {
-                        client = new Client();
-
-                        Clients[clientDelta.Key] = client;
-                    }
-
-                    if (clientDelta.Value.NewEyeID.HasValue) {
-                        client.EyeID = clientDelta.Value.NewEyeID.Value;
-                    }
-
-                    if (clientDelta.Value.ScreenObjectAdditions != null) {
-                        foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {
-                            client.ScreenObjects.Add(screenObjectID);
-                        }
-                    }
-
-                    if (clientDelta.Value.ScreenObjectRemovals != null) {
-                        foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectRemovals) {
-                            client.ScreenObjects.Remove(screenObjectID);
-                        }
+                if (clientDelta.Value.ScreenObjectRemovals != null) {
+                    foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectRemovals) {
+                        client.ScreenObjects.Remove(screenObjectID);
                     }
                 }
             }

@@ -3,15 +3,12 @@ using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace OpenDreamServer.Dream {
     delegate void DreamStateManagerDeltaStateFinalizedDelegate(DreamDeltaState deltaState);
 
     class DreamStateManager {
-        public List<DreamFullState> FullStates = new List<DreamFullState>();
-        public List<DreamDeltaState> DeltaStates = new List<DreamDeltaState>();
+        public DreamFullState FullState;
 
         public event DreamStateManagerDeltaStateFinalizedDelegate DeltaStateFinalized;
 
@@ -26,38 +23,17 @@ namespace OpenDreamServer.Dream {
         public void FinalizeCurrentDeltaState() {
             lock (_dreamStateManagerLock) {
                 if (_currentDeltaState.ContainsChanges()) {
-                    DeltaStates.Add(_currentDeltaState);
+                    if (FullState == null) {
+                        FullState = new DreamFullState(0);
+                        FullState.Turfs = new UInt32[Program.DreamMap.Width, Program.DreamMap.Height];
+                    }
+
+                    FullState.ApplyDeltaState(_currentDeltaState);
+                    FullState.ID = _currentDeltaState.ID;
+
                     DeltaStateFinalized.Invoke(_currentDeltaState);
                     CreateNewDeltaState();
-
-                    if (DeltaStates.Count % 5 == 0) {
-                        CreateLatestFullState();
-                    }
                 }
-            }
-        }
-
-        public DreamFullState CreateLatestFullState() {
-            lock (_dreamStateManagerLock) {
-                DreamFullState lastFullState = FullStates.LastOrDefault();
-                DreamDeltaState lastDeltaState = DeltaStates.Last();
-
-                if (lastFullState != null && lastFullState.ID == lastDeltaState.ID) {
-                    return lastFullState;
-                }
-
-                DreamFullState fullState = new DreamFullState(lastDeltaState.ID);
-
-                if (lastFullState != null) {
-                    fullState.SetFromFullState(lastFullState);
-                    fullState.ApplyDeltaStates(GetDeltaStatesSince(lastFullState.ID));
-                } else {
-                    fullState.Turfs = new UInt32[Program.DreamMap.Width, Program.DreamMap.Height];
-                    fullState.ApplyDeltaStates(DeltaStates);
-                }
-
-                FullStates.Add(fullState);
-                return fullState;
             }
         }
 
@@ -137,23 +113,6 @@ namespace OpenDreamServer.Dream {
             lock (_dreamStateManagerLock) {
                 _currentDeltaState = new DreamDeltaState(_stateIDCounter++);
             }
-        }
-
-        private List<DreamDeltaState> GetDeltaStatesSince(UInt32 stateID) {
-            List<DreamDeltaState> deltaStates = new List<DreamDeltaState>();
-
-            for (int i = DeltaStates.Count - 1; i > 0; i--) {
-                DreamDeltaState deltaState = DeltaStates[i];
-
-                if (deltaState.ID > stateID) {
-                    deltaStates.Add(deltaState);
-                } else {
-                    break;
-                }
-            }
-
-            deltaStates.Reverse();
-            return deltaStates;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿/world
 	var/list/contents = list()
 
+	var/log = null
+
 	var/area = /area
 	var/turf = /turf
 	var/mob = /mob

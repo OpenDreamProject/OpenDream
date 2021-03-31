@@ -1,6 +1,6 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Net;
-using OpenDreamShared.Dream;
+using OpenDreamServer.Resources;
 using System;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
@@ -11,6 +11,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             base.OnObjectCreated(dreamObject, creationArguments);
 
             ContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+
+            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
 
             //New() is not called here
         }
@@ -51,8 +53,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            Console.WriteLine("WORLD OUTPUT: " + b);
-
             foreach (DreamConnection connection in Program.DreamServer.DreamConnections) {
                 connection.OutputDreamValue(b);
             }

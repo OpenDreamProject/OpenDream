@@ -6,20 +6,22 @@ using System.IO;
 
 namespace OpenDreamServer.Resources {
     class DreamResourceManager {
-        private string _rootPath;
+        public string RootPath;
 
         private Dictionary<string, DreamResource> _resourceCache = new();
         private object _resourceCacheLock = new object();
 
         public DreamResourceManager(string rootPath) {
-            _rootPath = rootPath;
+            RootPath = rootPath;
         }
 
-        public bool DoesResourceExist(string resourcePath) {
-            return File.Exists(Path.Combine(_rootPath, resourcePath));
+        public bool DoesFileExist(string resourcePath) {
+            return File.Exists(Path.Combine(RootPath, resourcePath));
         }
 
         public DreamResource LoadResource(string resourcePath) {
+            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
+
             DreamResource resource = null;
 
             lock (_resourceCacheLock) {
@@ -27,14 +29,7 @@ namespace OpenDreamServer.Resources {
             }
 
             if (resource == null) {
-                FileStream stream = new FileStream(Path.Combine(_rootPath, resourcePath), FileMode.Open);
-                byte[] resourceData = new byte[stream.Length];
-                int readBytes = 0;
-
-                while (readBytes < stream.Length) readBytes += stream.Read(resourceData);
-                stream.Close();
-
-                resource = new DreamResource(resourcePath, resourceData);
+                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
                 lock (_resourceCacheLock) {
                     _resourceCache.Add(resourcePath, resource);
                 }
@@ -51,7 +46,7 @@ namespace OpenDreamServer.Resources {
 
         public bool DeleteFile(string filePath) {
             try {
-                File.Delete(Path.Combine(_rootPath, filePath));
+                File.Delete(Path.Combine(RootPath, filePath));
             } catch (Exception) {
                 return false;
             }
@@ -61,7 +56,7 @@ namespace OpenDreamServer.Resources {
 
         public bool DeleteDirectory(string directoryPath) {
             try {
-                Directory.Delete(Path.Combine(_rootPath, directoryPath), true);
+                Directory.Delete(Path.Combine(RootPath, directoryPath), true);
             } catch (Exception) {
                 return false;
             }
@@ -71,7 +66,7 @@ namespace OpenDreamServer.Resources {
 
         public bool SaveTextToFile(string filePath, string text) {
             try {
-                File.WriteAllText(Path.Combine(_rootPath, filePath), text);
+                File.WriteAllText(Path.Combine(RootPath, filePath), text);
             } catch (Exception) {
                 return false;
             }
@@ -81,7 +76,7 @@ namespace OpenDreamServer.Resources {
 
         public bool CopyFile(string sourceFilePath, string destinationFilePath) {
             try {
-                File.Copy(Path.Combine(_rootPath, sourceFilePath), Path.Combine(_rootPath, destinationFilePath));
+                File.Copy(Path.Combine(RootPath, sourceFilePath), Path.Combine(RootPath, destinationFilePath));
             } catch (Exception) {
                 return false;
             }

@@ -173,7 +173,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_fexists(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
-            return new DreamValue(Program.DreamResourceManager.DoesResourceExist(filePath) ? 1 : 0);
+            return new DreamValue(Program.DreamResourceManager.DoesFileExist(filePath) ? 1 : 0);
         }
 
         [DreamProc("file")]

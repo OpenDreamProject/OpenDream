@@ -497,6 +497,10 @@ namespace OpenDreamServer.Dream.Procs {
                 } else {
                     throw new Exception("Invalid output operation on " + first + " and " + second);
                 }
+            } else if (first.Type == DreamValue.DreamValueType.DreamResource) {
+                first.GetValueAsDreamResource().Output(second);
+
+                interpreter.Push(new DreamValue((DreamObject)null));
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                 interpreter.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
             } else {

@@ -1039,7 +1039,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                         } else {
                             return new DreamValue(Convert.ToInt32(text, radix));
                         }
-                    } catch (FormatException _) {
+                    } catch (FormatException) {
                         return new DreamValue((DreamObject)null); //No digits, return null
                     }
                 } else {

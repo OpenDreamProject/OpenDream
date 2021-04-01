@@ -10,10 +10,15 @@
 		..()
 		loc = locate(5, 5, 1)
 
-	Move(NewLoc, Dir)
-		..()
-		client << "You are now at (" + num2text(loc.x) + ", " + num2text(loc.y) + ")"
+	verb/tell_location()
+		usr << "You are at ([x], [y])"
+
+	verb/say(message as text)
+		var/list/viewers = viewers()
+
+		for (var/mob/viewer in viewers)
+			viewer << "[ckey] says: \"[message]\""
 
 /world/New()
 	..()
-	world << "World loaded!"
+	world.log << "World loaded!"

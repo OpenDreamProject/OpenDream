@@ -85,8 +85,10 @@ namespace OpenDreamServer {
             WorldInstance = DreamObjectTree.CreateObject(DreamPath.World);
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
-            DreamProc globalInitProc = new DreamProc(CompiledJson.GlobalInitProc.Bytecode);
-            globalInitProc.Run(WorldInstance, new DreamProcArguments(new(), new()));
+            if (CompiledJson.GlobalInitProc != null) {
+                DreamProc globalInitProc = new DreamProc(CompiledJson.GlobalInitProc.Bytecode);
+                globalInitProc.Run(WorldInstance, new DreamProcArguments(new(), new()));
+            }
 
             DreamMap = new DreamMap();
             DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));

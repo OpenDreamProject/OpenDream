@@ -8,23 +8,21 @@ using System.Collections.Generic;
 namespace DMCompiler.DM.Visitors {
     class DMVisitorObjectBuilder : DMASTVisitor {
         private Stack<object> _valueStack = new();
-        private Dictionary<DreamPath, DMObject> _dmObjects = new();
-        private UInt32 _dmObjectIdCounter = 0;
+        private DMObjectTree _objectTree = null;
         private DMObject _currentObject = null;
         private DMVisitorProcBuilder _procBuilder = new DMVisitorProcBuilder();
         private DMVariable _currentVariable = null;
 
-        public Dictionary<DreamPath, DMObject> BuildObjects(DMASTFile astFile) {
+        public DMObjectTree BuildObjectTree(DMASTFile astFile) {
+            _objectTree = new DMObjectTree();
             _valueStack.Clear();
-            _dmObjects.Clear();
-            _dmObjectIdCounter = 0;
             astFile.Visit(this);
 
-            return _dmObjects;
+            return _objectTree;
         }
 
         public void VisitFile(DMASTFile file) {
-            _currentObject = GetDMObject(DreamPath.Root);
+            _currentObject = _objectTree.GetDMObject(DreamPath.Root);
 
             file.BlockInner.Visit(this);
         }
@@ -45,7 +43,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (newObjectPath.Type == DreamPath.PathType.Relative) newObjectPath = _currentObject.Path.AddToPath(newObjectPath.PathString);
 
-            _currentObject = GetDMObject(newObjectPath);
+            _currentObject = _objectTree.GetDMObject(newObjectPath);
             if (objectDefinition.InnerBlock != null) objectDefinition.InnerBlock.Visit(this);
             _currentObject = oldObject;
         }
@@ -53,11 +51,11 @@ namespace DMCompiler.DM.Visitors {
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject dmObject = _currentObject;
 
-            if (varDefinition.ObjectPath != null) {
-                dmObject = GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Path));
+            if (varDefinition.ObjectPath.HasValue) {
+                dmObject = _objectTree.GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Value));
             }
 
-            _currentVariable = new DMVariable((varDefinition.Type != null) ? varDefinition.Type.Path : null, varDefinition.Name, varDefinition.IsGlobal);
+            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
             varDefinition.Value.Visit(this);
             _currentVariable.Value = _valueStack.Pop();
 
@@ -71,8 +69,8 @@ namespace DMCompiler.DM.Visitors {
         public void VisitObjectVarOverride(DMASTObjectVarOverride varOverride) {
             DMObject dmObject = _currentObject;
 
-            if (varOverride.ObjectPath != null) {
-                dmObject = GetDMObject(_currentObject.Path.Combine(varOverride.ObjectPath.Path));
+            if (varOverride.ObjectPath.HasValue) {
+                dmObject = _objectTree.GetDMObject(_currentObject.Path.Combine(varOverride.ObjectPath.Value));
             }
 
             if (varOverride.VarName == "parent_type") {
@@ -90,33 +88,28 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) {
-            string procName = procDefinition.Path.Path.LastElement;
-            DreamPath objectPath = _currentObject.Path.Combine(procDefinition.Path.Path.FromElements(0, -2));
-            int procElementIndex = objectPath.FindElement("proc");
-            bool isVerb = false;
-            if (procElementIndex == -1) {
-                procElementIndex = objectPath.FindElement("verb");
+            DMObject dmObject = _currentObject;
 
-                isVerb = procElementIndex != -1;
+            if (procDefinition.ObjectPath.HasValue) {
+                dmObject = _objectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
             }
 
-            if (procElementIndex != -1) {
-                objectPath = objectPath.RemoveElement(procElementIndex);
-            }
-
-            DMObject dmObject = GetDMObject(objectPath);
             DMProc proc = _procBuilder.BuildProc(procDefinition);
-            if (!dmObject.Procs.ContainsKey(procName)) dmObject.Procs.Add(procName, new List<DMProc>());
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 proc.AddParameter(parameter.Path.Path.LastElement, parameter.Type);
             }
 
-            dmObject.Procs[procName].Add(proc);
-            if (isVerb) {
+            if (!dmObject.Procs.ContainsKey(procDefinition.Name)) {
+                dmObject.Procs.Add(procDefinition.Name, new List<DMProc>() { proc });
+            } else {
+                dmObject.Procs[procDefinition.Name].Add(proc);
+            }
+            
+            if (procDefinition.IsVerb) {
                 DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(dmObject.CreateInitializationProc());
 
-                DMASTPath procPath = new DMASTPath(new DreamPath(".proc/" + procName));
+                DMASTPath procPath = new DMASTPath(new DreamPath(".proc/" + procDefinition.Name));
                 DMASTAppend verbAppend = new DMASTAppend(new DMASTIdentifier("verbs"), new DMASTConstantPath(procPath));
                 verbAppend.Visit(initProcBuilder);
             }
@@ -175,37 +168,6 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantFloat(DMASTConstantFloat constantFloat) {
             _valueStack.Push(constantFloat.Value);
-        }
-
-        private DMObject GetDMObject(DreamPath path) {
-            DMObject dmObject;
-            if (!_dmObjects.TryGetValue(path, out dmObject)) {
-                DreamPath? parentType = null;
-
-                if (path.Elements.Length >= 2) {
-                    parentType = path.FromElements(0, -2);
-                    GetDMObject(parentType.Value); //Make sure the parent exists
-                }
-
-                dmObject = new DMObject(_dmObjectIdCounter++, path, parentType);
-                _dmObjects.Add(path, dmObject);
-            }
-
-            return dmObject;
-        }
-
-        private DMVariable GetVariable(DMObject dmObject, string variableName) {
-            DMVariable variable = null;
-
-            while (variable == null) {
-                if (!dmObject.Variables.TryGetValue(variableName, out variable)) {
-                    if (dmObject.Parent == null) break;
-
-                    dmObject = GetDMObject(dmObject.Parent.Value);
-                }
-            }
-
-            return variable;
         }
     }
 }

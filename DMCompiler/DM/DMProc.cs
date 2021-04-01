@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,6 +25,27 @@ namespace DMCompiler.DM {
         public DMProc() {
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
+        }
+
+        public ProcDefinitionJson GetJsonRepresentation() {
+            ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+
+            if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
+            if (Parameters.Count > 0) {
+                procDefinition.Arguments = new List<ProcArgumentJson>();
+
+                for (int i = 0; i < Parameters.Count; i++) {
+                    string argumentName = Parameters[i];
+                    DMValueType argumentType = ParameterTypes[i];
+
+                    procDefinition.Arguments.Add(new ProcArgumentJson() {
+                        Name = argumentName,
+                        Type = argumentType
+                    });
+                }
+            }
+
+            return procDefinition;
         }
 
         public void AddParameter(string name, DMValueType type) {

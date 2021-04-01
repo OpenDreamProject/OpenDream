@@ -239,7 +239,7 @@ namespace OpenDreamServer.Net {
         }
 
         public void HandlePacketTopic(PacketTopic pTopic) {
-            DreamList hrefList = DreamProcNativeRoot.params2list(pTopic.Query);
+            DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
             DreamObject src = null;
 

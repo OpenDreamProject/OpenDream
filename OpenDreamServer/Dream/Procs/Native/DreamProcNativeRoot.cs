@@ -758,7 +758,8 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList list = Program.DreamObjectTree.CreateList();
 
             foreach (string queryKey in query.AllKeys) {
-                string queryValue = query.Get(queryKey);
+                string[] queryValues = query.GetValues(queryKey);
+                string queryValue = queryValues[queryValues.Length - 1]; //Use the last appearance of the key in the query
 
                 list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
             }
@@ -804,6 +805,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_rand(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (arguments.ArgumentCount == 0) {
                 return new DreamValue((float)new Random().NextDouble());
+            } else if (arguments.ArgumentCount == 1) {
+                int high = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsNumber());
+
+                return new DreamValue(new Random().Next(high));
             } else {
                 int low = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsNumber());
                 int high = (int)Math.Floor(arguments.GetArgument(1, "H").GetValueAsNumber());
@@ -1028,10 +1033,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
                 text = text.Trim();
                 if (text.Length != 0) {
-                    if (text.Contains(".") && radix == 10) {
-                        return new DreamValue(Convert.ToSingle(text));
-                    } else {
-                        return new DreamValue(Convert.ToInt32(text, radix));
+                    try {
+                        if (text.Contains(".") && radix == 10) {
+                            return new DreamValue(Convert.ToSingle(text));
+                        } else {
+                            return new DreamValue(Convert.ToInt32(text, radix));
+                        }
+                    } catch (FormatException _) {
+                        return new DreamValue((DreamObject)null); //No digits, return null
                     }
                 } else {
                     return new DreamValue((DreamObject)null);

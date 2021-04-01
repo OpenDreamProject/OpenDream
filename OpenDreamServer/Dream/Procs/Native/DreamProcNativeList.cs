@@ -85,20 +85,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(index);
         }
 
-        [DreamProc("Join")]
-        [DreamProcParameter("Glue")]
-        [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
-        public static DreamValue NativeProc_Join(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue glue = arguments.GetArgument(0, "Glue");
-            int start = arguments.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(0, "End").GetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)instance;
-
-            string glueValue = (glue.Type == DreamValueType.String) ? glue.GetValueAsString() : "";
-            return new DreamValue(list.Join(glueValue, start, end));
-        }
-
         [DreamProc("Remove")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

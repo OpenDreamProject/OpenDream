@@ -84,7 +84,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             list.SetNativeProc(DreamProcNativeList.NativeProc_Cut);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Find);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Insert);
-            list.SetNativeProc(DreamProcNativeList.NativeProc_Join);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
         }

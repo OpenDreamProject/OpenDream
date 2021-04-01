@@ -180,3 +180,8 @@ proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 	Ref.Move(get_step_towards(Ref, Trg), dir)
+
+proc/jointext(list/List, Glue, Start = 1, End = 0)
+	if (isnull(List)) CRASH("Invalid list")
+	
+	return List.Join(Glue, Start, End)

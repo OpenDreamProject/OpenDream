@@ -4,36 +4,43 @@ using System;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM {
-    class DMObjectTree {
-        private Dictionary<DreamPath, DMObject> _allObjects = new();
-        private uint _dmObjectIdCounter = 0;
+    static class DMObjectTree {
+        public static Dictionary<DreamPath, DMObject> AllObjects = new();
 
-        public DMObjectTree() {
+        private static uint _dmObjectIdCounter = 0;
+
+        static DMObjectTree() {
+            Clear();
+        }
+
+        public static void Clear() {
+            AllObjects.Clear();
             GetDMObject(DreamPath.Root);
         }
 
-        public DMObject GetDMObject(DreamPath path) {
+        public static DMObject GetDMObject(DreamPath path) {
+            if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
+
             DMObject dmObject;
 
-            if (!_allObjects.TryGetValue(path, out dmObject)) {
-                DreamPath? parentType = null;
-                if (path.Elements.Length >= 2) {
-                    parentType = path.FromElements(0, -2);
-                    GetDMObject(parentType.Value); //Make sure the parent exists
+            if (!AllObjects.TryGetValue(path, out dmObject)) {
+                DMObject parent = null;
+                if (path.Elements.Length > 0) {
+                    parent = GetDMObject(path.FromElements(0, -2));
                 }
 
-                dmObject = new DMObject(_dmObjectIdCounter++, path, parentType);
-                _allObjects.Add(path, dmObject);
+                dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+                AllObjects.Add(path, dmObject);
             }
 
             return dmObject;
         }
 
-        public DreamObjectJson CreateJsonRepresentation() {
+        public static DreamObjectJson CreateJsonRepresentation() {
             Dictionary<DreamPath, DreamObjectJson> jsonObjects = new();
             Queue<(DMObject, DreamObjectJson)> unparentedObjects = new();
 
-            foreach (KeyValuePair<DreamPath, DMObject> dmObject in _allObjects) {
+            foreach (KeyValuePair<DreamPath, DMObject> dmObject in AllObjects) {
                 DreamObjectJson jsonObject = dmObject.Value.CreateJsonRepresentation();
 
                 jsonObjects.Add(dmObject.Key, jsonObject);
@@ -50,7 +57,7 @@ namespace DMCompiler.DM {
                     if (treeParent.Children == null) treeParent.Children = new List<DreamObjectJson>();
 
                     treeParent.Children.Add(unparentedObject.Item2);
-                    if (unparentedObject.Item1.Parent != null && unparentedObject.Item1.Parent.Value.Equals(treeParentPath)) {
+                    if (unparentedObject.Item1.Parent != null && unparentedObject.Item1.Parent?.Path.Equals(treeParentPath) == true) {
                         unparentedObject.Item2.Parent = null; //Parent type can be assumed
                     }
                 } else {

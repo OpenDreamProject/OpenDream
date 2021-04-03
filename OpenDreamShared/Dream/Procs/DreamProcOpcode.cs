@@ -27,7 +27,7 @@
         Modulus = 0x19,
         Append = 0x1A,
         CreateRangeEnumerator = 0x1B,
-        //0x1C
+        PushUsr = 0x1C,
         CompareLessThanOrEqual = 0x1D,
         IndexList = 0x1E,
         Remove = 0x1F,
@@ -64,7 +64,7 @@
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
         BitShiftRight = 0x40,
-        GetLocalVariable = 0x41,
+        PushLocalVariable = 0x41,
         Power = 0x42,
         DereferenceProc = 0x43,
         GetProc = 0x44,

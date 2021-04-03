@@ -1,4 +1,6 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using System;
@@ -7,14 +9,32 @@ using System.IO;
 
 namespace DMCompiler.DM {
     class DMProc {
+        public class DMLocalVariable {
+            public int Id;
+            public DreamPath? Type;
+
+            public DMLocalVariable(int id, DreamPath? type) {
+                Id = id;
+                Type = type;
+            }
+        }
+
         private class DMProcScope {
-            public Dictionary<string, int> LocalVariables = new();
+            public Dictionary<string, DMLocalVariable> LocalVariables = new();
+            public DMProcScope ParentScope;
+
+            public DMProcScope() { }
+
+            public DMProcScope(DMProcScope parentScope) {
+                ParentScope = parentScope;
+            }
         }
 
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
 
+        private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
@@ -22,9 +42,18 @@ namespace DMCompiler.DM {
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
 
-        public DMProc() {
+        public DMProc(DMASTProcDefinition astDefinition) {
+            _astDefinition = astDefinition;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
+        }
+
+        public void Compile(DMObject dmObject) {
+            foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
+                AddParameter(parameter.Name, parameter.Type);
+            }
+
+            _astDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
@@ -71,11 +100,22 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public int AddLocalVariable(string name) {
+        public void AddLocalVariable(string name, DreamPath? type) {
             int localVarId = _localVariableIdCounter++;
 
-            _scopes.Peek().LocalVariables.Add(name, localVarId);
-            return localVarId;
+            _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type));
+        }
+
+        public DMLocalVariable GetLocalVariable(string name) {
+            DMProcScope scope = _scopes.Peek();
+
+            while (scope != null) {
+                if (scope.LocalVariables.TryGetValue(name, out DMLocalVariable localVariable)) return localVariable;
+
+                scope = scope.ParentScope;
+            }
+
+            return null;
         }
 
         public void Error() {
@@ -83,15 +123,15 @@ namespace DMCompiler.DM {
         }
 
         public void GetIdentifier(string identifier) {
-            int localVarId = GetLocalVariableId(identifier);
+            WriteOpcode(DreamProcOpcode.GetIdentifier);
+            WriteString(identifier);
+        }
 
-            if (localVarId != -1) {
-                WriteOpcode(DreamProcOpcode.GetLocalVariable);
-                WriteByte((byte)localVarId);
-            } else {
-                WriteOpcode(DreamProcOpcode.GetIdentifier);
-                WriteString(identifier);
-            }
+        public void PushLocalVariable(string name) {
+            DMLocalVariable localVar = GetLocalVariable(name);
+
+            WriteOpcode(DreamProcOpcode.PushLocalVariable);
+            WriteByte((byte)localVar.Id);
         }
 
         public void GetProc(string identifier) {
@@ -109,7 +149,7 @@ namespace DMCompiler.DM {
 
         public void Enumerate(string outputVariableName) {
             WriteOpcode(DreamProcOpcode.Enumerate);
-            WriteByte((byte)GetLocalVariableId(outputVariableName));
+            WriteByte((byte)GetLocalVariable(outputVariableName).Id);
         }
 
         public void DestroyEnumerator() {
@@ -212,7 +252,7 @@ namespace DMCompiler.DM {
         }
 
         public void StartScope() {
-            _scopes.Push(new DMProcScope());
+            _scopes.Push(new DMProcScope(_scopes.Peek()));
         }
 
         public void EndScope() {
@@ -266,7 +306,7 @@ namespace DMCompiler.DM {
 
         public void SetLocalVariable(string name) {
             WriteOpcode(DreamProcOpcode.SetLocalVariable);
-            WriteByte((byte)GetLocalVariableId(name, true));
+            WriteByte((byte)GetLocalVariable(name).Id);
         }
 
         public void Dereference(string identifier) {
@@ -394,6 +434,10 @@ namespace DMCompiler.DM {
         public void PushSrc() {
             WriteOpcode(DreamProcOpcode.PushSrc);
         }
+        
+        public void PushUsr() {
+            WriteOpcode(DreamProcOpcode.PushUsr);
+        }
 
         public void PushInt(int value) {
             WriteOpcode(DreamProcOpcode.PushInt);
@@ -443,22 +487,6 @@ namespace DMCompiler.DM {
 
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
-        }
-
-        private int GetLocalVariableId(string name, bool create = false) {
-            int localVarId = -1;
-            foreach (DMProcScope scope in _scopes) {
-                if (scope.LocalVariables.TryGetValue(name, out int foundLocalVarId)) {
-                    localVarId = foundLocalVarId;
-                    break;
-                }
-            }
-
-            if (localVarId == -1 && create) {
-                localVarId = AddLocalVariable(name);
-            }
-
-            return localVarId;
         }
 
         private void WriteByte(byte value) {

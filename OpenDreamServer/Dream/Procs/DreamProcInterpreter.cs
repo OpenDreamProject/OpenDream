@@ -46,7 +46,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.Modulus,
             DreamProcInterpreterOpcodes.Append,
             DreamProcInterpreterOpcodes.CreateRangeEnumerator,
-            null, //0x1C
+            DreamProcInterpreterOpcodes.PushUsr,
             DreamProcInterpreterOpcodes.CompareLessThanOrEqual,
             DreamProcInterpreterOpcodes.IndexList,
             DreamProcInterpreterOpcodes.Remove,
@@ -83,7 +83,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.BrowseResource,
             DreamProcInterpreterOpcodes.OutputControl,
             DreamProcInterpreterOpcodes.BitShiftRight,
-            DreamProcInterpreterOpcodes.GetLocalVariable,
+            DreamProcInterpreterOpcodes.PushLocalVariable,
             DreamProcInterpreterOpcodes.Power,
             DreamProcInterpreterOpcodes.DereferenceProc,
             DreamProcInterpreterOpcodes.GetProc,

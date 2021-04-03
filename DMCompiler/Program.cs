@@ -6,13 +6,14 @@ using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using DMCompiler.Preprocessor;
 using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
-        public static DMProc GlobalInitProc = new();
+        public static List<DMASTProcStatement> GlobalInitProcStatements = new();
 
         static void Main(string[] args) {
             if (args.Length < 2) {
@@ -40,18 +41,29 @@ namespace DMCompiler {
             astSimplifier.SimplifyAST(astFile);
 
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
-            DMObjectTree objectTree = dmObjectBuilder.BuildObjectTree(astFile);
+            dmObjectBuilder.BuildObjectTree(astFile);
 
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = StringTable;
-            compiledDream.RootObject = objectTree.CreateJsonRepresentation();
-            if (GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = GlobalInitProc.GetJsonRepresentation();
+            compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
+            if (GlobalInitProcStatements.Count > 0) compiledDream.GlobalInitProc = CreateGlobalInitProc().GetJsonRepresentation();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true
             });
             
             File.WriteAllText(args[2], json);
+        }
+
+        private static DMProc CreateGlobalInitProc() {
+            DMProc globalInitProc = new DMProc(null);
+            DMVisitorProcBuilder globalInitProcBuilder = new DMVisitorProcBuilder(DMObjectTree.GetDMObject(DreamPath.Root), globalInitProc);
+
+            foreach (DMASTProcStatement statement in GlobalInitProcStatements) {
+                statement.Visit(globalInitProcBuilder);
+            }
+
+            return globalInitProc;
         }
     }
 }

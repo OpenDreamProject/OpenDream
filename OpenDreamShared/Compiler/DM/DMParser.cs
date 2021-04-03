@@ -1365,9 +1365,13 @@ namespace OpenDreamShared.Compiler.DM {
 
                                 return new DMASTInitial(callParameters[0].Value);
                             } else if (identifier != null && identifier.Identifier == "istype") {
-                                if (callParameters.Length != 2) throw new Exception("istype() requires 2 arguments");
-
-                                return new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
+                                if (callParameters.Length == 1) {
+                                    return new DMASTImplicitIsType(callParameters[0].Value);
+                                } else if (callParameters.Length == 2) {
+                                    return new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
+                                } else {
+                                    throw new Exception("istype() requires 1 or 2 arguments");
+                                }
                             } else {
                                 DMASTCallable callable;
 

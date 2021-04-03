@@ -20,11 +20,11 @@
 
 		return mob
 
-	proc/Topic(href, href_list, hsrc)
+	proc/Topic(href, list/href_list, datum/hsrc)
 		if (hsrc != null)
 			hsrc.Topic(href, href_list)
 
-	proc/Click(object, location, control, params)
+	proc/Click(atom/object, location, control, params)
 		object.Click(location, control, params)
 
 	proc/Move(loc, dir)

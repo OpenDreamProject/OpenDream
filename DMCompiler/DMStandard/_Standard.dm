@@ -179,7 +179,7 @@ proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
 	return turn(get_step_towards(Ref, Trg), 180)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
-	Ref.Move(get_step_towards(Ref, Trg), dir)
+	Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
 	if (isnull(List)) CRASH("Invalid list")

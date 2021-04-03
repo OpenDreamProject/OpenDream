@@ -163,7 +163,7 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
-        public static void GetLocalVariable(DreamProcInterpreter interpreter) {
+        public static void PushLocalVariable(DreamProcInterpreter interpreter) {
             int localVariableId = interpreter.ReadByte();
 
             interpreter.Push(new DreamProcIdentifierLocalVariable(interpreter.LocalVariables, localVariableId));
@@ -334,6 +334,10 @@ namespace OpenDreamServer.Dream.Procs {
 
         public static void PushSrc(DreamProcInterpreter interpreter) {
             interpreter.Push(new DreamValue(interpreter.Instance));
+        }
+        
+        public static void PushUsr(DreamProcInterpreter interpreter) {
+            interpreter.Push(new DreamValue(interpreter.Usr));
         }
 
         public static void PushString(DreamProcInterpreter interpreter) {

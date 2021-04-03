@@ -45,6 +45,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsType(DMASTIsType isType) { throw new NotImplementedException(); }
+        public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -274,7 +275,7 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementVarDeclaration : DMASTProcStatement {
-        public DMASTPath Type;
+        public DreamPath? Type;
         public string Name;
         public DMASTExpression Value;
 
@@ -282,7 +283,7 @@ namespace OpenDreamShared.Compiler.DM {
             int varElementIndex = path.Path.FindElement("var");
             DreamPath typePath = path.Path.FromElements(varElementIndex + 1, -2);
 
-            Type = (typePath.Elements.Length > 0) ? new DMASTPath(typePath) : null;
+            Type = (typePath.Elements.Length > 0) ? typePath : null;
             Name = path.Path.LastElement;
             Value = value;
         }
@@ -725,6 +726,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitIsType(this);
+        }
+    }
+    
+    class DMASTImplicitIsType : DMASTExpression {
+        public DMASTExpression Value;
+
+        public DMASTImplicitIsType(DMASTExpression value) {
+            Value = value;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitImplicitIsType(this);
         }
     }
 
@@ -1327,13 +1340,20 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTDefinitionParameter : DMASTNode {
-        public DMASTPath Path;
+        public DreamPath? ObjectType;
+        public string Name;
         public DMASTExpression Value;
         public DMValueType Type;
         public DMASTExpression PossibleValues;
 
-        public DMASTDefinitionParameter(DMASTPath path, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) {
-            Path = path;
+        public DMASTDefinitionParameter(DMASTPath astPath, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) {
+            DreamPath path = astPath.Path;
+
+            int varElementIndex = path.FindElement("var");
+            if (varElementIndex != -1) path = path.RemoveElement(varElementIndex);
+
+            ObjectType = (path.Elements.Length > 1) ? path.FromElements(0, -2) : null;
+            Name = path.LastElement;
             Value = value;
             Type = type;
             PossibleValues = possibleValues;

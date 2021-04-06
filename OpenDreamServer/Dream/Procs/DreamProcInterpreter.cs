@@ -91,7 +91,9 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.PushProcArguments,
             DreamProcInterpreterOpcodes.Initial,
             DreamProcInterpreterOpcodes.CallSelf,
-            DreamProcInterpreterOpcodes.IsType
+            DreamProcInterpreterOpcodes.IsType,
+            DreamProcInterpreterOpcodes.LocateCoord,
+            DreamProcInterpreterOpcodes.Locate
         };
 
         private MemoryStream _bytecodeStream;

@@ -485,6 +485,14 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsType);
         }
 
+        public void LocateCoordinates() {
+            WriteOpcode(DreamProcOpcode.LocateCoord);
+        }
+
+        public void Locate() {
+            WriteOpcode(DreamProcOpcode.Locate);
+        }
+
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
         }

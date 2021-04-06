@@ -1377,6 +1377,22 @@ namespace OpenDreamShared.Compiler.DM {
                                 } else {
                                     throw new Exception("istype() requires 1 or 2 arguments");
                                 }
+                            } else if (identifier != null && identifier.Identifier == "locate") {
+                                if (callParameters.Length == 3) { //locate(X, Y, Z)
+                                    return new DMASTLocateCoordinates(callParameters[0].Value, callParameters[1].Value, callParameters[2].Value);
+                                } else {
+                                    if (callParameters.Length > 1) throw new Exception("locate() requires 1 or 3 arguments");
+
+                                    DMASTExpression container = null;
+                                    if (Check(TokenType.DM_In)) {
+                                        Whitespace();
+
+                                        container = Expression();
+                                        if (container == null) throw new Exception("Expected a container for locate()");
+                                    }
+
+                                    return new DMASTLocate(callParameters.Length == 1 ? callParameters[0].Value : null, container);
+                                }
                             } else {
                                 DMASTCallable callable;
 

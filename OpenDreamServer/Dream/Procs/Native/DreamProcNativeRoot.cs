@@ -543,31 +543,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             throw new Exception("Cannot check length of " + value + "");
         }
 
-        [DreamProc("locate")]
-        [DreamProcParameter("X", Type = DreamValueType.Integer | DreamValueType.String)]
-        [DreamProcParameter("Y", Type = DreamValueType.Integer)]
-        [DreamProcParameter("Z", Type = DreamValueType.Integer)]
-        public static DreamValue NativeProc_locate(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue xValue = arguments.GetArgument(0, "X");
-
-            if (xValue.TryGetValueAsInteger(out int x)) {
-                int y = arguments.GetArgument(1, "Y").GetValueAsInteger(); //1-indexed
-                int z = arguments.GetArgument(2, "Z").GetValueAsInteger(); //1-indexed
-
-                if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
-                    return new DreamValue(Program.DreamMap.GetTurfAt(x, y)); //TODO: Z
-                } else {
-                    return new DreamValue((DreamObject)null);
-                }
-            } else if (xValue.TryGetValueAsString(out string refString)) {
-                int refID = int.Parse(refString);
-
-                return new DreamValue(DreamObject.GetFromReferenceID(refID));
-            }
-
-            throw new Exception("Invalid call to locate()");
-        }
-
         [DreamProc("log")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]
         [DreamProcParameter("Y")]

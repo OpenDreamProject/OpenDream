@@ -777,6 +777,32 @@ namespace DMCompiler.DM.Visitors {
             _proc.IsType();
         }
 
+        public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) {
+            locateCoordinates.X.Visit(this);
+            locateCoordinates.Y.Visit(this);
+            locateCoordinates.Z.Visit(this);
+
+            _proc.LocateCoordinates();
+        }
+
+        public void VisitLocate(DMASTLocate locate) {
+            if (locate.Expression != null) {
+                locate.Expression.Visit(this);
+            } else {
+                if (_currentVariable.Type == null) throw new Exception("locate() requires a type");
+
+                _proc.PushPath(_currentVariable.Type.Value);
+            }
+
+            if (locate.Container != null) {
+                locate.Container.Visit(this);
+            } else {
+                _proc.GetIdentifier("world");
+            }
+
+            _proc.Locate();
+        }
+
         public void VisitList(DMASTList list) {
             _proc.CreateList();
 

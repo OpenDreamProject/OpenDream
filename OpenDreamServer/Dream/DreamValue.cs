@@ -220,6 +220,18 @@ namespace OpenDreamServer.Dream {
             return (DreamPath)GetValueExpectingType(DreamValueType.DreamPath);
         }
 
+        public bool TryGetValueAsPath(out DreamPath path) {
+            if (IsType(DreamValueType.DreamPath)) {
+                path = (DreamPath)Value;
+
+                return true;
+            } else {
+                path = DreamPath.Root;
+
+                return false;
+            }
+        }
+
         public DreamProc GetValueAsProc() {
             return (DreamProc)GetValueExpectingType(DreamValueType.DreamProc);
         }

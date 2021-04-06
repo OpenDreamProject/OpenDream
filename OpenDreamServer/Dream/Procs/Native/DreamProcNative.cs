@@ -40,7 +40,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_locate);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_log);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);

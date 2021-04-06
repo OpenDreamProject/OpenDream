@@ -1132,18 +1132,23 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionMultiplicationDivisionModulus();
 
             if (a != null) {
-                if (Check(TokenType.DM_Plus)) {
-                    Whitespace();
-                    DMASTExpression b = ExpressionAdditionSubtraction();
-                    if (b == null) throw new Exception("Expected value to add");
+                Token token = Current();
+                TokenType[] types = new TokenType[] {
+                    TokenType.DM_Plus,
+                    TokenType.DM_Minus,
+                };
 
-                    return new DMASTAdd(a, b);
-                } else if (Check(TokenType.DM_Minus)) {
+                while (Check(types)) {
                     Whitespace();
-                    DMASTExpression b = ExpressionAdditionSubtraction();
-                    if (b == null) throw new Exception("Expected value to subtract");
+                    DMASTExpression b = ExpressionMultiplicationDivisionModulus();
+                    if (b == null) throw new Exception("Expected an expression");
 
-                    return new DMASTSubtract(a, b);
+                    switch (token.Type) {
+                        case TokenType.DM_Plus: a = new DMASTAdd(a, b); break;
+                        case TokenType.DM_Minus: a = new DMASTSubtract(a, b); break;
+                    }
+
+                    token = Current();
                 }
             }
 

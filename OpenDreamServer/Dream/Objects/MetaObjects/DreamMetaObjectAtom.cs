@@ -246,6 +246,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 appearance.Layer = image.GetVariable("layer").GetValueAsNumber();
                 appearance.PixelX = image.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelY = image.GetVariable("pixel_y").GetValueAsInteger();
+            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom)) {
+                appearance = BuildAtomAppearance(overlayAtom);
             } else {
                 throw new Exception("Invalid overlay (" + value + ")");
             }

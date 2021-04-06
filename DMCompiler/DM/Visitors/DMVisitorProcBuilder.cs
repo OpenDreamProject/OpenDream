@@ -1,5 +1,4 @@
-﻿using DMCompiler.DM;
-using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
@@ -431,7 +430,7 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     DreamPath type = _currentVariable.Type.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type);
+                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
 
                     _currentVariable = dmObject.GetVariable(deref.Property);
                     if (_currentVariable == null) _currentVariable = dmObject.GetGlobalVariable(deref.Property);
@@ -458,7 +457,7 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     DreamPath type = _currentVariable.Type.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type);
+                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
 
                     if (isDereferencingProc) { //Last deref is dereferencing a proc
                         if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");

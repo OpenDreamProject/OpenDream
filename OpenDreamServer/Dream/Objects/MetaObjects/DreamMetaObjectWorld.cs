@@ -14,6 +14,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
             dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
 
+            DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
+            if (fps.Value != null) {
+                dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / fps.GetValueAsInteger()));
+            }
+
             //New() is not called here
         }
 
@@ -21,7 +26,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "fps") {
-                dreamObject.SetVariable("tick_lag", new DreamValue(10.0 / variableValue.GetValueAsInteger()));
+                dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / variableValue.GetValueAsInteger()));
             }
         }
 

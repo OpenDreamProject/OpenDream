@@ -10,23 +10,25 @@ namespace DMCompiler.DM {
         private static uint _dmObjectIdCounter = 0;
 
         static DMObjectTree() {
-            Clear();
+            Reset();
         }
 
-        public static void Clear() {
+        public static void Reset() {
             AllObjects.Clear();
             GetDMObject(DreamPath.Root);
         }
 
-        public static DMObject GetDMObject(DreamPath path) {
+        public static DMObject GetDMObject(DreamPath path, bool createIfNonexistant = true) {
             if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
 
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
+                if (!createIfNonexistant) throw new Exception("Type " + path + " does not exist");
+
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
-                    parent = GetDMObject(path.FromElements(0, -2));
+                    parent = GetDMObject(path.FromElements(0, -2), createIfNonexistant);
                 }
 
                 dmObject = new DMObject(_dmObjectIdCounter++, path, parent);

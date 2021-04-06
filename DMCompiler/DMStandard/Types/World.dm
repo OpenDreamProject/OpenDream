@@ -12,7 +12,7 @@
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
-	var/fps = 10
+	var/fps = null
 	var/tick_usage
 
 	var/maxx = 0

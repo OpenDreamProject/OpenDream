@@ -1123,6 +1123,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return false;
             } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.String) {
                 return false;
+            } else if (first.Type == DreamValue.DreamValueType.DreamResource && second.Type == DreamValue.DreamValueType.DreamResource) {
+                return first.GetValueAsDreamResource().ResourcePath == second.GetValueAsDreamResource().ResourcePath;
             } else if (first.Type == DreamValue.DreamValueType.DreamResource && second.Type != DreamValue.DreamValueType.DreamResource) {
                 return false;
             } else if (first.Value == null) {
@@ -1137,6 +1139,8 @@ namespace OpenDreamServer.Dream.Procs {
                 return first.GetValueAsInteger() > second.GetValueAsInteger();
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
                 return first.GetValueAsInteger() > second.GetValueAsFloat();
+            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
+                return first.GetValueAsInteger() > 0;
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return first.GetValueAsFloat() > second.GetValueAsFloat();
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {

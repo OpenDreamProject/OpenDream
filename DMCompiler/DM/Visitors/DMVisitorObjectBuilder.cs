@@ -11,7 +11,7 @@ namespace DMCompiler.DM.Visitors {
         private DMVariable _currentVariable = null;
 
         public void BuildObjectTree(DMASTFile astFile) {
-            DMObjectTree.Clear();
+            DMObjectTree.Reset();
             _valueStack.Clear();
             astFile.Visit(this);
 

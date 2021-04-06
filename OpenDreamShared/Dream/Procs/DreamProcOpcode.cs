@@ -72,7 +72,9 @@
         PushProcArguments = 0x46,
         Initial = 0x47,
         CallSelf = 0x48,
-        IsType = 0x49
+        IsType = 0x49,
+        LocateCoord = 0x4A,
+        Locate = 0x4B
     }
 
     enum DreamProcOpcodeParameterType {

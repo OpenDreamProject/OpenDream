@@ -46,6 +46,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsType(DMASTIsType isType) { throw new NotImplementedException(); }
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
+        public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) { throw new NotImplementedException(); }
+        public void VisitLocate(DMASTLocate locate) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -738,6 +740,34 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitImplicitIsType(this);
+        }
+    }
+
+    class DMASTLocateCoordinates : DMASTExpression {
+        public DMASTExpression X, Y, Z;
+
+        public DMASTLocateCoordinates(DMASTExpression x, DMASTExpression y, DMASTExpression z) {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLocateCoordinates(this);
+        }
+    }
+    
+    class DMASTLocate : DMASTExpression {
+        public DMASTExpression Expression;
+        public DMASTExpression Container;
+
+        public DMASTLocate(DMASTExpression expression, DMASTExpression container) {
+            Expression = expression;
+            Container = container;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLocate(this);
         }
     }
 

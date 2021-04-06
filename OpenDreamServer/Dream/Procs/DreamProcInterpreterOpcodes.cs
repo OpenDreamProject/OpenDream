@@ -1065,6 +1065,50 @@ namespace OpenDreamServer.Dream.Procs {
                 interpreter.Push(promptTask.Result);
             }
         }
+
+        public static void LocateCoord(DreamProcInterpreter interpreter) {
+            int z = interpreter.PopDreamValue().GetValueAsInteger();
+            int y = interpreter.PopDreamValue().GetValueAsInteger();
+            int x = interpreter.PopDreamValue().GetValueAsInteger();
+
+            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
+                interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y))); //TODO: Z
+            } else {
+                interpreter.Push(new DreamValue((DreamObject)null));
+            }
+        }
+        
+        public static void Locate(DreamProcInterpreter interpreter) {
+            DreamObject container = interpreter.PopDreamValue().GetValueAsDreamObject();
+            DreamValue value = interpreter.PopDreamValue();
+
+            if (value.TryGetValueAsString(out string refString)) {
+                int refID = int.Parse(refString);
+
+                interpreter.Push(new DreamValue(DreamObject.GetFromReferenceID(refID)));
+            } else if (value.TryGetValueAsPath(out DreamPath type)) {
+                DreamList containerList;
+                if (container.IsSubtypeOf(DreamPath.Atom)) {
+                    containerList = container.GetVariable("contents").GetValueAsDreamList();
+                } else {
+                    containerList = (DreamList)container;
+                }
+
+                foreach (DreamValue containerItem in containerList.GetValues()) {
+                    if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
+
+                    if (dmObject.IsSubtypeOf(type)) {
+                        interpreter.Push(containerItem);
+
+                        return;
+                    }
+                }
+
+                interpreter.Push(new DreamValue((DreamObject)null));
+            } else {
+                throw new Exception("Invalid locate() argument " + value);
+            }
+        }
         #endregion Others
 
         #region Helpers

@@ -66,14 +66,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue.Value == null) return;
+            if (screenValue == DreamValue.Null) return;
 
             DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             Program.DreamStateManager.AddClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue.Value == null) return;
+            if (screenValue == DreamValue.Null) return;
 
             DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             Program.DreamStateManager.RemoveClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);

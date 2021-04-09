@@ -309,7 +309,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void PushNull(DreamProcInterpreter interpreter) {
-            interpreter.Push(new DreamValue((DreamObject)null));
+            interpreter.Push(DreamValue.Null);
         }
 
         public static void PushPath(DreamProcInterpreter interpreter) {
@@ -504,7 +504,7 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (first.Type == DreamValue.DreamValueType.DreamResource) {
                 first.GetValueAsDreamResource().Output(second);
 
-                interpreter.Push(new DreamValue((DreamObject)null));
+                interpreter.Push(DreamValue.Null);
             } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                 interpreter.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
             } else {
@@ -1074,7 +1074,7 @@ namespace OpenDreamServer.Dream.Procs {
             if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
                 interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y))); //TODO: Z
             } else {
-                interpreter.Push(new DreamValue((DreamObject)null));
+                interpreter.Push(DreamValue.Null);
             }
         }
         
@@ -1082,18 +1082,18 @@ namespace OpenDreamServer.Dream.Procs {
             DreamObject container = interpreter.PopDreamValue().GetValueAsDreamObject();
             DreamValue value = interpreter.PopDreamValue();
 
+            DreamList containerList;
+            if (container.IsSubtypeOf(DreamPath.Atom)) {
+                containerList = container.GetVariable("contents").GetValueAsDreamList();
+            } else {
+                containerList = (DreamList)container;
+            }
+
             if (value.TryGetValueAsString(out string refString)) {
                 int refID = int.Parse(refString);
 
                 interpreter.Push(new DreamValue(DreamObject.GetFromReferenceID(refID)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
-                DreamList containerList;
-                if (container.IsSubtypeOf(DreamPath.Atom)) {
-                    containerList = container.GetVariable("contents").GetValueAsDreamList();
-                } else {
-                    containerList = (DreamList)container;
-                }
-
                 foreach (DreamValue containerItem in containerList.GetValues()) {
                     if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
 
@@ -1104,9 +1104,17 @@ namespace OpenDreamServer.Dream.Procs {
                     }
                 }
 
-                interpreter.Push(new DreamValue((DreamObject)null));
+                interpreter.Push(DreamValue.Null);
             } else {
-                throw new Exception("Invalid locate() argument " + value);
+                foreach (DreamValue containerItem in containerList.GetValues()) {
+                    if (IsEqual(containerItem, value)) {
+                        interpreter.Push(containerItem);
+
+                        return;
+                    }
+                }
+
+                interpreter.Push(DreamValue.Null);
             }
         }
         #endregion Others

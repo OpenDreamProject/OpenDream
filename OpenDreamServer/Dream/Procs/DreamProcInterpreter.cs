@@ -8,7 +8,7 @@ namespace OpenDreamServer.Dream.Procs {
 
     class DreamProcInterpreter {
         public DreamObject Instance, Usr;
-        public DreamValue DefaultReturnValue = new DreamValue((DreamObject)null);
+        public DreamValue DefaultReturnValue = DreamValue.Null;
         public DreamProcArguments Arguments;
         public List<string> ArgumentNames;
         public Dictionary<int, DreamValue> LocalVariables = new();
@@ -121,7 +121,7 @@ namespace OpenDreamServer.Dream.Procs {
                 } else if (i < arguments.OrderedArguments.Count) {
                     LocalVariables[i] = arguments.OrderedArguments[i];
                 } else {
-                    LocalVariables[i] = new DreamValue((DreamObject)null);
+                    LocalVariables[i] = DreamValue.Null;
                 }
             }
 

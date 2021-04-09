@@ -146,7 +146,7 @@ namespace OpenDreamServer {
             Console.WriteLine("Connection request from '" + connection.CKey + "'");
             DreamStateManager.AddClient(connection.CKey);
 
-            connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { new DreamValue((DreamObject)null) }));
+            connection.ClientDreamObject = DreamObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
             ClientToConnection[connection.ClientDreamObject] = connection;
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
             connection.SendPacket(new PacketFullGameState(DreamStateManager.FullState));

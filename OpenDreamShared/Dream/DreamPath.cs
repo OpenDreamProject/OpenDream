@@ -44,8 +44,8 @@ namespace OpenDreamShared.Dream {
                 if (_pathString != null) return _pathString;
 
                 if (Type == PathType.Absolute) _pathString = "/";
-                else if (Type == PathType.DownwardSearch) _pathString = ".";
-                else if (Type == PathType.UpwardSearch) _pathString = ":";
+                else if (Type == PathType.DownwardSearch) _pathString = ":";
+                else if (Type == PathType.UpwardSearch) _pathString = ".";
                 else if (Type == PathType.Relative) _pathString = String.Empty;
 
                 if (Elements.Length > 0) {

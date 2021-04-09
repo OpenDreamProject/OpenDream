@@ -108,7 +108,7 @@ namespace OpenDreamServer.Dream.Objects {
                 Console.WriteLine("Exception while running proc '" + procName + "' on object of type '" + ObjectDefinition.Type + "': " + e.Message);
             }
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         public DreamValue CallProc(string procName) {

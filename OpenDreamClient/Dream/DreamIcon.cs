@@ -9,6 +9,7 @@ namespace OpenDreamClient.Dream {
     class DreamIcon {
         public ResourceDMI DMI { get; private set; } = null;
         public List<DreamIcon> Overlays { get; } = new();
+        public List<DreamIcon> Underlays { get; } = new();
 
         public int AnimationFrame {
             get {
@@ -82,6 +83,14 @@ namespace OpenDreamClient.Dream {
             return DMI != null && DMI.Description.States.ContainsKey(Appearance.IconState);
         }
 
+        public static int LayerSort(DreamIcon first, DreamIcon second) {
+            float diff = first.Appearance.Layer - second.Appearance.Layer;
+
+            if (diff < 0) return -1;
+            else if (diff > 0) return 1;
+            return 0;
+        }
+
         private void UpdateIcon() {
             if (Appearance.Icon == null) {
                 DMI = null;
@@ -106,16 +115,20 @@ namespace OpenDreamClient.Dream {
 
                 Overlays.Add(new DreamIcon(appearance));
             }
+            
+            Underlays.Clear();
+            foreach (int underlayId in Appearance.Underlays) {
+                IconAppearance appearance = Program.OpenDream.IconAppearances[underlayId];
 
-            Overlays.Sort(
-                new Comparison<DreamIcon>((DreamIcon first, DreamIcon second) => {
-                    float diff = first.Appearance.Layer - second.Appearance.Layer;
+                if (appearance.Direction == AtomDirection.None) {
+                    appearance = new IconAppearance(appearance) { Direction = Appearance.Direction };
+                }
 
-                    if (diff < 0) return -1;
-                    else if (diff > 0) return 1;
-                    return 0;
-                })
-            );
+                Underlays.Add(new DreamIcon(appearance));
+            }
+
+            Overlays.Sort(new Comparison<DreamIcon>(LayerSort));
+            Underlays.Sort(new Comparison<DreamIcon>(LayerSort));
         }
     }
 }

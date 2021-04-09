@@ -46,7 +46,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 obj.SetVariable("transform", transform);
             }
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         [DreamProc("arccos")]
@@ -917,7 +917,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             Program.TickEvents.Add(tickEvent);
             tickEvent.Wait();
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         [DreamProc("sorttext")]
@@ -1020,15 +1020,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
                             return new DreamValue(Convert.ToInt32(text, radix));
                         }
                     } catch (FormatException) {
-                        return new DreamValue((DreamObject)null); //No digits, return null
+                        return DreamValue.Null; //No digits, return null
                     }
                 } else {
-                    return new DreamValue((DreamObject)null);
+                    return DreamValue.Null;
                 }
             } else if (value.IsType(DreamValueType.Number)) {
                 return new DreamValue(value.Value);
             } else if (value.Value == null) {
-                return new DreamValue((DreamObject)null);
+                return DreamValue.Null;
             } else {
                 throw new Exception("Invalid argument to text2num: " + value);
             }
@@ -1043,7 +1043,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             if (Program.DreamObjectTree.HasTreeEntry(path)) {
                 return new DreamValue(path);
             } else {
-                return new DreamValue((DreamObject)null);
+                return DreamValue.Null;
             }
         }
 
@@ -1208,7 +1208,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_walk(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO: Implement walk()
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         [DreamProc("walk_to")]
@@ -1220,7 +1220,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_walk_to(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO: Implement walk_to()
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
     }
 }

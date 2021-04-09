@@ -17,6 +17,8 @@ namespace OpenDreamServer.Dream {
             DreamProc = 64
         }
 
+        public static readonly DreamValue Null = new DreamValue((DreamObject)null);
+
         public DreamValueType Type { get; private set; }
         public object Value { get; private set; }
 

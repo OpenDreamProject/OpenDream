@@ -178,12 +178,12 @@ namespace OpenDreamServer.Dream.Objects {
 
                         return new DreamValue(resource);
                     } else if (resourcePathElement.ValueKind == JsonValueKind.Null) {
-                        return new DreamValue((DreamObject)null);
+                        return DreamValue.Null;
                     } else {
                         throw new Exception("Property 'resourcePath' must be a string or null");
                     }
                 } else if (variableType == JsonVariableType.Null) {
-                    return new DreamValue((DreamObject)null);
+                    return DreamValue.Null;
                 } else if (variableType == JsonVariableType.Path) {
                     return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
                 } else {

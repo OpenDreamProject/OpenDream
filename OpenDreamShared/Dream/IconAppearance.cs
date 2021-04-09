@@ -15,6 +15,7 @@ namespace OpenDreamShared.Dream {
             Layer,
             Invisibility,
             Overlays,
+            Underlays,
             Transform
         }
 
@@ -49,6 +50,7 @@ namespace OpenDreamShared.Dream {
         public float Layer;
         public int Invisibility;
         public List<int> Overlays = new();
+        public List<int> Underlays = new();
         public float[] Transform = new float[6] {   1, 0,
                                                     0, 1,
                                                     0, 0 };
@@ -67,6 +69,10 @@ namespace OpenDreamShared.Dream {
             
             foreach (int overlay in appearance.Overlays) {
                 Overlays.Add(overlay);
+            }
+            
+            foreach (int underlay in appearance.Underlays) {
+                Underlays.Add(underlay);
             }
 
             for (int i = 0; i < 6; i++) {
@@ -91,6 +97,10 @@ namespace OpenDreamShared.Dream {
             for (int i = 0; i < Overlays.Count; i++) {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
             }
+            
+            for (int i = 0; i < Underlays.Count; i++) {
+                if (appearance.Underlays[i] != Underlays[i]) return false;
+            }
 
             for (int i = 0; i < 6; i++) {
                 if (appearance.Transform[i] != Transform[i]) return false;
@@ -110,6 +120,10 @@ namespace OpenDreamShared.Dream {
 
             foreach (int overlay in Overlays) {
                 hashCode += overlay.GetHashCode();
+            }
+            
+            foreach (int underlay in Underlays) {
+                hashCode += underlay.GetHashCode();
             }
 
             for (int i = 0; i < 6; i++) {
@@ -186,6 +200,15 @@ namespace OpenDreamShared.Dream {
                     packetStream.WriteUInt32((UInt32)overlay);
                 }
             }
+            
+            if (Underlays.Count > 0) {
+                packetStream.WriteByte((byte)AppearanceProperty.Underlays);
+                packetStream.WriteByte((byte)Underlays.Count);
+
+                foreach (int underlay in Underlays) {
+                    packetStream.WriteUInt32((UInt32)underlay);
+                }
+            }
 
             if (!IsTransformIdentity()) {
                 packetStream.WriteByte((byte)AppearanceProperty.Transform);
@@ -216,6 +239,15 @@ namespace OpenDreamShared.Dream {
 
                         for (int i = 0; i < overlayCount; i++) {
                             appearance.Overlays.Add((int)packetStream.ReadUInt32());
+                        }
+
+                        break;
+                    }
+                    case AppearanceProperty.Underlays: {
+                        int underlayCount = packetStream.ReadByte();
+
+                        for (int i = 0; i < underlayCount; i++) {
+                            appearance.Underlays.Add((int)packetStream.ReadUInt32());
                         }
 
                         break;

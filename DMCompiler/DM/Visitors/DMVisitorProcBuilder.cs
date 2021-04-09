@@ -437,8 +437,10 @@ namespace DMCompiler.DM.Visitors {
                     if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + type);
 
                     _proc.Dereference(deref.Property);
-                } else if (deref.Type == DMASTDereference.DereferenceType.Search) {
-                    throw new NotImplementedException();
+                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
+                    _currentVariable = new DMVariable(null, deref.Property, false);
+
+                    _proc.Dereference(deref.Property);
                 }
             }
         }
@@ -448,10 +450,9 @@ namespace DMCompiler.DM.Visitors {
 
             for (int i = 0; i < dereferenceProc.Dereferences.Length; i++) {
                 DMASTDereference.Dereference deref = dereferenceProc.Dereferences[i];
+                bool isDereferencingProc = (i == dereferenceProc.Dereferences.Length - 1);
 
                 if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                    bool isDereferencingProc = (i == dereferenceProc.Dereferences.Length - 1);
-
                     if (_currentVariable.Type == null) {
                         throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
                     }
@@ -459,7 +460,7 @@ namespace DMCompiler.DM.Visitors {
                     DreamPath type = _currentVariable.Type.Value;
                     DMObject dmObject = DMObjectTree.GetDMObject(type, false);
 
-                    if (isDereferencingProc) { //Last deref is dereferencing a proc
+                    if (isDereferencingProc) {
                         if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
 
                         _proc.DereferenceProc(deref.Property);
@@ -470,8 +471,14 @@ namespace DMCompiler.DM.Visitors {
 
                         _proc.Dereference(deref.Property);
                     }
-                } else if (deref.Type == DMASTDereference.DereferenceType.Search) {
-                    throw new NotImplementedException();
+                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
+                    if (isDereferencingProc) {
+                        _proc.DereferenceProc(deref.Property);
+                    } else {
+                        _currentVariable = new DMVariable(null, deref.Property, false);
+
+                        _proc.Dereference(deref.Property);
+                    }
                 }
             }
         }

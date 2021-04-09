@@ -33,7 +33,7 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (OrderedArguments.Count > argumentPosition) {
                 return OrderedArguments[argumentPosition];
             } else {
-                return new DreamValue((DreamObject)null);
+                return DreamValue.Null;
             }
         }
 

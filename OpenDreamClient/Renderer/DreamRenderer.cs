@@ -149,11 +149,7 @@ namespace OpenDreamClient.Renderer {
             //Sort by layer
             atoms.Sort(
                 new Comparison<ATOM>((ATOM first, ATOM second) => {
-                    float diff = first.Icon.Appearance.Layer - second.Icon.Appearance.Layer;
-
-                    if (diff < 0) return -1;
-                    else if (diff > 0) return 1;
-                    return 0;
+                    return DreamIcon.LayerSort(first.Icon, second.Icon);
                 })
             );
 
@@ -177,6 +173,10 @@ namespace OpenDreamClient.Renderer {
             if (usePixelOffsets) {
                 pixelX += icon.Appearance.PixelX;
                 pixelY += icon.Appearance.PixelY;
+            }
+
+            foreach (DreamIcon underlay in icon.Underlays) {
+                DrawDreamIcon(underlay, usePixelOffsets, pixelX, pixelY, transform);
             }
 
             if (texture != null) {

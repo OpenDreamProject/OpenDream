@@ -106,7 +106,7 @@ namespace OpenDreamServer.Net {
                         DreamValue file = outputObject.GetVariable("file"); 
                         UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsNumber();
                         
-                        if (file.IsType(DreamValue.DreamValueType.String) || file.Value == null) {
+                        if (file.IsType(DreamValue.DreamValueType.String) || file == DreamValue.Null) {
                             SendPacket(new PacketSound(channel, (string)file.Value, volume));
                         } else if (file.IsType(DreamValue.DreamValueType.DreamResource)) {
                             SendPacket(new PacketSound(channel, file.GetValueAsDreamResource().ResourcePath, volume));
@@ -175,7 +175,7 @@ namespace OpenDreamServer.Net {
                 ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
                 int promptId = _promptEvents.Count;
 
-                DreamValue promptResponse = new DreamValue((DreamObject)null);
+                DreamValue promptResponse = DreamValue.Null;
                 _promptEvents[promptId] = (DreamValue response) => {
                     promptResponse = response;
                     promptWaitHandle.Set();
@@ -195,7 +195,7 @@ namespace OpenDreamServer.Net {
                 DreamValue value;
 
                 switch (pPromptResponse.Type) {
-                    case DMValueType.Null: value = new DreamValue((DreamObject)null); break;
+                    case DMValueType.Null: value = DreamValue.Null; break;
                     case DMValueType.Text: value = new DreamValue((string)pPromptResponse.Value); break;
                     case DMValueType.Num: value = new DreamValue((int)pPromptResponse.Value); break;
                     case DMValueType.Message: value = new DreamValue((string)pPromptResponse.Value); break;
@@ -229,8 +229,8 @@ namespace OpenDreamServer.Net {
 
                 DreamProcArguments clickArguments = new DreamProcArguments(new() {
                     new DreamValue(atom),
-                    new DreamValue((DreamObject)null),
-                    new DreamValue((DreamObject)null),
+                    DreamValue.Null,
+                    DreamValue.Null,
                     new DreamValue(paramsBuilder.ToString())
                 });
 

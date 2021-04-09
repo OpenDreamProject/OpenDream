@@ -20,7 +20,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             }
 
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         [DreamProc("Copy")]
@@ -44,7 +44,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList list = (DreamList)instance;
 
             list.Cut(start, end);
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
 
         [DreamProc("Find")]
@@ -112,7 +112,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int index2 = arguments.GetArgument(1, "Index2").GetValueAsInteger();
 
             list.Swap(index1, index2);
-            return new DreamValue((DreamObject)null);
+            return DreamValue.Null;
         }
     }
 }

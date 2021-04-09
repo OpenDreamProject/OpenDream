@@ -45,7 +45,7 @@ namespace OpenDreamServer.Dream.Procs {
 
                 return true;
             } else {
-                value = new DreamValue((DreamObject)null);
+                value = DreamValue.Null;
 
                 return false;
             }

@@ -57,7 +57,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public DreamValue GetValue(DreamValue key) {
-            if (key.Value == null) return new DreamValue((DreamObject)null);//TODO: Null key
+            if (key == DreamValue.Null) return DreamValue.Null; //TODO: Null key
 
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
@@ -65,7 +65,7 @@ namespace OpenDreamServer.Dream.Objects {
                 if (_associativeValues.ContainsKey(key)) {
                     return _associativeValues[key];
                 } else {
-                    return new DreamValue((DreamObject)null);
+                    return DreamValue.Null;
                 }
             } else {
                 throw new ArgumentException("Invalid index " + key);
@@ -74,6 +74,7 @@ namespace OpenDreamServer.Dream.Objects {
 
         public void SetValue(DreamValue key, DreamValue value) {
             if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
+
             if (IsValidAssociativeKey(key)) {
                 if (!ContainsValue(key)) _values.Add(key);
 
@@ -83,7 +84,6 @@ namespace OpenDreamServer.Dream.Objects {
             } else {
                 throw new ArgumentException("Invalid index " + key);
             }
-
         }
 
         public void RemoveValue(DreamValue value) {

@@ -19,7 +19,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 
                 if (newLen > list.GetLength()) {
                     for (int i = list.GetLength(); i < newLen; i++) {
-                        list.AddValue(new DreamValue((DreamObject)null));
+                        list.AddValue(DreamValue.Null);
                     }
                 } else {
                     list.Cut(newLen + 1, list.GetLength() + 1);

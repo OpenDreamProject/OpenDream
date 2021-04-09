@@ -49,7 +49,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 if (clientObject != null && clientObject.IsSubtypeOf(DreamPath.Client)) {
                     return clientObject.GetVariable(variableName);
                 } else {
-                    return new DreamValue((DreamObject)null);
+                    return DreamValue.Null;
                 }
             } else if (variableName == "client") {
                 DreamConnection connection = Program.DreamServer.GetConnectionFromMob(dreamObject);
@@ -57,7 +57,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 if (connection != null && connection.ClientDreamObject != null) {
                     return new DreamValue(connection.ClientDreamObject);
                 } else {
-                    return new DreamValue((DreamObject)null);
+                    return DreamValue.Null;
                 }
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);

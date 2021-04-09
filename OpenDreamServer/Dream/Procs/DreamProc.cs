@@ -26,7 +26,7 @@ namespace OpenDreamServer.Dream.Procs {
                 for (int i = 0; i < ArgumentNames.Count; i++) {
                     string argumentName = ArgumentNames[i];
 
-                    if (arguments.GetArgument(i, argumentName).Value == null) {
+                    if (arguments.GetArgument(i, argumentName) == DreamValue.Null) {
                         if (_defaultArgumentValues != null && _defaultArgumentValues.TryGetValue(argumentName, out DreamValue defaultValue)) {
                             arguments.NamedArguments.Add(argumentName, defaultValue);
                         }

@@ -184,7 +184,11 @@ namespace OpenDreamClient.Interface {
         }
         
         public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
-            if (DefaultInfo != null) DefaultInfo.Verbs = pUpdateAvailableVerbs.AvailableVerbs;
+            if (DefaultInfo != null) DefaultInfo.UpdateVerbs(pUpdateAvailableVerbs);
+        }
+        
+        public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
+            if (DefaultInfo != null) DefaultInfo.UpdateStatPanels(pUpdateStatPanels);
         }
 
         private Window CreateDefaultWindow() {

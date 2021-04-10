@@ -29,6 +29,7 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketPromptResponse>(PacketID.PromptResponse);
             RegisterPacket<PacketCallVerb>(PacketID.CallVerb);
             RegisterPacket<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs);
+            RegisterPacket<PacketUpdateStatPanels>(PacketID.UpdateStatPanels);
         }
 
         public static IPacket CreatePacketFromData(byte[] packetData) {

@@ -4,6 +4,7 @@
 	var/list/images = list()
 
 	var/mob/mob
+	var/atom/statobj
 	var/key
 	var/ckey
 
@@ -23,6 +24,9 @@
 	proc/Topic(href, list/href_list, datum/hsrc)
 		if (hsrc != null)
 			hsrc.Topic(href, href_list)
+
+	proc/Stat()
+		if (statobj != null) statobj.Stat()
 
 	proc/Click(atom/object, location, control, params)
 		object.Click(location, control, params)

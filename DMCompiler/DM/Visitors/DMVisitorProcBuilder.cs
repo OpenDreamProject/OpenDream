@@ -130,14 +130,11 @@ namespace DMCompiler.DM.Visitors {
                 if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
 
                 string loopLabel = NewLabelName();
-                string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     statementForStandard.Comparator.Visit(this);
-                    _proc.JumpIfTrue(loopBodyLabel);
-                    _proc.Break();
+                    _proc.BreakIfFalse();
 
-                    _proc.AddLabel(loopBodyLabel);
                     statementForStandard.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
@@ -158,7 +155,6 @@ namespace DMCompiler.DM.Visitors {
 
                 string loopLabel = NewLabelName();
                 string typeCheckLabel = NewLabelName();
-                string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.Enumerate(statementForList.Variable.Identifier);
@@ -172,11 +168,9 @@ namespace DMCompiler.DM.Visitors {
                         _proc.PushPath(varDeclaration.Type.Value);
                         _proc.IsType();
 
-                        _proc.JumpIfTrue(loopBodyLabel);
-                        _proc.Continue();
+                        _proc.ContinueIfFalse();
                     }
 
-                    _proc.AddLabel(loopBodyLabel);
                     statementForList.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
@@ -198,14 +192,11 @@ namespace DMCompiler.DM.Visitors {
                 if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
 
                 string loopLabel = NewLabelName();
-                string loopBodyLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.Enumerate(statementForRange.Variable.Identifier);
-                    _proc.JumpIfTrue(loopBodyLabel);
-                    _proc.Break();
+                    _proc.BreakIfFalse();
 
-                    _proc.AddLabel(loopBodyLabel);
                     statementForRange.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
@@ -219,15 +210,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
             string loopLabel = NewLabelName();
-            string bodyLabel = NewLabelName();
 
             _proc.LoopStart(loopLabel);
             {
                 statementWhile.Conditional.Visit(this);
-                _proc.JumpIfTrue(bodyLabel);
-                _proc.Break();
+                _proc.BreakIfFalse();
 
-                _proc.AddLabel(bodyLabel);
                 _proc.StartScope();
                 {
                     statementWhile.Body.Visit(this);

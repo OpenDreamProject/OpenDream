@@ -208,9 +208,17 @@ namespace DMCompiler.DM {
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }
+        
+        public void BreakIfFalse() {
+            JumpIfFalse(_loopStack.Peek() + "_end");
+        }
 
         public void Continue() {
             Jump(_loopStack.Peek() + "_continue");
+        }
+        
+        public void ContinueIfFalse() {
+            JumpIfFalse(_loopStack.Peek() + "_continue");
         }
 
         public void PushProcArguments() {

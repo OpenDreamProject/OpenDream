@@ -48,6 +48,8 @@ namespace OpenDreamServer.Net {
         private DreamObject _mobDreamObject = null;
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
         private Dictionary<string, DreamProc> _availableVerbs = new();
+        private Dictionary<string, List<string>> _statPanels = new();
+        private string _selectedStatPanel;
 
         private TcpClient _tcpClient;
         private NetworkStream _tcpStream;
@@ -168,6 +170,32 @@ namespace OpenDreamServer.Net {
             }
 
             SendPacket(new PacketUpdateAvailableVerbs(_availableVerbs.Keys.ToArray()));
+        }
+
+        public void UpdateStat() {
+            if (ClientDreamObject != null) {
+                Task.Run(() => {
+                    _statPanels.Clear();
+
+                    ClientDreamObject.CallProc("Stat", new DreamProcArguments(null, null), _mobDreamObject);
+                    SendPacket(new PacketUpdateStatPanels(_statPanels));
+                });
+            }
+        }
+
+        public void SelectStatPanel(string name) {
+            _selectedStatPanel = name;
+        }
+
+        public void AddStatPanelLine(string text) {
+            List<string> statPanelLines;
+            if (!_statPanels.TryGetValue(_selectedStatPanel, out statPanelLines)) {
+                statPanelLines = new List<string>();
+
+                _statPanels.Add(_selectedStatPanel, statPanelLines);
+            }
+
+            statPanelLines.Add(text);
         }
 
         public Task<DreamValue> Prompt(DMValueType types, string message) {

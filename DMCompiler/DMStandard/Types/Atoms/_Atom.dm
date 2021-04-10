@@ -51,5 +51,7 @@
 	proc/Exit(atom/movable/O, atom/newloc)
 		return TRUE
 	
+	proc/Stat()
+
 	proc/Click(location, control, params)
 		return

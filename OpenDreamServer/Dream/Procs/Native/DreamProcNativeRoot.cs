@@ -1,5 +1,6 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
+using OpenDreamServer.Net;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
 using System;
@@ -974,6 +975,35 @@ namespace OpenDreamServer.Dream.Procs.Native {
             double a = arguments.GetArgument(0, "A").GetValueAsNumber();
 
             return new DreamValue((float)Math.Sqrt(a));
+        }
+        
+        [DreamProc("stat")]
+        [DreamProcParameter("Name")]
+        [DreamProcParameter("Value")]
+        public static DreamValue NativeProc_stat(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue name = arguments.GetArgument(0, "Name");
+            DreamValue value = arguments.GetArgument(1, "Value");
+            DreamConnection connection = Program.DreamServer.GetConnectionFromMob(usr);
+
+            if (name != DreamValue.Null) {
+                connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
+            } else {
+                connection.AddStatPanelLine(value.Stringify());
+            }
+            
+            return DreamValue.Null;
+        }
+        
+        [DreamProc("statpanel")]
+        [DreamProcParameter("Panel", Type = DreamValueType.String)]
+        [DreamProcParameter("Name")]
+        [DreamProcParameter("Value")]
+        public static DreamValue NativeProc_statpanel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
+            DreamConnection connection = Program.DreamServer.GetConnectionFromMob(usr);
+
+            connection.SelectStatPanel(panel);
+            return new DreamValue(1); //TODO: Know when the client is looking at the panel
         }
 
         [DreamProc("text")]

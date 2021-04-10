@@ -108,14 +108,16 @@ namespace OpenDreamServer {
                 }
 
                 foreach (DreamConnection connection in DreamServer.DreamConnections) {
+                    connection.UpdateStat();
+
                     if (connection.PressedKeys.Contains(38)) {
-                        Task.Run(() => { connection.ClientDreamObject?.CallProc("North"); });
+                        Task.Run(() => connection.ClientDreamObject?.CallProc("North"));
                     } else if (connection.PressedKeys.Contains(39)) {
-                        Task.Run(() => { connection.ClientDreamObject?.CallProc("East"); });
+                        Task.Run(() => connection.ClientDreamObject?.CallProc("East"));
                     } else if (connection.PressedKeys.Contains(40)) {
-                        Task.Run(() => { connection.ClientDreamObject?.CallProc("South"); });
+                        Task.Run(() => connection.ClientDreamObject?.CallProc("South"));
                     } else if (connection.PressedKeys.Contains(37)) {
-                        Task.Run(() => { connection.ClientDreamObject?.CallProc("West"); });
+                        Task.Run(() => connection.ClientDreamObject?.CallProc("West"));
                     }
                 }
 

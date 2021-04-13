@@ -47,7 +47,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            interpreter.EnumeratorStack.Push(new DreamProcListEnumerator(values));
+            interpreter.EnumeratorStack.Push(values.GetEnumerator());
         }
 
         public static void CreateRangeEnumerator(DreamProcInterpreter interpreter) {
@@ -93,11 +93,13 @@ namespace OpenDreamServer.Dream.Procs {
 
         public static void Enumerate(DreamProcInterpreter interpreter) {
             int outputVarId = interpreter.ReadByte();
-            IDreamProcEnumerator enumerator = interpreter.EnumeratorStack.Peek();
-            bool successfulEnumeration = enumerator.TryMoveNext(out DreamValue newValue);
+            IEnumerator<DreamValue> enumerator = interpreter.EnumeratorStack.Peek();
+            bool successfulEnumeration = enumerator.MoveNext();
 
             interpreter.Push(new DreamValue(successfulEnumeration ? 1 : 0));
-            interpreter.LocalVariables[outputVarId] = newValue;
+            if (successfulEnumeration) {
+                interpreter.LocalVariables[outputVarId] = enumerator.Current;
+            }
         }
 
         public static void FormatString(DreamProcInterpreter interpreter) {
@@ -750,6 +752,8 @@ namespace OpenDreamServer.Dream.Procs {
             } else if (first.Value == null) {
                 if (second.Type == DreamValue.DreamValueType.Integer) {
                     output = new DreamValue(-second.GetValueAsInteger());
+                } else if (second.Type == DreamValue.DreamValueType.Float) {
+                    output = new DreamValue(-second.GetValueAsFloat());
                 }
             } else if (first.Type == DreamValue.DreamValueType.Integer) {
                 int firstInt = first.GetValueAsInteger();

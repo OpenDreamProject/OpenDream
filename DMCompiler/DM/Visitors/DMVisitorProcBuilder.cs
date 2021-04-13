@@ -154,14 +154,11 @@ namespace DMCompiler.DM.Visitors {
                 if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
 
                 string loopLabel = NewLabelName();
-                string typeCheckLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.Enumerate(statementForList.Variable.Identifier);
-                    _proc.JumpIfTrue(typeCheckLabel);
-                    _proc.Break();
+                    _proc.BreakIfFalse();
 
-                    _proc.AddLabel(typeCheckLabel);
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null) {
                         statementForList.Variable.Visit(this);

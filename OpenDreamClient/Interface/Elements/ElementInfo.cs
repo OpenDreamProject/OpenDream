@@ -21,6 +21,7 @@ namespace OpenDreamClient.Interface.Elements {
             _textBlock = new TextBlock();
             _textBlock.HorizontalAlignment = HorizontalAlignment.Stretch;
             _textBlock.VerticalAlignment = VerticalAlignment.Stretch;
+            _textBlock.FontFamily = new FontFamily("Courier New");
 
             ScrollViewer scrollViewer = new ScrollViewer();
             scrollViewer.Content = _textBlock;

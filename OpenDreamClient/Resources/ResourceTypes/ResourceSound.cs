@@ -1,7 +1,4 @@
-﻿using OpenDreamClient.Audio;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
     class ResourceSound : Resource {

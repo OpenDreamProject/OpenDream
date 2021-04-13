@@ -1,6 +1,7 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects {
@@ -62,8 +63,8 @@ namespace OpenDreamServer.Dream.Objects {
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
             } else if (IsValidAssociativeKey(key)) {
-                if (_associativeValues.ContainsKey(key)) {
-                    return _associativeValues[key];
+                if (_associativeValues.TryGetValue(key, out DreamValue value)) {
+                    return value;
                 } else {
                     return DreamValue.Null;
                 }

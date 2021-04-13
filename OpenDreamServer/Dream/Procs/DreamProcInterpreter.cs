@@ -12,7 +12,7 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamProcArguments Arguments;
         public List<string> ArgumentNames;
         public Dictionary<int, DreamValue> LocalVariables = new();
-        public Stack<IDreamProcEnumerator> EnumeratorStack = new();
+        public Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
         public DreamProc SelfProc;
         public DreamProc SuperProc;
 

@@ -19,6 +19,7 @@ namespace OpenDreamClient.Interface.Elements {
         private Label _loadingLabel;
         private string _fileSource;
         private ElementDescriptorBrowser _elementDescriptor;
+        private bool _webViewReady;
 
         public ElementBrowser() {
             _loadingLabel = new Label();
@@ -34,7 +35,7 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void SetFileSource(string filepath) {
             _fileSource = filepath;
-            if (WebView.CoreWebView2 != null) WebView.CoreWebView2.Navigate("file://" + _fileSource);
+            if (_webViewReady) WebView.CoreWebView2.Navigate("file://" + _fileSource);
         }
 
         public void UpdateVisuals() {
@@ -42,16 +43,17 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void Output(string value, string jsFunction) {
-            if (WebView.CoreWebView2 != null) {
-                if (jsFunction == null) return;
-                value = HttpUtility.UrlDecode(value);
+            if (!_webViewReady) return;
+            if (jsFunction == null) return;
 
-                value = value.Replace("\"", "\\\"");
-                WebView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
-            }
+            value = HttpUtility.UrlDecode(value);
+            value = value.Replace("\"", "\\\"");
+            WebView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
         }
 
         private void OnWebView2Ready(object sender, EventArgs e) {
+            _webViewReady = true;
+
             this.Children.Remove(_loadingLabel);
             if (_fileSource != null) WebView.CoreWebView2.Navigate("file://" + _fileSource);
         }

@@ -125,7 +125,11 @@ namespace OpenDreamServer {
                 DreamServer.Process();
 
                 TickCount++;
-                Thread.Sleep((int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsNumber()));
+
+                int elapsedTime = (int)(new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - TickStartTime);
+                int tickLength = (int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsNumber());
+                int timeToSleep = tickLength - elapsedTime;
+                if (timeToSleep > 0) Thread.Sleep(timeToSleep);
             }
         }
 

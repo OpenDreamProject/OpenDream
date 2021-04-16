@@ -1,6 +1,5 @@
 ﻿using OpenDreamClient.Dream;
 using SharpGL;
-using SharpGL.WPF;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -8,7 +7,7 @@ using System.Windows;
 
 namespace OpenDreamClient.Renderer {
     class DreamRenderer {
-        public OpenGLControl OpenGLViewControl;
+        public SharpGLControl OpenGLViewControl;
 
         public int CameraX {
             get => (Program.OpenDream.Eye != null) ? Program.OpenDream.Eye.X : 0;
@@ -26,23 +25,17 @@ namespace OpenDreamClient.Renderer {
         private static Dictionary<(string, Rectangle), DreamTexture> _textureCache = new();
 
         public DreamRenderer() {
-            OpenGLViewControl = new OpenGLControl();
-            OpenGLViewControl.FrameRate = 60;
-            OpenGLViewControl.RenderContextType = RenderContextType.FBO;
+            OpenGLViewControl = new SharpGLControl(480, 480);
             OpenGLViewControl.HorizontalAlignment = HorizontalAlignment.Center;
             OpenGLViewControl.VerticalAlignment = VerticalAlignment.Center;
-            OpenGLViewControl.OpenGLDraw += RenderFrame;
-            OpenGLViewControl.OpenGLInitialized += InitOpenGL;
-        }
-
-        ~DreamRenderer() {
-            
+            OpenGLViewControl.Render += RenderFrame;
+            OpenGLViewControl.OpenGLContextCreated += InitOpenGL;
         }
 
         public void SetViewportSize(int width, int height) {
             OpenGLViewControl.Width = width;
             OpenGLViewControl.Height = height;
-            OpenGLViewControl.OpenGL.Viewport(0, 0, width, height);
+            _gl.Viewport(0, 0, width, height);
             _shader.SetViewportSize((float)width, (float)height);
         }
 
@@ -69,8 +62,8 @@ namespace OpenDreamClient.Renderer {
                     iconRect.Y >= -iconRect.Height && iconRect.Y <= OpenGLViewControl.Height);
         }
 
-        private void InitOpenGL(object sender, OpenGLRoutedEventArgs args) {
-            _gl = args.OpenGL;
+        private void InitOpenGL(OpenGL gl) {
+            _gl = gl;
             _shader = new OpenGLShader(_gl, "Renderer/VertexShader.glsl", "Renderer/FragmentShader.glsl");
 
             _gl.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -107,6 +100,8 @@ namespace OpenDreamClient.Renderer {
                 1.0f, 0.0f
             }, OpenGL.GL_STATIC_DRAW);
             _gl.EnableVertexAttribArray(_shader.TextureCoordLocation);
+
+            SetViewportSize(480, 480);
         }
 
         private DreamTexture GetDreamTexture(DreamIcon icon) {
@@ -125,7 +120,7 @@ namespace OpenDreamClient.Renderer {
             return texture;
         }
 
-        private void RenderFrame(object sender, OpenGLRoutedEventArgs args) {
+        private void RenderFrame(OpenGL gl) {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {

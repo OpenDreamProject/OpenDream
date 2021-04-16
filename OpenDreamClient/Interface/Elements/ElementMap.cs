@@ -31,7 +31,6 @@ namespace OpenDreamClient.Interface.Elements {
             this.UseLayoutRounding = true;
             this.Background = Brushes.Black;
 
-            this.Loaded += OnLoaded;
             this.MouseLeftButtonDown += OnLeftMouseDown;
         }
 
@@ -54,10 +53,6 @@ namespace OpenDreamClient.Interface.Elements {
             }
 
             return false;
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e) {
-            _dreamRenderer.SetViewportSize(480, 480);
         }
 
         private void OnLeftMouseDown(object sender, MouseEventArgs e) {

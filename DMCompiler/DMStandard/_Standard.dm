@@ -186,3 +186,6 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 	if (isnull(List)) CRASH("Invalid list")
 	
 	return List.Join(Glue, Start, End)
+
+proc/lentext(T)
+	return length(T)

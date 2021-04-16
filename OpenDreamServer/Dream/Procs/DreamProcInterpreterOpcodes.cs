@@ -189,19 +189,19 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void Initial(DreamProcInterpreter interpreter) {
-            IDreamProcIdentifier identifier = interpreter.PopIdentifier();
+            DreamValue owner = interpreter.PopDreamValue();
+            string property = interpreter.ReadString();
 
-            if (identifier is DreamProcIdentifierVariable varIdentifier) {
-                DreamObjectDefinition objectDefinition = varIdentifier.Instance.ObjectDefinition;
-
-                if (objectDefinition.Variables.TryGetValue(varIdentifier.IdentifierName, out DreamValue initialValue)) {
-                    interpreter.Push(initialValue);
-                } else {
-                    throw new NotImplementedException("Initial is not implemented for variables not belonging to an object");
-                }
+            DreamObjectDefinition objectDefinition;
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                objectDefinition = dreamObject.ObjectDefinition;
+            } else if (owner.TryGetValueAsPath(out DreamPath path)) {
+                objectDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(path);
             } else {
-                throw new Exception("Initial must be given a variable");
+                throw new Exception("Invalid owner for initial() call " + owner);
             }
+
+            interpreter.Push(objectDefinition.Variables[property]);
         }
 
         public static void IsInList(DreamProcInterpreter interpreter) {
@@ -1090,7 +1090,7 @@ namespace OpenDreamServer.Dream.Procs {
             if (container.IsSubtypeOf(DreamPath.Atom)) {
                 containerList = container.GetVariable("contents").GetValueAsDreamList();
             } else {
-                containerList = (DreamList)container;
+                containerList = container as DreamList;
             }
 
             if (value.TryGetValueAsString(out string refString)) {

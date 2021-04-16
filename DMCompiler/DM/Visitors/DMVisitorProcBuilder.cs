@@ -406,65 +406,25 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitDereference(DMASTDereference dereference) {
-            dereference.Expression.Visit(this);
-
-            foreach (DMASTDereference.Dereference deref in dereference.Dereferences) {
-                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                    if (_currentVariable.Type == null) {
-                        throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
-                    }
-
-                    DreamPath type = _currentVariable.Type.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
-
-                    _currentVariable = dmObject.GetVariable(deref.Property);
-                    if (_currentVariable == null) _currentVariable = dmObject.GetGlobalVariable(deref.Property);
-                    if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + type);
-
-                    _proc.Dereference(deref.Property);
-                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
-                    _currentVariable = new DMVariable(null, deref.Property, false);
-
-                    _proc.Dereference(deref.Property);
-                }
-            }
+            Dereference(dereference, true);
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
-            dereferenceProc.Expression.Visit(this);
+            Dereference(dereferenceProc, false);
 
-            for (int i = 0; i < dereferenceProc.Dereferences.Length; i++) {
-                DMASTDereference.Dereference deref = dereferenceProc.Dereferences[i];
-                bool isDereferencingProc = (i == dereferenceProc.Dereferences.Length - 1);
-
-                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                    if (_currentVariable.Type == null) {
-                        throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
-                    }
-
-                    DreamPath type = _currentVariable.Type.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
-
-                    if (isDereferencingProc) {
-                        if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
-
-                        _proc.DereferenceProc(deref.Property);
-                    } else {
-                        _currentVariable = dmObject.GetVariable(deref.Property);
-                        if (_currentVariable == null) _currentVariable = dmObject.GetGlobalVariable(deref.Property);
-                        if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + type);
-
-                        _proc.Dereference(deref.Property);
-                    }
-                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
-                    if (isDereferencingProc) {
-                        _proc.DereferenceProc(deref.Property);
-                    } else {
-                        _currentVariable = new DMVariable(null, deref.Property, false);
-
-                        _proc.Dereference(deref.Property);
-                    }
+            DMASTDereference.Dereference deref = dereferenceProc.Dereferences[dereferenceProc.Dereferences.Length - 1];
+            if (deref.Type == DMASTDereference.DereferenceType.Direct) {
+                if (_currentVariable.Type == null) {
+                    throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
                 }
+
+                DreamPath type = _currentVariable.Type.Value;
+                DMObject dmObject = DMObjectTree.GetDMObject(type, false);
+
+                if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
+                _proc.DereferenceProc(deref.Property);
+            } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
+                _proc.DereferenceProc(deref.Property);
             }
         }
 
@@ -750,8 +710,23 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitInitial(DMASTInitial initial) {
-            initial.Expression.Visit(this);
-            _proc.Initial();
+            if (initial.Expression is DMASTIdentifier identifier) {
+                DMProc.DMLocalVariable localVariable = _proc.GetLocalVariable(identifier.Identifier);
+
+                if (localVariable != null) {
+                    throw new NotImplementedException("Using initial() on local variables is not implemented");
+                } else {
+                    _proc.PushSrc();
+                    _proc.Initial(identifier.Identifier);
+                }
+            } else if (initial.Expression is DMASTDereference dereference) {
+                Dereference(dereference, false);
+
+                DMASTDereference.Dereference lastDeref = dereference.Dereferences[dereference.Dereferences.Length - 1];
+                _proc.Initial(lastDeref.Property);
+            } else {
+                throw new Exception("Expected an identifier");
+            }
         }
 
         public void VisitIsType(DMASTIsType isType) {
@@ -852,6 +827,34 @@ namespace DMCompiler.DM.Visitors {
 
         private string NewLabelName() {
             return "label" + _labelIdCounter++;
+        }
+
+        private void Dereference(DMASTDereference dereference, bool includingLast) {
+            dereference.Expression.Visit(this);
+
+            DMASTDereference.Dereference[] dereferences = dereference.Dereferences;
+            for (int i = 0; i < (includingLast ? dereferences.Length : dereferences.Length - 1); i++) {
+                DMASTDereference.Dereference deref = dereferences[i];
+
+                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
+                    if (_currentVariable.Type == null) {
+                        throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
+                    }
+
+                    DreamPath type = _currentVariable.Type.Value;
+                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
+
+                    _currentVariable = dmObject.GetVariable(deref.Property);
+                    if (_currentVariable == null) _currentVariable = dmObject.GetGlobalVariable(deref.Property);
+                    if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + type);
+
+                    _proc.Dereference(deref.Property);
+                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
+                    _currentVariable = new DMVariable(null, deref.Property, false);
+
+                    _proc.Dereference(deref.Property);
+                }
+            }
         }
 
         private void PushCallParameters(DMASTCallParameter[] parameters) {

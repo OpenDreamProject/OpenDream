@@ -133,7 +133,7 @@ namespace OpenDreamServer.Dream.Procs {
                 _opcodeHandlers[opcode].Invoke(this);
             }
 
-            _dreamValuePool.Return(LocalVariables);
+            _dreamValuePool.Return(LocalVariables, true);
             return DefaultReturnValue;
         }
 

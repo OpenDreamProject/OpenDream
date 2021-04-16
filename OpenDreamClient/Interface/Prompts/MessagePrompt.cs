@@ -10,8 +10,11 @@ namespace OpenDreamClient.Interface.Prompts {
             TextBox textBox = new TextBox();
 
             textBox.MinHeight = 100;
+            textBox.MaxWidth = 500;
+            textBox.MaxHeight = 400;
             textBox.AcceptsReturn = true;
             textBox.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+            textBox.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
             return textBox;
         }
 

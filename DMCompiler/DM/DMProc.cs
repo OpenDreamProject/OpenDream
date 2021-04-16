@@ -300,8 +300,9 @@ namespace DMCompiler.DM {
             WriteInt((int)types);
         }
 
-        public void Initial() {
+        public void Initial(string propertyName) {
             WriteOpcode(DreamProcOpcode.Initial);
+            WriteString(propertyName);
         }
 
         public void Return() {

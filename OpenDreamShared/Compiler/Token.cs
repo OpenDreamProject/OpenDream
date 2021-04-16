@@ -10,7 +10,12 @@
         //DM Preprocessor
         DM_Preproc_ConstantString,
         DM_Preproc_Define,
+        DM_Preproc_Else,
+        DM_Preproc_EndIf,
         DM_Preproc_Identifier,
+        DM_Preproc_If,
+        DM_Preproc_Ifdef,
+        DM_Preproc_Ifndef,
         DM_Preproc_Include,
         DM_Preproc_Number,
         DM_Preproc_ParameterStringify,

@@ -16,8 +16,8 @@ namespace DMCompiler.Preprocessor {
         private bool _isCurrentLineWhitespaceOnly = true;
         private Dictionary<string, DMMacro> _defines = new();
 
-        public void IncludeFile(string includePath, string filePath) {
-            string source = File.ReadAllText(Path.Combine(includePath, filePath));
+        public void IncludeFile(string includePath, string fileName) {
+            string source = File.ReadAllText(Path.Combine(includePath, fileName));
             source = source.Replace("\r\n", "\n");
             source = Regex.Replace(source, @"\\\n", String.Empty); //Combine all lines ending with a backslash
             source += '\n';
@@ -28,11 +28,14 @@ namespace DMCompiler.Preprocessor {
             while (token.Type != TokenType.EndOfFile) {
                 switch (token.Type) {
                     case TokenType.DM_Preproc_Include: {
-                        Token includedFile = GetNextToken(true);
-                        if (includedFile.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFile.Text + "\" is not a valid include path");
-                        string includedFilePath = (string)includedFile.Value;
+                        Token includedFileToken = GetNextToken(true);
+                        if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFileToken.Text + "\" is not a valid include path");
+                        
+                        string includedFile = (string)includedFileToken.Value;
+                        string includedFileName = Path.GetFileName(includedFile);
+                        string newIncludePath = Path.Combine(includePath, Path.GetDirectoryName(includedFile));
 
-                        if (includedFilePath.EndsWith(".dm")) IncludeFile(includePath, (string)includedFile.Value);
+                        if (includedFileName.EndsWith(".dm")) IncludeFile(newIncludePath, includedFileName);
                         break;
                     }
                     case TokenType.DM_Preproc_Define: {
@@ -91,7 +94,19 @@ namespace DMCompiler.Preprocessor {
                     }
                     case TokenType.DM_Preproc_Identifier: {
                         if (_defines.TryGetValue(token.Text, out DMMacro macro)) {
-                            List<Token> expandedTokens = ProcessMacro(macro);
+                            List<List<Token>> parameters = null;
+
+                            if (macro.HasParameters()) {
+                                parameters = GetMacroParameters();
+
+                                if (parameters == null) {
+                                    _currentLine.Append(token.Text);
+
+                                    break;
+                                }
+                            }
+
+                            List<Token> expandedTokens = macro.Expand(parameters);
 
                             //Put the tokens at the beginning of the macro on the top of the stack
                             //Can't use a queue because macros within a macro have to be processed before the rest of the macro
@@ -108,6 +123,31 @@ namespace DMCompiler.Preprocessor {
 
                         break;
                     }
+                    case TokenType.DM_Preproc_Ifdef: {
+                        Token define = GetNextToken(true);
+                        if (define.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a define identifier");
+
+                        if (!_defines.ContainsKey(define.Text)) {
+                            SkipIfBody();
+                        }
+
+                        break;
+                    }
+                    case TokenType.DM_Preproc_Ifndef: {
+                        Token define = GetNextToken(true);
+                        if (define.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a define identifier");
+
+                        if (_defines.ContainsKey(define.Text)) {
+                            SkipIfBody();
+                        }
+
+                        break;
+                    }
+                    case TokenType.DM_Preproc_Else: { //If this is encountered outside of SkipIfBody, it needs skipped
+                        SkipIfBody();
+
+                        break;
+                    }
                     case TokenType.Newline: {
                         if (!_isCurrentLineWhitespaceOnly) {
                             _result.Append(_currentLine);
@@ -119,6 +159,7 @@ namespace DMCompiler.Preprocessor {
                         _currentLine = new StringBuilder();
                         break;
                     }
+                    case TokenType.DM_Preproc_EndIf: break;
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
                     case TokenType.DM_Preproc_ConstantString:
@@ -129,7 +170,7 @@ namespace DMCompiler.Preprocessor {
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:
                     case TokenType.DM_Preproc_Punctuator_RightParenthesis: _isCurrentLineWhitespaceOnly = false; _currentLine.Append(token.Text); break;
-                    case TokenType.DM_Preproc_Whitespace: _currentLine.Append(token.Text); break;
+                    case TokenType.DM_Preproc_Whitespace: _currentLine.Append(token.Text);  break;
                     default: throw new Exception("Invalid token '" + token.Text + "'");
                 }
 
@@ -157,14 +198,21 @@ namespace DMCompiler.Preprocessor {
             }
         }
 
-        private List<Token> ProcessMacro(DMMacro macro) {
-            List<List<Token>> parameters = null;
+        private void SkipIfBody() {
+            int ifdefCount = 1;
 
-            if (macro.HasParameters()) {
-                parameters = GetMacroParameters();
+            Token token;
+            while ((token = GetNextToken(false)).Type != TokenType.EndOfFile) {
+                if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
+                    ifdefCount++;
+                } else if (token.Type == TokenType.DM_Preproc_EndIf) {
+                    ifdefCount--;
+                }
+
+                if (ifdefCount == 0 || (token.Type == TokenType.DM_Preproc_Else && ifdefCount == 1)) {
+                    break;
+                }
             }
-
-            return macro.Expand(parameters);
         }
 
         private List<List<Token>> GetMacroParameters() {

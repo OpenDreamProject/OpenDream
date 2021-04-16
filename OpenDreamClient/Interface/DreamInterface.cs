@@ -86,10 +86,10 @@ namespace OpenDreamClient.Interface {
         public Window CreatePopupWindow(string windowName, System.Drawing.Size windowSize) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(windowName, new() {
                 new ElementDescriptorMain("main") {
-                    Size = new System.Drawing.Size(480, 480)
+                    Size = windowSize
                 },
                 new ElementDescriptorBrowser("browser") {
-                    Size = new System.Drawing.Size(480, 480),
+                    Size = windowSize,
                     Anchor1 = new System.Drawing.Point(0, 0),
                     Anchor2 = new System.Drawing.Point(100, 100)
                 }

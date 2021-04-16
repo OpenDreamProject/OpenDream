@@ -68,6 +68,21 @@ namespace DMCompiler.Preprocessor {
 
                         break;
                     }
+                    case '@': { //Raw string
+                        char delimiter = Advance();
+                        StringBuilder textBuilder = new StringBuilder();
+
+                        textBuilder.Append('@');
+                        textBuilder.Append(delimiter);
+                        while ((c = Advance()) != delimiter) {
+                            textBuilder.Append(c);
+                        }
+                        Advance();
+
+                        string text = textBuilder.ToString();
+                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(2, text.Length - 3));
+                        break;
+                    }
                     case '\'':
                     case '"': {
                         token = LexString(false);
@@ -96,6 +111,16 @@ namespace DMCompiler.Preprocessor {
                             token = CreateToken(TokenType.DM_Preproc_Define, text);
                         } else if (text == "#undef") {
                             token = CreateToken(TokenType.DM_Preproc_Undefine, text);
+                        } else if (text == "#if") {
+                            token = CreateToken(TokenType.DM_Preproc_If, text);
+                        } else if (text == "#ifdef") {
+                            token = CreateToken(TokenType.DM_Preproc_Ifdef, text);
+                        } else if (text == "#ifndef") {
+                            token = CreateToken(TokenType.DM_Preproc_Ifndef, text);
+                        } else if (text == "#else") {
+                            token = CreateToken(TokenType.DM_Preproc_Else, text);
+                        } else if (text == "#endif") {
+                            token = CreateToken(TokenType.DM_Preproc_EndIf, text);
                         } else if (text.StartsWith("##")) {
                             token = CreateToken(TokenType.DM_Preproc_TokenConcat, text, text.Substring(2));
                         } else {
@@ -120,7 +145,7 @@ namespace DMCompiler.Preprocessor {
                                 else textBuilder.Append(c);
                             }
 
-                            if (IsNumeric(c)) {
+                            if (IsNumeric(c) || c == '#') {
                                 while (!IsAtEndOfFile()) {
                                     c = Advance();
 

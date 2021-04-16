@@ -1,5 +1,6 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -11,13 +12,13 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamValue DefaultReturnValue = DreamValue.Null;
         public DreamProcArguments Arguments;
         public List<string> ArgumentNames;
-        public Dictionary<int, DreamValue> LocalVariables = new();
+        public DreamValue[] LocalVariables;
         public Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
         public DreamProc SelfProc;
         public DreamProc SuperProc;
 
         //In the same order as the DreamProcOpcode enum
-        private static List<InterpreterOpcode> _opcodeHandlers = new() {
+        private static InterpreterOpcode[] _opcodeHandlers = new InterpreterOpcode[] {
             null, //0x0
             DreamProcInterpreterOpcodes.BitShiftLeft,
             DreamProcInterpreterOpcodes.GetIdentifier,
@@ -98,6 +99,7 @@ namespace OpenDreamServer.Dream.Procs {
 
         private MemoryStream _bytecodeStream;
         private BinaryReader _binaryReader;
+        private ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
         private Stack<object> _stack = new();
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
@@ -112,6 +114,7 @@ namespace OpenDreamServer.Dream.Procs {
             SuperProc = superProc;
             Arguments = arguments;
             ArgumentNames = argumentNames;
+            LocalVariables = _dreamValuePool.Rent(256);
 
             for (int i = 0; i < ArgumentNames.Count; i++) {
                 string argumentName = ArgumentNames[i];
@@ -125,10 +128,12 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            while (_bytecodeStream.Position < _bytecodeStream.Length) {
-                _opcodeHandlers[_bytecodeStream.ReadByte()].Invoke(this);
+            int opcode;
+            while ((opcode = _bytecodeStream.ReadByte()) != -1) {
+                _opcodeHandlers[opcode].Invoke(this);
             }
 
+            _dreamValuePool.Return(LocalVariables);
             return DefaultReturnValue;
         }
 

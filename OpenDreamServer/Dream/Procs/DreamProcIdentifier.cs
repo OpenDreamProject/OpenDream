@@ -40,11 +40,11 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierLocalVariable : IDreamProcIdentifier {
-        private Dictionary<int, DreamValue> _localVariables;
+        private DreamValue[] _localVariables;
 
         public int ID;
 
-        public DreamProcIdentifierLocalVariable(Dictionary<int, DreamValue> localVariables, int id) {
+        public DreamProcIdentifierLocalVariable(DreamValue[] localVariables, int id) {
             _localVariables = localVariables;
             ID = id;
         }

@@ -175,9 +175,9 @@ proc/get_step_towards(atom/movable/Ref, /atom/Trg)
 	return get_step(Ref, dir)
 
 proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
-	if (get_dist(Ref, Trg) > Max) return 0
+	var/dir = turn(get_dir(Ref, Trg), 180)
 
-	return turn(get_step_towards(Ref, Trg), 180)
+	return get_step(Ref, dir)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 	Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))

@@ -1,5 +1,4 @@
 ﻿using OpenDreamClient.Audio;
-using OpenDreamClient.Audio.NAudio;
 using OpenDreamClient.Dream;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
@@ -13,7 +12,7 @@ using System.Windows.Threading;
 
 namespace OpenDreamClient {
     class OpenDream : Application {
-        public IDreamSoundEngine SoundEngine = null;
+        public DreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
         public DreamInterface Interface = null;
@@ -51,7 +50,7 @@ namespace OpenDreamClient {
             Connection.SendPacket(pRequestConnect);
 
             Interface = new DreamInterface();
-            SoundEngine = new NAudioSoundEngine();
+            SoundEngine = new DreamSoundEngine();
             ResourceManager = new DreamResourceManager();
             StateManager = new DreamStateManager();
 

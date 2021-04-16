@@ -17,6 +17,6 @@
 
 		var/result = ""
 		for (var/i in Start to End)
-			result += "[src[i]][Glue]"
+			result += "[src[i]][(i != End) ? Glue : ""]"
 
 		return result

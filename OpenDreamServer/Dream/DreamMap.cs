@@ -37,7 +37,7 @@ namespace OpenDreamServer.Dream {
                 foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
                     DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
                     DreamObject turf = CreateMapObject(cellDefinition.Turf);
-                    DreamPath areaPath = (cellDefinition.Area != null) ? cellDefinition.Area.Type : DreamPath.Area;
+                    DreamPath areaPath = cellDefinition.Area?.Type ?? DreamPath.Area;
                     int x = mapBlock.X + cell.Key.X - 1;
                     int y = mapBlock.Y + cell.Key.Y - 1;
 

@@ -1391,9 +1391,15 @@ namespace OpenDreamShared.Compiler.DM {
                                         if (container == null) throw new Exception("Expected a container for locate()");
                                     }
 
-                                    if (callParameters.Length == 2) container = callParameters[1].Value;
+                                    DMASTExpression type = null;
+                                    if (callParameters.Length == 2) {
+                                        type = callParameters[0].Value;
+                                        container = callParameters[1].Value;
+                                    } else if (callParameters.Length == 1) {
+                                        type = callParameters[0].Value;
+                                    }
 
-                                    return new DMASTLocate(callParameters.Length == 1 ? callParameters[0].Value : null, container);
+                                    return new DMASTLocate(type, container);
                                 }
                             } else {
                                 DMASTCallable callable;

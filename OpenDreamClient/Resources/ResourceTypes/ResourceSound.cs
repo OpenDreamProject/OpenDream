@@ -23,13 +23,24 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             _outputDevice.Dispose();
         }
 
-        public VorbisWaveReader Play() {
-            VorbisWaveReader waveReader = new VorbisWaveReader(new MemoryStream(Data));
+        public ISampleProvider Play(float volume) {
+            ISampleProvider sampleProvider = new VorbisSampleProvider(new MemoryStream(Data));
 
-            _mixer.AddMixerInput((IWaveProvider)waveReader);
+            if (volume != 1.0f) {
+                VolumeSampleProvider volumeProvider = new VolumeSampleProvider(sampleProvider);
+                volumeProvider.Volume = volume;
+
+                sampleProvider = volumeProvider;
+            }
+
+            _mixer.AddMixerInput(sampleProvider);
             _outputDevice.Play();
 
-            return waveReader;
+            return sampleProvider;
+        }
+
+        public void Stop(ISampleProvider sampleProvider) {
+            _mixer.RemoveMixerInput(sampleProvider);
         }
     }
 }

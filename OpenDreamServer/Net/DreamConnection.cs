@@ -107,7 +107,7 @@ namespace OpenDreamServer.Net {
                         UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                         DreamValue file = outputObject.GetVariable("file"); 
                         UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsNumber();
-                        
+
                         if (file.IsType(DreamValue.DreamValueType.String) || file == DreamValue.Null) {
                             SendPacket(new PacketSound(channel, (string)file.Value, volume));
                         } else if (file.IsType(DreamValue.DreamValueType.DreamResource)) {

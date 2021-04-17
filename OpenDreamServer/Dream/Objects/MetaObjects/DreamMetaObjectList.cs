@@ -1,6 +1,4 @@
 ﻿using OpenDreamServer.Dream.Procs;
-using OpenDreamShared.Dream;
-using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {

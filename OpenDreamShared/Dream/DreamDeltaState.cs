@@ -42,7 +42,7 @@ namespace OpenDreamShared.Dream {
         public List<UInt32> AtomDeletions = new();
         public List<AtomLocationDelta> AtomLocationDeltas = new();
         public Dictionary<UInt32, AtomDelta> AtomDeltas = new();
-        public Dictionary<(int X, int Y), UInt32> TurfDeltas = new();
+        public Dictionary<(int X, int Y, int Z), UInt32> TurfDeltas = new();
         public Dictionary<string, ClientDelta> ClientDeltas = new();
 
         public DreamDeltaState(UInt32 id) {
@@ -91,8 +91,8 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public void AddTurfDelta(int x, int y, UInt32 newTurfAtomID) {
-            TurfDeltas[(x, y)] = newTurfAtomID;
+        public void AddTurfDelta(int x, int y, int z, UInt32 newTurfAtomID) {
+            TurfDeltas[(x, y, z)] = newTurfAtomID;
         }
 
         public void AddClient(string ckey) {

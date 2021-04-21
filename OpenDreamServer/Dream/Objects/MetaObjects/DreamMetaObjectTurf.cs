@@ -4,17 +4,18 @@ using OpenDreamShared.Dream;
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectTurf : DreamMetaObjectAtom {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamObject loc = DreamMetaObjectAtom.FindLocArgument(creationArguments);
-
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            if (loc != null && loc.IsSubtypeOf(DreamPath.Turf)) {
-                DreamList contents = loc.GetVariable("contents").GetValueAsDreamList();
+            if (creationArguments.GetArgument(0, "loc").TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject replacedTurf)) {
+                DreamList contents = replacedTurf.GetVariable("contents").GetValueAsDreamList();
                 while (contents.GetLength() > 0) { //Transfer all the old turf's contents
                     contents.GetValue(new DreamValue(1)).GetValueAsDreamObjectOfType(DreamPath.Atom).SetVariable("loc", new DreamValue(dreamObject));
                 }
 
-                Program.DreamMap.SetTurf(loc.GetVariable("x").GetValueAsInteger(), loc.GetVariable("y").GetValueAsInteger(), dreamObject);
+                int x = replacedTurf.GetVariable("x").GetValueAsInteger();
+                int y = replacedTurf.GetVariable("y").GetValueAsInteger();
+                int z = replacedTurf.GetVariable("z").GetValueAsInteger();
+                Program.DreamMap.SetTurf(x, y, z, dreamObject);
             }
         }
 

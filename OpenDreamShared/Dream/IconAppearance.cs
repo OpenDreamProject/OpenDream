@@ -112,18 +112,18 @@ namespace OpenDreamShared.Dream {
         public override int GetHashCode() {
             int hashCode = (Icon + IconState).GetHashCode();
             hashCode += Direction.GetHashCode();
-            hashCode += PixelX.GetHashCode();
-            hashCode += PixelY.GetHashCode();
+            hashCode += PixelX;
+            hashCode += PixelY;
             hashCode += Color.GetHashCode();
             hashCode += Layer.GetHashCode();
-            hashCode += Invisibility.GetHashCode();
+            hashCode += Invisibility;
 
             foreach (int overlay in Overlays) {
-                hashCode += overlay.GetHashCode();
+                hashCode += overlay;
             }
             
             foreach (int underlay in Underlays) {
-                hashCode += underlay.GetHashCode();
+                hashCode += underlay;
             }
 
             for (int i = 0; i < 6; i++) {

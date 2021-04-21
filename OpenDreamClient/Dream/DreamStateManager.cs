@@ -32,19 +32,22 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            ATOM[,] turfs = new ATOM[fullState.Turfs.GetLength(0), fullState.Turfs.GetLength(1)];
+            ATOM[,,] turfs = new ATOM[fullState.Turfs.GetLength(0), fullState.Turfs.GetLength(1), fullState.Turfs.GetLength(2)];
             for (int x = 0; x < turfs.GetLength(0); x++) {
                 for (int y = 0; y < turfs.GetLength(1); y++) {
-                    UInt32 turfAtomID = fullState.Turfs[x, y];
+                    for (int z = 0; z < turfs.GetLength(2); z++) {
+                        UInt32 turfAtomID = fullState.Turfs[x, y, z];
 
-                    if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
-                        ATOM turf = Program.OpenDream.ATOMs[turfAtomID];
+                        if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
+                            ATOM turf = Program.OpenDream.ATOMs[turfAtomID];
 
-                        turf.X = x;
-                        turf.Y = y;
-                        turfs[x, y] = turf;
-                    } else {
-                        Console.WriteLine("Full game state packet defines a turf as an atom that doesn't exist, and was ignored (ID " + turfAtomID + ")(Location " + x + ", " + y + ")");
+                            turf.X = x;
+                            turf.Y = y;
+                            turf.Z = z;
+                            turfs[x, y, z] = turf;
+                        } else {
+                            Console.WriteLine("Full game state packet defines a turf as an atom that doesn't exist, and was ignored (ID " + turfAtomID + ")(Location " + x + ", " + y + ", " + z + ")");
+                        }
                     }
                 }
             }
@@ -155,9 +158,10 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            foreach (KeyValuePair<(int X, int Y), UInt32> turfDelta in deltaState.TurfDeltas) {
+            foreach (KeyValuePair<(int X, int Y, int Z), UInt32> turfDelta in deltaState.TurfDeltas) {
                 int x = turfDelta.Key.X;
                 int y = turfDelta.Key.Y;
+                int z = turfDelta.Key.Z;
                 UInt32 turfAtomID = turfDelta.Value;
 
                 if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
@@ -165,9 +169,10 @@ namespace OpenDreamClient.Dream {
 
                     turf.X = x;
                     turf.Y = y;
-                    Program.OpenDream.Map.Turfs[x, y] = turf;
+                    turf.Z = z;
+                    Program.OpenDream.Map.Turfs[x, y, z] = turf;
                 } else {
-                    Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfAtomID + ")(Location " + x + ", " + y + ")");
+                    Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfAtomID + ")(Location " + x + ", " + y + ", " + z + ")");
                 }
             }
 

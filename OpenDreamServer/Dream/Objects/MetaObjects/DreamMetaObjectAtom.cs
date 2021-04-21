@@ -27,11 +27,11 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             Program.DreamStateManager.AddAtomCreation(dreamObject, atomAppearance);
             UpdateAppearance(dreamObject, atomAppearance);
 
-            DreamObject locArgument = FindLocArgument(creationArguments);
-            if (locArgument != null) {
-                dreamObject.SetVariable("loc", new DreamValue(locArgument)); //loc is set before /New() is ever called
+            DreamValue locArgument = creationArguments.GetArgument(0, "loc");
+            if (locArgument.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out _)) {
+                dreamObject.SetVariable("loc", locArgument); //loc is set before /New() is ever called
             } else if (creationArguments.ArgumentCount == 0) {
-                creationArguments.OrderedArguments.Add(new DreamValue(locArgument)); //First argument is loc, which is null
+                creationArguments.OrderedArguments.Add(DreamValue.Null); //First argument is loc, which is null
             }
 
             DreamMetaObjectWorld.ContentsList.AddValue(new DreamValue(dreamObject));
@@ -159,18 +159,6 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
-        }
-
-        protected static DreamObject FindLocArgument(DreamProcArguments arguments) {
-            if (arguments.ArgumentCount >= 1) {
-                DreamValue loc = arguments.GetArgument(0, "loc");
-
-                if (loc.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject locValue)) {
-                    return locValue;
-                }
-            }
-
-            return null;
         }
 
         protected static ServerIconAppearance GetAppearance(DreamObject atom) {

@@ -51,7 +51,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "maxy") {
                 return new DreamValue(Program.DreamMap.Height);
             } else if (variableName == "maxz") {
-                return new DreamValue(1); //TODO: Z-Level support
+                return new DreamValue(Program.DreamMap.Levels.Length);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

@@ -2,7 +2,6 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 
 namespace OpenDreamServer.Dream.Procs {
     delegate void InterpreterOpcode(DreamProcInterpreter interpreter);
@@ -97,14 +96,13 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.Locate
         };
 
-        private MemoryStream _bytecodeStream;
-        private BinaryReader _binaryReader;
+        private byte[] _bytecode;
+        private int _pc;
         private ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
         private Stack<object> _stack = new();
 
         public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
-            _bytecodeStream = new MemoryStream(bytecode);
-            _binaryReader = new BinaryReader(_bytecodeStream);
+            _bytecode = bytecode;
             SelfProc = selfProc;
         }
 
@@ -128,8 +126,9 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            int opcode;
-            while ((opcode = _bytecodeStream.ReadByte()) != -1) {
+            while (_pc < _bytecode.Length) {
+                int opcode = _bytecode[_pc++];
+
                 _opcodeHandlers[opcode].Invoke(this);
             }
 
@@ -137,8 +136,12 @@ namespace OpenDreamServer.Dream.Procs {
             return DefaultReturnValue;
         }
 
-        public void SeekTo(int position) {
-            _bytecodeStream.Seek(position, SeekOrigin.Begin);
+        public void JumpTo(int position) {
+            _pc = position;
+        }
+
+        public void End() {
+            _pc = _bytecode.Length; //End the proc by moving to the end
         }
 
         public string ReadString() {
@@ -148,15 +151,21 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public int ReadByte() {
-            return _bytecodeStream.ReadByte();
+            return _bytecode[_pc++];
         }
 
         public int ReadInt() {
-            return _binaryReader.ReadInt32();
+            int value = BitConverter.ToInt32(_bytecode, _pc);
+            _pc += 4;
+
+            return value;
         }
 
         public float ReadFloat() {
-            return _binaryReader.ReadSingle();
+            float value = BitConverter.ToSingle(_bytecode, _pc);
+            _pc += 4;
+
+            return value;
         }
 
         public void Push(DreamValue value) {
@@ -193,10 +202,6 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamValue RunProc(DreamProc proc, DreamObject instance, DreamProcArguments arguments) {
             return proc.Run(instance, arguments, Usr);
-        }
-
-        public void Return() {
-            _bytecodeStream.Seek(0, SeekOrigin.End); //End the proc by moving to the end
         }
     }
 }

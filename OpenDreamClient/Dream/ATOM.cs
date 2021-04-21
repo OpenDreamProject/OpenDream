@@ -57,9 +57,24 @@ namespace OpenDreamClient.Dream {
                 }
             }
         }
+        
+        public int Z {
+            get {
+                if (Type == AtomType.Turf) {
+                    return _z;
+                } else {
+                    return (Loc != null) ? Loc.Z : 0;
+                }
+            }
+            set {
+                if (Type == AtomType.Turf) {
+                    _z = value;
+                }
+            }
+        }
 
         private ATOM _loc = null;
-        private int _x, _y; //Only used for turfs
+        private int _x, _y, _z; //Only used for turfs
 
         public ATOM(UInt32 id, AtomType type, int appearanceId) {
             ID = id;

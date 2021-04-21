@@ -10,11 +10,15 @@ namespace OpenDreamClient.Renderer {
         public SharpGLControl OpenGLViewControl;
 
         public int CameraX {
-            get => (Program.OpenDream.Eye != null) ? Program.OpenDream.Eye.X : 0;
+            get => Program.OpenDream.Eye?.X ?? 0;
         }
 
         public int CameraY {
-            get => (Program.OpenDream.Eye != null) ? Program.OpenDream.Eye.Y : 0;
+            get => Program.OpenDream.Eye?.Y ?? 0;
+        }
+        
+        public int CameraZ {
+            get => Program.OpenDream.Eye?.Z ?? 0;
         }
 
         private OpenGL _gl;
@@ -124,7 +128,7 @@ namespace OpenDreamClient.Renderer {
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {
-                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 8, CameraY - 8, 16, 16);
+                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 8, CameraY - 8, CameraZ, 16, 16);
                 List<ATOM> mapAtoms = new();
 
                 foreach (ATOM turf in turfs) {
@@ -144,7 +148,10 @@ namespace OpenDreamClient.Renderer {
             //Sort by layer
             atoms.Sort(
                 new Comparison<ATOM>((ATOM first, ATOM second) => {
-                    return DreamIcon.LayerSort(first.Icon, second.Icon);
+                    int layerSort = DreamIcon.LayerSort(first.Icon, second.Icon);
+
+                    if (layerSort == 0) return (int)first.ID - (int)second.ID; //Sort by ID instead
+                    else return layerSort;
                 })
             );
 

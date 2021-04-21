@@ -20,7 +20,7 @@ namespace OpenDreamShared.Dream {
         public List<IconAppearance> IconAppearances = new();
         public Dictionary<UInt32, Atom> Atoms = new();
         public Dictionary<string, Client> Clients = new();
-        public UInt32[,] Turfs = new UInt32[0, 0];
+        public UInt32[,,] Turfs = new UInt32[0, 0, 0];
 
         public DreamFullState(UInt32 id) {
             ID = id;
@@ -66,8 +66,8 @@ namespace OpenDreamShared.Dream {
                 }
             }
 
-            foreach (KeyValuePair<(int X, int Y), UInt32> turfDelta in deltaState.TurfDeltas) {
-                Turfs[turfDelta.Key.X, turfDelta.Key.Y] = turfDelta.Value;
+            foreach (KeyValuePair<(int X, int Y, int Z), UInt32> turfDelta in deltaState.TurfDeltas) {
+                Turfs[turfDelta.Key.X, turfDelta.Key.Y, turfDelta.Key.Z] = turfDelta.Value;
             }
 
             foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {

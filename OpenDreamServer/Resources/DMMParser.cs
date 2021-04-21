@@ -5,12 +5,11 @@ using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamShared.Compiler.DMM {
     class DMMParser : DMParser {
         public class Map {
-            public int MaxX, MaxY;
+            public int MaxX, MaxY, MaxZ;
             public Dictionary<string, CellDefinition> CellDefinitions = new();
             public List<MapBlock> Blocks = new();
         }
@@ -72,6 +71,7 @@ namespace OpenDreamShared.Compiler.DMM {
                     int maxY = mapBlock.Y + mapBlock.Height;
                     if (map.MaxX < maxX) map.MaxX = maxX;
                     if (map.MaxY < maxY) map.MaxY = maxY;
+                    if (map.MaxZ < mapBlock.Z) map.MaxZ = mapBlock.Z;
 
                     map.Blocks.Add(mapBlock);
                 }

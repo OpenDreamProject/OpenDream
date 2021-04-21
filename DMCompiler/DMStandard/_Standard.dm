@@ -95,11 +95,14 @@ proc/block(var/atom/Start, var/atom/End)
 	
 	var/startX = min(Start.x, End.x)
 	var/startY = min(Start.y, End.y)
+	var/startZ = min(Start.z, End.z)
 	var/endX = max(Start.x, End.x)
 	var/endY = max(Start.y, End.y)
-	for (var/y=startY; y<=endY; y++)
-		for (var/x=startX; x<=endX; x++)
-			atoms.Add(locate(x, y, Start.z))
+	var/endZ = max(Start.z, End.z)
+	for (var/z=startZ; z<=endZ; z++)
+		for (var/y=startY; y<=endY; y++)
+			for (var/x=startX; x<=endX; x++)
+				atoms.Add(locate(x, y, z))
 	
 	return atoms
 
@@ -108,6 +111,7 @@ proc/get_step(atom/Ref, Dir)
 	
 	var/x = Ref.x
 	var/y = Ref.y
+	var/z = Ref.z
 
 	if (Dir & NORTH) y += 1
 	else if (Dir & SOUTH) y -= 1
@@ -115,10 +119,13 @@ proc/get_step(atom/Ref, Dir)
 	if (Dir & EAST) x += 1
 	else if (Dir & WEST) x -= 1
 
-	return locate(max(x, 1), max(y, 1), Ref.z)
+	if (Dir & UP) z += 1
+	else if (Dir & DOWN) z -= 1
+
+	return locate(max(x, 1), max(y, 1), max(z, 1))
 
 proc/get_dir(atom/Loc1, atom/Loc2)
-	if (Loc1 == null || Loc2 == null) return 0
+	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0
 
 	var/loc1X = Loc1.x
 	var/loc2X = Loc2.x
@@ -134,7 +141,9 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		else if (loc2Y > loc1Y) return NORTHEAST
 		else return SOUTHEAST
 	else if (loc2Y > loc1Y) return NORTH
-	else return SOUTH
+	else if (loc2Y < loc1Y) return SOUTH
+
+	return 0
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	Ref.Move(get_step(Ref, Dir), Dir)

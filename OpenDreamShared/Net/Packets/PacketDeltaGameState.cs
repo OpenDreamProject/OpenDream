@@ -197,9 +197,10 @@ namespace OpenDreamShared.Net.Packets {
             for (int i = 0; i < turfDeltasCount; i++) {
                 UInt16 x = stream.ReadUInt16();
                 UInt16 y = stream.ReadUInt16();
+                UInt16 z = stream.ReadUInt16();
                 UInt32 turfAtomID = stream.ReadUInt32();
 
-                DeltaState.TurfDeltas[(x, y)] = turfAtomID;
+                DeltaState.TurfDeltas[(x, y, z)] = turfAtomID;
             }
         }
 
@@ -207,9 +208,10 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteByte((byte)SectionID.TurfDeltas);
             stream.WriteUInt32((UInt32)DeltaState.TurfDeltas.Count);
 
-            foreach (KeyValuePair<(int X, int Y), UInt32> turfDelta in DeltaState.TurfDeltas) {
+            foreach (KeyValuePair<(int X, int Y, int Z), UInt32> turfDelta in DeltaState.TurfDeltas) {
                 stream.WriteUInt16((UInt16)turfDelta.Key.X);
                 stream.WriteUInt16((UInt16)turfDelta.Key.Y);
+                stream.WriteUInt16((UInt16)turfDelta.Key.Z);
                 stream.WriteUInt32(turfDelta.Value);
             }
         }

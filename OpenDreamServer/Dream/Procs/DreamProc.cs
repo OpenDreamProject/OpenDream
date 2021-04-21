@@ -23,12 +23,12 @@ namespace OpenDreamServer.Dream.Procs {
 
         public DreamProc(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
-                for (int i = 0; i < ArgumentNames.Count; i++) {
-                    string argumentName = ArgumentNames[i];
+                if (_defaultArgumentValues != null) {
+                    foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
+                        int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
 
-                    if (arguments.GetArgument(i, argumentName) == DreamValue.Null) {
-                        if (_defaultArgumentValues != null && _defaultArgumentValues.TryGetValue(argumentName, out DreamValue defaultValue)) {
-                            arguments.NamedArguments.Add(argumentName, defaultValue);
+                        if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
+                            arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
                         }
                     }
                 }

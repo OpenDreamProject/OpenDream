@@ -563,7 +563,7 @@ namespace OpenDreamServer.Dream.Procs {
 
             if (!IsTruthy(a)) {
                 interpreter.Push(a);
-                interpreter.SeekTo(jumpPosition);
+                interpreter.JumpTo(jumpPosition);
             }
         }
 
@@ -579,7 +579,7 @@ namespace OpenDreamServer.Dream.Procs {
 
             if (IsTruthy(a)) {
                 interpreter.Push(a);
-                interpreter.SeekTo(jumpPosition);
+                interpreter.JumpTo(jumpPosition);
             }
         }
 
@@ -926,7 +926,7 @@ namespace OpenDreamServer.Dream.Procs {
         public static void Jump(DreamProcInterpreter interpreter) {
             int position = interpreter.ReadInt();
 
-            interpreter.SeekTo(position);
+            interpreter.JumpTo(position);
         }
 
         public static void JumpIfFalse(DreamProcInterpreter interpreter) {
@@ -934,7 +934,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue value = interpreter.PopDreamValue();
 
             if (!IsTruthy(value)) {
-                interpreter.SeekTo(position);
+                interpreter.JumpTo(position);
             }
         }
 
@@ -943,14 +943,14 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue value = interpreter.PopDreamValue();
 
             if (IsTruthy(value)) {
-                interpreter.SeekTo(position);
+                interpreter.JumpTo(position);
             }
         }
 
         public static void Return(DreamProcInterpreter interpreter) {
             interpreter.DefaultReturnValue = interpreter.PopDreamValue();
 
-            interpreter.Return();
+            interpreter.End();
         }
 
         public static void SwitchCase(DreamProcInterpreter interpreter) {
@@ -959,7 +959,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue value = interpreter.PopDreamValue();
 
             if (IsEqual(value, testValue)) {
-                interpreter.SeekTo(casePosition);
+                interpreter.JumpTo(casePosition);
             } else {
                 interpreter.Push(value);
             }
@@ -1075,8 +1075,8 @@ namespace OpenDreamServer.Dream.Procs {
             int y = interpreter.PopDreamValue().GetValueAsInteger();
             int x = interpreter.PopDreamValue().GetValueAsInteger();
 
-            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && x <= Program.DreamMap.Height) {
-                interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y))); //TODO: Z
+            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && y <= Program.DreamMap.Height && z >= 1 && z <= Program.DreamMap.Levels.Length) {
+                interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y, z)));
             } else {
                 interpreter.Push(DreamValue.Null);
             }

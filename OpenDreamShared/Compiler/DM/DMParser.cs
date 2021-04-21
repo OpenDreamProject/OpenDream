@@ -759,7 +759,7 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcStatementSwitch.SwitchCase SwitchCase() {
             if (Check(TokenType.DM_If)) {
-                List<DMASTExpressionConstant> expressions = new List<DMASTExpressionConstant>();
+                List<DMASTExpressionConstant> expressions = new();
 
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");

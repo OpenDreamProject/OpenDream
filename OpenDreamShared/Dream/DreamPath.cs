@@ -4,21 +4,21 @@ using System.Linq;
 
 namespace OpenDreamShared.Dream {
     struct DreamPath {
-        public static DreamPath Root = new DreamPath("/");
-        public static DreamPath List = new DreamPath("/list");
-        public static DreamPath Sound = new DreamPath("/sound");
-        public static DreamPath Image = new DreamPath("/image");
-        public static DreamPath MutableAppearance = new DreamPath("/mutable_appearance");
-        public static DreamPath World = new DreamPath("/world");
-        public static DreamPath Client = new DreamPath("/client");
-        public static DreamPath Datum = new DreamPath("/datum");
-        public static DreamPath Matrix = new DreamPath("/matrix");
-        public static DreamPath Atom = new DreamPath("/atom");
-        public static DreamPath Area = new DreamPath("/area");
-        public static DreamPath Turf = new DreamPath("/turf");
-        public static DreamPath Movable = new DreamPath("/atom/movable");
-        public static DreamPath Obj = new DreamPath("/obj");
-        public static DreamPath Mob = new DreamPath("/mob");
+        public static readonly DreamPath Root = new DreamPath("/");
+        public static readonly DreamPath List = new DreamPath("/list");
+        public static readonly DreamPath Sound = new DreamPath("/sound");
+        public static readonly DreamPath Image = new DreamPath("/image");
+        public static readonly DreamPath MutableAppearance = new DreamPath("/mutable_appearance");
+        public static readonly DreamPath World = new DreamPath("/world");
+        public static readonly DreamPath Client = new DreamPath("/client");
+        public static readonly DreamPath Datum = new DreamPath("/datum");
+        public static readonly DreamPath Matrix = new DreamPath("/matrix");
+        public static readonly DreamPath Atom = new DreamPath("/atom");
+        public static readonly DreamPath Area = new DreamPath("/area");
+        public static readonly DreamPath Turf = new DreamPath("/turf");
+        public static readonly DreamPath Movable = new DreamPath("/atom/movable");
+        public static readonly DreamPath Obj = new DreamPath("/obj");
+        public static readonly DreamPath Mob = new DreamPath("/mob");
 
         public enum PathType {
             Absolute,
@@ -170,8 +170,14 @@ namespace OpenDreamShared.Dream {
         }
 
         public override bool Equals(object obj) {
-            if (obj is DreamPath) {
-                return PathString == ((DreamPath)obj).PathString;
+            if (obj is DreamPath otherPath) {
+                if (otherPath.Elements.Length != Elements.Length) return false;
+
+                for (int i = 0; i < Elements.Length; i++) {
+                    if (Elements[i] != otherPath.Elements[i]) return false;
+                }
+
+                return true;
             } else {
                 return base.Equals(obj);
             }

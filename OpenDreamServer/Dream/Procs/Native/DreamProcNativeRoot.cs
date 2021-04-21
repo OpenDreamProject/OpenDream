@@ -670,11 +670,12 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList orange = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
+            int centerZ = center.GetVariable("z").GetValueAsInteger();
 
             for (int x = Math.Max(centerX - distance, 1); x <= Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y <= Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
                     if (x != centerX || y != centerY) {
-                        DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
+                        DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
 
                         orange.AddValue(new DreamValue(turf));
                         foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
@@ -716,12 +717,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList view = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
+            int centerZ = center.GetVariable("z").GetValueAsInteger();
 
             for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
                     if (x == centerX && y == centerY) continue;
 
-                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
+                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
 
                     view.AddValue(new DreamValue(turf));
                     foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
@@ -807,10 +809,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList range = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
+            int centerZ = center.GetVariable("z").GetValueAsInteger();
 
             for (int x = Math.Max(centerX - distance, 1); x <= Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y <= Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
-                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
+                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
 
                     range.AddValue(new DreamValue(turf));
                     foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
@@ -976,6 +979,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue((float)Math.Sqrt(a));
         }
+
+        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
+            string entryName = (name != DreamValue.Null) ? name.Stringify() : null;
+
+            if (name != DreamValue.Null) {
+                connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
+            } else {
+                connection.AddStatPanelLine(value.Stringify());
+            }
+        }
         
         [DreamProc("stat")]
         [DreamProcParameter("Name")]
@@ -985,12 +998,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamValue value = arguments.GetArgument(1, "Value");
             DreamConnection connection = Program.DreamServer.GetConnectionFromMob(usr);
 
-            if (name != DreamValue.Null) {
-                connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
-            } else {
-                connection.AddStatPanelLine(value.Stringify());
-            }
-            
+            OutputToStatPanel(connection, name, value);
             return DreamValue.Null;
         }
         
@@ -1000,9 +1008,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_statpanel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
+            DreamValue name = arguments.GetArgument(1, "Name");
+            DreamValue value = arguments.GetArgument(2, "Value");
             DreamConnection connection = Program.DreamServer.GetConnectionFromMob(usr);
 
             connection.SelectStatPanel(panel);
+            if (name != DreamValue.Null || value != DreamValue.Null) {
+                OutputToStatPanel(connection, name, value);
+            }
+
             return new DreamValue(1); //TODO: Know when the client is looking at the panel
         }
 
@@ -1172,10 +1186,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamList view = Program.DreamObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
+            int centerZ = center.GetVariable("z").GetValueAsInteger();
 
             for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
-                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y);
+                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
 
                     view.AddValue(new DreamValue(turf));
                     foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {

@@ -85,13 +85,16 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void ReadMapSection(PacketStream stream) {
-            UInt16 MapWidth = stream.ReadUInt16();
-            UInt16 MapHeight = stream.ReadUInt16();
+            UInt16 mapWidth = stream.ReadUInt16();
+            UInt16 mapHeight = stream.ReadUInt16();
+            UInt16 levels = stream.ReadUInt16();
 
-            FullState.Turfs = new UInt32[MapWidth, MapHeight];
-            for (int x = 0; x < MapWidth; x++) {
-                for (int y = 0; y < MapHeight; y++) {
-                    FullState.Turfs[x, y] = stream.ReadUInt32();
+            FullState.Turfs = new UInt32[mapWidth, mapHeight, levels];
+            for (int x = 0; x < mapWidth; x++) {
+                for (int y = 0; y < mapHeight; y++) {
+                    for (int z = 0; z < levels; z++) {
+                        FullState.Turfs[x, y, z] = stream.ReadUInt32();
+                    }
                 }
             }
         }
@@ -99,10 +102,13 @@ namespace OpenDreamShared.Net.Packets {
         private void WriteMapSection(PacketStream stream) {
             stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(0));
             stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(1));
+            stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(2));
 
             for (int x = 0; x < FullState.Turfs.GetLength(0); x++) {
                 for (int y = 0; y < FullState.Turfs.GetLength(1); y++) {
-                    stream.WriteUInt32(FullState.Turfs[x, y]);
+                    for (int z = 0; z < FullState.Turfs.GetLength(2); z++) {
+                        stream.WriteUInt32(FullState.Turfs[x, y, z]);
+                    }
                 }
             }
         }

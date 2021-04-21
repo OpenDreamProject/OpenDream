@@ -3,11 +3,12 @@ using System.Collections.Generic;
 
 namespace OpenDreamClient.Dream {
     class Map {
-        public ATOM[,] Turfs;
+        public ATOM[,,] Turfs;
         public int Width { get => Turfs.GetLength(0); }
         public int Height { get => Turfs.GetLength(1); }
+        public int Levels { get => Turfs.GetLength(2); }
 
-        public Map(ATOM[,] turfs) {
+        public Map(ATOM[,,] turfs) {
             Turfs = turfs;
         }
 
@@ -16,7 +17,7 @@ namespace OpenDreamClient.Dream {
                     y >= 0 && y < Turfs.GetLength(1);
         }
 
-        public List<ATOM> GetTurfs(int x, int y, int width, int height) {
+        public List<ATOM> GetTurfs(int x, int y, int z, int width, int height) {
             int startX = Math.Max(x, 0);
             int startY = Math.Max(y, 0);
             int endX = Math.Min(x + width, Width);
@@ -25,7 +26,7 @@ namespace OpenDreamClient.Dream {
 
             for (x = startX; x < endX; x++) {
                 for (y = startY; y < endY; y++) {
-                    turfs.Add(Turfs[x, y]);
+                    turfs.Add(Turfs[x, y, z]);
                 }
             }
 

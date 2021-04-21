@@ -29,7 +29,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (variableName == "x" || variableName == "y" || variableName == "z") {
                 int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
                 int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
-                DreamObject newLocation = Program.DreamMap.GetTurfAt(x, y);
+                int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
+                DreamObject newLocation = Program.DreamMap.GetTurfAt(x, y, z);
 
                 dreamObject.SetVariable("loc", new DreamValue(newLocation));
             } else if (variableName == "loc") {

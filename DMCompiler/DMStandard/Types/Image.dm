@@ -3,7 +3,7 @@
 
 	var/icon = null
 	var/icon_state = null
-	var/loc = null
+	var/atom/loc = null
 	var/layer = FLOAT_LAYER
 	var/dir = 2
 	var/pixel_x = 0

@@ -87,6 +87,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
             list.SetNativeProc(DreamProcNativeList.NativeProc_Insert);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
+
+            DreamObjectDefinition regex = Program.DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
+            regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
         }
     }
 }

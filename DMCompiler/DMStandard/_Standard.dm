@@ -81,6 +81,7 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 #include "Types\List.dm"
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
+#include "Types\Regex.dm"
 #include "Types\Sound.dm"
 #include "Types\World.dm"
 #include "Types\Atoms\_Atom.dm"

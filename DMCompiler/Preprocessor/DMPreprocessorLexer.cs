@@ -74,9 +74,11 @@ namespace DMCompiler.Preprocessor {
 
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
-                        while ((c = Advance()) != delimiter) {
+                        do {
+                            c = Advance();
+
                             textBuilder.Append(c);
-                        }
+                        } while (c != delimiter && c != '\n');
                         Advance();
 
                         string text = textBuilder.ToString();
@@ -141,7 +143,7 @@ namespace DMCompiler.Preprocessor {
                             if (c == '.') {
                                 c = Advance();
 
-                                if (!IsNumeric(c)) token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, '.');
+                                if (!IsNumeric(c) && c != '#') token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, '.');
                                 else textBuilder.Append(c);
                             }
 

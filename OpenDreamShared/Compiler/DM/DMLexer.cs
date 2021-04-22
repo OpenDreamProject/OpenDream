@@ -340,6 +340,25 @@ namespace OpenDreamShared.Compiler.DM {
                         token = CreateToken(TokenType.DM_Resource, text, text.Substring(1, text.Length - 2));
                         break;
                     }
+                    case '@': { //Raw string
+                        char delimiter = Advance();
+                        StringBuilder textBuilder = new StringBuilder();
+
+                        textBuilder.Append("@");
+                        textBuilder.Append(delimiter);
+                        do {
+                            c = Advance();
+
+                            textBuilder.Append(c);
+                        } while (c != delimiter && c != '\n');
+
+                        if (c != delimiter) throw new Exception("Expected '" + delimiter + "' to end raw string");
+                        Advance();
+
+                        string text = textBuilder.ToString();
+                        token = CreateToken(TokenType.DM_RawString, text, text.Substring(2, text.Length - 3));
+                        break;
+                    }
                     case '"': {
                         token = LexString(false);
 
@@ -372,18 +391,26 @@ namespace OpenDreamShared.Compiler.DM {
                             do {
                                 c = Advance();
 
-                                if (IsNumeric(c) || c == '.' || c == 'E' || c == 'e') {
+                                if (IsNumeric(c) || c == '.' || c == 'E' || c == 'e' || c == '#') {
                                     if (c == '.') {
                                         if (containsDecimal) throw new Exception("Multiple decimals in number");
 
                                         containsDecimal = true;
-                                    }
-
-                                    if (c == 'E' || c == 'e') {
+                                    } else if (c == 'E' || c == 'e') {
                                         textBuilder.Append(c);
                                         c = Advance();
 
                                         if (!(IsNumeric(c) || c == '-' || c == '+')) throw new Exception("Invalid scientific notation");
+                                    } else if (c == '#') {
+                                        textBuilder.Append(c);
+                                        textBuilder.Append("IN");
+
+                                        c = Advance();
+                                        if (c != 'I') throw new Exception("Expected .#INF");
+                                        c = Advance();
+                                        if (c != 'N') throw new Exception("Expected .#INF");
+                                        c = Advance();
+                                        if (c != 'F') throw new Exception("Expected .#INF");
                                     }
 
                                     textBuilder.Append(c);
@@ -393,7 +420,9 @@ namespace OpenDreamShared.Compiler.DM {
                             } while (!IsAtEndOfFile());
 
                             string text = textBuilder.ToString();
-                            if (containsDecimal || text.Contains("e")) {
+                            if (text == "1.#INF") {
+                                token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
+                            } else if (containsDecimal || text.Contains("e")) {
                                 token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
                             } else if (Int32.TryParse(text, out int value)) {
                                 token = CreateToken(TokenType.DM_Integer, text, value);

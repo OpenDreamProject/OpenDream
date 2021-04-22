@@ -6,6 +6,7 @@ namespace OpenDreamShared.Dream {
     struct DreamPath {
         public static readonly DreamPath Root = new DreamPath("/");
         public static readonly DreamPath List = new DreamPath("/list");
+        public static readonly DreamPath Regex = new DreamPath("/regex");
         public static readonly DreamPath Sound = new DreamPath("/sound");
         public static readonly DreamPath Image = new DreamPath("/image");
         public static readonly DreamPath MutableAppearance = new DreamPath("/mutable_appearance");

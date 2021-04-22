@@ -85,6 +85,7 @@
         DM_PlusPlus,
         DM_Proc,
         DM_Question,
+        DM_RawString,
         DM_Resource,
         DM_Return,
         DM_RightBracket,

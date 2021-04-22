@@ -1464,6 +1464,7 @@ namespace OpenDreamShared.Compiler.DM {
                 case TokenType.DM_Float: Advance(); return new DMASTConstantFloat((float)constantToken.Value);
                 case TokenType.DM_Resource: Advance(); return new DMASTConstantResource((string)constantToken.Value);
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull();
+                case TokenType.DM_RawString: Advance(); return new DMASTConstantString((string)constantToken.Value);
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
                     StringBuilder stringBuilder = new StringBuilder(); ;

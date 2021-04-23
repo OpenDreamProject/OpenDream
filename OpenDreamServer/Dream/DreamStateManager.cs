@@ -2,6 +2,7 @@
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream {
     delegate void DreamStateManagerDeltaStateFinalizedDelegate(DreamDeltaState deltaState);
@@ -24,7 +25,11 @@ namespace OpenDreamServer.Dream {
                 if (_currentDeltaState.ContainsChanges()) {
                     if (FullState == null) {
                         FullState = new DreamFullState(0);
-                        FullState.Turfs = new UInt32[Program.DreamMap.Width, Program.DreamMap.Height, Program.DreamMap.Levels.Length];
+
+                        FullState.Levels = new List<DreamFullState.Level>(Program.DreamMap.Levels.Count);
+                        for (int z = 0; z < Program.DreamMap.Levels.Count; z++) {
+                            FullState.Levels.Add(new DreamFullState.Level(Program.DreamMap.Width, Program.DreamMap.Height));
+                        }
                     }
 
                     FullState.ApplyDeltaState(_currentDeltaState);

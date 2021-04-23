@@ -1075,7 +1075,7 @@ namespace OpenDreamServer.Dream.Procs {
             int y = interpreter.PopDreamValue().GetValueAsInteger();
             int x = interpreter.PopDreamValue().GetValueAsInteger();
 
-            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && y <= Program.DreamMap.Height && z >= 1 && z <= Program.DreamMap.Levels.Length) {
+            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && y <= Program.DreamMap.Height && z >= 1 && z <= Program.DreamMap.Levels.Count) {
                 interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y, z)));
             } else {
                 interpreter.Push(DreamValue.Null);

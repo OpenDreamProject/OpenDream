@@ -7,7 +7,6 @@ using OpenDreamShared.Compiler.DMM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamServer.Dream {
     class DreamMap {
@@ -31,7 +30,7 @@ namespace OpenDreamServer.Dream {
         }
 
         public Dictionary<DreamPath, DreamObject> Areas = new();
-        public MapLevel[] Levels { get; private set; }
+        public List<MapLevel> Levels { get; private set; }
         public int Width, Height;
 
         public void LoadMap(DreamResource mapResource) {
@@ -41,11 +40,12 @@ namespace OpenDreamServer.Dream {
 
             Width = map.MaxX - 1;
             Height = map.MaxY - 1;
-            Levels = new MapLevel[map.MaxZ];
+            Levels = new List<MapLevel>(map.MaxZ);
             for (int z = 1; z <= map.MaxZ; z++) {
-                Levels[z - 1] = new MapLevel(Width, Height);
+                Levels.Add(new MapLevel(Width, Height));
             }
 
+            DreamPath defaultTurf = Program.WorldInstance.GetVariable("turf").GetValueAsPath();
             foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
                 foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
                     DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
@@ -54,13 +54,27 @@ namespace OpenDreamServer.Dream {
                     int x = mapBlock.X + cell.Key.X - 1;
                     int y = mapBlock.Y + cell.Key.Y - 1;
 
-                    if (turf == null) turf = Program.DreamObjectTree.CreateObject(DreamPath.Turf);
+                    if (turf == null) turf = Program.DreamObjectTree.CreateObject(defaultTurf);
 
                     SetTurf(x, y, mapBlock.Z, turf);
                     SetArea(x, y, mapBlock.Z, cellDefinition.Area.Type);
                     foreach (DMMParser.MapObject mapObject in cellDefinition.Objects) {
                         CreateMapObject(mapObject, turf);
                     }
+                }
+            }
+        }
+
+        public void AddLevel() {
+            DreamPath defaultTurf = Program.WorldInstance.GetVariable("turf").GetValueAsPath();
+
+            Levels.Add(new MapLevel(Width, Height));
+
+            int z = Levels.Count;
+            for (int x = 1; x <= Width; x++) {
+                for (int y = 1; y <= Height; y++) {
+                    SetTurf(x, y, z, Program.DreamObjectTree.CreateObject(defaultTurf));
+                    SetArea(x, y, z, DreamPath.Area);
                 }
             }
         }

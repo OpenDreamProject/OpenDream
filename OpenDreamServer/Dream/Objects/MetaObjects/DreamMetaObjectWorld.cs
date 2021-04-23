@@ -27,6 +27,12 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
             if (variableName == "fps") {
                 dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / variableValue.GetValueAsInteger()));
+            } else if (variableName == "maxz") {
+                int newMaxZ = variableValue.GetValueAsInteger();
+
+                if (newMaxZ < oldVariableValue.GetValueAsInteger()) throw new NotImplementedException("Cannot set maxz lower than previous value");
+
+                while (Program.DreamMap.Levels.Count < newMaxZ) Program.DreamMap.AddLevel();
             }
         }
 
@@ -51,7 +57,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "maxy") {
                 return new DreamValue(Program.DreamMap.Height);
             } else if (variableName == "maxz") {
-                return new DreamValue(Program.DreamMap.Levels.Length);
+                return new DreamValue(Program.DreamMap.Levels.Count);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

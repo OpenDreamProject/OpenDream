@@ -22,6 +22,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 return new DreamValue(dreamObject.ObjectDefinition.Type);
             } else if (variableName == "parent_type") {
                 return new DreamValue(Program.DreamObjectTree.GetTreeEntryFromPath(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
+            } else if (variableName == "vars") {
+                return new DreamValue(new DreamListVars(dreamObject));
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

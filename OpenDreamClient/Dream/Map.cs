@@ -3,18 +3,17 @@ using System.Collections.Generic;
 
 namespace OpenDreamClient.Dream {
     class Map {
-        public ATOM[,,] Turfs;
-        public int Width { get => Turfs.GetLength(0); }
-        public int Height { get => Turfs.GetLength(1); }
-        public int Levels { get => Turfs.GetLength(2); }
-
-        public Map(ATOM[,,] turfs) {
-            Turfs = turfs;
+        public struct Level {
+            public ATOM[,] Turfs;
         }
 
+        public List<Level> Levels = new();
+        public int Width { get => Levels[0].Turfs.GetLength(0); }
+        public int Height { get => Levels[0].Turfs.GetLength(1); }
+
         public bool IsValidCoordinate(int x, int y) {
-            return  x >= 0 && x < Turfs.GetLength(0) &&
-                    y >= 0 && y < Turfs.GetLength(1);
+            return  x >= 0 && x < Width &&
+                    y >= 0 && y < Height;
         }
 
         public List<ATOM> GetTurfs(int x, int y, int z, int width, int height) {
@@ -26,7 +25,7 @@ namespace OpenDreamClient.Dream {
 
             for (x = startX; x < endX; x++) {
                 for (y = startY; y < endY; y++) {
-                    turfs.Add(Turfs[x, y, z]);
+                    turfs.Add(Levels[z].Turfs[x, y]);
                 }
             }
 

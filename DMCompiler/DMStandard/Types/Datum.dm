@@ -2,6 +2,8 @@
 	var/type
 	var/parent_type
 
+	var/list/vars
+
 	var/tag = null
 
 	proc/New()

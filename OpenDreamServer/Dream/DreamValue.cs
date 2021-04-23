@@ -238,6 +238,18 @@ namespace OpenDreamServer.Dream {
             return (DreamProc)GetValueExpectingType(DreamValueType.DreamProc);
         }
 
+        public bool TryGetValueAsProc(out DreamProc proc) {
+            if (IsType(DreamValueType.DreamProc)) {
+                proc = (DreamProc)Value;
+
+                return true;
+            } else {
+                proc = null;
+
+                return false;
+            }
+        }
+
         public string Stringify() {
             if (Type == DreamValueType.String) {
                 return GetValueAsString();

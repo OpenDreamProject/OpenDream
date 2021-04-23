@@ -1,7 +1,6 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream.Objects {
@@ -49,7 +48,7 @@ namespace OpenDreamServer.Dream.Objects {
             return copy;
         }
 
-        public List<DreamValue> GetValues() {
+        public virtual List<DreamValue> GetValues() {
             return _values;
         }
 
@@ -57,7 +56,7 @@ namespace OpenDreamServer.Dream.Objects {
             return _associativeValues;
         }
 
-        public DreamValue GetValue(DreamValue key) {
+        public virtual DreamValue GetValue(DreamValue key) {
             if (key == DreamValue.Null) return DreamValue.Null; //TODO: Null key
 
             if (key.Type == DreamValue.DreamValueType.Integer) {
@@ -73,7 +72,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void SetValue(DreamValue key, DreamValue value) {
+        public virtual void SetValue(DreamValue key, DreamValue value) {
             if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
 
             if (IsValidAssociativeKey(key)) {
@@ -161,6 +160,30 @@ namespace OpenDreamServer.Dream.Objects {
 
         public int GetLength() {
             return _values.Count;
+        }
+    }
+
+    class DreamListVars : DreamList {
+        private DreamObject _dreamObject;
+
+        public DreamListVars(DreamObject dreamObject) : base() {
+            _dreamObject = dreamObject;
+        }
+
+        public override List<DreamValue> GetValues() {
+            throw new NotImplementedException();
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            return _dreamObject.GetVariable(key.GetValueAsString());
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value) {
+            string varName = key.GetValueAsString();
+
+            if (_dreamObject.HasVariable(varName)) {
+                _dreamObject.SetVariable(varName, value);
+            }
         }
     }
 }

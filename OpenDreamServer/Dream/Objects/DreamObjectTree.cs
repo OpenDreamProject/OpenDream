@@ -53,9 +53,7 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObjectTreeEntry RootObject = new DreamObjectTreeEntry(DreamPath.Root);
 
         public bool HasTreeEntry(DreamPath path) {
-            if (path.Type != DreamPath.PathType.Absolute) {
-                throw new Exception("Path must be an absolute path");
-            }
+            if (path.Type != DreamPath.PathType.Absolute) return false;
 
             if (path.Equals(DreamPath.Root) && RootObject != null) return true;
 

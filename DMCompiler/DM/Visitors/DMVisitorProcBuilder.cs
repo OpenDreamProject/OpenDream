@@ -351,7 +351,7 @@ namespace DMCompiler.DM.Visitors {
                 } else {
                     _currentVariable =  _dmObject.GetVariable(identifier.Identifier);
                     if (_currentVariable == null) _currentVariable =  _dmObject.GetGlobalVariable(identifier.Identifier);
-                    if (_currentVariable == null) throw new Exception("Invalid identifier \"" + identifier.Identifier);
+                    if (_currentVariable == null) throw new Exception("Invalid identifier \"" + identifier.Identifier + "\"");
 
                     _proc.GetIdentifier(identifier.Identifier);
                 }

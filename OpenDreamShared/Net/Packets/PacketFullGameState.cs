@@ -89,25 +89,30 @@ namespace OpenDreamShared.Net.Packets {
             UInt16 mapHeight = stream.ReadUInt16();
             UInt16 levels = stream.ReadUInt16();
 
-            FullState.Turfs = new UInt32[mapWidth, mapHeight, levels];
-            for (int x = 0; x < mapWidth; x++) {
-                for (int y = 0; y < mapHeight; y++) {
-                    for (int z = 0; z < levels; z++) {
-                        FullState.Turfs[x, y, z] = stream.ReadUInt32();
+            FullState.Levels = new List<DreamFullState.Level>(levels);
+            for (int z = 0; z < levels; z++) {
+                FullState.Levels.Add(new DreamFullState.Level(mapWidth, mapHeight));
+
+                for (int x = 0; x < mapWidth; x++) {
+                    for (int y = 0; y < mapHeight; y++) {
+                        FullState.Levels[z].Turfs[x, y] = stream.ReadUInt32();
                     }
                 }
             }
         }
 
         private void WriteMapSection(PacketStream stream) {
-            stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(0));
-            stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(1));
-            stream.WriteUInt16((UInt16)FullState.Turfs.GetLength(2));
+            int mapWidth = FullState.Levels[0].Turfs.GetLength(0);
+            int mapHeight = FullState.Levels[0].Turfs.GetLength(1);
 
-            for (int x = 0; x < FullState.Turfs.GetLength(0); x++) {
-                for (int y = 0; y < FullState.Turfs.GetLength(1); y++) {
-                    for (int z = 0; z < FullState.Turfs.GetLength(2); z++) {
-                        stream.WriteUInt32(FullState.Turfs[x, y, z]);
+            stream.WriteUInt16((UInt16)mapWidth);
+            stream.WriteUInt16((UInt16)mapHeight);
+            stream.WriteUInt16((UInt16)FullState.Levels.Count);
+
+            foreach (DreamFullState.Level level in FullState.Levels) {
+                for (int x = 0; x < mapWidth; x++) {
+                    for (int y = 0; y < mapHeight; y++) {
+                        stream.WriteUInt32(level.Turfs[x, y]);
                     }
                 }
             }

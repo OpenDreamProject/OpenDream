@@ -90,6 +90,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             DreamObjectDefinition regex = Program.DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
+            regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
         }
     }
 }

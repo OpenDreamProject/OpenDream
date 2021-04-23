@@ -16,11 +16,19 @@ namespace OpenDreamShared.Dream {
             public List<UInt32> ScreenObjects = new();
         }
 
+        public struct Level {
+            public UInt32[,] Turfs;
+
+            public Level(int width, int height) {
+                Turfs = new uint[width, height];
+            }
+        }
+
         public UInt32 ID;
         public List<IconAppearance> IconAppearances = new();
         public Dictionary<UInt32, Atom> Atoms = new();
         public Dictionary<string, Client> Clients = new();
-        public UInt32[,,] Turfs = new UInt32[0, 0, 0];
+        public List<Level> Levels = new();
 
         public DreamFullState(UInt32 id) {
             ID = id;
@@ -67,7 +75,11 @@ namespace OpenDreamShared.Dream {
             }
 
             foreach (KeyValuePair<(int X, int Y, int Z), UInt32> turfDelta in deltaState.TurfDeltas) {
-                Turfs[turfDelta.Key.X, turfDelta.Key.Y, turfDelta.Key.Z] = turfDelta.Value;
+                if (turfDelta.Key.Z >= Levels.Count) {
+                    while (Levels.Count <= turfDelta.Key.Z) Levels.Add(new Level(Levels[0].Turfs.GetLength(0), Levels[0].Turfs.GetLength(1)));
+                }
+
+                Levels[turfDelta.Key.Z].Turfs[turfDelta.Key.X, turfDelta.Key.Y] = turfDelta.Value;
             }
 
             foreach (KeyValuePair<string, DreamDeltaState.ClientDelta> clientDelta in deltaState.ClientDeltas) {

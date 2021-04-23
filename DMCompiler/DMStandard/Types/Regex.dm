@@ -20,6 +20,7 @@
 			src.flags = flags
 
 	proc/Find(haystack, Start = 1, End = 0)
+	proc/Replace(haystack, replacement, Start = 1, End = 0)
 
 proc/regex(pattern, flags)
 	return new /regex(pattern, flags)

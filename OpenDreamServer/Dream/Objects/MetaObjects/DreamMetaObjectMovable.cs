@@ -1,8 +1,5 @@
 ﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamServer.Dream.Objects.MetaObjects {
     class DreamMetaObjectMovable : DreamMetaObjectAtom {

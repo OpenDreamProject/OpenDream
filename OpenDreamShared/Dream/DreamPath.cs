@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace OpenDreamShared.Dream {
     struct DreamPath {
@@ -44,17 +45,17 @@ namespace OpenDreamShared.Dream {
             get {
                 if (_pathString != null) return _pathString;
 
-                if (Type == PathType.Absolute) _pathString = "/";
-                else if (Type == PathType.DownwardSearch) _pathString = ":";
-                else if (Type == PathType.UpwardSearch) _pathString = ".";
-                else if (Type == PathType.Relative) _pathString = String.Empty;
+                StringBuilder pathStringBuilder = new StringBuilder();
+                if (Type == PathType.Absolute) pathStringBuilder.Append("/");
+                else if (Type == PathType.DownwardSearch) pathStringBuilder.Append(":");
+                else if (Type == PathType.UpwardSearch) pathStringBuilder.Append(".");
 
-                if (Elements.Length > 0) {
-                    _pathString += Elements.Aggregate((string first, string second) => {
-                        return first + "/" + second;
-                    });
+                for (int i = 0; i < Elements.Length; i++) {
+                    pathStringBuilder.Append(Elements[i]);
+                    if (i < Elements.Length - 1) pathStringBuilder.Append("/");
                 }
 
+                _pathString = pathStringBuilder.ToString();
                 return _pathString;
             }
         }

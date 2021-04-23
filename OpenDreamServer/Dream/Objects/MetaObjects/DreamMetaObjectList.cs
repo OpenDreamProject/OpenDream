@@ -133,18 +133,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             DreamList list = a.GetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
-                int len = list.GetLength();
-
-                for (int i = 1; i <= len; i++) {
+                for (int i = 1; i <= list.GetLength(); i++) {
                     if (!bList.ContainsValue(list.GetValue(new DreamValue(i)))) {
                         list.Cut(i, i + 1);
                         i--;
                     }
                 }
             } else {
-                int len = list.GetLength();
-
-                for (int i = 1; i <= len; i++) {
+                for (int i = 1; i <= list.GetLength(); i++) {
                     if (list.GetValue(new DreamValue(i)) != b) {
                         list.Cut(i, i + 1);
                         i--;

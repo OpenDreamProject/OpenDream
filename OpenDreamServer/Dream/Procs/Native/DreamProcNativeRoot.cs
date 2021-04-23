@@ -228,7 +228,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.Substring(start - 1, end - start).IndexOf(needle);
+            int needleIndex = text.IndexOf(needle, start - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -274,7 +274,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.Substring(start - 1, end - start).LastIndexOf(needle);
+            int needleIndex = text.LastIndexOf(needle, end - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -407,11 +407,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             DreamValue value = arguments.GetArgument(0, "Val");
             DreamValue type = arguments.GetArgument(1, "Type");
 
-            if (value.Type == DreamValueType.DreamPath) {
-                if (type.Value != null) {
-                    if (value.GetValueAsPath().IsDescendantOf(type.GetValueAsPath())) {
-                        return new DreamValue(1);
-                    }
+            if (value.TryGetValueAsPath(out DreamPath valuePath)) {
+                if (type != DreamValue.Null) {
+                    DreamObjectDefinition valueDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(valuePath);
+
+                    return new DreamValue(valueDefinition.IsSubtypeOf(value.GetValueAsPath()) ? 1 : 0);
                 } else {
                     return new DreamValue(1);
                 }
@@ -1058,7 +1058,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 text = text.Trim();
                 if (text.Length != 0) {
                     try {
-                        if (text.Contains(".") && radix == 10) {
+                        if (radix == 10) {
                             return new DreamValue(Convert.ToSingle(text));
                         } else {
                             return new DreamValue(Convert.ToInt32(text, radix));
@@ -1071,7 +1071,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             } else if (value.IsType(DreamValueType.Number)) {
                 return new DreamValue(value.Value);
-            } else if (value.Value == null) {
+            } else if (value == DreamValue.Null) {
                 return DreamValue.Null;
             } else {
                 throw new Exception("Invalid argument to text2num: " + value);

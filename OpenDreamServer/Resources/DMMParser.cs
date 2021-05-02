@@ -117,7 +117,7 @@ namespace OpenDreamShared.Compiler.DMM {
                             } else if (varOverride.Value is DMASTConstantNull) {
                                 varValue = DreamValue.Null;
                             } else if (varOverride.Value is DMASTList dmastList) {
-                                DreamList list = Program.DreamObjectTree.CreateList();
+                                DreamList list = new DreamList();
 
                                 //TODO: Fill list
 

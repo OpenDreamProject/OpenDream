@@ -74,7 +74,8 @@
         CallSelf = 0x48,
         IsType = 0x49,
         LocateCoord = 0x4A,
-        Locate = 0x4B
+        Locate = 0x4B,
+        IsNull = 0x4C
     }
 
     enum DreamProcOpcodeParameterType {

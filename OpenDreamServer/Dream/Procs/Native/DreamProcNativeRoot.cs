@@ -30,7 +30,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("flags", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_animate(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject obj = arguments.GetArgument(0, "Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            
+
             if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
                 obj.SetVariable("pixel_x", pixelX);
             }
@@ -210,7 +210,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 resource = file.GetValueAsDreamResource();
             }
 
-            return new DreamValue(resource.ReadAsString());
+            string text = resource.ReadAsString();
+            if (text != null) return new DreamValue(text);
+            else return DreamValue.Null;
+
         }
 
         [DreamProc("findtext")]
@@ -251,7 +254,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.Substring(start - 1, end - start).IndexOf(needle);
+            int needleIndex = text.IndexOf(needle, start - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -282,24 +285,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
-        [DreamProc("get_dist")]
-        [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_get_dist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject loc1 = arguments.GetArgument(0, "Loc1").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamObject loc2 = arguments.GetArgument(1, "Loc2").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            
-            if (loc1 != loc2) {
-                int x1 = loc1.GetVariable("x").GetValueAsInteger();
-                int x2 = loc2.GetVariable("x").GetValueAsInteger();
-                int y1 = loc1.GetVariable("y").GetValueAsInteger();
-                int y2 = loc2.GetVariable("y").GetValueAsInteger();
-                int dist = (int)Math.Floor(Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2)));
+        [DreamProc("flist")]
+        [DreamProcParameter("Path", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string path = arguments.GetArgument(0, "Path").GetValueAsString();
 
-                return new DreamValue(dist);
-            } else {
-                return new DreamValue(-1);
-            }
+            string[] listing = Program.DreamResourceManager.GetListing(path);
+            DreamList list = new DreamList(listing);
+            return new DreamValue(list);
         }
 
         [DreamProc("html_decode")]
@@ -341,7 +334,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(1);
         }
-        
+
         [DreamProc("isfile")]
         [DreamProcParameter("File")]
         public static DreamValue NativeProc_isfile(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -358,7 +351,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             foreach (DreamValue loc in locs) {
                 if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
                     bool isLoc = locObject.IsSubtypeOf(DreamPath.Mob) || locObject.IsSubtypeOf(DreamPath.Obj) || locObject.IsSubtypeOf(DreamPath.Turf) || locObject.IsSubtypeOf(DreamPath.Area);
-                    
+
                     if (!isLoc) {
                         return new DreamValue(0);
                     }
@@ -377,7 +370,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             foreach (DreamValue loc in locs) {
                 if (loc.Type != DreamValueType.DreamObject || loc.Value == null || !loc.GetValueAsDreamObject().IsSubtypeOf(DreamPath.Mob)) {
-                     return new DreamValue(0);
+                    return new DreamValue(0);
                 }
             }
 
@@ -406,17 +399,18 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_ispath(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue value = arguments.GetArgument(0, "Val");
             DreamValue type = arguments.GetArgument(1, "Type");
+            
 
             if (value.TryGetValueAsPath(out DreamPath valuePath)) {
-                if (type != DreamValue.Null) {
+                if (type.TryGetValueAsPath(out DreamPath typePath)) {
                     DreamObjectDefinition valueDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(valuePath);
 
-                    return new DreamValue(valueDefinition.IsSubtypeOf(value.GetValueAsPath()) ? 1 : 0);
+                    return new DreamValue(valueDefinition.IsSubtypeOf(typePath) ? 1 : 0);
                 } else {
                     return new DreamValue(1);
                 }
             }
-            
+
             return new DreamValue(0);
         }
 
@@ -424,10 +418,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_istext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue value = arguments.GetArgument(0, "Val");
-            
+
             return new DreamValue((value.Type == DreamValueType.String) ? 1 : 0);
         }
-        
+
         [DreamProc("isturf")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isturf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -444,7 +438,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
             if (jsonElement.ValueKind == JsonValueKind.Array) {
-                DreamList list = Program.DreamObjectTree.CreateList();
+                DreamList list = new DreamList();
 
                 foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                     DreamValue value = CreateValueFromJsonElement(childElement);
@@ -454,7 +448,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
                 return new DreamValue(list);
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {
-                DreamList list = Program.DreamObjectTree.CreateList();
+                DreamList list = new DreamList();
 
                 foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                     DreamValue value = CreateValueFromJsonElement(childProperty.Value);
@@ -473,8 +467,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         public static object CreateJsonElementFromValue(DreamValue value) {
-            if (value.IsType(DreamValueType.String | DreamValueType.Integer | DreamValueType.Float)) {
+            if (value.IsType(DreamValueType.Number)) {
                 return value.Value;
+            } else if (value.TryGetValueAsString(out string text)) {
+                return HttpUtility.JavaScriptStringEncode(text);
             } else if (value.Type == DreamValueType.DreamPath) {
                 return value.GetValueAsPath().ToString();
             } else if (value.TryGetValueAsDreamList(out DreamList list)) {
@@ -661,33 +657,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
-        [DreamProc("orange")]
-        [DreamProcParameter("Dist", Type = DreamValueType.Integer)]
-        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)] //TODO: Default to usr
-        public static DreamValue NativeProc_orange(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            int distance = arguments.GetArgument(0, "Dist").GetValueAsInteger();
-            DreamObject center = arguments.GetArgument(1, "Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamList orange = Program.DreamObjectTree.CreateList();
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
-            int centerZ = center.GetVariable("z").GetValueAsInteger();
-
-            for (int x = Math.Max(centerX - distance, 1); x <= Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
-                for (int y = Math.Max(centerY - distance, 1); y <= Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
-                    if (x != centerX || y != centerY) {
-                        DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
-
-                        orange.AddValue(new DreamValue(turf));
-                        foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-                            orange.AddValue(content);
-                        }
-                    }
-                }
-            }
-
-            return new DreamValue(orange);
-        }
-
         [DreamProc("oview")]
         [DreamProcParameter("Dist", Type = DreamValueType.Integer, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
@@ -714,7 +683,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             }
 
-            DreamList view = Program.DreamObjectTree.CreateList();
+            DreamList view = new DreamList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -738,13 +707,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamList params2list(string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-            DreamList list = Program.DreamObjectTree.CreateList();
+            DreamList list = new DreamList();
 
             foreach (string queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
                 string queryValue = queryValues[queryValues.Length - 1]; //Use the last appearance of the key in the query
 
-                list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                if (queryKey != null) {
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                } else {
+                    list.AddValue(new DreamValue(queryValue));
+                }
             }
 
             return list;
@@ -753,9 +726,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("params2list")]
         [DreamProcParameter("Params", Type = DreamValueType.String)]
         public static DreamValue NativeProc_params2list(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            string paramsString = arguments.GetArgument(0, "Params").GetValueAsString();
-            
-            return new DreamValue(params2list(paramsString));
+            DreamValue paramsValue = arguments.GetArgument(0, "Params");
+            DreamList result;
+
+            if (paramsValue.TryGetValueAsString(out string paramsString)) {
+                result = params2list(paramsString);
+            } else {
+                result = new DreamList();
+            }
+
+            return new DreamValue(result);
         }
 
         [DreamProc("pick")]
@@ -798,31 +778,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
                 return new DreamValue(new Random().Next(Math.Min(low, high), Math.Max(low, high)));
             }
-        }
-
-        [DreamProc("range")]
-        [DreamProcParameter("Dist", Type = DreamValueType.Integer)]
-        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)] //TODO: Default to usr
-        public static DreamValue NativeProc_range(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            int distance = arguments.GetArgument(0, "Dist").GetValueAsInteger();
-            DreamObject center = arguments.GetArgument(1, "Center").GetValueAsDreamObjectOfType(DreamPath.Atom);
-            DreamList range = Program.DreamObjectTree.CreateList();
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
-            int centerZ = center.GetVariable("z").GetValueAsInteger();
-
-            for (int x = Math.Max(centerX - distance, 1); x <= Math.Min(centerX + distance, Program.DreamMap.Width); x++) {
-                for (int y = Math.Max(centerY - distance, 1); y <= Math.Min(centerY + distance, Program.DreamMap.Width); y++) {
-                    DreamObject turf = Program.DreamMap.GetTurfAt(x, y, centerZ);
-
-                    range.AddValue(new DreamValue(turf));
-                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-                        range.AddValue(content);
-                    }
-                }
-            }
-
-            return new DreamValue(range);
         }
 
         [DreamProc("replacetext")]
@@ -963,11 +918,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string text = arguments.GetArgument(0, "Text").GetValueAsString();
             string delimiter = arguments.GetArgument(1, "Delimiter").GetValueAsString();
             string[] splitText = text.Split(delimiter);
-            DreamList list = Program.DreamObjectTree.CreateList();
-
-            foreach (string value in splitText) {
-                list.AddValue(new DreamValue(value));
-            }
+            DreamList list = new DreamList(splitText);
 
             return new DreamValue(list);
         }
@@ -1114,7 +1065,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamList list = Program.DreamObjectTree.CreateList();
+            DreamList list = new DreamList();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 DreamPath typePath = type.GetValueAsPath();
@@ -1183,7 +1134,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             }
 
-            DreamList view = Program.DreamObjectTree.CreateList();
+            DreamList view = new DreamList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -1228,7 +1179,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
             }
 
-            DreamList view = Program.DreamObjectTree.CreateList();
+            DreamList view = new DreamList();
             int depth = (depthValue.Type == DreamValueType.Integer) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();

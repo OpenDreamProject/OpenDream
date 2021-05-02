@@ -27,8 +27,7 @@ namespace DMCompiler.DM.Visitors {
                         string afterDefaultValueCheck = NewLabelName();
 
                         _proc.PushLocalVariable(parameterName);
-                        _proc.PushNull();
-                        _proc.Equal();
+                        _proc.IsNull();
                         _proc.JumpIfFalse(afterDefaultValueCheck);
 
                         _proc.PushLocalVariable(parameterName);
@@ -846,7 +845,7 @@ namespace DMCompiler.DM.Visitors {
 
                     _currentVariable = dmObject.GetVariable(deref.Property);
                     if (_currentVariable == null) _currentVariable = dmObject.GetGlobalVariable(deref.Property);
-                    if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + type);
+                    if (_currentVariable == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
 
                     _proc.Dereference(deref.Property);
                 } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks

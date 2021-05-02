@@ -278,18 +278,11 @@ namespace OpenDreamServer.Dream {
         }
 
         public override bool Equals(object obj) {
-            if (obj is DreamValue) {
-                DreamValue b = (DreamValue)obj;
-
-                if (Type == DreamValueType.DreamPath && b.Type == DreamValueType.DreamPath) {
-                    return GetValueAsPath().Equals(b.GetValueAsPath());
-                } else if (Value != null) {
-                    return Value.Equals(b.Value);
-                } else {
-                    return b.Value == null;
-                }
+            if (obj is DreamValue b) {
+                if (Value == null) return b.Value == null;
+                else return Value.Equals(b.Value);
             } else {
-                return base.Equals(obj);
+                return false;
             }
         }
 

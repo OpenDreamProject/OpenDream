@@ -39,9 +39,11 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
+            //Enumerate a copy of the list
             List<DreamValue> values = new();
             if (list != null) {
-                //Enumerate a copy of the list
+                values.Capacity = list.GetLength();
+
                 foreach (DreamValue value in list.GetValues()) {
                     values.Add(value);
                 }
@@ -202,6 +204,12 @@ namespace OpenDreamServer.Dream.Procs {
             }
 
             interpreter.Push(objectDefinition.Variables[property]);
+        }
+
+        public static void IsNull(DreamProcInterpreter interpreter) {
+            DreamValue value = interpreter.PopDreamValue();
+
+            interpreter.Push(new DreamValue((value == DreamValue.Null) ? 1 : 0));
         }
 
         public static void IsInList(DreamProcInterpreter interpreter) {
@@ -389,8 +397,6 @@ namespace OpenDreamServer.Dream.Procs {
 
                 if (metaObject != null) {
                     output = metaObject.OperatorAdd(first, second);
-                } else {
-                    throw new Exception("Invalid add operation on " + first + " and " + second);
                 }
             }
             
@@ -440,7 +446,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue first = interpreter.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = Program.DreamObjectTree.CreateList();
+                DreamList newList = new DreamList();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
@@ -530,7 +536,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue first = interpreter.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = Program.DreamObjectTree.CreateList();
+                DreamList newList = new DreamList();
                 List<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
@@ -660,8 +666,10 @@ namespace OpenDreamServer.Dream.Procs {
 
             if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
                 interpreter.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
+                interpreter.Push(new DreamValue((int)(first.GetValueAsFloat() % second.GetValueAsInteger())));
             } else {
-                throw new Exception("Invalid multiply operation on " + first + " and " + second);
+                throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }
         }
 
@@ -803,8 +811,13 @@ namespace OpenDreamServer.Dream.Procs {
         public static void CompareGreaterThanOrEqual(DreamProcInterpreter interpreter) {
             DreamValue second = interpreter.PopDreamValue();
             DreamValue first = interpreter.PopDreamValue();
+            DreamValue result;
 
-            interpreter.Push(new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0));
+            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            else result = new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0);
+
+            interpreter.Push(result);
         }
 
         public static void CompareLessThan(DreamProcInterpreter interpreter) {
@@ -817,8 +830,13 @@ namespace OpenDreamServer.Dream.Procs {
         public static void CompareLessThanOrEqual(DreamProcInterpreter interpreter) {
             DreamValue second = interpreter.PopDreamValue();
             DreamValue first = interpreter.PopDreamValue();
+            DreamValue result;
 
-            interpreter.Push(new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0));
+            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            else result = new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0);
+
+            interpreter.Push(result);
         }
 
         public static void CompareNotEquals(DreamProcInterpreter interpreter) {
@@ -1075,11 +1093,7 @@ namespace OpenDreamServer.Dream.Procs {
             int y = interpreter.PopDreamValue().GetValueAsInteger();
             int x = interpreter.PopDreamValue().GetValueAsInteger();
 
-            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && y <= Program.DreamMap.Height && z >= 1 && z <= Program.DreamMap.Levels.Count) {
-                interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y, z)));
-            } else {
-                interpreter.Push(DreamValue.Null);
-            }
+            interpreter.Push(new DreamValue(Program.DreamMap.GetTurfAt(x, y, z)));
         }
         
         public static void Locate(DreamProcInterpreter interpreter) {
@@ -1087,7 +1101,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamValue value = interpreter.PopDreamValue();
 
             DreamList containerList;
-            if (container.IsSubtypeOf(DreamPath.Atom)) {
+            if (container != null && container.IsSubtypeOf(DreamPath.Atom)) {
                 containerList = container.GetVariable("contents").GetValueAsDreamList();
             } else {
                 containerList = container as DreamList;
@@ -1098,6 +1112,12 @@ namespace OpenDreamServer.Dream.Procs {
 
                 interpreter.Push(new DreamValue(DreamObject.GetFromReferenceID(refID)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
+                if (containerList == null) {
+                    interpreter.Push(DreamValue.Null);
+
+                    return;
+                }
+
                 foreach (DreamValue containerItem in containerList.GetValues()) {
                     if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
 
@@ -1110,6 +1130,12 @@ namespace OpenDreamServer.Dream.Procs {
 
                 interpreter.Push(DreamValue.Null);
             } else {
+                if (containerList == null) {
+                    interpreter.Push(DreamValue.Null);
+
+                    return;
+                }
+
                 foreach (DreamValue containerItem in containerList.GetValues()) {
                     if (IsEqual(containerItem, value)) {
                         interpreter.Push(containerItem);

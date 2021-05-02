@@ -18,7 +18,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             instance.SetVariable("text", haystack);
 
-            string haystackString = haystack.GetValueAsString();
+            string haystackString;
+            if (!haystack.TryGetValueAsString(out haystackString)) {
+                haystackString = String.Empty;
+            }
+
             if (end == 0) end = haystackString.Length;
             if (haystackString.Length == next - 1) return new DreamValue(0);
 
@@ -27,7 +31,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 instance.SetVariable("index", new DreamValue(match.Index + 1));
                 instance.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = Program.DreamObjectTree.CreateList();
+                    DreamList groupList = new DreamList();
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));

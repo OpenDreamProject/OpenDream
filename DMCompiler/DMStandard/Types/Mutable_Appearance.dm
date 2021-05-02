@@ -3,6 +3,7 @@
 
 	var/icon = null
 	var/icon_state = ""
+	var/dir = SOUTH
 	var/color = "#FFFFFF"
 	var/alpha = 255
 	var/layer = 0.0
@@ -15,6 +16,7 @@
 
 			src.icon = appearance.icon
 			src.icon_state = appearance.icon_state
+			src.dir = appearance.dir
 			src.color = appearance.color
 			src.alpha = appearance.alpha
 			src.layer = appearance.layer
@@ -25,6 +27,7 @@
 
 			src.icon = image.icon
 			src.icon_state = image.icon_state
+			src.dir = image.dir
 			src.color = image.color
 			src.alpha = image.alpha
 			src.layer = image.layer

@@ -34,7 +34,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DreamList CreateDreamList() {
-            DreamList list = Program.DreamObjectTree.CreateList();
+            DreamList list = new DreamList();
 
             foreach (DreamValue argument in OrderedArguments) {
                 list.AddValue(argument);

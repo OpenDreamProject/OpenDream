@@ -66,14 +66,8 @@ namespace OpenDreamShared.Dream {
             Color = appearance.Color;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
-            
-            foreach (int overlay in appearance.Overlays) {
-                Overlays.Add(overlay);
-            }
-            
-            foreach (int underlay in appearance.Underlays) {
-                Underlays.Add(underlay);
-            }
+            Overlays = new List<int>(appearance.Overlays);
+            Underlays = new List<int>(appearance.Underlays);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];

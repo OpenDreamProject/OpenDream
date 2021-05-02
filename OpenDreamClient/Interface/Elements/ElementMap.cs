@@ -32,6 +32,7 @@ namespace OpenDreamClient.Interface.Elements {
             this.Background = Brushes.Black;
 
             this.MouseLeftButtonDown += OnLeftMouseDown;
+            this.Unloaded += OnUnloaded;
         }
 
         public void UpdateVisuals() {
@@ -106,6 +107,10 @@ namespace OpenDreamClient.Interface.Elements {
             pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             pClickAtom.ModifierAlt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
             Program.OpenDream.Connection.SendPacket(pClickAtom);
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e) {
+            _dreamRenderer.StopRendering();
         }
     }
 }

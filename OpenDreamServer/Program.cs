@@ -76,6 +76,7 @@ namespace OpenDreamServer {
             DreamObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
             DreamObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
             DreamObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
+            DreamObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());
             DreamObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             DreamObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             DreamObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());

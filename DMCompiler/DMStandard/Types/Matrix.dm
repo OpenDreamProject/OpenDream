@@ -24,6 +24,10 @@
 			src.d = d
 			src.e = e
 			src.f = f
+	
+	proc/Translate(x, y = x)
+		c += x
+		f += y
 
 	proc/Turn(angle)
 		var/angleCos = cos(angle)

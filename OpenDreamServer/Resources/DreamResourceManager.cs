@@ -41,7 +41,11 @@ namespace OpenDreamServer.Resources {
         public void HandleRequestResourcePacket(DreamConnection connection, PacketRequestResource pRequestResource) {
             DreamResource resource = LoadResource(pRequestResource.ResourcePath);
 
-            connection.SendPacket(new PacketResource(resource.ResourcePath, resource.ResourceData));
+            if (resource.ResourceData != null) {
+                connection.SendPacket(new PacketResource(resource.ResourcePath, resource.ResourceData));
+            } else {
+                Console.WriteLine("User \"" + connection.CKey + "\" requested resource '" + pRequestResource.ResourcePath + "', which doesn't exist");
+            }
         }
 
         public bool DeleteFile(string filePath) {
@@ -82,6 +86,20 @@ namespace OpenDreamServer.Resources {
             }
 
             return true;
+        }
+
+        public string[] GetListing(string path) {
+            string[] files;
+
+            if (Path.EndsInDirectorySeparator(path)) {
+                files = Directory.GetFiles(RootPath, path, SearchOption.AllDirectories);
+            } else {
+                string directoryPath = Path.GetDirectoryName(path);
+
+                files = Directory.GetFiles(Path.Combine(RootPath, directoryPath), Path.GetFileName(path), SearchOption.AllDirectories);
+            }
+
+            return files;
         }
     }
 }

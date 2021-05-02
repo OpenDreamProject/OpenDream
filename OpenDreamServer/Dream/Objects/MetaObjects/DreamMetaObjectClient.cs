@@ -39,7 +39,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 DreamList screenList;
                 if (!variableValue.TryGetValueAsDreamList(out screenList)) {
-                    screenList = Program.DreamObjectTree.CreateList();
+                    screenList = new DreamList();
                 }
 
                 screenList.ValueAssigned += ScreenValueAssigned;

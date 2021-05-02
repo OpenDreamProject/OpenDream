@@ -24,7 +24,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_get_dist);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_flist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);
@@ -45,13 +45,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_orange);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_params2list);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_pick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_prob);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand);
-            root.SetNativeProc(DreamProcNativeRoot.NativeProc_range);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);

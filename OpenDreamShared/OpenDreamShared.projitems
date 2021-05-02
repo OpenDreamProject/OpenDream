@@ -23,7 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketCallVerb.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketUpdateAvailableVerbs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketUpdateStatPanels.cs" />
-    <Compile Include="..\OpenDreamShared\Json\DreamCompiledJson.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\DreamCompiledJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\DreamObjectJson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\Procs\DreamProcOpcode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketBrowse.cs" />
@@ -32,14 +32,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketPromptResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketSound.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketTopic.cs" />
-    <Compile Include="..\OpenDreamShared\Dream\AtomDirection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dream\AtomDirection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamDeltaState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamFullState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\DreamPath.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\ScreenLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interface\InterfaceDescriptor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\IPacket.cs" />
-    <Compile Include="..\OpenDreamShared\Net\Packets\PacketClickAtom.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketClickAtom.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketConnectionResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketDeltaGameState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Net\Packets\PacketFullGameState.cs" />

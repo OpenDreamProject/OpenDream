@@ -7,7 +7,7 @@ namespace OpenDreamServer.Dream.Procs {
     delegate void InterpreterOpcode(DreamProcInterpreter interpreter);
 
     class DreamProcInterpreter {
-        public DreamObject Instance, Usr;
+public DreamObject Instance, Usr;
         public DreamValue DefaultReturnValue = DreamValue.Null;
         public DreamProcArguments Arguments;
         public List<string> ArgumentNames;
@@ -93,7 +93,8 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.CallSelf,
             DreamProcInterpreterOpcodes.IsType,
             DreamProcInterpreterOpcodes.LocateCoord,
-            DreamProcInterpreterOpcodes.Locate
+            DreamProcInterpreterOpcodes.Locate,
+            DreamProcInterpreterOpcodes.IsNull
         };
 
         private byte[] _bytecode;

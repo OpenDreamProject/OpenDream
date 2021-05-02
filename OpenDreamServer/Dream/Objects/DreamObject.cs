@@ -1,5 +1,4 @@
-﻿using OpenDreamServer.Dream.Objects.MetaObjects;
-using OpenDreamServer.Dream.Procs;
+﻿using OpenDreamServer.Dream.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ namespace OpenDreamServer.Dream.Objects {
         /// <summary>
         /// Any variables that may differ from the default
         /// </summary>
-        private readonly Dictionary<string, DreamValue> _variables = new();
+        private Dictionary<string, DreamValue> _variables = new();
 
         private static readonly Dictionary<DreamObject, int> _referenceIDs = new();
 
@@ -56,6 +55,11 @@ namespace OpenDreamServer.Dream.Objects {
 
             _referenceIDs.Remove(this);
             Deleted = true;
+        }
+
+        public void CopyFrom(DreamObject from) {
+            ObjectDefinition = from.ObjectDefinition;
+            _variables = from._variables;
         }
 
         public bool IsSubtypeOf(DreamPath path) {

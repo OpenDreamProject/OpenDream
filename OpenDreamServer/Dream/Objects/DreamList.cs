@@ -23,10 +23,17 @@ namespace OpenDreamServer.Dream.Objects {
 
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = new();
+        private object _listLock = new object();
 
         public DreamList() : base(ListDefinition, new DreamProcArguments(null)) { }
 
         public DreamList(DreamProcArguments creationArguments) : base(ListDefinition, creationArguments) { }
+
+        public DreamList(IEnumerable<object> collection) : base(ListDefinition, new DreamProcArguments(null)) {
+            foreach (object value in collection) {
+                _values.Add(new DreamValue(value));
+            }
+        }
 
         public bool IsAssociative() {
             return _associativeValues.Count > 0;
@@ -37,12 +44,15 @@ namespace OpenDreamServer.Dream.Objects {
 
             if (end == 0 || end > _values.Count) end = _values.Count;
 
-            for (int i = start; i <= end; i++) {
-                copy._values.Add(_values[i - 1]);
-            }
+            lock (copy._listLock) {
+                for (int i = start; i <= end; i++) {
+                    DreamValue value = _values[i - 1];
 
-            foreach (KeyValuePair<DreamValue, DreamValue> associativeValue in _associativeValues) {
-                copy._associativeValues.Add(associativeValue.Key, associativeValue.Value);
+                    copy._values.Add(value);
+                    if (_associativeValues.ContainsKey(value)) {
+                        copy._associativeValues.Add(value, _associativeValues[value]);
+                    }
+                }
             }
 
             return copy;
@@ -75,14 +85,16 @@ namespace OpenDreamServer.Dream.Objects {
         public virtual void SetValue(DreamValue key, DreamValue value) {
             if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
 
-            if (IsValidAssociativeKey(key)) {
-                if (!ContainsValue(key)) _values.Add(key);
+            lock (_listLock) {
+                if (IsValidAssociativeKey(key)) {
+                    if (!ContainsValue(key)) _values.Add(key);
 
-                _associativeValues[key] = value;
-            } else if (key.Type == DreamValue.DreamValueType.Integer) {
-                _values[key.GetValueAsInteger() - 1] = value;
-            } else {
-                throw new ArgumentException("Invalid index " + key);
+                    _associativeValues[key] = value;
+                } else if (key.Type == DreamValue.DreamValueType.Integer) {
+                    _values[key.GetValueAsInteger() - 1] = value;
+                } else {
+                    throw new ArgumentException("Invalid index " + key);
+                }
             }
         }
 
@@ -91,12 +103,18 @@ namespace OpenDreamServer.Dream.Objects {
 
             if (valueIndex != -1) {
                 if (BeforeValueRemoved != null) BeforeValueRemoved.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
-                _values.RemoveAt(valueIndex);
+
+                lock (_listLock) {
+                    _values.RemoveAt(valueIndex);
+                }
             }
         }
 
         public void AddValue(DreamValue value) {
-            _values.Add(value);
+            lock (_listLock) {
+                _values.Add(value);
+            }
+            
             if (ValueAssigned != null) ValueAssigned.Invoke(this, new DreamValue(_values.Count), value);
         }
 
@@ -129,26 +147,21 @@ namespace OpenDreamServer.Dream.Objects {
         public void Cut(int start = 1, int end = 0) {
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
-            for (int i = end - 1; i >= start; i--) {
-                if (BeforeValueRemoved != null) BeforeValueRemoved.Invoke(this, new DreamValue(i), _values[i - 1]);
-                _values.RemoveAt(i - 1);
-            }
-        }
-
-        public string Join(string glue, int start = 1, int end = 0) {
-            if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
-
-            string result = String.Empty;
-            for (int i = start; i < end; i++) {
-                result += _values[i - 1].Stringify();
-                if (i != end - 1) result += glue;
+            if (BeforeValueRemoved != null) {
+                for (int i = end - 1; i >= start; i--) {
+                    BeforeValueRemoved.Invoke(this, new DreamValue(i), _values[i - 1]);
+                }
             }
 
-            return result;
+            lock (_listLock) {
+                _values.RemoveRange(start - 1, end - start);
+            }
         }
 
         public void Insert(int index, DreamValue value) {
-            _values.Insert(index - 1, value);
+            lock (_listLock) {
+                _values.Insert(index - 1, value);
+            }
         }
 
         public void Swap(int index1, int index2) {
@@ -158,11 +171,24 @@ namespace OpenDreamServer.Dream.Objects {
             SetValue(new DreamValue(index2), temp);
         }
 
+        public void Resize(int size) {
+            if (size > _values.Count) {
+                _values.Capacity = size;
+
+                for (int i = _values.Count; i < size; i++) {
+                    AddValue(DreamValue.Null);
+                }
+            } else {
+                Cut(size + 1);
+            }
+        }
+
         public int GetLength() {
             return _values.Count;
         }
     }
 
+    // /datum.vars list
     class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 

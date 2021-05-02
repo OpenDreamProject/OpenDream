@@ -17,8 +17,9 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         private static object _atomListsLock = new object();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            UInt32 atomID = _atomIDCounter++;
             lock (_atomListsLock) {
+                UInt32 atomID = _atomIDCounter++;
+
                 AtomIDs.Add(dreamObject, atomID);
                 AtomIDToAtom.Add(atomID, dreamObject);
             }
@@ -90,9 +91,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 UpdateAppearance(dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
-                if (variableValue.Type == DreamValue.DreamValueType.String) {
-                    color = variableValue.GetValueAsString();
-                } else {
+                if (!variableValue.TryGetValueAsString(out color)) {
                     color = "white";
                 }
 
@@ -126,7 +125,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 DreamList overlayList;
                 if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
-                    overlayList = Program.DreamObjectTree.CreateList();
+                    overlayList = new DreamList();
                 }
 
                 overlayList.ValueAssigned += OverlayValueAssigned;
@@ -142,7 +141,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
 
                 DreamList underlayList;
                 if (!variableValue.TryGetValueAsDreamList(out underlayList)) {
-                    underlayList = Program.DreamObjectTree.CreateList();
+                    underlayList = new DreamList();
                 }
 
                 underlayList.ValueAssigned += UnderlayValueAssigned;
@@ -166,7 +165,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         }
 
         protected static void UpdateAppearance(DreamObject atom, ServerIconAppearance newAppearance) {
-            if (!AtomToAppearance.ContainsKey(atom) || AtomToAppearance[atom].GetID() != newAppearance.GetID()) {
+            if (!AtomToAppearance.TryGetValue(atom, out ServerIconAppearance oldAppearance) || oldAppearance.GetID() != newAppearance.GetID()) {
                 AtomToAppearance[atom] = newAppearance;
 
                 Program.DreamStateManager.AddAtomIconAppearanceDelta(atom, newAppearance);

@@ -5,7 +5,7 @@
 	var/icon_state = null
 	var/atom/loc = null
 	var/layer = FLOAT_LAYER
-	var/dir = 2
+	var/dir = SOUTH
 	var/pixel_x = 0
 	var/pixel_y = 0
 	var/color = "#FFFFFF"

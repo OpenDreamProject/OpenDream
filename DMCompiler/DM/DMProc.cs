@@ -490,6 +490,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsInList);
         }
 
+        public void IsNull() {
+            WriteOpcode(DreamProcOpcode.IsNull);
+        }
+
         public void IsType() {
             WriteOpcode(DreamProcOpcode.IsType);
         }

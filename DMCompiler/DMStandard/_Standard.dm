@@ -19,7 +19,7 @@ proc/file2text(File)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
-proc/get_dist(Loc1, Loc2)
+proc/flist(Path)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
 proc/image(icon, loc, icon_state, layer, dir)
@@ -40,8 +40,6 @@ proc/lowertext(T)
 proc/max(A)
 proc/min(A)
 proc/num2text(N, Digits, Radix)
-proc/orange(Dist = 5, Center = usr)
-proc/range(Dist, Center = usr)
 proc/oview(Dist = 5, Center = usr)
 proc/params2list(Params)
 proc/pick(Val1)
@@ -107,6 +105,33 @@ proc/block(var/atom/Start, var/atom/End)
 	
 	return atoms
 
+proc/range(Dist, atom/Center = usr)
+	var/list/range = list()
+
+	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
+		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
+			var/turf/t = locate(x, y, Center.z)
+
+			if (t != null)
+				range.Add(t)
+				range.Add(t.contents)
+
+	return range
+
+proc/orange(Dist = 5, var/atom/Center = usr)
+	var/list/orange = list()
+
+	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
+		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
+			if (x == Center.x && y == Center.y) continue
+
+			var/turf/t = locate(x, y, Center.z)
+			if (t != null)
+				orange.Add(t)
+				orange.Add(t.contents)
+
+	return orange
+
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null
 	
@@ -128,23 +153,15 @@ proc/get_step(atom/Ref, Dir)
 proc/get_dir(atom/Loc1, atom/Loc2)
 	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0
 
-	var/loc1X = Loc1.x
-	var/loc2X = Loc2.x
-	var/loc1Y = Loc1.y
-	var/loc2Y = Loc2.y
+	var/dir = 0
 
-	if (loc2X < loc1X)
-		if (loc2Y == loc1Y) return WEST
-		else if (loc2Y > loc1Y) return NORTHWEST
-		else return SOUTHWEST
-	else if (loc2X > loc1X)
-		if (loc2Y == loc1Y) return EAST
-		else if (loc2Y > loc1Y) return NORTHEAST
-		else return SOUTHEAST
-	else if (loc2Y > loc1Y) return NORTH
-	else if (loc2Y < loc1Y) return SOUTH
+	if (Loc2.x < Loc1.x) dir |= WEST
+	else if (Loc2.x > Loc1.x) dir |= EAST
 
-	return 0
+	if (Loc2.y < Loc1.y) dir |= SOUTH
+	else if (Loc2.y > Loc1.y) dir |= NORTH
+
+	return dir
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	Ref.Move(get_step(Ref, Dir), Dir)
@@ -178,6 +195,13 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (225) return SOUTHWEST
 		if (270) return SOUTH
 		if (315) return SOUTHEAST
+
+proc/get_dist(atom/Loc1, atom/Loc2)
+	if (Loc1 == Loc2) return -1
+
+	var/distX = Loc2.x - Loc1.x
+	var/distY = Loc2.y - Loc1.y
+	return round(sqrt(distX ** 2 + distY ** 2))
 
 proc/get_step_towards(atom/movable/Ref, /atom/Trg)
 	var/dir = get_dir(Ref, Trg)

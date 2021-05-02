@@ -97,10 +97,6 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObject CreateObject(DreamPath path) {
             return CreateObject(path, new DreamProcArguments(null));
         }
-
-        public DreamList CreateList() {
-            return (DreamList)CreateObject(DreamPath.List);
-        }
         
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {
             List<DreamObjectTreeEntry> treeEntries = GetTreeEntryFromPath(path).GetAllDescendants(true, true);

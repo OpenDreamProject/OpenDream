@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamServer.Dream {
     class DreamMap {
-        public struct MapCell {
+        public class MapCell {
             public DreamObject Area;
             public UInt32 Turf;
         }
@@ -29,9 +29,10 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public Dictionary<DreamPath, DreamObject> Areas = new();
         public List<MapLevel> Levels { get; private set; }
         public int Width, Height;
+
+        private Dictionary<DreamPath, DreamObject> _mapLoaderAreas = new();
 
         public void LoadMap(DreamResource mapResource) {
             string dmmSource = mapResource.ReadAsString();
@@ -46,18 +47,21 @@ namespace OpenDreamServer.Dream {
             }
 
             DreamPath defaultTurf = Program.WorldInstance.GetVariable("turf").GetValueAsPath();
+            DreamPath defaultArea = Program.WorldInstance.GetVariable("area").GetValueAsPath();
+
             foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
                 foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
                     DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
                     DreamObject turf = CreateMapObject(cellDefinition.Turf);
-                    DreamPath areaPath = cellDefinition.Area?.Type ?? DreamPath.Area;
+                    DreamObject area = GetMapLoaderArea(cellDefinition.Area?.Type ?? defaultArea);
+
+                    if (turf == null) turf = Program.DreamObjectTree.CreateObject(defaultTurf);
+                    
                     int x = mapBlock.X + cell.Key.X - 1;
                     int y = mapBlock.Y + cell.Key.Y - 1;
 
-                    if (turf == null) turf = Program.DreamObjectTree.CreateObject(defaultTurf);
-
-                    SetTurf(x, y, mapBlock.Z, turf);
-                    SetArea(x, y, mapBlock.Z, cellDefinition.Area.Type);
+                    SetTurf(x, y, mapBlock.Z, turf, false);
+                    SetArea(x, y, mapBlock.Z, area);
                     foreach (DMMParser.MapObject mapObject in cellDefinition.Objects) {
                         CreateMapObject(mapObject, turf);
                     }
@@ -67,19 +71,21 @@ namespace OpenDreamServer.Dream {
 
         public void AddLevel() {
             DreamPath defaultTurf = Program.WorldInstance.GetVariable("turf").GetValueAsPath();
+            DreamPath defaultArea = Program.WorldInstance.GetVariable("area").GetValueAsPath();
+            DreamObject area = GetMapLoaderArea(defaultArea);
 
             Levels.Add(new MapLevel(Width, Height));
 
             int z = Levels.Count;
             for (int x = 1; x <= Width; x++) {
                 for (int y = 1; y <= Height; y++) {
-                    SetTurf(x, y, z, Program.DreamObjectTree.CreateObject(defaultTurf));
-                    SetArea(x, y, z, DreamPath.Area);
+                    SetTurf(x, y, z, Program.DreamObjectTree.CreateObject(defaultTurf), false);
+                    SetArea(x, y, z, area);
                 }
             }
         }
 
-        public void SetTurf(int x, int y, int z, DreamObject turf) {
+        public void SetTurf(int x, int y, int z, DreamObject turf, bool replace = true) {
             if (!turf.IsSubtypeOf(DreamPath.Turf)) {
                 throw new Exception("Turf was not a sub-type of " + DreamPath.Turf);
             }
@@ -88,20 +94,22 @@ namespace OpenDreamServer.Dream {
             turf.SetVariable("y", new DreamValue(y));
             turf.SetVariable("z", new DreamValue(z));
 
+            if (replace) {
+                DreamObject existingTurf = GetTurfAt(x, y, z);
+
+                //Every reference to the old turf becomes the new turf
+                //Do this by turning the old turf object into the new one
+                existingTurf.CopyFrom(turf);
+            }
+            
+
             Levels[z - 1].Cells[x - 1, y - 1].Turf = DreamMetaObjectAtom.AtomIDs[turf];
             Program.DreamStateManager.AddTurfDelta(x - 1, y - 1, z - 1, turf);
         }
 
-        public void SetArea(int x, int y, int z, DreamPath areaPath) {
-            if (!areaPath.IsDescendantOf(DreamPath.Area) || !Program.DreamObjectTree.HasTreeEntry(areaPath)) {
-                throw new Exception("Invalid area " + areaPath);
-            }
-
-            DreamObject area;
-            if (!Areas.TryGetValue(areaPath, out area)) {
-                area = Program.DreamObjectTree.CreateObject(areaPath);
-
-                Areas.Add(areaPath, area);
+        public void SetArea(int x, int y, int z, DreamObject area) {
+            if (!area.IsSubtypeOf(DreamPath.Area)) {
+                throw new Exception("Invalid area " + area);
             }
 
             if (area.GetVariable("x").GetValueAsInteger() > x) area.SetVariable("x", new DreamValue(x));
@@ -111,11 +119,26 @@ namespace OpenDreamServer.Dream {
         }
 
         public DreamObject GetTurfAt(int x, int y, int z) {
-            return DreamMetaObjectAtom.AtomIDToAtom[Levels[z - 1].Cells[x - 1, y - 1].Turf];
+            if (x >= 1 && x <= Program.DreamMap.Width && y >= 1 && y <= Program.DreamMap.Height && z >= 1 && z <= Program.DreamMap.Levels.Count) {
+                return DreamMetaObjectAtom.AtomIDToAtom[Levels[z - 1].Cells[x - 1, y - 1].Turf];
+            } else {
+                return null;
+            }
         }
 
         public DreamObject GetAreaAt(int x, int y, int z) {
             return Levels[z - 1].Cells[x - 1, y - 1].Area;
+        }
+
+        private DreamObject GetMapLoaderArea(DreamPath areaPath) {
+            if (_mapLoaderAreas.TryGetValue(areaPath, out DreamObject area)) {
+                return area;
+            } else {
+                area = Program.DreamObjectTree.CreateObject(areaPath);
+
+                _mapLoaderAreas.Add(areaPath, area);
+                return area;
+            }
         }
 
         private DreamObject CreateMapObject(DMMParser.MapObject mapObject, DreamObject loc = null) {

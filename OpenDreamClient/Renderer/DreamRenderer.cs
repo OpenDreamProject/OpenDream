@@ -36,6 +36,10 @@ namespace OpenDreamClient.Renderer {
             OpenGLViewControl.OpenGLContextCreated += InitOpenGL;
         }
 
+        public void StopRendering() {
+            OpenGLViewControl.Render -= RenderFrame;
+        }
+
         public void SetViewportSize(int width, int height) {
             OpenGLViewControl.Width = width;
             OpenGLViewControl.Height = height;

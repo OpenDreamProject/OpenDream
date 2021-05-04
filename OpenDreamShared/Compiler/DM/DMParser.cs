@@ -1578,7 +1578,7 @@ namespace OpenDreamShared.Compiler.DM {
                 do {
                     Token typeToken = Current();
 
-                    Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected parameter type");
+                    Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected value type");
                     switch (typeToken.Text) {
                         case "anything": type |= DMValueType.Anything; break;
                         case "null": type |= DMValueType.Null; break;
@@ -1591,7 +1591,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case "area": type |= DMValueType.Area; break;
                         case "color": type |= DMValueType.Color; break;
                         case "file": type |= DMValueType.File; break;
-                        default: throw new Exception("Invalid parameter type '" + typeToken.Text + "'");
+                        default: throw new Exception("Invalid value type '" + typeToken.Text + "'");
                     }
                 } while (Check(TokenType.DM_Bar));
             }

@@ -52,6 +52,3 @@
 		return TRUE
 	
 	proc/Stat()
-
-	proc/Click(location, control, params)
-		return

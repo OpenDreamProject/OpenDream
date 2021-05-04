@@ -852,6 +852,12 @@ namespace OpenDreamServer.Dream.Procs {
             DreamPath type;
 
             if (typeValue.TryGetValueAsDreamObject(out DreamObject typeObject)) {
+                if (typeObject == null) {
+                    interpreter.Push(new DreamValue(0));
+
+                    return;
+                }
+
                 type = typeObject.ObjectDefinition.Type;
             } else {
                 type = typeValue.GetValueAsPath();

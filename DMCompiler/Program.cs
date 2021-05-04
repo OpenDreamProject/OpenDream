@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
@@ -9,6 +11,9 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
+        public static List<string> IncludedMaps = new();
+        public static string IncludedInterface = null;
+
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
 
@@ -43,7 +48,10 @@ namespace DMCompiler {
         private static string Preprocess(string[] files) {
             DMPreprocessor preprocessor = new DMPreprocessor();
 
-            preprocessor.IncludeFile("DMStandard", "_Standard.dm");
+            string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string dmStandardDirectory = Path.Combine(compilerDirectory, "DMStandard");
+            preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+
             foreach (string file in files) {
                 string directoryPath = Path.GetDirectoryName(file);
                 string fileName = Path.GetFileName(file);
@@ -69,6 +77,8 @@ namespace DMCompiler {
         private static void SaveJson(string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
+            compiledDream.Maps = IncludedMaps;
+            compiledDream.Interface = IncludedInterface;
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
             if (DMObjectTree.GlobalInitProc != null) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 

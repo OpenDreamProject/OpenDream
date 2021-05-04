@@ -932,8 +932,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
-            string entryName = (name != DreamValue.Null) ? name.Stringify() : null;
-
             if (name != DreamValue.Null) {
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
             } else {

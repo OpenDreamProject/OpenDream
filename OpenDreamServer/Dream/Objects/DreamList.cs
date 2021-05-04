@@ -127,8 +127,10 @@ namespace OpenDreamServer.Dream.Objects {
 
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
-            foreach (DreamValue listValue in _values) {
-                if (value == listValue) return true;
+            lock (_listLock) {
+                foreach (DreamValue listValue in _values) {
+                    if (value == listValue) return true;
+                }
             }
 
             return false;

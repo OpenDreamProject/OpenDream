@@ -12,6 +12,7 @@ using OpenDreamShared.Json;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,27 +34,20 @@ namespace OpenDreamServer {
         private static InterfaceDescriptor _clientInterface = null;
 
         static void Main(string[] args) {
-            if (args.Length < 4) {
-                Console.WriteLine("Four arguments are required:");
-                Console.WriteLine("\tResource Location");
-                Console.WriteLine("\t\tPath to the folder holding all the game's assets");
-                Console.WriteLine("\tObject Tree Location");
-                Console.WriteLine("\t\tPath to the JSON file holding a compiled form of the game's code, relative to the resource location");
-                Console.WriteLine("\tMap File Location");
-                Console.WriteLine("\t\tPath to the map's DMM file, relative to the resource location");
-                Console.WriteLine("\tInterface File Location");
-                Console.WriteLine("\t\tPath to the interface's DMF file, relative to the resource location");
+            if (args.Length < 1 || Path.GetExtension(args[0]) != ".json") {
+                Console.WriteLine("You must compile your game using DMCompiler, and supply its output as an argument");
 
                 return;
             }
 
-            string resourceLocation = args[0];
-            string objectTreeFile = args[1];
-            string mapFile = args[2];
-            string interfaceFile = args[3];
+            string compiledDreamFilepath = args[0];
+            string resourcePath = Path.GetDirectoryName(compiledDreamFilepath);
 
-            DreamResourceManager = new DreamResourceManager(resourceLocation);
-            DreamResource interfaceResource = DreamResourceManager.LoadResource(interfaceFile);
+            DreamResourceManager = new DreamResourceManager(resourcePath);
+
+            if (!LoadCompiledDreamJson(compiledDreamFilepath)) return;
+
+            DreamResource interfaceResource = DreamResourceManager.LoadResource(CompiledJson.Interface);
             DMFLexer dmfLexer = new DMFLexer(interfaceResource.ReadAsString());
             DMFParser dmfParser = new DMFParser(dmfLexer);
             _clientInterface = dmfParser.Interface();
@@ -62,9 +56,6 @@ namespace OpenDreamServer {
             DreamServer.DreamConnectionRequest += OnDreamConnectionRequest;
 
             RegisterPacketCallbacks();
-
-            DreamResource compiledJsonResource = DreamResourceManager.LoadResource(objectTreeFile);
-            CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonResource.ReadAsString());
 
             DreamObjectTree.LoadFromJson(CompiledJson.RootObject);
             DreamObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
@@ -93,7 +84,7 @@ namespace OpenDreamServer {
             }
 
             DreamMap = new DreamMap();
-            DreamMap.LoadMap(DreamResourceManager.LoadResource(mapFile));
+            DreamMap.LoadMap(DreamResourceManager.LoadResource(CompiledJson.Maps[0]));
 
             Task.Run(() => WorldInstance.CallProc("New"));
             DreamServer.Start();
@@ -133,6 +124,29 @@ namespace OpenDreamServer {
                 int timeToSleep = tickLength - elapsedTime;
                 if (timeToSleep > 0) Thread.Sleep(timeToSleep);
             }
+        }
+
+        private static bool LoadCompiledDreamJson(string filepath) {
+            DreamResource compiledJsonResource = DreamResourceManager.LoadResource(filepath);
+            CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonResource.ReadAsString());
+
+            if (CompiledJson.Maps == null || CompiledJson.Maps.Count == 0) {
+                Console.WriteLine("The game does not include a map");
+
+                return false;
+            } else if (CompiledJson.Maps.Count > 1) {
+                Console.WriteLine("The game includes more than one map");
+
+                return false;
+            }
+
+            if (CompiledJson.Interface == null) {
+                Console.WriteLine("The game does not include an interface file");
+
+                return false;
+            }
+
+            return true;
         }
 
         private static void RegisterPacketCallbacks() {

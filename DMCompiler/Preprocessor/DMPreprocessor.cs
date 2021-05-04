@@ -33,9 +33,22 @@ namespace DMCompiler.Preprocessor {
                         
                         string includedFile = (string)includedFileToken.Value;
                         string includedFileName = Path.GetFileName(includedFile);
-                        string newIncludePath = Path.Combine(includePath, Path.GetDirectoryName(includedFile));
+                        string includedFileExtension = Path.GetExtension(includedFileName);
+                        string fullIncludePath = Path.Combine(includePath, includedFile);
 
-                        if (includedFileName.EndsWith(".dm")) IncludeFile(newIncludePath, includedFileName);
+                        if (includedFileExtension == ".dm") {
+                            string newIncludePath = Path.GetDirectoryName(fullIncludePath);
+
+                            IncludeFile(newIncludePath, includedFileName);
+                        } else if (includedFileExtension == ".dmm") {
+                            Program.IncludedMaps.Add(fullIncludePath);
+                        } else if (includedFileExtension == ".dmf") {
+                            if (Program.IncludedInterface != null) {
+                                throw new Exception("Attempted to include a second interface file (" + fullIncludePath + ") while one was already included (" + Program.IncludedInterface + ")");
+                            }
+
+                            Program.IncludedInterface = fullIncludePath;
+                        }
                         break;
                     }
                     case TokenType.DM_Preproc_Define: {

@@ -1492,7 +1492,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 DMLexer expressionLexer = new DMLexer(insideBrackets.ToString());
                                 DMParser expressionParser = new DMParser(expressionLexer);
 
-                                expressionParser.Whitespace();
+                                expressionParser.Whitespace(true);
                                 DMASTExpression expression = expressionParser.Expression();
                                 if (expression == null) throw new Exception("Expected an expression");
 
@@ -1558,8 +1558,15 @@ namespace OpenDreamShared.Compiler.DM {
             return hasNewline;
         }
 
-        protected bool Whitespace() {
-            return Check(TokenType.DM_Whitespace);
+        protected bool Whitespace(bool includeIndentation = false) {
+            if (includeIndentation) {
+                bool hadWhitespace = false;
+
+                while (Check(new TokenType[] { TokenType.DM_Whitespace, TokenType.DM_Indent, TokenType.DM_Dedent })) hadWhitespace = true;
+                return hadWhitespace;
+            } else {
+                return Check(TokenType.DM_Whitespace);
+            }
         }
 
         private DMValueType AsTypes() {

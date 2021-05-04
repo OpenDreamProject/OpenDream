@@ -18,6 +18,8 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMObject dmObject in DMObjectTree.AllObjects.Values) {
                 dmObject.CompileProcs();
             }
+
+            DMObjectTree.CreateGlobalInitProc();
         }
 
         public void VisitFile(DMASTFile file) {
@@ -111,7 +113,7 @@ namespace DMCompiler.DM.Visitors {
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
 
             if (_currentVariable.IsGlobal) {
-                Program.GlobalInitProcStatements.Add(statement);
+                DMObjectTree.AddGlobalInitProcStatement(statement);
             } else {
                 _currentObject.InitializationProcStatements.Add(statement);
             }
@@ -124,7 +126,7 @@ namespace DMCompiler.DM.Visitors {
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
 
             if (_currentVariable.IsGlobal) {
-                Program.GlobalInitProcStatements.Add(statement);
+                DMObjectTree.AddGlobalInitProcStatement(statement);
             } else {
                 _currentObject.InitializationProcStatements.Add(statement);
             }
@@ -137,7 +139,7 @@ namespace DMCompiler.DM.Visitors {
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
 
             if (_currentVariable.IsGlobal) {
-                Program.GlobalInitProcStatements.Add(statement);
+                DMObjectTree.AddGlobalInitProcStatement(statement);
             } else {
                 _currentObject.InitializationProcStatements.Add(statement);
             }

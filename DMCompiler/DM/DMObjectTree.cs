@@ -1,4 +1,6 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
@@ -6,6 +8,11 @@ using System.Collections.Generic;
 namespace DMCompiler.DM {
     static class DMObjectTree {
         public static Dictionary<DreamPath, DMObject> AllObjects = new();
+        public static List<string> StringTable = new();
+        public static Dictionary<string, int> StringToStringID = new();
+        public static DMProc GlobalInitProc = null;
+
+        private static List<DMASTProcStatement> _globalInitProcStatements = new();
 
         private static uint _dmObjectIdCounter = 0;
 
@@ -36,6 +43,21 @@ namespace DMCompiler.DM {
             }
 
             return dmObject;
+        }
+
+        public static void AddGlobalInitProcStatement(DMASTProcStatement statement) {
+            _globalInitProcStatements.Add(statement);
+        }
+
+        public static void CreateGlobalInitProc() {
+            if (_globalInitProcStatements.Count == 0) return;
+
+            GlobalInitProc = new DMProc(null);
+            DMVisitorProcBuilder globalInitProcBuilder = new DMVisitorProcBuilder(DMObjectTree.GetDMObject(DreamPath.Root), GlobalInitProc);
+
+            foreach (DMASTProcStatement statement in _globalInitProcStatements) {
+                statement.Visit(globalInitProcBuilder);
+            }
         }
 
         public static DreamObjectJson CreateJsonRepresentation() {

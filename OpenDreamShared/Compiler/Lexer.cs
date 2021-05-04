@@ -15,7 +15,7 @@ namespace OpenDreamShared.Compiler {
         protected Queue<Token> _pendingTokenQueue = new();
         protected int _currentPosition = -1;
         protected int _currentLine = 1;
-        protected int _currentColumn = 0;
+        protected int _currentColumn = 1;
 
         private string _source = null;
 

@@ -525,11 +525,11 @@ namespace DMCompiler.DM {
         private void WriteString(string value) {
             int stringID;
 
-            if (!Program.StringToStringID.TryGetValue(value, out stringID)) {
-                stringID = Program.StringTable.Count;
+            if (!DMObjectTree.StringToStringID.TryGetValue(value, out stringID)) {
+                stringID = DMObjectTree.StringTable.Count;
 
-                Program.StringTable.Add(value);
-                Program.StringToStringID.Add(value, stringID);
+                DMObjectTree.StringTable.Add(value);
+                DMObjectTree.StringToStringID.Add(value, stringID);
             }
 
             WriteInt(stringID);

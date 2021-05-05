@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
@@ -75,6 +75,8 @@ namespace OpenDreamShared.Compiler.DM {
                             }
                         } else {
                             if (path.Path.FindElement("var") != -1) {
+                                Whitespace();
+                                AsTypes();
                                 return new DMASTObjectVarDefinition(path, new DMASTConstantNull());
                             } else {
                                 return new DMASTObjectDefinition(path, null);

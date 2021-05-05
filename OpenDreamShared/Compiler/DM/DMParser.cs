@@ -75,11 +75,8 @@ namespace OpenDreamShared.Compiler.DM {
                             }
                         } else {
                             if (path.Path.FindElement("var") != -1) {
-                                if (Check(TokenType.DM_As))
-                                {
-                                    Whitespace();
-                                    Consume(TokenType.DM_Identifier, "Expected as identifier");
-                                }
+                                Whitespace();
+                                AsTypes();
                                 return new DMASTObjectVarDefinition(path, new DMASTConstantNull());
                             } else {
                                 return new DMASTObjectDefinition(path, null);

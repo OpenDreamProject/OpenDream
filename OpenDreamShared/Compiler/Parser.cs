@@ -67,8 +67,8 @@ namespace OpenDreamShared.Compiler {
             foreach (TokenType type in types) {
                 if (Check(type)) return;
             }
-            
-            throw new Exception(errorMessage);
+
+            Error(errorMessage);
         }
 
         protected void Error(string message) {

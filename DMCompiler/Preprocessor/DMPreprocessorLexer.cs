@@ -23,6 +23,7 @@ namespace DMCompiler.Preprocessor {
                 switch (c) {
                     case ' ':
                     case '\t': Advance(); token = CreateToken(TokenType.DM_Preproc_Whitespace, c); break;
+                    case '\\':
                     case '}':
                     case '!':
                     case '&':
@@ -175,7 +176,7 @@ namespace DMCompiler.Preprocessor {
         //Lexes a string
         //If it contains string interpolations, it splits the string tokens into parts and lexes the expressions as normal
         //For example, "There are [amount] of them" becomes:
-        //    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String( of them")
+        //    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String(" of them")
         //If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
         private Token LexString(bool isLong) {
             char terminator = GetCurrent();

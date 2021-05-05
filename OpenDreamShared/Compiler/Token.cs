@@ -171,12 +171,14 @@
     struct Token {
         public TokenType Type;
         public string Text;
+        public string SourceFile;
         public int Line, Column;
         public object Value;
 
-        public Token(TokenType type, string text, int line, int column, object value) {
+        public Token(TokenType type, string text, string sourceFile, int line, int column, object value) {
             Type = type;
             Text = text;
+            SourceFile = sourceFile;
             Line = line;
             Column = column;
             Value = value;

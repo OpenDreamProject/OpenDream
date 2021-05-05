@@ -5,6 +5,7 @@ using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Dream.Procs.Native;
 using OpenDreamServer.Net;
 using OpenDreamServer.Resources;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DMF;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Interface;
@@ -46,11 +47,7 @@ namespace OpenDreamServer {
             DreamResourceManager = new DreamResourceManager(resourcePath);
 
             if (!LoadCompiledDreamJson(compiledDreamFilepath)) return;
-
-            DreamResource interfaceResource = DreamResourceManager.LoadResource(CompiledJson.Interface);
-            DMFLexer dmfLexer = new DMFLexer(interfaceResource.ReadAsString());
-            DMFParser dmfParser = new DMFParser(dmfLexer);
-            _clientInterface = dmfParser.Interface();
+            if (!LoadInterface(CompiledJson.Interface)) return;
 
             DreamStateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             DreamServer.DreamConnectionRequest += OnDreamConnectionRequest;
@@ -149,11 +146,32 @@ namespace OpenDreamServer {
             return true;
         }
 
+
+        private static bool LoadInterface(string filepath) {
+            DreamResource interfaceResource = DreamResourceManager.LoadResource(filepath);
+            DMFLexer dmfLexer = new DMFLexer(filepath, interfaceResource.ReadAsString());
+            DMFParser dmfParser = new DMFParser(dmfLexer);
+
+            _clientInterface = dmfParser.Interface();
+
+            if (dmfParser.Errors.Count > 0) {
+                Console.WriteLine("Errors while parsing the interface file");
+
+                foreach (CompilerError error in dmfParser.Errors) {
+                    Console.WriteLine(error);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
         private static void RegisterPacketCallbacks() {
             DreamServer.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, DreamResourceManager.HandleRequestResourcePacket);
-            DreamServer.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));;
-            DreamServer.RegisterPacketCallback(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => connection.HandlePacketClickAtom(pClickAtom)); ;
-            DreamServer.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic)); ;
+            DreamServer.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));
+            DreamServer.RegisterPacketCallback(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => connection.HandlePacketClickAtom(pClickAtom));
+            DreamServer.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic));
             DreamServer.RegisterPacketCallback(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
             DreamServer.RegisterPacketCallback(PacketID.CallVerb, (DreamConnection connection, PacketCallVerb pCallVerb) => connection.HandlePacketCallVerb(pCallVerb));
         }

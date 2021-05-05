@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     class Parser {
+        public List<CompilerError> Errors = new();
+
         private Lexer _lexer;
         private Token _currentToken;
         private Stack<Token> _tokenStack = new Stack<Token>();
@@ -57,7 +59,7 @@ namespace OpenDreamShared.Compiler {
 
         protected void Consume(TokenType type, string errorMessage) {
             if (!Check(type)) {
-                throw new Exception(errorMessage);
+                Error(errorMessage);
             }
         }
 
@@ -67,6 +69,10 @@ namespace OpenDreamShared.Compiler {
             }
             
             throw new Exception(errorMessage);
+        }
+
+        protected void Error(string message) {
+            Errors.Add(new CompilerError(_currentToken, message));
         }
     }
 }

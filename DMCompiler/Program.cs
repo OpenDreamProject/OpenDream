@@ -6,6 +6,7 @@ using System.Text.Json;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using DMCompiler.Preprocessor;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Json;
 
@@ -18,11 +19,12 @@ namespace DMCompiler {
             if (!VerifyArguments(args)) return;
 
             string source = Preprocess(args);
-            Compile(source);
+            if (Compile(source)) {
+                //Output file is the first file with the extension changed to .json
+                string outputFile = Path.ChangeExtension(args[0], "json");
 
-            //Output file is the first file with the extension changed to .json
-            string outputFile = Path.ChangeExtension(args[0], "json");
-            SaveJson(outputFile);
+                SaveJson(outputFile);
+            }
         }
 
         private static bool VerifyArguments(string[] args) {
@@ -62,16 +64,26 @@ namespace DMCompiler {
             return preprocessor.GetResult();
         }
 
-        private static void Compile(string source) {
-            DMLexer dmLexer = new DMLexer(source);
+        private static bool Compile(string source) {
+            DMLexer dmLexer = new DMLexer(null, source);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
+
+            if (dmParser.Errors.Count > 0) {
+                foreach (CompilerError error in dmParser.Errors) {
+                    Console.WriteLine(error);
+                }
+
+                return false;
+            }
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);
 
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
+
+            return true;
         }
 
         private static void SaveJson(string outputFile) {

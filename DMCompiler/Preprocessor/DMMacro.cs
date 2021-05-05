@@ -47,11 +47,11 @@ namespace DMCompiler.Preprocessor {
                         if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
                             StringBuilder tokenTextBuilder = new StringBuilder();
 
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", 0, 0, null));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", null, 0, 0, null));
                             foreach (Token parameterToken in parameter) {
-                                expandedTokens.Add(new Token(TokenType.DM_Preproc_String, parameterToken.Text, 0, 0, null));
+                                expandedTokens.Add(new Token(TokenType.DM_Preproc_String, null, parameterToken.Text, 0, 0, null));
                             }
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", 0, 0, null));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", null, 0, 0, null));
                         } else {
                             foreach (Token parameterToken in parameter) {
                                 expandedTokens.Add(parameterToken);
@@ -63,7 +63,7 @@ namespace DMCompiler.Preprocessor {
                                 expandedTokens.Add(parameterToken);
                             }
 
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", 0, 0, null));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", null, 0, 0, null));
                         }
                     } else {
                         expandedTokens.Add(token);

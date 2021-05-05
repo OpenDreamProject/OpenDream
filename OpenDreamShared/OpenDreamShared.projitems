@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\AST.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compiler\CompilerError.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMF\DMFLexer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMF\DMFParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMAST.cs" />

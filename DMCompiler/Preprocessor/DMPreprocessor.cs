@@ -16,13 +16,14 @@ namespace DMCompiler.Preprocessor {
         private bool _isCurrentLineWhitespaceOnly = true;
         private Dictionary<string, DMMacro> _defines = new();
 
-        public void IncludeFile(string includePath, string fileName) {
-            string source = File.ReadAllText(Path.Combine(includePath, fileName));
+        public void IncludeFile(string includePath, string file) {
+            string source = File.ReadAllText(Path.Combine(includePath, file));
             source = source.Replace("\r\n", "\n");
             source = Regex.Replace(source, @"\\\n", String.Empty); //Combine all lines ending with a backslash
             source += '\n';
 
-            _lexerStack.Push(new DMPreprocessorLexer(source));
+            _lexerStack.Push(new DMPreprocessorLexer(file, source));
+            WriteSourceAndLine();
 
             Token token = GetNextToken();
             while (token.Type != TokenType.EndOfFile) {
@@ -32,14 +33,11 @@ namespace DMCompiler.Preprocessor {
                         if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFileToken.Text + "\" is not a valid include path");
                         
                         string includedFile = (string)includedFileToken.Value;
-                        string includedFileName = Path.GetFileName(includedFile);
-                        string includedFileExtension = Path.GetExtension(includedFileName);
-                        string fullIncludePath = Path.Combine(includePath, includedFile);
+                        string includedFileExtension = Path.GetExtension(includedFile);
+                        string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile);
 
                         if (includedFileExtension == ".dm") {
-                            string newIncludePath = Path.GetDirectoryName(fullIncludePath);
-
-                            IncludeFile(newIncludePath, includedFileName);
+                            IncludeFile(includePath, fullIncludePath);
                         } else if (includedFileExtension == ".dmm") {
                             Program.IncludedMaps.Add(fullIncludePath);
                         } else if (includedFileExtension == ".dmf") {
@@ -167,11 +165,14 @@ namespace DMCompiler.Preprocessor {
                             _result.Append('\n');
 
                             _isCurrentLineWhitespaceOnly = true;
+                        } else {
+                            WriteSourceAndLine();
                         }
 
                         _currentLine = new StringBuilder();
                         break;
                     }
+                    case TokenType.DM_Preproc_If: SkipIfBody(); break;
                     case TokenType.DM_Preproc_EndIf: break;
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
@@ -183,7 +184,7 @@ namespace DMCompiler.Preprocessor {
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:
                     case TokenType.DM_Preproc_Punctuator_RightParenthesis: _isCurrentLineWhitespaceOnly = false; _currentLine.Append(token.Text); break;
-                    case TokenType.DM_Preproc_Whitespace: _currentLine.Append(token.Text);  break;
+                    case TokenType.DM_Preproc_Whitespace: _currentLine.Append(token.Text); break;
                     default: throw new Exception("Invalid token '" + token.Text + "'");
                 }
 
@@ -191,10 +192,18 @@ namespace DMCompiler.Preprocessor {
             }
 
             _lexerStack.Pop();
+            WriteSourceAndLine();
         }
 
         public string GetResult() {
             return _result.ToString();
+        }
+
+        private void WriteSourceAndLine() {
+            if (_lexerStack.Count == 0) return;
+
+            DMPreprocessorLexer lexer = _lexerStack.Peek();
+            _result.Append("#" + lexer.SourceName + "#" + lexer.CurrentLine + "\n"); //Tell the DM lexer what file and line we're on
         }
 
         private Token GetNextToken(bool ignoreWhitespace = false) {

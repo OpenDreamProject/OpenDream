@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DMCompiler.Preprocessor {
     class DMPreprocessorLexer : Lexer {
-        public DMPreprocessorLexer(string source) : base(source) { }
+        public DMPreprocessorLexer(string sourceName, string source) : base(sourceName, source) { }
 
         public Token GetNextTokenIgnoringWhitespace() {
             Token nextToken = GetNextToken();

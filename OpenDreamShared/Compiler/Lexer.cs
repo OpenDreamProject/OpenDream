@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     class Lexer {
+        public string SourceName = null;
         public string Source {
             get => _source;
             private set {
@@ -11,15 +12,16 @@ namespace OpenDreamShared.Compiler {
             }
         }
         public string[] Lines { get; private set; }
+        public int CurrentLine = 1;
+        public int CurrentColumn = 1;
 
         protected Queue<Token> _pendingTokenQueue = new();
         protected int _currentPosition = -1;
-        protected int _currentLine = 1;
-        protected int _currentColumn = 1;
 
         private string _source = null;
 
-        public Lexer(string source) {
+        public Lexer(string sourceName, string source) {
+            SourceName = sourceName;
             Source = source;
 
             Advance();
@@ -71,7 +73,7 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected Token CreateToken(TokenType type, string text, object value = null) {
-            return new Token(type, text, _currentLine, _currentColumn, value);
+            return new Token(type, text, SourceName, CurrentLine, CurrentColumn, value);
         }
 
         protected Token CreateToken(TokenType type, char text, object value = null) {
@@ -87,10 +89,10 @@ namespace OpenDreamShared.Compiler {
         protected virtual char Advance() {
             if (_currentPosition >= 0) {
                 if (GetCurrent() == '\n') {
-                    _currentLine++;
-                    _currentColumn = 1;
+                    CurrentLine++;
+                    CurrentColumn = 1;
                 } else {
-                    _currentColumn++;
+                    CurrentColumn++;
                 }
             }
 

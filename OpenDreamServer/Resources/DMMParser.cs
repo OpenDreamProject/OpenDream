@@ -60,7 +60,7 @@ namespace OpenDreamShared.Compiler.DMM {
                 CellDefinition cellDefinition = ParseCellDefinition();
                 if (cellDefinition != null) {
                     if (_cellNameLength == -1) _cellNameLength = cellDefinition.Name.Length;
-                    else if (cellDefinition.Name.Length != _cellNameLength) throw new Exception("Invalid cell definition name");
+                    else if (cellDefinition.Name.Length != _cellNameLength) Error("Invalid cell definition name");
 
                     map.CellDefinitions.Add(cellDefinition.Name, cellDefinition);
                 }
@@ -102,8 +102,8 @@ namespace OpenDreamShared.Compiler.DMM {
                             DMASTObjectVarOverride varOverride = statement as DMASTObjectVarOverride;
                             DreamValue varValue;
 
-                            if (varOverride == null) throw new Exception("Expected a var override");
-                            if (varOverride.ObjectPath != null) throw new Exception("Invalid var name");
+                            if (varOverride == null) Error("Expected a var override");
+                            if (varOverride.ObjectPath != null) Error("Invalid var name");
                             if (varOverride.Value is DMASTConstantString dmastString) {
                                 varValue = new DreamValue(dmastString.Value);
                             } else if (varOverride.Value is DMASTConstantResource dmastResource) {
@@ -123,7 +123,9 @@ namespace OpenDreamShared.Compiler.DMM {
 
                                 varValue = new DreamValue(list);
                             } else {
-                                throw new Exception("Invalid var value (" + varOverride.Value + ")");
+                                Error("Invalid var value (" + varOverride.Value + ")");
+
+                                varValue = DreamValue.Null;
                             }
 
                             mapObject.VarOverrides.Add(varOverride.VarName, varValue);
@@ -179,7 +181,7 @@ namespace OpenDreamShared.Compiler.DMM {
                     int width = (line.Length / _cellNameLength);
 
                     if (mapBlock.Width < width) mapBlock.Width = width;
-                    if ((line.Length % _cellNameLength) != 0) throw new Exception("Invalid map block row");
+                    if ((line.Length % _cellNameLength) != 0) Error("Invalid map block row");
 
                     for (int x = 1; x <= width; x++) {
                         mapBlock.Cells.Add((x, mapBlock.Height - y + 1), line.Substring((x - 1) * _cellNameLength, _cellNameLength));
@@ -195,13 +197,13 @@ namespace OpenDreamShared.Compiler.DMM {
         private (int X, int Y, int Z)? Coordinates() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 DMASTConstantInteger x = Constant() as DMASTConstantInteger;
-                if (x == null) throw new Exception("Expected an integer");
+                if (x == null) Error("Expected an integer");
                 Consume(TokenType.DM_Comma, "Expected ','");
                 DMASTConstantInteger y = Constant() as DMASTConstantInteger;
-                if (y == null) throw new Exception("Expected an integer");
+                if (y == null) Error("Expected an integer");
                 Consume(TokenType.DM_Comma, "Expected ','");
                 DMASTConstantInteger z = Constant() as DMASTConstantInteger;
-                if (z == null) throw new Exception("Expected an integer");
+                if (z == null) Error("Expected an integer");
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 
                 return (x.Value, y.Value, z.Value);

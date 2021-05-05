@@ -53,7 +53,7 @@ namespace OpenDreamShared.Compiler.DMF {
             { "none", TokenType.DMF_None }
         };
 
-        public DMFLexer(string source) : base(source) { }
+        public DMFLexer(string sourceName, string source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();

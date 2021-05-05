@@ -2,6 +2,7 @@
 using OpenDreamServer.Dream.Objects.MetaObjects;
 using OpenDreamServer.Dream.Procs;
 using OpenDreamServer.Resources;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Compiler.DMM;
 using OpenDreamShared.Dream;
@@ -36,8 +37,16 @@ namespace OpenDreamServer.Dream {
 
         public void LoadMap(DreamResource mapResource) {
             string dmmSource = mapResource.ReadAsString();
-            DMMParser dmmParser = new DMMParser(new DMLexer(dmmSource));
+            DMMParser dmmParser = new DMMParser(new DMLexer(mapResource.ResourcePath, dmmSource));
             DMMParser.Map map = dmmParser.ParseMap();
+
+            if (dmmParser.Errors.Count > 0) {
+                foreach (CompilerError error in dmmParser.Errors) {
+                    Console.WriteLine(error);
+                }
+
+                throw new Exception("Errors while parsing map");
+            }
 
             Width = map.MaxX - 1;
             Height = map.MaxY - 1;

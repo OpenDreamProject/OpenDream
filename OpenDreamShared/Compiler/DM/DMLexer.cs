@@ -53,7 +53,7 @@ namespace OpenDreamShared.Compiler.DM {
         private int bracketNesting = 0;
         private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
 
-        public DMLexer(string source) : base(source) { }
+        public DMLexer(string sourceName, string source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
@@ -451,8 +451,19 @@ namespace OpenDreamShared.Compiler.DM {
         protected override char Advance() {
             base.Advance();
 
-            if (_currentColumn == 1 && _checkingIndentation) { //Beginning a new line
-                CheckIndentation();
+            if (CurrentColumn == 1 && _checkingIndentation) { //Beginning a new line
+                if (GetCurrent() == '#') { //Information left by the preprocessor that tells us the current file and line number
+                    StringBuilder file = new StringBuilder();
+                    StringBuilder lineNumber = new StringBuilder();
+                    while (Advance() != '#' && !IsAtEndOfFile()) file.Append(GetCurrent());
+                    while (Advance() != '\n' && !IsAtEndOfFile()) lineNumber.Append(GetCurrent());
+                    Advance();
+
+                    CurrentLine = int.Parse(lineNumber.ToString());
+                    SourceName = file.ToString();
+                } else if (_checkingIndentation) {
+                    CheckIndentation();
+                }
             }
 
             return GetCurrent();
@@ -469,7 +480,7 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             if (bracketNesting != 0) return; //Don't emit identation when inside brackets
-            if (Lines[_currentLine - 1].Trim() == "") //Don't emit indentation tokens on empty lines
+            if (Lines[CurrentLine - 1].Trim() == "") //Don't emit indentation tokens on empty lines
                 return;
 
             int currentIndentationLevel = _indentationStack.Peek();
@@ -483,7 +494,7 @@ namespace OpenDreamShared.Compiler.DM {
                 } while (indentationLevel < _indentationStack.Peek());
 
                 if (indentationLevel != _indentationStack.Peek()) {
-                    throw new Exception("Invalid indentation at line " + _currentLine + ":" + _currentColumn);
+                    throw new Exception("Invalid indentation at line " + CurrentLine + ":" + CurrentColumn);
                 }
             }
         }

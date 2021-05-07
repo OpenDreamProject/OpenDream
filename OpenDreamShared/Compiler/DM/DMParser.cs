@@ -1392,6 +1392,34 @@ namespace OpenDreamShared.Compiler.DM {
                                 } else {
                                     Error("istype() requires 1 or 2 arguments");
                                 }
+                            } else if (identifier != null && identifier.Identifier == "text") {
+                                if (callParameters.Length == 0) Error("text() requires at least 1 argument");
+
+                                if (callParameters[0].Value is DMASTConstantString constantString) {
+                                    if (callParameters.Length > 1) Error("text() expected 1 argument");
+
+                                    return constantString;
+                                } else if (callParameters[0].Value is DMASTStringFormat formatText) {
+                                    if (formatText == null) Error("text()'s first argument must be a string format");
+
+                                    List<int> emptyValueIndices = new();
+                                    for (int i = 0; i < formatText.InterpolatedValues.Length; i++) {
+                                        if (formatText.InterpolatedValues[i] == null) emptyValueIndices.Add(i);
+                                    }
+
+                                    if (callParameters.Length != emptyValueIndices.Count + 1) Error("text() was given an invalid amount of arguments for the string");
+                                    for (int i = 0; i < emptyValueIndices.Count; i++) {
+                                        int emptyValueIndex = emptyValueIndices[i];
+
+                                        formatText.InterpolatedValues[emptyValueIndex] = callParameters[i + 1].Value;
+                                    }
+
+                                    return formatText;
+                                } else {
+                                    Error("text() expected a string as the first argument");
+
+                                    return null;
+                                }
                             } else if (identifier != null && identifier.Identifier == "locate") {
                                 if (callParameters.Length > 3) Error("locate() was given too many arguments");
 
@@ -1504,29 +1532,35 @@ namespace OpenDreamShared.Compiler.DM {
                             if (bracketNesting == 0) { //End of expression
                                 insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
 
-                                DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.SourceFile, insideBrackets.ToString());
-                                List<Token> preprocTokens = new();
-                                Token preprocToken;
-                                while ((preprocToken = preprocLexer.GetNextToken()).Type != TokenType.EndOfFile) {
-                                    preprocToken.SourceFile = constantToken.SourceFile;
-                                    preprocToken.Line = constantToken.Line;
-                                    preprocToken.Column = constantToken.Column;
-                                    preprocTokens.Add(preprocToken);
+                                string insideBracketsText = insideBrackets.ToString();
+                                if (insideBracketsText != String.Empty) {
+                                    DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.SourceFile, insideBracketsText);
+                                    List<Token> preprocTokens = new();
+                                    Token preprocToken;
+                                    while ((preprocToken = preprocLexer.GetNextToken()).Type != TokenType.EndOfFile) {
+                                        preprocToken.SourceFile = constantToken.SourceFile;
+                                        preprocToken.Line = constantToken.Line;
+                                        preprocToken.Column = constantToken.Column;
+                                        preprocTokens.Add(preprocToken);
+                                    }
+
+                                    DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
+                                    DMParser expressionParser = new DMParser(expressionLexer);
+
+                                    expressionParser.Whitespace(true);
+                                    DMASTExpression expression = expressionParser.Expression();
+                                    if (expression == null) Error("Expected an expression");
+                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
+
+                                    interpolationValues.Add(expression);
+                                } else {
+                                    interpolationValues.Add(null);
                                 }
 
-                                DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
-                                DMParser expressionParser = new DMParser(expressionLexer);
-
-                                expressionParser.Whitespace(true);
-                                DMASTExpression expression = expressionParser.Expression();
-                                if (expression == null) Error("Expected an expression");
-                                if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
-
-                                interpolationValues.Add(expression);
                                 stringBuilder.Append(StringFormatCharacter);
                                 stringBuilder.Append((char)currentInterpolationType);
-                                currentInterpolationType = StringFormatTypes.Stringify;
 
+                                currentInterpolationType = StringFormatTypes.Stringify;
                                 insideBrackets.Clear();
                             }
                         } else if (c == '\\' && bracketNesting == 0) {

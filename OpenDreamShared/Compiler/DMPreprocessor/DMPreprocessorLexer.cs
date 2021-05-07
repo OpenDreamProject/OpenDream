@@ -1,10 +1,9 @@
-﻿using OpenDreamShared.Compiler;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DMCompiler.Preprocessor {
-    class DMPreprocessorLexer : Lexer {
+namespace OpenDreamShared.Compiler.DMPreprocessor {
+    class DMPreprocessorLexer : TextLexer {
         public DMPreprocessorLexer(string sourceName, string source) : base(sourceName, source) { }
 
         public Token GetNextTokenIgnoringWhitespace() {
@@ -22,7 +21,7 @@ namespace DMCompiler.Preprocessor {
 
                 switch (c) {
                     case ' ':
-                    case '\t': Advance(); token = CreateToken(TokenType.DM_Preproc_Whitespace, c); break;
+                    case '\t': token = CreateToken(TokenType.DM_Preproc_Whitespace, c); Advance(); break;
                     case '\\':
                     case '}':
                     case '!':
@@ -40,6 +39,7 @@ namespace DMCompiler.Preprocessor {
                     case '*':
                     case '~':
                     case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
@@ -47,7 +47,7 @@ namespace DMCompiler.Preprocessor {
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '/': {
                         if (Advance() == '/') {
-                            while (Advance() != '\n' && !IsAtEndOfFile()) ;
+                            while (Advance() != '\n' && !AtEndOfSource) ;
 
                             token = CreateToken(TokenType.Skip, "//");
                         } else if (GetCurrent() == '*') {
@@ -57,7 +57,7 @@ namespace DMCompiler.Preprocessor {
                                 bool isStar = GetCurrent() == '*';
 
                                 if (isStar && Advance() == '/') break;
-                                else if (IsAtEndOfFile()) throw new Exception("Expected \"*/\" to end multiline comment");
+                                else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();
                             }
 
@@ -103,7 +103,7 @@ namespace DMCompiler.Preprocessor {
                     }
                     case '#': {
                         StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
-                        while ((IsAlphabetic(Advance()) ||GetCurrent() == '_' || GetCurrent() == '#') && !IsAtEndOfFile()) {
+                        while ((IsAlphabetic(Advance()) ||GetCurrent() == '_' || GetCurrent() == '#') && !AtEndOfSource) {
                             textBuilder.Append(GetCurrent());
                         }
 
@@ -135,32 +135,39 @@ namespace DMCompiler.Preprocessor {
                     default: {
                         if (IsAlphabetic(c) || c == '_') {
                             StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
-                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '_') && !IsAtEndOfFile()) textBuilder.Append(GetCurrent());
+                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
 
                             token = CreateToken(TokenType.DM_Preproc_Identifier, textBuilder.ToString());
-                        } else if (IsNumeric(c) || c == '.') {
+                        } else if (IsNumeric(c)) {
                             StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
+                            bool error = false;
 
-                            if (c == '.') {
-                                c = Advance();
+                            while (!AtEndOfSource) {
+                                char next = Advance();
+                                if ((c == 'e' || c == 'E') && (next == '-' || next == '+')) { //1e-10 or 1e+10
+                                    textBuilder.Append(next);
+                                    next = Advance();
+                                } else if (c == '#' && next == 'I') { //1.#INF
+                                    if (Advance() != 'N' || Advance() != 'F') {
+                                        error = true;
 
-                                if (!IsNumeric(c) && c != '#') token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, '.');
-                                else textBuilder.Append(c);
-                            }
-
-                            if (IsNumeric(c) || c == '#') {
-                                while (!IsAtEndOfFile()) {
-                                    c = Advance();
-
-                                    if (IsNumeric(c) || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
-                                        textBuilder.Append(c);
-                                    } else {
                                         break;
                                     }
+
+                                    textBuilder.Append("INF");
+                                    next = Advance();
                                 }
 
-                                token = CreateToken(TokenType.DM_Preproc_Number, textBuilder.ToString());
+                                c = next;
+                                if (IsNumeric(c) || c == '.' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
+                                    textBuilder.Append(c);
+                                } else {
+                                    break;
+                                }
                             }
+
+                            if (!error) token = CreateToken(TokenType.DM_Preproc_Number, textBuilder.ToString());
+                            else token = CreateToken(TokenType.Error, null, "Invalid number");
                         } else {
                             Advance();
                         }
@@ -171,6 +178,19 @@ namespace DMCompiler.Preprocessor {
             }
 
             return token;
+        }
+
+        protected override char Advance() {
+            char current = base.Advance();
+            if (current == '\\') {
+                if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
+                    base.Advance();
+
+                    current = Advance();
+                }
+            }
+
+            return current;
         }
 
         //Lexes a string
@@ -184,7 +204,7 @@ namespace DMCompiler.Preprocessor {
             Queue<Token> stringTokens = new();
 
             Advance();
-            while (!(!isLong && GetCurrent() == '\n') && !IsAtEndOfFile()) {
+            while (!(!isLong && GetCurrent() == '\n') && !AtEndOfSource) {
                 char stringC = GetCurrent();
 
                 textBuilder.Append(stringC);
@@ -196,7 +216,7 @@ namespace DMCompiler.Preprocessor {
 
                     Token exprToken = GetNextToken();
                     int bracketNesting = 0;
-                    while (!(bracketNesting == 0 && exprToken.Type == TokenType.DM_Preproc_Punctuator_RightBracket) && !IsAtEndOfFile()) {
+                    while (!(bracketNesting == 0 && exprToken.Type == TokenType.DM_Preproc_Punctuator_RightBracket) && !AtEndOfSource) {
                         stringTokens.Enqueue(exprToken);
 
                         if (exprToken.Type == TokenType.DM_Preproc_Punctuator_LeftBracket) bracketNesting++;
@@ -234,7 +254,9 @@ namespace DMCompiler.Preprocessor {
             else if (isLong && !text.EndsWith("}")) throw new Exception("Expected '}' to end long string");
 
             if (stringTokens.Count == 0) {
-                return CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(1, text.Length - 2));
+                string stringValue = isLong ? text.Substring(2, text.Length - 4) : text.Substring(1, text.Length - 2);
+
+                return CreateToken(TokenType.DM_Preproc_ConstantString, text, stringValue);
             } else {
                 stringTokens.Enqueue(CreateToken(TokenType.DM_Preproc_String, textBuilder.ToString()));
 

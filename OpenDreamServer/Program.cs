@@ -81,7 +81,7 @@ namespace OpenDreamServer {
             }
 
             DreamMap = new DreamMap();
-            DreamMap.LoadMap(DreamResourceManager.LoadResource(CompiledJson.Maps[0]));
+            DreamMap.LoadMap(CompiledJson.Maps[0]);
 
             Task.Run(() => WorldInstance.CallProc("New"));
             DreamServer.Start();

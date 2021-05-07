@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
-    class Parser {
+    class Parser<SourceType> {
         public List<CompilerError> Errors = new();
 
-        private Lexer _lexer;
+        private Lexer<SourceType> _lexer;
         private Token _currentToken;
         private Stack<Token> _tokenStack = new Stack<Token>();
 
-        public Parser(Lexer lexer) {
+        public Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;
 
             Advance();
@@ -24,6 +24,10 @@ namespace OpenDreamShared.Compiler {
                 _currentToken = _tokenStack.Pop();
             } else {
                 _currentToken = _lexer.GetNextToken();
+
+                if (_currentToken.Type == TokenType.Error) {
+                    Error((string)_currentToken.Value);
+                }
             }
 
             return Current();

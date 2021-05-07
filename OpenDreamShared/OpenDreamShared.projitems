@@ -18,6 +18,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\DM\DMParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Lexer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Parser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMPreprocessor\DMMacro.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMPreprocessor\DMPreprocessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Compiler\DMPreprocessor\DMPreprocessorLexer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Compiler\Token.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\AtomType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Dream\IconAppearance.cs" />

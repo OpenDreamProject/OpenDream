@@ -2,10 +2,12 @@
     enum TokenType {
         //Base lexer
         Error,
-        Newline,
-        EndOfFile,
         Unknown,
         Skip, //Internally skipped by the lexer
+
+        //Text lexer
+        Newline,
+        EndOfFile,
 
         //DM Preprocessor
         DM_Preproc_ConstantString,
@@ -168,7 +170,7 @@
         DMF_ZoomMode
     }
 
-    struct Token {
+    class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;
@@ -182,6 +184,10 @@
             Line = line;
             Column = column;
             Value = value;
+        }
+
+        public override string ToString() {
+            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + Text + ")";
         }
     }
 }

@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Text.Json;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
-using DMCompiler.Preprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Compiler.DMPreprocessor;
 using OpenDreamShared.Json;
 
 namespace DMCompiler {
@@ -18,12 +18,12 @@ namespace DMCompiler {
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
 
-            string source = Preprocess(args);
-            if (Compile(source)) {
+            DMPreprocessor preprocessor = Preprocess(args);
+            if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(args[0], "json");
 
-                SaveJson(outputFile);
+                SaveJson(preprocessor.IncludedMaps, preprocessor.IncludedInterface, outputFile);
             }
         }
 
@@ -47,8 +47,8 @@ namespace DMCompiler {
             return true;
         }
 
-        private static string Preprocess(string[] files) {
-            DMPreprocessor preprocessor = new DMPreprocessor();
+        private static DMPreprocessor Preprocess(string[] files) {
+            DMPreprocessor preprocessor = new DMPreprocessor(true);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string dmStandardDirectory = Path.Combine(compilerDirectory, "DMStandard");
@@ -61,11 +61,11 @@ namespace DMCompiler {
                 preprocessor.IncludeFile(directoryPath, fileName);
             }
 
-            return preprocessor.GetResult();
+            return preprocessor;
         }
 
-        private static bool Compile(string source) {
-            DMLexer dmLexer = new DMLexer(null, source);
+        private static bool Compile(List<Token> preprocessedTokens) {
+            DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
 
@@ -86,11 +86,11 @@ namespace DMCompiler {
             return true;
         }
 
-        private static void SaveJson(string outputFile) {
+        private static void SaveJson(List<string> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
-            compiledDream.Maps = IncludedMaps;
-            compiledDream.Interface = IncludedInterface;
+            compiledDream.Maps = maps;
+            compiledDream.Interface = interfaceFile;
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
             if (DMObjectTree.GlobalInitProc != null) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
@@ -99,6 +99,7 @@ namespace DMCompiler {
             });
 
             File.WriteAllText(outputFile, json);
+            Console.WriteLine("Saved to " + outputFile);
         }
     }
 }

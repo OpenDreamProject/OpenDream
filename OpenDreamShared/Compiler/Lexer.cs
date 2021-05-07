@@ -2,29 +2,22 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
-    class Lexer {
-        public string SourceName = null;
-        public string Source {
-            get => _source;
-            private set {
-                _source = value;
-                Lines = value.Split("\n");
-            }
-        }
-        public string[] Lines { get; private set; }
-        public int CurrentLine = 1;
-        public int CurrentColumn = 1;
+    class Lexer<SourceType> {
+        public string SourceName { get; protected set; }
+        public IEnumerable<SourceType> Source { get; protected set; }
+        public int CurrentLine { get; protected set; } = 1;
+        public int CurrentColumn { get; protected set; } = 0;
+        public bool AtEndOfSource { get; protected set; } = false;
 
         protected Queue<Token> _pendingTokenQueue = new();
-        protected int _currentPosition = -1;
 
-        private string _source = null;
+        private IEnumerator<SourceType> _sourceEnumerator = null;
+        private SourceType _current;
 
-        public Lexer(string sourceName, string source) {
+        public Lexer(string sourceName, IEnumerable<SourceType> source) {
             SourceName = sourceName;
             Source = source;
-
-            Advance();
+            _sourceEnumerator = Source.GetEnumerator();
         }
 
         public Token GetNextToken() {
@@ -43,13 +36,70 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected virtual Token ParseNextToken() {
+            return CreateToken(TokenType.Unknown, GetCurrent().ToString());
+        }
+
+        protected Token CreateToken(TokenType type, string text, object value = null) {
+            return new Token(type, text, SourceName, CurrentLine, CurrentColumn, value);
+        }
+
+        protected Token CreateToken(TokenType type, char text, object value = null) {
+            return CreateToken(type, Convert.ToString(text), value);
+        }
+
+        protected virtual SourceType GetCurrent() {
+            return _current;
+        }
+
+        protected virtual SourceType Advance() {
+            if (_sourceEnumerator.MoveNext()) {
+                _current = _sourceEnumerator.Current;
+            } else {
+                AtEndOfSource = true;
+            }
+
+            return GetCurrent();
+        }
+    }
+
+    class TextLexer : Lexer<char> {
+        protected string _source;
+        protected int _currentPosition = 0;
+
+        public TextLexer(string sourceName, string source) : base(sourceName, source) {
+            _source = source;
+
+            Advance();
+        }
+
+        protected override Token ParseNextToken() {
             char c = GetCurrent();
 
+            Token token;
             switch (c) {
-                case '\n': Advance(); return CreateToken(TokenType.Newline, c);
-                case '\0': return CreateToken(TokenType.EndOfFile, c);
-                default: return CreateToken(TokenType.Unknown, c);
+                case '\n': token = CreateToken(TokenType.Newline, c); Advance(); break;
+                case '\0': token = CreateToken(TokenType.EndOfFile, c); Advance(); break;
+                default: token = CreateToken(TokenType.Unknown, c); break;
             }
+
+            return token;
+        }
+
+        protected override char GetCurrent() {
+            if (AtEndOfSource) return '\0';
+            else return base.GetCurrent();
+        }
+
+        protected override char Advance() {
+            if (GetCurrent() == '\n') {
+                CurrentLine++;
+                CurrentColumn = 1;
+            } else {
+                CurrentColumn++;
+            }
+
+            _currentPosition++;
+            return base.Advance();
         }
 
         protected bool IsAlphabetic(char c) {
@@ -66,38 +116,6 @@ namespace OpenDreamShared.Compiler {
 
         protected bool IsHex(char c) {
             return IsNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-        }
-
-        protected bool IsAtEndOfFile() {
-            return _currentPosition >= Source.Length;
-        }
-
-        protected Token CreateToken(TokenType type, string text, object value = null) {
-            return new Token(type, text, SourceName, CurrentLine, CurrentColumn, value);
-        }
-
-        protected Token CreateToken(TokenType type, char text, object value = null) {
-            return CreateToken(type, Convert.ToString(text), value);
-        }
-
-        protected char GetCurrent() {
-            if (IsAtEndOfFile()) return '\0';
-
-            return Source[_currentPosition];
-        }
-
-        protected virtual char Advance() {
-            if (_currentPosition >= 0) {
-                if (GetCurrent() == '\n') {
-                    CurrentLine++;
-                    CurrentColumn = 1;
-                } else {
-                    CurrentColumn++;
-                }
-            }
-
-            _currentPosition++;
-            return GetCurrent();
         }
     }
 }

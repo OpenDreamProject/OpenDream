@@ -1,9 +1,8 @@
-﻿using OpenDreamShared.Compiler;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DMCompiler.Preprocessor {
+namespace OpenDreamShared.Compiler.DMPreprocessor {
     class DMMacro {
         private List<string> _parameters;
         private List<Token> _tokens;
@@ -47,11 +46,14 @@ namespace DMCompiler.Preprocessor {
                         if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
                             StringBuilder tokenTextBuilder = new StringBuilder();
 
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", null, 0, 0, null));
+                            tokenTextBuilder.Append('"');
                             foreach (Token parameterToken in parameter) {
-                                expandedTokens.Add(new Token(TokenType.DM_Preproc_String, null, parameterToken.Text, 0, 0, null));
+                                tokenTextBuilder.Append(parameterToken.Text);
                             }
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_String, "\"", null, 0, 0, null));
+                            tokenTextBuilder.Append('"');
+
+                            string tokenText = tokenTextBuilder.ToString();
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, null, 0, 0, tokenText.Substring(1, tokenText.Length - 2)));
                         } else {
                             foreach (Token parameterToken in parameter) {
                                 expandedTokens.Add(parameterToken);

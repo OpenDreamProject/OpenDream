@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    class DMLexer : Lexer {
+    class DMLexer : Lexer<Token> {
         public static List<string> ValidEscapeSequences = new List<string>() {
             "t", "n",
             "[", "]",
@@ -53,499 +53,420 @@ namespace OpenDreamShared.Compiler.DM {
         private int bracketNesting = 0;
         private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
 
-        public DMLexer(string sourceName, string source) : base(sourceName, source) { }
+        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) {
+            Advance();
+        }
 
         protected override Token ParseNextToken() {
-            Token token = base.ParseNextToken();
+            Token token;
 
-            if (token.Type == TokenType.Unknown) {
-                char c = GetCurrent();
+            if (AtEndOfSource) {
+                while (_indentationStack.Peek() > 0) {
+                    _indentationStack.Pop();
+                    _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
+                }
 
-                switch (c) {
-                    case ' ':
-                    case '\t': {
-                        Advance();
-                        while (GetCurrent() == ' ' || GetCurrent() == '\t') Advance();
+                token = CreateToken(TokenType.EndOfFile, '\0');
+            } else {
+                Token preprocToken = GetCurrent();
 
-                        token = CreateToken(TokenType.DM_Whitespace, ' ');
-                        break;
-                    }
-                    case '(': Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, c); bracketNesting++; break;
-                    case ')': Advance(); token = CreateToken(TokenType.DM_RightParenthesis, c); bracketNesting--; break;
-                    case '[': Advance(); token = CreateToken(TokenType.DM_LeftBracket, c); bracketNesting++; break;
-                    case ']': Advance(); token = CreateToken(TokenType.DM_RightBracket, c); bracketNesting--; break;
-                    case ',': Advance(); token = CreateToken(TokenType.DM_Comma, c); break;
-                    case ';': Advance(); token = CreateToken(TokenType.DM_Semicolon, c); break;
-                    case ':': Advance(); token = CreateToken(TokenType.DM_Colon, c); break;
-                    case '?': Advance(); token = CreateToken(TokenType.DM_Question, c); break;
-                    case '{': {
-                        c = Advance();
-
-                        if (c == '"') {
-                            token = LexString(true);
-                            token.Text = "{" + token.Text + "}";
-                        } else {
-                            token = CreateToken(TokenType.DM_LeftCurlyBracket, '{');
-                        }
-
-                        break;
-                    }
-                    case '}': {
+                if (preprocToken.Type == TokenType.Newline) {
+                    if (_checkingIndentation) {
                         Advance();
 
-                        _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
-                        token = CreateToken(TokenType.Newline, '\n');
-                        break;
-                    }
-                    case '.': {
-                        c = Advance();
+                        int currentIndentationLevel = _indentationStack.Peek();
+                        int indentationLevel = CheckIndentation();
+                        if (indentationLevel > currentIndentationLevel) {
+                            _indentationStack.Push(indentationLevel);
 
-                        if (c == '.') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_SuperProc, "..");
-                        } else {
-                            token = CreateToken(TokenType.DM_Period, '.');
-                        }
-
-                        break;
-                    }
-                    case '/': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_SlashEquals, "/=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Slash, '/');
-                        }
-
-                        break;
-                    }
-                    case '=': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_EqualsEquals, "==");
-                        } else {
-                            token = CreateToken(TokenType.DM_Equals, '=');
-                        }
-
-                        break;
-                    }
-                    case '!': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_ExclamationEquals, "!=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Exclamation, '!');
-                        }
-
-                        break;
-                    }
-                    case '&': {
-                        c = Advance();
-
-                        if (c == '&') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_AndAnd, "&&");
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_AndEquals, "&=");
-                        } else {
-                            token = CreateToken(TokenType.DM_And, '&');
-                        }
-
-                        break;
-                    }
-                    case '+': {
-                        c = Advance();
-
-                        if (c == '+') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_PlusPlus, "++");
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_PlusEquals, "+=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Plus, '+');
-                        }
-
-                        break;
-                    }
-                    case '-': {
-                        c = Advance();
-
-                        if (c == '-') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_MinusMinus, "--");
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_MinusEquals, "-=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Minus, '-');
-                        }
-
-                        break;
-                    }
-                    case '*': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_StarEquals, "*=");
-                        } else if (c == '*') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_StarStar, "**");
-                        } else {
-                            token = CreateToken(TokenType.DM_Star, '*');
-                        }
-
-                        break;
-                    }
-                    case '^': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_XorEquals, "^=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Xor, '^');
-                        }
-
-                        break;
-                    }
-                    case '%': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_ModulusEquals, "%=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Modulus, '%');
-                        }
-
-                        break;
-                    }
-                    case '~': {
-                        c = Advance();
-
-                        if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_TildeEquals, "~=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Tilde, '~');
-                        }
-
-                        break;
-                    }
-                    case '<': {
-                        c = Advance();
-
-                        if (c == '<') {
-                            c = Advance();
-
-                            if (c == '=') {
-                                Advance();
-
-                                token = CreateToken(TokenType.DM_LeftShiftEquals, "<<=");
-                            } else {
-                                token = CreateToken(TokenType.DM_LeftShift, "<<");
-                            }
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_LessThanEquals, "<=");
-                        } else {
-                            token = CreateToken(TokenType.DM_LessThan, '<');
-                        }
-
-                        break;
-                    }
-                    case '>': {
-                        c = Advance();
-
-                        if (c == '>') {
-                            c = Advance();
-
-                            if (c == '=') {
-                                Advance();
-
-                                token = CreateToken(TokenType.DM_RightShiftEquals, ">>=");
-                            } else {
-                                token = CreateToken(TokenType.DM_RightShift, ">>");
-                            }
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_GreaterThanEquals, ">=");
-                        } else {
-                            token = CreateToken(TokenType.DM_GreaterThan, '>');
-                        }
-
-                        break;
-                    }
-                    case '|': {
-                        c = Advance();
-
-                        if (c == '|') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_BarBar, "||");
-                        } else if (c == '=') {
-                            Advance();
-
-                            token = CreateToken(TokenType.DM_BarEquals, "|=");
-                        } else {
-                            token = CreateToken(TokenType.DM_Bar, '|');
-                        }
-
-                        break;
-                    }
-                    case '\'': {
-                        StringBuilder resourcePathBuilder = new StringBuilder(Convert.ToString(c));
-
-                        do {
-                            c = Advance();
-
-                            if (c != '\'' && c != '\n') {
-                                resourcePathBuilder.Append(c);
-                            } else {
-                                break;
-                            }
-                        } while (!IsAtEndOfFile());
-                        if (c != '\'') throw new Exception("Expected \"\'\" to end resource path");
-                        resourcePathBuilder.Append('\'');
-
-                        Advance();
-
-                        string text = resourcePathBuilder.ToString();
-                        token = CreateToken(TokenType.DM_Resource, text, text.Substring(1, text.Length - 2));
-                        break;
-                    }
-                    case '@': { //Raw string
-                        char delimiter = Advance();
-                        StringBuilder textBuilder = new StringBuilder();
-
-                        textBuilder.Append("@");
-                        textBuilder.Append(delimiter);
-                        do {
-                            c = Advance();
-
-                            textBuilder.Append(c);
-                        } while (c != delimiter && c != '\n');
-
-                        if (c != delimiter) throw new Exception("Expected '" + delimiter + "' to end raw string");
-                        Advance();
-
-                        string text = textBuilder.ToString();
-                        token = CreateToken(TokenType.DM_RawString, text, text.Substring(2, text.Length - 3));
-                        break;
-                    }
-                    case '"': {
-                        token = LexString(false);
-
-                        break;
-                    }
-                    default: {
-                        if (IsAlphabetic(c) || c == '_') {
-                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
-
+                            _pendingTokenQueue.Enqueue(preprocToken);
+                            token = CreateToken(TokenType.DM_Indent, '\t');
+                        } else if (indentationLevel < currentIndentationLevel) {
+                            _pendingTokenQueue.Enqueue(preprocToken);
                             do {
-                                c = Advance();
+                                _indentationStack.Pop();
+                                _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
+                            } while (indentationLevel < _indentationStack.Peek());
 
-                                if (IsAlphanumeric(c) || c == '_') {
-                                    textBuilder.Append(c);
-                                } else {
+                            if (indentationLevel == _indentationStack.Peek()) {
+                                token = _pendingTokenQueue.Dequeue();
+                            } else {
+                                token = CreateToken(TokenType.Error, null, "Invalid indentation");
+                            }
+                        } else {
+                            token = preprocToken;
+                        }
+                    } else {
+                        token = preprocToken;
+                    }
+                } else {
+                    switch (preprocToken.Type) {
+                        case TokenType.DM_Preproc_Whitespace: {
+                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) ;
+                            
+                            token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
+                            break;
+                        }
+                        case TokenType.DM_Preproc_Punctuator_LeftParenthesis: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightParenthesis: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_LeftBracket: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightBracket: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_Period: {
+                            if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
+                                token = CreateToken(TokenType.DM_SuperProc, "..");
+
+                                Advance();
+                            } else {
+                                token = CreateToken(TokenType.DM_Period, ".");
+                            }
+
+                            break;
+                        }
+                        case TokenType.DM_Preproc_Punctuator: {
+                            Advance();
+
+                            string c = preprocToken.Text;
+                            switch (c) {
+                                case ";": token = CreateToken(TokenType.DM_Semicolon, c); break;
+                                case ":": token = CreateToken(TokenType.DM_Colon, c); break;
+                                case "?": token = CreateToken(TokenType.DM_Question, c); break;
+                                case "{": token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
+                                case "}": {
+                                    _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
+                                    token = CreateToken(TokenType.Newline, '\n');
+
                                     break;
                                 }
-                            } while (!IsAtEndOfFile());
+                                case "/": {
+                                    Token current = GetCurrent();
 
-                            string text = textBuilder.ToString();
-                            if (Keywords.TryGetValue(text, out TokenType keywordType)) {
-                                token = CreateToken(keywordType, text);
-                            } else {
-                                token = CreateToken(TokenType.DM_Identifier, text);
-                            }
-                        } else if (IsNumeric(c)) {
-                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
-                            bool containsDecimal = false;
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
 
-                            do {
-                                c = Advance();
-
-                                if (IsNumeric(c) || c == '.' || c == 'E' || c == 'e' || c == '#') {
-                                    if (c == '.') {
-                                        if (containsDecimal) throw new Exception("Multiple decimals in number");
-
-                                        containsDecimal = true;
-                                    } else if (c == 'E' || c == 'e') {
-                                        textBuilder.Append(c);
-                                        c = Advance();
-
-                                        if (!(IsNumeric(c) || c == '-' || c == '+')) throw new Exception("Invalid scientific notation");
-                                    } else if (c == '#') {
-                                        textBuilder.Append(c);
-                                        textBuilder.Append("IN");
-
-                                        c = Advance();
-                                        if (c != 'I') throw new Exception("Expected .#INF");
-                                        c = Advance();
-                                        if (c != 'N') throw new Exception("Expected .#INF");
-                                        c = Advance();
-                                        if (c != 'F') throw new Exception("Expected .#INF");
+                                        token = CreateToken(TokenType.DM_SlashEquals, "/=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Slash, c);
                                     }
 
-                                    textBuilder.Append(c);
-                                } else {
                                     break;
                                 }
-                            } while (!IsAtEndOfFile());
+                                case "=": {
+                                    Token current = GetCurrent();
 
-                            string text = textBuilder.ToString();
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_EqualsEquals, "==");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Equals, c);
+                                    }
+
+                                    break;
+                                }
+                                case "!": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_ExclamationEquals, "!=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Exclamation, c);
+                                    }
+
+                                    break;
+                                }
+                                case "^": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_XorEquals, "^=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Xor, c);
+                                    }
+
+                                    break;
+                                }
+                                case "%": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_ModulusEquals, "%=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Modulus, c);
+                                    }
+
+                                    break;
+                                }
+                                case "~": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_TildeEquals, "~=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Tilde, c);
+                                    }
+
+                                    break;
+                                }
+                                case "&": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "&") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_AndAnd, "&&");
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_AndEquals, "&=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_And, c);
+                                    }
+
+                                    break;
+                                }
+                                case "+": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "+") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_PlusPlus, "++");
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_PlusEquals, "+=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Plus, c);
+                                    }
+
+                                    break;
+                                }
+                                case "-": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "-") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_MinusMinus, "--");
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_MinusEquals, "-=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Minus, c);
+                                    }
+
+                                    break;
+                                }
+                                case "*": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "*") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_StarStar, "**");
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_StarEquals, "*=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Star, c);
+                                    }
+
+                                    break;
+                                }
+                                case "|": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "|") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_BarBar, "||");
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_BarEquals, "|=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_Bar, c);
+                                    }
+
+                                    break;
+                                }
+                                case "<": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "<") {
+                                        current = Advance();
+
+                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                            Advance();
+
+                                            token = CreateToken(TokenType.DM_LeftShiftEquals, "<<=");
+                                        } else {
+                                            token = CreateToken(TokenType.DM_LeftShift, "<<");
+                                        }
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_LessThanEquals, "<=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_LessThan, c);
+                                    }
+
+                                    break;
+                                }
+                                case ">": {
+                                    Token current = GetCurrent();
+
+                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == ">") {
+                                        current = Advance();
+
+                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                            Advance();
+
+                                            token = CreateToken(TokenType.DM_RightShiftEquals, ">>=");
+                                        } else {
+                                            token = CreateToken(TokenType.DM_RightShift, ">>");
+                                        }
+                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
+                                        Advance();
+
+                                        token = CreateToken(TokenType.DM_GreaterThanEquals, ">=");
+                                    } else {
+                                        token = CreateToken(TokenType.DM_GreaterThan, c);
+                                    }
+
+                                    break;
+                                }
+                                default: throw new Exception("Invalid punctuator token '" + c + "'");
+                            }
+
+                            break;
+                        }
+                        case TokenType.DM_Preproc_ConstantString: {
+                            string tokenText = preprocToken.Text;
+                            switch (preprocToken.Text[0]) {
+                                case '"':
+                                case '{': token = CreateToken(TokenType.DM_String, tokenText, preprocToken.Value); break;
+                                case '\'': token = CreateToken(TokenType.DM_Resource, tokenText, preprocToken.Value); break;
+                                case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
+                                default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
+                            }
+                            
+                            Advance();
+                            break;
+                        }
+                        case TokenType.DM_Preproc_String: {
+                            string tokenText = preprocToken.Text;
+
+                            string stringStart = null, stringEnd = null;
+                            switch (preprocToken.Text[0]) {
+                                case '"': stringStart = "\""; stringEnd = "\""; break;
+                                case '{': stringStart = "{\""; stringEnd = "\"}"; break;
+                            }
+
+                            if (stringEnd != null) {
+                                StringBuilder stringTextBuilder = new StringBuilder(tokenText);
+
+                                int stringNesting = 1;
+                                while (!AtEndOfSource) {
+                                    Token stringToken = Advance();
+
+                                    stringTextBuilder.Append(stringToken.Text);
+                                    if (stringToken.Type == TokenType.DM_Preproc_String) {
+                                        if (stringToken.Text.StartsWith(stringStart)) {
+                                            stringNesting++;
+                                        } else if (stringToken.Text.EndsWith(stringEnd)) {
+                                            stringNesting--;
+
+                                            if (stringNesting == 0) break;
+                                        }
+                                    }
+                                }
+
+                                string stringText = stringTextBuilder.ToString();
+                                string stringValue = stringText.Substring(stringStart.Length, stringText.Length - stringStart.Length - stringEnd.Length);
+                                token = CreateToken(TokenType.DM_String, stringText, stringValue);
+                            } else {
+                                token = CreateToken(TokenType.Error, tokenText, "Invalid string");
+                            }
+                            
+                            Advance();
+                            break;
+                        }
+                        case TokenType.DM_Preproc_Identifier: {
+                            StringBuilder identifierTextBuilder = new StringBuilder();
+
+                            do { //Preprocessor macros might end up making one identifier out of multiple tokens
+                                identifierTextBuilder.Append(GetCurrent().Text);
+                            } while (Advance().Type == TokenType.DM_Preproc_Identifier && !AtEndOfSource);
+
+                            string identifierText = identifierTextBuilder.ToString();
+                            if (Keywords.TryGetValue(identifierText, out TokenType keywordType)) {
+                                token = CreateToken(keywordType, identifierText);
+                            } else {
+                                token = CreateToken(TokenType.DM_Identifier, identifierText);
+                            }
+
+                            break;
+                        }
+                        case TokenType.DM_Preproc_Number: {
+                            Advance();
+
+                            string text = preprocToken.Text;
                             if (text == "1.#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
-                            } else if (containsDecimal || text.Contains("e")) {
+                            } else if (text.Contains(".") || text.Contains("e")) {
                                 token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
                             } else if (Int32.TryParse(text, out int value)) {
                                 token = CreateToken(TokenType.DM_Integer, text, value);
                             } else {
-                                throw new Exception("Invalid number '" + text + "'");
+                                token = CreateToken(TokenType.Error, text, "Invalid number");
                             }
-                        } else { //Not a known token, advance over it
-                            Advance();
-                        }
 
-                        break;
+                            break;
+                        }
+                        default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                     }
-                }
-            } else if (token.Type == TokenType.Newline && bracketNesting != 0) { //Don't emit newlines within brackets
-                token = CreateToken(TokenType.Skip, '\n');
-            } else if (token.Type == TokenType.EndOfFile) {
-                while (_indentationStack.Peek() > 0) {
-                    _indentationStack.Pop();
-                    _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
                 }
             }
 
             return token;
         }
 
-        protected override char Advance() {
-            base.Advance();
+        protected override Token Advance() {
+            Token current = base.Advance();
 
-            if (CurrentColumn == 1 && _checkingIndentation) { //Beginning a new line
-                if (GetCurrent() == '#') { //Information left by the preprocessor that tells us the current file and line number
-                    StringBuilder file = new StringBuilder();
-                    StringBuilder lineNumber = new StringBuilder();
-                    while (Advance() != '#' && !IsAtEndOfFile()) file.Append(GetCurrent());
-                    while (Advance() != '\n' && !IsAtEndOfFile()) lineNumber.Append(GetCurrent());
-                    Advance();
-
-                    CurrentLine = int.Parse(lineNumber.ToString());
-                    SourceName = file.ToString();
-                } else if (_checkingIndentation) {
-                    CheckIndentation();
-                }
+            //Skip any newlines when inside brackets
+            if (bracketNesting != 0) {
+                while (current.Type == TokenType.Newline) current = Advance();
             }
 
-            return GetCurrent();
+            SourceName = current.SourceFile;
+            CurrentLine = current.Line;
+            CurrentColumn = current.Column;
+            return current;
         }
 
-        private void CheckIndentation() {
-            char c = GetCurrent();
+        private int CheckIndentation() {
             int indentationLevel = 0;
 
-            while (c == '\t' || c == ' ') {
+            while (GetCurrent().Type == TokenType.DM_Preproc_Whitespace) {
                 indentationLevel++;
 
-                c = Advance();
+                Advance();
             }
 
-            if (bracketNesting != 0) return; //Don't emit identation when inside brackets
-            if (Lines[CurrentLine - 1].Trim() == "") //Don't emit indentation tokens on empty lines
-                return;
-
-            int currentIndentationLevel = _indentationStack.Peek();
-            if (indentationLevel > currentIndentationLevel) {
-                _indentationStack.Push(indentationLevel);
-                _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Indent, '\t'));
-            } else if (indentationLevel < currentIndentationLevel) {
-                do {
-                    _indentationStack.Pop();
-                    _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
-                } while (indentationLevel < _indentationStack.Peek());
-
-                if (indentationLevel != _indentationStack.Peek()) {
-                    throw new Exception("Invalid indentation at line " + CurrentLine + ":" + CurrentColumn);
-                }
-            }
-        }
-
-        private Token LexString(bool isLong) {
-            StringBuilder textBuilder = new StringBuilder(Convert.ToString(GetCurrent()));
-            int stringBracketNesting = 0;
-            
-            if (isLong) _checkingIndentation = false;
-
-            char c;
-            Advance();
-            do {
-                c = GetCurrent();
-
-                textBuilder.Append(c);
-
-                if (c == '\\') { // So \" doesn't end the string
-                    textBuilder.Append(Advance());
-                    c = Advance();
-                    textBuilder.Append(c);
-                }
-
-                if (c == '[') stringBracketNesting++;
-                else if (c == ']') stringBracketNesting--;
-
-                if (stringBracketNesting == 0) {
-                    if (c == '"' || (!isLong && c == '\n')) {
-                        if (isLong) {
-                            c = Advance();
-
-                            if (c == '}') break;
-                        } else {
-                            break;
-                        }
-                    } else {
-                        Advance();
-                    }
-                } else {
-                    Advance();
-                }
-            } while (!IsAtEndOfFile());
-
-            if (isLong && c != '}') throw new Exception("Expected \"\"}\" to end long string");
-            else if (!isLong && c != '"') throw new Exception("Expected '\"' to end string");
-
-            Advance();
-            if (isLong) _checkingIndentation = true;
-
-            string text = textBuilder.ToString();
-            return CreateToken(TokenType.DM_String, text, text.Substring(1, text.Length - 2));
+            return indentationLevel;
         }
     }
 }

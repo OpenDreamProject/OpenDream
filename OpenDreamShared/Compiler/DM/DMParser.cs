@@ -5,9 +5,10 @@ using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.Dereference
 using Dereference = OpenDreamShared.Compiler.DM.DMASTDereference.Dereference;
 using OpenDreamShared.Dream.Procs;
 using System.Text;
+using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
-    class DMParser : Parser {
+    class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 
         public DMParser(DMLexer lexer) : base(lexer) { }
@@ -24,7 +25,7 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTStatement statement = Statement();
 
             if (statement != null) {
-                List<DMASTStatement> statements = new List<DMASTStatement>() { statement };
+                List<DMASTStatement> statements = new() { statement };
 
                 while (Delimiter()) {
                     Whitespace();
@@ -197,8 +198,15 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTBlockInner Block() {
+            Token beforeBlockToken = Current();
+            bool hasNewline = Newline();
+
             DMASTBlockInner block = BracedBlock();
             if (block == null) block = IndentedBlock();
+
+            if (block == null && hasNewline) {
+                ReuseToken(beforeBlockToken);
+            }
 
             return block;
         }
@@ -206,11 +214,10 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTBlockInner BracedBlock() {
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 Whitespace();
-                bool isIndented = Check(TokenType.DM_Indent);
                 Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
                 DMASTBlockInner blockInner = BlockInner();
                 if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
-                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return blockInner;
@@ -221,17 +228,13 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTBlockInner IndentedBlock() {
             if (Check(TokenType.DM_Indent)) {
-                Newline();
                 DMASTBlockInner blockInner = BlockInner();
 
                 if (blockInner != null) {
                     Newline();
+                    Consume(TokenType.DM_Dedent, "Expected dedent");
 
-                    if (Check(TokenType.DM_Dedent)) {
-                        return blockInner;
-                    } else {
-                        Error("Expected dedent");
-                    }
+                    return blockInner;
                 }
             }
 
@@ -239,8 +242,15 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcBlockInner ProcBlock() {
+            Token beforeBlockToken = Current();
+            bool hasNewline = Newline();
+
             DMASTProcBlockInner procBlock = BracedProcBlock();
             if (procBlock == null) procBlock = IndentedProcBlock();
+
+            if (procBlock == null && hasNewline) {
+                ReuseToken(beforeBlockToken);
+            }
 
             return procBlock;
         }
@@ -248,8 +258,8 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcBlockInner BracedProcBlock() {
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 Whitespace();
-                bool isIndented = Check(TokenType.DM_Indent);
                 Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
                 DMASTProcBlockInner procBlock = ProcBlockInner();
                 if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
@@ -262,9 +272,7 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcBlockInner IndentedProcBlock() {
             if (Check(TokenType.DM_Indent)) {
-                Newline();
                 DMASTProcBlockInner procBlock = ProcBlockInner();
-                Newline();
                 Consume(TokenType.DM_Dedent, "Expected dedent");
 
                 return procBlock;
@@ -721,21 +729,26 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] SwitchCases() {
+            Token beforeSwitchBlock = Current();
+            bool hasNewline = Newline();
+
             DMASTProcStatementSwitch.SwitchCase[] switchCases = BracedSwitchInner();
             if (switchCases == null) switchCases = IndentedSwitchInner();
+
+            if (switchCases == null && hasNewline) {
+                ReuseToken(beforeSwitchBlock);
+            }
 
             return switchCases;
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] BracedSwitchInner() {
-            return null;
+            return null; //TODO: Braced switch blocks
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] IndentedSwitchInner() {
             if (Check(TokenType.DM_Indent)) {
-                Newline();
                 DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
-                Newline();
                 Consume(TokenType.DM_Dedent, "Expected dedent");
 
                 return switchInner;
@@ -1470,7 +1483,7 @@ namespace OpenDreamShared.Compiler.DM {
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
                     StringBuilder stringBuilder = new StringBuilder(); ;
-                    List<DMASTExpression> interpolationValues = new List<DMASTExpression>();
+                    List<DMASTExpression> interpolationValues = new();
                     Advance();
 
                     int bracketNesting = 0;
@@ -1482,7 +1495,7 @@ namespace OpenDreamShared.Compiler.DM {
                         if (bracketNesting > 0) {
                             insideBrackets.Append(c);
                         }
-
+                        
                         if (c == '[') {
                             bracketNesting++;
                         } else if (c == ']' && bracketNesting > 0) {
@@ -1491,12 +1504,23 @@ namespace OpenDreamShared.Compiler.DM {
                             if (bracketNesting == 0) { //End of expression
                                 insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
 
-                                DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, insideBrackets.ToString());
+                                DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.SourceFile, insideBrackets.ToString());
+                                List<Token> preprocTokens = new();
+                                Token preprocToken;
+                                while ((preprocToken = preprocLexer.GetNextToken()).Type != TokenType.EndOfFile) {
+                                    preprocToken.SourceFile = constantToken.SourceFile;
+                                    preprocToken.Line = constantToken.Line;
+                                    preprocToken.Column = constantToken.Column;
+                                    preprocTokens.Add(preprocToken);
+                                }
+
+                                DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
                                 DMParser expressionParser = new DMParser(expressionLexer);
 
                                 expressionParser.Whitespace(true);
                                 DMASTExpression expression = expressionParser.Expression();
                                 if (expression == null) Error("Expected an expression");
+                                if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
 
                                 interpolationValues.Add(expression);
                                 stringBuilder.Append(StringFormatCharacter);

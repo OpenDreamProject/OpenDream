@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamShared.Compiler.DMF {
-    class DMFLexer : Lexer {
+    class DMFLexer : TextLexer {
         public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
             { "true", TokenType.DMF_True },
             { "false", TokenType.DMF_False },
@@ -93,7 +92,7 @@ namespace OpenDreamShared.Compiler.DMF {
                             } else {
                                 text += Advance();
                             }
-                        } while (GetCurrent() != c && !IsAtEndOfFile());
+                        } while (GetCurrent() != c && !AtEndOfSource);
                         if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
                         Advance();
 
@@ -118,7 +117,7 @@ namespace OpenDreamShared.Compiler.DMF {
                         if (IsAlphabetic(c)) {
                             string text = c.ToString();
 
-                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '-') && !IsAtEndOfFile()) text += GetCurrent();
+                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '-') && !AtEndOfSource) text += GetCurrent();
 
                             if (Keywords.ContainsKey(text)) {
                                 token = CreateToken(Keywords[text], text);
@@ -128,7 +127,7 @@ namespace OpenDreamShared.Compiler.DMF {
                         } else if (IsNumeric(c) || c == '-') {
                             string text = c.ToString();
 
-                            while (IsNumeric(Advance()) && !IsAtEndOfFile()) text += GetCurrent();
+                            while (IsNumeric(Advance()) && !AtEndOfSource) text += GetCurrent();
 
                             token = CreateToken(TokenType.DMF_Integer, text, int.Parse(text));
                         } else {

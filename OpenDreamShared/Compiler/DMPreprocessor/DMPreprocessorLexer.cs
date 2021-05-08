@@ -204,7 +204,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             Queue<Token> stringTokens = new();
 
             Advance();
-            while (!(!isLong && GetCurrent() == '\n') && !AtEndOfSource) {
+            while (!AtEndOfSource) {
                 char stringC = GetCurrent();
 
                 textBuilder.Append(stringC);
@@ -229,7 +229,23 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 } else if (stringC == '\\') {
                     Advance();
                     textBuilder.Append(GetCurrent());
+                    
                     Advance();
+                } else if (stringC == '\n' && !isLong) {
+                    Advance();
+                    if (GetCurrent() == '\t')
+                    {
+                        while (!AtEndOfSource && GetCurrent() == '\t')
+                        {
+                            textBuilder.Append('\t');
+                            Advance();
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    
                 } else if (stringC == terminator) {
                     if (isLong) {
                         stringC = Advance();

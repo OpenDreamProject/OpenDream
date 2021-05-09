@@ -68,8 +68,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();
                             }
-
-                            Advance();
+                            
                             token = CreateToken(TokenType.Skip, "/* */");
                         } else {
                             token = CreateToken(TokenType.DM_Preproc_Punctuator, c);

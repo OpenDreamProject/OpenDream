@@ -188,6 +188,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         _currentLine.Clear();
                         break;
                     }
+                    case TokenType.Error: //Pass the error token on to the DM lexer
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
                     case TokenType.DM_Preproc_ConstantString:

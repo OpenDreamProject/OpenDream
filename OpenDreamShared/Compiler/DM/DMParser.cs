@@ -1633,8 +1633,13 @@ namespace OpenDreamShared.Compiler.DM {
             DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
+                if (Check(TokenType.DM_LeftParenthesis) && Check(TokenType.DM_RightParenthesis))
+                {
+                    return DMValueType.Anything;
+                }
+                
                 Whitespace();
-
+                
                 do {
                     Token typeToken = Current();
 

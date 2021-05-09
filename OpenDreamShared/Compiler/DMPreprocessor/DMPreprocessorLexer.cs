@@ -56,7 +56,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             while (true) {
                                 bool isStar = GetCurrent() == '*';
 
-                                if (isStar && Advance() == '/') break;
+                                if (isStar && Advance() == '/')
+                                {
+                                    Advance();
+                                    while (GetCurrent() == ' ' || GetCurrent() == '\t')
+                                    {
+                                        Advance();
+                                    }
+                                    break;
+                                }
                                 else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();
                             }
@@ -185,8 +193,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             if (current == '\\') {
                 if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
                     base.Advance();
-
+                    
                     current = Advance();
+                    while (current == ' ' || current == '\t' || current == '\n')
+                    {
+                        current = Advance();
+                    }
                 }
             }
 
@@ -229,6 +241,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 } else if (stringC == '\\') {
                     Advance();
                     textBuilder.Append(GetCurrent());
+                    
                     Advance();
                 } else if (stringC == terminator) {
                     if (isLong) {

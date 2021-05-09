@@ -194,6 +194,11 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
                     base.Advance();
 
+                    while (current == ' ' || current == '\t')
+                    {
+                        current = Advance();
+                    }
+                    
                     current = Advance();
                 }
             }
@@ -212,7 +217,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             Queue<Token> stringTokens = new();
 
             Advance();
-            while (!AtEndOfSource) {
+            while (!(!isLong && GetCurrent() == '\n') && !AtEndOfSource) {
                 char stringC = GetCurrent();
 
                 textBuilder.Append(stringC);
@@ -239,21 +244,6 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     textBuilder.Append(GetCurrent());
                     
                     Advance();
-                } else if (stringC == '\n' && !isLong) {
-                    Advance();
-                    if (GetCurrent() == '\t')
-                    {
-                        while (!AtEndOfSource && GetCurrent() == '\t')
-                        {
-                            textBuilder.Append('\t');
-                            Advance();
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                    
                 } else if (stringC == terminator) {
                     if (isLong) {
                         stringC = Advance();

@@ -101,7 +101,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             defineToken = GetNextToken();
                         }
 
-                        _defines.Add(defineIdentifier.Text, new DMMacro(parameters, defineTokens));
+                        _defines[defineIdentifier.Text] = new DMMacro(parameters, defineTokens);
                         break;
                     }
                     case TokenType.DM_Preproc_Undefine: {

@@ -56,7 +56,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             while (true) {
                                 bool isStar = GetCurrent() == '*';
 
-                                if (isStar && Advance() == '/') break;
+                                if (isStar && Advance() == '/')
+                                {
+                                    Advance();
+                                    while (GetCurrent() == ' ')
+                                    {
+                                        Advance();
+                                    }
+                                    if(!AtEndOfSource) break;
+                                }
                                 else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();
                             }

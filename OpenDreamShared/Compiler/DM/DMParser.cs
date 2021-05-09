@@ -359,6 +359,12 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 Check(TokenType.Skip);
 
+                if (procStatement != null)
+                {
+                    Whitespace();
+                }
+                
+
                 return procStatement;
             }
         }

@@ -65,10 +65,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                     }
                                     break;
                                 }
-                                else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
+                                else if (AtEndOfSource) return CreateToken(TokenType.Error, null, "Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();
                             }
-                            
+
                             token = CreateToken(TokenType.Skip, "/* */");
                         } else {
                             token = CreateToken(TokenType.DM_Preproc_Punctuator, c);
@@ -235,7 +235,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         exprToken = GetNextToken();
                     }
 
-                    if (exprToken.Type != TokenType.DM_Preproc_Punctuator_RightBracket) throw new Exception("Expected ']' to end expression");
+                    if (exprToken.Type != TokenType.DM_Preproc_Punctuator_RightBracket) return CreateToken(TokenType.Error, null, "Expected ']' to end expression");
                     textBuilder.Append(']');
                 } else if (stringC == '\\') {
                     Advance();
@@ -262,8 +262,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             Advance();
 
             string text = textBuilder.ToString();
-            if (!isLong && !text.EndsWith(terminator)) throw new Exception("Expected '" + terminator + "' to end string");
-            else if (isLong && !text.EndsWith("}")) throw new Exception("Expected '}' to end long string");
+            if (!isLong && !(text.EndsWith(terminator) && text.Length != 1)) return CreateToken(TokenType.Error, null, "Expected '" + terminator + "' to end string");
+            else if (isLong && !text.EndsWith("}")) return CreateToken(TokenType.Error, null, "Expected '}' to end long string");
 
             if (stringTokens.Count == 0) {
                 string stringValue = isLong ? text.Substring(2, text.Length - 4) : text.Substring(1, text.Length - 2);

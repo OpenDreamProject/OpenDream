@@ -424,17 +424,18 @@ namespace OpenDreamShared.Compiler.DM {
 
                             string text = preprocToken.Text;
                             if (text == "1.#INF") {
-                                token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
-                            } else if (text.Contains(".") || text.Contains("e")) {
-                                token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
-                            } else if (Int32.TryParse(text, out int value)) {
-                                token = CreateToken(TokenType.DM_Integer, text, value);
+                                token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
+                            } else if (Int32.TryParse(text, out int intValue)) {
+                                token = CreateToken(TokenType.DM_Integer, text, intValue);
+                            } else if (Single.TryParse(text, out float floatValue)) {
+                                token = CreateToken(TokenType.DM_Float, text, floatValue);
                             } else {
                                 token = CreateToken(TokenType.Error, text, "Invalid number");
                             }
 
                             break;
                         }
+                        case TokenType.Error: token = preprocToken; break;
                         default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                     }
                 }

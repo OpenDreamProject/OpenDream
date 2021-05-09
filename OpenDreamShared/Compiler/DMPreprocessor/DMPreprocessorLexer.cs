@@ -194,7 +194,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
                     base.Advance();
 
-                    while (current == ' ' || current == '\t')
+                    while (current == ' ' || current == '\t' || current == '\n')
                     {
                         current = Advance();
                     }

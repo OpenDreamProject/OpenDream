@@ -1641,7 +1641,6 @@ namespace OpenDreamShared.Compiler.DM {
                 }
                 
                 Whitespace();
-                
                 do {
                     Token typeToken = Current();
 

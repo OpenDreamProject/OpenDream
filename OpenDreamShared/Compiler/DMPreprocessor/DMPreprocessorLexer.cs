@@ -59,7 +59,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 if (isStar && Advance() == '/')
                                 {
                                     Advance();
-                                    while (GetCurrent() == ' ')
+                                    while (GetCurrent() == ' ' || GetCurrent() == '\t')
                                     {
                                         Advance();
                                     }

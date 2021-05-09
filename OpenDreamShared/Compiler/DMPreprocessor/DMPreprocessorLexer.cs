@@ -63,7 +63,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                     {
                                         Advance();
                                     }
-                                    if(!AtEndOfSource) break;
+                                    break;
                                 }
                                 else if (AtEndOfSource) throw new Exception("Expected \"*/\" to end multiline comment");
                                 else if (!isStar) Advance();

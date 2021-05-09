@@ -357,9 +357,9 @@ namespace OpenDreamShared.Compiler.DM {
 
     class DMASTProcStatementSet : DMASTProcStatement {
         public string Attribute;
-        public DMASTExpressionConstant Value;
+        public DMASTExpression Value;
 
-        public DMASTProcStatementSet(string attribute, DMASTExpressionConstant value) {
+        public DMASTProcStatementSet(string attribute, DMASTExpression value) {
             Attribute = attribute;
             Value = value;
         }

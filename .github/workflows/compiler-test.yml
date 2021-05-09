@@ -1,4 +1,3 @@
-  
 name: Build & Compile TestGame
 
 on:
@@ -22,4 +21,4 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: dotnet DMCompiler\bin\Release\net5.0\DMCompiler.exe ..\..\..\..\TestGame
+      run: DMCompiler\bin\Release\net5.0\DMCompiler.exe TestGame\environment.dme

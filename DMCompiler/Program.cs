@@ -24,6 +24,9 @@ namespace DMCompiler {
                 string outputFile = Path.ChangeExtension(args[0], "json");
 
                 SaveJson(preprocessor.IncludedMaps, preprocessor.IncludedInterface, outputFile);
+            } else {
+                //Compile errors, exit with an error code
+                Environment.Exit(1);
             }
         }
 

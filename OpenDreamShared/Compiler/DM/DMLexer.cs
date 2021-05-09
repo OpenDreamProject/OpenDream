@@ -425,7 +425,7 @@ namespace OpenDreamShared.Compiler.DM {
                             string text = preprocToken.Text;
                             if (text == "1.#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
-                            } else if (text.Contains(".") || text.Contains("e")) {
+                            } else if (text.Contains(".") || text.Contains("e") || text.Contains("E")) {
                                 token = CreateToken(TokenType.DM_Float, text, Convert.ToSingle(text));
                             } else if (Int32.TryParse(text, out int value)) {
                                 token = CreateToken(TokenType.DM_Integer, text, value);

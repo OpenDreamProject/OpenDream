@@ -357,6 +357,12 @@ namespace OpenDreamShared.Compiler.DM {
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
 
+                if (procStatement != null)
+                {
+                    Whitespace();
+                }
+                
+
                 return procStatement;
             }
         }

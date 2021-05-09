@@ -1639,11 +1639,21 @@ namespace OpenDreamShared.Compiler.DM {
             DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
+                
                 Whitespace();
-
+                bool parenthetical = Check(TokenType.DM_LeftParenthesis);
+                bool closed = false;
+                Whitespace();
+                
                 do {
                     Token typeToken = Current();
 
+                    if (parenthetical)
+                    {
+                        closed = Check(TokenType.DM_RightParenthesis);
+                        if (closed) break;
+                    }
+                    
                     Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected value type");
                     switch (typeToken.Text) {
                         case "anything": type |= DMValueType.Anything; break;
@@ -1660,6 +1670,11 @@ namespace OpenDreamShared.Compiler.DM {
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
                 } while (Check(TokenType.DM_Bar));
+                
+                if (parenthetical && !closed) { 
+                    Whitespace();
+                    Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
+                }
             }
 
             return type;

@@ -62,7 +62,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             }
 
                             Advance();
-                            token = CreateToken(TokenType.Skip, "/* */");
+                            token = CreateToken(TokenType.Skip, "/* */"); //ignore me
                         } else {
                             token = CreateToken(TokenType.DM_Preproc_Punctuator, c);
                         }

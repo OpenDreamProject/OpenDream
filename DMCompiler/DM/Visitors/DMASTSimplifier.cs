@@ -124,6 +124,14 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementSpawn.Time);
         }
 
+        public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) {
+            
+        }
+        
+        public void VisitProcStatementLabel(DMASTProcStatementLabel statementLabel) {
+
+        }
+
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) {
             SimplifyExpression(ref statementBrowse.Receiver);
             SimplifyExpression(ref statementBrowse.Body);

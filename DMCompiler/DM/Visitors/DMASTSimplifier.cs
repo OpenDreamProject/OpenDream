@@ -122,6 +122,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
             SimplifyExpression(ref statementSpawn.Time);
+            statementSpawn.Body.Visit(this);
         }
 
         public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) {

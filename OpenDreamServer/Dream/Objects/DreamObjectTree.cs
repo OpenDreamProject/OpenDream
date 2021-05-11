@@ -218,7 +218,7 @@ namespace OpenDreamServer.Dream.Objects {
                 string procName = jsonProc.Key;
 
                 foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    byte[] bytecode = procDefinition.Bytecode != null ? procDefinition.Bytecode : new byte[0];
+                    byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
                     List<string> argumentNames = new();
                     List<DMValueType> argumentTypes = new();
 

@@ -415,7 +415,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
             Dereference(dereferenceProc, false);
 
-            DMASTDereference.Dereference deref = dereferenceProc.Dereferences[dereferenceProc.Dereferences.Length - 1];
+            DMASTDereference.Dereference deref = dereferenceProc.Dereferences[^1];
             if (deref.Type == DMASTDereference.DereferenceType.Direct) {
                 if (_currentVariable.Type == null) {
                     throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
@@ -725,7 +725,7 @@ namespace DMCompiler.DM.Visitors {
             } else if (initial.Expression is DMASTDereference dereference) {
                 Dereference(dereference, false);
 
-                DMASTDereference.Dereference lastDeref = dereference.Dereferences[dereference.Dereferences.Length - 1];
+                DMASTDereference.Dereference lastDeref = dereference.Dereferences[^1];
                 _proc.Initial(lastDeref.Property);
             } else {
                 throw new Exception("Expected an identifier");

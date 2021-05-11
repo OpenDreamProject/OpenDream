@@ -1384,7 +1384,7 @@ namespace OpenDreamShared.Compiler.DM {
                             Whitespace();
 
                             if (identifier != null && identifier.Identifier == "input") {
-                                DMValueType types = AsTypes();
+                                DMValueType types = AsTypes(defaultType: DMValueType.Text);
                                 Whitespace();
                                 DMASTExpression list = null;
 
@@ -1644,7 +1644,7 @@ namespace OpenDreamShared.Compiler.DM {
             }
         }
 
-        private DMValueType AsTypes() {
+        private DMValueType AsTypes(DMValueType defaultType = DMValueType.Anything) {
             DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
@@ -1684,6 +1684,9 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
                 }
+            }
+            else {
+                return defaultType;
             }
 
             return type;

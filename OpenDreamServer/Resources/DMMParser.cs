@@ -173,7 +173,7 @@ namespace OpenDreamShared.Compiler.DMM {
 
                 string blockString = (string)blockStringToken.Value;
                 List<string> lines = new(blockString.Split("\n"));
-                lines.RemoveAll(line => String.IsNullOrEmpty(line));
+                lines.RemoveAll(string.IsNullOrEmpty);
 
                 mapBlock.Height = lines.Count;
                 for (int y = 1; y <= mapBlock.Height; y++) {

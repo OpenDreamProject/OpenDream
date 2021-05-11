@@ -70,36 +70,28 @@ namespace OpenDreamServer.Dream {
         public DreamValue(object value) {
             Value = value;
 
-            if (value is string) {
-                Type = DreamValueType.String;
-            } else if (value is int) {
-                Type = DreamValueType.Integer;
-            } else if (value is float) {
-                Type = DreamValueType.Float;
-            } else if (value is DreamResource) {
-                Type = DreamValueType.DreamResource;
-            } else if (value is DreamObject) {
-                Type = DreamValueType.DreamObject;
-            } else if (value is DreamPath) {
-                Type = DreamValueType.DreamPath;
-            } else if (value is DreamProc) {
-                Type = DreamValueType.DreamProc;
-            } else {
-                throw new ArgumentException("Invalid DreamValue value (" + value + ")");
-            }
+            Type = value switch {
+                string => DreamValueType.String,
+                int => DreamValueType.Integer,
+                float => DreamValueType.Float,
+                DreamResource => DreamValueType.DreamResource,
+                DreamObject => DreamValueType.DreamObject,
+                DreamPath => DreamValueType.DreamPath,
+                DreamProc => DreamValueType.DreamProc,
+                _ => throw new ArgumentException("Invalid DreamValue value (" + value + ")")
+            };
         }
 
         public override string ToString() {
             string value;
             if (Value == null) {
                 value = "null";
-            } else if (Type == DreamValueType.String) {
-                value = "\"" + Value + "\"";
-            } else if (Type == DreamValueType.DreamResource) {
-                value = "'" + ((DreamResource)Value).ResourcePath + "'";
-            } else {
-                value = Value.ToString();
-            }
+            } else
+                value = Type switch {
+                    DreamValueType.String => "\"" + Value + "\"",
+                    DreamValueType.DreamResource => "'" + ((DreamResource)Value).ResourcePath + "'",
+                    _ => Value.ToString()
+                };
 
             return "DreamValue(" + Type + ", " + value + ")";
         }

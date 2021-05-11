@@ -18,7 +18,7 @@ namespace OpenDreamClient.Interface.Prompts {
         private void NumberInput_PreviewTextInput(object sender, TextCompositionEventArgs e) {
             //Only allow numbers
             foreach (char c in e.Text) {
-                if (!(c >= '0' && c <= '9')) {
+                if (!char.IsDigit(c)) {
                     e.Handled = true;
 
                     return;

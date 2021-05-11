@@ -243,7 +243,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Write((byte)parameterType);
 
                     if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        WriteString(parameterNames[namedParameterIndex++]);
+                        WriteString(parameterNames?[namedParameterIndex++]);
                     }
                 }
             }

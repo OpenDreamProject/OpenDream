@@ -126,7 +126,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             _proc.StartScope();
             {
-                if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
+                statementForStandard.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -150,7 +150,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateListEnumerator();
             _proc.StartScope();
             {
-                if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
+                statementForList.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -185,7 +185,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
-                if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
+                statementForRange.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);

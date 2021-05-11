@@ -45,7 +45,7 @@ namespace DMCompiler.DM.Visitors {
             if (newObjectPath.Type == DreamPath.PathType.Relative) newObjectPath = _currentObject.Path.AddToPath(newObjectPath.PathString);
 
             _currentObject = DMObjectTree.GetDMObject(newObjectPath);
-            if (objectDefinition.InnerBlock != null) objectDefinition.InnerBlock.Visit(this);
+            objectDefinition.InnerBlock?.Visit(this);
             _currentObject = oldObject;
         }
 

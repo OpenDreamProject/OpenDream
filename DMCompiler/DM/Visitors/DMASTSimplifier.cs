@@ -12,8 +12,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         #region Objects
-        public void VisitObjectDefinition(DMASTObjectDefinition statement) {
-            if (statement.InnerBlock != null) statement.InnerBlock.Visit(this);
+        public void VisitObjectDefinition(DMASTObjectDefinition statement)
+        {
+            statement.InnerBlock?.Visit(this);
         }
 
         public void VisitBlockInner(DMASTBlockInner blockInner) {
@@ -37,7 +38,7 @@ namespace DMCompiler.DM.Visitors {
                 SimplifyExpression(ref parameter.Value);
             }
 
-            if (procDefinition.Body != null) procDefinition.Body.Visit(this);
+            procDefinition.Body?.Visit(this);
         }
 
         public void VisitProcBlockInner(DMASTProcBlockInner procBlockInner) {
@@ -53,15 +54,15 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) {
             SimplifyExpression(ref statementIf.Condition);
 
-            if (statementIf.Body != null) statementIf.Body.Visit(this);
-            if (statementIf.ElseBody != null) statementIf.ElseBody.Visit(this);
+            statementIf.Body?.Visit(this);
+            statementIf.ElseBody?.Visit(this);
         }
 
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
             SimplifyExpression(ref statementForList.List);
 
-            if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
-            if (statementForList.Body != null) statementForList.Body.Visit(this);
+            statementForList.Initializer?.Visit(this);
+            statementForList.Body?.Visit(this);
         }
         
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
@@ -69,34 +70,35 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementForRange.RangeEnd);
             SimplifyExpression(ref statementForRange.Step);
 
-            if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
-            if (statementForRange.Body != null) statementForRange.Body.Visit(this);
+            statementForRange.Initializer?.Visit(this);
+            statementForRange.Body?.Visit(this);
         }
 
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
-            if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
+            statementForStandard.Initializer?.Visit(this);
             if (statementForStandard.Comparator != null) SimplifyExpression(ref statementForStandard.Comparator);
             if (statementForStandard.Incrementor != null) SimplifyExpression(ref statementForStandard.Incrementor);
-            if (statementForStandard.Body != null) statementForStandard.Body.Visit(this);
+            statementForStandard.Body?.Visit(this);
         }
 
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
             SimplifyExpression(ref statementWhile.Conditional);
 
-            if (statementWhile.Body != null) statementWhile.Body.Visit(this);
+            statementWhile.Body?.Visit(this);
         }
 
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
             SimplifyExpression(ref statementDoWhile.Conditional);
 
-            if (statementDoWhile.Body != null) statementDoWhile.Body.Visit(this);
+            statementDoWhile.Body?.Visit(this);
         }
 
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             SimplifyExpression(ref statementSwitch.Value);
 
-            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
-                if (switchCase.Body != null) switchCase.Body.Visit(this);
+            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases)
+            {
+                switchCase.Body?.Visit(this);
             }
         }
 

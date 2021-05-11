@@ -118,7 +118,7 @@ namespace OpenDreamServer.Dream.Objects {
             ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
         }
 
-        public bool IsValidAssociativeKey(DreamValue key) {
+        public static bool IsValidAssociativeKey(DreamValue key) {
             return key.Value != null && key.IsType( DreamValue.DreamValueType.String |
                                                     DreamValue.DreamValueType.DreamPath |
                                                     DreamValue.DreamValueType.DreamObject |

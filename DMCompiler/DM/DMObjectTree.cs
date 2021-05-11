@@ -25,17 +25,17 @@ namespace DMCompiler.DM {
             GetDMObject(DreamPath.Root);
         }
 
-        public static DMObject GetDMObject(DreamPath path, bool createIfNonexistant = true) {
+        public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
 
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistant) throw new Exception("Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
-                    parent = GetDMObject(path.FromElements(0, -2), createIfNonexistant);
+                    parent = GetDMObject(path.FromElements(0, -2), createIfNonexistent);
                 }
 
                 dmObject = new DMObject(_dmObjectIdCounter++, path, parent);

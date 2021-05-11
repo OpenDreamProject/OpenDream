@@ -14,13 +14,7 @@ namespace OpenDreamClient.Net {
         private BinaryWriter _tcpStreamBinaryWriter;
         private Dictionary<PacketID, Action<IPacket>> _packetIDToCallback = new Dictionary<PacketID, Action<IPacket>>();
 
-        public bool Connected {
-            get {
-                if (_tcpClient == null) return false;
-
-                return _tcpClient.Connected;
-            }
-        }
+        public bool Connected => _tcpClient is { Connected: true };
 
         public void Connect(string serverIP, int serverPort) {
             _serverIP = serverIP;
@@ -47,7 +41,7 @@ namespace OpenDreamClient.Net {
         }
 
         public void RegisterPacketCallback<PacketClass>(PacketID packetID, Action<PacketClass> packetCallback) where PacketClass:IPacket, new() {
-            if (_packetIDToCallback.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID.ToString() + "' already has a callback");
+            if (_packetIDToCallback.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID + "' already has a callback");
 
             if (packetCallback != null) {
                 _packetIDToCallback[packetID] = (IPacket packet) => {
@@ -73,7 +67,7 @@ namespace OpenDreamClient.Net {
                     try {
                         _packetIDToCallback[packet.PacketID]?.Invoke(packet);
                     } catch (Exception e) {
-                        Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID.ToString() + "): " + e.Message);
+                        Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID + "): " + e.Message);
                     }
                 } catch (Exception e) {
                     Console.WriteLine("Error while processing packets: " + e.Message);

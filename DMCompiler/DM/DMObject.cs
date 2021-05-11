@@ -49,10 +49,8 @@ namespace DMCompiler.DM {
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
                 return variable;
-            } else
-            {
-                return Parent?.GetVariable(name);
             }
+            return Parent?.GetVariable(name);
         }
 
         public bool HasProc(string name) {

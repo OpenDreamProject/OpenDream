@@ -12,8 +12,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         #region Objects
-        public void VisitObjectDefinition(DMASTObjectDefinition statement)
-        {
+        public void VisitObjectDefinition(DMASTObjectDefinition statement) {
             statement.InnerBlock?.Visit(this);
         }
 
@@ -96,8 +95,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             SimplifyExpression(ref statementSwitch.Value);
 
-            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases)
-            {
+            foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
                 switchCase.Body?.Visit(this);
             }
         }

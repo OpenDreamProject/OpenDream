@@ -243,19 +243,20 @@ namespace OpenDreamServer.Dream {
         }
 
         public string Stringify() {
-            if (Type == DreamValueType.String) {
-                return GetValueAsString();
-            } else if (Type == DreamValueType.Integer) {
-                return GetValueAsInteger().ToString();
-            } else if (Type == DreamValueType.Float) {
-                return GetValueAsFloat().ToString();
-            } else if (Type == DreamValueType.DreamResource) {
-                return GetValueAsDreamResource().ResourcePath;
-            } else if (Type == DreamValueType.DreamPath) {
-                return GetValueAsPath().PathString;
-            } else if (Type == DreamValueType.DreamObject) {
-                if (Value == null) return "";
-                else {
+            switch (Type) {
+                case DreamValueType.String:
+                    return GetValueAsString();
+                case DreamValueType.Integer:
+                    return GetValueAsInteger().ToString();
+                case DreamValueType.Float:
+                    return GetValueAsFloat().ToString();
+                case DreamValueType.DreamResource:
+                    return GetValueAsDreamResource().ResourcePath;
+                case DreamValueType.DreamPath:
+                    return GetValueAsPath().PathString;
+                case DreamValueType.DreamObject when Value == null:
+                    return "";
+                case DreamValueType.DreamObject: {
                     DreamObject dreamObject = GetValueAsDreamObject();
 
                     if (dreamObject.IsSubtypeOf(DreamPath.Atom)) {
@@ -264,8 +265,8 @@ namespace OpenDreamServer.Dream {
                         return dreamObject.ObjectDefinition.Type.ToString();
                     }
                 }
-            } else {
-                throw new NotImplementedException("Cannot stringify " + this);
+                default:
+                    throw new NotImplementedException("Cannot stringify " + this);
             }
         }
 

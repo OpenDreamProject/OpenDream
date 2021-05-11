@@ -28,7 +28,7 @@ namespace OpenDreamServer.Net {
         }
 
         public void RegisterPacketCallback<PacketClass>(PacketID packetID, Action<DreamConnection, PacketClass> packetCallback) where PacketClass : IPacket, new() {
-            if (_packetIDToCallback.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID.ToString() + "' already has a callback");
+            if (_packetIDToCallback.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID + "' already has a callback");
 
             if (packetCallback != null) {
                 _packetIDToCallback[packetID] = (DreamConnection connection, IPacket packet) => {
@@ -80,11 +80,11 @@ namespace OpenDreamServer.Net {
                         try {
                             _packetIDToCallback[packet.PacketID]?.Invoke(dreamConnection, packet);
                         } catch (Exception e) {
-                            Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID.ToString() + "): " + e.Message);
+                            Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID + "): " + e.Message);
                         }
                     }
                 } catch (Exception e) {
-                    Console.Error.WriteLine("Error while processing recieved packet from user '" + dreamConnection.CKey + "': " + e.Message);
+                    Console.Error.WriteLine("Error while processing received packet from user '" + dreamConnection.CKey + "': " + e.Message);
                 }
             }
         }

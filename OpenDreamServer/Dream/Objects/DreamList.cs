@@ -83,7 +83,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
-            if (ValueAssigned != null) ValueAssigned.Invoke(this, key, value);
+            ValueAssigned?.Invoke(this, key, value);
 
             lock (_listLock) {
                 if (IsValidAssociativeKey(key)) {
@@ -102,7 +102,7 @@ namespace OpenDreamServer.Dream.Objects {
             int valueIndex = _values.IndexOf(value);
 
             if (valueIndex != -1) {
-                if (BeforeValueRemoved != null) BeforeValueRemoved.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
+                BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
 
                 lock (_listLock) {
                     _values.RemoveAt(valueIndex);
@@ -114,11 +114,11 @@ namespace OpenDreamServer.Dream.Objects {
             lock (_listLock) {
                 _values.Add(value);
             }
-            
-            if (ValueAssigned != null) ValueAssigned.Invoke(this, new DreamValue(_values.Count), value);
+
+            ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
         }
 
-        public bool IsValidAssociativeKey(DreamValue key) {
+        public static bool IsValidAssociativeKey(DreamValue key) {
             return key.Value != null && key.IsType( DreamValue.DreamValueType.String |
                                                     DreamValue.DreamValueType.DreamPath |
                                                     DreamValue.DreamValueType.DreamObject |

@@ -220,15 +220,14 @@ namespace OpenDreamServer.Net {
 
         public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
             if (_promptEvents.TryGetValue(pPromptResponse.PromptId, out Action<DreamValue> promptEvent)) {
-                DreamValue value;
 
-                switch (pPromptResponse.Type) {
-                    case DMValueType.Null: value = DreamValue.Null; break;
-                    case DMValueType.Text: value = new DreamValue((string)pPromptResponse.Value); break;
-                    case DMValueType.Num: value = new DreamValue((int)pPromptResponse.Value); break;
-                    case DMValueType.Message: value = new DreamValue((string)pPromptResponse.Value); break;
-                    default: throw new Exception("Invalid prompt response '" + pPromptResponse.Type + "'");
-                }
+                DreamValue value = pPromptResponse.Type switch {
+                    DMValueType.Null => DreamValue.Null,
+                    DMValueType.Text => new DreamValue((string)pPromptResponse.Value),
+                    DMValueType.Num => new DreamValue((int)pPromptResponse.Value),
+                    DMValueType.Message => new DreamValue((string)pPromptResponse.Value),
+                    _ => throw new Exception("Invalid prompt response '" + pPromptResponse.Type + "'")
+                };
 
                 promptEvent.Invoke(value);
                 _promptEvents[pPromptResponse.PromptId] = null;

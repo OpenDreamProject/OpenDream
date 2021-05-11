@@ -18,11 +18,9 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObject(DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             ObjectDefinition = objectDefinition;
 
-            if (ObjectDefinition.InitializionProc != null) {
-                ObjectDefinition.InitializionProc.Run(this, new DreamProcArguments(new(), new()));
-            }
+            ObjectDefinition.InitializionProc?.Run(this, new DreamProcArguments(new(), new()));
 
-            if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectCreated(this, creationArguments);
+            ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
         }
 
         ~DreamObject() {
@@ -51,7 +49,7 @@ namespace OpenDreamServer.Dream.Objects {
 
         public void Delete() {
             if (Deleted) return;
-            if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnObjectDeleted(this);
+            ObjectDefinition.MetaObject?.OnObjectDeleted(this);
 
             _referenceIDs.Remove(this);
             Deleted = true;

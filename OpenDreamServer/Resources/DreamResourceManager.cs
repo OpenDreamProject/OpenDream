@@ -96,7 +96,7 @@ namespace OpenDreamServer.Resources {
             } else {
                 string directoryPath = Path.GetDirectoryName(path);
 
-                files = Directory.GetFiles(Path.Combine(RootPath, directoryPath), Path.GetFileName(path), SearchOption.AllDirectories);
+                files = Directory.GetFiles(Path.Combine(RootPath, directoryPath ?? string.Empty), Path.GetFileName(path), SearchOption.AllDirectories);
             }
 
             return files;

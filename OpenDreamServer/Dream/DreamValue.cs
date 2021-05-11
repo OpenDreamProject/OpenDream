@@ -103,9 +103,8 @@ namespace OpenDreamServer.Dream {
         public object GetValueExpectingType(DreamValueType type) {
             if (IsType(type)) {
                 return Value;
-            } else {
-                throw new Exception("Value " + this + " was not the expected type of " + type + "");
             }
+            throw new Exception("Value " + this + " was not the expected type of " + type + "");
         }
 
         public string GetValueAsString() {
@@ -282,9 +281,8 @@ namespace OpenDreamServer.Dream {
         public override int GetHashCode() {
             if (Value != null) {
                 return Value.GetHashCode();
-            } else {
-                return 0;
             }
+            return 0;
         }
 
         public static bool operator ==(DreamValue a, DreamValue b) {

@@ -64,10 +64,8 @@ namespace DMCompiler.DM {
         public DMVariable GetGlobalVariable(string name) {
             if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
                 return variable;
-            } else
-            {
-                return Parent?.GetGlobalVariable(name);
             }
+            return Parent?.GetGlobalVariable(name);
         }
 
         public DMProc CreateInitializationProc() {

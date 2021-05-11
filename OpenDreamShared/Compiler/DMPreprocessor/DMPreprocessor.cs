@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace OpenDreamShared.Compiler.DMPreprocessor {
     class DMPreprocessor {
@@ -177,6 +177,25 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         break;
                     }
                     case TokenType.DM_Preproc_EndIf: break;
+                    case TokenType.DM_Preproc_Error:
+                    case TokenType.DM_Preproc_Warning: {
+                        StringBuilder messageBuilder = new StringBuilder();
+
+                        Token messageToken = GetNextToken(true);
+                        while (messageToken.Type != TokenType.EndOfFile) {
+                            if (messageToken.Type == TokenType.Newline) break;
+                            
+                            messageBuilder.Append(messageToken.Text);
+                            messageToken = GetNextToken();
+                        }
+
+                        string message = messageBuilder.ToString();
+                        TokenType type = (token.Type == TokenType.DM_Preproc_Error) ? TokenType.Error : TokenType.Warning;
+
+                        _isCurrentLineWhitespaceOnly = false;
+                        _currentLine.Add(new Token(type, token.Text, token.SourceFile, token.Line, token.Column, message));
+                        break;
+                    }
                     case TokenType.Newline: {
                         if (!_isCurrentLineWhitespaceOnly) {
                             _result.AddRange(_currentLine);
@@ -231,7 +250,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             int ifdefCount = 1;
 
             Token token;
-            while ((token = GetNextToken(false)).Type != TokenType.EndOfFile) {
+            while ((token = GetNextToken()).Type != TokenType.EndOfFile) {
                 if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
                     ifdefCount++;
                 } else if (token.Type == TokenType.DM_Preproc_EndIf) {

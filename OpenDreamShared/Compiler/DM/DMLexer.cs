@@ -435,7 +435,8 @@ namespace OpenDreamShared.Compiler.DM {
 
                             break;
                         }
-                        case TokenType.Error: token = preprocToken; break;
+                        case TokenType.Error:
+                        case TokenType.Warning: token = preprocToken; Advance();  break;
                         default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                     }
                 }

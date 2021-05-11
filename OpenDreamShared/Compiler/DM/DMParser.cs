@@ -1565,6 +1565,7 @@ namespace OpenDreamShared.Compiler.DM {
                                     DMASTExpression expression = expressionParser.Expression();
                                     if (expression == null) Error("Expected an expression");
                                     if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
+                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
 
                                     interpolationValues.Add(expression);
                                 } else {

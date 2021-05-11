@@ -72,6 +72,12 @@ namespace DMCompiler {
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
 
+            if (dmParser.Warnings.Count > 0) {
+                foreach (CompilerWarning warning in dmParser.Warnings) {
+                    Console.WriteLine(warning);
+                }
+            }
+
             if (dmParser.Errors.Count > 0) {
                 foreach (CompilerError error in dmParser.Errors) {
                     Console.WriteLine(error);

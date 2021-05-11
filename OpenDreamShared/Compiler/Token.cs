@@ -2,6 +2,7 @@
     enum TokenType {
         //Base lexer
         Error,
+        Warning,
         Unknown,
         Skip, //Internally skipped by the lexer
 
@@ -14,6 +15,7 @@
         DM_Preproc_Define,
         DM_Preproc_Else,
         DM_Preproc_EndIf,
+        DM_Preproc_Error,
         DM_Preproc_Identifier,
         DM_Preproc_If,
         DM_Preproc_Ifdef,
@@ -31,6 +33,7 @@
         DM_Preproc_String,
         DM_Preproc_TokenConcat,
         DM_Preproc_Undefine,
+        DM_Preproc_Warning,
         DM_Preproc_Whitespace,
 
         //DM

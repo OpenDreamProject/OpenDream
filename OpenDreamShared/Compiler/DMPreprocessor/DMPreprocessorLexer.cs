@@ -115,26 +115,26 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         }
 
                         string text = textBuilder.ToString();
-                        if (text == "#include") {
-                            token = CreateToken(TokenType.DM_Preproc_Include, text);
-                        } else if (text == "#define") {
-                            token = CreateToken(TokenType.DM_Preproc_Define, text);
-                        } else if (text == "#undef") {
-                            token = CreateToken(TokenType.DM_Preproc_Undefine, text);
-                        } else if (text == "#if") {
-                            token = CreateToken(TokenType.DM_Preproc_If, text);
-                        } else if (text == "#ifdef") {
-                            token = CreateToken(TokenType.DM_Preproc_Ifdef, text);
-                        } else if (text == "#ifndef") {
-                            token = CreateToken(TokenType.DM_Preproc_Ifndef, text);
-                        } else if (text == "#else") {
-                            token = CreateToken(TokenType.DM_Preproc_Else, text);
-                        } else if (text == "#endif") {
-                            token = CreateToken(TokenType.DM_Preproc_EndIf, text);
-                        } else if (text.StartsWith("##")) {
-                            token = CreateToken(TokenType.DM_Preproc_TokenConcat, text, text.Substring(2));
-                        } else {
-                            token = CreateToken(TokenType.DM_Preproc_ParameterStringify, text, text.Substring(1));
+                        switch (text) {
+                            case "#include": token = CreateToken(TokenType.DM_Preproc_Include, text); break;
+                            case "#define": token = CreateToken(TokenType.DM_Preproc_Define, text); break;
+                            case "#undef": token = CreateToken(TokenType.DM_Preproc_Undefine, text); break;
+                            case "#if": token = CreateToken(TokenType.DM_Preproc_If, text); break;
+                            case "#ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, text); break;
+                            case "#ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, text); break;
+                            case "#else": token = CreateToken(TokenType.DM_Preproc_Else, text); break;
+                            case "#endif": token = CreateToken(TokenType.DM_Preproc_EndIf, text); break;
+                            case "#error": token = CreateToken(TokenType.DM_Preproc_Error, text); break;
+                            case "#warning": token = CreateToken(TokenType.DM_Preproc_Warning, text); break;
+                            default: {
+                                if (text.StartsWith("##")) {
+                                    token = CreateToken(TokenType.DM_Preproc_TokenConcat, text, text.Substring(2));
+                                } else {
+                                    token = CreateToken(TokenType.DM_Preproc_ParameterStringify, text, text.Substring(1));
+                                }
+
+                                break;
+                            }
                         }
 
                         break;

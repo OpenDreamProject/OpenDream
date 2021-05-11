@@ -56,7 +56,15 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
+
                     DMASTProcBlockInner procBlock = ProcBlock();
+                    if (procBlock == null) {
+                        DMASTProcStatement procStatement = ProcStatement();
+
+                        if (procStatement != null) {
+                            procBlock = new DMASTProcBlockInner(new DMASTProcStatement[] { procStatement });
+                        }
+                    }
 
                     return new DMASTProcDefinition(path, parameters, procBlock);
                 } else {

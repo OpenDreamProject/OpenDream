@@ -6,7 +6,7 @@ using System.Windows.Input;
 
 namespace OpenDreamClient.Interface.Prompts {
     class NumberPrompt : PromptWindow {
-        public NumberPrompt(int promptId, string message) : base(promptId, message) { }
+        public NumberPrompt(int promptId, string title, string message) : base(promptId, title, message) { }
 
         protected override Control CreatePromptControl() {
             TextBox numberInput = new TextBox();

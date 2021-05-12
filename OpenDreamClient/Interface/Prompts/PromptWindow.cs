@@ -10,8 +10,10 @@ namespace OpenDreamClient.Interface.Prompts {
 
         private bool _responseSent = false;
 
-        public PromptWindow(int promptId, string message) {
+        public PromptWindow(int promptId, string title, string message) {
             PromptId = promptId;
+
+            Title = title ?? "OpenDream";
 
             Label messageLabel = new Label();
             messageLabel.Margin = new Thickness(5);

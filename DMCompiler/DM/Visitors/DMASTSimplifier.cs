@@ -350,6 +350,7 @@ namespace DMCompiler.DM.Visitors {
                 if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value + bInteger.Value);
                 else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(aInteger.Value + bFloat.Value);
                 else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(aFloat.Value + bInteger.Value);
+                else if (aFloat != null && bFloat != null) expression = new DMASTConstantFloat(aFloat.Value + bFloat.Value);
                 else if (aString != null && bString != null) expression = new DMASTConstantString(aString.Value + bString.Value);
 
                 return;

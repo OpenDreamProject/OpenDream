@@ -50,22 +50,24 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
-            DMObject dmObject = _currentObject;
+            DMObject oldObject = _currentObject;
 
             if (varDefinition.ObjectPath.HasValue) {
-                dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Value));
+                _currentObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Value));
             }
 
-            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
+            bool isGlobal = varDefinition.IsGlobal || _currentObject.Path.Equals(DreamPath.Root);
+            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, isGlobal);
 
-            if (_currentVariable.IsGlobal) {
-                dmObject.GlobalVariables[_currentVariable.Name] = _currentVariable;
+            if (isGlobal) {
+                _currentObject.GlobalVariables[_currentVariable.Name] = _currentVariable;
             } else {
-                dmObject.Variables[_currentVariable.Name] = _currentVariable;
+                _currentObject.Variables[_currentVariable.Name] = _currentVariable;
             }
 
             varDefinition.Value.Visit(this);
             _currentVariable.Value = _valueStack.Pop();
+            _currentObject = oldObject;
         }
 
         public void VisitObjectVarOverride(DMASTObjectVarOverride varOverride) {
@@ -108,6 +110,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        #region Values
         public void VisitNewPath(DMASTNewPath newPath) {
             DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), newPath);
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
@@ -147,6 +150,26 @@ namespace DMCompiler.DM.Visitors {
             _valueStack.Push(null);
         }
 
+        public void VisitStringFormat(DMASTStringFormat stringFormat) {
+            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a formatted string.");
+
+            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), stringFormat);
+            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
+            DMObjectTree.AddGlobalInitProcStatement(statement);
+
+            _valueStack.Push(null);
+        }
+
+        public void VisitProcCall(DMASTProcCall procCall) {
+            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a proc call.");
+
+            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), procCall);
+            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
+            DMObjectTree.AddGlobalInitProcStatement(statement);
+
+            _valueStack.Push(null);
+        }
+
         public void VisitConstantNull(DMASTConstantNull constantNull) {
             _valueStack.Push(null);
         }
@@ -170,5 +193,6 @@ namespace DMCompiler.DM.Visitors {
         public void VisitConstantFloat(DMASTConstantFloat constantFloat) {
             _valueStack.Push(constantFloat.Value);
         }
+        #endregion Values
     }
 }

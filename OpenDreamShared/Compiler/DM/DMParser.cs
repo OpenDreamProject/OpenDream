@@ -481,9 +481,18 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
-                DMASTExpression time = Expression();
-                if (time == null) Error("Expected an expression");
-                Consume(TokenType.DM_RightParenthesis, "Expected ')'");
+
+                DMASTExpression delay;
+                if (Check(TokenType.DM_RightParenthesis)) {
+                    //No parameters, default to zero
+                    delay = new DMASTConstantInteger(0);
+                } else {
+                    delay = Expression();
+
+                    if (delay == null) Error("Expected an expression");
+                    Consume(TokenType.DM_RightParenthesis, "Expected ')'");
+                }
+                
                 Whitespace();
                 Newline();
 
@@ -495,7 +504,7 @@ namespace OpenDreamShared.Compiler.DM {
                     body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                return new DMASTProcStatementSpawn(time, body);
+                return new DMASTProcStatementSpawn(delay, body);
             } else {
                 return null;
             }

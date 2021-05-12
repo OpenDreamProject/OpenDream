@@ -205,6 +205,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void Spawn(string jumpTo) {
+            WriteOpcode(DreamProcOpcode.Spawn);
+            WriteLabel(jumpTo);
+        }
+
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }

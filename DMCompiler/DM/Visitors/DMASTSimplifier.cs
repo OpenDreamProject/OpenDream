@@ -121,7 +121,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
-            SimplifyExpression(ref statementSpawn.Time);
+            SimplifyExpression(ref statementSpawn.Delay);
             statementSpawn.Body.Visit(this);
         }
 

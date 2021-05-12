@@ -72,6 +72,18 @@ namespace DMCompiler.DM.Visitors {
             _proc.DeleteObject();
         }
 
+        public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
+            statementSpawn.Delay.Visit(this);
+
+            string afterSpawnLabel = NewLabelName();
+            _proc.Spawn(afterSpawnLabel);
+
+            statementSpawn.Body.Visit(this);
+            _proc.Return(); //Prevent the new thread from executing outside its own code
+
+            _proc.AddLabel(afterSpawnLabel);
+        }
+
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             _currentVariable = new DMVariable(varDeclaration.Type, varDeclaration.Name, false);
             _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);

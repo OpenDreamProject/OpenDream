@@ -370,11 +370,11 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTProcStatementSpawn : DMASTProcStatement {
-        public DMASTExpression Time;
+        public DMASTExpression Delay;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementSpawn(DMASTExpression time, DMASTProcBlockInner body) {
-            Time = time;
+        public DMASTProcStatementSpawn(DMASTExpression delay, DMASTProcBlockInner body) {
+            Delay = delay;
             Body = body;
         }
 

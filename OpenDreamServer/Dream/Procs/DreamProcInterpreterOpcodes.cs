@@ -1,5 +1,6 @@
 ﻿using OpenDreamServer.Dream.Objects;
 using OpenDreamServer.Dream.Objects.MetaObjects;
+using OpenDreamServer.Dream.Procs.Native;
 using OpenDreamServer.Net;
 using OpenDreamServer.Resources;
 using OpenDreamShared.Dream;
@@ -148,7 +149,7 @@ namespace OpenDreamServer.Dream.Procs {
                         string argumentName = key.GetValueAsString();
 
                         interpreter.Arguments.NamedArguments[argumentName] = value;
-                        interpreter.LocalVariables[interpreter.ArgumentNames.IndexOf(argumentName)] = value;
+                        interpreter.LocalVariables[interpreter.SelfProc.ArgumentNames.IndexOf(argumentName)] = value;
                     } else if (key.Type == DreamValue.DreamValueType.Integer) {
                         int argumentIndex = key.GetValueAsInteger() - 1;
 
@@ -160,8 +161,6 @@ namespace OpenDreamServer.Dream.Procs {
                 };
 
                 interpreter.Push(new DreamValue(argsList));
-            } else if (identifierName == "usr") {
-                interpreter.Push(new DreamValue(interpreter.Usr));
             } else {
                 interpreter.Push(new DreamProcIdentifierVariable(interpreter.Instance, identifierName));
             }
@@ -355,7 +354,7 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public static void PushSuperProc(DreamProcInterpreter interpreter) {
-            interpreter.Push(new DreamProcIdentifierProc(interpreter.SuperProc, interpreter.Instance, ".."));
+            interpreter.Push(new DreamProcIdentifierProc(interpreter.SelfProc.SuperProc, interpreter.Instance, ".."));
         }
 
         public static void SetLocalVariable(DreamProcInterpreter interpreter) {
@@ -987,6 +986,21 @@ namespace OpenDreamServer.Dream.Procs {
             } else {
                 interpreter.Push(value);
             }
+        }
+
+        //Copy & run the interpreter in a new thread
+        //Jump the current thread to after the spawn's code
+        public static void Spawn(DreamProcInterpreter interpreter) {
+            int jumpTo = interpreter.ReadInt();
+            float delay = interpreter.PopDreamValue().GetValueAsNumber();
+
+            DreamProcInterpreter copiedInterpreter = interpreter.Copy();
+            Task.Run(() => {
+                DreamProcNativeRoot.Sleep((int)(delay * 100));
+                copiedInterpreter.Run();
+            });
+
+            interpreter.JumpTo(jumpTo);
         }
         #endregion Flow
 

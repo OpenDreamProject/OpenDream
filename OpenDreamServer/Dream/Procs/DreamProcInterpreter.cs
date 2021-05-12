@@ -7,15 +7,8 @@ namespace OpenDreamServer.Dream.Procs {
     delegate void InterpreterOpcode(DreamProcInterpreter interpreter);
 
     class DreamProcInterpreter {
-public DreamObject Instance, Usr;
-        public DreamValue DefaultReturnValue = DreamValue.Null;
-        public DreamProcArguments Arguments;
-        public List<string> ArgumentNames;
-        public DreamValue[] LocalVariables;
-        public Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
-        public DreamProc SelfProc;
-        public DreamProc SuperProc;
-
+        private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
+        
         //In the same order as the DreamProcOpcode enum
         private static InterpreterOpcode[] _opcodeHandlers = new InterpreterOpcode[] {
             null, //0x0
@@ -94,36 +87,58 @@ public DreamObject Instance, Usr;
             DreamProcInterpreterOpcodes.IsType,
             DreamProcInterpreterOpcodes.LocateCoord,
             DreamProcInterpreterOpcodes.Locate,
-            DreamProcInterpreterOpcodes.IsNull
+            DreamProcInterpreterOpcodes.IsNull,
+            DreamProcInterpreterOpcodes.Spawn
         };
+
+        public DreamProc SelfProc;
+        public DreamObject Instance, Usr;
+        public DreamProcArguments Arguments;
+        public DreamValue DefaultReturnValue = DreamValue.Null;
+        public DreamValue[] LocalVariables;
+        public Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
 
         private byte[] _bytecode;
         private int _pc;
-        private ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
         private Stack<object> _stack = new();
 
-        public DreamProcInterpreter(DreamProc selfProc, byte[] bytecode) {
-            _bytecode = bytecode;
+        public DreamProcInterpreter(DreamProc selfProc, DreamObject instance, DreamObject usr, DreamProcArguments arguments, byte[] bytecode) {
             SelfProc = selfProc;
-        }
-
-        public DreamValue Run(DreamObject instance, DreamObject usr, DreamProc superProc, DreamProcArguments arguments, List<string> argumentNames) {
             Instance = instance;
             Usr = usr;
-            SuperProc = superProc;
             Arguments = arguments;
-            ArgumentNames = argumentNames;
+            _bytecode = bytecode;
+        }
+
+        private DreamProcInterpreter(DreamProcInterpreter copyFrom) {
+            SelfProc = copyFrom.SelfProc;
+            Instance = copyFrom.Instance;
+            Usr = copyFrom.Usr;
+            Arguments = copyFrom.Arguments;
+            DefaultReturnValue = copyFrom.DefaultReturnValue;
+            Arguments = copyFrom.Arguments;
             LocalVariables = _dreamValuePool.Rent(256);
+            _bytecode = copyFrom._bytecode;
+            _pc = copyFrom._pc;
+            _stack = new Stack<object>(copyFrom._stack);
 
-            for (int i = 0; i < ArgumentNames.Count; i++) {
-                string argumentName = ArgumentNames[i];
+            Array.Copy(copyFrom.LocalVariables, LocalVariables, 256);
+        }
 
-                if (arguments.NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
-                    LocalVariables[i] = argumentValue;
-                } else if (i < arguments.OrderedArguments.Count) {
-                    LocalVariables[i] = arguments.OrderedArguments[i];
-                } else {
-                    LocalVariables[i] = DreamValue.Null;
+        public DreamValue Run() {
+            if (LocalVariables == null) {
+                LocalVariables = _dreamValuePool.Rent(256);
+
+                for (int i = 0; i < SelfProc.ArgumentNames.Count; i++) {
+                    string argumentName = SelfProc.ArgumentNames[i];
+
+                    if (Arguments.NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
+                        LocalVariables[i] = argumentValue;
+                    } else if (i < Arguments.OrderedArguments.Count) {
+                        LocalVariables[i] = Arguments.OrderedArguments[i];
+                    } else {
+                        LocalVariables[i] = DreamValue.Null;
+                    }
                 }
             }
 
@@ -135,6 +150,10 @@ public DreamObject Instance, Usr;
 
             _dreamValuePool.Return(LocalVariables, true);
             return DefaultReturnValue;
+        }
+
+        public DreamProcInterpreter Copy() {
+            return new DreamProcInterpreter(this);
         }
 
         public void JumpTo(int position) {

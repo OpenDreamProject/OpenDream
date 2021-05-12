@@ -75,7 +75,8 @@
         IsType = 0x49,
         LocateCoord = 0x4A,
         Locate = 0x4B,
-        IsNull = 0x4C
+        IsNull = 0x4C,
+        Spawn = 0x4D
     }
 
     enum DreamProcOpcodeParameterType {

@@ -865,17 +865,23 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue((float)Math.Sin(rad));
         }
 
-        [DreamProc("sleep")]
-        [DreamProcParameter("Delay", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_sleep(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            float delay = arguments.GetArgument(0, "Delay").GetValueAsNumber();
-            int delayMilliseconds = (int)(delay * 100);
+        public static void Sleep(int delayMilliseconds) {
+            if (delayMilliseconds <= 0) return;
+
             int ticksToSleep = (int)Math.Ceiling(delayMilliseconds / (Program.WorldInstance.GetVariable("tick_lag").GetValueAsNumber() * 100));
 
             CountdownEvent tickEvent = new CountdownEvent(ticksToSleep);
             Program.TickEvents.Add(tickEvent);
             tickEvent.Wait();
+        }
 
+        [DreamProc("sleep")]
+        [DreamProcParameter("Delay", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_sleep(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            float delay = arguments.GetArgument(0, "Delay").GetValueAsNumber();
+            int delayMilliseconds = (int)(delay * 100);
+
+            Sleep(delayMilliseconds);
             return DreamValue.Null;
         }
 

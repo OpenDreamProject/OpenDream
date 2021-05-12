@@ -248,6 +248,8 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Write((byte)parameterType);
 
                     if (parameterType == DreamProcOpcodeParameterType.Named) {
+                        if (parameterNames == null) 
+                            throw new Exception("parameterNames was null while parameterTypes was:" + parameterTypes);
                         WriteString(parameterNames[namedParameterIndex++]);
                     }
                 }

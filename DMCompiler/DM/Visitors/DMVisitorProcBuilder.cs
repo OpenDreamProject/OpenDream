@@ -138,7 +138,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             _proc.StartScope();
             {
-                if (statementForStandard.Initializer != null) statementForStandard.Initializer.Visit(this);
+                statementForStandard.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -162,7 +162,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateListEnumerator();
             _proc.StartScope();
             {
-                if (statementForList.Initializer != null) statementForList.Initializer.Visit(this);
+                statementForList.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -197,7 +197,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
-                if (statementForRange.Initializer != null) statementForRange.Initializer.Visit(this);
+                statementForRange.Initializer?.Visit(this);
 
                 string loopLabel = NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -427,7 +427,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
             Dereference(dereferenceProc, false);
 
-            DMASTDereference.Dereference deref = dereferenceProc.Dereferences[dereferenceProc.Dereferences.Length - 1];
+            DMASTDereference.Dereference deref = dereferenceProc.Dereferences[^1];
             if (deref.Type == DMASTDereference.DereferenceType.Direct) {
                 if (_currentVariable.Type == null) {
                     throw new Exception("Cannot dereference property \"" + deref.Property + "\" because \"" + _currentVariable.Name + "\" does not have a type");
@@ -737,7 +737,7 @@ namespace DMCompiler.DM.Visitors {
             } else if (initial.Expression is DMASTDereference dereference) {
                 Dereference(dereference, false);
 
-                DMASTDereference.Dereference lastDeref = dereference.Dereferences[dereference.Dereferences.Length - 1];
+                DMASTDereference.Dereference lastDeref = dereference.Dereferences[^1];
                 _proc.Initial(lastDeref.Property);
             } else {
                 throw new Exception("Expected an identifier");

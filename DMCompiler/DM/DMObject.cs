@@ -49,11 +49,8 @@ namespace DMCompiler.DM {
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
                 return variable;
-            } else if (Parent != null) {
-                return Parent.GetVariable(name);
-            } else {
-                return null;
             }
+            return Parent?.GetVariable(name);
         }
 
         public bool HasProc(string name) {
@@ -65,11 +62,8 @@ namespace DMCompiler.DM {
         public DMVariable GetGlobalVariable(string name) {
             if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
                 return variable;
-            } else if (Parent != null) {
-                return Parent.GetGlobalVariable(name);
-            } else {
-                return null;
             }
+            return Parent?.GetGlobalVariable(name);
         }
 
         public DMProc CreateInitializationProc() {

@@ -54,7 +54,7 @@ namespace DMCompiler {
             DMPreprocessor preprocessor = new DMPreprocessor(true);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string dmStandardDirectory = Path.Combine(compilerDirectory, "DMStandard");
+            string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
             preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
 
             foreach (string file in files) {

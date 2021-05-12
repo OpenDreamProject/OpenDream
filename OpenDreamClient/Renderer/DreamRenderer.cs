@@ -175,7 +175,7 @@ namespace OpenDreamClient.Renderer {
         private void DrawDreamIcon(DreamIcon icon, bool usePixelOffsets, int pixelX = 0, int pixelY = 0, float[] transform = null) {
             DreamTexture texture = GetDreamTexture(icon);
 
-            if (transform == null) transform = icon.Appearance.Transform;
+            transform ??= icon.Appearance.Transform;
             if (usePixelOffsets) {
                 pixelX += icon.Appearance.PixelX;
                 pixelY += icon.Appearance.PixelY;

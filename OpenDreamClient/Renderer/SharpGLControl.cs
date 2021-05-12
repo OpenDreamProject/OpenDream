@@ -48,7 +48,7 @@ namespace OpenDreamClient.Renderer {
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.DepthFunc(OpenGL.GL_LEQUAL);
 
-            if (OpenGLContextCreated != null) OpenGLContextCreated.Invoke(GL);
+            OpenGLContextCreated?.Invoke(GL);
         }
 
         private static BitmapSource HBitmapToBitmapSource(IntPtr hBitmap) {
@@ -90,7 +90,7 @@ namespace OpenDreamClient.Renderer {
         private void _renderTimer_Tick(object sender, EventArgs e) {
             GL.MakeCurrent();
 
-            if (Render != null) Render.Invoke(GL);
+            Render?.Invoke(GL);
 
             GL.Blit(IntPtr.Zero);
             UpdateImage();

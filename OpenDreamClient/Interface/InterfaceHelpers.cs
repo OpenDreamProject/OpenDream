@@ -38,16 +38,16 @@ namespace OpenDreamClient.Interface {
         }
 
         public static IElement CreateElementFromDescriptor(ElementDescriptor elementDescriptor) {
-            IElement element;
-
-            if (elementDescriptor is ElementDescriptorChild) element = new ElementChild();
-            else if (elementDescriptor is ElementDescriptorInput) element = new ElementInput();
-            else if (elementDescriptor is ElementDescriptorButton) element = new ElementButton();
-            else if (elementDescriptor is ElementDescriptorOutput) element = new ElementOutput();
-            else if (elementDescriptor is ElementDescriptorInfo) element = new ElementInfo();
-            else if (elementDescriptor is ElementDescriptorMap) element = new ElementMap();
-            else if (elementDescriptor is ElementDescriptorBrowser) element = new ElementBrowser();
-            else throw new Exception("Invalid descriptor");
+            IElement element = elementDescriptor switch {
+                ElementDescriptorChild => new ElementChild(),
+                ElementDescriptorInput => new ElementInput(),
+                ElementDescriptorButton => new ElementButton(),
+                ElementDescriptorOutput => new ElementOutput(),
+                ElementDescriptorInfo => new ElementInfo(),
+                ElementDescriptorMap => new ElementMap(),
+                ElementDescriptorBrowser => new ElementBrowser(),
+                _ => throw new Exception("Invalid descriptor")
+            };
 
             SetSharedAttributes(element, elementDescriptor);
             element.ElementDescriptor = elementDescriptor;
@@ -73,10 +73,13 @@ namespace OpenDreamClient.Interface {
                 System.Drawing.Color color = elementDescriptor.BackgroundColor.Value;
                 Brush brush = new SolidColorBrush(Color.FromRgb(color.R, color.G, color.B));
 
-                if (uiElement is Panel) {
-                    ((Panel)uiElement).Background = brush;
-                } else if (uiElement is Control) {
-                    ((Control)uiElement).Background = brush;
+                switch (uiElement) {
+                    case Panel panel:
+                        panel.Background = brush;
+                        break;
+                    case Control control:
+                        control.Background = brush;
+                        break;
                 }
             }
 
@@ -116,19 +119,19 @@ namespace OpenDreamClient.Interface {
         }
 
         public static int KeyToKeyCode(Key key) {
-            int keyCode = -1;
 
-            switch (key) {
-                case Key.W: keyCode = 87; break;
-                case Key.A: keyCode = 65; break;
-                case Key.S: keyCode = 83; break;
-                case Key.D: keyCode = 68; break;
-                case Key.Up: keyCode = 38; break;
-                case Key.Down: keyCode = 40; break;
-                case Key.Left: keyCode = 37; break;
-                case Key.Right: keyCode = 39; break;
-                case Key.T: keyCode = 84; break;
-            }
+            int keyCode = key switch {
+                Key.W => 87,
+                Key.A => 65,
+                Key.S => 83,
+                Key.D => 68,
+                Key.Up => 38,
+                Key.Down => 40,
+                Key.Left => 37,
+                Key.Right => 39,
+                Key.T => 84,
+                _ => -1
+            };
 
             return keyCode;
         }

@@ -78,7 +78,7 @@ namespace OpenDreamClient.Interface.Elements {
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        private string[] _verbs = new string[0];
+        private string[] _verbs = Array.Empty<string>();
 
         public ElementInfo() {
             this.BorderBrush = Brushes.Black;

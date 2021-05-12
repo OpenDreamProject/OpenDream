@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace OpenDreamShared.Compiler {
     class Lexer<SourceType> {
@@ -17,6 +18,8 @@ namespace OpenDreamShared.Compiler {
         public Lexer(string sourceName, IEnumerable<SourceType> source) {
             SourceName = sourceName;
             Source = source;
+            if (source == null)
+                throw new FileNotFoundException("Source file could not be read: " + sourceName);
             _sourceEnumerator = Source.GetEnumerator();
         }
 

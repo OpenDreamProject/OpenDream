@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using System;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Net.Packets;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,7 +14,7 @@ namespace OpenDreamClient.Interface.Prompts {
         public PromptWindow(int promptId, string title, string message) {
             PromptId = promptId;
 
-            Title = title ?? "OpenDream";
+            Title = !String.IsNullOrEmpty(title) ? title : "OpenDream";
 
             Label messageLabel = new Label();
             messageLabel.Margin = new Thickness(5);

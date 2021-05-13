@@ -209,7 +209,7 @@ namespace OpenDreamServer.Net {
                     promptWaitHandle.Set();
                 };
 
-                SendPacket(new PacketPrompt(promptId, types, "DreamOpen", message));
+                SendPacket(new PacketPrompt(promptId, types, "NonNull", message));
                 promptWaitHandle.WaitOne();
                 return promptResponse;
             });

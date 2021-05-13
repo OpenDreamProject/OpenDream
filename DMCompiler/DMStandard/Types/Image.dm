@@ -3,6 +3,7 @@
 
 	var/icon = null
 	var/icon_state = null
+	var/list/overlays = list()
 	var/atom/loc = null
 	var/layer = FLOAT_LAYER
 	var/dir = SOUTH

@@ -39,6 +39,7 @@ proc/length(E)
 proc/log(X, Y)
 proc/lowertext(T)
 proc/max(A)
+proc/md5(T)
 proc/min(A)
 proc/num2text(N, Digits, Radix)
 proc/oview(Dist = 5, Center = usr)
@@ -72,7 +73,6 @@ proc/view(Dist = 4, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
-proc/md5(T)
 
 #include "Defines.dm"
 #include "Types\Client.dm"

@@ -18,6 +18,15 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (fps.Value != null) {
                 dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / fps.GetValueAsInteger()));
             }
+            
+            //system_type value should match the defines in Defines.dm
+            if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX) {
+                dreamObject.SetVariable("system_type", new DreamValue(0));
+            }
+            else {
+                dreamObject.SetVariable("system_type", new DreamValue(1));
+            }
+            
 
             //New() is not called here
         }

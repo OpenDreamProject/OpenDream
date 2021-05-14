@@ -8,10 +8,9 @@ namespace OpenDreamClient.Interface.Prompts {
         public TextPrompt(int promptId, String title, String message, String defaultValue) : base(promptId, title, message, defaultValue) { }
 
         protected override Control CreatePromptControl(String defaultValue) {
-            TextBox box = new() {
+            return new TextBox {
                 Text = defaultValue
             };
-            return box;
         }
 
         protected override void OkButton_Click(object sender, RoutedEventArgs e) {

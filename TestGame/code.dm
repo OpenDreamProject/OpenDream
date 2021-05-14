@@ -31,6 +31,10 @@
 
 	verb/move_down()
 		step(src, DOWN)
+	
+	verb/md5_ckey()
+	    var/hash = md5(ckey)
+	    usr << "The md5 hash of your ckey is: [hash]"
 
 /world/New()
 	..()

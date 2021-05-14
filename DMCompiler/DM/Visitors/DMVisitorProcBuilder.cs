@@ -720,7 +720,20 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitInput(DMASTInput input) {
-            PushCallParameters(input.Parameters);
+            if (input.Parameters.Length == 0 || input.Parameters.Length > 4) throw new Exception("Invalid input() parameter count");
+
+            //Push input's four arguments, pushing null for the missing ones
+            for (int i = 4; i >= 0; i--) {
+                if (i < input.Parameters.Length) {
+                    DMASTCallParameter parameter = input.Parameters[i];
+
+                    if (parameter.Name != null) throw new Exception("input() does not take named arguments");
+                    parameter.Value.Visit(this);
+                } else {
+                    _proc.PushNull();
+                }
+            }
+
             _proc.Prompt(input.Types);
         }
 

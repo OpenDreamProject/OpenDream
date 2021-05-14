@@ -1086,25 +1086,26 @@ namespace OpenDreamServer.Dream.Procs {
 
         public static void Prompt(DreamProcInterpreter interpreter) {
             DMValueType types = (DMValueType)interpreter.ReadInt();
-            DreamProcArguments arguments = interpreter.PopArguments();
-            DreamValue firstArg = arguments.OrderedArguments[0];
             DreamObject recipientMob;
-            String title;
-            String message;
+            DreamValue title, message, defaultValue;
 
+            DreamValue firstArg = interpreter.PopDreamValue();
             if (firstArg.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out recipientMob)) {
-                message = arguments.OrderedArguments[1].GetValueAsString();
-                title = arguments.OrderedArguments[2].GetValueAsString();
+                message = interpreter.PopDreamValue();
+                title = interpreter.PopDreamValue();
+                defaultValue = interpreter.PopDreamValue();
             } else {
                 recipientMob = interpreter.Usr;
-                message = arguments.OrderedArguments[0].GetValueAsString();
-                title = arguments.OrderedArguments[1].GetValueAsString();
+                message = firstArg;
+                title = interpreter.PopDreamValue();
+                defaultValue = interpreter.PopDreamValue();
+                interpreter.PopDreamValue(); //Fourth argument, should be null
             }
 
             DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                 DreamConnection connection = Program.ClientToConnection[clientObject];
-                Task<DreamValue> promptTask = connection.Prompt(types, title, message);
+                Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify());
 
                 promptTask.Wait();
                 interpreter.Push(promptTask.Result);

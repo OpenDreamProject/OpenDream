@@ -64,7 +64,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.AddLabel(statementLabel.Name + "_goto");
+            _proc.AddLabel(statementLabel.Name);
         }
 
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) {

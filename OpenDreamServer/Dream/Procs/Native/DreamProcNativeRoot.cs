@@ -1251,9 +1251,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
             if (text == null) text = arg.GetValueAsString();
             
             MD5 md5 = MD5.Create();
-            byte[] input = Encoding.ASCII.GetBytes(text);
+            byte[] input = Encoding.UTF8.GetBytes(text);
             byte[] output = md5.ComputeHash(input);
-            string hash = BitConverter.ToString(output);
+            //Match BYOND formatting
+            string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
         }
     }

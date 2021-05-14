@@ -293,8 +293,8 @@ namespace OpenDreamServer.Net {
                     for (int i = 0; i < verb.ArgumentNames.Count; i++) {
                         String argumentName = verb.ArgumentNames[i];
                         DMValueType argumentType = verb.ArgumentTypes[i];
-                        DreamValue value = await Prompt(argumentType, title: null, // No settable title for verbs
-                                                        argumentName, defaultValue: ""); // No default value for verbs
+                        DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
+                                                        argumentName, defaultValue: String.Empty); // No default value for verbs
 
                         arguments.Add(argumentName, value);
                     }

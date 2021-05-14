@@ -6,10 +6,12 @@ using System.Windows.Input;
 
 namespace OpenDreamClient.Interface.Prompts {
     class NumberPrompt : PromptWindow {
-        public NumberPrompt(int promptId, string title, string message) : base(promptId, title, message) { }
+        public NumberPrompt(int promptId, String title, String message, String defaultValue) : base(promptId, title, message, defaultValue) { }
 
-        protected override Control CreatePromptControl() {
-            TextBox numberInput = new TextBox();
+        protected override Control CreatePromptControl(String defaultValue) {
+            TextBox numberInput = new() {
+                Text = defaultValue
+            };
             numberInput.PreviewTextInput += NumberInput_PreviewTextInput;
 
             return numberInput;
@@ -27,7 +29,10 @@ namespace OpenDreamClient.Interface.Prompts {
         }
 
         protected override void OkButton_Click(object sender, RoutedEventArgs e) {
-            FinishPrompt(DMValueType.Num, Int32.Parse(((TextBox)PromptControl).Text));
+            if (!Int32.TryParse(((TextBox)PromptControl).Text, out Int32 num)) {
+                Console.Error.WriteLine("Error while trying to convert " + ((TextBox)PromptControl).Text + " to a number.");
+            }
+            FinishPrompt(DMValueType.Num, num);
         }
     }
 }

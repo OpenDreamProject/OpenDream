@@ -9,14 +9,16 @@ namespace OpenDreamShared.Net.Packets {
         public DMValueType Types;
         public string Title;
         public string Message;
+        public String DefaultValue;
 
         public PacketPrompt() { }
 
-        public PacketPrompt(int promptId, DMValueType types, string title, string message) {
+        public PacketPrompt(int promptId, DMValueType types, String title, String message, String defaultValue) {
             PromptId = promptId;
             Types = types;
             Title = title;
             Message = message;
+            DefaultValue = defaultValue;
         }
 
         public void ReadFromStream(PacketStream stream) {
@@ -24,6 +26,7 @@ namespace OpenDreamShared.Net.Packets {
             Types = (DMValueType)stream.ReadUInt16();
             Title = stream.ReadString();
             Message = stream.ReadString();
+            DefaultValue = stream.ReadString();
         }
 
         public void WriteToStream(PacketStream stream) {
@@ -31,6 +34,7 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteUInt16((UInt16)Types);
             stream.WriteString(Title);
             stream.WriteString(Message);
+            stream.WriteString(DefaultValue);
         }
     }
 }

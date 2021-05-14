@@ -198,7 +198,7 @@ namespace OpenDreamServer.Net {
             statPanelLines.Add(text);
         }
 
-        public Task<DreamValue> Prompt(DMValueType types, String title, String message) {
+        public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {
             Task<DreamValue> promptTask = new Task<DreamValue>(() => {
                 ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
                 int promptId = _promptEvents.Count;
@@ -209,7 +209,7 @@ namespace OpenDreamServer.Net {
                     promptWaitHandle.Set();
                 };
 
-                SendPacket(new PacketPrompt(promptId, types, title, message));
+                SendPacket(new PacketPrompt(promptId, types, title, message, defaultValue));
                 promptWaitHandle.WaitOne();
                 return promptResponse;
             });
@@ -294,7 +294,7 @@ namespace OpenDreamServer.Net {
                         String argumentName = verb.ArgumentNames[i];
                         DMValueType argumentType = verb.ArgumentTypes[i];
                         DreamValue value = await Prompt(argumentType, title: null, // No settable title for verbs
-                                                        argumentName);
+                                                        argumentName, defaultValue: ""); // No default value for verbs
 
                         arguments.Add(argumentName, value);
                     }

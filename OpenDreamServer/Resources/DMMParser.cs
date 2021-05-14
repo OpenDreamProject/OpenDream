@@ -103,7 +103,7 @@ namespace OpenDreamShared.Compiler.DMM {
                             DreamValue varValue;
 
                             if (varOverride == null) Error("Expected a var override");
-                            if (varOverride.ObjectPath != null) Error("Invalid var name");
+                            if (!varOverride.ObjectPath.Equals(DreamPath.Root)) Error("Invalid var name");
                             if (varOverride.Value is DMASTConstantString dmastString) {
                                 varValue = new DreamValue(dmastString.Value);
                             } else if (varOverride.Value is DMASTConstantResource dmastResource) {

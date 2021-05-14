@@ -40,11 +40,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitObjectDefinition(DMASTObjectDefinition objectDefinition) {
             DMObject oldObject = _currentObject;
-            DreamPath newObjectPath = objectDefinition.Path.Path;
-
-            if (newObjectPath.Type == DreamPath.PathType.Relative) newObjectPath = _currentObject.Path.AddToPath(newObjectPath.PathString);
-
-            _currentObject = DMObjectTree.GetDMObject(newObjectPath);
+            
+            _currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
             objectDefinition.InnerBlock?.Visit(this);
             _currentObject = oldObject;
         }
@@ -52,14 +49,10 @@ namespace DMCompiler.DM.Visitors {
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
 
-            if (varDefinition.ObjectPath.HasValue) {
-                _currentObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(varDefinition.ObjectPath.Value));
-            }
+            _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
+            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
 
-            bool isGlobal = varDefinition.IsGlobal || _currentObject.Path.Equals(DreamPath.Root);
-            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, isGlobal);
-
-            if (isGlobal) {
+            if (_currentVariable.IsGlobal) {
                 _currentObject.GlobalVariables[_currentVariable.Name] = _currentVariable;
             } else {
                 _currentObject.Variables[_currentVariable.Name] = _currentVariable;
@@ -71,24 +64,24 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitObjectVarOverride(DMASTObjectVarOverride varOverride) {
-            DMObject dmObject = _currentObject;
+            DMObject oldObject = _currentObject;
 
-            if (varOverride.ObjectPath.HasValue) {
-                dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(varOverride.ObjectPath.Value));
-            }
+            _currentObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
             if (varOverride.VarName == "parent_type") {
                 DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
                 if (parentType == null) throw new Exception("Expected a constant path");
-                dmObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
+                _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
             } else {
                 _currentVariable = new DMVariable(null, varOverride.VarName, false);
                 varOverride.Value.Visit(this);
                 _currentVariable.Value = _valueStack.Pop();
 
-                dmObject.VariableOverrides[_currentVariable.Name] = _currentVariable;
+                _currentObject.VariableOverrides[_currentVariable.Name] = _currentVariable;
             }
+
+            _currentObject = oldObject;
         }
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) {

@@ -11,6 +11,8 @@ namespace OpenDreamShared.Compiler.DM {
     class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 
+        private DreamPath _currentPath = DreamPath.Root;
+
         public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
@@ -48,8 +50,12 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTPath path = Path();
 
             if (path != null) {
+                DreamPath oldPath = _currentPath;
+                DMASTStatement statement;
+
                 Whitespace();
 
+                _currentPath = _currentPath.Combine(path.Path);
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
                     DMASTDefinitionParameter[] parameters = DefinitionParameters();
@@ -66,33 +72,36 @@ namespace OpenDreamShared.Compiler.DM {
                         }
                     }
 
-                    return new DMASTProcDefinition(path, parameters, procBlock);
+                    statement = new DMASTProcDefinition(_currentPath, parameters, procBlock);
                 } else {
                     DMASTBlockInner block = Block();
 
                     if (block != null) {
-                        return new DMASTObjectDefinition(path, block);
+                        statement = new DMASTObjectDefinition(_currentPath, block);
                     } else {
                         if (Check(TokenType.DM_Equals)) {
                             Whitespace();
                             DMASTExpression value = Expression();
 
-                            if (path.Path.FindElement("var") != -1) {
-                                return new DMASTObjectVarDefinition(path, value);
+                            if (_currentPath.FindElement("var") != -1) {
+                                statement = new DMASTObjectVarDefinition(_currentPath, value);
                             } else {
-                                return new DMASTObjectVarOverride(path, value);
+                                statement = new DMASTObjectVarOverride(_currentPath, value);
                             }
                         } else {
-                            if (path.Path.FindElement("var") != -1) {
+                            if (_currentPath.FindElement("var") != -1) {
                                 Whitespace();
                                 AsTypes();
-                                return new DMASTObjectVarDefinition(path, new DMASTConstantNull());
+                                statement = new DMASTObjectVarDefinition(_currentPath, new DMASTConstantNull());
                             } else {
-                                return new DMASTObjectDefinition(path, null);
+                                statement = new DMASTObjectDefinition(_currentPath, null);
                             }
                         }
                     }
                 }
+
+                _currentPath = oldPath;
+                return statement;
             }
 
             return null;

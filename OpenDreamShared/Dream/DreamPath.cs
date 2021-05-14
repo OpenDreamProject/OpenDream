@@ -164,7 +164,11 @@ namespace OpenDreamShared.Dream {
         }
 
         public DreamPath Combine(DreamPath path) {
-            return new DreamPath(PathString + path.PathString);
+            switch (path.Type) {
+                case PathType.Relative: return new DreamPath(PathString + "/" + path.PathString);
+                case PathType.Absolute: return path;
+                default: return new DreamPath(PathString + path.PathString);
+            }
         }
 
         public override string ToString() {

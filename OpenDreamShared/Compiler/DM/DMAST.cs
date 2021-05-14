@@ -163,10 +163,10 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTObjectDefinition : DMASTStatement {
-        public DMASTPath Path;
+        public DreamPath Path;
         public DMASTBlockInner InnerBlock;
 
-        public DMASTObjectDefinition(DMASTPath path, DMASTBlockInner innerBlock) {
+        public DMASTObjectDefinition(DreamPath path, DMASTBlockInner innerBlock) {
             Path = path;
             InnerBlock = innerBlock;
         }
@@ -183,8 +183,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTDefinitionParameter[] Parameters;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcDefinition(DMASTPath astPath, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) {
-            DreamPath path = astPath.Path;
+        public DMASTProcDefinition(DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -219,26 +218,24 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTObjectVarDefinition : DMASTStatement {
-        public DreamPath? ObjectPath;
+        public DreamPath ObjectPath;
         public DreamPath? Type;
         public string Name;
         public DMASTExpression Value;
         public bool IsGlobal = false;
 
-        public DMASTObjectVarDefinition(DMASTPath astPath, DMASTExpression value) {
-            DreamPath path = astPath.Path;
-
+        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value) {
             int globalElementIndex = path.FindElement("global");
-            if (globalElementIndex != -1) {
-                path = path.RemoveElement(globalElementIndex);
-                IsGlobal = true;
-            }
+            if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
             int varElementIndex = path.FindElement("var");
+            if (varElementIndex == -1) throw new Exception("Var definition's path (" + path + ") did not contain a var element");
+
             DreamPath varPath = path.FromElements(varElementIndex + 1, -1);
 
-            ObjectPath = (varElementIndex > 0) ? path.FromElements(0, varElementIndex) : null;
+            ObjectPath = path.FromElements(0, varElementIndex);
             Type = (varPath.Elements.Length > 1) ? varPath.FromElements(0, -2) : null;
+            IsGlobal = globalElementIndex != -1 || ObjectPath.Equals(DreamPath.Root);
             Name = varPath.LastElement;
             Value = value;
         }
@@ -249,13 +246,13 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     class DMASTObjectVarOverride : DMASTStatement {
-        public DreamPath? ObjectPath;
+        public DreamPath ObjectPath;
         public string VarName;
         public DMASTExpression Value;
 
-        public DMASTObjectVarOverride(DMASTPath path, DMASTExpression value) {
-            ObjectPath = (path.Path.Elements.Length > 1) ? path.Path.FromElements(0, -2) : null;
-            VarName = path.Path.LastElement;
+        public DMASTObjectVarOverride(DreamPath path, DMASTExpression value) {
+            ObjectPath = path.FromElements(0, -2);
+            VarName = path.LastElement;
             Value = value;
         }
 

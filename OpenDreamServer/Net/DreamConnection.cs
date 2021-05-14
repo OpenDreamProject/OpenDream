@@ -13,6 +13,7 @@ using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,10 +52,11 @@ namespace OpenDreamServer.Net {
         private Dictionary<string, List<string>> _statPanels = new();
         private string _selectedStatPanel;
 
-        private TcpClient _tcpClient;
-        private NetworkStream _tcpStream;
-        private BinaryReader _tcpStreamBinaryReader;
-        private BinaryWriter _tcpStreamBinaryWriter;
+        public readonly IPAddress Address;
+        private readonly TcpClient _tcpClient;
+        private readonly NetworkStream _tcpStream;
+        private readonly BinaryReader _tcpStreamBinaryReader;
+        private readonly BinaryWriter _tcpStreamBinaryWriter;
         private object _netLock = new object();
 
         public DreamConnection(TcpClient tcpClient) {
@@ -62,6 +64,7 @@ namespace OpenDreamServer.Net {
             _tcpStream = _tcpClient.GetStream();
             _tcpStreamBinaryReader = new BinaryReader(_tcpStream);
             _tcpStreamBinaryWriter = new BinaryWriter(_tcpStream);
+            Address = tcpClient.Client.RemoteEndPoint != null ? ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address : IPAddress.Any;
         }
 
         public byte[] ReadPacketData() {

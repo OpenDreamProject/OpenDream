@@ -54,7 +54,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             } else if (variableName == "mob") {
                 return new DreamValue(Program.ClientToConnection[dreamObject].MobDreamObject);
             } else if (variableName == "address") {
-                return DreamValue.Null;
+                return new DreamValue(Program.ClientToConnection[dreamObject].Address.ToString());
             } else if (variableName == "inactivity") {
                 return new DreamValue(0);
             } else {

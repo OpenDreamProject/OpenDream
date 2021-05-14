@@ -125,6 +125,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             case "#else": token = CreateToken(TokenType.DM_Preproc_Else, text); break;
                             case "#endif": token = CreateToken(TokenType.DM_Preproc_EndIf, text); break;
                             case "#error": token = CreateToken(TokenType.DM_Preproc_Error, text); break;
+                            case "#warn":
                             case "#warning": token = CreateToken(TokenType.DM_Preproc_Warning, text); break;
                             default: {
                                 if (text.StartsWith("##")) {

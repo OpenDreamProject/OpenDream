@@ -371,7 +371,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
             if (!_dmObject.HasProc(procIdentifier.Identifier)) {
-                throw new Exception("Type + " + _dmObject.Path + " does not have a proc named \"" + procIdentifier.Identifier + "\"");
+                throw new Exception("Type " + _dmObject.Path + " does not have a proc named \"" + procIdentifier.Identifier + "\"");
             }
 
             _proc.GetProc(procIdentifier.Identifier);

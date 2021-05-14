@@ -3,6 +3,7 @@
 
 	var/name = "atom"
 	var/desc = null
+	var/suffix = null
 	var/list/verbs = list()
 
 	var/list/contents = list()

@@ -58,6 +58,8 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 return new DreamValue(Program.DreamMap.Height);
             } else if (variableName == "maxz") {
                 return new DreamValue(Program.DreamMap.Levels.Count);
+            } else if (variableName == "address") {
+                return DreamValue.Null;
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

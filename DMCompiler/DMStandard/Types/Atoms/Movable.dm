@@ -1,6 +1,8 @@
 ﻿/atom/movable
 	var/screen_loc
 
+	var/animate_movement = FORWARD_STEPS
+
 	proc/Bump(atom/Obstacle)
 	
 	proc/Move(atom/NewLoc, Dir=0)

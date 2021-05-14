@@ -24,6 +24,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_flick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_flist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);

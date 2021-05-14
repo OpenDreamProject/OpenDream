@@ -285,6 +285,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
         }
 
+        [DreamProc("flick")]
+        [DreamProcParameter("Icon", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        [DreamProcParameter("Object", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        public static DreamValue NativeProc_flick(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            //TODO: Implement flick()
+
+            return DreamValue.Null;
+        }
+
         [DreamProc("flist")]
         [DreamProcParameter("Path", Type = DreamValueType.String)]
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

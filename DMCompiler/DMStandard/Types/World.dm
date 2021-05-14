@@ -21,5 +21,12 @@
 	var/icon_size = 32
 	var/view = 5
 
+	var/address
+	var/status
+	var/list/params = null
+
 	proc/New()
 	proc/Del()
+
+	proc/Reboot()
+		CRASH("/world.Reboot() is not implemented")

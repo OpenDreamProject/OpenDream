@@ -33,3 +33,8 @@
 #define EASE_IN 64
 #define EASE_OUT 128
 #define ANIMATION_RELATIVE 256
+
+#define NO_STEPS 0
+#define FORWARD_STEPS 1
+#define SLIDE_STEPS 2
+#define SYNC_STEPS 3

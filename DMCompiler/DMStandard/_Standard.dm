@@ -19,6 +19,7 @@ proc/file2text(File)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
+proc/flick(Icon, Object)
 proc/flist(Path)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
@@ -223,3 +224,9 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 
 proc/lentext(T)
 	return length(T)
+
+proc/isobj(Loc1)
+	for(var/arg in args)
+		if (!istype(arg, /obj)) return 0
+
+	return 1

@@ -24,8 +24,7 @@
 	
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud")
-		for (var/mob/M in viewers())
-			M << "[ckey] says loudly: \"[msg]\""
+		world << "[ckey] says loudly: \"[msg]\""
 
 	verb/move_up()
 		step(src, UP)

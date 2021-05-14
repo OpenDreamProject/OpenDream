@@ -6,6 +6,8 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1230,6 +1232,29 @@ namespace OpenDreamServer.Dream.Procs.Native {
             //TODO: Implement walk_to()
 
             return DreamValue.Null;
+        }
+        
+        [DreamProc("md5")]
+        [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        public static DreamValue NativeProc_md5(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
+            DreamValue arg = arguments.GetArgument(0, "T");
+            DreamResource resource;
+
+            if (arg.Type == DreamValueType.String) {
+                resource = Program.DreamResourceManager.LoadResource(arg.GetValueAsString());
+            } else {
+                resource = arg.GetValueAsDreamResource();
+            }
+
+            string text = resource.ReadAsString();
+            if (text == null) text = arg.GetValueAsString();
+            
+            MD5 md5 = MD5.Create();
+            byte[] input = Encoding.ASCII.GetBytes(text);
+            byte[] output = md5.ComputeHash(input);
+            string hash = BitConverter.ToString(output);
+            return new DreamValue(hash);
         }
     }
 }

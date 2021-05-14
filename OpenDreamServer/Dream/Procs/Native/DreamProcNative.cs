@@ -77,6 +77,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_viewers);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_md5);
 
             DreamObjectDefinition list = Program.DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Add);

@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Prompts {
     class MessagePrompt : PromptWindow {
-        public MessagePrompt(int promptId, string message) : base(promptId, message) { }
+        public MessagePrompt(int promptId, string title, string message) : base(promptId, title, message) { }
 
         protected override Control CreatePromptControl() {
             TextBox textBox = new TextBox();

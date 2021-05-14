@@ -105,7 +105,7 @@ namespace OpenDreamServer.Net {
                 if (outputObject != null) {
                     if (outputObject.IsSubtypeOf(DreamPath.Sound)) {
                         UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
-                        DreamValue file = outputObject.GetVariable("file"); 
+                        DreamValue file = outputObject.GetVariable("file");
                         UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsNumber();
 
                         if (file.IsType(DreamValue.DreamValueType.String) || file == DreamValue.Null) {
@@ -198,8 +198,8 @@ namespace OpenDreamServer.Net {
             statPanelLines.Add(text);
         }
 
-        public Task<DreamValue> Prompt(DMValueType types, string message) {
-            Task <DreamValue> promptTask = new Task<DreamValue>(() => {
+        public Task<DreamValue> Prompt(DMValueType types, String title, String message) {
+            Task<DreamValue> promptTask = new Task<DreamValue>(() => {
                 ManualResetEvent promptWaitHandle = new ManualResetEvent(false);
                 int promptId = _promptEvents.Count;
 
@@ -209,7 +209,7 @@ namespace OpenDreamServer.Net {
                     promptWaitHandle.Set();
                 };
 
-                SendPacket(new PacketPrompt(promptId, types, message));
+                SendPacket(new PacketPrompt(promptId, types, title, message));
                 promptWaitHandle.WaitOne();
                 return promptResponse;
             });
@@ -288,12 +288,13 @@ namespace OpenDreamServer.Net {
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
             if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
                 Task.Run(async () => {
-                    Dictionary<string, DreamValue> arguments = new();
+                    Dictionary<String, DreamValue> arguments = new();
 
                     for (int i = 0; i < verb.ArgumentNames.Count; i++) {
-                        string argumentName = verb.ArgumentNames[i];
+                        String argumentName = verb.ArgumentNames[i];
                         DMValueType argumentType = verb.ArgumentTypes[i];
-                        DreamValue value = await Prompt(argumentType, argumentName);
+                        DreamValue value = await Prompt(argumentType, title: null, // No settable title for verbs
+                                                        argumentName);
 
                         arguments.Add(argumentName, value);
                     }

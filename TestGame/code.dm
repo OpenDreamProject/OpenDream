@@ -21,6 +21,10 @@
 
 		for (var/mob/viewer in viewers)
 			viewer << "[ckey] says: \"[message]\""
+	
+	verb/say_loud()
+		var/msg = input("Please put the message you want to say loudly.", "Say Loud")
+		world << "[ckey] says loudly: \"[msg]\""
 
 	verb/move_up()
 		step(src, UP)

@@ -1089,19 +1089,22 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcArguments arguments = interpreter.PopArguments();
             DreamValue firstArg = arguments.OrderedArguments[0];
             DreamObject recipientMob;
-            string message;
+            String title;
+            String message;
 
             if (firstArg.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out recipientMob)) {
                 message = arguments.OrderedArguments[1].GetValueAsString();
+                title = arguments.OrderedArguments[2].GetValueAsString();
             } else {
                 recipientMob = interpreter.Usr;
                 message = arguments.OrderedArguments[0].GetValueAsString();
+                title = arguments.OrderedArguments[1].GetValueAsString();
             }
 
             DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                 DreamConnection connection = Program.ClientToConnection[clientObject];
-                Task<DreamValue> promptTask = connection.Prompt(types, message);
+                Task<DreamValue> promptTask = connection.Prompt(types, title, message);
 
                 promptTask.Wait();
                 interpreter.Push(promptTask.Result);

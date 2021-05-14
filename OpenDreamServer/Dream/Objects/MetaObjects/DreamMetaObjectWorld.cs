@@ -20,7 +20,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             }
             
             //system_type value should match the defines in Defines.dm
-            if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX) {
+            if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other) {
                 dreamObject.SetVariable("system_type", new DreamValue(0));
             }
             else {

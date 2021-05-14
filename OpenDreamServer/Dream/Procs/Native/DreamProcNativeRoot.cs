@@ -618,17 +618,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_md5(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            DreamResource resource;
 
-            if (arg.Type == DreamValueType.String) {
-                resource = Program.DreamResourceManager.LoadResource(arg.GetValueAsString());
-            } else {
-                resource = arg.GetValueAsDreamResource();
+            string text;
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                text = resource.ReadAsString();
+            } else if (!arg.TryGetValueAsString(out text)) {
+                return DreamValue.Null;
             }
 
-            string text = resource.ReadAsString();
-            if (text == null) text = arg.GetValueAsString();
-            
             MD5 md5 = MD5.Create();
             byte[] input = Encoding.UTF8.GetBytes(text);
             byte[] output = md5.ComputeHash(input);

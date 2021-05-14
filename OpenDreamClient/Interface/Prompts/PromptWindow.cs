@@ -11,7 +11,7 @@ namespace OpenDreamClient.Interface.Prompts {
 
         private bool _responseSent = false;
 
-        public PromptWindow(int promptId, string title, string message) {
+        public PromptWindow(int promptId, String title, String message, String defaultValue) {
             PromptId = promptId;
 
             Title = !String.IsNullOrEmpty(title) ? title : "OpenDream";
@@ -20,7 +20,7 @@ namespace OpenDreamClient.Interface.Prompts {
             messageLabel.Margin = new Thickness(5);
             messageLabel.Content = message;
 
-            PromptControl = CreatePromptControl();
+            PromptControl = CreatePromptControl(defaultValue);
             PromptControl.Margin = new Thickness(5);
 
             Button okButton = new Button();
@@ -45,7 +45,7 @@ namespace OpenDreamClient.Interface.Prompts {
             PromptControl.Focus();
         }
 
-        protected virtual Control CreatePromptControl() {
+        protected virtual Control CreatePromptControl(String defaultValue) {
             return new Control();
         }
 

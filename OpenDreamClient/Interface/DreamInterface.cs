@@ -170,11 +170,11 @@ namespace OpenDreamClient.Interface {
             int promptTypeBitflag = (int)pPrompt.Types;
 
             if ((promptTypeBitflag & (int)DMValueType.Text) != 0) {
-                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message);
+                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
             } else if ((promptTypeBitflag & (int)DMValueType.Num) != 0) {
-                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message);
+                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
             } else if ((promptTypeBitflag & (int)DMValueType.Message) != 0) {
-                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message);
+                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
             }
 
             if (prompt != null) {

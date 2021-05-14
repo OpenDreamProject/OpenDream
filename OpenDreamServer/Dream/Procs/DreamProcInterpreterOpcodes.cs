@@ -7,6 +7,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -1105,7 +1106,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                 DreamConnection connection = Program.ClientToConnection[clientObject];
-                Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify());
+                Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
                 promptTask.Wait();
                 interpreter.Push(promptTask.Result);
@@ -1194,6 +1195,7 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
+        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {
             if (first.Type == DreamValue.DreamValueType.DreamObject && second.Type == DreamValue.DreamValueType.DreamObject) {
                 return first.GetValueAsDreamObject() == second.GetValueAsDreamObject();

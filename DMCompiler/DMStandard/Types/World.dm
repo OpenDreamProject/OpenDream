@@ -22,6 +22,8 @@
 	var/view = 5
 
 	var/address
+	var/port
+	var/url
 	var/status
 	var/list/params = null
 	

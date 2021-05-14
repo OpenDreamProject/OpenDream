@@ -13,6 +13,7 @@ namespace OpenDreamServer.Net {
         public event DreamConnectionReadyEventHandler DreamConnectionRequest;
         
         public readonly IPAddress Address;
+        public readonly int Port;
         private readonly TcpListener _tcpListener;
         
         private Dictionary<PacketID, Action<DreamConnection, IPacket>> _packetIDToCallback = new Dictionary<PacketID, Action<DreamConnection, IPacket>>();
@@ -23,8 +24,11 @@ namespace OpenDreamServer.Net {
                 Console.Error.WriteLine("Error while parsing address " + ipAddress + ", falling back to localhost.");
                 ipAddress = IPAddress.Any;
             }
-            Address = ipAddress;
             _tcpListener = new TcpListener(ipAddress, port);
+            
+            IPEndPoint endpoint = (IPEndPoint)_tcpListener.LocalEndpoint;
+            Address = endpoint.Address;
+            Port = endpoint.Port;
 
             RegisterPacketCallback<PacketRequestConnect>(PacketID.RequestConnect, OnPacketRequestConnect);
         }

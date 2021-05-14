@@ -60,6 +60,10 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 return new DreamValue(Program.DreamMap.Levels.Count);
             } else if (variableName == "address") {
                 return new(Program.DreamServer.Address.ToString());
+            } else if (variableName == "port") {
+                return new(Program.DreamServer.Port.ToString());
+            } else if (variableName == "url") {
+                return new("byond://" + Program.DreamServer.Address + ":" + Program.DreamServer.Port);
             } else if (variableName == "system_type") {
                 //system_type value should match the defines in Defines.dm
                 if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other) {

@@ -57,7 +57,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int end = arguments.GetArgument(2, "End").GetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)instance;
             
-            return new DreamValue(list.FindValue(element));
+            return new(list.FindValue(element, start, end));
         }
 
         [DreamProc("Insert")]

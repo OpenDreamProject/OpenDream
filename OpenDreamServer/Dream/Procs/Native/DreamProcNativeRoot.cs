@@ -79,31 +79,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(Convert.ToChar(ascii).ToString());
         }
-        
-        [DreamProc("clamp")]
-        [DreamProcParameter("Value")]
-        [DreamProcParameter("Low", Type = DreamValueType.Number)]
-        [DreamProcParameter("High", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue lVal = arguments.GetArgument(1, "Low");
-            DreamValue hVal = arguments.GetArgument(2, "High");
-
-            arguments.GetArgument(0, "Value").TryGetValueAsDreamList(out DreamList iVal);
-            DreamList iValues = iVal.CreateCopy();
-            float lowValue = (lVal.Value == null) ? 0 : lVal.GetValueAsNumber();
-            float highValue = (hVal.Value == null) ? 0 : hVal.GetValueAsNumber();
-
-            DreamList Values = new DreamList();
-
-            foreach(DreamValue val in iValues.GetValues()) {
-                DreamValue tmp = new DreamValue(Math.Clamp(val.GetValueAsFloat(), lowValue, highValue));
-                Values.AddValue(tmp);
-            }
-            if(Values.GetLength() == 1) {
-                return Values.GetValues()[0];
-            }
-            return new DreamValue(Values);
-        }
 
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]
@@ -112,6 +87,32 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             key = Regex.Replace(key.ToLower(), "[^a-z]", ""); //Remove all punctuation and make lowercase
             return new DreamValue(key);
+        }
+
+        [DreamProc("clamp")]
+        [DreamProcParameter("Value", Type = DreamValueType.Number | DreamValueType.DreamObject)]
+        [DreamProcParameter("Low", Type = DreamValueType.Number)]
+        [DreamProcParameter("High", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            DreamValue value = arguments.GetArgument(0, "Value");
+            float lVal = arguments.GetArgument(1, "Low").GetValueAsNumber();
+            float hVal = arguments.GetArgument(2, "High").GetValueAsNumber();
+
+            if (value.TryGetValueAsDreamList(out DreamList list))
+            {
+                DreamList tmp = new DreamList();
+                for (int i = 1; i < list.GetLength(); i++)
+                {
+                    DreamValue val = list.GetValues()[i];
+                    tmp.AddValue(new DreamValue((float)Math.Clamp(val.GetValueAsNumber(), lVal, hVal)));
+                }
+                return new DreamValue(tmp);
+            }
+            else
+            {
+                return new DreamValue((float)Math.Clamp(value.GetValueAsNumber(), lVal, hVal));
+            }
         }
 
         [DreamProc("cmptext")]

@@ -76,6 +76,14 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
+        public List<DreamValue> GetVariables() {
+            List<DreamValue> list = new(_variables.Count);
+            foreach (String key in _variables.Keys) {
+                list.Add(new(key));
+            }
+            return list;
+        }
+
         public bool TryGetVariable(string name, out DreamValue variableValue) {
             if (_variables.TryGetValue(name, out variableValue) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);

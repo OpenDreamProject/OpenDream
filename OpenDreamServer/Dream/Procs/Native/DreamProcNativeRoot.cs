@@ -89,6 +89,31 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(key);
         }
 
+        [DreamProc("clamp")]
+        [DreamProcParameter("Value", Type = DreamValueType.Number | DreamValueType.DreamObject)]
+        [DreamProcParameter("Low", Type = DreamValueType.Number)]
+        [DreamProcParameter("High", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            DreamValue value = arguments.GetArgument(0, "Value");
+            float lVal = arguments.GetArgument(1, "Low").GetValueAsNumber();
+            float hVal = arguments.GetArgument(2, "High").GetValueAsNumber();
+
+            if (value.TryGetValueAsDreamList(out DreamList list))
+            {
+                DreamList tmp = new DreamList();
+                foreach (DreamValue val in list.GetValues())
+                {
+                    tmp.AddValue(new DreamValue(Math.Clamp(val.GetValueAsNumber(), lVal, hVal)));
+                }
+                return new DreamValue(tmp);
+            }
+            else
+            {
+                return new DreamValue(Math.Clamp(value.GetValueAsNumber(), lVal, hVal));
+            }
+        }
+
         [DreamProc("cmptext")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
         public static DreamValue NativeProc_cmptext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

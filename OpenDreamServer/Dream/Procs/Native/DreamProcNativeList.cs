@@ -56,8 +56,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int start = arguments.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(2, "End").GetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)instance;
-
-            if (start != 1 || end != 0) throw new NotImplementedException("Ranged /list.Find() is not implemented");
+            
             return new DreamValue(list.FindValue(element));
         }
 

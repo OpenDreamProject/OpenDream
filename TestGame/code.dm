@@ -35,6 +35,12 @@
 	verb/md5_ckey()
 	    var/hash = md5(ckey)
 	    usr << "The md5 hash of your ckey is: [hash]"
+	    
+	verb/clamp_value()
+	    var/out1 = clamp(10, 1, 5)
+	    usr << "The output should be 5: [out1]"
+	    var/out2 = clamp(-10, 1, 5)
+	    usr << "The output should be 1: [out2]"
 
 /world/New()
 	..()

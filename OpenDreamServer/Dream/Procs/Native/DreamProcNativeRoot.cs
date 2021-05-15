@@ -62,6 +62,14 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue((float)(acos * 180 / Math.PI));
         }
 
+        [DreamProc("arcsin")]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_arcsin(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
+            float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
+            return new DreamValue((float)(Math.Asin(x) * 180 / Math.PI));
+        }
+
         [DreamProc("arctan")]
         [DreamProcParameter("A", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_arctan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

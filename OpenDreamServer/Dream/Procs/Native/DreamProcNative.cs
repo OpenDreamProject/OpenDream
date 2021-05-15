@@ -8,6 +8,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arccos);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_arcsin);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arctan);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ckey);

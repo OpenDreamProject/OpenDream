@@ -35,6 +35,10 @@
 	verb/md5_ckey()
 	    var/hash = md5(ckey)
 	    usr << "The md5 hash of your ckey is: [hash]"
+	    
+	verb/roll_dice(dice as text)
+	    var/result = roll(dice)
+	    usr << "The total shown on the dice is: [result]"
 
 /world/New()
 	..()

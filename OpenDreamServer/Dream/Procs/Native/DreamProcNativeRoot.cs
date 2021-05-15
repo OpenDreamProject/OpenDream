@@ -886,6 +886,29 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
         }
+        
+        [DreamProc("roll")]
+        [DreamProcParameter("ndice", Type = DreamValueType.Integer | DreamValueType.String)]
+        [DreamProcParameter("sides", Type = DreamValueType.Integer)]
+        public static DreamValue NativeProc_roll(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int dice = 0;
+            int sides = 0;
+            string diceString;
+            if (arguments.ArgumentCount == 1 && arguments.GetArgument(0, "ndice").TryGetValueAsString(out diceString)) {
+                string[] diceList = diceString.Split("d");
+                if (diceList.Length < 2) { return new DreamValue(0); }
+                dice = Convert.ToInt32(diceList[0]);
+                sides = Convert.ToInt32(diceList[1]);
+            } else if (!arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
+                return new DreamValue(0);
+            }
+            float total = 0;
+            for (int i = 0; i < dice; i++) {
+                total += new Random().Next(1, sides);
+            }
+
+            return new DreamValue(total);
+        }
 
         [DreamProc("sin")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]

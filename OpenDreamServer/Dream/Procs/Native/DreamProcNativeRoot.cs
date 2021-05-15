@@ -911,8 +911,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return new DreamValue(0);
             }
             float total = modifier; // Adds the modifier to start with
+            Random random = new Random();
             for (int i = 0; i < dice; i++) {
-                total += new Random().Next(1, sides);
+                total += random.Next(1, sides + 1);
             }
 
             return new DreamValue(total);

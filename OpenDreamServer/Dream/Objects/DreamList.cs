@@ -199,7 +199,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public override List<DreamValue> GetValues() {
-            return _dreamObject.GetVariables();
+            return _dreamObject.GetVariableNames();
         }
 
         public override DreamValue GetValue(DreamValue key) {

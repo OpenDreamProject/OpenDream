@@ -76,7 +76,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public List<DreamValue> GetVariables() {
+        public List<DreamValue> GetVariableNames() {
             List<DreamValue> list = new(_variables.Count);
             foreach (String key in _variables.Keys) {
                 list.Add(new(key));

@@ -895,15 +895,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
             int sides;
             int modifier = 0;
             if (arguments.ArgumentCount == 1) {
-                string[] diceList = arguments.GetArgument(0, "ndice").GetValueAsString().Split('d');
+                string diceInput = arguments.GetArgument(0, "ndice").GetValueAsString();
+                string[] diceList = diceInput.Split('d');
                 if (diceList.Length < 2) {
-                    sides = Convert.ToInt32(diceList[0]);
+                    if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception("Invalid dice value: " + diceInput); }
                 } else {
-                    dice = Convert.ToInt32(diceList[0]);
+                    if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception("Invalid dice value: " + diceInput); }
                     if (!Int32.TryParse(diceList[1], out sides)) {
                         string[] sideList = diceList[1].Split('+');
-                        sides = Convert.ToInt32(sideList[0]);
-                        modifier = Convert.ToInt32(sideList[1]);
+                        if (!Int32.TryParse(sideList[0], out sides)) { throw new Exception("Invalid dice value: " + diceInput); }
+                        if (!Int32.TryParse(sideList[1], out modifier)) { throw new Exception("Invalid dice value: " + diceInput); }
                     }
                 }
             } else if (!arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {

@@ -118,7 +118,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public static bool IsValidAssociativeKey(DreamValue key) {
-            return key != null && (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
+            return (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
                                                                              DreamValue.DreamValueType.DreamPath |
                                                                              DreamValue.DreamValueType.DreamObject |
                                                                              DreamValue.DreamValueType.DreamResource));

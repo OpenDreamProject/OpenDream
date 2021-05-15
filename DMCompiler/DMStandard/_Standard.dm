@@ -3,6 +3,7 @@
 proc/abs(A)
 proc/animate(Object, time, loop, easing, flags)
 proc/arccos(X)
+proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
 proc/ckey(Key)

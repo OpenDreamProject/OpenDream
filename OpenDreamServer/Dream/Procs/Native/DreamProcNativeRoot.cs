@@ -353,6 +353,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(file.IsType(DreamValueType.DreamResource) ? 1 : 0);
         }
+        
+        [DreamProc("islist")]
+        [DreamProcParameter("Object")]
+        public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            bool isList = arguments.GetArgument(0, "Object").TryGetValueAsDreamList(out _);
+            return new DreamValue(isList ? 1 : 0);
+        }
 
         [DreamProc("isloc")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
@@ -549,6 +556,40 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             throw new Exception("Cannot check length of " + value + "");
+        }
+        
+        [DreamProc("list2params")]
+        [DreamProcParameter("List")]
+        public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) throw new ArgumentException("list2params was passed a non-list");
+            
+            StringBuilder paramBuilder = new StringBuilder();
+            
+            if (list.IsAssociative()) {
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+                foreach (KeyValuePair<DreamValue, DreamValue> entry in associativeValues) {
+                    if (entry.Value == DreamValue.Null)
+                    {
+                        paramBuilder.Append(entry.Key.Value);
+                        paramBuilder.Append('&');
+                    } else {
+                        paramBuilder.Append($"{entry.Key.Value}={entry.Value.Value}");
+                        paramBuilder.Append('&');
+                    }
+                }
+            } else {
+                List<DreamValue> values = list.GetValues();
+                foreach (DreamValue val in values)
+                {
+                    paramBuilder.Append(val.Value);
+                    paramBuilder.Append('&');
+                }
+            }
+            
+            //Remove trailing &
+            paramBuilder.Remove(paramBuilder.Length-1, 1);
+            return new DreamValue(paramBuilder.ToString());
         }
 
         [DreamProc("log")]

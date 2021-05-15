@@ -102,16 +102,15 @@ namespace OpenDreamServer.Dream.Procs.Native {
             if (value.TryGetValueAsDreamList(out DreamList list))
             {
                 DreamList tmp = new DreamList();
-                for (int i = 1; i < list.GetLength(); i++)
+                foreach (DreamValue val in list.GetValues())
                 {
-                    DreamValue val = list.GetValues()[i];
-                    tmp.AddValue(new DreamValue((float)Math.Clamp(val.GetValueAsNumber(), lVal, hVal)));
+                    tmp.AddValue(new DreamValue(Math.Clamp(val.GetValueAsNumber(), lVal, hVal)));
                 }
                 return new DreamValue(tmp);
             }
             else
             {
-                return new DreamValue((float)Math.Clamp(value.GetValueAsNumber(), lVal, hVal));
+                return new DreamValue(Math.Clamp(value.GetValueAsNumber(), lVal, hVal));
             }
         }
 

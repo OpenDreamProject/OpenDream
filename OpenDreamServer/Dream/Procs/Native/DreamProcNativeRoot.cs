@@ -736,6 +736,51 @@ namespace OpenDreamServer.Dream.Procs.Native {
             return new DreamValue(view);
         }
 
+        [DreamProc("oviewers")]
+        [DreamProcParameter("Depth", Type = DreamValueType.Integer)]
+        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_oviewers(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
+            DreamValue depthValue = new DreamValue(5);
+            DreamObject center = usr;
+
+            //Arguments are optional and can be passed in any order
+            if (arguments.ArgumentCount > 0) {
+                DreamValue firstArgument = arguments.GetArgument(0, "Depth");
+
+                if (firstArgument.Type == DreamValueType.DreamObject) {
+                    center = firstArgument.GetValueAsDreamObject();
+
+                    if (arguments.ArgumentCount > 1) {
+                        depthValue = arguments.GetArgument(1, "Center");
+                    }
+                } else {
+                    depthValue = firstArgument;
+
+                    if (arguments.ArgumentCount > 1) {
+                        center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+                    }
+                }
+            }
+
+            DreamList view = new DreamList();
+            int depth = (depthValue.Type == DreamValueType.Integer) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
+            int centerX = center.GetVariable("x").GetValueAsInteger();
+            int centerY = center.GetVariable("y").GetValueAsInteger();
+
+            foreach (DreamObject mob in DreamMetaObjectMob.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (mobX == centerX && mobY == centerY) continue;
+                
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    view.AddValue(new DreamValue(mob));
+                }
+            }
+
+            return new DreamValue(view);
+        }
+        
         public static DreamList params2list(string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);

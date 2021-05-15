@@ -48,6 +48,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_oviewers);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_params2list);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_pick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_prob);

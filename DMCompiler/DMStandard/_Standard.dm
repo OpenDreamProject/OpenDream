@@ -43,6 +43,7 @@ proc/md5(T)
 proc/min(A)
 proc/num2text(N, Digits, Radix)
 proc/oview(Dist = 5, Center = usr)
+proc/oviewers(Depth = 5, Center = usr)
 proc/params2list(Params)
 proc/pick(Val1)
 proc/prob(P)
@@ -134,15 +135,6 @@ proc/orange(Dist = 5, var/atom/Center = usr)
 				orange.Add(t.contents)
 
 	return orange
-	
-proc/oviewers(Depth = world.view, atom/Center=usr)
-    var/list/viewers = viewers(Depth, Center)
-    
-    for(var/atom/viewer as anything in viewers)
-        if(viewer.x == Center.x && viewer.y == Center.y)
-            viewers -= viewer
-    
-    return viewers
 
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null

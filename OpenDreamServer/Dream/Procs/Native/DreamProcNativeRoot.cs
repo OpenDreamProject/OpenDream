@@ -125,7 +125,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_cos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue xValue = arguments.GetArgument(0, "X");
             float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
-            double rad = x * Math.PI / 180;
+            double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Cos(rad));
         }
@@ -743,7 +743,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             foreach (string queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
-                string queryValue = queryValues[queryValues.Length - 1]; //Use the last appearance of the key in the query
+                string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
 
                 if (queryKey != null) {
                     list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
@@ -892,7 +892,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_sin(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue xValue = arguments.GetArgument(0, "X");
             float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
-            double rad = x * Math.PI / 180;
+            double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Sin(rad));
         }
@@ -1005,6 +1005,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             return new DreamValue(1); //TODO: Know when the client is looking at the panel
+        }
+        
+        [DreamProc("tan")]
+        [DreamProcParameter("X", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_tan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue xValue = arguments.GetArgument(0, "X");
+            float x = (xValue.Value == null) ? 0 : xValue.GetValueAsNumber();
+            double rad = x * (Math.PI / 180);
+
+            return new DreamValue((float)Math.Tan(rad));
         }
 
         [DreamProc("text")]

@@ -30,3 +30,6 @@
 
 	proc/Reboot()
 		CRASH("/world.Reboot() is not implemented")
+		
+	proc/Repop()
+		CRASH("/world.Repop() will not be implemented")

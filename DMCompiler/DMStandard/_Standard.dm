@@ -217,6 +217,10 @@ proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
 
 	return get_step(Ref, dir)
 
+proc/hearers(Depth = world.view, Center = usr)
+	//TODO: Actual cursed hearers implementation
+	return viewers(Depth, Center)
+
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 	Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 

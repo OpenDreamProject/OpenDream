@@ -892,7 +892,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("sides", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_roll(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             int dice = 1;
-            int sides = 0;
+            int sides;
             int modifier = 0;
             if (arguments.ArgumentCount == 1) {
                 string[] diceList = arguments.GetArgument(0, "ndice").GetValueAsString().Split('d');

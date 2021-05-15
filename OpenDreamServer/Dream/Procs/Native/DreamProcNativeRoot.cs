@@ -81,19 +81,28 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
         
         [DreamProc("clamp")]
-        [DreamProcParameter("Value", Type = DreamValueType.Number)]
+        [DreamProcParameter("Value")]
         [DreamProcParameter("Low", Type = DreamValueType.Number)]
         [DreamProcParameter("High", Type = DreamValueType.Number)]
         public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-
-            DreamValue iVal = arguments.GetArgument(0, "Value");
             DreamValue lVal = arguments.GetArgument(1, "Low");
             DreamValue hVal = arguments.GetArgument(2, "High");
 
-            float iValue = (iVal.Value == null) ? 0 : iVal.GetValueAsNumber();
+            arguments.GetArgument(0, "Value").TryGetValueAsDreamList(out DreamList iVal);
+            DreamList iValues = iVal.CreateCopy();
             float lowValue = (lVal.Value == null) ? 0 : lVal.GetValueAsNumber();
             float highValue = (hVal.Value == null) ? 0 : hVal.GetValueAsNumber();
-            return new DreamValue((float)Math.Clamp(iValue, lowValue, highValue));
+
+            DreamList Values = new DreamList();
+
+            foreach(DreamValue val in iValues.GetValues()) {
+                DreamValue tmp = new DreamValue(Math.Clamp(val.GetValueAsFloat(), lowValue, highValue));
+                Values.AddValue(tmp);
+            }
+            if(Values.GetLength() == 1) {
+                return Values.GetValues()[0];
+            }
+            return new DreamValue(Values);
         }
 
         [DreamProc("ckey")]

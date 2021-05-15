@@ -891,20 +891,23 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("ndice", Type = DreamValueType.Integer | DreamValueType.String)]
         [DreamProcParameter("sides", Type = DreamValueType.Integer)]
         public static DreamValue NativeProc_roll(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            int dice = 0;
+            int dice = 1;
             int sides = 0;
             int modifier = 0;
-            string diceString;
-            if (arguments.ArgumentCount == 1 && arguments.GetArgument(0, "ndice").TryGetValueAsString(out diceString)) {
-                string[] diceList = diceString.Split('d');
-                if (diceList.Length < 2) { return new DreamValue(0); }
-                dice = Convert.ToInt32(diceList[0]);
-                try {
-                    sides = Convert.ToInt32(diceList[1]);
-                } catch (FormatException) {
-                    string[] sideList = diceList[1].Split('+');
-                    sides = Convert.ToInt32(sideList[0]);
-                    modifier = Convert.ToInt32(sideList[1]);
+            if (arguments.ArgumentCount == 1) {
+                string[] diceList = arguments.GetArgument(0, "ndice").GetValueAsString().Split('d');
+                if (diceList.Length < 2) {
+                    sides = Convert.ToInt32(diceList[0]);
+                } else {
+                    dice = Convert.ToInt32(diceList[0]);
+                    try {
+                        sides = Convert.ToInt32(diceList[1]);
+                    }
+                    catch (FormatException) {
+                        string[] sideList = diceList[1].Split('+');
+                        sides = Convert.ToInt32(sideList[0]);
+                        modifier = Convert.ToInt32(sideList[1]);
+                    }
                 }
             } else if (!arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);

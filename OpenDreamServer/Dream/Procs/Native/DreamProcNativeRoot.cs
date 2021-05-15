@@ -893,16 +893,23 @@ namespace OpenDreamServer.Dream.Procs.Native {
         public static DreamValue NativeProc_roll(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             int dice = 0;
             int sides = 0;
+            int modifier = 0;
             string diceString;
             if (arguments.ArgumentCount == 1 && arguments.GetArgument(0, "ndice").TryGetValueAsString(out diceString)) {
-                string[] diceList = diceString.Split("d");
+                string[] diceList = diceString.Split('d');
                 if (diceList.Length < 2) { return new DreamValue(0); }
                 dice = Convert.ToInt32(diceList[0]);
-                sides = Convert.ToInt32(diceList[1]);
+                try {
+                    sides = Convert.ToInt32(diceList[1]);
+                } catch (FormatException) {
+                    string[] sideList = diceList[1].Split('+');
+                    sides = Convert.ToInt32(sideList[0]);
+                    modifier = Convert.ToInt32(sideList[1]);
+                }
             } else if (!arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);
             }
-            float total = 0;
+            float total = modifier; // Adds the modifier to start with
             for (int i = 0; i < dice; i++) {
                 total += new Random().Next(1, sides);
             }

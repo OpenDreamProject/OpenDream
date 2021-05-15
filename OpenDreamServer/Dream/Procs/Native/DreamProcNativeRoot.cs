@@ -6,7 +6,6 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Math;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -85,11 +84,16 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("Value", Type = DreamValueType.Number)]
         [DreamProcParameter("Low", Type = DreamValueType.Number)]
         [DreamProcParameter("High", Type = DreamValueType.Number)]
-        public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue iValue = arguments.GetArgument(0, "Value");
-            DreamValue lowValue = arguments.GetArgument(1, "Low");
-            DreamValue highValue = arguments.GetArgument(2, "High");
-            return Math.Clamp(iValue, lowValue, highValue);
+        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+
+            DreamValue iVal = arguments.GetArgument(0, "Value");
+            DreamValue lVal = arguments.GetArgument(1, "Low");
+            DreamValue hVal = arguments.GetArgument(2, "High");
+
+            float iValue = (iVal.Value == null) ? 0 : iVal.GetValueAsNumber();
+            float lowValue = (lVal.Value == null) ? 0 : lVal.GetValueAsNumber();
+            float highValue = (hVal.Value == null) ? 0 : hVal.GetValueAsNumber();
+            return new DreamValue((float)Math.Clamp(iValue, lowValue, highValue));
         }
 
         [DreamProc("ckey")]

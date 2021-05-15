@@ -67,19 +67,16 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public virtual DreamValue GetValue(DreamValue key) {
-            if (key == DreamValue.Null) return DreamValue.Null; //TODO: Null key
+            if (key == DreamValue.Null) // x = List[null]
+                key = new(String.Empty);
 
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
-            } else if (IsValidAssociativeKey(key)) {
-                if (_associativeValues.TryGetValue(key, out DreamValue value)) {
-                    return value;
-                } else {
-                    return DreamValue.Null;
-                }
-            } else {
-                throw new ArgumentException("Invalid index " + key);
             }
+            if (IsValidAssociativeKey(key)) {
+                return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
+            }
+            throw new ArgumentException("Invalid index " + key);
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
@@ -87,6 +84,8 @@ namespace OpenDreamServer.Dream.Objects {
 
             lock (_listLock) {
                 if (IsValidAssociativeKey(key)) {
+                    if (key == DreamValue.Null) // List[null] = x
+                        key = new(String.Empty);
                     if (!ContainsValue(key)) _values.Add(key);
 
                     _associativeValues[key] = value;
@@ -119,10 +118,10 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public static bool IsValidAssociativeKey(DreamValue key) {
-            return key.Value != null && key.IsType( DreamValue.DreamValueType.String |
-                                                    DreamValue.DreamValueType.DreamPath |
-                                                    DreamValue.DreamValueType.DreamObject |
-                                                    DreamValue.DreamValueType.DreamResource);
+            return key != null && (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
+                                                                             DreamValue.DreamValueType.DreamPath |
+                                                                             DreamValue.DreamValueType.DreamObject |
+                                                                             DreamValue.DreamValueType.DreamResource));
         }
 
         //Does not include associations

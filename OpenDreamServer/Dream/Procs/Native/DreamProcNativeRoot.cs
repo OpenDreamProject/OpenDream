@@ -521,8 +521,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 if (list.IsAssociative()) {
                     Dictionary<object, object> jsonObject = new();
 
+                    // Init with capacity to avoid resizing - ex. 1 elem is associative but the rest are non-assoc.
+                    List<DreamValue> doneElements = new(list.GetLength()-1);
+
                     foreach (KeyValuePair<DreamValue, DreamValue> listValue in list.GetAssociativeValues()) {
                         jsonObject.Add(listValue.Key.Stringify(), CreateJsonElementFromValue(listValue.Value));
+                        doneElements.Add(listValue.Key);
+                    }
+                    // For elements which aren't associated with anything
+                    foreach (DreamValue nonAssoc in list.GetValues()) {
+                        if (!doneElements.Contains(nonAssoc))
+                            jsonObject.Add(CreateJsonElementFromValue(nonAssoc), "");
                     }
 
                     return jsonObject;

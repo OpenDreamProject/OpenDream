@@ -179,6 +179,7 @@ namespace OpenDreamShared.Compiler.DM {
     class DMASTProcDefinition : DMASTStatement {
         public DreamPath? ObjectPath;
         public string Name;
+        public bool IsOverride = false;
         public bool IsVerb = false;
         public DMASTDefinitionParameter[] Parameters;
         public DMASTProcBlockInner Body;
@@ -190,6 +191,7 @@ namespace OpenDreamShared.Compiler.DM {
                 procElementIndex = path.FindElement("verb");
 
                 if (procElementIndex != -1) IsVerb = true;
+                else IsOverride = true;
             }
 
             if (procElementIndex != -1) path = path.RemoveElement(procElementIndex);

@@ -55,8 +55,8 @@ namespace DMCompiler.DM {
 
         public bool HasProc(string name) {
             if (Procs.ContainsKey(name)) return true;
-            else if (Parent != null) return Parent.HasProc(name);
-            else return false;
+            
+            return Parent?.HasProc(name) ?? false;
         }
         
         public DMVariable GetGlobalVariable(string name) {

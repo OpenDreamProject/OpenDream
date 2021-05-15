@@ -9,7 +9,7 @@
 	var/next
 	var/text
 
-	proc/New(pattern, flags)
+	New(pattern, flags)
 		if (istype(pattern, /regex))
 			var/regex/Regex = pattern
 

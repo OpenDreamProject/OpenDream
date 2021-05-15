@@ -12,7 +12,7 @@
 	var/color = "#FFFFFF"
 	var/alpha = 255
 
-	proc/New(icon, loc, icon_state, layer, dir)
+	New(icon, loc, icon_state, layer, dir)
 		src.icon = icon
 		if (!istext(loc))
 			if (loc != null) src.loc = loc

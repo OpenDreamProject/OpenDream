@@ -92,6 +92,10 @@ namespace DMCompiler.DM.Visitors {
                 dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
             }
 
+            if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
+                throw new Exception("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+            }
+
             DMProc proc = new DMProc(procDefinition);
             
             dmObject.AddProc(procName, proc);

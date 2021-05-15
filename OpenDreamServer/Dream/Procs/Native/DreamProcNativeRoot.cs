@@ -900,10 +900,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     sides = Convert.ToInt32(diceList[0]);
                 } else {
                     dice = Convert.ToInt32(diceList[0]);
-                    try {
-                        sides = Convert.ToInt32(diceList[1]);
-                    }
-                    catch (FormatException) {
+                    if (!Int32.TryParse(diceList[1], out sides)) {
                         string[] sideList = diceList[1].Split('+');
                         sides = Convert.ToInt32(sideList[0]);
                         modifier = Convert.ToInt32(sideList[1]);

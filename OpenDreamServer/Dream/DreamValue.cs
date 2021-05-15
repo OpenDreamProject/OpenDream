@@ -6,6 +6,7 @@ using System;
 
 namespace OpenDreamServer.Dream {
     struct DreamValue {
+        [Flags]
         public enum DreamValueType {
             String = 1,
             Integer = 2,

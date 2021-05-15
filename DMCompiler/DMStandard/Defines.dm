@@ -38,3 +38,7 @@
 #define FORWARD_STEPS 1
 #define SLIDE_STEPS 2
 #define SYNC_STEPS 3
+
+//world.system_type
+#define UNIX 0
+#define MS_WINDOWS 1

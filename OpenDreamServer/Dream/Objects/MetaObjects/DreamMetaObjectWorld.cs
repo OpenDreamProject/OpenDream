@@ -18,7 +18,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
             if (fps.Value != null) {
                 dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / fps.GetValueAsInteger()));
             }
-
+            
             //New() is not called here
         }
 
@@ -60,6 +60,14 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
                 return new DreamValue(Program.DreamMap.Levels.Count);
             } else if (variableName == "address") {
                 return DreamValue.Null;
+            } else if (variableName == "system_type") {
+                //system_type value should match the defines in Defines.dm
+                if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other) {
+                    return new DreamValue(0);
+                }
+                //Windows
+                return new DreamValue(1);
+                
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

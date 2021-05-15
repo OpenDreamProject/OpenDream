@@ -24,6 +24,8 @@
 	var/address
 	var/status
 	var/list/params = null
+	
+	var/system_type
 
 	proc/New()
 	proc/Del()

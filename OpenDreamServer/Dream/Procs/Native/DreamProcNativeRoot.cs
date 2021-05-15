@@ -886,6 +886,38 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
         }
+        
+        [DreamProc("roll")]
+        [DreamProcParameter("ndice", Type = DreamValueType.Integer | DreamValueType.String)]
+        [DreamProcParameter("sides", Type = DreamValueType.Integer)]
+        public static DreamValue NativeProc_roll(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            int dice = 1;
+            int sides;
+            int modifier = 0;
+            if (arguments.ArgumentCount == 1) {
+                string diceInput = arguments.GetArgument(0, "ndice").GetValueAsString();
+                string[] diceList = diceInput.Split('d');
+                if (diceList.Length < 2) {
+                    if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception("Invalid dice value: " + diceInput); }
+                } else {
+                    if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception("Invalid dice value: " + diceInput); }
+                    if (!Int32.TryParse(diceList[1], out sides)) {
+                        string[] sideList = diceList[1].Split('+');
+                        if (!Int32.TryParse(sideList[0], out sides)) { throw new Exception("Invalid dice value: " + diceInput); }
+                        if (!Int32.TryParse(sideList[1], out modifier)) { throw new Exception("Invalid dice value: " + diceInput); }
+                    }
+                }
+            } else if (!arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
+                return new DreamValue(0);
+            }
+            float total = modifier; // Adds the modifier to start with
+            Random random = new Random();
+            for (int i = 0; i < dice; i++) {
+                total += random.Next(1, sides + 1);
+            }
+
+            return new DreamValue(total);
+        }
 
         [DreamProc("sin")]
         [DreamProcParameter("X", Type = DreamValueType.Number)]

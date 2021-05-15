@@ -79,6 +79,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(Convert.ToChar(ascii).ToString());
         }
+        
+        [DreamProc("clamp")]
+        [DreamProcParameter("Value", Type = DreamValueType.Number)]
+        [DreamProcParameter("Low", Type = DreamValueType.Number)]
+        [DreamProcParameter("High", Type = DreamValueType.Number)]
+        public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue iValue = arguments.GetArgument(0, "Value");
+            DreamValue lowValue = arguments.GetArgument(1, "Low");
+            DreamValue highValue = arguments.GetArgument(2, "High");
+            return Math.Clamp(iValue, lowValue, highValue);
+        }
 
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]

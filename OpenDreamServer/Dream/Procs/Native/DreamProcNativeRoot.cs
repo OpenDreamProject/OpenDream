@@ -566,20 +566,20 @@ namespace OpenDreamServer.Dream.Procs.Native {
             
             StringBuilder paramBuilder = new StringBuilder();
             
+            List<DreamValue> values = list.GetValues();
             if (list.IsAssociative()) {
                 Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
-                foreach (KeyValuePair<DreamValue, DreamValue> entry in associativeValues) {
-                    if (entry.Value == DreamValue.Null)
+                foreach (DreamValue entry in values) {
+                    if (associativeValues.ContainsKey(entry))
                     {
-                        paramBuilder.Append(entry.Key.Value);
+                        paramBuilder.Append($"{entry.Value}={associativeValues[entry].Value}");
                         paramBuilder.Append('&');
                     } else {
-                        paramBuilder.Append($"{entry.Key.Value}={entry.Value.Value}");
+                        paramBuilder.Append(entry.Value);
                         paramBuilder.Append('&');
                     }
                 }
             } else {
-                List<DreamValue> values = list.GetValues();
                 foreach (DreamValue val in values)
                 {
                     paramBuilder.Append(val.Value);

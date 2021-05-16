@@ -28,7 +28,7 @@ namespace OpenDreamClient.Interface.Elements {
 
             this.Children.Add(WebView);
             this.Children.Add(_loadingLabel);
-            WebView.CoreWebView2Ready += OnWebView2Ready;
+            WebView.CoreWebView2InitializationCompleted += OnWebView2InitializationCompleted;
             WebView.NavigationStarting += OnWebViewNavigationStarting;
             WebView.EnsureCoreWebView2Async();
         }
@@ -51,7 +51,7 @@ namespace OpenDreamClient.Interface.Elements {
             WebView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
         }
 
-        private void OnWebView2Ready(object sender, EventArgs e) {
+        private void OnWebView2InitializationCompleted(object sender, EventArgs e) {
             _webViewReady = true;
 
             this.Children.Remove(_loadingLabel);

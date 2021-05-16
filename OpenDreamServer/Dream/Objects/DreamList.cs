@@ -67,19 +67,13 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public virtual DreamValue GetValue(DreamValue key) {
-            if (key == DreamValue.Null) return DreamValue.Null; //TODO: Null key
-
             if (key.Type == DreamValue.DreamValueType.Integer) {
                 return _values[key.GetValueAsInteger() - 1]; //1-indexed
-            } else if (IsValidAssociativeKey(key)) {
-                if (_associativeValues.TryGetValue(key, out DreamValue value)) {
-                    return value;
-                } else {
-                    return DreamValue.Null;
-                }
-            } else {
-                throw new ArgumentException("Invalid index " + key);
             }
+            if (IsValidAssociativeKey(key)) {
+                return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
+            }
+            throw new ArgumentException("Invalid index " + key);
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
@@ -119,10 +113,10 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public static bool IsValidAssociativeKey(DreamValue key) {
-            return key.Value != null && key.IsType( DreamValue.DreamValueType.String |
-                                                    DreamValue.DreamValueType.DreamPath |
-                                                    DreamValue.DreamValueType.DreamObject |
-                                                    DreamValue.DreamValueType.DreamResource);
+            return (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
+                                                         DreamValue.DreamValueType.DreamPath |
+                                                         DreamValue.DreamValueType.DreamObject |
+                                                         DreamValue.DreamValueType.DreamResource));
         }
 
         //Does not include associations

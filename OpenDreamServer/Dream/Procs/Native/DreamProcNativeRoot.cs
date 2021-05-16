@@ -519,24 +519,19 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return value.GetValueAsPath().ToString();
             } else if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative()) {
-                    Dictionary<object, object> jsonObject = new();
+                    Dictionary<Object, Object> jsonObject = new(list.GetLength());
+                    Dictionary<DreamValue, DreamValue> assocValues = list.GetAssociativeValues();
 
-                    // Init with capacity to avoid resizing - ex. 1 elem is associative but the rest are non-assoc.
-                    List<DreamValue> doneElements = new(list.GetLength()-1);
-
-                    foreach (KeyValuePair<DreamValue, DreamValue> listValue in list.GetAssociativeValues()) {
-                        jsonObject.Add(listValue.Key.Stringify(), CreateJsonElementFromValue(listValue.Value));
-                        doneElements.Add(listValue.Key);
+                    foreach (DreamValue listValue in list.GetValues()) {
+                        if (assocValues.ContainsKey(listValue)) {
+                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(assocValues[listValue]));
+                        } else {
+                            jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
+                        }
                     }
-                    // For elements which aren't associated with anything
-                    foreach (DreamValue nonAssoc in list.GetValues()) {
-                        if (!doneElements.Contains(nonAssoc))
-                            jsonObject.Add(CreateJsonElementFromValue(nonAssoc), "");
-                    }
-
                     return jsonObject;
                 } else {
-                    List<object> jsonObject = new();
+                    List<Object> jsonObject = new();
 
                     foreach (DreamValue listValue in list.GetValues()) {
                         jsonObject.Add(CreateJsonElementFromValue(listValue));

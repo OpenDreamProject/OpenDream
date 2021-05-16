@@ -519,15 +519,19 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 return value.GetValueAsPath().ToString();
             } else if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative()) {
-                    Dictionary<object, object> jsonObject = new();
+                    Dictionary<Object, Object> jsonObject = new(list.GetLength());
+                    Dictionary<DreamValue, DreamValue> assocValues = list.GetAssociativeValues();
 
-                    foreach (KeyValuePair<DreamValue, DreamValue> listValue in list.GetAssociativeValues()) {
-                        jsonObject.Add(listValue.Key.Stringify(), CreateJsonElementFromValue(listValue.Value));
+                    foreach (DreamValue listValue in list.GetValues()) {
+                        if (assocValues.ContainsKey(listValue)) {
+                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(assocValues[listValue]));
+                        } else {
+                            jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
+                        }
                     }
-
                     return jsonObject;
                 } else {
-                    List<object> jsonObject = new();
+                    List<Object> jsonObject = new();
 
                     foreach (DreamValue listValue in list.GetValues()) {
                         jsonObject.Add(CreateJsonElementFromValue(listValue));

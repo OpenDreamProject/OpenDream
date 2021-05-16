@@ -562,7 +562,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         [DreamProcParameter("List")]
         public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) throw new ArgumentException("list2params was passed a non-list");
+            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) return new DreamValue(string.Empty);
             
             StringBuilder paramBuilder = new StringBuilder();
             
@@ -571,10 +571,10 @@ namespace OpenDreamServer.Dream.Procs.Native {
             foreach (DreamValue entry in values) {
                 if (associativeValues.ContainsKey(entry))
                 {
-                    paramBuilder.Append($"{entry.Value}={associativeValues[entry].Value}");
+                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(associativeValues[entry].Value.ToString())}");
                     paramBuilder.Append('&');
                 } else {
-                    paramBuilder.Append(entry.Value);
+                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Value.ToString()));
                     paramBuilder.Append('&');
                 }
             }

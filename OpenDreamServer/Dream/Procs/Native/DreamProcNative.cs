@@ -33,6 +33,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isarea);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isfile);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_islist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismob);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnull);
@@ -43,6 +44,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_list2params);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_log);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);

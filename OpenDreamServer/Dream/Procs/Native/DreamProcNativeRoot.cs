@@ -386,6 +386,13 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             return new DreamValue(file.IsType(DreamValueType.DreamResource) ? 1 : 0);
         }
+        
+        [DreamProc("islist")]
+        [DreamProcParameter("Object")]
+        public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            bool isList = arguments.GetArgument(0, "Object").TryGetValueAsDreamList(out _);
+            return new DreamValue(isList ? 1 : 0);
+        }
 
         [DreamProc("isloc")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
@@ -586,6 +593,32 @@ namespace OpenDreamServer.Dream.Procs.Native {
             }
 
             throw new Exception("Cannot check length of " + value + "");
+        }
+        
+        [DreamProc("list2params")]
+        [DreamProcParameter("List")]
+        public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) return new DreamValue(string.Empty);
+            
+            StringBuilder paramBuilder = new StringBuilder();
+            
+            List<DreamValue> values = list.GetValues();
+            Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+            foreach (DreamValue entry in values) {
+                if (associativeValues.ContainsKey(entry))
+                {
+                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(associativeValues[entry].Value.ToString())}");
+                    paramBuilder.Append('&');
+                } else {
+                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Value.ToString()));
+                    paramBuilder.Append('&');
+                }
+            }
+            
+            //Remove trailing &
+            paramBuilder.Remove(paramBuilder.Length-1, 1);
+            return new DreamValue(paramBuilder.ToString());
         }
 
         [DreamProc("log")]

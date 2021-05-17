@@ -13,16 +13,16 @@ namespace OpenDreamServer.Dream.Procs {
 
     delegate DreamValue TrivialNativeImpl(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
-    abstract class Proc {
+    abstract class DreamProc {
         public string Name { get; }
 
         // This is currently publically settable because the loading code doesn't know what our super is until after we are instantiated
-        public Proc SuperProc { set; get; }
+        public DreamProc SuperProc { set; get; }
 
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected Proc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
             SuperProc = superProc;
             ArgumentNames = argumentNames ?? new();
@@ -40,10 +40,10 @@ namespace OpenDreamServer.Dream.Procs {
         }
     }
 
-    class TrivialNativeProc : Proc {
+    class TrivialNativeProc : DreamProc {
         public TrivialNativeImpl Func { get; }
 
-        public TrivialNativeProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, TrivialNativeImpl func)
+        public TrivialNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, TrivialNativeImpl func)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             Func = func;
@@ -55,10 +55,10 @@ namespace OpenDreamServer.Dream.Procs {
         }
     }
 
-    class DMProc : Proc {
+    class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        public DMProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
@@ -78,7 +78,7 @@ namespace OpenDreamServer.Dream.Procs {
             Context = context;
         }
 
-        public abstract Proc Proc { get; }
+        public abstract DreamProc Proc { get; }
         public abstract ProcStatus Resume();
 
         // Most implementations won't require this, so give it a default
@@ -93,7 +93,7 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamProcArguments Arguments;
         
         private TrivialNativeProc _proc;
-        public override Proc Proc => _proc;
+        public override DreamProc Proc => _proc;
 
         public TrivialNativeProcState(TrivialNativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
             : base(context)
@@ -262,7 +262,7 @@ namespace OpenDreamServer.Dream.Procs {
         private int _pc = 0;
 
         private DMProc _proc;
-        public override Proc Proc => _proc;
+        public override DreamProc Proc => _proc;
 
         public DMProcState(DMProc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
             : base(context)
@@ -337,7 +337,7 @@ namespace OpenDreamServer.Dream.Procs {
             Result = value;
         }
 
-        public void Call(Proc proc, DreamObject src, DreamProcArguments arguments) {
+        public void Call(DreamProc proc, DreamObject src, DreamProcArguments arguments) {
             var state = proc.CreateState(Context, src, Usr, arguments);
             Context.PushProcState(state);
         }

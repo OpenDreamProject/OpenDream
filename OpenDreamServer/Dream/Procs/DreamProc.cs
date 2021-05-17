@@ -31,15 +31,12 @@ namespace OpenDreamServer.Dream.Procs {
 
         public abstract ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
-        // Wrapper that matches legacy call style
-        // TODO: Remove, or something.
+        // Execute this proc. This will behave as if the proc has `set waitfor = 0`
         public DreamValue Run(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
             var context = new ExecutionContext();
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
-
-            var value = context.Resume();
-            return value ?? DreamValue.Null;
+            return context.Resume();
         }
     }
 
@@ -122,7 +119,7 @@ namespace OpenDreamServer.Dream.Procs {
         private ProcState _current; 
         private Stack<ProcState> _stack = new();
 
-        public DreamValue? Resume() {
+        public DreamValue Resume() {
             if (!Program.IsMainThread) {
                 throw new InvalidOperationException();
             }
@@ -146,7 +143,8 @@ namespace OpenDreamServer.Dream.Procs {
 
                     // The context is done executing for now
                     case ProcStatus.Deferred:
-                        return null;
+                        // We return the current return value here even though it may not be the final result
+                        return _current.Result;
 
                     // Our top-most proc just called a function
                     // This means _current has changed!
@@ -156,7 +154,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            return null;
+            throw new InvalidOperationException();
         }
 
         public void PushProcState(ProcState state) {

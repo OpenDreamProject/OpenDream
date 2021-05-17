@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace OpenDreamServer {
     class Program {
         [ThreadStatic]
-        public static readonly bool IsMainThread = true;
+        public static bool IsMainThread;
 
         public static DreamCompiledJson CompiledJson = null;
         public static DreamResourceManager DreamResourceManager = null;
@@ -38,6 +38,8 @@ namespace OpenDreamServer {
         private static InterfaceDescriptor _clientInterface = null;
 
         static void Main(string[] args) {
+            IsMainThread = true;
+            
             if (args.Length < 1 || Path.GetExtension(args[0]) != ".json") {
                 Console.WriteLine("You must compile your game using DMCompiler, and supply its output as an argument");
 

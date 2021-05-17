@@ -102,8 +102,9 @@ namespace OpenDreamShared.Compiler.DM {
                 } else {
                     switch (preprocToken.Type) {
                         case TokenType.DM_Preproc_Whitespace: {
-                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) ;
-                            
+                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) {
+                            }
+
                             token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
                             break;
                         }

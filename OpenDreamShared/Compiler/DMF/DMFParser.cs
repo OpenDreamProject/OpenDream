@@ -308,7 +308,8 @@ namespace OpenDreamShared.Compiler.DMF {
                 string menuName = String();
                 Newline();
 
-                while (MenuElement()) ;
+                while (MenuElement()) {
+                }
 
                 return true;
             } else {
@@ -348,7 +349,8 @@ namespace OpenDreamShared.Compiler.DMF {
         }
 
         public void Newline() {
-            while (Check(TokenType.Newline)) ;
+            while (Check(TokenType.Newline)) {
+            }
         }
 
         public (int X, int Y)? Coordinate() {

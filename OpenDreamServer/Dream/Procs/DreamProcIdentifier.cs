@@ -59,19 +59,16 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierProc : IDreamProcIdentifier {
+        public Proc Proc;
         public DreamObject Instance;
-        public string ProcName;
 
-        private DreamValue _proc;
-
-        public DreamProcIdentifierProc(DreamProc_Old proc, DreamObject instance, string procName) {
-            _proc = new DreamValue(proc);
+        public DreamProcIdentifierProc(Proc proc, DreamObject instance) {
+            Proc = proc;
             Instance = instance;
-            ProcName = procName;
         }
 
         public DreamValue GetValue() {
-            return _proc;
+            return new DreamValue(Proc);
         }
 
         public void Assign(DreamValue value) {
@@ -102,20 +99,18 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierSelfProc : IDreamProcIdentifier {
-        public DreamProc_Old SelfProc;
-        public DreamProcInterpreter Interpreter;
+        public ProcState State;
 
-        public DreamProcIdentifierSelfProc(DreamProc_Old selfProc, DreamProcInterpreter interpreter) {
-            SelfProc = selfProc;
-            Interpreter = interpreter;
+        public DreamProcIdentifierSelfProc(ProcState state) {
+            State = state;
         }
 
         public DreamValue GetValue() {
-            return Interpreter.DefaultReturnValue;
+            return State.Result;
         }
 
         public void Assign(DreamValue value) {
-            Interpreter.DefaultReturnValue = value;
+            State.Result = value;
         }
     }
 }

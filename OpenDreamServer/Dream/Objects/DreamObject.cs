@@ -101,26 +101,29 @@ namespace OpenDreamServer.Dream.Objects {
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
         }
 
-        public DreamProc_Old GetProc(string procName) {
+        public Proc GetProc(string procName) {
             return ObjectDefinition.GetProc(procName);
         }
 
-        public bool TryGetProc(string procName, out DreamProc_Old proc) {
+        public bool TryGetProc(string procName, out Proc proc) {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
+        // Wrapper that matches legacy call style
+        // TODO: Remove
         public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
             try {
-                DreamProc_Old proc = GetProc(procName);
-
+                Proc proc = GetProc(procName);
                 return proc.Run(this, arguments, usr);
             } catch (Exception e) {
                 Console.WriteLine("Exception while running proc '" + procName + "' on object of type '" + ObjectDefinition.Type + "': " + e.Message);
+                return DreamValue.Null;
             }
-
-            return DreamValue.Null;
         }
 
+
+        // Wrapper that matches legacy call style
+        // TODO: Remove
         public DreamValue CallProc(string procName) {
             return CallProc(procName, new DreamProcArguments(null));
         }

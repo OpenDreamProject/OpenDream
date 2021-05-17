@@ -1267,7 +1267,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     DreamPath objectTypePath = typePath.AddToPath("..");
                     DreamObjectDefinition objectDefinition = Program.DreamObjectTree.GetObjectDefinitionFromPath(objectTypePath);
 
-                    foreach (KeyValuePair<string, DreamProc_Old> proc in objectDefinition.Procs) {
+                    foreach (KeyValuePair<string, Proc> proc in objectDefinition.Procs) {
                         list.AddValue(new DreamValue(proc.Key));
                     }
                 } else {

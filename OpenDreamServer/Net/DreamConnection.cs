@@ -48,7 +48,7 @@ namespace OpenDreamServer.Net {
 
         private DreamObject _mobDreamObject = null;
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
-        private Dictionary<string, DreamProc_Old> _availableVerbs = new();
+        private Dictionary<string, Proc> _availableVerbs = new();
         private Dictionary<string, List<string>> _statPanels = new();
         private string _selectedStatPanel;
 
@@ -289,7 +289,7 @@ namespace OpenDreamServer.Net {
         }
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
-            if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc_Old verb)) {
+            if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out Proc verb)) {
                 Task.Run(async () => {
                     Dictionary<String, DreamValue> arguments = new();
 

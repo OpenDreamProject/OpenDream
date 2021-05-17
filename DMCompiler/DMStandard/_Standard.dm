@@ -157,7 +157,7 @@ proc/get_step(atom/Ref, Dir)
 	if (Dir & UP) z += 1
 	else if (Dir & DOWN) z -= 1
 
-	return locate(max(x, 1), max(y, 1), max(z, 1))
+	return locate(x, y, z)
 
 proc/get_dir(atom/Loc1, atom/Loc2)
 	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0

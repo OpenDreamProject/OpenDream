@@ -270,13 +270,16 @@ namespace OpenDreamServer.Dream {
             }
         }
 
+        public bool Equals(DreamValue other) {
+            return Value == other.Value;
+        }
+
         public override bool Equals(object obj) {
             if (obj is DreamValue b) {
                 if (Value == null) return b.Value == null;
-                else return Value.Equals(b.Value);
-            } else {
-                return false;
+                return Value.Equals(b.Value);
             }
+            return false;
         }
 
         public override int GetHashCode() {

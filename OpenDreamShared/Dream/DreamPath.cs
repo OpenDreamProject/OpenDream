@@ -175,18 +175,18 @@ namespace OpenDreamShared.Dream {
             return PathString;
         }
 
-        public override bool Equals(object obj) {
-            if (obj is DreamPath otherPath) {
-                if (otherPath.Elements.Length != Elements.Length) return false;
+        public bool Equals(DreamPath other) {
+            if (other.Elements.Length != Elements.Length) return false;
 
-                for (int i = 0; i < Elements.Length; i++) {
-                    if (Elements[i] != otherPath.Elements[i]) return false;
-                }
-
-                return true;
-            } else {
-                return base.Equals(obj);
+            for (int i = 0; i < Elements.Length; i++) {
+                if (Elements[i] != other.Elements[i]) return false;
             }
+
+            return true;
+        }
+        
+        public override bool Equals(object obj) {
+            return false; // A DreamPath can only be equal to another DreamPath (see other DreamPath.Equals)
         }
 
         public override int GetHashCode() {

@@ -11,7 +11,7 @@ namespace OpenDreamServer.Dream.Procs {
         Called,
     }
 
-    delegate DreamValue TrivialNativeImpl(DreamObject src, DreamObject usr, DreamProcArguments arguments);
+    delegate DreamValue NativeProcHandler(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
     abstract class DreamProc {
         public string Name { get; }
@@ -40,10 +40,10 @@ namespace OpenDreamServer.Dream.Procs {
         }
     }
 
-    class TrivialNativeProc : DreamProc {
-        public TrivialNativeImpl Func { get; }
+    class NativeProc : DreamProc {
+        public NativeProcHandler Func { get; }
 
-        public TrivialNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, TrivialNativeImpl func)
+        public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, NativeProcHandler func)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             Func = func;
@@ -92,10 +92,10 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamObject Usr;
         public DreamProcArguments Arguments;
         
-        private TrivialNativeProc _proc;
+        private NativeProc _proc;
         public override DreamProc Proc => _proc;
 
-        public TrivialNativeProcState(TrivialNativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public TrivialNativeProcState(NativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
             : base(context)
         {
             _proc = proc;

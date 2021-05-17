@@ -59,12 +59,14 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void SetNativeProc(NativeFunc nativeProc) {
-            List<Attribute> attributes = new(nativeProc.GetInvocationList()[0].Method.GetCustomAttributes());
+        public void SetTrivialNativeProc(TrivialNativeImpl func) {
+            List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
             DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
             if (procAttribute == null) throw new ArgumentException();
 
-            Procs[procAttribute.Name] = new Proc(nativeProc);
+            // TODO: This NativeProc instance should probably include arg info.
+            var proc = new TrivialNativeProc(procAttribute.Name, null, null, null, func);
+            SetProcDefinition(procAttribute.Name, proc);
         }
 
         public Proc GetProc(string procName) {

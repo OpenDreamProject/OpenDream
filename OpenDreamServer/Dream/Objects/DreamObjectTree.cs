@@ -119,7 +119,7 @@ namespace OpenDreamServer.Dream.Objects {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
 
             if (jsonObject.InitProc != null) {
-                Proc initProc = new Proc("(init)", jsonObject.InitProc.Bytecode);
+                var initProc = new DMProc("(init)", null, null, null, jsonObject.InitProc.Bytecode);
 
                 initProc.SuperProc = treeEntry.ObjectDefinition.InitializionProc;
                 treeEntry.ObjectDefinition.InitializionProc = initProc;
@@ -229,7 +229,8 @@ namespace OpenDreamServer.Dream.Objects {
                         }
                     }
 
-                    objectDefinition.SetProcDefinition(jsonProc.Key, new Proc(jsonProc.Key, bytecode, argumentNames, argumentTypes));
+                    var proc = new DMProc(jsonProc.Key, null, argumentNames, argumentTypes, bytecode);
+                    objectDefinition.SetProcDefinition(jsonProc.Key, proc);
                 }
             }
         }

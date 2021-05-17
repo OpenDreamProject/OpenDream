@@ -11,96 +11,105 @@ namespace OpenDreamServer.Dream.Procs {
         Called,
     }
 
-    delegate DreamValue NativeFunc(DreamObject a, DreamObject b, DreamProcArguments c);
+    delegate DreamValue TrivialNativeImpl(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
-    // TODO: Interface with separate imp for DMProc and NativeProc?
-    class Proc {
-        public Proc SuperProc;
-        public readonly string Name;
-        public readonly List<string> ArgumentNames = new();
-        public readonly List<DMValueType> ArgumentTypes = new();
-        public readonly byte[] Bytecode;
-        public readonly NativeFunc Native;
+    abstract class Proc {
+        public string Name { get; }
 
-        public Proc(NativeFunc native) {
-            Name = "<native proc>";
-            Native = native;
-        }
+        // This is currently publically settable because the loading code doesn't know what our super is until after we are instantiated
+        public Proc SuperProc { set; get; }
 
-        public Proc(string name, byte[] bytecode) {
+        public List<String> ArgumentNames { get; }
+        public List<DMValueType> ArgumentTypes { get; }
+
+        protected Proc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
-            Bytecode = bytecode;
+            SuperProc = superProc;
+            ArgumentNames = argumentNames ?? new();
+            ArgumentTypes = argumentTypes ?? new();
         }
 
-        public Proc(string name, byte[] bytecode, List<string> argumentNames, List<DMValueType> argumentTypes)
-            : this(name, bytecode)
-        {
-            ArgumentNames = argumentNames;
-            ArgumentTypes = argumentTypes;
-        }
+        public abstract ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         // Wrapper that matches legacy call style
-        // TODO: Remove
-        public DreamValue Run(DreamObject instance, DreamProcArguments arguments, DreamObject usr = null) {
+        // TODO: Remove, or something.
+        public DreamValue Run(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
             var context = new ExecutionContext();
-            
-            if (Bytecode != null) {
-                context.PushNewProcState(this, instance, usr, arguments);
-            }
+            var state = CreateState(context, src, usr, arguments);
+            context.PushProcState(state);
 
             var value = context.Resume();
             return value ?? DreamValue.Null;
         }
+    }
 
-        // TODO: Remove. Should be part of an interface or something
-        public ProcState NewProcState(ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (Bytecode != null) {
-                return new DMProcState(this, context, instance, usr, arguments);
-            }
+    class TrivialNativeProc : Proc {
+        public TrivialNativeImpl Func { get; }
 
-            if (Native != null) {
-                return new NativeProcState(this, context, instance, usr, arguments);
-            }
+        public TrivialNativeProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, TrivialNativeImpl func)
+            : base(name, superProc, argumentNames, argumentTypes)
+        {
+            Func = func;
+        }
 
-            throw new InvalidOperationException();
+        public override TrivialNativeProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        {
+            return new TrivialNativeProcState(this, context, src, usr, arguments);
+        }
+    }
+
+    class DMProc : Proc {
+        public byte[] Bytecode { get; }
+
+        public DMProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
+            : base(name, superProc, argumentNames, argumentTypes)
+        {
+            Bytecode = bytecode;
+        }
+
+        public override DMProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        {
+            return new DMProcState(this, context, src, usr, arguments);
         }
     }
 
     abstract class ProcState {
-        public Proc Proc { get; }
         public ExecutionContext Context { get; }
         public DreamValue Result { set; get; } = DreamValue.Null;
         
-        public ProcState(Proc proc, ExecutionContext context) {
-            Proc = proc;
+        public ProcState(ExecutionContext context) {
             Context = context;
         }
 
-        public abstract string Name { get; }
+        public abstract Proc Proc { get; }
         public abstract ProcStatus Resume();
-        public abstract void ReturnedInto(DreamValue value);
+
+        // Most implementations won't require this, so give it a default
+        public virtual void ReturnedInto(DreamValue value) {}
     }
 
-    class NativeProcState : ProcState
+    // Used for synchronous procs that won't need to persist any state between executions (as they only execute once.)
+    class TrivialNativeProcState : ProcState
     {
-        public override string Name => "<native proc>";
-
-        public DreamObject Instance;
+        public DreamObject Src;
         public DreamObject Usr;
         public DreamProcArguments Arguments;
         
+        private TrivialNativeProc _proc;
+        public override Proc Proc => _proc;
 
-        public NativeProcState(Proc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-            : base(proc, context)
+        public TrivialNativeProcState(TrivialNativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+            : base(context)
         {
-            Instance = instance;
+            _proc = proc;
+            Src = src;
             Usr = usr;
             Arguments = arguments;
         }
 
         public override ProcStatus Resume()
         {
-            Result = new DreamValue("Hello from native");
+            Result = _proc.Func.Invoke(Src, Usr, Arguments);
             return ProcStatus.Returned;
         }
 
@@ -146,20 +155,14 @@ namespace OpenDreamServer.Dream.Procs {
             return null;
         }
 
-        public void PushNativeProcState(NativeProcState state) {
+        public void PushProcState(ProcState state) {
             if (_current != null) {
                 _stack.Push(_current);
             }
             _current = state;
         }
 
-        public void PushNewProcState(Proc proc, DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (_current != null) {
-                _stack.Push(_current);
-            }
-            _current = proc.NewProcState(this, instance, usr, arguments);
-        }
-
+        // TODO: Remove
         public void PushCopiedDMProcState(DMProcState state) {
             if (_current != null) {
                 _stack.Push(_current);
@@ -256,8 +259,6 @@ namespace OpenDreamServer.Dream.Procs {
             DMOpcodeHandlers.Spawn
         };
 
-        public override string Name => Proc.Name;
-
         public readonly DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
@@ -266,9 +267,13 @@ namespace OpenDreamServer.Dream.Procs {
 
         private int _pc = 0;
 
-        public DMProcState(Proc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-            : base(proc, context)
+        private DMProc _proc;
+        public override Proc Proc => _proc;
+
+        public DMProcState(DMProc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+            : base(context)
         {
+            _proc = proc;
             Instance = instance;
             Usr = usr;
             Arguments = arguments;
@@ -289,12 +294,13 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public DMProcState(DMProcState other, ExecutionContext context)
-            : base(other.Proc, context)
+            : base(context)
         {
             if (other.EnumeratorStack.Count > 0) {
                 throw new NotImplementedException();
             }
 
+            _proc = other._proc;
             Instance = other.Instance;
             Usr = other.Usr;
             Arguments = other.Arguments;
@@ -307,8 +313,8 @@ namespace OpenDreamServer.Dream.Procs {
 
         public override ProcStatus Resume()
         {
-            while (_pc < Proc.Bytecode.Length) {
-                int opcode = Proc.Bytecode[_pc++];
+            while (_pc < _proc.Bytecode.Length) {
+                int opcode = _proc.Bytecode[_pc++];
 
                 var status = _opcodeHandlers[opcode].Invoke(this);
 
@@ -337,8 +343,9 @@ namespace OpenDreamServer.Dream.Procs {
             Result = value;
         }
 
-        public void Call(Proc proc, DreamObject instance, DreamProcArguments arguments) {
-            Context.PushNewProcState(proc, instance, Usr, arguments);
+        public void Call(Proc proc, DreamObject src, DreamProcArguments arguments) {
+            var state = proc.CreateState(Context, src, Usr, arguments);
+            Context.PushProcState(state);
         }
 
         public ExecutionContext Spawn() {
@@ -385,18 +392,18 @@ namespace OpenDreamServer.Dream.Procs {
 
         #region Operands
         public int ReadByte() {
-            return Proc.Bytecode[_pc++];
+            return _proc.Bytecode[_pc++];
         }
 
         public int ReadInt() {
-            int value = BitConverter.ToInt32(Proc.Bytecode, _pc);
+            int value = BitConverter.ToInt32(_proc.Bytecode, _pc);
             _pc += 4;
 
             return value;
         }
 
         public float ReadFloat() {
-            float value = BitConverter.ToSingle(Proc.Bytecode, _pc);
+            float value = BitConverter.ToSingle(_proc.Bytecode, _pc);
             _pc += 4;
 
             return value;

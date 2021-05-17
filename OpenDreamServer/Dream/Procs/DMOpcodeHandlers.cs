@@ -1065,14 +1065,14 @@ namespace OpenDreamServer.Dream.Procs {
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             float delay = state.PopDreamValue().GetValueAsNumber();
+            int delayMilliseconds = (int)(delay * 100);
 
+            // TODO: If delay negative, do a switcharoo
             ExecutionContext newContext = state.Spawn();
+            SleepQueue.Push(DateTime.Now.AddMilliseconds(delayMilliseconds), newContext);
 
             state.Jump(jumpTo);
-
-            // TODO: Schedule new state to run
-            // TODO: If delay negative, do a switcharoo
-            throw new NotImplementedException();
+            return null;        
         }
         #endregion Flow
 

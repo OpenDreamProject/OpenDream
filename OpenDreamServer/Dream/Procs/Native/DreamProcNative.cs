@@ -5,53 +5,6 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamServer.Dream.Procs.Native {
-    class SleepProc : Proc
-    {
-        public static SleepProc Instance = new();
-
-        class State : ProcState
-        {
-            // TODO: Using DateTime here is probably terrible.
-            public DateTime WakeTime { get; }
-            private bool _beganSleep;
-
-            public override Proc Proc => SleepProc.Instance;
-
-            public State(ExecutionContext context, DateTime wakeTime)
-                : base(context)
-            {
-                WakeTime = wakeTime;
-            }
-
-            public override ProcStatus Resume()
-            {
-                if (!_beganSleep) {
-                    _beganSleep = true;
-                    // TODO: Move context to sleeper list
-                    return ProcStatus.Deferred;
-                }
-
-                return ProcStatus.Returned;
-            }
-        }
-
-        private SleepProc()
-            // TODO: pass argument list?
-            : base("sleep", null, null, null)
-        {}
-
-        public override ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
-            float delay = arguments.GetArgument(0, "Delay").GetValueAsNumber();
-            int delayMilliseconds = (int)(delay * 100);
-
-            var wakeTime = DateTime.Now;
-            wakeTime.AddMilliseconds(delayMilliseconds);
-
-            return new State(context, wakeTime);
-        }
-    }
-
     static class DreamProcNative {
         public static void SetupNativeProcs() {
             DreamObjectDefinition root = Program.DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root);
@@ -113,7 +66,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_roll);
             root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_round);
             root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_sin);
-            root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             root.SetProcDefinition("sleep", SleepProc.Instance);
             root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             root.SetTrivialNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);

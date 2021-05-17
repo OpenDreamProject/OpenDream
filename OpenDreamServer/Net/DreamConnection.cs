@@ -177,12 +177,11 @@ namespace OpenDreamServer.Net {
 
         public void UpdateStat() {
             if (ClientDreamObject != null) {
-                Task.Run(() => {
-                    _statPanels.Clear();
+                // TODO: Async?
+                _statPanels.Clear();
 
-                    ClientDreamObject.CallProc("Stat", new DreamProcArguments(null, null), _mobDreamObject);
-                    SendPacket(new PacketUpdateStatPanels(_statPanels));
-                });
+                ClientDreamObject.CallProc("Stat", new DreamProcArguments(null, null), _mobDreamObject);
+                SendPacket(new PacketUpdateStatPanels(_statPanels));
             }
         }
 
@@ -264,7 +263,7 @@ namespace OpenDreamServer.Net {
                     new DreamValue(paramsBuilder.ToString())
                 });
 
-                Task.Run(() => ClientDreamObject?.CallProc("Click", clickArguments, MobDreamObject));
+                ClientDreamObject?.CallProc("Click", clickArguments, MobDreamObject);
             }
         }
 
@@ -285,11 +284,12 @@ namespace OpenDreamServer.Net {
                 new DreamValue(src)
             });
 
-            Task.Run(() => ClientDreamObject?.CallProc("Topic", topicArguments, MobDreamObject));
+            ClientDreamObject?.CallProc("Topic", topicArguments, MobDreamObject);
         }
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
             if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out Proc verb)) {
+                // TODO: No way is this correct
                 Task.Run(async () => {
                     Dictionary<String, DreamValue> arguments = new();
 

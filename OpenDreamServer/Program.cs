@@ -20,6 +20,9 @@ using System.Threading.Tasks;
 
 namespace OpenDreamServer {
     class Program {
+        [ThreadStatic]
+        public static readonly bool IsMainThread = true;
+
         public static DreamCompiledJson CompiledJson = null;
         public static DreamResourceManager DreamResourceManager = null;
         public static DreamStateManager DreamStateManager = new DreamStateManager();
@@ -83,31 +86,23 @@ namespace OpenDreamServer {
             DreamMap = new DreamMap();
             DreamMap.LoadMap(CompiledJson.Maps[0]);
 
-            Task.Run(() => WorldInstance.CallProc("New"));
+            WorldInstance.CallProc("New");
             DreamServer.Start();
             while (true) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-                for (int i = 0; i < TickEvents.Count; i++) {
-                    CountdownEvent tickEvent = TickEvents[i];
-
-                    tickEvent.Signal();
-                    if (tickEvent.CurrentCount <= 0) {
-                        TickEvents.RemoveAt(i);
-                        i--;
-                    }
-                }
+                SleepQueue.Process();
 
                 foreach (DreamConnection connection in DreamServer.DreamConnections) {
                     connection.UpdateStat();
 
                     if (connection.PressedKeys.Contains(38)) {
-                        Task.Run(() => connection.ClientDreamObject?.CallProc("North"));
+                        connection.ClientDreamObject?.CallProc("North");
                     } else if (connection.PressedKeys.Contains(39)) {
-                        Task.Run(() => connection.ClientDreamObject?.CallProc("East"));
+                        connection.ClientDreamObject?.CallProc("East");
                     } else if (connection.PressedKeys.Contains(40)) {
-                        Task.Run(() => connection.ClientDreamObject?.CallProc("South"));
+                        connection.ClientDreamObject?.CallProc("South");
                     } else if (connection.PressedKeys.Contains(37)) {
-                        Task.Run(() => connection.ClientDreamObject?.CallProc("West"));
+                        connection.ClientDreamObject?.CallProc("West");
                     }
                 }
 
@@ -191,14 +186,13 @@ namespace OpenDreamServer {
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
             connection.SendPacket(new PacketFullGameState(DreamStateManager.FullState));
 
-            Task.Run(() => {
-                DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
-                if (clientMob.Value != null) {
-                    connection.SendPacket(new PacketConnectionResult(true, ""));
-                } else {
-                    connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
-                }
-            });
+            // TODO: Async?
+            DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
+            if (clientMob.Value != null) {
+                connection.SendPacket(new PacketConnectionResult(true, ""));
+            } else {
+                connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
+            }
         }
     }
 }

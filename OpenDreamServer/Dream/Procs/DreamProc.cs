@@ -123,6 +123,10 @@ namespace OpenDreamServer.Dream.Procs {
         private Stack<ProcState> _stack = new();
 
         public DreamValue? Resume() {
+            if (!Program.IsMainThread) {
+                throw new InvalidOperationException();
+            }
+
             while (_current != null) {
                 // _current.Resume may mutate our state!!!
                 switch (_current.Resume()) {
@@ -160,14 +164,6 @@ namespace OpenDreamServer.Dream.Procs {
                 _stack.Push(_current);
             }
             _current = state;
-        }
-
-        // TODO: Remove
-        public void PushCopiedDMProcState(DMProcState state) {
-            if (_current != null) {
-                _stack.Push(_current);
-            }
-            _current = new DMProcState(state, this);
         }
     }
 
@@ -304,7 +300,7 @@ namespace OpenDreamServer.Dream.Procs {
             Instance = other.Instance;
             Usr = other.Usr;
             Arguments = other.Arguments;
-            _pc = 0;
+            _pc = other._pc;
             _stack = new Stack<object>(other._stack);
 
             LocalVariables = _dreamValuePool.Rent(256);
@@ -350,7 +346,10 @@ namespace OpenDreamServer.Dream.Procs {
 
         public ExecutionContext Spawn() {
             var context = new ExecutionContext();
-            context.PushCopiedDMProcState(this);
+
+            var state = new DMProcState(this, context);
+            context.PushProcState(state);
+
             return context;
         }
 

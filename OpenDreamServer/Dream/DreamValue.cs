@@ -276,7 +276,8 @@ namespace OpenDreamServer.Dream {
 
         public override bool Equals(object obj) {
             if (obj is DreamValue b) {
-                if (Value == null) return b.Value == null;
+                if (Value == null) 
+                        return b.Value == null;
                 return Value.Equals(b.Value);
             }
             return false;

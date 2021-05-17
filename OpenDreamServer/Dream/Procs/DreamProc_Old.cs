@@ -5,15 +5,15 @@ using System.Collections.Generic;
 using System.Reflection;
 
 namespace OpenDreamServer.Dream.Procs {
-    class DreamProc {
-        public DreamProc SuperProc = null;
+    class DreamProc_Old {
+        public DreamProc_Old SuperProc = null;
         public List<string> ArgumentNames;
         public List<DMValueType> ArgumentTypes;
 
         private Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> _runAction;
         private Dictionary<string, DreamValue> _defaultArgumentValues;
 
-        public DreamProc(byte[] bytecode, List<string> argumentNames = null, List<DMValueType> argumentTypes = null) {
+        public DreamProc_Old(byte[] bytecode, List<string> argumentNames = null, List<DMValueType> argumentTypes = null) {
             ArgumentNames = (argumentNames != null) ? argumentNames : new List<string>();
             ArgumentTypes = (argumentTypes != null) ? argumentTypes : new List<DMValueType>();
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
@@ -21,7 +21,7 @@ namespace OpenDreamServer.Dream.Procs {
             };
         }
 
-        public DreamProc(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
+        public DreamProc_Old(Func<DreamObject, DreamObject, DreamProcArguments, DreamValue> nativeProc) {
             _runAction = (DreamObject instance, DreamObject usr, DreamProcArguments arguments) => {
                 if (_defaultArgumentValues != null) {
                     foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {

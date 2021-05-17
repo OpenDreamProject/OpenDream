@@ -101,17 +101,17 @@ namespace OpenDreamServer.Dream.Objects {
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
         }
 
-        public DreamProc GetProc(string procName) {
+        public DreamProc_Old GetProc(string procName) {
             return ObjectDefinition.GetProc(procName);
         }
 
-        public bool TryGetProc(string procName, out DreamProc proc) {
+        public bool TryGetProc(string procName, out DreamProc_Old proc) {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
         public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
             try {
-                DreamProc proc = GetProc(procName);
+                DreamProc_Old proc = GetProc(procName);
 
                 return proc.Run(this, arguments, usr);
             } catch (Exception e) {

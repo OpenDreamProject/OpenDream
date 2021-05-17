@@ -9,9 +9,9 @@ namespace OpenDreamServer.Dream.Objects {
     class DreamObjectDefinition {
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
-        public DreamProc InitializionProc = null;
-        public Dictionary<string, DreamProc> Procs { get; private set; } = new();
-        public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new();
+        public DreamProc_Old InitializionProc = null;
+        public Dictionary<string, DreamProc_Old> Procs { get; private set; } = new();
+        public Dictionary<string, DreamProc_Old> OverridingProcs { get; private set; } = new();
         public Dictionary<string, DreamValue> Variables { get; private set; } = new();
         public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new();
 
@@ -29,11 +29,11 @@ namespace OpenDreamServer.Dream.Objects {
 
             CopyVariablesFrom(copyFrom);
 
-            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.Procs) {
+            foreach (KeyValuePair<string, DreamProc_Old> proc in copyFrom.Procs) {
                 Procs.Add(proc.Key, proc.Value);
             }
 
-            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.OverridingProcs) {
+            foreach (KeyValuePair<string, DreamProc_Old> proc in copyFrom.OverridingProcs) {
                 OverridingProcs.Add(proc.Key, proc.Value);
             }
         }
@@ -50,7 +50,7 @@ namespace OpenDreamServer.Dream.Objects {
             Variables[variableName] = value;
         }
 
-        public void SetProcDefinition(string procName, DreamProc proc) {
+        public void SetProcDefinition(string procName, DreamProc_Old proc) {
             if (HasProc(procName)) {
                 proc.SuperProc = GetProc(procName);
                 OverridingProcs[procName] = proc;
@@ -64,18 +64,18 @@ namespace OpenDreamServer.Dream.Objects {
             DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
             if (procAttribute == null) throw new ArgumentException();
 
-            Procs[procAttribute.Name] = new DreamProc(nativeProc);
+            Procs[procAttribute.Name] = new DreamProc_Old(nativeProc);
         }
 
-        public DreamProc GetProc(string procName) {
-            if (TryGetProc(procName, out DreamProc proc)) {
+        public DreamProc_Old GetProc(string procName) {
+            if (TryGetProc(procName, out DreamProc_Old proc)) {
                 return proc;
             } else {
                 throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
             }
         }
 
-        public bool TryGetProc(string procName, out DreamProc proc) {
+        public bool TryGetProc(string procName, out DreamProc_Old proc) {
             if (OverridingProcs.TryGetValue(procName, out proc)) {
                 return true;
             } else if (Procs.TryGetValue(procName, out proc)) {

@@ -64,7 +64,7 @@ namespace OpenDreamServer.Dream.Procs {
 
         private DreamValue _proc;
 
-        public DreamProcIdentifierProc(DreamProc proc, DreamObject instance, string procName) {
+        public DreamProcIdentifierProc(DreamProc_Old proc, DreamObject instance, string procName) {
             _proc = new DreamValue(proc);
             Instance = instance;
             ProcName = procName;
@@ -102,10 +102,10 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierSelfProc : IDreamProcIdentifier {
-        public DreamProc SelfProc;
+        public DreamProc_Old SelfProc;
         public DreamProcInterpreter Interpreter;
 
-        public DreamProcIdentifierSelfProc(DreamProc selfProc, DreamProcInterpreter interpreter) {
+        public DreamProcIdentifierSelfProc(DreamProc_Old selfProc, DreamProcInterpreter interpreter) {
             SelfProc = selfProc;
             Interpreter = interpreter;
         }

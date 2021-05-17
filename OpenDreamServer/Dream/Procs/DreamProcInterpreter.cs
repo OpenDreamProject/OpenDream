@@ -91,7 +91,7 @@ namespace OpenDreamServer.Dream.Procs {
             DreamProcInterpreterOpcodes.Spawn
         };
 
-        public DreamProc SelfProc;
+        public DreamProc_Old SelfProc;
         public DreamObject Instance, Usr;
         public DreamProcArguments Arguments;
         public DreamValue DefaultReturnValue = DreamValue.Null;
@@ -102,7 +102,7 @@ namespace OpenDreamServer.Dream.Procs {
         private int _pc;
         private Stack<object> _stack = new();
 
-        public DreamProcInterpreter(DreamProc selfProc, DreamObject instance, DreamObject usr, DreamProcArguments arguments, byte[] bytecode) {
+        public DreamProcInterpreter(DreamProc_Old selfProc, DreamObject instance, DreamObject usr, DreamProcArguments arguments, byte[] bytecode) {
             SelfProc = selfProc;
             Instance = instance;
             Usr = usr;
@@ -220,7 +220,7 @@ namespace OpenDreamServer.Dream.Procs {
             return (DreamProcArguments)_stack.Pop();
         }
 
-        public DreamValue RunProc(DreamProc proc, DreamObject instance, DreamProcArguments arguments) {
+        public DreamValue RunProc(DreamProc_Old proc, DreamObject instance, DreamProcArguments arguments) {
             return proc.Run(instance, arguments, Usr);
         }
     }

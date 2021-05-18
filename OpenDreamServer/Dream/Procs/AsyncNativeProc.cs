@@ -55,8 +55,6 @@ namespace OpenDreamServer.Dream.Procs {
 
                     // When the task finishes, fetch its result
                     _task.ContinueWith(task => {
-                        Result = task.Result;
-
                         // We have to resume now so that the execution context knows we have returned
                         // This will immediately hit a `return ProcStatus.Returned`.
                         SafeResume();
@@ -84,6 +82,14 @@ namespace OpenDreamServer.Dream.Procs {
 
                 // If the task is finished, we're all done
                 if (_task.IsCompleted) {
+                    if (_task.IsCompletedSuccessfully) {
+                        Result = _task.Result;
+                    }
+
+                    if (_task.Exception != null) {
+                        throw _task.Exception;
+                    }
+
                     return ProcStatus.Returned;
                 }
 

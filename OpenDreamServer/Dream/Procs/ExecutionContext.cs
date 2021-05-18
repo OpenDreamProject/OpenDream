@@ -157,7 +157,7 @@ namespace OpenDreamServer.Dream.Procs {
             builder.AppendLine();
 
             builder.AppendLine("=C# StackTrace=");
-            builder.AppendLine(exception.StackTrace);
+            builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
             Console.WriteLine(builder.ToString());

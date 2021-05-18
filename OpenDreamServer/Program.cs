@@ -99,6 +99,7 @@ namespace OpenDreamServer {
                 await Task.Delay(1000);
                 var x = await Task.Run(async () => {
                     await Task.Delay(1000);
+                    throw new Exception("fucky wucky");
                     return 20;
                 });
                 var res = await state.Call(proc, WorldInstance, null, new DreamProcArguments(null));

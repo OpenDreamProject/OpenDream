@@ -59,10 +59,10 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     struct DreamProcIdentifierProc : IDreamProcIdentifier {
-        public DreamProc Proc;
+        public Proc Proc;
         public DreamObject Instance;
 
-        public DreamProcIdentifierProc(DreamProc proc, DreamObject instance) {
+        public DreamProcIdentifierProc(Proc proc, DreamObject instance) {
             Proc = proc;
             Instance = instance;
         }

@@ -67,7 +67,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             string haystackString = haystack.GetValueAsString();
             if (end == 0) end = haystackString.Length;
 
-            if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
+            if (replace.TryGetValueAsProc(out Proc replaceProc)) {
                 throw new NotImplementedException("Proc replacements are not implemented");
             } else if (replace.TryGetValueAsString(out string replaceString)) {
                 string replaced = dreamRegex.Regex.Replace(haystackString, replaceString, end - start, start - 1);

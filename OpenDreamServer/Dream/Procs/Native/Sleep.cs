@@ -36,7 +36,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
     }
 
-    class SleepProc : DreamProc
+    class SleepProc : Proc
     {
         public static SleepProc Instance = new();
 
@@ -54,7 +54,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 WakeTime = wakeTime;
             }
 
-            public override DreamProc Proc => SleepProc.Instance;
+            public override Proc Proc => SleepProc.Instance;
 
             public override ProcStatus Resume()
             {

@@ -65,7 +65,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public bool HasVariable(string name) {
-            return ObjectDefinition.HasVariable(name); ;
+            return ObjectDefinition.HasVariable(name);
         }
 
         public DreamValue GetVariable(string name) {

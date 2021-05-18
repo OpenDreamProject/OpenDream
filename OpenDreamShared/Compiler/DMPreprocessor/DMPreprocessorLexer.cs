@@ -47,7 +47,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '/': {
                         if (Advance() == '/') {
-                            while (Advance() != '\n' && !AtEndOfSource) ;
+                            while (Advance() != '\n' && !AtEndOfSource) {
+                            }
 
                             token = CreateToken(TokenType.Skip, "//");
                         } else if (GetCurrent() == '*') {

@@ -1542,7 +1542,7 @@ namespace OpenDreamShared.Compiler.DM {
                 case TokenType.DM_RawString: Advance(); return new DMASTConstantString((string)constantToken.Value);
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
-                    StringBuilder stringBuilder = new StringBuilder(); ;
+                    StringBuilder stringBuilder = new StringBuilder();
                     List<DMASTExpression> interpolationValues = new();
                     Advance();
 
@@ -1647,7 +1647,8 @@ namespace OpenDreamShared.Compiler.DM {
         protected bool Newline() {
             bool hasNewline = Check(TokenType.Newline);
 
-            while (Check(TokenType.Newline)) ;
+            while (Check(TokenType.Newline)) {
+            }
             return hasNewline;
         }
 

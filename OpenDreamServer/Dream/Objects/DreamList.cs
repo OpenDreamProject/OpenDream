@@ -21,9 +21,9 @@ namespace OpenDreamServer.Dream.Objects {
 
         private static DreamObjectDefinition _listDefinition = null;
 
-        private List<DreamValue> _values = new();
-        private Dictionary<DreamValue, DreamValue> _associativeValues = new();
-        private object _listLock = new object();
+        private readonly List<DreamValue> _values = new();
+        private readonly Dictionary<DreamValue, DreamValue> _associativeValues = new();
+        private readonly object _listLock = new object();
 
         public DreamList() : base(ListDefinition, new DreamProcArguments(null)) { }
 
@@ -122,7 +122,8 @@ namespace OpenDreamServer.Dream.Objects {
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
             lock (_listLock) {
-                foreach (DreamValue listValue in _values) {
+                for (int idx = 0; idx < _values.Count; idx++) {
+                    DreamValue listValue = _values[idx];
                     if (value == listValue) return true;
                 }
             }
@@ -186,7 +187,7 @@ namespace OpenDreamServer.Dream.Objects {
 
     // /datum.vars list
     class DreamListVars : DreamList {
-        private DreamObject _dreamObject;
+        private readonly DreamObject _dreamObject;
 
         public DreamListVars(DreamObject dreamObject) : base() {
             _dreamObject = dreamObject;
@@ -201,7 +202,7 @@ namespace OpenDreamServer.Dream.Objects {
         }
 
         public override void SetValue(DreamValue key, DreamValue value) {
-            string varName = key.GetValueAsString();
+            String varName = key.GetValueAsString();
 
             if (_dreamObject.HasVariable(varName)) {
                 _dreamObject.SetVariable(varName, value);

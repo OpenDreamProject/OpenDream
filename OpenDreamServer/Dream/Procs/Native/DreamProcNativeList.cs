@@ -19,7 +19,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
                     list.AddValue(argument);
                 }
             }
-
             return DreamValue.Null;
         }
 
@@ -73,7 +72,9 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 DreamValue item = arguments.OrderedArguments[i];
 
                 if (item.TryGetValueAsDreamList(out DreamList valueList)) {
-                    foreach (DreamValue value in valueList.GetValues()) {
+                    List<DreamValue> values = valueList.GetValues();
+                    for (int idx = 0; idx < values.Count; idx++) {
+                        DreamValue value = values[idx];
                         list.Insert(index++, value);
                     }
                 } else {

@@ -30,7 +30,7 @@ namespace OpenDreamServer.Dream.Procs {
 
         #region Opcode Handlers
         //In the same order as the DreamProcOpcode enum
-        private static OpcodeHandler[] _opcodeHandlers = new OpcodeHandler[] {
+        private static readonly OpcodeHandler[] _opcodeHandlers = {
             null, //0x0
             DMOpcodeHandlers.BitShiftLeft,
             DMOpcodeHandlers.GetIdentifier,

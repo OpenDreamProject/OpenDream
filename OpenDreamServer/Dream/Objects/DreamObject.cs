@@ -18,13 +18,13 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObject(DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             ObjectDefinition = objectDefinition;
 
-            ObjectDefinition.InitializionProc?.Run(this, new DreamProcArguments(new(), new()));
+            ObjectDefinition.InitializionProc?.Call(this, new DreamProcArguments(new(), new()));
 
             ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
         }
 
         ~DreamObject() {
-            Delete();
+            // Delete();
         }
 
         public static DreamObject GetFromReferenceID(int refID) {
@@ -109,23 +109,18 @@ namespace OpenDreamServer.Dream.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        // Wrapper that matches legacy call style
-        // TODO: Remove
         public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
-            try {
-                DreamProc proc = GetProc(procName);
-                return proc.Run(this, arguments, usr);
-            } catch (Exception e) {
-                Console.WriteLine("Exception while running proc '" + procName + "' on object of type '" + ObjectDefinition.Type + "': " + e.Message);
-                return DreamValue.Null;
-            }
+            var proc = GetProc(procName);
+            return proc.Call(this, arguments, usr);
         }
 
-
-        // Wrapper that matches legacy call style
-        // TODO: Remove
         public DreamValue CallProc(string procName) {
             return CallProc(procName, new DreamProcArguments(null));
+        }
+
+        public void CallProcAsync(string procName, DreamProcArguments arguments, DreamObject usr, Action<DreamValue> callback) {
+            var proc = GetProc(procName);
+            proc.CallAsync(callback, this, arguments, usr);
         }
 
         public override string ToString() {

@@ -75,7 +75,6 @@ namespace OpenDreamServer.Dream.Procs.Native {
         }
 
         private SleepProc()
-            // TODO: pass argument list?
             : base("sleep", null, null, null)
         {}
 

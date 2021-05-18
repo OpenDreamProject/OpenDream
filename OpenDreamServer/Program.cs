@@ -82,7 +82,7 @@ namespace OpenDreamServer {
 
             if (CompiledJson.GlobalInitProc != null) {
                 var globalInitProc = new DMProc("/proc/(global init)", null, null, null, CompiledJson.GlobalInitProc.Bytecode);
-                globalInitProc.Run(WorldInstance, new DreamProcArguments(new(), new()));
+                globalInitProc.Call(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
             DreamMap = new DreamMap();
@@ -188,13 +188,13 @@ namespace OpenDreamServer {
             connection.SendPacket(new PacketInterfaceData(_clientInterface));
             connection.SendPacket(new PacketFullGameState(DreamStateManager.FullState));
 
-            // TODO: Async?
-            DreamValue clientMob = connection.ClientDreamObject.CallProc("New");
-            if (clientMob.Value != null) {
-                connection.SendPacket(new PacketConnectionResult(true, ""));
-            } else {
-                connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
-            }
+            connection.ClientDreamObject.CallProcAsync("New", new DreamProcArguments(null), null, (DreamValue clientMob) => {
+                if (clientMob.Value != null) {
+                    connection.SendPacket(new PacketConnectionResult(true, ""));
+                } else {
+                    connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
+                }
+            });
         }
     }
 }

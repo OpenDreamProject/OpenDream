@@ -177,11 +177,12 @@ namespace OpenDreamServer.Net {
 
         public void UpdateStat() {
             if (ClientDreamObject != null) {
-                // TODO: Async?
                 _statPanels.Clear();
 
-                ClientDreamObject.CallProc("Stat", new DreamProcArguments(null, null), _mobDreamObject);
-                SendPacket(new PacketUpdateStatPanels(_statPanels));
+                // TODO: This should disallow other calls to UpdateStat until it returns
+                ClientDreamObject.CallProcAsync("Stat", new DreamProcArguments(null, null), _mobDreamObject, (DreamValue result) => {
+                    SendPacket(new PacketUpdateStatPanels(_statPanels));
+                });
             }
         }
 
@@ -302,11 +303,7 @@ namespace OpenDreamServer.Net {
                         arguments.Add(argumentName, value);
                     }
 
-                    try {
-                        verb.Run(MobDreamObject, new DreamProcArguments(new(), arguments), MobDreamObject);
-                    } catch (Exception e) {
-                        Console.WriteLine("Exception while running verb \"" + pCallVerb.VerbName + "\": " + e.Message);
-                    }
+                    verb.Call(MobDreamObject, new DreamProcArguments(new(), arguments), MobDreamObject);
                 });
             }
         }

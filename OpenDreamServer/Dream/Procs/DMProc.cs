@@ -28,6 +28,7 @@ namespace OpenDreamServer.Dream.Procs {
         // TODO: This pool is not returned to if the proc runtimes
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
 
+        #region Opcode Handlers
         //In the same order as the DreamProcOpcode enum
         private static OpcodeHandler[] _opcodeHandlers = new OpcodeHandler[] {
             null, //0x0
@@ -109,7 +110,8 @@ namespace OpenDreamServer.Dream.Procs {
             DMOpcodeHandlers.IsNull,
             DMOpcodeHandlers.Spawn
         };
-
+        #endregion
+        
         public readonly DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
@@ -182,7 +184,8 @@ namespace OpenDreamServer.Dream.Procs {
             return ProcStatus.Returned;
         }
 
-        public override void ReturnedInto(DreamValue value) {
+        public override void ReturnedInto(DreamValue value)
+        {
             Push(value);
         }
 

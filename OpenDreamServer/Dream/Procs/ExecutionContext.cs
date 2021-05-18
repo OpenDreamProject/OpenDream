@@ -31,11 +31,20 @@ namespace OpenDreamServer.Dream.Procs {
         public abstract ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
-        public DreamValue Run(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
+        public DreamValue Call(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
             var context = new ExecutionContext();
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
             return context.Resume();
+        }
+
+        // Execute the given proc and pass its return value to the callback when it has returned.
+        // This may call the callback synchronously!!
+        public void CallAsync(Action<DreamValue> callback, DreamObject src, DreamProcArguments arguments, DreamObject usr) {
+            var context = new ExecutionContext();
+            var state = AsyncResultProc.Instance.CreateState(context, callback, this, src, usr, arguments);
+            context.PushProcState(state);
+            context.Resume();
         }
     }
 

@@ -63,7 +63,7 @@ namespace OpenDreamServer.Dream {
             Value = value;
         }
 
-        public DreamValue(Proc value) {
+        public DreamValue(DreamProc value) {
             Type = DreamValueType.DreamProc;
             Value = value;
         }
@@ -78,7 +78,7 @@ namespace OpenDreamServer.Dream {
                 DreamResource => DreamValueType.DreamResource,
                 DreamObject => DreamValueType.DreamObject,
                 DreamPath => DreamValueType.DreamPath,
-                Proc => DreamValueType.DreamProc,
+                DreamProc => DreamValueType.DreamProc,
                 _ => throw new ArgumentException("Invalid DreamValue value (" + value + ")")
             };
         }
@@ -226,13 +226,13 @@ namespace OpenDreamServer.Dream {
             }
         }
 
-        public Proc GetValueAsProc() {
-            return (Proc)GetValueExpectingType(DreamValueType.DreamProc);
+        public DreamProc GetValueAsProc() {
+            return (DreamProc)GetValueExpectingType(DreamValueType.DreamProc);
         }
 
-        public bool TryGetValueAsProc(out Proc proc) {
+        public bool TryGetValueAsProc(out DreamProc proc) {
             if (IsType(DreamValueType.DreamProc)) {
-                proc = (Proc)Value;
+                proc = (DreamProc)Value;
 
                 return true;
             } else {

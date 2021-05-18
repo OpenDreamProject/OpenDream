@@ -5,12 +5,12 @@ using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamServer.Dream.Procs {
-    class NativeProc : Proc {
+    class NativeProc : DreamProc {
         public delegate DreamValue NativeProcHandler(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         public NativeProcHandler Handler { get; }
 
-        public NativeProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, NativeProcHandler handler)
+        public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, NativeProcHandler handler)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             Handler = handler;
@@ -29,7 +29,7 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamProcArguments Arguments;
         
         private NativeProc _proc;
-        public override Proc Proc => _proc;
+        public override DreamProc Proc => _proc;
 
         public NativeProcState(NativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
             : base(context)

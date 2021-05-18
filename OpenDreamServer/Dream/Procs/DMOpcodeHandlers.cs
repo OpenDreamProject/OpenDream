@@ -90,7 +90,7 @@ namespace OpenDreamServer.Dream.Procs {
 
             if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
 
-            if (dreamObject.TryGetProc(identifierName, out Proc proc)) {
+            if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
                 state.Push(new DreamProcIdentifierProc(proc, dreamObject));
             } else {
                 throw new Exception("Proc '" + identifierName + "' doesn't exist");
@@ -188,7 +188,7 @@ namespace OpenDreamServer.Dream.Procs {
         public static ProcStatus? GetProc(DMProcState state) {
             string identifierName = state.ReadString();
 
-            if (state.Instance.TryGetProc(identifierName, out Proc proc)) {
+            if (state.Instance.TryGetProc(identifierName, out DreamProc proc)) {
                 state.Push(new DreamProcIdentifierProc(proc, state.Instance));
             } else {
                 throw new Exception("Proc '" + identifierName + "' doesn't exist");
@@ -952,7 +952,7 @@ namespace OpenDreamServer.Dream.Procs {
         public static ProcStatus? Call(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
             DreamProcIdentifierProc procIdentifier = (DreamProcIdentifierProc)state.PopIdentifier();
-            Proc proc = procIdentifier.GetValue().GetValueAsProc();
+            DreamProc proc = procIdentifier.GetValue().GetValueAsProc();
 
             state.Call(procIdentifier.Proc, procIdentifier.Instance, arguments);
             return ProcStatus.Called;
@@ -972,7 +972,7 @@ namespace OpenDreamServer.Dream.Procs {
             if (source.Type == DreamValue.DreamValueType.DreamObject) {
                 DreamObject dreamObject = source.GetValueAsDreamObject();
                 DreamValue procId = state.PopDreamValue();
-                Proc proc = null;
+                DreamProc proc = null;
 
                 if (procId.Type == DreamValue.DreamValueType.String) {
                     proc = dreamObject.GetProc(procId.GetValueAsString());
@@ -998,7 +998,7 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamPath fullProcPath = source.GetValueAsPath();
                 if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
                 string procName = fullProcPath.LastElement;
-                Proc proc = state.Instance.GetProc(procName);
+                DreamProc proc = state.Instance.GetProc(procName);
 
                 state.Call(proc, state.Instance, arguments);
                 return ProcStatus.Called;

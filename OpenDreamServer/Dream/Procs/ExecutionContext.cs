@@ -11,16 +11,16 @@ namespace OpenDreamServer.Dream.Procs {
         Called,
     }
 
-    abstract class Proc {
+    abstract class DreamProc {
         public string Name { get; }
 
         // This is currently publically settable because the loading code doesn't know what our super is until after we are instantiated
-        public Proc SuperProc { set; get; }
+        public DreamProc SuperProc { set; get; }
 
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected Proc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
             SuperProc = superProc;
             ArgumentNames = argumentNames ?? new();
@@ -46,7 +46,7 @@ namespace OpenDreamServer.Dream.Procs {
             Context = context;
         }
 
-        public abstract Proc Proc { get; }
+        public abstract DreamProc Proc { get; }
         public abstract ProcStatus Resume();
 
         // Most implementations won't require this, so give it a default

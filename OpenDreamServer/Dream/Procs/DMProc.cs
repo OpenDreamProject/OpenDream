@@ -5,10 +5,10 @@ using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamServer.Dream.Procs {
-    class DMProc : Proc {
+    class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        public DMProc(string name, Proc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
@@ -117,7 +117,7 @@ namespace OpenDreamServer.Dream.Procs {
         private int _pc = 0;
 
         private DMProc _proc;
-        public override Proc Proc => _proc;
+        public override DreamProc Proc => _proc;
 
         public DMProcState(DMProc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
             : base(context)
@@ -192,7 +192,7 @@ namespace OpenDreamServer.Dream.Procs {
             Result = value;
         }
 
-        public void Call(Proc proc, DreamObject src, DreamProcArguments arguments) {
+        public void Call(DreamProc proc, DreamObject src, DreamProcArguments arguments) {
             var state = proc.CreateState(Context, src, Usr, arguments);
             Context.PushProcState(state);
         }

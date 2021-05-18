@@ -64,8 +64,21 @@ namespace OpenDreamServer.Dream.Objects {
             DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
             if (procAttribute == null) throw new ArgumentException();
 
-            // TODO: This instance should probably include arg info.
-            var proc = new NativeProc(procAttribute.Name, null, null, null, func);
+            Dictionary<string, DreamValue> defaultArgumentValues = null;
+            var argumentNames = new List<string>();
+            List<Attribute> parameterAttributes = attributes.FindAll(attribute => attribute is DreamProcParameterAttribute);
+            foreach (Attribute attribute in parameterAttributes) {
+                DreamProcParameterAttribute parameterAttribute = (DreamProcParameterAttribute)attribute;
+
+                argumentNames.Add(parameterAttribute.Name);
+                if (parameterAttribute.DefaultValue != default) {
+                    if (defaultArgumentValues == null) defaultArgumentValues = new Dictionary<string, DreamValue>();
+
+                    defaultArgumentValues.Add(parameterAttribute.Name, new DreamValue(parameterAttribute.DefaultValue));
+                }
+            }
+
+            var proc = new NativeProc(procAttribute.Name, null, argumentNames, null, defaultArgumentValues, func); 
             SetProcDefinition(procAttribute.Name, proc);
         }
 

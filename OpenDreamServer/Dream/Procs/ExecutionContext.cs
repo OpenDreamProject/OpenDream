@@ -40,11 +40,9 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     class ProcRuntime : Exception {
-        public ProcRuntime(ExecutionContext context, string message)
+        public ProcRuntime(string message)
             : base(message)
-        {
-
-        }
+        {}
     }
 
     abstract class ProcState {
@@ -74,6 +72,8 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     class ExecutionContext {
+        private const int MaxStackDepth = 256;
+
         private ProcState _current; 
         private Stack<ProcState> _stack = new();
 
@@ -116,6 +116,10 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public void PushProcState(ProcState state) {
+            if (_stack.Count >= MaxStackDepth) {
+                throw new ProcRuntime("stack depth limit reached");
+            }
+
             if (_current != null) {
                 _stack.Push(_current);
             }

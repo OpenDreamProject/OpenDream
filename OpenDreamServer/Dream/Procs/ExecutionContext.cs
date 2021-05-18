@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 

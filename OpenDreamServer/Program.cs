@@ -23,6 +23,9 @@ namespace OpenDreamServer {
         [ThreadStatic]
         public static bool IsMainThread;
 
+        public static DreamTaskScheduler DreamTaskScheduler = null;
+        public static TaskFactory TaskFactory = null;
+
         public static DreamCompiledJson CompiledJson = null;
         public static DreamResourceManager DreamResourceManager = null;
         public static DreamStateManager DreamStateManager = new DreamStateManager();
@@ -39,6 +42,9 @@ namespace OpenDreamServer {
 
         static void Main(string[] args) {
             IsMainThread = true;
+
+            DreamTaskScheduler = new();
+            TaskFactory = new TaskFactory(DreamTaskScheduler);
             
             if (args.Length < 1 || Path.GetExtension(args[0]) != ".json") {
                 Console.WriteLine("You must compile your game using DMCompiler, and supply its output as an argument");
@@ -88,10 +94,24 @@ namespace OpenDreamServer {
             DreamMap = new DreamMap();
             DreamMap.LoadMap(CompiledJson.Maps[0]);
 
+            AsyncNativeProc.Run(async (state) => {
+                var proc = WorldInstance.GetProc("Test");
+                await Task.Delay(1000);
+                var x = await Task.Run(async () => {
+                    await Task.Delay(1000);
+                    return 20;
+                });
+                var res = await state.Call(proc, WorldInstance, null, new DreamProcArguments(null));
+                Console.WriteLine($"Got Result: {res}");
+                return DreamValue.Null;
+            });
+
             WorldInstance.CallProc("New");
             DreamServer.Start();
             while (true) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
+
+                DreamTaskScheduler.Process();
                 SleepQueue.Process();
 
                 foreach (DreamConnection connection in DreamServer.DreamConnections) {

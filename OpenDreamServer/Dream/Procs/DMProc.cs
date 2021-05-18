@@ -238,13 +238,11 @@ namespace OpenDreamServer.Dream.Procs {
         public DreamValue PopDreamValue() {
             object value = _stack.Pop();
 
-            if (value is IDreamProcIdentifier identifier) {
-                return identifier.GetValue();
-            } else if (value is DreamValue dreamValue) {
-                return dreamValue;
-            } else {
-                throw new Exception("Last object on stack was not a dream value or identifier");
-            }
+            return value switch {
+                IDreamProcIdentifier identifier => identifier.GetValue(),
+                DreamValue dreamValue => dreamValue,
+                _ => throw new Exception("Last object on stack was not a dream value or identifier")
+            };
         }
 
         public DreamProcArguments PopArguments() {

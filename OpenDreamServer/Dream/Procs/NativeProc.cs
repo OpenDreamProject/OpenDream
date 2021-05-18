@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Text;
 using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 
@@ -40,14 +41,15 @@ namespace OpenDreamServer.Dream.Procs {
             Arguments = arguments;
         }
 
-        public override ProcStatus Resume()
+        protected override ProcStatus InternalResume()
         {
             Result = _proc.Handler.Invoke(Src, Usr, Arguments);
             return ProcStatus.Returned;
         }
 
-        public override void ReturnedInto(DreamValue value) {
-            
+        public override void AppendStackFrame(StringBuilder builder)
+        {
+            builder.Append($"{Proc.Name}(...)");
         }
     }
 }

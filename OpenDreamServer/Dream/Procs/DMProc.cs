@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Text;
 using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 
@@ -24,6 +25,7 @@ namespace OpenDreamServer.Dream.Procs {
     {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
+        // TODO: This pool is not returned to if the proc runtimes
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
 
         //In the same order as the DreamProcOpcode enum
@@ -160,7 +162,7 @@ namespace OpenDreamServer.Dream.Procs {
             Array.Copy(other.LocalVariables, LocalVariables, 256);
         }
 
-        public override ProcStatus Resume()
+        protected override ProcStatus InternalResume()
         {
             while (_pc < _proc.Bytecode.Length) {
                 int opcode = _proc.Bytecode[_pc++];
@@ -182,6 +184,11 @@ namespace OpenDreamServer.Dream.Procs {
 
         public override void ReturnedInto(DreamValue value) {
             Push(value);
+        }
+
+        public override void AppendStackFrame(StringBuilder builder)
+        {
+            builder.Append($"{Proc.Name}(...)");
         }
 
         public void Jump(int position) {

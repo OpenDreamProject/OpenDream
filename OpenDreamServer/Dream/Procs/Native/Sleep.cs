@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using OpenDreamServer.Dream.Objects;
 
 namespace OpenDreamServer.Dream.Procs.Native {
@@ -56,7 +57,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
 
             public override DreamProc Proc => SleepProc.Instance;
 
-            public override ProcStatus Resume()
+            protected override ProcStatus InternalResume()
             {
                 if (!_beganSleep) {
                     _beganSleep = true;
@@ -65,6 +66,11 @@ namespace OpenDreamServer.Dream.Procs.Native {
                 }
 
                 return ProcStatus.Returned;
+            }
+
+            public override void AppendStackFrame(StringBuilder builder)
+            {
+                builder.Append("sleep(...)");
             }
         }
 

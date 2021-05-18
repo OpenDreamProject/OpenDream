@@ -81,7 +81,7 @@ namespace OpenDreamServer {
             DreamObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
             if (CompiledJson.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", null, null, null, CompiledJson.GlobalInitProc.Bytecode);
+                var globalInitProc = new DMProc("/proc/(global init)", null, null, null, CompiledJson.GlobalInitProc.Bytecode);
                 globalInitProc.Run(WorldInstance, new DreamProcArguments(new(), new()));
             }
 

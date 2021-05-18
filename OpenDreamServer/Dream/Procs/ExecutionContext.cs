@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Text;
 using OpenDreamServer.Dream.Objects;
 using OpenDreamShared.Dream.Procs;
 
@@ -38,6 +39,14 @@ namespace OpenDreamServer.Dream.Procs {
         }
     }
 
+    class ProcRuntime : Exception {
+        public ProcRuntime(ExecutionContext context, string message)
+            : base(message)
+        {
+
+        }
+    }
+
     abstract class ProcState {
         public ExecutionContext Context { get; }
         public DreamValue Result { set; get; } = DreamValue.Null;
@@ -45,9 +54,20 @@ namespace OpenDreamServer.Dream.Procs {
         public ProcState(ExecutionContext context) {
             Context = context;
         }
+        
+        public ProcStatus Resume() {
+            try {
+                return InternalResume();
+            } catch (Exception exception) {
+                Context.HandleException(exception);
+                return ProcStatus.Returned;
+            }
+        }
 
         public abstract DreamProc Proc { get; }
-        public abstract ProcStatus Resume();
+        protected abstract ProcStatus InternalResume();
+
+        public abstract void AppendStackFrame(StringBuilder builder);
 
         // Most implementations won't require this, so give it a default
         public virtual void ReturnedInto(DreamValue value) {}
@@ -100,6 +120,33 @@ namespace OpenDreamServer.Dream.Procs {
                 _stack.Push(_current);
             }
             _current = state;
+        }
+
+        public void AppendStackTrace(StringBuilder builder) {
+            builder.Append("   ");
+            _current.AppendStackFrame(builder);
+            builder.AppendLine();
+
+            foreach (var frame in _stack) {
+                builder.Append("   ");
+                frame.AppendStackFrame(builder);
+                builder.AppendLine();
+            }
+        }
+
+        public void HandleException(Exception exception) {
+            StringBuilder builder = new();
+            builder.AppendLine($"Exception Occured: {exception.Message}");
+
+            builder.AppendLine("=DM StackTrace=");
+            AppendStackTrace(builder);
+            builder.AppendLine();
+
+            builder.AppendLine("=C# StackTrace=");
+            builder.AppendLine(exception.StackTrace);
+            builder.AppendLine();
+
+            Console.WriteLine(builder.ToString());
         }
     }
 }

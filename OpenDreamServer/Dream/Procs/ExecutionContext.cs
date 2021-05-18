@@ -16,7 +16,7 @@ namespace OpenDreamServer.Dream.Procs {
     abstract class DreamProc {
         public string Name { get; }
 
-        // This is currently publically settable because the loading code doesn't know what our super is until after we are instantiated
+        // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc SuperProc { set; get; }
 
         public List<String> ArgumentNames { get; }

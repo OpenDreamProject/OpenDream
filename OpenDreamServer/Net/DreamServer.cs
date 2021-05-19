@@ -11,13 +11,24 @@ namespace OpenDreamServer.Net {
     class DreamServer {
         public List<DreamConnection> DreamConnections = new List<DreamConnection>();
         public event DreamConnectionReadyEventHandler DreamConnectionRequest;
-
-        private TcpListener _tcpListener;
+        
+        public readonly IPAddress Address;
+        public readonly int Port;
+        private readonly TcpListener _tcpListener;
+        
         private Dictionary<PacketID, Action<DreamConnection, IPacket>> _packetIDToCallback = new Dictionary<PacketID, Action<DreamConnection, IPacket>>();
         private Dictionary<string, DreamConnection> _ckeyToConnection = new Dictionary<string, DreamConnection>();
         
-        public DreamServer(int port) {
-            _tcpListener = new TcpListener(IPAddress.Any, port);
+        public DreamServer(String addr, int port) {
+            if (!IPAddress.TryParse(addr, out IPAddress ipAddress)) {
+                Console.Error.WriteLine("Error while parsing address " + ipAddress + ", falling back to localhost.");
+                ipAddress = IPAddress.Any;
+            }
+            _tcpListener = new TcpListener(ipAddress, port);
+            
+            IPEndPoint endpoint = (IPEndPoint)_tcpListener.LocalEndpoint;
+            Address = endpoint.Address;
+            Port = endpoint.Port;
 
             RegisterPacketCallback<PacketRequestConnect>(PacketID.RequestConnect, OnPacketRequestConnect);
         }

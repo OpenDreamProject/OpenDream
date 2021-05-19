@@ -269,14 +269,12 @@ namespace OpenDreamServer.Dream {
                     throw new NotImplementedException("Cannot stringify " + this);
             }
         }
+        
+        public override bool Equals(object obj) => obj is DreamValue other && Equals(other);
 
-        public override bool Equals(object obj) {
-            if (obj is DreamValue b) {
-                if (Value == null) return b.Value == null;
-                else return Value.Equals(b.Value);
-            } else {
-                return false;
-            }
+        public bool Equals(DreamValue other) {
+            if (Value == null) return other.Value == null;
+            return Value.Equals(other.Value);
         }
 
         public override int GetHashCode() {

@@ -14,6 +14,7 @@ using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace OpenDreamServer {
         public static DreamStateManager DreamStateManager = new DreamStateManager();
         public static DreamObjectTree DreamObjectTree = new DreamObjectTree();
         public static DreamMap DreamMap = null;
-        public static DreamServer DreamServer = new DreamServer(25566);
+        public static DreamServer DreamServer = new DreamServer(IPAddress.Any.ToString(), 25566);
         public static DreamObject WorldInstance = null;
         public static Dictionary<DreamObject, DreamConnection> ClientToConnection = new();
         public static List<CountdownEvent> TickEvents = new();

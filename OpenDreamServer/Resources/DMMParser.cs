@@ -215,8 +215,9 @@ namespace OpenDreamShared.Compiler.DMM {
         protected override Token Advance() {
             //Throw out any newlines, indents, dedents, or whitespace
             List<TokenType> ignoredTypes = new() { TokenType.Newline, TokenType.DM_Indent, TokenType.DM_Dedent, TokenType.DM_Whitespace };
-            while (ignoredTypes.Contains(base.Advance().Type)) ;
-            
+            while (ignoredTypes.Contains(base.Advance().Type)) {
+            }
+
             return Current();
         }
     }

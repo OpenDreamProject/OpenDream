@@ -1192,11 +1192,11 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamConnection connection = Program.ClientToConnection[clientObject];
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
-                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to callt hem.
-                var waiter = AsyncNativeProc.CreateAnonymousState(state.Context, async (state) => {
+                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
+                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async (state) => {
                     return await promptTask;
                 });
-                state.Context.PushProcState(waiter);
+                state.Thread.PushProcState(waiter);
                 return ProcStatus.Called;
             }
 

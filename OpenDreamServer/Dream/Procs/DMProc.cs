@@ -15,9 +15,9 @@ namespace OpenDreamServer.Dream.Procs {
             Bytecode = bytecode;
         }
 
-        public override DMProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override DMProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
-            return new DMProcState(this, context, src, usr, arguments);
+            return new DMProcState(this, thread, src, usr, arguments);
         }
     }
 
@@ -123,8 +123,8 @@ namespace OpenDreamServer.Dream.Procs {
         private DMProc _proc;
         public override DreamProc Proc => _proc;
 
-        public DMProcState(DMProc proc, DreamThread context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-            : base(context)
+        public DMProcState(DMProc proc, DreamThread thread, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+            : base(thread)
         {
             _proc = proc;
             Instance = instance;
@@ -146,8 +146,8 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
-        public DMProcState(DMProcState other, DreamThread context)
-            : base(context)
+        public DMProcState(DMProcState other, DreamThread thread)
+            : base(thread)
         {
             if (other.EnumeratorStack.Count > 0) {
                 throw new NotImplementedException();
@@ -203,17 +203,17 @@ namespace OpenDreamServer.Dream.Procs {
         }
 
         public void Call(DreamProc proc, DreamObject src, DreamProcArguments arguments) {
-            var state = proc.CreateState(Context, src, Usr, arguments);
-            Context.PushProcState(state);
+            var state = proc.CreateState(Thread, src, Usr, arguments);
+            Thread.PushProcState(state);
         }
 
         public DreamThread Spawn() {
-            var context = new DreamThread();
+            var thread = new DreamThread();
 
-            var state = new DMProcState(this, context);
-            context.PushProcState(state);
+            var state = new DMProcState(this, thread);
+            thread.PushProcState(state);
 
-            return context;
+            return thread;
         }
 
         #region Stack

@@ -19,8 +19,8 @@ namespace OpenDreamServer.Dream.Procs {
             private NativeProc _proc;
             public override DreamProc Proc => _proc;
 
-            public State(NativeProc proc, DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-                : base(context)
+            public State(NativeProc proc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+                : base(thread)
             {
                 _proc = proc;
                 Src = src;
@@ -55,7 +55,7 @@ namespace OpenDreamServer.Dream.Procs {
             Handler = handler;
         }
 
-        public override State CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override State CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             if (_defaultArgumentValues != null) {
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
@@ -67,11 +67,11 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            return new State(this, context, src, usr, arguments);
+            return new State(this, thread, src, usr, arguments);
         }
 
-        public static ProcState CreateAnonymousState(DreamThread context, HandlerFn handler) {
-            return new State(null, context, null, null, new DreamProcArguments(null));
+        public static ProcState CreateAnonymousState(DreamThread thread, HandlerFn handler) {
+            return new State(null, thread, null, null, new DreamProcArguments(null));
         }
     }
 }

@@ -29,7 +29,7 @@ namespace OpenDreamServer.Dream.Procs {
             ArgumentTypes = argumentTypes ?? new();
         }
 
-        public abstract ProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
+        public abstract ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
         public DreamValue Call(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
@@ -56,18 +56,18 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     abstract class ProcState {
-        public DreamThread Context { get; }
+        public DreamThread Thread { get; }
         public DreamValue Result { set; get; } = DreamValue.Null;
         
-        public ProcState(DreamThread context) {
-            Context = context;
+        public ProcState(DreamThread thread) {
+            Thread = thread;
         }
         
         public ProcStatus Resume() {
             try {
                 return InternalResume();
             } catch (Exception exception) {
-                Context.HandleException(exception);
+                Thread.HandleException(exception);
                 return ProcStatus.Returned;
             }
         }

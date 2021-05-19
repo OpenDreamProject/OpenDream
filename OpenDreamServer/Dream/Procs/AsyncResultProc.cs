@@ -13,8 +13,8 @@ namespace OpenDreamServer.Dream.Procs {
 
         class State : ProcState
         {
-            public State(DreamThread context, Action<DreamValue> handler, ProcState targetState)
-                : base(context)
+            public State(DreamThread thread, Action<DreamValue> handler, ProcState targetState)
+                : base(thread)
             {
                 _handler = handler;
                 _targetState = targetState;
@@ -38,7 +38,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
 
                 // This is our first resume, call the target proc
-                Context.PushProcState(_targetState);
+                Thread.PushProcState(_targetState);
                 return ProcStatus.Called;
             }
 
@@ -52,15 +52,15 @@ namespace OpenDreamServer.Dream.Procs {
             : base("<async wrapper>", null, null, null)
         {}
 
-        public override ProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             // This proc's state gets instantiated through a new overload. It shouldn't reach this path.
             throw new NotImplementedException();
         }
 
-        public ProcState CreateState(DreamThread context, Action<DreamValue> handler, DreamProc targetProc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-            var targetState = targetProc.CreateState(context, src, usr, arguments);
-            return new State(context, handler, targetState);
+        public ProcState CreateState(DreamThread thread, Action<DreamValue> handler, DreamProc targetProc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            var targetState = targetProc.CreateState(thread, src, usr, arguments);
+            return new State(thread, handler, targetState);
         }
     }
 }

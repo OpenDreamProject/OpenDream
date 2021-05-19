@@ -27,8 +27,8 @@ namespace OpenDreamServer.Dream.Procs {
 
             private bool _inResume;
 
-            public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-                : base(context)
+            public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+                : base(thread)
             {
                 _proc = proc;
                 _taskFunc = taskFunc;
@@ -43,12 +43,12 @@ namespace OpenDreamServer.Dream.Procs {
                     return;
                 }
 
-                Context.Resume();
+                Thread.Resume();
             }
 
             public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
                 _callTcs = new();
-                _callProcNotify = proc.CreateState(Context, src, usr, arguments);
+                _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
 
                 // The field may be mutated by SafeResume, so cache the task
                 var callTcs = _callTcs;
@@ -83,7 +83,7 @@ namespace OpenDreamServer.Dream.Procs {
                     var callProcNotify = _callProcNotify;
                     _callProcNotify = null;
 
-                    Context.PushProcState(callProcNotify);
+                    Thread.PushProcState(callProcNotify);
                     return ProcStatus.Called;
                 }
 
@@ -140,7 +140,7 @@ namespace OpenDreamServer.Dream.Procs {
             _taskFunc = taskFunc;
         }
 
-        public override ProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             if (_defaultArgumentValues != null) {
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
@@ -152,11 +152,11 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            return new State(this, _taskFunc, context, src, usr, arguments);
+            return new State(this, _taskFunc, thread, src, usr, arguments);
         }
 
-        public static ProcState CreateAnonymousState(DreamThread context, Func<State, Task<DreamValue>> taskFunc) {
-            return new State(null, taskFunc, context, null, null, new DreamProcArguments(null));
+        public static ProcState CreateAnonymousState(DreamThread thread, Func<State, Task<DreamValue>> taskFunc) {
+            return new State(null, taskFunc, thread, null, null, new DreamProcArguments(null));
         }
     }
 }

@@ -95,19 +95,6 @@ namespace OpenDreamServer {
             DreamMap = new DreamMap();
             DreamMap.LoadMap(CompiledJson.Maps[0]);
 
-            var result = DreamThread.Run(async (state) => {
-                var proc = WorldInstance.GetProc("Test");
-                state.Result = new DreamValue(132);
-                await Task.Delay(1000);
-                var x = await Task.Run(async () => {
-                    await Task.Delay(1000);
-                    return 20;
-                });
-                var res = await state.Call(proc, WorldInstance, null, new DreamProcArguments(null));
-                Console.WriteLine($"Got Result: {res}");
-                return DreamValue.Null;
-            });
-
             WorldInstance.SpawnProc("New");
             DreamServer.Start();
             while (true) {

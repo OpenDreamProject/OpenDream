@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace OpenDreamServer.Dream.Objects {
     class DreamObjectDefinition {
@@ -59,7 +60,7 @@ namespace OpenDreamServer.Dream.Objects {
             }
         }
 
-        public void SetNativeProc(NativeProc.NativeProcHandler func) {
+        private (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
             List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
             DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
             if (procAttribute == null) throw new ArgumentException();
@@ -78,8 +79,19 @@ namespace OpenDreamServer.Dream.Objects {
                 }
             }
 
-            var proc = new NativeProc(procAttribute.Name, null, argumentNames, null, defaultArgumentValues, func); 
-            SetProcDefinition(procAttribute.Name, proc);
+            return (procAttribute.Name, defaultArgumentValues, argumentNames);
+        }
+
+        public void SetNativeProc(NativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func); 
+            SetProcDefinition(name, proc);
+        }
+
+        public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+            var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func); 
+            SetProcDefinition(name, proc);
         }
 
         public DreamProc GetProc(string procName) {

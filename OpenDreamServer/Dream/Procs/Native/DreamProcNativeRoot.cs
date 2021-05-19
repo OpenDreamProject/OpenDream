@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using DreamValueType = OpenDreamServer.Dream.DreamValue.DreamValueType;
 
@@ -1042,6 +1043,17 @@ namespace OpenDreamServer.Dream.Procs.Native {
             double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Sin(rad));
+        }
+
+        [DreamProc("sleep")]
+        [DreamProcParameter("Delay", Type = DreamValueType.Number)]
+        public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
+            float delay = state.Arguments.GetArgument(0, "Delay").GetValueAsNumber();
+            int delayMilliseconds = (int)(delay * 100);
+
+            // This is obviously not the proper behaviour
+            await Task.Delay(delayMilliseconds);
+            return DreamValue.Null;
         }
 
         [DreamProc("sorttext")]

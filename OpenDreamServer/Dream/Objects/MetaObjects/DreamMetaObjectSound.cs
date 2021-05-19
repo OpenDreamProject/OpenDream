@@ -8,7 +8,7 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            dreamObject.CallProc("New", creationArguments);
+            dreamObject.SpawnProc("New", creationArguments);
         }
     }
 }

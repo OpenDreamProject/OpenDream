@@ -109,18 +109,13 @@ namespace OpenDreamServer.Dream.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        public DreamValue CallProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
+        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
             var proc = GetProc(procName);
-            return proc.Call(this, arguments, usr);
+            return DreamThread.Run(proc, this, usr, arguments);
         }
 
-        public DreamValue CallProc(string procName) {
-            return CallProc(procName, new DreamProcArguments(null));
-        }
-
-        public void CallProcAsync(string procName, DreamProcArguments arguments, DreamObject usr, Action<DreamValue> callback) {
-            var proc = GetProc(procName);
-            proc.CallAsync(callback, this, arguments, usr);
+        public DreamValue SpawnProc(string procName) {
+            return SpawnProc(procName, new DreamProcArguments(null));
         }
 
         public override string ToString() {

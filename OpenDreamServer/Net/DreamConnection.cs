@@ -28,7 +28,7 @@ namespace OpenDreamServer.Net {
             get => _mobDreamObject;
             set {
                 if (_mobDreamObject != value) {
-                    if (_mobDreamObject != null) _mobDreamObject.CallProc("Logout");
+                    if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout");
 
                     if (value != null && value.IsSubtypeOf(DreamPath.Mob)) {
                         DreamConnection oldMobConnection = Program.DreamServer.GetConnectionFromMob(value);
@@ -36,7 +36,7 @@ namespace OpenDreamServer.Net {
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.CallProc("Login");
+                        _mobDreamObject.SpawnProc("Login");
                     } else {
                         _mobDreamObject = null;
                     }
@@ -179,9 +179,12 @@ namespace OpenDreamServer.Net {
             if (ClientDreamObject != null) {
                 _statPanels.Clear();
 
-                // TODO: This should disallow other calls to UpdateStat until it returns
-                ClientDreamObject.CallProcAsync("Stat", new DreamProcArguments(null, null), _mobDreamObject, (DreamValue result) => {
-                    SendPacket(new PacketUpdateStatPanels(_statPanels));
+                DreamThread.Run(async (state) => {
+                    var statProc = ClientDreamObject.GetProc("Stat");
+
+                    await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
+                    SendPacket(new PacketUpdateStatPanels(_statPanels));        
+                    return DreamValue.Null;
                 });
             }
         }
@@ -264,7 +267,7 @@ namespace OpenDreamServer.Net {
                     new DreamValue(paramsBuilder.ToString())
                 });
 
-                ClientDreamObject?.CallProc("Click", clickArguments, MobDreamObject);
+                ClientDreamObject?.SpawnProc("Click", clickArguments, MobDreamObject);
             }
         }
 
@@ -285,13 +288,14 @@ namespace OpenDreamServer.Net {
                 new DreamValue(src)
             });
 
-            ClientDreamObject?.CallProc("Topic", topicArguments, MobDreamObject);
+            ClientDreamObject?.SpawnProc("Topic", topicArguments, MobDreamObject);
         }
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
             if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
                 // TODO: No way is this correct
-                Task.Run(async () => {
+
+                DreamThread.Run(async (state) => {
                     Dictionary<String, DreamValue> arguments = new();
 
                     for (int i = 0; i < verb.ArgumentNames.Count; i++) {
@@ -303,7 +307,8 @@ namespace OpenDreamServer.Net {
                         arguments.Add(argumentName, value);
                     }
 
-                    verb.Call(MobDreamObject, new DreamProcArguments(new(), arguments), MobDreamObject);
+                    await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
+                    return DreamValue.Null;
                 });
             }
         }

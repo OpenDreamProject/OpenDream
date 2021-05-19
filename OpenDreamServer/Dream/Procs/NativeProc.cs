@@ -8,19 +8,54 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamServer.Dream.Procs {
     class NativeProc : DreamProc {
-        public delegate DreamValue NativeProcHandler(DreamObject src, DreamObject usr, DreamProcArguments arguments);
+        public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
+
+        public class State : ProcState
+        {
+            public DreamObject Src;
+            public DreamObject Usr;
+            public DreamProcArguments Arguments;
+            
+            private NativeProc _proc;
+            public override DreamProc Proc => _proc;
+
+            public State(NativeProc proc, DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+                : base(context)
+            {
+                _proc = proc;
+                Src = src;
+                Usr = usr;
+                Arguments = arguments;
+            }
+
+            protected override ProcStatus InternalResume()
+            {
+                Result = _proc.Handler.Invoke(Src, Usr, Arguments);
+                return ProcStatus.Returned;
+            }
+
+            public override void AppendStackFrame(StringBuilder builder)
+            {
+                if (_proc == null) {
+                    builder.Append("<anonymous proc>");
+                    return;
+                }
+
+                builder.Append($"{_proc.Name}(...)");
+            }
+        }
 
         private Dictionary<string, DreamValue> _defaultArgumentValues;
-        public NativeProcHandler Handler { get; }
+        public HandlerFn Handler { get; }
 
-        public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, NativeProcHandler handler)
+        public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler)
             : base(name, superProc, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             Handler = handler;
         }
 
-        public override NativeProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override State CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             if (_defaultArgumentValues != null) {
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
@@ -32,37 +67,11 @@ namespace OpenDreamServer.Dream.Procs {
                 }
             }
 
-            return new NativeProcState(this, context, src, usr, arguments);
-        }
-    }
-
-    class NativeProcState : ProcState
-    {
-        public DreamObject Src;
-        public DreamObject Usr;
-        public DreamProcArguments Arguments;
-        
-        private NativeProc _proc;
-        public override DreamProc Proc => _proc;
-
-        public NativeProcState(NativeProc proc, ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-            : base(context)
-        {
-            _proc = proc;
-            Src = src;
-            Usr = usr;
-            Arguments = arguments;
+            return new State(this, context, src, usr, arguments);
         }
 
-        protected override ProcStatus InternalResume()
-        {
-            Result = _proc.Handler.Invoke(Src, Usr, Arguments);
-            return ProcStatus.Returned;
-        }
-
-        public override void AppendStackFrame(StringBuilder builder)
-        {
-            builder.Append($"{Proc.Name}(...)");
+        public static ProcState CreateAnonymousState(DreamThread context, HandlerFn handler) {
+            return new State(null, context, null, null, new DreamProcArguments(null));
         }
     }
 }

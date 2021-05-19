@@ -66,7 +66,7 @@ namespace OpenDreamServer.Dream.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_roll);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sin);
-            root.SetProcDefinition("sleep", SleepProc.Instance);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sound);

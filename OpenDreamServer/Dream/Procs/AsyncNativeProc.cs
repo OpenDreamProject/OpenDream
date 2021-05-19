@@ -9,32 +9,33 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamServer.Dream.Procs {
     class AsyncNativeProc : DreamProc {
-        private static AsyncResultProc Instance = new();
-
         public class State : ProcState
         {
-            public State(ExecutionContext context, Func<State, Task<DreamValue>> taskFunc)
-                : base(context)
-            {
-                _taskFunc = taskFunc;
-            }      
+            public DreamObject Src;
+            public DreamObject Usr;
+            public DreamProcArguments Arguments;
 
-            public override DreamProc Proc => AsyncNativeProc.Instance;
+            private AsyncNativeProc _proc;
+            public override DreamProc Proc => _proc;
 
             private Func<State, Task<DreamValue>> _taskFunc;
-
-            public override void AppendStackFrame(StringBuilder builder)
-            {
-                builder.AppendLine("<async proc>");
-            }
+            private Task<DreamValue> _task;
 
             private ProcState _callProcNotify;
             private TaskCompletionSource<DreamValue> _callTcs;
             private DreamValue? _callResult;
 
-            private Task<DreamValue> _task;
-
             private bool _inResume;
+
+            public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+                : base(context)
+            {
+                _proc = proc;
+                _taskFunc = taskFunc;
+                Src = src;
+                Usr = usr;
+                Arguments = arguments;
+            }      
 
             // Used to avoid reentrant resumptions in our proc
             protected void SafeResume() {
@@ -45,18 +46,34 @@ namespace OpenDreamServer.Dream.Procs {
                 Context.Resume();
             }
 
+            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+                _callTcs = new();
+                _callProcNotify = proc.CreateState(Context, src, usr, arguments);
+
+                // The field may be mutated by SafeResume, so cache the task
+                var callTcs = _callTcs;
+                SafeResume();
+                return callTcs.Task;
+            }
+
+            public override void ReturnedInto(DreamValue value) {
+                // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
+                _callResult = value;
+            }
+
             protected override ProcStatus InternalResume()
             {
                 _inResume = true;
 
                 // We've just been created, start our task
-                if (_task == null) {                    
-                    _task = Program.TaskFactory.StartNew(() => _taskFunc(this)).Unwrap();
+                if (_task == null) {
+                    // Pull execution of _taskFunc outside of StartNew to allow it to inline here
+                    var inlined  = _taskFunc(this);
+                    _task = Program.TaskFactory.StartNew(() => inlined).Unwrap();
 
-                    // When the task finishes, fetch its result
-                    _task.ContinueWith(task => {
+                    _task.ContinueWith(_ => {
                         // We have to resume now so that the execution context knows we have returned
-                        // This will immediately hit a `return ProcStatus.Returned`.
+                        // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
                         SafeResume();
                     }, Program.DreamTaskScheduler);
                 }
@@ -98,34 +115,48 @@ namespace OpenDreamServer.Dream.Procs {
                 return ProcStatus.Deferred;
             }
 
-            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-                _callTcs = new();
-                _callProcNotify = proc.CreateState(Context, src, usr, arguments);
-                SafeResume();
-                return _callTcs.Task;
-            }
+            public override void AppendStackFrame(StringBuilder builder)
+            {
+                if (_proc == null) {
+                    builder.Append("<anonymous async proc>");
+                    return;
+                }
 
-            public override void ReturnedInto(DreamValue value) {
-                // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
-                _callResult = value;
+                builder.Append($"{_proc.Name}(...)");
             }
         }
 
-        public AsyncNativeProc()
-            : base("<async wrapper>", null, null, null)
+        private Dictionary<string, DreamValue> _defaultArgumentValues;
+        private Func<State, Task<DreamValue>> _taskFunc;
+
+        private AsyncNativeProc()
+            : base("<anonymous async proc>", null, null, null)
         {}
 
-        public override ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public AsyncNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
+            : base(name, superProc, argumentNames, argumentTypes)
         {
-            // This proc's state gets instantiated through a static overload. It shouldn't reach this path.
-            throw new NotImplementedException();
+            _defaultArgumentValues = defaultArgumentValues;
+            _taskFunc = taskFunc;
         }
 
-        public static void Run(Func<State, Task<DreamValue>> taskFunc) {
-            var context = new ExecutionContext();
-            var state = new State(context, taskFunc);
-            context.PushProcState(state);
-            context.Resume();
+        public override ProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        {
+            if (_defaultArgumentValues != null) {
+                foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
+                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
+
+                    if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
+                        arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
+                    }
+                }
+            }
+
+            return new State(this, _taskFunc, context, src, usr, arguments);
+        }
+
+        public static ProcState CreateAnonymousState(DreamThread context, Func<State, Task<DreamValue>> taskFunc) {
+            return new State(null, taskFunc, context, null, null, new DreamProcArguments(null));
         }
     }
 }

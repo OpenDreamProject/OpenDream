@@ -15,7 +15,7 @@ namespace OpenDreamServer.Dream.Procs {
             Bytecode = bytecode;
         }
 
-        public override DMProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override DMProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             return new DMProcState(this, context, src, usr, arguments);
         }
@@ -123,7 +123,7 @@ namespace OpenDreamServer.Dream.Procs {
         private DMProc _proc;
         public override DreamProc Proc => _proc;
 
-        public DMProcState(DMProc proc, ExecutionContext context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        public DMProcState(DMProc proc, DreamThread context, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
             : base(context)
         {
             _proc = proc;
@@ -146,7 +146,7 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
-        public DMProcState(DMProcState other, ExecutionContext context)
+        public DMProcState(DMProcState other, DreamThread context)
             : base(context)
         {
             if (other.EnumeratorStack.Count > 0) {
@@ -207,8 +207,8 @@ namespace OpenDreamServer.Dream.Procs {
             Context.PushProcState(state);
         }
 
-        public ExecutionContext Spawn() {
-            var context = new ExecutionContext();
+        public DreamThread Spawn() {
+            var context = new DreamThread();
 
             var state = new DMProcState(this, context);
             context.PushProcState(state);

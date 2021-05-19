@@ -1062,14 +1062,19 @@ namespace OpenDreamServer.Dream.Procs {
 
         //Copy & run the interpreter in a new thread
         //Jump the current thread to after the spawn's code
+        // TODO: If delay negative, do a switcharoo
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             float delay = state.PopDreamValue().GetValueAsNumber();
             int delayMilliseconds = (int)(delay * 100);
 
-            // TODO: If delay negative, do a switcharoo
-            ExecutionContext newContext = state.Spawn();
-            SleepQueue.Push(DateTime.Now.AddMilliseconds(delayMilliseconds), newContext);
+            // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
+            // and have state.Spawn return a ProcState instead
+            DreamThread newContext = state.Spawn();
+            Program.TaskFactory.StartNew(async () => {
+                await Task.Delay(delayMilliseconds);
+                newContext.Resume();
+            });
 
             state.Jump(jumpTo);
             return null;        
@@ -1187,8 +1192,12 @@ namespace OpenDreamServer.Dream.Procs {
                 DreamConnection connection = Program.ClientToConnection[clientObject];
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
-                promptTask.Wait();
-                state.Push(promptTask.Result);
+                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to callt hem.
+                var waiter = AsyncNativeProc.CreateAnonymousState(state.Context, async (state) => {
+                    return await promptTask;
+                });
+                state.Context.PushProcState(waiter);
+                return ProcStatus.Called;
             }
 
             return null;

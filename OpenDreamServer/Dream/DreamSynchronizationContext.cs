@@ -30,6 +30,12 @@ namespace OpenDreamServer.Dream {
             SynchronizationContext.SetSynchronizationContext(_context);
         }
 
+        public void TryImmediate(Task task) {
+            if (!TryExecuteTaskInline(task, true)) {
+                throw new InvalidOperationException();
+            }
+        }
+
         public void Process() {
             int index = 0;
 

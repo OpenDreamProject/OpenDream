@@ -29,11 +29,11 @@ namespace OpenDreamServer.Dream.Procs {
             ArgumentTypes = argumentTypes ?? new();
         }
 
-        public abstract ProcState CreateState(ExecutionContext context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
+        public abstract ProcState CreateState(DreamThread context, DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
         public DreamValue Call(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
-            var context = new ExecutionContext();
+            var context = new DreamThread();
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
             return context.Resume();
@@ -42,7 +42,7 @@ namespace OpenDreamServer.Dream.Procs {
         // Execute the given proc and pass its return value to the callback when it has returned.
         // This may call the callback synchronously!!
         public void CallAsync(Action<DreamValue> callback, DreamObject src, DreamProcArguments arguments, DreamObject usr) {
-            var context = new ExecutionContext();
+            var context = new DreamThread();
             var state = AsyncResultProc.Instance.CreateState(context, callback, this, src, usr, arguments);
             context.PushProcState(state);
             context.Resume();
@@ -56,10 +56,10 @@ namespace OpenDreamServer.Dream.Procs {
     }
 
     abstract class ProcState {
-        public ExecutionContext Context { get; }
+        public DreamThread Context { get; }
         public DreamValue Result { set; get; } = DreamValue.Null;
         
-        public ProcState(ExecutionContext context) {
+        public ProcState(DreamThread context) {
             Context = context;
         }
         
@@ -72,7 +72,9 @@ namespace OpenDreamServer.Dream.Procs {
             }
         }
 
+        // May be null
         public abstract DreamProc Proc { get; }
+
         protected abstract ProcStatus InternalResume();
 
         public abstract void AppendStackFrame(StringBuilder builder);
@@ -81,11 +83,25 @@ namespace OpenDreamServer.Dream.Procs {
         public virtual void ReturnedInto(DreamValue value) {}
     }
 
-    class ExecutionContext {
+    class DreamThread {
         private const int MaxStackDepth = 256;
 
         private ProcState _current; 
         private Stack<ProcState> _stack = new();
+
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
+            var context = new DreamThread();
+            var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
+            context.PushProcState(state);
+            return context.Resume();
+        }
+
+        public static DreamValue Run(Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+            var context = new DreamThread();
+            var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
+            context.PushProcState(state);
+            return context.Resume();
+        }
 
         public DreamValue Resume() {
             if (!Program.IsMainThread) {

@@ -8,13 +8,13 @@ namespace OpenDreamServer.Dream.Objects.MetaObjects {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            dreamObject.CallProc("New", creationArguments);
+            dreamObject.SpawnProc("New", creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
 
-            dreamObject.CallProc("Del");
+            dreamObject.SpawnProc("Del");
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {

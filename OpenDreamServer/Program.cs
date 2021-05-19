@@ -88,7 +88,7 @@ namespace OpenDreamServer {
 
             if (CompiledJson.GlobalInitProc != null) {
                 var globalInitProc = new DMProc("/proc/(global init)", null, null, null, CompiledJson.GlobalInitProc.Bytecode);
-                globalInitProc.Call(WorldInstance, new DreamProcArguments(new(), new()));
+                globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
             DreamMap = new DreamMap();

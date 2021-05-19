@@ -18,7 +18,7 @@ namespace OpenDreamServer.Dream.Objects {
         public DreamObject(DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             ObjectDefinition = objectDefinition;
 
-            ObjectDefinition.InitializionProc?.Call(this, new DreamProcArguments(new(), new()));
+            ObjectDefinition.InitializionProc?.Spawn(this, new DreamProcArguments(new(), new()));
 
             ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
         }

@@ -293,8 +293,6 @@ namespace OpenDreamServer.Net {
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
             if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
-                // TODO: No way is this correct
-
                 DreamThread.Run(async (state) => {
                     Dictionary<String, DreamValue> arguments = new();
 

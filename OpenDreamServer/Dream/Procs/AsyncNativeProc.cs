@@ -19,13 +19,14 @@ namespace OpenDreamServer.Dream.Procs {
             public override DreamProc Proc => _proc;
 
             private Func<State, Task<DreamValue>> _taskFunc;
-            private Task<DreamValue> _task;
+            private Task _task;
 
             private ProcState _callProcNotify;
             private TaskCompletionSource<DreamValue> _callTcs;
             private DreamValue? _callResult;
 
             private bool _inResume;
+            private bool _hasReturned;
 
             public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
                 : base(thread)
@@ -61,14 +62,19 @@ namespace OpenDreamServer.Dream.Procs {
                 _callResult = value;
             }
 
+            private async Task InternalResumeAsync() {
+                Result = await _taskFunc(this);
+                _hasReturned = true;
+            }
+
             protected override ProcStatus InternalResume()
             {
                 _inResume = true;
 
                 // We've just been created, start our task
                 if (_task == null) {
-                    // Pull execution of _taskFunc outside of StartNew to allow it to inline here
-                    var inlined  = _taskFunc(this);
+                    // Pull execution of our task outside of StartNew to allow it to inline here
+                    var inlined  = InternalResumeAsync();
                     _task = Program.TaskFactory.StartNew(() => inlined).Unwrap();
 
                     _task.ContinueWith(_ => {
@@ -98,11 +104,7 @@ namespace OpenDreamServer.Dream.Procs {
                 }
 
                 // If the task is finished, we're all done
-                if (_task.IsCompleted) {
-                    if (_task.IsCompletedSuccessfully) {
-                        Result = _task.Result;
-                    }
-
+                if (_hasReturned) {
                     if (_task.Exception != null) {
                         throw _task.Exception;
                     }

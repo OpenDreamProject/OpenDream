@@ -238,7 +238,7 @@ namespace OpenDreamRuntime {
         }
 
         public void HandlePacketTopic(PacketTopic pTopic) {
-            DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
+            DreamList hrefList = DreamProcNativeRoot.params2list(Runtime, HttpUtility.UrlDecode(pTopic.Query));
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
             DreamObject src = null;
 

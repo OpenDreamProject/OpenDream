@@ -853,10 +853,10 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(view);
         }
         
-        public static DreamList params2list(string queryString) {
+        public static DreamList params2list(DreamRuntime runtime, string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-            DreamList list = new DreamList(CurrentRuntime);
+            DreamList list = new DreamList(runtime);
 
             foreach (string queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
@@ -879,7 +879,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList result;
 
             if (paramsValue.TryGetValueAsString(out string paramsString)) {
-                result = params2list(paramsString);
+                result = params2list(CurrentRuntime, paramsString);
             } else {
                 result = new DreamList(CurrentRuntime);
             }

@@ -19,7 +19,7 @@ namespace OpenDreamShared.Dream {
             Transform
         }
 
-        public static Dictionary<string, UInt32> Colors = new() {
+        public static readonly Dictionary<String, UInt32> Colors = new() {
             { "black", 0x000000FF },
             { "silver", 0xC0C0C0FF },
             { "gray", 0x808080FF },
@@ -28,7 +28,7 @@ namespace OpenDreamShared.Dream {
             { "maroon", 0x800000FF },
             { "red", 0xFF0000FF },
             { "purple", 0x800080FF },
-            { "fuschia", 0xFF00FFFF },
+            { "fuchsia", 0xFF00FFFF },
             { "magenta", 0xFF00FFFF },
             { "green", 0x00C000FF },
             { "lime", 0x00FF00FF },

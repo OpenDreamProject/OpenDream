@@ -21,7 +21,8 @@ namespace OpenDreamRuntime.Resources {
         private string _filePath;
         private byte[] _resourceData = null;
 
-        public DreamResource(string filePath, string resourcePath) {
+        public DreamResource(DreamRuntime runtime, string filePath, string resourcePath) {
+            Runtime = runtime;
             _filePath = filePath;
             ResourcePath = resourcePath;
         }

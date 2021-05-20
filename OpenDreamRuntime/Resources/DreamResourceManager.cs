@@ -5,12 +5,14 @@ using System.IO;
 
 namespace OpenDreamRuntime.Resources {
     public class DreamResourceManager {
+        public DreamRuntime Runtime { get; }
         public string RootPath;
 
         private Dictionary<string, DreamResource> _resourceCache = new();
         private object _resourceCacheLock = new object();
 
-        public DreamResourceManager(string rootPath) {
+        public DreamResourceManager(DreamRuntime runtime, string rootPath) {
+            Runtime = runtime;
             RootPath = rootPath;
         }
 
@@ -19,7 +21,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public DreamResource LoadResource(string resourcePath) {
-            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
+            if (resourcePath == "") return new ConsoleOutputResource(Runtime); //An empty resource path is the console
 
             DreamResource resource = null;
 
@@ -28,7 +30,7 @@ namespace OpenDreamRuntime.Resources {
             }
 
             if (resource == null) {
-                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
+                resource = new DreamResource(Runtime, Path.Combine(RootPath, resourcePath), resourcePath);
                 lock (_resourceCacheLock) {
                     _resourceCache.Add(resourcePath, resource);
                 }

@@ -46,7 +46,7 @@ namespace OpenDreamRuntime {
             DMPreprocessor dmmPreprocessor = new DMPreprocessor(false);
             dmmPreprocessor.IncludeFile(Runtime.ResourceManager.RootPath, filePath);
 
-            DMMParser dmmParser = new DMMParser(new DMLexer(filePath, dmmPreprocessor.GetResult()));
+            DMMParser dmmParser = new DMMParser(Runtime, new DMLexer(filePath, dmmPreprocessor.GetResult()));
             DMMParser.Map map = dmmParser.ParseMap();
 
             if (dmmParser.Errors.Count > 0) {

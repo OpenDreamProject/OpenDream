@@ -14,7 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             Runtime.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
-            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
+            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource(Runtime)));
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
             if (fps.Value != null) {

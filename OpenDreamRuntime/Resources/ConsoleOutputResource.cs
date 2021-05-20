@@ -5,7 +5,7 @@ namespace OpenDreamRuntime.Resources {
     //A special resource that outputs to the console
     //world.log defaults to this
     class ConsoleOutputResource : DreamResource {
-        public ConsoleOutputResource() : base(null, null) { }
+        public ConsoleOutputResource(DreamRuntime runtime) : base(runtime, null, null) { }
 
         public override string ReadAsString() {
             return null;

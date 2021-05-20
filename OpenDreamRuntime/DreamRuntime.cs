@@ -66,7 +66,7 @@ namespace OpenDreamRuntime
             // Something is doing something fucky with relative dirs, somewhere
             executablePath = Path.GetFullPath(executablePath);
 
-            ResourceManager = new DreamResourceManager(Path.GetDirectoryName(executablePath));
+            ResourceManager = new DreamResourceManager(this, Path.GetDirectoryName(executablePath));
 
             // This initialization isn't great
             ObjectTree = new(this);

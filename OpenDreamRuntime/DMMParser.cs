@@ -50,7 +50,9 @@ namespace OpenDreamShared.Compiler.DMM {
 
         private int _cellNameLength = -1;
 
-        public DMMParser(DMLexer lexer) : base(lexer) { }
+        public DMMParser(DreamRuntime runtime, DMLexer lexer) : base(lexer) {
+            Runtime = runtime;
+        }
 
         public Map ParseMap() {
             Map map = new Map();

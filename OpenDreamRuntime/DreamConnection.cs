@@ -217,7 +217,7 @@ namespace OpenDreamVM {
         }
 
         public void HandlePacketClickAtom(PacketClickAtom pClickAtom) {
-            if (DreamMetaObjectAtom.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
+            if (Runtime.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
                 NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
                 paramsBuilder.Add("icon-x", pClickAtom.IconX.ToString());
                 paramsBuilder.Add("icon-y", pClickAtom.IconY.ToString());
@@ -245,7 +245,7 @@ namespace OpenDreamVM {
             if (srcRefValue.Value != null) {
                 int srcRef = int.Parse(srcRefValue.GetValueAsString());
 
-                src = DreamObject.GetFromReferenceID(srcRef);
+                src = DreamObject.GetFromReferenceID(Runtime, srcRef);
             }
 
             DreamProcArguments topicArguments = new DreamProcArguments(new() {

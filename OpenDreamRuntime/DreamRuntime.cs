@@ -10,6 +10,7 @@ using OpenDreamVM.Procs;
 using OpenDreamVM.Procs.Native;
 using OpenDreamVM.Resources;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,6 +45,19 @@ namespace OpenDreamVM
         public long TickStartTime = 0;
 
 		private readonly InterfaceDescriptor _clientInterface;
+
+        // Global state that may not really (really really) belong here
+        public Dictionary<ServerIconAppearance, int> AppearanceToID = new();
+        public Dictionary<DreamObject, int> ReferenceIDs = new();
+        public Dictionary<DreamObject, DreamList> AreaContents = new();
+        public Dictionary<DreamObject, UInt32> AtomIDs = new();
+        public Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
+        public ConcurrentDictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new();
+        public UInt32 AtomIDCounter;
+        public Dictionary<DreamList, DreamObject> OverlaysListToAtom = new();
+        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom = new();
+        public List<DreamObject> Mobs = new ();
+        public DreamList WorldContentsList;
 
         public DreamRuntime(DreamServer server, string executablePath) {
 			MainThread = Thread.CurrentThread;

@@ -9,13 +9,10 @@ namespace OpenDreamVM.Objects.MetaObjects {
 
         {}
 
-        // TODO: global state
-        public static DreamList ContentsList;
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            ContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+            Runtime.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
             dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
 

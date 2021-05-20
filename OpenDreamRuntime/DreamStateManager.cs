@@ -57,37 +57,37 @@ namespace OpenDreamVM {
             else if (atom.IsSubtypeOf(DreamPath.Obj)) atomType = AtomType.Movable;
 
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomCreation(DreamMetaObjectAtom.AtomIDs[atom], atomType, appearance.GetID());
+                _currentDeltaState.AddAtomCreation(Runtime.AtomIDs[atom], atomType, appearance.GetID());
             }
         }
 
         public void AddAtomDeletion(DreamObject atom) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomDeletion(DreamMetaObjectAtom.AtomIDs[atom]);
+                _currentDeltaState.AddAtomDeletion(Runtime.AtomIDs[atom]);
             }
         }
 
         public void AddAtomIconAppearanceDelta(DreamObject atom, ServerIconAppearance appearance) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomIconAppearanceDelta(DreamMetaObjectAtom.AtomIDs[atom], appearance.GetID());
+                _currentDeltaState.AddAtomIconAppearanceDelta(Runtime.AtomIDs[atom], appearance.GetID());
             }
         }
 
         public void AddAtomScreenLocationDelta(DreamObject atom, ScreenLocation screenLocation) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomScreenLocDelta(DreamMetaObjectAtom.AtomIDs[atom], screenLocation);
+                _currentDeltaState.AddAtomScreenLocDelta(Runtime.AtomIDs[atom], screenLocation);
             }
         }
 
         public void AddAtomLocationDelta(DreamObject atom, DreamObject newLocation) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddAtomLocationDelta(DreamMetaObjectAtom.AtomIDs[atom], (newLocation != null) ? DreamMetaObjectAtom.AtomIDs[newLocation] : UInt32.MaxValue);
+                _currentDeltaState.AddAtomLocationDelta(Runtime.AtomIDs[atom], (newLocation != null) ? Runtime.AtomIDs[newLocation] : UInt32.MaxValue);
             }
         }
 
         public void AddTurfDelta(int x, int y, int z, DreamObject turf) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddTurfDelta(x, y, z, DreamMetaObjectAtom.AtomIDs[turf]);
+                _currentDeltaState.AddTurfDelta(x, y, z, Runtime.AtomIDs[turf]);
             }
         }
 
@@ -105,13 +105,13 @@ namespace OpenDreamVM {
 
         public void AddClientScreenObject(string ckey, DreamObject atom) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.AddClientScreenObject(ckey, DreamMetaObjectAtom.AtomIDs[atom]);
+                _currentDeltaState.AddClientScreenObject(ckey, Runtime.AtomIDs[atom]);
             }
         }
 
         public void RemoveClientScreenObject(string ckey, DreamObject atom) {
             lock (_dreamStateManagerLock) {
-                _currentDeltaState.RemoveClientScreenObject(ckey, DreamMetaObjectAtom.AtomIDs[atom]);
+                _currentDeltaState.RemoveClientScreenObject(ckey, Runtime.AtomIDs[atom]);
             }
         }
 

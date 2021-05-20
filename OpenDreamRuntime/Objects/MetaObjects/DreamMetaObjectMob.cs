@@ -8,23 +8,14 @@ namespace OpenDreamVM.Objects.MetaObjects {
             : base(runtime)
         {}
 
-        // TODO: global state
-        public static List<DreamObject> Mobs = new List<DreamObject>();
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-
-            lock (Mobs) {
-                Mobs.Add(dreamObject);
-            }
+            Runtime.Mobs.Add(dreamObject);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
-
-            lock (Mobs) {
-                Mobs.Remove(dreamObject);
-            }
+            Runtime.Mobs.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

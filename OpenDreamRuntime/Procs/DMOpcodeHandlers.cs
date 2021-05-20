@@ -1225,7 +1225,7 @@ namespace OpenDreamVM.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 int refID = int.Parse(refString);
 
-                state.Push(new DreamValue(DreamObject.GetFromReferenceID(refID)));
+                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.Runtime, refID)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);

@@ -15,9 +15,6 @@ namespace OpenDreamVM.Objects {
         /// </summary>
         private Dictionary<string, DreamValue> _variables = new();
 
-        // TODO: global state
-        private static readonly Dictionary<DreamObject, int> _referenceIDs = new();
-
         public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
             Runtime = runtime;
             ObjectDefinition = objectDefinition;
@@ -31,9 +28,8 @@ namespace OpenDreamVM.Objects {
             // Delete();
         }
 
-        // TODO: global state
-        public static DreamObject GetFromReferenceID(int refID) {
-            foreach (KeyValuePair<DreamObject, int> referenceIDPair in _referenceIDs) {
+        public static DreamObject GetFromReferenceID(DreamRuntime runtime, int refID) {
+            foreach (KeyValuePair<DreamObject, int> referenceIDPair in runtime.ReferenceIDs) {
                 if (referenceIDPair.Value == refID) return referenceIDPair.Key;
             }
 
@@ -43,10 +39,10 @@ namespace OpenDreamVM.Objects {
         public int CreateReferenceID() {
             int referenceID;
 
-            if (!_referenceIDs.TryGetValue(this, out referenceID)) {
-                referenceID = _referenceIDs.Count;
+            if (!Runtime.ReferenceIDs.TryGetValue(this, out referenceID)) {
+                referenceID = Runtime.ReferenceIDs.Count;
 
-                _referenceIDs.Add(this, referenceID);
+                Runtime.ReferenceIDs.Add(this, referenceID);
             }
 
             return referenceID;
@@ -56,7 +52,7 @@ namespace OpenDreamVM.Objects {
             if (Deleted) return;
             ObjectDefinition.MetaObject?.OnObjectDeleted(this);
 
-            _referenceIDs.Remove(this);
+            Runtime.ReferenceIDs.Remove(this);
             Deleted = true;
         }
 

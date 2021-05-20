@@ -8,9 +8,6 @@ namespace OpenDreamVM.Objects.MetaObjects {
             : base(runtime)
         {}
 
-        // TODO: global state
-        public static Dictionary<DreamObject, DreamList> AreaContents = new();
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = new DreamList(Runtime);
 
@@ -24,24 +21,19 @@ namespace OpenDreamVM.Objects.MetaObjects {
                 }
             };
 
-            lock (AreaContents) {
-                AreaContents.Add(dreamObject, contents);
-            }
+            Runtime.AreaContents.Add(dreamObject, contents);
 
             base.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            lock (AreaContents) {
-                AreaContents.Remove(dreamObject);
-            }
-
+            Runtime.AreaContents.Remove(dreamObject);
             base.OnObjectDeleted(dreamObject);
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "contents") {
-                return new DreamValue(AreaContents[dreamObject]);
+                return new DreamValue(Runtime.AreaContents[dreamObject]);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

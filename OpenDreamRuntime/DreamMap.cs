@@ -121,7 +121,7 @@ namespace OpenDreamVM {
             }
             
 
-            Levels[z - 1].Cells[x - 1, y - 1].Turf = DreamMetaObjectAtom.AtomIDs[turf];
+            Levels[z - 1].Cells[x - 1, y - 1].Turf = Runtime.AtomIDs[turf];
             Runtime.StateManager.AddTurfDelta(x - 1, y - 1, z - 1, turf);
         }
 
@@ -138,7 +138,7 @@ namespace OpenDreamVM {
 
         public DreamObject GetTurfAt(int x, int y, int z) {
             if (x >= 1 && x <= Runtime.Map.Width && y >= 1 && y <= Runtime.Map.Height && z >= 1 && z <= Runtime.Map.Levels.Count) {
-                return DreamMetaObjectAtom.AtomIDToAtom[Levels[z - 1].Cells[x - 1, y - 1].Turf];
+                return Runtime.AtomIDToAtom[Levels[z - 1].Cells[x - 1, y - 1].Turf];
             } else {
                 return null;
             }

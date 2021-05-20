@@ -839,7 +839,7 @@ namespace OpenDreamVM.Procs.Native {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            foreach (DreamObject mob in DreamMetaObjectMob.Mobs) {
+            foreach (DreamObject mob in CurrentRuntime.Mobs) {
                 int mobX = mob.GetVariable("x").GetValueAsInteger();
                 int mobY = mob.GetVariable("y").GetValueAsInteger();
 
@@ -1370,7 +1370,7 @@ namespace OpenDreamVM.Procs.Native {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            foreach (DreamObject mob in DreamMetaObjectMob.Mobs) {
+            foreach (DreamObject mob in CurrentRuntime.Mobs) {
                 int mobX = mob.GetVariable("x").GetValueAsInteger();
                 int mobY = mob.GetVariable("y").GetValueAsInteger();
 

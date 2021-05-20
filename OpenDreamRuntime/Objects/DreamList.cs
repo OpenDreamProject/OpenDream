@@ -10,8 +10,6 @@ namespace OpenDreamVM.Objects {
         internal event DreamListValueAssignedEventHandler ValueAssigned;
         internal event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
-        private static DreamObjectDefinition _listDefinition = null;
-
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = new();
         private object _listLock = new object();

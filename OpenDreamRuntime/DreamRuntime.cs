@@ -49,6 +49,8 @@ namespace OpenDreamVM
 			MainThread = Thread.CurrentThread;
             Server = server;
 
+            ResourceManager = new DreamResourceManager(Path.GetDirectoryName(executablePath));
+
             // This initialization isn't great
             ObjectTree = new(this);
             StateManager = new(this);
@@ -59,15 +61,8 @@ namespace OpenDreamVM
             StateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             Server.DreamConnectionRequest += OnDreamConnectionRequest;
 
-            ListDefinition = ObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
-
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-
-            WorldInstance = ObjectTree.CreateObject(DreamPath.World);
-            ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
         
-			ResourceManager = new DreamResourceManager(Path.GetDirectoryName(executablePath));
-
 			CompiledJson = LoadCompiledJson(executablePath);
 			if (CompiledJson == null) {
 				throw new InvalidOperationException();
@@ -93,6 +88,11 @@ namespace OpenDreamVM
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable(this));
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob(this));
             DreamProcNative.SetupNativeProcs(ObjectTree);
+
+            ListDefinition = ObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
+
+            WorldInstance = ObjectTree.CreateObject(DreamPath.World);
+            ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);

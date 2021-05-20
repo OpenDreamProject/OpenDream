@@ -723,7 +723,7 @@ namespace DMCompiler.DM.Visitors {
             if (input.Parameters.Length == 0 || input.Parameters.Length > 4) throw new Exception("Invalid input() parameter count");
 
             //Push input's four arguments, pushing null for the missing ones
-            for (int i = 4; i >= 0; i--) {
+            for (int i = 3; i >= 0; i--) {
                 if (i < input.Parameters.Length) {
                     DMASTCallParameter parameter = input.Parameters[i];
 

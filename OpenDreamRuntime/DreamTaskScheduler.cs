@@ -27,8 +27,7 @@ namespace OpenDreamVM {
         private List<Task> _tasks = new();
 
         public DreamTaskScheduler() {
-            // TODO: dependant code sets this
-            // SynchronizationContext.SetSynchronizationContext(_context);
+            SynchronizationContext.SetSynchronizationContext(_context);
         }
 
         public void Process() {

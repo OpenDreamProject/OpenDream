@@ -107,7 +107,7 @@ namespace OpenDreamVM
             }
 
             WorldInstance.SpawnProc("New");
-            Server.Start();
+            Server.Start(this);
 
             while (true) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();

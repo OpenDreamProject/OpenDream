@@ -24,10 +24,14 @@ namespace OpenDreamVM {
         public abstract void SendPacket(IPacket packet);
 
         // Implementation
-        public readonly string CKey;
-        public readonly IPAddress Address;
+        public string CKey;
+        public IPAddress Address;
         public readonly List<int> PressedKeys = new();
         public DreamRuntime Runtime { get; }
+
+        public DreamConnection(DreamRuntime runtime) {
+            Runtime = runtime;
+        }
 
         public DreamObject ClientDreamObject;
 
@@ -36,11 +40,6 @@ namespace OpenDreamVM {
         private Dictionary<string, DreamProc> _availableVerbs = new();
         private Dictionary<string, List<string>> _statPanels = new();
         private string _selectedStatPanel;
-
-        public DreamConnection(string cKey, IPAddress address) {
-            CKey = cKey;
-            Address = address;
-        }
 
         public DreamObject MobDreamObject {
             get => _mobDreamObject;

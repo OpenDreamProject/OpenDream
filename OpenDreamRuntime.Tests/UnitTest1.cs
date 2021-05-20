@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 namespace OpenDreamServer.Tests
 {
 	class TestConnection : DreamConnection {
-		public TestConnection(string cKey, IPAddress address)
-			: base(cKey, address)
+		public TestConnection(DreamRuntime runtime)
+			: base(runtime)
 		{}
 
 		public override byte[] ReadPacketData()
@@ -29,7 +29,10 @@ namespace OpenDreamServer.Tests
 		public TestServer() {
 
 		}
-		public override void Start()
+
+        public override event DreamConnectionReadyEventHandler DreamConnectionRequest;
+
+        public override void Start(DreamRuntime runtime)
 		{
 
 		}

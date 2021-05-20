@@ -15,6 +15,7 @@ namespace OpenDreamVM.Objects {
         /// </summary>
         private Dictionary<string, DreamValue> _variables = new();
 
+        // TODO: global state
         private static readonly Dictionary<DreamObject, int> _referenceIDs = new();
 
         public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
@@ -30,6 +31,7 @@ namespace OpenDreamVM.Objects {
             // Delete();
         }
 
+        // TODO: global state
         public static DreamObject GetFromReferenceID(int refID) {
             foreach (KeyValuePair<DreamObject, int> referenceIDPair in _referenceIDs) {
                 if (referenceIDPair.Value == refID) return referenceIDPair.Key;

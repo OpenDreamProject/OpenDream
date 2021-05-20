@@ -12,10 +12,12 @@ namespace OpenDreamVM.Objects.MetaObjects {
 
         {}
 
+        // TODO: global state
         public static Dictionary<DreamObject, UInt32> AtomIDs = new();
         public static Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
         public static ConcurrentDictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new();
 
+        // TODO: global state
         private static UInt32 _atomIDCounter = 0;
         private static Dictionary<DreamList, DreamObject> _overlaysListToAtom = new();
         private static Dictionary<DreamList, DreamObject> _underlaysListToAtom = new();
@@ -165,6 +167,7 @@ namespace OpenDreamVM.Objects.MetaObjects {
             }
         }
 
+        // TODO: global state
         protected static ServerIconAppearance GetAppearance(DreamObject atom) {
             return AtomToAppearance[atom];
         }

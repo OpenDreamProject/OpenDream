@@ -9,6 +9,7 @@ namespace OpenDreamVM.Objects.MetaObjects {
 
         {}
 
+        // TODO: global state
         public static DreamList ContentsList;
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

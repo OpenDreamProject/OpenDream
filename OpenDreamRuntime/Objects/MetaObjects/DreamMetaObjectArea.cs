@@ -8,6 +8,7 @@ namespace OpenDreamVM.Objects.MetaObjects {
             : base(runtime)
         {}
 
+        // TODO: global state
         public static Dictionary<DreamObject, DreamList> AreaContents = new();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

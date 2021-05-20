@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamVM {
     public class ServerIconAppearance : IconAppearance {
+        // TODO: global state
         private static Dictionary<ServerIconAppearance, int> _appearanceToID = new();
 
         public DreamRuntime Runtime { get; }

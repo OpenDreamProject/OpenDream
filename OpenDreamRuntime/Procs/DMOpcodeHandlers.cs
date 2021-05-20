@@ -1,7 +1,7 @@
-﻿using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
-using OpenDreamVM.Procs.Native;
-using OpenDreamVM.Resources;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
@@ -11,7 +11,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
         #region Values
         public static ProcStatus? Assign(DMProcState state) {

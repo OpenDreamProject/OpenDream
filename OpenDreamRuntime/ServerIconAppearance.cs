@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public class ServerIconAppearance : IconAppearance {
         public DreamRuntime Runtime { get; }
 

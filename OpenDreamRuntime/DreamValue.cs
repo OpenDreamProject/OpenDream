@@ -1,9 +1,9 @@
 ﻿using System;
-using OpenDreamVM.Objects;
-using OpenDreamVM.Resources;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public struct DreamValue {
         [Flags]
         public enum DreamValueType {

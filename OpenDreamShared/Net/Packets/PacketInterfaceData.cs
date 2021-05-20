@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketInterfaceData : IPacket {
+    public class PacketInterfaceData : IPacket {
 		enum AttributeType {
 			End = 0x0,
 			Pos = 0x1,

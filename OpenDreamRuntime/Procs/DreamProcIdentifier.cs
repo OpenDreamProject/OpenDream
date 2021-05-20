@@ -1,9 +1,9 @@
-﻿using OpenDreamVM.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     interface IDreamProcIdentifier {
         public DreamValue GetValue();
         public void Assign(DreamValue value);

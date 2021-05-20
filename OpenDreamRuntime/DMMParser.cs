@@ -1,5 +1,5 @@
-﻿using OpenDreamVM;
-using OpenDreamVM.Objects;
+﻿using OpenDreamRuntime;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;

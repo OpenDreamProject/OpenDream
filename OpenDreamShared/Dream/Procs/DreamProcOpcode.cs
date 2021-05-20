@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Dream.Procs {
-    enum DreamProcOpcode {
+    public enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,
         PushString = 0x3,
@@ -79,12 +79,12 @@
         Spawn = 0x4D
     }
 
-    enum DreamProcOpcodeParameterType {
+    public enum DreamProcOpcodeParameterType {
         Named = 0xFC,
         Unnamed = 0xFD
     }
 
-    enum StringFormatTypes {
+    public enum StringFormatTypes {
         Stringify = 0x0,
         Ref = 0x1
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
-    class DMFParser : Parser<char> {
+    public class DMFParser : Parser<char> {
         private TokenType[] _sharedElementAttributeTypes = new TokenType[] {
             TokenType.DMF_Pos,
             TokenType.DMF_Size,

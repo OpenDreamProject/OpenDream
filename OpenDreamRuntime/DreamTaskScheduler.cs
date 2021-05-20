@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     class DreamSynchronizationContext : SynchronizationContext {
         private ConcurrentQueue<(SendOrPostCallback, object)> _queue = new();
 

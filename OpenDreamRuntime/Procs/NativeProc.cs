@@ -3,11 +3,11 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using OpenDreamVM.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
-using OpenDreamVM.Procs.Native;
+using OpenDreamRuntime.Procs.Native;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     public class NativeProc : DreamProc {
         public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 

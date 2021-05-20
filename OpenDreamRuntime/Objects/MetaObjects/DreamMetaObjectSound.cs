@@ -1,9 +1,9 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectSound : DreamMetaObjectRoot {
         public DreamMetaObjectSound(DreamRuntime runtime)
             : base(runtime)

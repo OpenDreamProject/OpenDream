@@ -1,7 +1,7 @@
-﻿using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
-using OpenDreamVM.Procs;
-using OpenDreamVM.Resources;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Compiler.DMM;
@@ -10,7 +10,7 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public class DreamMap {
         public DreamMap(DreamRuntime runtime) {
             Runtime = runtime;

@@ -10,14 +10,14 @@ using System.Web;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Net.Packets;
-using OpenDreamVM;
-using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
-using OpenDreamVM.Procs;
-using OpenDreamVM.Procs.Native;
-using OpenDreamVM.Resources;
+using OpenDreamRuntime;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Resources;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public abstract class DreamConnection {
         // Interface
         public abstract byte[] ReadPacketData();

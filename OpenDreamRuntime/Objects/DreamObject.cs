@@ -1,9 +1,9 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Objects {
+namespace OpenDreamRuntime.Objects {
     public class DreamObject {
         public DreamRuntime Runtime { get; }
 

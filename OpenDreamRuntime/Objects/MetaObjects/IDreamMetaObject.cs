@@ -1,7 +1,7 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using System.Threading.Tasks;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     public interface IDreamMetaObject {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments);
         public void OnObjectDeleted(DreamObject dreamObject);

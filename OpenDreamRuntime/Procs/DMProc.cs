@@ -2,10 +2,10 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
-using OpenDreamVM.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 

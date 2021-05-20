@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenDreamVM.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamVM.Procs.Native {
+namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
             DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);

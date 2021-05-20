@@ -1,11 +1,11 @@
-﻿using OpenDreamVM.Procs;
-using OpenDreamVM.Resources;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         public DreamMetaObjectAtom(DreamRuntime runtime)
             : base(runtime)

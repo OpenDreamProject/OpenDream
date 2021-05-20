@@ -1,10 +1,10 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectClient : DreamMetaObjectRoot {
         public DreamMetaObjectClient(DreamRuntime runtime)
             : base(runtime)

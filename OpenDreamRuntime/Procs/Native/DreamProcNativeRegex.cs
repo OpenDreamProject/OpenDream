@@ -1,10 +1,10 @@
-﻿using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using System;
 using System.Text.RegularExpressions;
-using DreamRegex = OpenDreamVM.Objects.MetaObjects.DreamMetaObjectRegex.DreamRegex;
+using DreamRegex = OpenDreamRuntime.Objects.MetaObjects.DreamMetaObjectRegex.DreamRegex;
 
-namespace OpenDreamVM.Procs.Native {
+namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]

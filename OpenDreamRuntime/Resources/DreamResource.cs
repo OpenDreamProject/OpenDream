@@ -1,9 +1,9 @@
-﻿using OpenDreamVM;
+﻿using OpenDreamRuntime;
 using System;
 using System.IO;
 using System.Text;
 
-namespace OpenDreamVM.Resources {
+namespace OpenDreamRuntime.Resources {
     public class DreamResource {
         public DreamRuntime Runtime { get; }
 

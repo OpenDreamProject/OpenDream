@@ -1,6 +1,6 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
         public DreamMetaObjectList(DreamRuntime runtime)
             : base(runtime)

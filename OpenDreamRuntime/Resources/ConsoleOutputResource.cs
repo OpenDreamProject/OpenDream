@@ -1,7 +1,7 @@
-﻿using OpenDreamVM;
+﻿using OpenDreamRuntime;
 using System;
 
-namespace OpenDreamVM.Resources {
+namespace OpenDreamRuntime.Resources {
     //A special resource that outputs to the console
     //world.log defaults to this
     class ConsoleOutputResource : DreamResource {

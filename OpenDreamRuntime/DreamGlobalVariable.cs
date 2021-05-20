@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public class DreamGlobalVariable {
         public DreamValue Value;
 

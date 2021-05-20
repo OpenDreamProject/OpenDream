@@ -1,6 +1,6 @@
-﻿using OpenDreamVM.Objects.MetaObjects;
-using OpenDreamVM.Procs;
-using OpenDreamVM.Resources;
+﻿using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamVM.Objects {
+namespace OpenDreamRuntime.Objects {
     public class DreamObjectTree {
         public DreamObjectTree(DreamRuntime runtime) {
             Runtime = runtime;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     [AttributeUsage(AttributeTargets.Method)]
     class DreamProcAttribute : Attribute {
         public string Name;

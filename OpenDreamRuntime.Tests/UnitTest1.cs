@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using OpenDreamShared.Net.Packets;
-using OpenDreamVM;
-using OpenDreamVM.Objects;
+using OpenDreamRuntime;
+using OpenDreamRuntime.Objects;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;

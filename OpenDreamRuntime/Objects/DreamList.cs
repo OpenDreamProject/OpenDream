@@ -1,8 +1,8 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Objects {
+namespace OpenDreamRuntime.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
     delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 

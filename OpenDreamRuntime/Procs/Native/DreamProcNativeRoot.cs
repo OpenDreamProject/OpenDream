@@ -1,5 +1,5 @@
-﻿using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
@@ -11,10 +11,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using DreamValueType = OpenDreamVM.DreamValue.DreamValueType;
-using OpenDreamVM.Resources;
+using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using OpenDreamRuntime.Resources;
 
-namespace OpenDreamVM.Procs.Native {
+namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
 
         public static DreamRuntime CurrentRuntime; // I don't want to edit 100 procs to have the runtime passed to them

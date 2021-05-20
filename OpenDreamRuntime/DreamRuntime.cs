@@ -4,11 +4,11 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Json;
 using OpenDreamShared.Net.Packets;
-using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
-using OpenDreamVM.Procs;
-using OpenDreamVM.Procs.Native;
-using OpenDreamVM.Resources;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Resources;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OpenDreamVM
+namespace OpenDreamRuntime
 {
 	public class DreamRuntime
 	{

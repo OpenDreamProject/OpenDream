@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace OpenDreamVM.Resources {
+namespace OpenDreamRuntime.Resources {
     public class DreamResourceManager {
         public string RootPath;
 

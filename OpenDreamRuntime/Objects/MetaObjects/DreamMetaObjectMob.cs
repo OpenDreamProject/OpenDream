@@ -1,8 +1,8 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectMob : DreamMetaObjectMovable {
         public DreamMetaObjectMob(DreamRuntime runtime)
             : base(runtime)

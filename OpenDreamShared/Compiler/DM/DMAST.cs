@@ -3,7 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Compiler.DM {
-    interface DMASTVisitor {
+    public interface DMASTVisitor {
         public void VisitFile(DMASTFile file) { throw new NotImplementedException(); }
         public void VisitBlockInner(DMASTBlockInner block) { throw new NotImplementedException(); }
         public void VisitProcBlockInner(DMASTProcBlockInner procBlock) { throw new NotImplementedException(); }
@@ -102,31 +102,31 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
     }
 
-    interface DMASTNode : ASTNode<DMASTVisitor> {
+    public interface DMASTNode : ASTNode<DMASTVisitor> {
 
     }
 
-    interface DMASTStatement : DMASTNode {
+    public interface DMASTStatement : DMASTNode {
 
     }
 
-    interface DMASTProcStatement : DMASTNode {
+    public interface DMASTProcStatement : DMASTNode {
 
     }
 
-    interface DMASTExpression : DMASTNode {
+    public interface DMASTExpression : DMASTNode {
 
     }
 
-    interface DMASTExpressionConstant : DMASTExpression {
+    public interface DMASTExpressionConstant : DMASTExpression {
 
     }
 
-    interface DMASTCallable : DMASTExpression {
+    public interface DMASTCallable : DMASTExpression {
 
     }
 
-    class DMASTFile : DMASTNode {
+    public class DMASTFile : DMASTNode {
         public DMASTBlockInner BlockInner;
 
         public DMASTFile(DMASTBlockInner blockInner) {
@@ -138,7 +138,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTBlockInner : DMASTNode {
+    public class DMASTBlockInner : DMASTNode {
         public DMASTStatement[] Statements;
 
         public DMASTBlockInner(DMASTStatement[] statements) {
@@ -150,7 +150,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcBlockInner : DMASTNode {
+    public class DMASTProcBlockInner : DMASTNode {
         public DMASTProcStatement[] Statements;
 
         public DMASTProcBlockInner(DMASTProcStatement[] statements) {
@@ -162,7 +162,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTObjectDefinition : DMASTStatement {
+    public class DMASTObjectDefinition : DMASTStatement {
         public DreamPath Path;
         public DMASTBlockInner InnerBlock;
 
@@ -176,7 +176,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcDefinition : DMASTStatement {
+    public class DMASTProcDefinition : DMASTStatement {
         public DreamPath? ObjectPath;
         public string Name;
         public bool IsOverride = false;
@@ -207,7 +207,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPath : DMASTNode {
+    public class DMASTPath : DMASTNode {
         public DreamPath Path;
 
         public DMASTPath(DreamPath path) {
@@ -219,7 +219,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTObjectVarDefinition : DMASTStatement {
+    public class DMASTObjectVarDefinition : DMASTStatement {
         public DreamPath ObjectPath;
         public DreamPath? Type;
         public string Name;
@@ -247,7 +247,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTObjectVarOverride : DMASTStatement {
+    public class DMASTObjectVarOverride : DMASTStatement {
         public DreamPath ObjectPath;
         public string VarName;
         public DMASTExpression Value;
@@ -263,7 +263,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementExpression : DMASTProcStatement {
+    public class DMASTProcStatementExpression : DMASTProcStatement {
         public DMASTExpression Expression;
 
         public DMASTProcStatementExpression(DMASTExpression expression) {
@@ -275,7 +275,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementVarDeclaration : DMASTProcStatement {
+    public class DMASTProcStatementVarDeclaration : DMASTProcStatement {
         public DreamPath? Type;
         public string Name;
         public DMASTExpression Value;
@@ -294,7 +294,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementReturn : DMASTProcStatement {
+    public class DMASTProcStatementReturn : DMASTProcStatement {
         public DMASTExpression Value;
 
         public DMASTProcStatementReturn(DMASTExpression value) {
@@ -306,19 +306,19 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementBreak : DMASTProcStatement {
+    public class DMASTProcStatementBreak : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBreak(this);
         }
     }
 
-    class DMASTProcStatementContinue : DMASTProcStatement {
+    public class DMASTProcStatementContinue : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementContinue(this);
         }
     }
 
-    class DMASTProcStatementGoto : DMASTProcStatement {
+    public class DMASTProcStatementGoto : DMASTProcStatement {
         public DMASTIdentifier Label;
 
         public DMASTProcStatementGoto(DMASTIdentifier label) {
@@ -330,7 +330,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementLabel : DMASTProcStatement {
+    public class DMASTProcStatementLabel : DMASTProcStatement {
         public string Name;
 
         public DMASTProcStatementLabel(string name) {
@@ -342,7 +342,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementDel : DMASTProcStatement {
+    public class DMASTProcStatementDel : DMASTProcStatement {
         public DMASTExpression Value;
 
         public DMASTProcStatementDel(DMASTExpression value) {
@@ -354,7 +354,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementSet : DMASTProcStatement {
+    public class DMASTProcStatementSet : DMASTProcStatement {
         public string Attribute;
         public DMASTExpression Value;
 
@@ -368,7 +368,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementSpawn : DMASTProcStatement {
+    public class DMASTProcStatementSpawn : DMASTProcStatement {
         public DMASTExpression Delay;
         public DMASTProcBlockInner Body;
 
@@ -382,7 +382,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementIf : DMASTProcStatement {
+    public class DMASTProcStatementIf : DMASTProcStatement {
         public DMASTExpression Condition;
         public DMASTProcBlockInner Body;
         public DMASTProcBlockInner ElseBody;
@@ -398,7 +398,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementFor : DMASTProcStatement {
+    public class DMASTProcStatementFor : DMASTProcStatement {
         public DMASTProcStatement Initializer;
         public DMASTProcBlockInner Body;
 
@@ -412,7 +412,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementForStandard : DMASTProcStatementFor {
+    public class DMASTProcStatementForStandard : DMASTProcStatementFor {
         public DMASTExpression Comparator, Incrementor;
 
         public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTExpression comparator, DMASTExpression incrementor, DMASTProcBlockInner body) : base(initializer, body) {
@@ -425,7 +425,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementForList : DMASTProcStatementFor {
+    public class DMASTProcStatementForList : DMASTProcStatementFor {
         public DMASTIdentifier Variable;
         public DMASTExpression List;
 
@@ -439,7 +439,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementForRange : DMASTProcStatementFor {
+    public class DMASTProcStatementForRange : DMASTProcStatementFor {
         public DMASTIdentifier Variable;
         public DMASTExpression RangeStart, RangeEnd, Step;
 
@@ -455,7 +455,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementForLoop : DMASTProcStatement {
+    public class DMASTProcStatementForLoop : DMASTProcStatement {
         public DMASTProcStatementVarDeclaration VariableDeclaration;
         public DMASTCallable Variable;
         public DMASTExpression Condition, Incrementer;
@@ -474,7 +474,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementWhile : DMASTProcStatement {
+    public class DMASTProcStatementWhile : DMASTProcStatement {
         public DMASTExpression Conditional;
         public DMASTProcBlockInner Body;
 
@@ -488,7 +488,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementDoWhile : DMASTProcStatement {
+    public class DMASTProcStatementDoWhile : DMASTProcStatement {
         public DMASTExpression Conditional;
         public DMASTProcBlockInner Body;
 
@@ -502,7 +502,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementSwitch : DMASTProcStatement {
+    public class DMASTProcStatementSwitch : DMASTProcStatement {
         public class SwitchCase {
             public DMASTProcBlockInner Body;
 
@@ -536,7 +536,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementBrowse : DMASTProcStatement {
+    public class DMASTProcStatementBrowse : DMASTProcStatement {
         public DMASTExpression Receiver;
         public DMASTExpression Body;
         public DMASTExpression Options;
@@ -552,7 +552,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
     
-    class DMASTProcStatementBrowseResource : DMASTProcStatement {
+    public class DMASTProcStatementBrowseResource : DMASTProcStatement {
         public DMASTExpression Receiver;
         public DMASTExpression File;
         public DMASTExpression Filename;
@@ -568,7 +568,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcStatementOutputControl : DMASTProcStatement {
+    public class DMASTProcStatementOutputControl : DMASTProcStatement {
         public DMASTExpression Receiver;
         public DMASTExpression Message;
         public DMASTExpression Control;
@@ -584,7 +584,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTIdentifier : DMASTExpression {
+    public class DMASTIdentifier : DMASTExpression {
         public string Identifier;
 
         public DMASTIdentifier(string identifier) {
@@ -596,7 +596,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTConstantInteger : DMASTExpressionConstant {
+    public class DMASTConstantInteger : DMASTExpressionConstant {
         public int Value;
 
         public DMASTConstantInteger(int value) {
@@ -608,7 +608,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTConstantFloat : DMASTExpressionConstant {
+    public class DMASTConstantFloat : DMASTExpressionConstant {
         public float Value;
 
         public DMASTConstantFloat(float value) {
@@ -620,7 +620,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTConstantString : DMASTExpressionConstant {
+    public class DMASTConstantString : DMASTExpressionConstant {
         public string Value;
 
         public DMASTConstantString(string value) {
@@ -632,7 +632,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTConstantResource : DMASTExpressionConstant {
+    public class DMASTConstantResource : DMASTExpressionConstant {
         public string Path;
 
         public DMASTConstantResource(string path) {
@@ -644,13 +644,13 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTConstantNull : DMASTExpressionConstant {
+    public class DMASTConstantNull : DMASTExpressionConstant {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantNull(this);
         }
     }
 
-    class DMASTConstantPath : DMASTExpressionConstant {
+    public class DMASTConstantPath : DMASTExpressionConstant {
         public DMASTPath Value;
 
         public DMASTConstantPath(DMASTPath value) {
@@ -662,7 +662,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTStringFormat : DMASTExpression {
+    public class DMASTStringFormat : DMASTExpression {
         public string Value;
         public DMASTExpression[] InterpolatedValues;
 
@@ -676,7 +676,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTList : DMASTExpression {
+    public class DMASTList : DMASTExpression {
         public DMASTCallParameter[] Values;
 
         public DMASTList(DMASTCallParameter[] values) {
@@ -688,7 +688,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTInput : DMASTExpression {
+    public class DMASTInput : DMASTExpression {
         public DMASTCallParameter[] Parameters;
         public DMValueType Types;
         public DMASTExpression List;
@@ -704,7 +704,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
     
-    class DMASTInitial : DMASTExpression {
+    public class DMASTInitial : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTInitial(DMASTExpression expression) {
@@ -716,7 +716,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTIsType : DMASTExpression {
+    public class DMASTIsType : DMASTExpression {
         public DMASTExpression Value;
         public DMASTExpression Type;
 
@@ -730,7 +730,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
     
-    class DMASTImplicitIsType : DMASTExpression {
+    public class DMASTImplicitIsType : DMASTExpression {
         public DMASTExpression Value;
 
         public DMASTImplicitIsType(DMASTExpression value) {
@@ -742,7 +742,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTLocateCoordinates : DMASTExpression {
+    public class DMASTLocateCoordinates : DMASTExpression {
         public DMASTExpression X, Y, Z;
 
         public DMASTLocateCoordinates(DMASTExpression x, DMASTExpression y, DMASTExpression z) {
@@ -756,7 +756,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
     
-    class DMASTLocate : DMASTExpression {
+    public class DMASTLocate : DMASTExpression {
         public DMASTExpression Expression;
         public DMASTExpression Container;
 
@@ -770,7 +770,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCall : DMASTExpression {
+    public class DMASTCall : DMASTExpression {
         public DMASTCallParameter[] CallParameters, ProcParameters;
 
         public DMASTCall(DMASTCallParameter[] callParameters, DMASTCallParameter[] procParameters) {
@@ -783,7 +783,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTAssign : DMASTExpression {
+    public class DMASTAssign : DMASTExpression {
         public DMASTExpression Expression, Value;
 
         public DMASTAssign(DMASTExpression expression, DMASTExpression value) {
@@ -796,7 +796,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewPath : DMASTExpression {
+    public class DMASTNewPath : DMASTExpression {
         public DMASTPath Path;
         public DMASTCallParameter[] Parameters;
 
@@ -810,7 +810,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewIdentifier : DMASTExpression {
+    public class DMASTNewIdentifier : DMASTExpression {
         public DMASTIdentifier Identifier;
         public DMASTCallParameter[] Parameters;
 
@@ -824,7 +824,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewDereference : DMASTExpression {
+    public class DMASTNewDereference : DMASTExpression {
         public DMASTDereference Dereference;
         public DMASTCallParameter[] Parameters;
 
@@ -838,7 +838,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNewInferred : DMASTExpression {
+    public class DMASTNewInferred : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
         public DMASTNewInferred(DMASTCallParameter[] parameters) {
@@ -850,7 +850,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNot : DMASTExpression {
+    public class DMASTNot : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTNot(DMASTExpression expression) {
@@ -862,7 +862,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNegate : DMASTExpression {
+    public class DMASTNegate : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTNegate(DMASTExpression expression) {
@@ -874,7 +874,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTEqual : DMASTExpression {
+    public class DMASTEqual : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTEqual(DMASTExpression a, DMASTExpression b) {
@@ -887,7 +887,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTNotEqual : DMASTExpression {
+    public class DMASTNotEqual : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTNotEqual(DMASTExpression a, DMASTExpression b) {
@@ -900,7 +900,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTLessThan : DMASTExpression {
+    public class DMASTLessThan : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTLessThan(DMASTExpression a, DMASTExpression b) {
@@ -913,7 +913,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTLessThanOrEqual : DMASTExpression {
+    public class DMASTLessThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTLessThanOrEqual(DMASTExpression a, DMASTExpression b) {
@@ -926,7 +926,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTGreaterThan : DMASTExpression {
+    public class DMASTGreaterThan : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTGreaterThan(DMASTExpression a, DMASTExpression b) {
@@ -939,7 +939,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTGreaterThanOrEqual : DMASTExpression {
+    public class DMASTGreaterThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTGreaterThanOrEqual(DMASTExpression a, DMASTExpression b) {
@@ -952,7 +952,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTMultiply : DMASTExpression {
+    public class DMASTMultiply : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTMultiply(DMASTExpression a, DMASTExpression b) {
@@ -965,7 +965,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTDivide : DMASTExpression {
+    public class DMASTDivide : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTDivide(DMASTExpression a, DMASTExpression b) {
@@ -978,7 +978,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTModulus : DMASTExpression {
+    public class DMASTModulus : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTModulus(DMASTExpression a, DMASTExpression b) {
@@ -991,7 +991,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPower : DMASTExpression {
+    public class DMASTPower : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTPower(DMASTExpression a, DMASTExpression b) {
@@ -1004,7 +1004,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTAdd : DMASTExpression {
+    public class DMASTAdd : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTAdd(DMASTExpression a, DMASTExpression b) {
@@ -1017,7 +1017,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTSubtract : DMASTExpression {
+    public class DMASTSubtract : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTSubtract(DMASTExpression a, DMASTExpression b) {
@@ -1030,7 +1030,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPreIncrement : DMASTExpression {
+    public class DMASTPreIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTPreIncrement(DMASTExpression expression) {
@@ -1042,7 +1042,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPreDecrement : DMASTExpression {
+    public class DMASTPreDecrement : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTPreDecrement(DMASTExpression expression) {
@@ -1054,7 +1054,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPostIncrement : DMASTExpression {
+    public class DMASTPostIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTPostIncrement(DMASTExpression expression) {
@@ -1066,7 +1066,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTPostDecrement : DMASTExpression {
+    public class DMASTPostDecrement : DMASTExpression {
         public DMASTExpression Expression;
 
         public DMASTPostDecrement(DMASTExpression expression) {
@@ -1078,7 +1078,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTTernary : DMASTExpression {
+    public class DMASTTernary : DMASTExpression {
         public DMASTExpression A, B, C;
 
         public DMASTTernary(DMASTExpression a, DMASTExpression b, DMASTExpression c) {
@@ -1092,7 +1092,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTAppend : DMASTExpression {
+    public class DMASTAppend : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTAppend(DMASTExpression a, DMASTExpression b) {
@@ -1105,7 +1105,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTRemove : DMASTExpression {
+    public class DMASTRemove : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTRemove(DMASTExpression a, DMASTExpression b) {
@@ -1118,7 +1118,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCombine : DMASTExpression {
+    public class DMASTCombine : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTCombine(DMASTExpression a, DMASTExpression b) {
@@ -1131,7 +1131,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTMask : DMASTExpression {
+    public class DMASTMask : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTMask(DMASTExpression a, DMASTExpression b) {
@@ -1144,7 +1144,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTMultiplyAssign : DMASTExpression {
+    public class DMASTMultiplyAssign : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTMultiplyAssign(DMASTExpression a, DMASTExpression b) {
@@ -1157,7 +1157,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTDivideAssign : DMASTExpression {
+    public class DMASTDivideAssign : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTDivideAssign(DMASTExpression a, DMASTExpression b) {
@@ -1170,7 +1170,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTLeftShiftAssign : DMASTExpression {
+    public class DMASTLeftShiftAssign : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTLeftShiftAssign(DMASTExpression a, DMASTExpression b) {
@@ -1183,7 +1183,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTRightShiftAssign : DMASTExpression {
+    public class DMASTRightShiftAssign : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTRightShiftAssign(DMASTExpression a, DMASTExpression b) {
@@ -1196,7 +1196,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTXorAssign : DMASTExpression {
+    public class DMASTXorAssign : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTXorAssign(DMASTExpression a, DMASTExpression b) {
@@ -1209,7 +1209,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTOr : DMASTExpression {
+    public class DMASTOr : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTOr(DMASTExpression a, DMASTExpression b) {
@@ -1222,7 +1222,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTAnd : DMASTExpression {
+    public class DMASTAnd : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTAnd(DMASTExpression a, DMASTExpression b) {
@@ -1235,7 +1235,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTBinaryAnd : DMASTExpression {
+    public class DMASTBinaryAnd : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTBinaryAnd(DMASTExpression a, DMASTExpression b) {
@@ -1248,7 +1248,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTBinaryXor : DMASTExpression {
+    public class DMASTBinaryXor : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTBinaryXor(DMASTExpression a, DMASTExpression b) {
@@ -1261,7 +1261,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTBinaryOr : DMASTExpression {
+    public class DMASTBinaryOr : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTBinaryOr(DMASTExpression a, DMASTExpression b) {
@@ -1274,7 +1274,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTBinaryNot : DMASTExpression {
+    public class DMASTBinaryNot : DMASTExpression {
         public DMASTExpression Value;
 
         public DMASTBinaryNot(DMASTExpression value) {
@@ -1286,7 +1286,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTLeftShift : DMASTExpression {
+    public class DMASTLeftShift : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTLeftShift(DMASTExpression a, DMASTExpression b) {
@@ -1299,7 +1299,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTRightShift : DMASTExpression {
+    public class DMASTRightShift : DMASTExpression {
         public DMASTExpression A, B;
 
         public DMASTRightShift(DMASTExpression a, DMASTExpression b) {
@@ -1312,7 +1312,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTExpressionIn : DMASTExpression {
+    public class DMASTExpressionIn : DMASTExpression {
         public DMASTExpression Value;
         public DMASTExpression List;
 
@@ -1326,7 +1326,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTListIndex : DMASTExpression {
+    public class DMASTListIndex : DMASTExpression {
         public DMASTExpression Expression;
         public DMASTExpression Index;
 
@@ -1340,7 +1340,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTProcCall : DMASTExpression {
+    public class DMASTProcCall : DMASTExpression {
         public DMASTCallable Callable;
         public DMASTCallParameter[] Parameters;
 
@@ -1354,7 +1354,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCallParameter : DMASTNode {
+    public class DMASTCallParameter : DMASTNode {
         public DMASTExpression Value;
         public string Name;
 
@@ -1368,7 +1368,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTDefinitionParameter : DMASTNode {
+    public class DMASTDefinitionParameter : DMASTNode {
         public DreamPath? ObjectType;
         public string Name;
         public DMASTExpression Value;
@@ -1393,7 +1393,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTDereference : DMASTCallable {
+    public class DMASTDereference : DMASTCallable {
         public enum DereferenceType {
             Direct,
             Search
@@ -1422,7 +1422,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
+    public class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
         public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -1430,7 +1430,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCallableProcIdentifier : DMASTCallable {
+    public class DMASTCallableProcIdentifier : DMASTCallable {
         public string Identifier;
 
         public DMASTCallableProcIdentifier(string identifier) {
@@ -1442,13 +1442,13 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    class DMASTCallableSuper : DMASTCallable {
+    public class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSuper(this);
         }
     }
 
-    class DMASTCallableSelf : DMASTCallable {
+    public class DMASTCallableSelf : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSelf(this);
         }

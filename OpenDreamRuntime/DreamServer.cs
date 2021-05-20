@@ -1,11 +1,11 @@
-﻿using OpenDreamVM.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public delegate void DreamConnectionReadyEventHandler(DreamConnection connection);
     public abstract class DreamServer {
         // Interface

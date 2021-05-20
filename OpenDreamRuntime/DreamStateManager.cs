@@ -1,10 +1,10 @@
-﻿using OpenDreamVM.Objects;
-using OpenDreamVM.Objects.MetaObjects;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public delegate void DreamStateManagerDeltaStateFinalizedDelegate(DreamDeltaState deltaState);
 
     public class DreamStateManager {

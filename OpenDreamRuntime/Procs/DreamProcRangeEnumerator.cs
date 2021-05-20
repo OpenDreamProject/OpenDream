@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     class DreamProcRangeEnumerator : IEnumerator<DreamValue> {
         private float _current;
         private float _start;

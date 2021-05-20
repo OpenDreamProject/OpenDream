@@ -1,9 +1,9 @@
-﻿using OpenDreamVM.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace OpenDreamVM.Objects.MetaObjects {
+namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectRegex : DreamMetaObjectDatum {
         public DreamMetaObjectRegex(DreamRuntime runtime)
             : base(runtime)

@@ -1,7 +1,7 @@
-﻿using OpenDreamVM.Objects;
+﻿using OpenDreamRuntime.Objects;
 using System.Collections.Generic;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     public struct DreamProcArguments {
         public List<DreamValue> OrderedArguments;
         public Dictionary<string, DreamValue> NamedArguments;

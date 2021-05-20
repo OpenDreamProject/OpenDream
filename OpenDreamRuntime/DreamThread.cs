@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamShared.Dream.Procs;
-using OpenDreamVM.Objects;
-using OpenDreamVM.Procs;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 
-namespace OpenDreamVM {
+namespace OpenDreamRuntime {
     public enum ProcStatus {
         Returned,
         Deferred,

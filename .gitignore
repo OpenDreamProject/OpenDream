@@ -15,6 +15,9 @@
 /OpenDreamServer/bin
 /OpenDreamServer/obj
 /OpenDreamServer/Properties
+/OpenDreamShared/bin
+/OpenDreamShared/obj
+/OpenDreamShared/Properties
 /DMCompiler/bin
 /DMCompiler/obj
 /DMCompiler/Properties

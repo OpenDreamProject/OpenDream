@@ -1,9 +1,9 @@
-﻿using OpenDreamVM.Objects;
+﻿using OpenDreamRuntime.Objects;
 using System;
 using System.Collections.Generic;
-using DreamValueType = OpenDreamVM.DreamValue.DreamValueType;
+using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
-namespace OpenDreamVM.Procs.Native {
+namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeList {
         [DreamProc("Add")]
         [DreamProcParameter("Item1")]

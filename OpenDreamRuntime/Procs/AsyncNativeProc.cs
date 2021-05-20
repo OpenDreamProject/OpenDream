@@ -5,10 +5,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamShared.Dream.Procs;
-using OpenDreamVM.Objects;
-using OpenDreamVM.Procs;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 
-namespace OpenDreamVM.Procs {
+namespace OpenDreamRuntime.Procs {
     public class AsyncNativeProc : DreamProc {
         public class State : ProcState
         {

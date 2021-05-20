@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamServer.Tests
 {
@@ -64,11 +65,13 @@ namespace OpenDreamServer.Tests
 			Assert.AreEqual(process.ExitCode, 0);
 		}
 
+		private DreamRuntime CreateRuntime() {
+			return new DreamRuntime(new TestServer(), "DMProject\\environment.json");
+		}
+
 		[Test]
-		public void SyncReturn()
-		{
-			var x = Directory.GetCurrentDirectory();
-			var runtime = new DreamRuntime(new TestServer(), "DMProject\\environment.json");
+		public void SyncReturn() {
+			var runtime = CreateRuntime();
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 			var result = DreamThread.Run(runtime, async (state) => {
@@ -80,9 +83,8 @@ namespace OpenDreamServer.Tests
 		}
 
 		[Test]
-		public void SyncReturnInAsync()
-		{
-			var runtime = new DreamRuntime(new TestServer(), "DMProject\\environment.json");
+		public void SyncReturnInAsync() {
+			var runtime = CreateRuntime();
 
 			var sync_result = DreamThread.Run(runtime, async(state) => {
 				state.Result = new DreamValue(420);
@@ -91,6 +93,19 @@ namespace OpenDreamServer.Tests
 			});
 
 			Assert.AreEqual(sync_result, new DreamValue(420));
+		}
+
+		[Test]
+		public void SyncCall() {
+			var runtime = CreateRuntime();
+
+			var sync_result = DreamThread.Run(runtime, async(state) => {
+				var root = state.Runtime.ObjectTree.RootObject.ObjectDefinition;
+				var proc = root.GetProc("sync_test");
+				return await state.Call(proc, null, null, new DreamProcArguments(null));
+			});
+
+			Assert.AreEqual(sync_result, new DreamValue(1992));
 		}
 	}
 }

@@ -23,6 +23,7 @@
 /DMCompiler/Properties
 /packages/System.Net.Sockets.4.3.0
 /TestGame/environment.json
+/OpenDreamRuntime.Tests/DMProject/environment.json
 
 # JetBrains Rider
 .idea/

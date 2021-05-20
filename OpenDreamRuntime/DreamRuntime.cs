@@ -63,6 +63,9 @@ namespace OpenDreamRuntime
 			MainThread = Thread.CurrentThread;
             Server = server;
 
+            // Something is doing something fucky with relative dirs, somewhere
+            executablePath = Path.GetFullPath(executablePath);
+
             ResourceManager = new DreamResourceManager(Path.GetDirectoryName(executablePath));
 
             // This initialization isn't great

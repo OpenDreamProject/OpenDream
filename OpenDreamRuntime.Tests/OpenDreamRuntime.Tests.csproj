@@ -18,4 +18,10 @@
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="DMProject\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

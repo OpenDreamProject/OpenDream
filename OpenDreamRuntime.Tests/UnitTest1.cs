@@ -5,6 +5,8 @@ using OpenDreamRuntime.Objects;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 
 namespace OpenDreamServer.Tests
 {
@@ -44,10 +46,29 @@ namespace OpenDreamServer.Tests
 	}
 
 	public class Tests {
+		[SetUp]
+		public void Compile() {
+			// Terrible platform-specific way to build our test dependencies
+			var info = new ProcessStartInfo {
+				FileName = "DMCompiler.exe",
+				Arguments = "DMProject\\environment.dme",
+				RedirectStandardInput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+			};
+
+			var process = new Process { StartInfo = info };
+			process.Start();
+			process.WaitForExit();
+
+			Assert.AreEqual(process.ExitCode, 0);
+		}
+
 		[Test]
 		public void SyncReturn()
 		{
-			var runtime = new DreamRuntime(new TestServer(), "E:\\OpenDream\\TestGame\\environment.json");
+			var x = Directory.GetCurrentDirectory();
+			var runtime = new DreamRuntime(new TestServer(), "DMProject\\environment.json");
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 			var result = DreamThread.Run(runtime, async (state) => {
@@ -61,7 +82,7 @@ namespace OpenDreamServer.Tests
 		[Test]
 		public void SyncReturnInAsync()
 		{
-			var runtime = new DreamRuntime(new TestServer(), "E:\\OpenDream\\TestGame\\environment.json");
+			var runtime = new DreamRuntime(new TestServer(), "DMProject\\environment.json");
 
 			var sync_result = DreamThread.Run(runtime, async(state) => {
 				state.Result = new DreamValue(420);

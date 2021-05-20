@@ -111,19 +111,20 @@ namespace OpenDreamRuntime
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
             ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
-            Map = new DreamMap(this);
-            Map.LoadMap(CompiledJson.Maps[0]);
-
             RegisterPacketCallbacks();
-        }
 
-        public void Run() {
             if (CompiledJson.GlobalInitProc != null) {
                 var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
+            Map = new DreamMap(this);
+            Map.LoadMap(CompiledJson.Maps[0]);
+
             WorldInstance.SpawnProc("New");
+        }
+
+        public void Run() {
             Server.Start(this);
 
             while (true) {

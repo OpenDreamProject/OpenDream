@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Net.Packets {
-    class PacketCallVerb : IPacket {
+    public class PacketCallVerb : IPacket {
         public PacketID PacketID => PacketID.CallVerb;
 
         public string VerbName;

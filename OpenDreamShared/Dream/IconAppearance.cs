@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    class IconAppearance {
+    public class IconAppearance {
         public enum AppearanceProperty {
             End,
             Icon,

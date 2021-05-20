@@ -6,6 +6,12 @@
 /OpenDreamClient/bin
 /OpenDreamClient/obj
 /OpenDreamClient/Properties
+/OpenDreamRuntime/bin
+/OpenDreamRuntime/obj
+/OpenDreamRuntime/Properties
+/OpenDreamRuntime.Tests/bin
+/OpenDreamRuntime.Tests/obj
+/OpenDreamRuntime.Tests/Properties
 /OpenDreamServer/bin
 /OpenDreamServer/obj
 /OpenDreamServer/Properties

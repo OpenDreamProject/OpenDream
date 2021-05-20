@@ -25,9 +25,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMCompiler", "DMCompiler\DMCompiler.csproj", "{5CE157DB-7811-499B-97B7-11AC3C2C728F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamRuntime", "OpenDreamRuntime\OpenDreamRuntime.csproj", "{4B8D1746-BBAE-4154-9BBE-1765AC10D292}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamRuntime.Tests", "OpenDreamRuntime.Tests\OpenDreamRuntime.Tests.csproj", "{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		OpenDreamShared\OpenDreamShared.projitems*{06092635-1e20-4f0e-9969-b2efbe53e200}*SharedItemsImports = 13
+		OpenDreamShared\OpenDreamShared.projitems*{4b8d1746-bbae-4154-9bbe-1765ac10d292}*SharedItemsImports = 5
 		OpenDreamShared\OpenDreamShared.projitems*{5ce157db-7811-499b-97b7-11ac3c2c728f}*SharedItemsImports = 5
 		OpenDreamShared\OpenDreamShared.projitems*{7c10496a-8fe6-4341-9725-18282cb14ad3}*SharedItemsImports = 5
 		OpenDreamShared\OpenDreamShared.projitems*{d4c253e8-22ab-47a4-b0a7-7963cf0d253b}*SharedItemsImports = 5
@@ -63,6 +68,22 @@ Global
 		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.ActiveCfg = Release|Any CPU
 		{5CE157DB-7811-499B-97B7-11AC3C2C728F}.Release|x64.Build.0 = Release|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Debug|x64.Build.0 = Debug|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Release|x64.ActiveCfg = Release|Any CPU
+		{4B8D1746-BBAE-4154-9BBE-1765AC10D292}.Release|x64.Build.0 = Release|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Debug|x64.Build.0 = Debug|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Release|x64.ActiveCfg = Release|Any CPU
+		{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

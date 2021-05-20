@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 namespace OpenDreamShared.Dream {
-    struct DreamPath {
+    public struct DreamPath {
         public static readonly DreamPath Root = new DreamPath("/");
         public static readonly DreamPath List = new DreamPath("/list");
         public static readonly DreamPath Regex = new DreamPath("/regex");

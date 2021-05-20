@@ -89,7 +89,7 @@
         Ref = 0x1
     }
 
-    enum DMValueType {
+    public enum DMValueType {
         Anything = 0x0,
         Null = 0x1,
         Text = 0x2,

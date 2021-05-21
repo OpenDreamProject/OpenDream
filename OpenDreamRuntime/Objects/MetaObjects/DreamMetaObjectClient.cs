@@ -53,13 +53,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-
             if (variableName == "key" || variableName == "ckey") {
+                var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                 return new DreamValue(connection.CKey);
             } else if (variableName == "mob") {
+                var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                 return new DreamValue(connection.MobDreamObject);
             } else if (variableName == "address") {
+                var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                 return new DreamValue(connection.Address.ToString());
             } else if (variableName == "inactivity") {
                 return new DreamValue(0);

@@ -951,8 +951,6 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Call(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
             DreamProcIdentifierProc procIdentifier = (DreamProcIdentifierProc)state.PopIdentifier();
-            DreamProc proc = procIdentifier.GetValue().GetValueAsProc();
-
             state.Call(procIdentifier.Proc, procIdentifier.Instance, arguments);
             return ProcStatus.Called;
         }

@@ -103,9 +103,9 @@ namespace OpenDreamRuntime.Objects {
 
         public static bool IsValidAssociativeKey(DreamValue key) {
             return (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
-                                                         DreamValue.DreamValueType.DreamPath |
-                                                         DreamValue.DreamValueType.DreamObject |
-                                                         DreamValue.DreamValueType.DreamResource));
+                                                        DreamValue.DreamValueType.DreamPath |
+                                                        DreamValue.DreamValueType.DreamObject |
+                                                        DreamValue.DreamValueType.DreamResource));
         }
 
         //Does not include associations

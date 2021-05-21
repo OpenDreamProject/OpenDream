@@ -21,31 +21,31 @@ using System.Threading.Tasks;
 
 namespace OpenDreamRuntime
 {
-	public class DreamRuntime
-	{
-		public readonly Thread MainThread;
+    public class DreamRuntime
+    {
+        public readonly Thread MainThread;
 
-		public TaskFactory TaskFactory { get; }
-		public TaskScheduler TaskScheduler => _taskScheduler;
-		DreamTaskScheduler _taskScheduler;
+        public TaskFactory TaskFactory { get; }
+        public TaskScheduler TaskScheduler => _taskScheduler;
+        DreamTaskScheduler _taskScheduler;
 		
-		public readonly DreamMap Map;
-		public readonly DreamObjectTree ObjectTree;
-		public readonly DreamStateManager StateManager;
-		public readonly DreamServer Server;
+        public readonly DreamMap Map;
+        public readonly DreamObjectTree ObjectTree;
+        public readonly DreamStateManager StateManager;
+        public readonly DreamServer Server;
 
-		public readonly DreamResourceManager ResourceManager;
-		public readonly DreamCompiledJson CompiledJson;
+        public readonly DreamResourceManager ResourceManager;
+        public readonly DreamCompiledJson CompiledJson;
         
-		public readonly DreamObjectDefinition ListDefinition;
+        public readonly DreamObjectDefinition ListDefinition;
 
-		public readonly DreamObject WorldInstance;
+        public readonly DreamObject WorldInstance;
         public uint ExceptionCount { get; internal set; }
 
         public int TickCount = 0;
         public long TickStartTime = 0;
 
-		private readonly InterfaceDescriptor _clientInterface;
+        private readonly InterfaceDescriptor _clientInterface;
 
         // Global state that may not really (really really) belong here
         public Dictionary<ServerIconAppearance, int> AppearanceToID = new();
@@ -61,7 +61,7 @@ namespace OpenDreamRuntime
         public DreamList WorldContentsList;
 
         public DreamRuntime(DreamServer server, string executablePath) {
-			MainThread = Thread.CurrentThread;
+            MainThread = Thread.CurrentThread;
             Server = server;
 
             // Something is doing something fucky with relative dirs, somewhere
@@ -73,23 +73,23 @@ namespace OpenDreamRuntime
             ObjectTree = new(this);
             StateManager = new(this);
 
-			_taskScheduler = new();
-			TaskFactory = new TaskFactory(_taskScheduler);
+            _taskScheduler = new();
+            TaskFactory = new TaskFactory(_taskScheduler);
 
             StateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             Server.DreamConnectionRequest += OnDreamConnectionRequest;
 
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
         
-			CompiledJson = LoadCompiledJson(executablePath);
-			if (CompiledJson == null) {
-				throw new InvalidOperationException();
-			}
+            CompiledJson = LoadCompiledJson(executablePath);
+            if (CompiledJson == null) {
+                throw new InvalidOperationException();
+            }
 
-			_clientInterface = LoadInterface(CompiledJson.Interface);
-			if (_clientInterface == null) {
-				throw new InvalidOperationException();
-			}
+            _clientInterface = LoadInterface(CompiledJson.Interface);
+            if (_clientInterface == null) {
+                throw new InvalidOperationException();
+            }
 
             ObjectTree.LoadFromJson(CompiledJson.RootObject);
             ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot(this));
@@ -159,32 +159,32 @@ namespace OpenDreamRuntime
             }
         }
 
-		private DreamCompiledJson LoadCompiledJson(string path) {
-			DreamResource compiledJsonResource = ResourceManager.LoadResource(path);
-			var compiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonResource.ReadAsString());
+        private DreamCompiledJson LoadCompiledJson(string path) {
+            DreamResource compiledJsonResource = ResourceManager.LoadResource(path);
+            var compiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonResource.ReadAsString());
 
             if (compiledJson.Maps == null || compiledJson.Maps.Count == 0) {
                 Console.WriteLine("The game does not include a map");
                 return null;
             } else if (compiledJson.Maps.Count > 1) {
                 Console.WriteLine("The game includes more than one map");
-				return null;
+                return null;
             }
 
             if (compiledJson.Interface == null) {
                 Console.WriteLine("The game does not include an interface file");
-				return null;
+                return null;
             }
 
             return compiledJson;
-		}
+        }
 
-		private InterfaceDescriptor LoadInterface(string path) {
+        private InterfaceDescriptor LoadInterface(string path) {
             DreamResource interfaceResource = ResourceManager.LoadResource(path);
             DMFLexer dmfLexer = new DMFLexer(path, interfaceResource.ReadAsString());
             DMFParser dmfParser = new DMFParser(dmfLexer);
 
-			var descriptor = dmfParser.Interface();
+            var descriptor = dmfParser.Interface();
 
             if (dmfParser.Errors.Count > 0) {
                 Console.WriteLine("Errors while parsing the interface file");
@@ -196,8 +196,8 @@ namespace OpenDreamRuntime
                 return null;
             }
 
-			return descriptor;
-		}
+            return descriptor;
+        }
         private void RegisterPacketCallbacks() {
             Server.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, ResourceManager.HandleRequestResourcePacket);
             Server.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));
@@ -237,5 +237,5 @@ namespace OpenDreamRuntime
             });
         }
 
-	}
+    }
 }

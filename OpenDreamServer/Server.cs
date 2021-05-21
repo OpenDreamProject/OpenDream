@@ -60,7 +60,7 @@ namespace OpenDreamServer {
     }
 
     class Server : DreamServer
-	{
+    {
         public DreamRuntime Runtime { private set; get; }
 
         private readonly TcpListener _tcpListener;
@@ -82,17 +82,17 @@ namespace OpenDreamServer {
 
         public override event DreamConnectionReadyEventHandler DreamConnectionRequest;
 
-		public override void Start(DreamRuntime runtime)
-		{
+        public override void Start(DreamRuntime runtime)
+        {
             Runtime = runtime;
             _tcpListener.Start();
-		}
+        }
 
-		public override void Process()
-		{
+        public override void Process()
+        {
             ProcessConnections();
             ProcessPackets();
-		}
+        }
 
         private void ProcessConnections() {
             while (_tcpListener.Pending()) {
@@ -132,5 +132,5 @@ namespace OpenDreamServer {
                 connection.SendPacket(new PacketConnectionResult(false, "A connection with your ckey already exists"));
             }
         }
-	}
+    }
 }

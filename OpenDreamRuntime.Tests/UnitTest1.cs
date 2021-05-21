@@ -34,7 +34,9 @@ namespace OpenDreamServer.Tests
 
         }
 
+#pragma warning disable CS0067 // Event is never used
         public override event DreamConnectionReadyEventHandler DreamConnectionRequest;
+#pragma warning disable CS0067 // Event is never used
 
         public override void Start(DreamRuntime runtime)
         {

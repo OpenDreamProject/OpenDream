@@ -35,7 +35,7 @@ namespace OpenDreamRuntime.Procs {
 
                 try {
                     Result = _proc.Handler.Invoke(Src, Usr, Arguments);
-                } catch (Exception _) {
+                } catch (Exception) {
                     throw;
                 } finally {
                     DreamProcNativeRoot.RuntimeStack.Pop();

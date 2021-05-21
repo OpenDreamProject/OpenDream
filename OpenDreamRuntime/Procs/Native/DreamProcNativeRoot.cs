@@ -16,8 +16,9 @@ using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
-
-        public static DreamRuntime CurrentRuntime; // I don't want to edit 100 procs to have the runtime passed to them
+        // I don't want to edit 100 procs to have the runtime passed to them
+        public static DreamRuntime CurrentRuntime => RuntimeStack.Peek();
+        public static Stack<DreamRuntime> RuntimeStack = new();
 
         [DreamProc("abs")]
         [DreamProcParameter("A")]

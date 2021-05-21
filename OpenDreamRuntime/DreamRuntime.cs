@@ -40,6 +40,7 @@ namespace OpenDreamRuntime
 		public readonly DreamObjectDefinition ListDefinition;
 
 		public readonly DreamObject WorldInstance;
+        public uint ExceptionCount { get; internal set; }
 
         public int TickCount = 0;
         public long TickStartTime = 0;

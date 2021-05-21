@@ -167,6 +167,8 @@ namespace OpenDreamRuntime {
         }
 
         public void HandleException(Exception exception) {
+            Runtime.ExceptionCount += 1;
+
             StringBuilder builder = new();
             builder.AppendLine($"Exception Occured: {exception.Message}");
 

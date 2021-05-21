@@ -31,13 +31,16 @@ namespace OpenDreamRuntime.Procs {
 
             protected override ProcStatus InternalResume()
             {
-                if (DreamProcNativeRoot.CurrentRuntime != null) {
-                    throw new InvalidOperationException();
+                DreamProcNativeRoot.RuntimeStack.Push(Thread.Runtime);
+
+                try {
+                    Result = _proc.Handler.Invoke(Src, Usr, Arguments);
+                } catch (Exception _) {
+                    throw;
+                } finally {
+                    DreamProcNativeRoot.RuntimeStack.Pop();
                 }
 
-                DreamProcNativeRoot.CurrentRuntime = Thread.Runtime;
-                Result = _proc.Handler.Invoke(Src, Usr, Arguments);
-                DreamProcNativeRoot.CurrentRuntime = null;
                 return ProcStatus.Returned;
             }
 

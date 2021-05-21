@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamServer.Tests
 {
@@ -80,6 +81,7 @@ namespace OpenDreamServer.Tests
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
 			Assert.AreEqual(result, new DreamValue(1337));
+			Assert.Zero(runtime.ExceptionCount);
 		}
 
 		[Test]
@@ -93,6 +95,7 @@ namespace OpenDreamServer.Tests
 			});
 
 			Assert.AreEqual(sync_result, new DreamValue(420));
+			Assert.Zero(runtime.ExceptionCount);
 		}
 
 		[Test]
@@ -106,6 +109,39 @@ namespace OpenDreamServer.Tests
 			});
 
 			Assert.AreEqual(sync_result, new DreamValue(1992));
+			Assert.Zero(runtime.ExceptionCount);
+		}
+
+		[Test]
+		public void Error() {
+			var runtime = CreateRuntime();
+
+			var sync_result = DreamThread.Run(runtime, async(state) => {
+				var world = state.Runtime.WorldInstance;
+				var proc = world.GetProc("error_test");
+				return await state.Call(proc, world, null, new DreamProcArguments(null));
+			});
+
+			Assert.AreEqual(sync_result, new DreamValue(1));
+			Assert.AreEqual(runtime.ExceptionCount, 1);
+		}
+
+		[Test]
+		public void SyncImage() {
+			var runtime = CreateRuntime();
+
+			var sync_result = DreamThread.Run(runtime, async(state) => {
+				var world = runtime.WorldInstance;
+				var proc = world.GetProc("image_test");
+				return await state.Call(proc, world, null, new DreamProcArguments(null));
+			});
+
+			var obj = sync_result.GetValueAsDreamObject();
+			Assert.IsNotNull(obj);
+
+			var imageDefinition = runtime.ObjectTree.GetObjectDefinitionFromPath(DreamPath.Image);
+			Assert.AreEqual(imageDefinition, obj.ObjectDefinition);
+			Assert.Zero(runtime.ExceptionCount);
 		}
 	}
 }

@@ -25,6 +25,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
+            Runtime = copyFrom.Runtime;
             Type = copyFrom.Type;
             MetaObject = copyFrom.MetaObject;
             InitializionProc = copyFrom.InitializionProc;
@@ -44,6 +45,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamObjectDefinition(DreamPath type, DreamObjectDefinition parentObjectDefinition) {
             CopyVariablesFrom(parentObjectDefinition);
 
+            Runtime = parentObjectDefinition.Runtime;
             Type = type;
             InitializionProc = parentObjectDefinition.InitializionProc;
             _parentObjectDefinition = parentObjectDefinition;

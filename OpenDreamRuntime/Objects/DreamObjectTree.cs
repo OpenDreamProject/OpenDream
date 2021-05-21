@@ -10,14 +10,14 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectTree {
+        public DreamRuntime Runtime { get; }
+
         public DreamObjectTree(DreamRuntime runtime) {
             Runtime = runtime;
             RootObject = new DreamObjectTreeEntry(Runtime, DreamPath.Root);
         }
 
-        public DreamRuntime Runtime { get; }
         public class DreamObjectTreeEntry {
-            public DreamRuntime Runtime { get; }
             public DreamObjectDefinition ObjectDefinition;
             public Dictionary<string, DreamObjectTreeEntry> Children = new();
             public DreamObjectTreeEntry ParentEntry = null;
@@ -27,12 +27,10 @@ namespace OpenDreamRuntime.Objects {
             public Dictionary<string, DreamObjectTreeEntry> BranchBreakingChildren = new();
 
             public DreamObjectTreeEntry(DreamRuntime runtime, DreamPath path) {
-                Runtime = runtime;
-                ObjectDefinition = new DreamObjectDefinition(Runtime, path);
+                ObjectDefinition = new DreamObjectDefinition(runtime, path);
             }
 
-            public DreamObjectTreeEntry(DreamRuntime runtime, DreamPath path, DreamObjectTreeEntry parentTreeEntry) {
-                Runtime = runtime;
+            public DreamObjectTreeEntry(DreamPath path, DreamObjectTreeEntry parentTreeEntry) {
                 ObjectDefinition = new DreamObjectDefinition(path, parentTreeEntry.ObjectDefinition);
                 ParentEntry = parentTreeEntry;
             }
@@ -146,10 +144,10 @@ namespace OpenDreamRuntime.Objects {
                     if (childJsonObject.Parent != null) {
                         DreamObjectTreeEntry parentTreeEntry = GetTreeEntryFromPath(new DreamPath(childJsonObject.Parent));
 
-                        childObjectTreeEntry = new DreamObjectTreeEntry(Runtime, childObjectPath, parentTreeEntry);
+                        childObjectTreeEntry = new DreamObjectTreeEntry(childObjectPath, parentTreeEntry);
                         parentTreeEntry.BranchBreakingChildren.Add(childJsonObject.Name, childObjectTreeEntry);
                     } else {
-                        childObjectTreeEntry = new DreamObjectTreeEntry(Runtime, childObjectPath, treeEntry);
+                        childObjectTreeEntry = new DreamObjectTreeEntry(childObjectPath, treeEntry);
                     }
 
                     LoadTreeEntryFromJson(childObjectTreeEntry, childJsonObject);

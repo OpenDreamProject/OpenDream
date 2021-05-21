@@ -1,12 +1,11 @@
-﻿using OpenDreamRuntime;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
-// Why is this in the wrong project?
-namespace OpenDreamShared.Compiler.DMM {
+namespace OpenDreamRuntime {
     class DMMParser : DMParser {
         public DreamRuntime Runtime { get; }
 

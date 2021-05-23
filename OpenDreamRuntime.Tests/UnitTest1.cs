@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Tests
             process.Start();
             process.WaitForExit();
 
-            Assert.AreEqual(process.ExitCode, 0);
+            Assert.AreEqual(0, process.ExitCode);
         }
 
         private DreamRuntime CreateRuntime() {
@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Tests
             });
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
-            Assert.AreEqual(result, new DreamValue(1337));
+            Assert.AreEqual(new DreamValue(1337), result);
             Assert.Zero(runtime.ExceptionCount);
         }
 
@@ -96,7 +96,7 @@ namespace OpenDreamRuntime.Tests
                 return new DreamValue(1337);
             });
 
-            Assert.AreEqual(sync_result, new DreamValue(420));
+            Assert.AreEqual(new DreamValue(420), sync_result);
             Assert.Zero(runtime.ExceptionCount);
         }
 
@@ -110,7 +110,7 @@ namespace OpenDreamRuntime.Tests
                 return await state.Call(proc, null, null, new DreamProcArguments(null));
             });
 
-            Assert.AreEqual(sync_result, new DreamValue(1992));
+            Assert.AreEqual(new DreamValue(1992), sync_result);
             Assert.Zero(runtime.ExceptionCount);
         }
 
@@ -124,8 +124,8 @@ namespace OpenDreamRuntime.Tests
                 return await state.Call(proc, world, null, new DreamProcArguments(null));
             });
 
-            Assert.AreEqual(sync_result, new DreamValue(1));
-            Assert.AreEqual(runtime.ExceptionCount, 1);
+            Assert.AreEqual(new DreamValue(1), sync_result);
+            Assert.AreEqual(1, runtime.ExceptionCount);
         }
 
         [Test]
@@ -161,8 +161,36 @@ namespace OpenDreamRuntime.Tests
 
             runtime.Run();
 
-            Assert.AreEqual(result, new DreamValue(1337));
+            Assert.AreEqual(new DreamValue(1337), result);
             Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void CrashPropagation() {
+            var runtime = CreateRuntime();
+
+            var sync_result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("crash_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), sync_result);
+            Assert.AreEqual(1, runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void StackOverflow() {
+            var runtime = CreateRuntime();
+
+            var sync_result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("stack_overflow_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), sync_result);
+            Assert.AreEqual(1, runtime.ExceptionCount);
         }
     }
 }

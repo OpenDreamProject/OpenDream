@@ -9,6 +9,7 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
+        Cancelled,
         Returned,
         Deferred,
         Called,
@@ -44,8 +45,14 @@ namespace OpenDreamRuntime {
         }
     }
 
-    class ProcRuntime : Exception {
-        public ProcRuntime(string message)
+    class CancellingRuntime : Exception {
+        public CancellingRuntime(string message)
+            : base(message)
+        {}
+    }
+
+    class PropagatingRuntime : Exception {
+        public PropagatingRuntime(string message)
             : base(message)
         {}
     }
@@ -62,6 +69,13 @@ namespace OpenDreamRuntime {
         public ProcStatus Resume() {
             try {
                 return InternalResume();
+            } catch (CancellingRuntime exception) {
+                Thread.HandleException(exception);
+                return ProcStatus.Cancelled;
+            } catch (PropagatingRuntime exception) {
+                Thread.HandleException(exception);
+                Thread.PopProcState();
+                return ProcStatus.Returned;
             } catch (Exception exception) {
                 Thread.HandleException(exception);
                 return ProcStatus.Returned;
@@ -113,13 +127,21 @@ namespace OpenDreamRuntime {
             while (_current != null) {
                 // _current.Resume may mutate our state!!!
                 switch (_current.Resume()) {
+                    // The entire Thread is stopping
+                    case ProcStatus.Cancelled:
+                        var current = _current;
+                        _current = null;
+                        _stack.Clear();
+                        return current.Result;
+
                     // Our top-most proc just returned a value
                     case ProcStatus.Returned:
                         var returned = _current.Result;
+                        PopProcState();
 
                         // If our stack is empty, the context has finished execution
                         // so we can return the result to our native caller
-                        if (!_stack.TryPop(out _current)) {
+                        if (_current == null) {
                             return returned;
                         }
 
@@ -145,13 +167,19 @@ namespace OpenDreamRuntime {
 
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
-                throw new ProcRuntime("stack depth limit reached");
+                throw new CancellingRuntime("stack depth limit reached");
             }
 
             if (_current != null) {
                 _stack.Push(_current);
             }
             _current = state;
+        }
+
+        public void PopProcState() {
+            if (!_stack.TryPop(out _current)) {
+                _current = null;
+            }
         }
 
         public void AppendStackTrace(StringBuilder builder) {

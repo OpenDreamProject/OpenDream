@@ -146,7 +146,7 @@ namespace OpenDreamRuntime.Tests
             Assert.Zero(runtime.ExceptionCount);
         }
 
-        [Test, Timeout(1000)]
+        [Test, Timeout(10000)]
         public void AsyncCall() {
             var runtime = CreateRuntime();
             var result = DreamValue.Null;

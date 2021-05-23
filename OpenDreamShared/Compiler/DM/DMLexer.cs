@@ -114,17 +114,19 @@ namespace OpenDreamShared.Compiler.DM {
                         case TokenType.DM_Preproc_Punctuator_RightBracket: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Period: {
-                            if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
-                                if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period)
+                            if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period)
+                            {
+                                Advance();
+                                if (GetCurrent().Type == TokenType.DM_Preproc_Punctuator_Period)
                                 {
                                     token = CreateToken(TokenType.DM_IndeterminateArgs, "...");
+                                    Advance();
                                 }
                                 else
                                 {
                                     token = CreateToken(TokenType.DM_SuperProc, "..");
                                 }
-                                
-                                Advance();
+
                             } else {
                                 token = CreateToken(TokenType.DM_Period, ".");
                             }

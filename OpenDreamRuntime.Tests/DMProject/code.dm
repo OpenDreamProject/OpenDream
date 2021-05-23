@@ -13,6 +13,11 @@
 /world/proc/image_test()
 	return image('a', "Hello")
 
+/world/proc/crash_test()
+	. = 1
+	CRASH("This should stop the current proc")
+	. = 2
+
 /world/New()
 	..()
 	world.log << "World loaded!"

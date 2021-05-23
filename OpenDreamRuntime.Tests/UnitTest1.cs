@@ -178,5 +178,19 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(1), sync_result);
             Assert.AreEqual(1, runtime.ExceptionCount);
         }
+
+        [Test]
+        public void StackOverflow() {
+            var runtime = CreateRuntime();
+
+            var sync_result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("stack_overflow_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), sync_result);
+            Assert.AreEqual(1, runtime.ExceptionCount);
+        }
     }
 }

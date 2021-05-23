@@ -9,6 +9,7 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
+        Cancelled,
         Returned,
         Deferred,
         Called,
@@ -44,6 +45,12 @@ namespace OpenDreamRuntime {
         }
     }
 
+    class CancellingRuntime : Exception {
+        public CancellingRuntime(string message)
+            : base(message)
+        {}
+    }
+
     class PropagatingRuntime : Exception {
         public PropagatingRuntime(string message)
             : base(message)
@@ -62,6 +69,9 @@ namespace OpenDreamRuntime {
         public ProcStatus Resume() {
             try {
                 return InternalResume();
+            } catch (CancellingRuntime exception) {
+                Thread.HandleException(exception);
+                return ProcStatus.Cancelled;
             } catch (PropagatingRuntime exception) {
                 Thread.HandleException(exception);
                 Thread.PopProcState();
@@ -117,6 +127,13 @@ namespace OpenDreamRuntime {
             while (_current != null) {
                 // _current.Resume may mutate our state!!!
                 switch (_current.Resume()) {
+                    // The entire Thread is stopping
+                    case ProcStatus.Cancelled:
+                        var current = _current;
+                        _current = null;
+                        _stack.Clear();
+                        return current.Result;
+
                     // Our top-most proc just returned a value
                     case ProcStatus.Returned:
                         var returned = _current.Result;
@@ -150,7 +167,7 @@ namespace OpenDreamRuntime {
 
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
-                throw new Exception("stack depth limit reached");
+                throw new CancellingRuntime("stack depth limit reached");
             }
 
             if (_current != null) {

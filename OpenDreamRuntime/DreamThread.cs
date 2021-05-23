@@ -176,7 +176,6 @@ namespace OpenDreamRuntime {
             _current = state;
         }
 
-        // Returns true if the thread still contains any proc states
         public void PopProcState() {
             if (!_stack.TryPop(out _current)) {
                 _current = null;

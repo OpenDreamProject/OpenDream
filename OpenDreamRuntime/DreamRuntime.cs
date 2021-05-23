@@ -47,6 +47,8 @@ namespace OpenDreamRuntime
 
         private readonly InterfaceDescriptor _clientInterface;
 
+        public bool Shutdown;
+
         // Global state that may not really (really really) belong here
         public Dictionary<ServerIconAppearance, int> AppearanceToID = new();
         public Dictionary<DreamObject, int> ReferenceIDs = new();
@@ -128,7 +130,7 @@ namespace OpenDreamRuntime
         public void Run() {
             Server.Start(this);
 
-            while (true) {
+            while (!Shutdown) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
                 
                 _taskScheduler.Process();

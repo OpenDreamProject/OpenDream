@@ -76,6 +76,17 @@ namespace OpenDreamRuntime.Procs {
                 if (_task == null) {
                     // Pull execution of our task outside of StartNew to allow it to inline here
                     var inlined  = InternalResumeAsync();
+
+                    // Shortcut: If our proc was synchronous, we don't need to schedule
+                    //           This also means we won't reach Resume on a finished proc through our continuation
+                    if (_hasReturned) {
+                        if (inlined.Exception != null) {
+                            throw inlined.Exception;
+                        }
+
+                        return ProcStatus.Returned;
+                    }
+
                     _task = Thread.Runtime.TaskFactory.StartNew(() => inlined).Unwrap();
 
                     _task.ContinueWith(_ => {

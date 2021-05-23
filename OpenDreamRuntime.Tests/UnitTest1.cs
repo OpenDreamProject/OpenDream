@@ -145,5 +145,24 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(imageDefinition, obj.ObjectDefinition);
             Assert.Zero(runtime.ExceptionCount);
         }
+
+        [Test, Timeout(10000)]
+        public void AsyncCall() {
+            var runtime = CreateRuntime();
+            var result = DreamValue.Null;
+
+            DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("async_test");
+                result = await state.Call(proc, world, null, new DreamProcArguments(null));
+                state.Runtime.Shutdown = true;
+                return DreamValue.Null;
+            });
+
+            runtime.Run();
+
+            Assert.AreEqual(result, new DreamValue(1337));
+            Assert.Zero(runtime.ExceptionCount);
+        }
     }
 }

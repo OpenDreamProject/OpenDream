@@ -10,7 +10,7 @@ using System.IO;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
-namespace OpenDreamServer.Tests
+namespace OpenDreamRuntime.Tests
 {
     class TestConnection : DreamConnection {
         public TestConnection(DreamRuntime runtime)

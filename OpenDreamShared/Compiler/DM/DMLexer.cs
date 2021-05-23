@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    class DMLexer : Lexer<Token> {
+    public class DMLexer : Lexer<Token> {
         public static List<string> ValidEscapeSequences = new List<string>() {
             "t", "n",
             "[", "]",

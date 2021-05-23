@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 namespace OpenDreamShared.Json {
-    class DreamCompiledJson {
+    public class DreamCompiledJson {
         public List<string> Strings { get; set; }
         public ProcDefinitionJson GlobalInitProc { get; set; }
         public List<string> Maps { get; set; }

@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketBrowseResource : IPacket {
+    public class PacketBrowseResource : IPacket {
         public PacketID PacketID => PacketID.BrowseResource;
 
         public string Filename;

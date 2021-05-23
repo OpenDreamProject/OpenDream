@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    class DreamDeltaState {
+    public class DreamDeltaState {
         public class AtomCreation {
             public AtomType Type;
             public UInt32 LocationID = UInt32.MaxValue;

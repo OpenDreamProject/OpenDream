@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketSound : IPacket {
+    public class PacketSound : IPacket {
         public PacketID PacketID => PacketID.Sound;
 
         public UInt16 Channel;

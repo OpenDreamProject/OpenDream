@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketDeltaGameState : IPacket {
+    public class PacketDeltaGameState : IPacket {
         private enum SectionID {
             AtomCreations = 0x0,
             AtomDeletions = 0x1,

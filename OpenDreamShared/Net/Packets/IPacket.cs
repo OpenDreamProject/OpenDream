@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Net.Packets {
-    interface IPacket {
+    public interface IPacket {
         public PacketID PacketID { get; }
 
         public void ReadFromStream(PacketStream stream);

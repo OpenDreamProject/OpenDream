@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Compiler {
-    struct CompilerError {
+    public struct CompilerError {
         public Token Token;
         public string Message;
 
@@ -13,7 +13,7 @@
         }
     }
 
-    struct CompilerWarning {
+    public struct CompilerWarning {
         public Token Token;
         public string Message;
 

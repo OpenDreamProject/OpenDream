@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DMPreprocessor {
-    class DMPreprocessor {
+    public class DMPreprocessor {
         public List<string> IncludedMaps = new();
         public string IncludedInterface;
 

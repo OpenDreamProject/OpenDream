@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    class DreamFullState {
+    public class DreamFullState {
         public class Atom {
             public UInt32 AtomID;
             public AtomType Type;

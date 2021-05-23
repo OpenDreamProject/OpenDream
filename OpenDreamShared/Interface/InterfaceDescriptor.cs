@@ -2,7 +2,7 @@
 using System.Drawing;
 
 namespace OpenDreamShared.Interface {
-    class InterfaceDescriptor {
+    public class InterfaceDescriptor {
         public List<WindowDescriptor> WindowDescriptors;
 
         public InterfaceDescriptor(List<WindowDescriptor> windowDescriptors) {
@@ -10,7 +10,7 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    class WindowDescriptor {
+    public class WindowDescriptor {
         public string Name;
         public List<ElementDescriptor> ElementDescriptors;
         public ElementDescriptorMain MainElementDescriptor { get; private set; } = null;
@@ -27,7 +27,7 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    class ElementDescriptor {
+    public class ElementDescriptor {
         public string Name;
 
         public Point? Pos = null;
@@ -44,13 +44,13 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    class ElementDescriptorMain : ElementDescriptor {
+    public class ElementDescriptorMain : ElementDescriptor {
         public bool IsPane = false;
 
         public ElementDescriptorMain(string name) : base(name) { }
     }
 
-    class ElementDescriptorChild : ElementDescriptor {
+    public class ElementDescriptorChild : ElementDescriptor {
         public string Left = null;
         public string Right = null;
         public bool IsVert = false;
@@ -58,29 +58,29 @@ namespace OpenDreamShared.Interface {
         public ElementDescriptorChild(string name) : base(name) { }
     }
 
-    class ElementDescriptorInput : ElementDescriptor {
+    public class ElementDescriptorInput : ElementDescriptor {
         public ElementDescriptorInput(string name) : base(name) { }
     }
 
-    class ElementDescriptorButton : ElementDescriptor {
+    public class ElementDescriptorButton : ElementDescriptor {
         public string Text = null;
 
         public ElementDescriptorButton(string name) : base(name) { }
     }
 
-    class ElementDescriptorOutput : ElementDescriptor {
+    public class ElementDescriptorOutput : ElementDescriptor {
         public ElementDescriptorOutput(string name) : base(name) { }
     }
 
-    class ElementDescriptorInfo : ElementDescriptor {
+    public class ElementDescriptorInfo : ElementDescriptor {
         public ElementDescriptorInfo(string name) : base(name) { }
     }
 
-    class ElementDescriptorMap : ElementDescriptor {
+    public class ElementDescriptorMap : ElementDescriptor {
         public ElementDescriptorMap(string name) : base(name) { }
     }
     
-    class ElementDescriptorBrowser : ElementDescriptor {
+    public class ElementDescriptorBrowser : ElementDescriptor {
         public ElementDescriptorBrowser(string name) : base(name) { }
     }
 }

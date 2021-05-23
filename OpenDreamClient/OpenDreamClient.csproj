@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Renderer\VertexShader.glsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -23,7 +27,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Import Project="..\OpenDreamShared\OpenDreamShared.projitems" Label="Shared" />
 
 </Project>

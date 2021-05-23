@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketConnectionResult : IPacket {
+    public class PacketConnectionResult : IPacket {
         public PacketID PacketID => PacketID.ConnectionResult;
 
         public bool ConnectionSuccessful;

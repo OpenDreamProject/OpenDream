@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketOutput : IPacket {
+    public class PacketOutput : IPacket {
         public PacketID PacketID => PacketID.Output;
 
         public string Value;

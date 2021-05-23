@@ -44,8 +44,8 @@ namespace OpenDreamRuntime {
         }
     }
 
-    class ProcRuntime : Exception {
-        public ProcRuntime(string message)
+    class PropagatingRuntime : Exception {
+        public PropagatingRuntime(string message)
             : base(message)
         {}
     }
@@ -62,6 +62,10 @@ namespace OpenDreamRuntime {
         public ProcStatus Resume() {
             try {
                 return InternalResume();
+            } catch (PropagatingRuntime exception) {
+                Thread.HandleException(exception);
+                Thread.PopProcState();
+                return ProcStatus.Returned;
             } catch (Exception exception) {
                 Thread.HandleException(exception);
                 return ProcStatus.Returned;
@@ -116,10 +120,11 @@ namespace OpenDreamRuntime {
                     // Our top-most proc just returned a value
                     case ProcStatus.Returned:
                         var returned = _current.Result;
+                        PopProcState();
 
                         // If our stack is empty, the context has finished execution
                         // so we can return the result to our native caller
-                        if (!_stack.TryPop(out _current)) {
+                        if (_current == null) {
                             return returned;
                         }
 
@@ -145,13 +150,20 @@ namespace OpenDreamRuntime {
 
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
-                throw new ProcRuntime("stack depth limit reached");
+                throw new Exception("stack depth limit reached");
             }
 
             if (_current != null) {
                 _stack.Push(_current);
             }
             _current = state;
+        }
+
+        // Returns true if the thread still contains any proc states
+        public void PopProcState() {
+            if (!_stack.TryPop(out _current)) {
+                _current = null;
+            }
         }
 
         public void AppendStackTrace(StringBuilder builder) {

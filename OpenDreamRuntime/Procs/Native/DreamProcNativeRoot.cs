@@ -172,7 +172,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string message = arguments.GetArgument(0, "msg").GetValueAsString();
 
-            throw new Exception(message);
+            throw new PropagatingRuntime(message);
         }
 
         [DreamProc("fcopy")]

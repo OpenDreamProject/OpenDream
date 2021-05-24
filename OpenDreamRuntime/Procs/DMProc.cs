@@ -36,7 +36,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.GetIdentifier,
             DMOpcodeHandlers.PushString,
             DMOpcodeHandlers.FormatString,
-            DMOpcodeHandlers.PushInt,
+            null, //0x5
             DMOpcodeHandlers.SetLocalVariable,
             DMOpcodeHandlers.PushPath,
             DMOpcodeHandlers.Add,

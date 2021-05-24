@@ -49,6 +49,11 @@
 	    for(var/item in out3)
 	    	usr << "The output should be between 1 and 10: [item]"
 
+var/static/my_global = 2
+
+/proc/test()
+	world.log << "World loaded!"
+
 /world/New()
 	..()
 	world.log << "World loaded!"

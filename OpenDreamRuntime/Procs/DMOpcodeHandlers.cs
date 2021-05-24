@@ -57,9 +57,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {
-            float step = state.PopDreamValue().GetValueAsNumber();
-            float rangeEnd = state.PopDreamValue().GetValueAsNumber();
-            float rangeStart = state.PopDreamValue().GetValueAsNumber();
+            float step = state.PopDreamValue().GetValueAsFloat();
+            float rangeEnd = state.PopDreamValue().GetValueAsFloat();
+            float rangeStart = state.PopDreamValue().GetValueAsFloat();
 
             state.EnumeratorStack.Push(new DreamProcRangeEnumerator(rangeStart, rangeEnd, step));
             return null;
@@ -160,7 +160,7 @@ namespace OpenDreamRuntime.Procs {
 
                         state.Arguments.NamedArguments[argumentName] = value;
                         state.LocalVariables[state.Proc.ArgumentNames.IndexOf(argumentName)] = value;
-                    } else if (key.Type == DreamValue.DreamValueType.Integer) {
+                    } else if (key.Type == DreamValue.DreamValueType.Float) {
                         int argumentIndex = key.GetValueAsInteger() - 1;
 
                         state.Arguments.OrderedArguments[argumentIndex] = value;
@@ -334,13 +334,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushInt(DMProcState state) {
-            int value = state.ReadInt();
-
-            state.Push(new DreamValue(value));
-            return null;
-        }
-
         public static ProcStatus? PushNull(DMProcState state) {
             state.Push(DreamValue.Null);
             return null;
@@ -409,18 +402,10 @@ namespace OpenDreamRuntime.Procs {
                 output = first;
             } else if (first.Value == null) {
                 output = second;
-            } else if (first.Type == DreamValue.DreamValueType.Integer) {
-                int firstInt = first.GetValueAsInteger();
-
-                switch (second.Type) {
-                    case DreamValue.DreamValueType.Integer: output = new DreamValue(firstInt + second.GetValueAsInteger()); break;
-                    case DreamValue.DreamValueType.Float: output = new DreamValue(firstInt + second.GetValueAsFloat()); break;
-                }
             } else if (first.Type == DreamValue.DreamValueType.Float) {
                 float firstFloat = first.GetValueAsFloat();
 
                 switch (second.Type) {
-                    case DreamValue.DreamValueType.Integer: output = new DreamValue(firstFloat + second.GetValueAsInteger()); break;
                     case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat + second.GetValueAsFloat()); break;
                 }
             } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
@@ -428,9 +413,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.Type == DreamValue.DreamValueType.DreamObject) {
                 IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
-                if (metaObject != null) {
-                    output = metaObject.OperatorAdd(first, second);
-                }
+                output = metaObject?.OperatorAdd(first, second);
             }
             
             if (output != null) {
@@ -460,14 +443,8 @@ namespace OpenDreamRuntime.Procs {
                     identifier.Assign(second);
                 }
             } else if (second.Value != null) {
-                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsInteger()));
-                } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() + second.GetValueAsFloat()));
-                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
-                } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsInteger()));
                 } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
                     identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
                 } else {
@@ -515,7 +492,7 @@ namespace OpenDreamRuntime.Procs {
 
                 state.Push(new DreamValue(newList));
             } else if (first.Value != null && second.Value != null) {
-                state.Push(new DreamValue((int)first.GetValueAsNumber() & (int)second.GetValueAsNumber()));
+                state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
                 state.Push(new DreamValue(0));
             }
@@ -554,7 +531,7 @@ namespace OpenDreamRuntime.Procs {
                 first.GetValueAsDreamResource().Output(second);
 
                 state.Push(DreamValue.Null);
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
             } else {
                 throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
@@ -567,7 +544,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
 
-            if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
             } else {
                 throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
@@ -658,7 +635,7 @@ namespace OpenDreamRuntime.Procs {
                     identifier.Assign(second);
                 }
             } else if (second.Value != null) {
-                if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+                if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                     identifier.Assign(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
                 } else if (first.Value == null) {
                     identifier.Assign(second);
@@ -676,14 +653,8 @@ namespace OpenDreamRuntime.Procs {
 
             if (first.Value == null) {
                 state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsNumber() / second.GetValueAsNumber()));
+                state.Push(new DreamValue(first.GetValueAsFloat() / second.GetValueAsFloat()));
             } else {
                 throw new Exception("Invalid divide operation on " + first + " and " + second);
             }
@@ -708,7 +679,7 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     identifier.Assign(new DreamValue(0));
                 }
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
                 throw new Exception("Invalid mask operation on " + first + " and " + second);
@@ -721,10 +692,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
 
-            if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue((int)(first.GetValueAsFloat() % second.GetValueAsInteger())));
             } else {
                 throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }
@@ -738,12 +707,6 @@ namespace OpenDreamRuntime.Procs {
 
             if (first.Value == null || second.Value == null) {
                 state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue(first.GetValueAsInteger() * second.GetValueAsInteger()));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() * second.GetValueAsFloat()));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue(first.GetValueAsFloat() * second.GetValueAsInteger()));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsFloat() * second.GetValueAsFloat()));
             } else {
@@ -757,8 +720,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.PopDreamValue();
 
             switch (value.Type) {
-                case DreamValue.DreamValueType.Integer: state.Push(new DreamValue(-value.GetValueAsInteger())); break;
                 case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
+                default: throw new Exception("Invalid negate operation on " + value);
             }
 
             return null;
@@ -768,14 +731,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
 
-            if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsInteger())));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue((float)Math.Pow(first.GetValueAsInteger(), second.GetValueAsFloat())));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                state.Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsInteger())));
             } else {
                 throw new Exception("Invalid power operation on " + first + " and " + second);
             }
@@ -797,19 +754,13 @@ namespace OpenDreamRuntime.Procs {
                     } else {
                         throw new Exception("Invalid remove operation on " + first + " and " + second);
                     }
-                } else if (second.Type == DreamValue.DreamValueType.Integer) {
-                    identifier.Assign(new DreamValue(-(second.GetValueAsInteger())));
+                } else if (second.Type == DreamValue.DreamValueType.Float) {
+                    identifier.Assign(new DreamValue(-second.GetValueAsFloat()));
                 } else {
                     throw new Exception("Invalid remove operation on " + first + " and " + second);
                 }
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsInteger()));
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                identifier.Assign(new DreamValue(first.GetValueAsInteger() - second.GetValueAsFloat()));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsInteger()));
             } else {
                 throw new Exception("Invalid remove operation on " + first + " and " + second);
             }
@@ -824,24 +775,12 @@ namespace OpenDreamRuntime.Procs {
 
             if (second.Value == null) {
                 output = first;
-            } else if (first.Value == null) {
-                if (second.Type == DreamValue.DreamValueType.Integer) {
-                    output = new DreamValue(-second.GetValueAsInteger());
-                } else if (second.Type == DreamValue.DreamValueType.Float) {
-                    output = new DreamValue(-second.GetValueAsFloat());
-                }
-            } else if (first.Type == DreamValue.DreamValueType.Integer) {
-                int firstInt = first.GetValueAsInteger();
-
-                switch (second.Type) {
-                    case DreamValue.DreamValueType.Integer: output = new DreamValue(firstInt - second.GetValueAsInteger()); break;
-                    case DreamValue.DreamValueType.Float: output = new DreamValue(firstInt - second.GetValueAsFloat()); break;
-                }
+            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
+                output = new DreamValue(-second.GetValueAsFloat());
             } else if (first.Type == DreamValue.DreamValueType.Float) {
                 float firstFloat = first.GetValueAsFloat();
 
                 switch (second.Type) {
-                    case DreamValue.DreamValueType.Integer: output = new DreamValue(firstFloat - second.GetValueAsInteger()); break;
                     case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat - second.GetValueAsFloat()); break;
                 }
             } else if (first.Type == DreamValue.DreamValueType.DreamObject) {
@@ -1062,7 +1001,7 @@ namespace OpenDreamRuntime.Procs {
         // TODO: If delay negative, do a switcharoo
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
-            float delay = state.PopDreamValue().GetValueAsNumber();
+            float delay = state.PopDreamValue().GetValueAsFloat();
             int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
@@ -1272,8 +1211,6 @@ namespace OpenDreamRuntime.Procs {
                 return true;
             } else if (value.Type == DreamValue.DreamValueType.DreamPath) {
                 return true;
-            } else if (value.Type == DreamValue.DreamValueType.Integer) {
-                return (value.GetValueAsInteger() != 0);
             } else if (value.Type == DreamValue.DreamValueType.Float) {
                 return (value.GetValueAsFloat() != 0);
             } else if (value.Type == DreamValue.DreamValueType.String) {
@@ -1287,64 +1224,70 @@ namespace OpenDreamRuntime.Procs {
 
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.DreamObject && second.Type == DreamValue.DreamValueType.DreamObject) {
-                return first.GetValueAsDreamObject() == second.GetValueAsDreamObject();
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject && second.Type == DreamValue.DreamValueType.String) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject && second.Type == DreamValue.DreamValueType.Integer) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject && second.Type == DreamValue.DreamValueType.Float) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsInteger() == second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsInteger() == second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.DreamObject) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.String) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsFloat() == second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsFloat() == second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.DreamObject) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.Integer) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
-                return first.GetValueAsString() == second.GetValueAsString();
-            } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.DreamObject) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.DreamPath) {
-                return first.GetValueAsPath().Equals(second.GetValueAsPath());
-            } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.DreamObject) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.DreamPath && second.Type == DreamValue.DreamValueType.String) {
-                return false;
-            } else if (first.Type == DreamValue.DreamValueType.DreamResource && second.Type == DreamValue.DreamValueType.DreamResource) {
-                return first.GetValueAsDreamResource().ResourcePath == second.GetValueAsDreamResource().ResourcePath;
-            } else if (first.Type == DreamValue.DreamValueType.DreamResource && second.Type != DreamValue.DreamValueType.DreamResource) {
-                return false;
-            } else if (first.Value == null) {
-                return second.Value == null;
-            } else {
-                throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject: {
+                    DreamObject firstValue = first.GetValueAsDreamObject();
+
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.DreamObject: return firstValue == second.GetValueAsDreamObject();
+                        case DreamValue.DreamValueType.DreamPath:
+                        case DreamValue.DreamValueType.String:
+                        case DreamValue.DreamValueType.Float: return false;
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.Float: {
+                    float firstValue = first.GetValueAsFloat();
+
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.Float: return firstValue == second.GetValueAsFloat();
+                        case DreamValue.DreamValueType.DreamObject:
+                        case DreamValue.DreamValueType.String: return false;
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.String: {
+                    string firstValue = first.GetValueAsString();
+
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.String: return firstValue == second.GetValueAsString();
+                        case DreamValue.DreamValueType.DreamObject:
+                        case DreamValue.DreamValueType.Float: return false;
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath: {
+                    DreamPath firstValue = first.GetValueAsPath();
+
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.DreamPath: return firstValue.Equals(second.GetValueAsPath());
+                        case DreamValue.DreamValueType.DreamObject:
+                        case DreamValue.DreamValueType.String: return false;
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamResource: {
+                    DreamResource firstValue = first.GetValueAsDreamResource();
+
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.DreamResource: return firstValue.ResourcePath == second.GetValueAsDreamResource().ResourcePath;
+                        default: return false;
+                    }
+                }
             }
+            
+            throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsInteger() > second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsInteger() > second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
-                return first.GetValueAsInteger() > 0;
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return first.GetValueAsFloat() > second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsFloat() > second.GetValueAsInteger();
-            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Integer) {
-                return 0 > second.GetValueAsInteger();
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Value == null) {
+                return first.GetValueAsFloat() > 0;
             } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                 return 0 > second.GetValueAsFloat();
             } else {
@@ -1353,20 +1296,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static bool IsLessThan(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsInteger() < second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsInteger() < second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Integer && second.Value == null) {
-                return first.GetValueAsInteger() < 0;
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Integer) {
-                return first.GetValueAsFloat() < second.GetValueAsInteger();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return first.GetValueAsFloat() < second.GetValueAsFloat();
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Value == null) {
                 return first.GetValueAsFloat() < 0;
-            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Integer) {
-                return 0 < second.GetValueAsInteger();
+            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
+                return 0 < second.GetValueAsFloat();
             } else {
                 throw new Exception("Invalid less than comparison between " + first + " and " + second);
             }

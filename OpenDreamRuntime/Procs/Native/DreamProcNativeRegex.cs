@@ -8,8 +8,8 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Integer | DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Integer)]
+        [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
             DreamValue haystack = arguments.GetArgument(0, "haystack");
@@ -53,8 +53,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Replace")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Integer)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Integer)]
+        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
             if (!dreamRegex.IsGlobal) throw new NotImplementedException("Non-global regex replaces are not implemented");

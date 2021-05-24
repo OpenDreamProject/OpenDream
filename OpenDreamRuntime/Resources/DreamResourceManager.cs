@@ -9,7 +9,6 @@ namespace OpenDreamRuntime.Resources {
         public string RootPath;
 
         private Dictionary<string, DreamResource> _resourceCache = new();
-        private object _resourceCacheLock = new object();
 
         public DreamResourceManager(DreamRuntime runtime, string rootPath) {
             Runtime = runtime;
@@ -23,17 +22,9 @@ namespace OpenDreamRuntime.Resources {
         public DreamResource LoadResource(string resourcePath) {
             if (resourcePath == "") return new ConsoleOutputResource(Runtime); //An empty resource path is the console
 
-            DreamResource resource = null;
-
-            lock (_resourceCacheLock) {
-                _resourceCache.TryGetValue(resourcePath, out resource);
-            }
-
-            if (resource == null) {
+            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource)) {
                 resource = new DreamResource(Runtime, Path.Combine(RootPath, resourcePath), resourcePath);
-                lock (_resourceCacheLock) {
-                    _resourceCache.Add(resourcePath, resource);
-                }
+                _resourceCache.Add(resourcePath, resource);
             }
 
             return resource;

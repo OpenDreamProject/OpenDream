@@ -155,7 +155,7 @@ namespace OpenDreamRuntime
                 TickCount++;
 
                 int elapsedTime = (int)(new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - TickStartTime);
-                int tickLength = (int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsNumber());
+                int tickLength = (int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsFloat());
                 int timeToSleep = tickLength - elapsedTime;
                 if (timeToSleep > 0) Thread.Sleep(timeToSleep);
             }

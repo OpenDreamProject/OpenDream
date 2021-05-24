@@ -14,7 +14,6 @@ namespace OpenDreamServer {
         private readonly NetworkStream _tcpStream;
         private readonly BinaryReader _tcpStreamBinaryReader;
         private readonly BinaryWriter _tcpStreamBinaryWriter;
-        private object _netLock = new object();
 
         public Connection(DreamRuntime runtime, TcpClient tcpClient)
             : base(runtime)
@@ -28,20 +27,18 @@ namespace OpenDreamServer {
 
         public override byte[] ReadPacketData()
         {
-            lock (_netLock) {
-                if (_tcpClient.Connected && _tcpStream.DataAvailable) {
-                    UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
-                    byte[] packetData = new byte[packetDataLength];
+            if (_tcpClient.Connected && _tcpStream.DataAvailable) {
+                UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
+                byte[] packetData = new byte[packetDataLength];
 
-                    int bytesRead = _tcpStream.Read(packetData, 0, (int)packetDataLength);
-                    while (bytesRead < packetDataLength) {
-                        bytesRead += _tcpStream.Read(packetData, bytesRead, (int)packetDataLength - bytesRead);
-                    }
-
-                    return packetData;
-                } else {
-                    return null;
+                int bytesRead = _tcpStream.Read(packetData, 0, (int)packetDataLength);
+                while (bytesRead < packetDataLength) {
+                    bytesRead += _tcpStream.Read(packetData, bytesRead, (int)packetDataLength - bytesRead);
                 }
+
+                return packetData;
+            } else {
+                return null;
             }
         }
 
@@ -52,10 +49,8 @@ namespace OpenDreamServer {
             stream.WriteByte((byte)packet.PacketID);
             packet.WriteToStream(stream);
 
-            lock (_netLock) {
-                _tcpStreamBinaryWriter.Write((UInt32)stream.Length);
-                _tcpStream.Write(stream.ToArray());
-            }
+            _tcpStreamBinaryWriter.Write((UInt32)stream.Length);
+            _tcpStream.Write(stream.ToArray());
         }
     }
 

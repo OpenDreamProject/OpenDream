@@ -42,6 +42,7 @@ namespace DMCompiler.DM {
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
         private bool _waitFor = true;
+        private int _labelIdCounter = 0;
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
@@ -172,6 +173,10 @@ namespace DMCompiler.DM {
 
         public void ListAppendAssociated() {
             WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        }
+
+        public string NewLabelName() {
+            return "label" + _labelIdCounter++;
         }
 
         public void LoopStart(string loopLabel) {
@@ -459,11 +464,6 @@ namespace DMCompiler.DM {
         
         public void PushUsr() {
             WriteOpcode(DreamProcOpcode.PushUsr);
-        }
-
-        public void PushInt(int value) {
-            WriteOpcode(DreamProcOpcode.PushInt);
-            WriteInt(value);
         }
 
         public void PushFloat(float value) {

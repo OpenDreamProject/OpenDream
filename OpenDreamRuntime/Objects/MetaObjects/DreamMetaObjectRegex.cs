@@ -38,10 +38,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 throw new System.Exception("Invalid regex pattern " + pattern);
             }
 
-            lock (ObjectToDreamRegex) {
-                ObjectToDreamRegex.Add(dreamObject, regex);
-            }
-
+            ObjectToDreamRegex.Add(dreamObject, regex);
             base.OnObjectCreated(dreamObject, creationArguments);
         }
     }

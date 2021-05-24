@@ -8,13 +8,11 @@ namespace OpenDreamRuntime {
         [Flags]
         public enum DreamValueType {
             String = 1,
-            Integer = 2,
-            Float = 4,
-            Number = Integer | Float,
-            DreamResource = 8,
-            DreamObject = 16,
-            DreamPath = 32,
-            DreamProc = 64
+            Float = 2,
+            DreamResource = 4,
+            DreamObject = 8,
+            DreamPath = 16,
+            DreamProc = 32
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject)null);
@@ -27,25 +25,14 @@ namespace OpenDreamRuntime {
             Value = value;
         }
 
-        public DreamValue(int value) {
-            Type = DreamValueType.Integer;
-            Value = (Int32)value;
-        }
-
-        public DreamValue(UInt32 value) {
-            Type = DreamValueType.Integer;
-            Value = (Int32)value;
-        }
-
         public DreamValue(float value) {
-            if (Math.Floor(value) == value && value <= Int32.MaxValue && value >= Int32.MinValue) {
-                Type = DreamValueType.Integer;
-                Value = (Int32)value;
-            } else {
-                Type = DreamValueType.Float;
-                Value = value;
-            }
+            Type = DreamValueType.Float;
+            Value = value;
         }
+
+        public DreamValue(int value) : this((float)value) { }
+
+        public DreamValue(UInt32 value) : this((float)value) { }
 
         public DreamValue(DreamResource value) {
             Type = DreamValueType.DreamResource;
@@ -68,11 +55,15 @@ namespace OpenDreamRuntime {
         }
 
         public DreamValue(object value) {
-            Value = value;
+            if (value is int) {
+                Value = (float)(int)value;
+            } else {
+                Value = value;
+            }
 
             Type = value switch {
                 string => DreamValueType.String,
-                int => DreamValueType.Integer,
+                int => DreamValueType.Float,
                 float => DreamValueType.Float,
                 DreamResource => DreamValueType.DreamResource,
                 DreamObject => DreamValueType.DreamObject,
@@ -96,14 +87,11 @@ namespace OpenDreamRuntime {
             return "DreamValue(" + Type + ", " + value + ")";
         }
 
-        public bool IsType(DreamValueType type) {
-            return ((int)type & (int)Type) != 0;
-        }
-
         public object GetValueExpectingType(DreamValueType type) {
-            if (IsType(type)) {
+            if (Type == type) {
                 return Value;
             }
+
             throw new Exception("Value " + this + " was not the expected type of " + type + "");
         }
 
@@ -112,7 +100,7 @@ namespace OpenDreamRuntime {
         }
 
         public bool TryGetValueAsString(out string value) {
-            if (IsType(DreamValueType.String)) {
+            if (Type == DreamValueType.String) {
                 value = (string)Value;
                 return true;
             } else {
@@ -121,13 +109,14 @@ namespace OpenDreamRuntime {
             }
         }
 
+        //Casts a float value to an integer
         public int GetValueAsInteger() {
-            return (int)GetValueExpectingType(DreamValueType.Integer);
+            return (int)(float)GetValueExpectingType(DreamValueType.Float);
         }
 
         public bool TryGetValueAsInteger(out int value) {
-            if (IsType(DreamValueType.Integer)) {
-                value = (int)Value;
+            if (Type == DreamValueType.Float) {
+                value = (int)(float)Value;
                 return true;
             } else {
                 value = 0;
@@ -138,9 +127,15 @@ namespace OpenDreamRuntime {
         public float GetValueAsFloat() {
             return (float)GetValueExpectingType(DreamValueType.Float);
         }
-
-        public float GetValueAsNumber() {
-            return Convert.ToSingle(GetValueExpectingType(DreamValueType.Integer | DreamValueType.Float));
+        
+        public bool TryGetValueAsFloat(out float value) {
+            if (Type == DreamValueType.Float) {
+                value = (float)Value;
+                return true;
+            } else {
+                value = 0;
+                return false;
+            }
         }
 
         public DreamResource GetValueAsDreamResource() {
@@ -148,7 +143,7 @@ namespace OpenDreamRuntime {
         }
 
         public bool TryGetValueAsDreamResource(out DreamResource value) {
-            if (IsType(DreamValueType.DreamResource)) {
+            if (Type == DreamValueType.DreamResource) {
                 value = (DreamResource)Value;
                 return true;
             } else {
@@ -160,7 +155,7 @@ namespace OpenDreamRuntime {
         public DreamObject GetValueAsDreamObject() {
             DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
 
-            if (dreamObject != null && dreamObject.Deleted) {
+            if (dreamObject?.Deleted == true) {
                 Value = null;
             
                 return null;
@@ -174,7 +169,7 @@ namespace OpenDreamRuntime {
         }
 
         public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {
-            if (IsType(DreamValueType.DreamObject)) {
+            if (Type == DreamValueType.DreamObject) {
                 dreamObject = GetValueAsDreamObject();
                 return true;
             } else {
@@ -186,7 +181,7 @@ namespace OpenDreamRuntime {
         public DreamObject GetValueAsDreamObjectOfType(DreamPath type) {
             DreamObject value = GetValueAsDreamObject();
 
-            if (value != null && !value.Deleted && value.IsSubtypeOf(type)) {
+            if (value?.IsSubtypeOf(type) == true) {
                 return value;
             } else {
                 throw new Exception("Value " + this + " was not of type '" + type + "'");
@@ -214,7 +209,7 @@ namespace OpenDreamRuntime {
         }
 
         public bool TryGetValueAsPath(out DreamPath path) {
-            if (IsType(DreamValueType.DreamPath)) {
+            if (Type == DreamValueType.DreamPath) {
                 path = (DreamPath)Value;
 
                 return true;
@@ -230,7 +225,7 @@ namespace OpenDreamRuntime {
         }
 
         public bool TryGetValueAsProc(out DreamProc proc) {
-            if (IsType(DreamValueType.DreamProc)) {
+            if (Type == DreamValueType.DreamProc) {
                 proc = (DreamProc)Value;
 
                 return true;
@@ -245,8 +240,6 @@ namespace OpenDreamRuntime {
             switch (Type) {
                 case DreamValueType.String:
                     return GetValueAsString();
-                case DreamValueType.Integer:
-                    return GetValueAsInteger().ToString();
                 case DreamValueType.Float:
                     return GetValueAsFloat().ToString();
                 case DreamValueType.DreamResource:

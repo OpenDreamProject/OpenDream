@@ -4,7 +4,7 @@
         GetIdentifier = 0x2,
         PushString = 0x3,
         FormatString = 0x4,
-        PushInt = 0x5,
+        //0x5
         SetLocalVariable = 0x6,
         PushPath = 0x7,
         Add = 0x8,

@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Net.Packets {
-    class PacketRequestConnect : IPacket {
+    public class PacketRequestConnect : IPacket {
         public PacketID PacketID => PacketID.RequestConnect;
 
         public string CKey;

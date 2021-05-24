@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketUpdateStatPanels : IPacket {
+    public class PacketUpdateStatPanels : IPacket {
         public PacketID PacketID => PacketID.UpdateStatPanels;
 
         public Dictionary<string, List<string>> StatPanels;

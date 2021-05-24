@@ -455,11 +455,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushUsr);
         }
 
-        public void PushInt(int value) {
-            WriteOpcode(DreamProcOpcode.PushInt);
-            WriteInt(value);
-        }
-
         public void PushFloat(float value) {
             WriteOpcode(DreamProcOpcode.PushFloat);
             WriteFloat(value);

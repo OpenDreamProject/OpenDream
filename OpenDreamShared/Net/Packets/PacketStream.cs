@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketStream : MemoryStream {
+    public class PacketStream : MemoryStream {
 
         private BinaryWriter _binaryWriter;
         private BinaryReader _binaryReader;

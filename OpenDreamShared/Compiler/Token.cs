@@ -1,5 +1,5 @@
-namespace OpenDreamShared.Compiler {
-    enum TokenType {
+﻿namespace OpenDreamShared.Compiler {
+    public enum TokenType {
         //Base lexer
         Error,
         Warning,
@@ -174,7 +174,7 @@ namespace OpenDreamShared.Compiler {
         DMF_ZoomMode
     }
 
-    class Token {
+    public class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;

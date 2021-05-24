@@ -87,7 +87,7 @@ namespace DMCompiler {
             }
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
-            // astSimplifier.SimplifyAST(astFile);
+            astSimplifier.SimplifyAST(astFile);
 
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);

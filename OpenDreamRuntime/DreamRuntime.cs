@@ -117,7 +117,7 @@ namespace OpenDreamRuntime
             RegisterPacketCallbacks();
 
             if (CompiledJson.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode);
+                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode, true);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 

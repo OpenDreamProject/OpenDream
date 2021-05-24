@@ -9,8 +9,8 @@ namespace OpenDreamRuntime.Procs {
     class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        public DMProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode)
-            : base(name, runtime, superProc, argumentNames, argumentTypes)
+        public DMProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, bool waitFor)
+            : base(name, runtime, superProc, waitFor, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
         }

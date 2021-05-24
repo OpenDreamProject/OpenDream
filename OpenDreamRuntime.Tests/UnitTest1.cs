@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.IO;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using System.Threading;
+using System;
 
 namespace OpenDreamRuntime.Tests
 {
@@ -191,6 +193,31 @@ namespace OpenDreamRuntime.Tests
 
             Assert.AreEqual(new DreamValue(1), sync_result);
             Assert.AreEqual(1, runtime.ExceptionCount);
+        }
+
+        [Test, Timeout(10000)]
+        public void WaitFor() {
+            var runtime = CreateRuntime();
+            DreamValue result_1 = DreamValue.Null;
+            DreamValue result_2 = DreamValue.Null;
+
+            DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc_1 = world.GetProc("waitfor_1_a");
+                result_1 = await state.Call(proc_1, world, null, new DreamProcArguments(null));
+
+                var proc_2 = world.GetProc("waitfor_2_a");
+                result_2 = await state.Call(proc_2, world, null, new DreamProcArguments(null));
+
+                state.Runtime.Shutdown = true;
+                return DreamValue.Null;
+            });
+
+            runtime.Run();
+
+            Assert.AreEqual(new DreamValue(3), result_1);
+            Assert.AreEqual(new DreamValue(2), result_2);
+            Assert.Zero(runtime.ExceptionCount);
         }
     }
 }

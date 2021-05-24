@@ -96,23 +96,26 @@ namespace OpenDreamRuntime.Procs {
                     }, Thread.Runtime.TaskScheduler);
                 }
 
-                // We need to call a proc
-                if (_callProcNotify != null) {
-                    var callProcNotify = _callProcNotify;
-                    _callProcNotify = null;
+                // We need to call a proc.
+                while (_callProcNotify != null || _callResult != null)
+                {
+                    if (_callProcNotify != null) {
+                        var callProcNotify = _callProcNotify;
+                        _callProcNotify = null;
 
-                    Thread.PushProcState(callProcNotify);
-                    return ProcStatus.Called;
-                }
+                        Thread.PushProcState(callProcNotify);
+                        return ProcStatus.Called;
+                    }
 
-                // We've just finished calling a proc, notify our task
-                if (_callResult != null) {
-                    var callTcs = _callTcs;
-                    var callResult = _callResult.Value;
-                    _callTcs = null;
-                    _callResult = null;
+                    // We've just finished calling a proc, notify our task
+                    if (_callResult != null) {
+                        var callTcs = _callTcs;
+                        var callResult = _callResult.Value;
+                        _callTcs = null;
+                        _callResult = null;
 
-                    callTcs.SetResult(callResult);
+                        callTcs.SetResult(callResult);
+                    }
                 }
 
                 // If the task is finished, we're all done
@@ -126,7 +129,7 @@ namespace OpenDreamRuntime.Procs {
 
                 // Otherwise, we are still pending
                 _inResume = false;
-                return ProcStatus.Deferred;
+                return Thread.HandleDefer();
             }
 
             public override void AppendStackFrame(StringBuilder builder)
@@ -144,11 +147,11 @@ namespace OpenDreamRuntime.Procs {
         private Func<State, Task<DreamValue>> _taskFunc;
 
         private AsyncNativeProc(DreamRuntime runtime)
-            : base("<anonymous async proc>", runtime, null, null, null)
+            : base("<anonymous async proc>", runtime, null, false, null, null)
         {}
 
         public AsyncNativeProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(name, runtime, superProc, argumentNames, argumentTypes)
+            : base(name, runtime, superProc, true, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;

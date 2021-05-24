@@ -13,10 +13,14 @@ namespace DMCompiler.DM {
             return instance.Result;
         }
 
-        // Shortcut to just directly emit code to push the result to the stack
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
             expr.EmitPushValue(dmObject, proc);
+        }
+
+        public static float Eval(DMObject dmObject, DMProc proc, DMASTExpression expression) {
+            var expr = Create(dmObject, proc, expression, null);
+            return expr.Eval();
         }
 
         // Perform constant evaluation of the expression

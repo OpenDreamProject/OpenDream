@@ -33,7 +33,7 @@
 	. = waitfor_1_b()
 
 /world/proc/waitfor_1_b()
-	set OPENDREAM_WAITFOR_FALSE = _
+	set waitfor = FALSE
 	. = 2
 	. = waitfor_1_c()
 	. = 3
@@ -41,7 +41,7 @@
 	. = 4
 
 /world/proc/waitfor_1_c()
-	set OPENDREAM_WAITFOR_FALSE = _
+	set waitfor = FALSE
 	. = 5
 	sleep(1)
 	. = 6
@@ -54,7 +54,7 @@
 	. = waitfor_2_b()
 
 /world/proc/waitfor_2_b()
-	set OPENDREAM_WAITFOR_FALSE = _
+	set waitfor = FALSE
 	. = 2
 	. = waitfor_2_c()
 	. = 3
@@ -62,6 +62,7 @@
 	. = 4
 
 /world/proc/waitfor_2_c()
+	set waitfor = TRUE
 	. = 5
 	sleep(1)
 	. = 6

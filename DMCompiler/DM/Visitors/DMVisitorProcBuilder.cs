@@ -64,8 +64,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
             //TODO: Proc attributes
-            if (statementSet.Attribute == "OPENDREAM_WAITFOR_FALSE") {
-                _proc.WaitFor(false);
+            if (statementSet.Attribute.ToLower() == "waitfor") {
+                _proc.WaitFor(DMExpression.Eval(_dmObject, _proc, statementSet.Value) != 0.0);
             }
         }
 

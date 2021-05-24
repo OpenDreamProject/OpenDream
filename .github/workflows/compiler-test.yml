@@ -1,4 +1,4 @@
-name: Build & Compile TestGame
+name: Build & Test
 
 on:
   push:

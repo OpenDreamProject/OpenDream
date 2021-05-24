@@ -123,6 +123,7 @@ namespace OpenDreamRuntime
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);
+            WorldInstance.SetVariable("maxz", new DreamValue(Map.Levels.Count));
 
             WorldInstance.SpawnProc("New");
         }

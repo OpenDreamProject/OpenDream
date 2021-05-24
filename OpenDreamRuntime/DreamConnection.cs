@@ -10,9 +10,7 @@ using System.Web;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Net.Packets;
-using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
@@ -64,31 +62,27 @@ namespace OpenDreamRuntime {
         }
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.String) {
-                SendPacket(new PacketOutput(value.GetValueAsString(), null));
-            } else if (value.Type == DreamValue.DreamValueType.Integer) {
-                SendPacket(new PacketOutput(value.GetValueAsInteger().ToString(), null));
-            } else if (value.Type == DreamValue.DreamValueType.DreamObject) {
+            if (value.Type == DreamValue.DreamValueType.DreamObject) {
                 DreamObject outputObject = value.GetValueAsDreamObject();
 
-                if (outputObject != null) {
-                    if (outputObject.IsSubtypeOf(DreamPath.Sound)) {
-                        UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
-                        DreamValue file = outputObject.GetVariable("file");
-                        UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsNumber();
+                if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
+                    UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
+                    DreamValue file = outputObject.GetVariable("file");
+                    UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
 
-                        if (file.IsType(DreamValue.DreamValueType.String) || file == DreamValue.Null) {
-                            SendPacket(new PacketSound(channel, (string)file.Value, volume));
-                        } else if (file.IsType(DreamValue.DreamValueType.DreamResource)) {
-                            SendPacket(new PacketSound(channel, file.GetValueAsDreamResource().ResourcePath, volume));
-                        } else {
-                            throw new ArgumentException("Cannot output " + value, nameof(value));
-                        }
+                    if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
+                        SendPacket(new PacketSound(channel, (string)file.Value, volume));
+                    } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
+                        SendPacket(new PacketSound(channel, resource.ResourcePath, volume));
+                    } else {
+                        throw new ArgumentException("Cannot output " + value, nameof(value));
                     }
+
+                    return;
                 }
-            } else {
-                throw new ArgumentException("Cannot output " + value, nameof(value));
             }
+
+            SendPacket(new PacketOutput(value.Stringify(), null));
         }
 
         public void Browse(string body, string options) {

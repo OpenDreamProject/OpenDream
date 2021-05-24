@@ -24,8 +24,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Copy")]
-        [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Copy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             int start = arguments.GetArgument(0, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(1, "End").GetValueAsInteger(); //1-indexed
@@ -36,8 +36,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Cut")]
-        [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Cut(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             int start = arguments.GetArgument(0, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(1, "End").GetValueAsInteger(); //1-indexed
@@ -49,8 +49,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Find")]
         [DreamProcParameter("Elem")]
-        [DreamProcParameter("Start", Type = DreamValueType.Integer, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Integer, DefaultValue = 0)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Find(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue element = arguments.GetArgument(0, "Elem");
             int start = arguments.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
@@ -61,7 +61,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Insert")]
-        [DreamProcParameter("Index", Type = DreamValueType.Integer)]
+        [DreamProcParameter("Index", Type = DreamValueType.Float)]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Insert(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             int index = arguments.GetArgument(0, "Index").GetValueAsInteger(); //1-indexed
@@ -103,8 +103,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Swap")]
-        [DreamProcParameter("Index1", Type = DreamValueType.Integer)]
-        [DreamProcParameter("Index2", Type = DreamValueType.Integer)]
+        [DreamProcParameter("Index1", Type = DreamValueType.Float)]
+        [DreamProcParameter("Index2", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_Swap(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = (DreamList)instance;
             int index1 = arguments.GetArgument(0, "Index1").GetValueAsInteger();

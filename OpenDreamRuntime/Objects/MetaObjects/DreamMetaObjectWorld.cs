@@ -40,17 +40,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "fps") {
-                return new DreamValue((float)10.0 / dreamObject.GetVariable("tick_lag").GetValueAsNumber());
+                return new DreamValue(10.0f / dreamObject.GetVariable("tick_lag").GetValueAsFloat());
             } else if (variableName == "timeofday") {
                 return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
             } else if (variableName == "time") {
-                return new DreamValue(dreamObject.GetVariable("tick_lag").GetValueAsNumber() * Runtime.TickCount);
+                return new DreamValue(dreamObject.GetVariable("tick_lag").GetValueAsFloat() * Runtime.TickCount);
             } else if (variableName == "realtime") {
                 return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
             } else if (variableName == "tick_usage") {
                 long currentTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
                 long elapsedTime = (currentTime - Runtime.TickStartTime);
-                double tickLength = (dreamObject.GetVariable("tick_lag").GetValueAsNumber() * 100);
+                double tickLength = (dreamObject.GetVariable("tick_lag").GetValueAsFloat() * 100);
                 int tickUsage = (int)(elapsedTime / tickLength * 100);
 
                 return new DreamValue(tickUsage);

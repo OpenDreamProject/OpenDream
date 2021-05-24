@@ -12,7 +12,6 @@ namespace OpenDreamRuntime.Objects {
 
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = new();
-        private object _listLock = new object();
 
         public DreamList(DreamRuntime runtime) : base(runtime, runtime.ListDefinition, new DreamProcArguments(null)) {}
 
@@ -33,14 +32,12 @@ namespace OpenDreamRuntime.Objects {
 
             if (end == 0 || end > _values.Count) end = _values.Count;
 
-            lock (copy._listLock) {
-                for (int i = start; i <= end; i++) {
-                    DreamValue value = _values[i - 1];
+            for (int i = start; i <= end; i++) {
+                DreamValue value = _values[i - 1];
 
-                    copy._values.Add(value);
-                    if (_associativeValues.ContainsKey(value)) {
-                        copy._associativeValues.Add(value, _associativeValues[value]);
-                    }
+                copy._values.Add(value);
+                if (_associativeValues.ContainsKey(value)) {
+                    copy._associativeValues.Add(value, _associativeValues[value]);
                 }
             }
 
@@ -56,28 +53,22 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual DreamValue GetValue(DreamValue key) {
-            if (key.Type == DreamValue.DreamValueType.Integer) {
-                return _values[key.GetValueAsInteger() - 1]; //1-indexed
+            if (key.TryGetValueAsInteger(out int keyInteger)) {
+                return _values[keyInteger - 1]; //1-indexed
             }
-            if (IsValidAssociativeKey(key)) {
-                return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
-            }
-            throw new ArgumentException("Invalid index " + key);
+
+            return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
             ValueAssigned?.Invoke(this, key, value);
 
-            lock (_listLock) {
-                if (IsValidAssociativeKey(key)) {
-                    if (!ContainsValue(key)) _values.Add(key);
+            if (key.TryGetValueAsInteger(out int keyInteger)) {
+                _values[keyInteger - 1] = value;
+            } else {
+                if (!ContainsValue(key)) _values.Add(key);
 
-                    _associativeValues[key] = value;
-                } else if (key.Type == DreamValue.DreamValueType.Integer) {
-                    _values[key.GetValueAsInteger() - 1] = value;
-                } else {
-                    throw new ArgumentException("Invalid index " + key);
-                }
+                _associativeValues[key] = value;
             }
         }
 
@@ -87,33 +78,20 @@ namespace OpenDreamRuntime.Objects {
             if (valueIndex != -1) {
                 BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
 
-                lock (_listLock) {
-                    _values.RemoveAt(valueIndex);
-                }
+                _values.RemoveAt(valueIndex);
             }
         }
 
         public void AddValue(DreamValue value) {
-            lock (_listLock) {
-                _values.Add(value);
-            }
+            _values.Add(value);
 
             ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
         }
 
-        public static bool IsValidAssociativeKey(DreamValue key) {
-            return (key == DreamValue.Null || key.IsType(DreamValue.DreamValueType.String |
-                                                        DreamValue.DreamValueType.DreamPath |
-                                                        DreamValue.DreamValueType.DreamObject |
-                                                        DreamValue.DreamValueType.DreamResource));
-        }
-
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
-            lock (_listLock) {
-                foreach (DreamValue listValue in _values) {
-                    if (value == listValue) return true;
-                }
+            foreach (DreamValue listValue in _values) {
+                if (value == listValue) return true;
             }
 
             return false;
@@ -138,15 +116,11 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            lock (_listLock) {
-                _values.RemoveRange(start - 1, end - start);
-            }
+            _values.RemoveRange(start - 1, end - start);
         }
 
         public void Insert(int index, DreamValue value) {
-            lock (_listLock) {
-                _values.Insert(index - 1, value);
-            }
+            _values.Insert(index - 1, value);
         }
 
         public void Swap(int index1, int index2) {

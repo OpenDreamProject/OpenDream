@@ -480,7 +480,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) {
             preIncrement.Expression.Visit(this);
-            _proc.PushInt(1);
+            _proc.PushFloat(1);
             _proc.Append();
 
             preIncrement.Expression.Visit(this);
@@ -488,7 +488,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) {
             preDecrement.Expression.Visit(this);
-            _proc.PushInt(1);
+            _proc.PushFloat(1);
             _proc.Remove();
 
             preDecrement.Expression.Visit(this);
@@ -498,7 +498,7 @@ namespace DMCompiler.DM.Visitors {
             postIncrement.Expression.Visit(this);
 
             postIncrement.Expression.Visit(this);
-            _proc.PushInt(1);
+            _proc.PushFloat(1);
             _proc.Append();
         }
 
@@ -506,7 +506,7 @@ namespace DMCompiler.DM.Visitors {
             postDecrement.Expression.Visit(this);
 
             postDecrement.Expression.Visit(this);
-            _proc.PushInt(1);
+            _proc.PushFloat(1);
             _proc.Remove();
         }
 
@@ -830,7 +830,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {
-            _proc.PushInt(constant.Value);
+            _proc.PushFloat(constant.Value);
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {

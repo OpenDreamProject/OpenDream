@@ -63,17 +63,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "pixel_x") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
 
-                newAppearance.PixelX = (int)variableValue.GetValueAsNumber();
+                newAppearance.PixelX = variableValue.GetValueAsInteger();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "pixel_y") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
 
-                newAppearance.PixelY = (int)variableValue.GetValueAsNumber();
+                newAppearance.PixelY = variableValue.GetValueAsInteger();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "layer") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
 
-                newAppearance.Layer = variableValue.GetValueAsNumber();
+                newAppearance.Layer = variableValue.GetValueAsFloat();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "invisibility") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
@@ -99,12 +99,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
 
-                newAppearance.Transform[0] = matrix.GetVariable("a").GetValueAsNumber();
-                newAppearance.Transform[1] = matrix.GetVariable("d").GetValueAsNumber();
-                newAppearance.Transform[2] = matrix.GetVariable("b").GetValueAsNumber();
-                newAppearance.Transform[3] = matrix.GetVariable("e").GetValueAsNumber();
-                newAppearance.Transform[4] = matrix.GetVariable("c").GetValueAsNumber();
-                newAppearance.Transform[5] = matrix.GetVariable("f").GetValueAsNumber();
+                newAppearance.Transform[0] = matrix.GetVariable("a").GetValueAsFloat();
+                newAppearance.Transform[1] = matrix.GetVariable("d").GetValueAsFloat();
+                newAppearance.Transform[2] = matrix.GetVariable("b").GetValueAsFloat();
+                newAppearance.Transform[3] = matrix.GetVariable("e").GetValueAsFloat();
+                newAppearance.Transform[4] = matrix.GetVariable("c").GetValueAsFloat();
+                newAppearance.Transform[5] = matrix.GetVariable("f").GetValueAsFloat();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "overlays") {
                 if (oldVariableValue != DreamValue.Null && oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.PixelY = pixelY;
             }
 
-            appearance.Layer = atom.GetVariable("layer").GetValueAsNumber();
+            appearance.Layer = atom.GetVariable("layer").GetValueAsFloat();
 
             return appearance;
         }
@@ -202,15 +202,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private ServerIconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
             ServerIconAppearance appearance = new ServerIconAppearance(Runtime);
 
-            if (value.IsType(DreamValue.DreamValueType.String)) {
+            if (value.TryGetValueAsString(out string valueString)) {
                 appearance.Icon = GetAppearance(Runtime, atom).Icon;
-                appearance.IconState = value.GetValueAsString();
+                appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
-                if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
-                    appearance.Icon = icon.GetValueAsDreamResource().ResourcePath;
-                } else if (icon.IsType(DreamValue.DreamValueType.String)) {
-                    appearance.Icon = icon.GetValueAsString();
+                if (icon.TryGetValueAsDreamResource(out DreamResource iconResource)) {
+                    appearance.Icon = iconResource.ResourcePath;
+                } else if (icon.TryGetValueAsString(out string iconString)) {
+                    appearance.Icon = iconString;
                 } else if (icon == DreamValue.Null) {
                     appearance.Icon = GetAppearance(Runtime, atom).Icon;
                 }
@@ -223,23 +223,23 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
 
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
-                appearance.Layer = mutableAppearance.GetVariable("layer").GetValueAsNumber();
+                appearance.Layer = mutableAppearance.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelX = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelY = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Image, out DreamObject image)) {
                 DreamValue icon = image.GetVariable("icon");
                 DreamValue iconState = image.GetVariable("icon_state");
 
-                if (icon.IsType(DreamValue.DreamValueType.DreamResource)) {
-                    appearance.Icon = icon.GetValueAsDreamResource().ResourcePath;
+                if (icon.TryGetValueAsDreamResource(out DreamResource iconResource)) {
+                    appearance.Icon = iconResource.ResourcePath;
                 } else {
                     appearance.Icon = icon.GetValueAsString();
                 }
 
-                if (iconState.IsType(DreamValue.DreamValueType.String)) appearance.IconState = iconState.GetValueAsString();
+                if (iconState.TryGetValueAsString(out string iconStateString)) appearance.IconState = iconStateString;
                 appearance.SetColor(image.GetVariable("color").GetValueAsString());
                 appearance.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
-                appearance.Layer = image.GetVariable("layer").GetValueAsNumber();
+                appearance.Layer = image.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelX = image.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelY = image.GetVariable("pixel_y").GetValueAsInteger();
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom)) {

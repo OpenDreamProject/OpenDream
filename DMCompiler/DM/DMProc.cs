@@ -41,6 +41,7 @@ namespace DMCompiler.DM {
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
+        private int _labelIdCounter = 0;
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
@@ -166,6 +167,10 @@ namespace DMCompiler.DM {
 
         public void ListAppendAssociated() {
             WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        }
+
+        public string NewLabelName() {
+            return "label" + _labelIdCounter++;
         }
 
         public void LoopStart(string loopLabel) {

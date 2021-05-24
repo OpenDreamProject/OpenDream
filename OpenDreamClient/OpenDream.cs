@@ -4,6 +4,7 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace OpenDreamClient {
         public DreamResourceManager ResourceManager = null;
         public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
+        public ClientData ClientData = new ClientData();
 
         public Map Map;
         public ATOM Eye;
@@ -46,7 +48,7 @@ namespace OpenDreamClient {
             if (Connection.Connected) throw new InvalidOperationException("Already connected to a server!");
             Connection.Connect(ip, port);
 
-            PacketRequestConnect pRequestConnect = new PacketRequestConnect(username);
+            PacketRequestConnect pRequestConnect = new PacketRequestConnect(username, ClientData);
             Connection.SendPacket(pRequestConnect);
 
             Interface = new DreamInterface();
@@ -73,6 +75,7 @@ namespace OpenDreamClient {
             SoundEngine = null;
             ResourceManager = null;
             StateManager = null;
+            ClientData = null;
 
             Map = null;
             ATOMs = null;

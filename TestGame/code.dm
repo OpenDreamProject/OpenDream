@@ -15,6 +15,7 @@
 
 	verb/tell_location()
 		usr << "You are at ([x], [y], [z])"
+		usr << usr.client.timezone
 
 	verb/say(message as text)
 		var/list/viewers = viewers()

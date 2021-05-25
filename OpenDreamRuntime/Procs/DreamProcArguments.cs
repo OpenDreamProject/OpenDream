@@ -24,11 +24,11 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
             if (NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
                 return argumentValue;
-            } else if (OrderedArguments.Count > argumentPosition) {
-                return OrderedArguments[argumentPosition];
-            } else {
-                return DreamValue.Null;
             }
+            if (OrderedArguments.Count > argumentPosition) {
+                return OrderedArguments[argumentPosition];
+            }
+            return DreamValue.Null;
         }
 
         public DreamList CreateDreamList(DreamRuntime runtime) {

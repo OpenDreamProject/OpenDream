@@ -71,3 +71,11 @@
 
 /world/proc/default_test(datum/arg = new())
 	return arg
+
+/world/proc/value_in_list(test)
+	var/L = list(1, 2, 3)
+	if (4 in L)
+		return FALSE
+	if (!(3 in L))
+		return FALSE
+	return TRUE

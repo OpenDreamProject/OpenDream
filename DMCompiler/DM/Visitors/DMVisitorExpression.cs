@@ -417,5 +417,11 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, initial.Expression);
             Result = new Expressions.Initial(expr);
         }
+
+        public void VisitIn(DMASTExpressionIn expressionIn) {
+            var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value);
+            var container = DMExpression.Create(_dmObject, _proc, expressionIn.List);   
+            Result = new Expressions.In(expr, container);
+        }
     }
 }

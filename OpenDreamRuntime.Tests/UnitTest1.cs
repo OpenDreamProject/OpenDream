@@ -235,5 +235,19 @@ namespace OpenDreamRuntime.Tests
             Assert.IsNotNull(obj);
         }
 
+        [Test]
+        public void ValueInList() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("value_in_list");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), result);
+        }
+
     }
 }
+

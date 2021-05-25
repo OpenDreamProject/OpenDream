@@ -1314,5 +1314,22 @@ namespace DMCompiler.DM {
                 throw new Exception($"can't get initial value of {_expr}");
             }
         }
+
+        // x in y
+        class In : DMExpression {
+            DMExpression _expr;
+            DMExpression _container;
+
+            public In(DMExpression expr, DMExpression container) {
+                _expr = expr;
+                _container = container;
+            }
+
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                _expr.EmitPushValue(dmObject, proc);
+                _container.EmitPushValue(dmObject, proc);
+                proc.IsInList();
+            }
+        }
     }
 }

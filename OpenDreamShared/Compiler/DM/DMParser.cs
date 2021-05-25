@@ -921,8 +921,13 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (Check(TokenType.DM_Comma)) {
                     Whitespace();
-                    
-                    if (Check(TokenType.DM_IndeterminateArgs)) break;
+
+                    if (Check(TokenType.DM_IndeterminateArgs) && !Check(TokenType.DM_Comma))
+                    {
+                        break;
+                    }
+
+                    Whitespace();
                     
                     parameter = DefinitionParameter();
 

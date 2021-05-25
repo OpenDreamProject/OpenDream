@@ -25,8 +25,7 @@ namespace OpenDreamServer {
             Address = tcpClient.Client.RemoteEndPoint != null ? ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address : IPAddress.Any;
         }
 
-        public override byte[] ReadPacketData()
-        {
+        public override byte[] ReadPacketData() {
             if (_tcpClient.Connected && _tcpStream.DataAvailable) {
                 UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
                 byte[] packetData = new byte[packetDataLength];
@@ -37,9 +36,8 @@ namespace OpenDreamServer {
                 }
 
                 return packetData;
-            } else {
-                return null;
             }
+            return null;
         }
 
         public override void SendPacket(IPacket packet)
@@ -100,9 +98,9 @@ namespace OpenDreamServer {
 
         private void ProcessPackets() {
             foreach (DreamConnection dreamConnection in Connections) {
-                byte[] packetData;
-
                 try {
+                    byte[] packetData;
+                    
                     while ((packetData = dreamConnection.ReadPacketData()) != null) {
                         IPacket packet = IPacket.CreatePacketFromData(packetData);
 

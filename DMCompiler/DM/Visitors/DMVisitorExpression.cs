@@ -30,7 +30,7 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Number(constant.Value);
         }
 
-        public void VisitConstantFloat(DMASTConstantInteger constant) {
+        public void VisitConstantFloat(DMASTConstantFloat constant) {
             Result = new Expressions.Number(constant.Value);
         }
 

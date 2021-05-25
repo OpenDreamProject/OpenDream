@@ -810,9 +810,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float: {
                     float firstFloat = first.GetValueAsFloat();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat - second.GetValueAsFloat()); break;
-                    }
+                    output = second.Type switch {
+                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat - second.GetValueAsFloat()),
+                        _ => null
+                    };
                     break;
                 }
                 case DreamValue.DreamValueType.DreamObject: {

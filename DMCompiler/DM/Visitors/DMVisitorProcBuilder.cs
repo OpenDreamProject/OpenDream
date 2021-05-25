@@ -8,7 +8,6 @@ namespace DMCompiler.DM.Visitors {
     class DMVisitorProcBuilder : DMASTVisitor {
         private DMObject _dmObject;
         private DMProc _proc;
-        private DMVariable _currentVariable = null;
 
         public DMVisitorProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
@@ -29,8 +28,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.JumpIfFalse(afterDefaultValueCheck);
 
                         _proc.PushLocalVariable(parameterName);
-                        _currentVariable = new DMVariable(parameter.ObjectType, parameterName, false);
-                        DMExpression.Emit(_dmObject, _proc, parameter.Value);
+                        DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                         _proc.Assign();
 
                         _proc.AddLabel(afterDefaultValueCheck);
@@ -87,7 +85,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            _currentVariable = new DMVariable(varDeclaration.Type, varDeclaration.Name, false);
             _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
 
             if (varDeclaration.Value != null) {

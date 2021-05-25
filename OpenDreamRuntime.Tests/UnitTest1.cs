@@ -219,5 +219,21 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(2), result_2);
             Assert.Zero(runtime.ExceptionCount);
         }
+
+
+        [Test]
+        public void Default() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("default_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            var obj = result.GetValueAsDreamObjectOfType(DreamPath.Datum);
+            Assert.IsNotNull(obj);
+        }
+
     }
 }

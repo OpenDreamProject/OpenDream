@@ -66,3 +66,8 @@
 	. = 5
 	sleep(1)
 	. = 6
+
+//
+
+/world/proc/default_test(datum/arg = new())
+	return arg

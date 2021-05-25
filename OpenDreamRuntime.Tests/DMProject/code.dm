@@ -79,3 +79,9 @@
 	if (!(3 in L))
 		return FALSE
 	return TRUE
+
+/world/proc/call_target()
+	return 13
+
+/world/proc/call_test()
+	return call(src, "call_target")()

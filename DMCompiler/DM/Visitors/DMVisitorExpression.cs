@@ -423,5 +423,29 @@ namespace DMCompiler.DM.Visitors {
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List);   
             Result = new Expressions.In(expr, container);
         }
+
+        public void VisitCall(DMASTCall call) {
+            var procArgs = new ArgumentList(_dmObject, _proc, call.CallParameters);
+
+            switch (call.CallParameters.Length) {
+                case 1:
+                    {
+                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value);
+                        Result = new Expressions.CallStatement(a, procArgs);
+                    }
+                    break;
+
+                case 2:
+                    {
+                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value);
+                        var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value);
+                        Result = new Expressions.CallStatement(a, b, procArgs);
+                    }
+                    break;
+
+                default:
+                    throw new Exception("invalid argument count for call()");
+            }            
+        }
     }
 }

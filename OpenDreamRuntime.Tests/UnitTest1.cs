@@ -248,6 +248,20 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(1), result);
         }
 
+
+        [Test]
+        public void CallTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("call_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(13), result);
+        }
+
     }
 }
 

@@ -957,6 +957,34 @@ namespace DMCompiler.DM {
             }
         }
 
+        // call(...)(...)
+        class CallStatement : DMExpression {
+            DMExpression _a; // Procref, Object, LibName
+            DMExpression _b; // ProcName, FuncName
+            ArgumentList _procArgs;
+
+            public CallStatement(DMExpression a, ArgumentList procArgs) {
+                _a = a;
+                _procArgs = procArgs;
+            }
+
+            public CallStatement(DMExpression a, DMExpression b, ArgumentList procArgs) {
+                _a = a;
+                _b = b;
+                _procArgs = procArgs;
+            }
+
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                if (_b != null) {
+                    _b.EmitPushValue(dmObject, proc);
+                }
+
+                _a.EmitPushValue(dmObject, proc);
+                _procArgs.EmitPushArguments(dmObject, proc);
+                proc.CallStatement();
+            }
+        }
+
         // x[y]
         class ListIndex : LValue {
             DMExpression _expr;

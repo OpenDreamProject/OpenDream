@@ -157,7 +157,7 @@ namespace OpenDreamRuntime
                 int elapsedTime = (int)(new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - TickStartTime);
                 int tickLength = (int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsFloat());
                 int timeToSleep = tickLength - elapsedTime;
-                WorldInstance.SetVariable("cpu", new DreamValue(100 - timeToSleep));
+                WorldInstance.SetVariable("cpu", new DreamValue((float)elapsedTime / tickLength * 100));
                 if (timeToSleep > 0) Thread.Sleep(timeToSleep);
             }
         }

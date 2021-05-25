@@ -1,6 +1,5 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;

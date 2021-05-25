@@ -1,7 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace OpenDreamShared.Net.Packets {
     public class PacketFullGameState: IPacket {

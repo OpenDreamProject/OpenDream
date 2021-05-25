@@ -1,7 +1,6 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Procs {
     interface IDreamProcIdentifier {

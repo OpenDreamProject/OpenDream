@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using System.Threading.Tasks;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     public interface IDreamMetaObject {

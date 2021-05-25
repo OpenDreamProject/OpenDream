@@ -2,7 +2,6 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectClient : DreamMetaObjectRoot {

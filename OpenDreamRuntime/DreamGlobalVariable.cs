@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenDreamRuntime {
+﻿namespace OpenDreamRuntime {
     public class DreamGlobalVariable {
         public DreamValue Value;
 

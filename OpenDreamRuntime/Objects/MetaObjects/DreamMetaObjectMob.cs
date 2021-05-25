@@ -1,6 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectMob : DreamMetaObjectMovable {

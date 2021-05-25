@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {

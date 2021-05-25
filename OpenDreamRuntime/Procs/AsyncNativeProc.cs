@@ -86,11 +86,9 @@ namespace OpenDreamRuntime.Procs {
 
                     _task = Thread.Runtime.TaskFactory.StartNew(() => inlined).Unwrap();
 
-                    _task.ContinueWith(_ => {
-                        // We have to resume now so that the execution context knows we have returned
-                        // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
-                        SafeResume();
-                    }, Thread.Runtime.TaskScheduler);
+                    // We have to resume now so that the execution context knows we have returned
+                    // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
+                    _task.ContinueWith(_ => SafeResume(), Thread.Runtime.TaskScheduler);
                 }
 
                 // We need to call a proc

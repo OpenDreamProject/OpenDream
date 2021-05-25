@@ -1128,9 +1128,7 @@ namespace OpenDreamRuntime.Procs {
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
                 // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
-                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async (state) => {
-                    return await promptTask;
-                });
+                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async (state) => await promptTask);
                 state.Thread.PushProcState(waiter);
                 return ProcStatus.Called;
             }

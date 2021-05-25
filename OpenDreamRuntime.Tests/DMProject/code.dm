@@ -120,7 +120,7 @@
 
 /world/proc/conditional_call_test()
 	var/datum/recursive/R = new()
-	return R?.inner?.get_inner()
+	return R?.inner?.get_inner(CRASH("this shouldn't be evaluated"))
  
 /world/proc/conditional_call_test_error()
  	var/datum/recursive/R = new()

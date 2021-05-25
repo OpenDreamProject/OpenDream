@@ -284,7 +284,7 @@ namespace OpenDreamRuntime.Tests
                 return await state.Call(proc, world, null, new DreamProcArguments(null));
             });
 
-            Assert.AreEqual(DreamValue.Null, result);
+            Assert.AreEqual(new DreamValue(1), result);
             Assert.Zero(runtime.ExceptionCount);
         }
 

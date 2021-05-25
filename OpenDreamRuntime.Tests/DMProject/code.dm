@@ -112,7 +112,9 @@
 
 /world/proc/conditional_access_test()
 	var/datum/recursive/R = new()
-	return R?.inner?.inner
+	R?.inner?.inner = CRASH("this shouldn't be evaluated")
+	R.inner = 1
+	return R?.inner
 
 /world/proc/conditional_access_test_error()
 	var/datum/recursive/R = new()

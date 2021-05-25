@@ -16,6 +16,15 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
+        public enum IdentifierPushResult {
+            // The emitted code has pushed the identifier onto the stack
+            Unconditional,
+
+            // The emitted code has pushed either null or the identifier onto the stack
+            // If null was pushed, any assignments to this identifier should silently evaluate to null
+            Conditional,
+        }
+
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
@@ -45,7 +54,7 @@ namespace DMCompiler.DM {
 
         // Emits code that pushes the identifier of this expression to the proc's stack
         // May throw if this expression is unable to be written
-        public virtual void EmitIdentifier(DMObject dmObject, DMProc proc) {
+        public virtual IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
             throw new Exception("attempt to assign to r-value");
         }
 
@@ -120,8 +129,9 @@ namespace DMCompiler.DM {
             }
 
             // At the moment this generally always matches EmitPushValue for any modifiable type
-            public override void EmitIdentifier(DMObject dmObject, DMProc proc) {
+            public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
                 EmitPushValue(dmObject, proc);
+                return IdentifierPushResult.Unconditional;
             }
         }
 
@@ -979,7 +989,7 @@ namespace DMCompiler.DM {
                     case ProcPushResult.Conditional: {
                         var skipLabel = proc.NewLabelName();
                         var endLabel = proc.NewLabelName();
-                        proc.JumpIfNullProc(skipLabel);
+                        proc.JumpIfNullIdentifier(skipLabel);
                         if (_arguments.Length == 0 && _target is ProcSuper) {
                             proc.PushProcArguments();
                         } else {
@@ -1107,6 +1117,27 @@ namespace DMCompiler.DM {
                 }
             }
 
+            public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
+                _expr.EmitPushValue(dmObject, proc);
+
+                bool lastConditional = false;
+                foreach (var (conditional, field) in _fields) {
+                    if (conditional) {
+                        proc.DereferenceConditional(field);
+                    } else {
+                        proc.Dereference(field);
+                    }
+
+                    lastConditional = conditional;
+                }
+
+                if (lastConditional) {
+                    return IdentifierPushResult.Conditional;
+                } else {
+                    return IdentifierPushResult.Unconditional;
+                }
+            }
+
             public void EmitPushInitial(DMObject dmObject, DMProc proc) {
                 _expr.EmitPushValue(dmObject, proc);
 
@@ -1189,9 +1220,25 @@ namespace DMCompiler.DM {
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
-                proc.Assign();
+                switch (LHS.EmitIdentifier(dmObject, proc)) {
+                    case IdentifierPushResult.Unconditional:
+                        RHS.EmitPushValue(dmObject, proc);
+                        proc.Assign();
+                        break;
+
+                    case IdentifierPushResult.Conditional: {
+                        var skipLabel = proc.NewLabelName();
+                        var endLabel = proc.NewLabelName();
+                        proc.JumpIfNullIdentifier(skipLabel);
+                        RHS.EmitPushValue(dmObject, proc);
+                        proc.Assign();
+                        proc.AddLabel(skipLabel);
+                        proc.Pop();
+                        proc.PushNull();
+                        proc.AddLabel(endLabel);
+                        break;
+                    }
+                }
             }
         }
 

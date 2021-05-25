@@ -111,7 +111,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Spawn,
             DMOpcodeHandlers.DereferenceConditional,
             DMOpcodeHandlers.DereferenceProcConditional,
-            DMOpcodeHandlers.JumpIfNullProc,
+            DMOpcodeHandlers.JumpIfNullIdentifier,
             DMOpcodeHandlers.Pop,
         };
         #endregion

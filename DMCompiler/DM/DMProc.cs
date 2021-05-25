@@ -306,8 +306,8 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
-        public void JumpIfNullProc(string label) {
-            WriteOpcode(DreamProcOpcode.JumpIfNullProc);
+        public void JumpIfNullIdentifier(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfNullIdentifier);
             WriteLabel(label);
         }
 

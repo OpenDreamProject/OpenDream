@@ -79,7 +79,7 @@
         Spawn = 0x4D,
         DereferenceConditional = 0x4E,
         DereferenceProcConditional = 0x4F,
-        JumpIfNullProc = 0x50,
+        JumpIfNullIdentifier = 0x50,
         Pop = 0x51,
     }
 

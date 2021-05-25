@@ -410,18 +410,25 @@ namespace OpenDreamRuntime.Procs {
                 output = first;
             } else if (first.Value == null) {
                 output = second;
-            } else if (first.Type == DreamValue.DreamValueType.Float) {
-                float firstFloat = first.GetValueAsFloat();
+            } else switch (first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    float firstFloat = first.GetValueAsFloat();
 
-                switch (second.Type) {
-                    case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat + second.GetValueAsFloat()); break;
+                    output = second.Type switch {
+                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat + second.GetValueAsFloat()),
+                        _ => null
+                    };
+                    break;
                 }
-            } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
-                output = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                    output = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                    break;
+                case DreamValue.DreamValueType.DreamObject: {
+                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
-                output = metaObject?.OperatorAdd(first, second);
+                    output = metaObject?.OperatorAdd(first, second);
+                    break;
+                }
             }
             
             if (output != null) {

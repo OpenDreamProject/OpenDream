@@ -105,7 +105,6 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new Exception("arglist must be the only argument");
                     if (procCall.Parameters.Length != 1) throw new Exception("arglist must have 1 argument");
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value);

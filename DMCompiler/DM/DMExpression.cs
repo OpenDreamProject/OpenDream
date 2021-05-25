@@ -1170,7 +1170,30 @@ namespace DMCompiler.DM {
             }
         }
 
-        // locate() | locate(x)
+        // locate()
+        class LocateInferred : DMExpression {
+            DreamPath _path;
+            DMExpression _container;
+
+            public LocateInferred(DreamPath path, DMExpression container) {
+                _path = path;
+                _container = container;
+            }
+
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                proc.PushPath(_path);
+
+                if (_container != null) {
+                    _container.EmitPushValue(dmObject, proc);
+                } else {
+                    proc.GetIdentifier("world");
+                }
+
+                proc.Locate();
+            }
+        }
+
+        // locate(x)
         class Locate : DMExpression {
             DMExpression _path;
             DMExpression _container;
@@ -1181,14 +1204,10 @@ namespace DMCompiler.DM {
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                if (_path != null) {
-                    _path.EmitPushValue(dmObject, proc);
-                } else {
-                    throw new Exception("implicit locate() not implemented");
-                }
+                _path.EmitPushValue(dmObject, proc);
 
                 if (_container != null) {
-                    _container.EmitPushProc(dmObject, proc);
+                    _container.EmitPushValue(dmObject, proc);
                 } else {
                     proc.GetIdentifier("world");
                 }

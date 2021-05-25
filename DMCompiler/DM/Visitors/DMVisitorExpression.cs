@@ -377,9 +377,18 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitLocate(DMASTLocate locate) {
-            var path = locate.Expression != null ? DMExpression.Create(_dmObject, _proc, locate.Expression) : null;
             var container = locate.Container != null ? DMExpression.Create(_dmObject, _proc, locate.Container) : null;
-            Result = new Expressions.Locate(path, container);
+
+            if (locate.Expression == null) {
+                if (_inferredPath == null) {
+                    throw new Exception("inferred lcoate requires a type");
+                }
+                Result = new Expressions.LocateInferred(_inferredPath.Value, container);
+                return;
+            }
+
+            var pathExpr = DMExpression.Create(_dmObject, _proc, locate.Expression);
+            Result = new Expressions.Locate(pathExpr, container);
         }
 
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) {

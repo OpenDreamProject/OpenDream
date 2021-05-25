@@ -192,24 +192,29 @@ namespace OpenDreamShared.Compiler.DM {
                     if (identifier != null) {
                         do {
                             DereferenceType type;
+                            bool conditional;
                             switch (dereferenceToken.Type) {
                                 case TokenType.DM_Period:
                                     type = DereferenceType.Direct;
+                                    conditional = false;
                                     break;
                                 case TokenType.DM_QuestionPeriod:
-                                    type = DereferenceType.SafeDirect;
+                                    type = DereferenceType.Direct;
+                                    conditional = true;
                                     break;
                                 case TokenType.DM_Colon:
                                     type = DereferenceType.Search;
+                                    conditional = false;
                                     break;
                                 case TokenType.DM_QuestionColon:
-                                    type = DereferenceType.SafeSearch;
+                                    type = DereferenceType.Search;
+                                    conditional = true;
                                     break;
                                 default:
                                     throw new InvalidOperationException();
                             }
 
-                            dereferences.Add(new Dereference(type, identifier.Identifier));
+                            dereferences.Add(new Dereference(type, conditional, identifier.Identifier));
 
                             dereferenceToken = Current();
                             if (Check(dereferenceTokenTypes)) {

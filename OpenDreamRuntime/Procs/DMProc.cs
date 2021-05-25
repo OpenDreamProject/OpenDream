@@ -108,7 +108,11 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.LocateCoord,
             DMOpcodeHandlers.Locate,
             DMOpcodeHandlers.IsNull,
-            DMOpcodeHandlers.Spawn
+            DMOpcodeHandlers.Spawn,
+            DMOpcodeHandlers.DereferenceConditional,
+            DMOpcodeHandlers.DereferenceProcConditional,
+            DMOpcodeHandlers.JumpIfNullProc,
+            DMOpcodeHandlers.Pop,
         };
         #endregion
         
@@ -229,6 +233,14 @@ namespace OpenDreamRuntime.Procs {
 
         public void Push(DreamProcArguments value) {
             _stack.Push(value);
+        }
+
+        public void Pop() {
+            _stack.Pop();
+        }
+
+        public IDreamProcIdentifier PeekIdentifier() {
+            return (IDreamProcIdentifier)_stack.Peek();
         }
 
         public IDreamProcIdentifier PopIdentifier() {

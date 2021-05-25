@@ -237,6 +237,11 @@ namespace DMCompiler.DM {
             JumpIfFalse(_loopStack.Peek() + "_continue");
         }
 
+        public void Pop()
+        {
+            WriteOpcode(DreamProcOpcode.Pop);
+        }
+
         public void PushProcArguments() {
             WriteOpcode(DreamProcOpcode.PushProcArguments);
         }
@@ -301,6 +306,11 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
+        public void JumpIfNullProc(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfNullProc);
+            WriteLabel(label);
+        }
+
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
         }
@@ -341,10 +351,21 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
+        public void DereferenceConditional(string identifier) {
+            WriteOpcode(DreamProcOpcode.DereferenceConditional);
+            WriteString(identifier);
+        }
+
         public void DereferenceProc(string identifier) {
             WriteOpcode(DreamProcOpcode.DereferenceProc);
             WriteString(identifier);
         }
+
+        public void DereferenceProcConditional(string identifier) {
+            WriteOpcode(DreamProcOpcode.DereferenceProcConditional);
+            WriteString(identifier);
+        }
+
 
         public void CreateObject() {
             WriteOpcode(DreamProcOpcode.CreateObject);

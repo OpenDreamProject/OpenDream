@@ -103,3 +103,25 @@
 /world/proc/super_call()
 	var/datum/parent/child/C = new()
 	. = C.f(127)
+
+/datum/recursive
+	var/datum/recursive/inner
+
+	proc/get_inner()
+		. = inner
+
+/world/proc/conditional_access_test()
+	var/datum/recursive/R = new()
+	return R?.inner?.inner
+
+/world/proc/conditional_access_test_error()
+	var/datum/recursive/R = new()
+	return R?.inner.inner
+
+/world/proc/conditional_call_test()
+	var/datum/recursive/R = new()
+	return R?.inner?.get_inner()
+ 
+/world/proc/conditional_call_test_error()
+ 	var/datum/recursive/R = new()
+ 	return R?.inner.get_inner()

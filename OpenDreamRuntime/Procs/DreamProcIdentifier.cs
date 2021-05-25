@@ -112,4 +112,14 @@ namespace OpenDreamRuntime.Procs {
             State.Result = value;
         }
     }
+
+    struct DreamProcIdentifierNullProc : IDreamProcIdentifier {
+        public DreamValue GetValue() {
+            throw new InvalidOperationException();
+        }
+
+        public void Assign(DreamValue value) {
+            throw new InvalidOperationException();
+        }
+    }
 }

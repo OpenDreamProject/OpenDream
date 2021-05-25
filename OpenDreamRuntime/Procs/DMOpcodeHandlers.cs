@@ -82,11 +82,44 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? DereferenceConditional(DMProcState state) {
+            DreamValue operand = state.PopDreamValue();
+            string identifierName = state.ReadString();
+
+            if (operand == DreamValue.Null) {
+                state.Push(DreamValue.Null);
+                return null;
+            }
+
+            DreamObject dreamObject = operand.GetValueAsDreamObject();
+            state.Push(new DreamProcIdentifierVariable(dreamObject, identifierName));
+            return null;
+        }
+
         public static ProcStatus? DereferenceProc(DMProcState state) {
             DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
             string identifierName = state.ReadString();
 
             if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
+
+            if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
+                state.Push(new DreamProcIdentifierProc(proc, dreamObject));
+            } else {
+                throw new Exception("Proc '" + identifierName + "' doesn't exist");
+            }
+            return null;
+        }
+
+        public static ProcStatus? DereferenceProcConditional(DMProcState state) {
+            DreamValue operand = state.PopDreamValue();
+            string identifierName = state.ReadString();
+
+            if (operand == DreamValue.Null) {
+                state.Push(new DreamProcIdentifierNullProc());
+                return null;
+            }
+
+            DreamObject dreamObject = operand.GetValueAsDreamObject();
 
             if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
                 state.Push(new DreamProcIdentifierProc(proc, dreamObject));
@@ -271,6 +304,11 @@ namespace OpenDreamRuntime.Procs {
 
             list.SetValue(index, value);
             state.Push(new DreamValue(list));
+            return null;
+        }
+
+        public static ProcStatus? Pop(DMProcState state) {
+            state.Pop();
             return null;
         }
 
@@ -1011,6 +1049,17 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.PopDreamValue();
 
             if (IsTruthy(value)) {
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? JumpIfNullProc(DMProcState state) {
+            int position = state.ReadInt();
+
+            var proc = state.PeekIdentifier();
+            if (proc is DreamProcIdentifierNullProc) {
                 state.Jump(position);
             }
 

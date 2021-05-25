@@ -116,8 +116,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case TokenType.DM_Preproc_Punctuator_Period: {
                             if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period)
                             {
-                                Advance();
-                                if (GetCurrent().Type == TokenType.DM_Preproc_Punctuator_Period)
+                                if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period)
                                 {
                                     token = CreateToken(TokenType.DM_IndeterminateArgs, "...");
                                     Advance();

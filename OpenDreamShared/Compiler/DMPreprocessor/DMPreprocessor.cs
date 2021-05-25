@@ -214,6 +214,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Punctuator:
                     case TokenType.DM_Preproc_Punctuator_Comma:
                     case TokenType.DM_Preproc_Punctuator_Period:
+                    case TokenType.DM_Preproc_Punctuator_Colon:
+                    case TokenType.DM_Preproc_Punctuator_Question:
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:

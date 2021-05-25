@@ -1396,7 +1396,9 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTDereference : DMASTCallable {
         public enum DereferenceType {
             Direct,
-            Search
+            SafeDirect,
+            Search,
+            SafeSearch,
         }
 
         public struct Dereference {

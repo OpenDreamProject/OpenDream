@@ -1029,23 +1029,32 @@ namespace DMCompiler.DM {
                 for (int i = 0; i < (includingLast ? dereferences.Length : dereferences.Length - 1); i++) {
                     DMASTDereference.Dereference deref = dereferences[i];
 
-                    if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                        if (current_path == null) {
-                            throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                    switch (deref.Type) {
+                        case DMASTDereference.DereferenceType.Direct: {
+                            if (current_path == null) {
+                                throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                            }
+
+                            DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
+
+                            var current = dmObject.GetVariable(deref.Property);
+                            if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
+                            if (current == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
+
+                            current_path = current.Type;
+                            _fields.Add(deref.Property);
+                            break;
                         }
 
-                        DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
+                        case DMASTDereference.DereferenceType.Search: {
+                            var current = new DMVariable(null, deref.Property, false);
+                            current_path = current.Type;
+                            _fields.Add(deref.Property);
+                            break;
+                        }
 
-                        var current = dmObject.GetVariable(deref.Property);
-                        if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
-                        if (current == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
-
-                        current_path = current.Type;
-                        _fields.Add(deref.Property);
-                    } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
-                        var current = new DMVariable(null, deref.Property, false);
-                        current_path = current.Type;
-                        _fields.Add(deref.Property);
+                        default:
+                            throw new InvalidOperationException();
                     }
                 }
 

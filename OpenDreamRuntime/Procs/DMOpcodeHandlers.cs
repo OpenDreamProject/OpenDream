@@ -154,18 +154,23 @@ namespace OpenDreamRuntime.Procs {
                 DreamList argsList = state.Arguments.CreateDreamList(state.Runtime);
 
                 argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
-                    if (key.Type == DreamValue.DreamValueType.String) {
-                        string argumentName = key.GetValueAsString();
+                    switch (key.Type) {
+                        case DreamValue.DreamValueType.String: {
+                            string argumentName = key.GetValueAsString();
 
-                        state.Arguments.NamedArguments[argumentName] = value;
-                        state.LocalVariables[state.Proc.ArgumentNames.IndexOf(argumentName)] = value;
-                    } else if (key.Type == DreamValue.DreamValueType.Float) {
-                        int argumentIndex = key.GetValueAsInteger() - 1;
+                            state.Arguments.NamedArguments[argumentName] = value;
+                            state.LocalVariables[state.Proc.ArgumentNames.IndexOf(argumentName)] = value;
+                            break;
+                        }
+                        case DreamValue.DreamValueType.Float: {
+                            int argumentIndex = key.GetValueAsInteger() - 1;
 
-                        state.Arguments.OrderedArguments[argumentIndex] = value;
-                        state.LocalVariables[argumentIndex] = value;
-                    } else {
-                        throw new Exception("Invalid key used on an args list");
+                            state.Arguments.OrderedArguments[argumentIndex] = value;
+                            state.LocalVariables[argumentIndex] = value;
+                            break;
+                        }
+                        default:
+                            throw new Exception("Invalid key used on an args list");
                     }
                 };
 
@@ -311,14 +316,18 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < argumentCount; i++) {
                 DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
 
-                if (argumentType == DreamProcOpcodeParameterType.Named) {
-                    string argumentName = state.ReadString();
+                switch (argumentType) {
+                    case DreamProcOpcodeParameterType.Named: {
+                        string argumentName = state.ReadString();
 
-                    arguments.NamedArguments[argumentName] = argumentValues[i];
-                } else if (argumentType == DreamProcOpcodeParameterType.Unnamed) {
-                    arguments.OrderedArguments.Add(argumentValues[i]);
-                } else {
-                    throw new Exception("Invalid argument type (" + argumentType + ")");
+                        arguments.NamedArguments[argumentName] = argumentValues[i];
+                        break;
+                    }
+                    case DreamProcOpcodeParameterType.Unnamed:
+                        arguments.OrderedArguments.Add(argumentValues[i]);
+                        break;
+                    default:
+                        throw new Exception("Invalid argument type (" + argumentType + ")");
                 }
             }
 
@@ -442,12 +451,15 @@ namespace OpenDreamRuntime.Procs {
                     identifier.Assign(second);
                 }
             } else if (second.Value != null) {
-                if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
-                } else if (first.Type == DreamValue.DreamValueType.String && second.Type == DreamValue.DreamValueType.String) {
-                    identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
-                } else {
-                    throw new Exception("Invalid append operation on " + first + " and " + second);
+                switch (first.Type) {
+                    case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                        identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
+                        break;
+                    case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                        identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
+                        break;
+                    default:
+                        throw new Exception("Invalid append operation on " + first + " and " + second);
                 }
             }
 
@@ -518,22 +530,27 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject && first.Value != null) { //Output operation
-                IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first.Value != null: { //Output operation
+                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
-                if (metaObject != null) {
-                    state.Push(metaObject.OperatorOutput(first, second));
-                } else {
-                    throw new Exception("Invalid output operation on " + first + " and " + second);
+                    if (metaObject != null) {
+                        state.Push(metaObject.OperatorOutput(first, second));
+                    } else {
+                        throw new Exception("Invalid output operation on " + first + " and " + second);
+                    }
+                    break;
                 }
-            } else if (first.Type == DreamValue.DreamValueType.DreamResource) {
-                first.GetValueAsDreamResource().Output(second);
+                case DreamValue.DreamValueType.DreamResource:
+                    first.GetValueAsDreamResource().Output(second);
 
-                state.Push(DreamValue.Null);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
-            } else {
-                throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
+                    state.Push(DreamValue.Null);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
+                    break;
+                default:
+                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
             }
 
             return null;
@@ -666,8 +683,8 @@ namespace OpenDreamRuntime.Procs {
             IDreamProcIdentifier identifier = state.PopIdentifier();
             DreamValue first = identifier.GetValue();
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                if (first.Value != null) {
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first.Value != null: {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
@@ -675,13 +692,16 @@ namespace OpenDreamRuntime.Procs {
                     } else {
                         throw new Exception("Invalid mask operation on " + first + " and " + second);
                     }
-                } else {
-                    identifier.Assign(new DreamValue(0));
+                    break;
                 }
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
-            } else {
-                throw new Exception("Invalid mask operation on " + first + " and " + second);
+                case DreamValue.DreamValueType.DreamObject:
+                    identifier.Assign(new DreamValue(0));
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
+                    break;
+                default:
+                    throw new Exception("Invalid mask operation on " + first + " and " + second);
             }
 
             return null;
@@ -744,8 +764,8 @@ namespace OpenDreamRuntime.Procs {
             IDreamProcIdentifier identifier = state.PopIdentifier();
             DreamValue first = identifier.GetValue();
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                if (first.Value != null) {
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first.Value != null: {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
@@ -753,15 +773,18 @@ namespace OpenDreamRuntime.Procs {
                     } else {
                         throw new Exception("Invalid remove operation on " + first + " and " + second);
                     }
-                } else if (second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(-second.GetValueAsFloat()));
-                } else {
-                    throw new Exception("Invalid remove operation on " + first + " and " + second);
+                    break;
                 }
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
-            } else {
-                throw new Exception("Invalid remove operation on " + first + " and " + second);
+                case DreamValue.DreamValueType.DreamObject when second.Type == DreamValue.DreamValueType.Float:
+                    identifier.Assign(new DreamValue(-second.GetValueAsFloat()));
+                    break;
+                case DreamValue.DreamValueType.DreamObject:
+                    throw new Exception("Invalid remove operation on " + first + " and " + second);
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
+                    break;
+                default:
+                    throw new Exception("Invalid remove operation on " + first + " and " + second);
             }
 
             return null;
@@ -776,17 +799,22 @@ namespace OpenDreamRuntime.Procs {
                 output = first;
             } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                 output = new DreamValue(-second.GetValueAsFloat());
-            } else if (first.Type == DreamValue.DreamValueType.Float) {
-                float firstFloat = first.GetValueAsFloat();
+            } else switch (first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    float firstFloat = first.GetValueAsFloat();
 
-                switch (second.Type) {
-                    case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat - second.GetValueAsFloat()); break;
+                    switch (second.Type) {
+                        case DreamValue.DreamValueType.Float: output = new DreamValue(firstFloat - second.GetValueAsFloat()); break;
+                    }
+                    break;
                 }
-            } else if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+                case DreamValue.DreamValueType.DreamObject: {
+                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
-                if (metaObject != null) {
-                    output = metaObject.OperatorSubtract(first, second);
+                    if (metaObject != null) {
+                        output = metaObject.OperatorSubtract(first, second);
+                    }
+                    break;
                 }
             }
 
@@ -904,42 +932,47 @@ namespace OpenDreamRuntime.Procs {
             DreamProcArguments arguments = state.PopArguments();
             DreamValue source = state.PopDreamValue();
 
-            if (source.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject dreamObject = source.GetValueAsDreamObject();
-                DreamValue procId = state.PopDreamValue();
-                DreamProc proc = null;
+            switch (source.Type) {
+                case DreamValue.DreamValueType.DreamObject: {
+                    DreamObject dreamObject = source.GetValueAsDreamObject();
+                    DreamValue procId = state.PopDreamValue();
+                    DreamProc proc = null;
 
-                if (procId.Type == DreamValue.DreamValueType.String) {
-                    proc = dreamObject.GetProc(procId.GetValueAsString());
-                } else if (procId.Type == DreamValue.DreamValueType.DreamPath) {
-                    DreamPath fullProcPath = procId.GetValueAsPath();
-                    int procElementIndex = fullProcPath.FindElement("proc");
+                    switch (procId.Type) {
+                        case DreamValue.DreamValueType.String:
+                            proc = dreamObject.GetProc(procId.GetValueAsString());
+                            break;
+                        case DreamValue.DreamValueType.DreamPath: {
+                            DreamPath fullProcPath = procId.GetValueAsPath();
+                            int procElementIndex = fullProcPath.FindElement("proc");
 
-                    if (procElementIndex != -1) {
-                        DreamPath procPath = fullProcPath.FromElements(procElementIndex + 1);
-                        string procName = procPath.LastElement;
+                            if (procElementIndex != -1) {
+                                DreamPath procPath = fullProcPath.FromElements(procElementIndex + 1);
+                                string procName = procPath.LastElement;
 
-                        proc = dreamObject.GetProc(procName);
+                                proc = dreamObject.GetProc(procName);
+                            }
+                            break;
+                        }
                     }
-                }
 
-                if (proc != null) {
-                    state.Call(proc, dreamObject, arguments);
-                    return ProcStatus.Called;
-                } else {
+                    if (proc != null) {
+                        state.Call(proc, dreamObject, arguments);
+                        return ProcStatus.Called;
+                    }
                     throw new Exception("Invalid proc (" + procId + ")");
                 }
-            } else if (source.Type == DreamValue.DreamValueType.DreamPath) {
-                DreamPath fullProcPath = source.GetValueAsPath();
-                if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
-                string procName = fullProcPath.LastElement;
-                DreamProc proc = state.Instance.GetProc(procName);
+                case DreamValue.DreamValueType.DreamPath: {
+                    DreamPath fullProcPath = source.GetValueAsPath();
+                    if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
+                    string procName = fullProcPath.LastElement;
+                    DreamProc proc = state.Instance.GetProc(procName);
 
-                state.Call(proc, state.Instance, arguments);
-                return ProcStatus.Called;
-
-            } else {
-                throw new Exception("Call statement has an invalid source (" + source + ")");
+                    state.Call(proc, state.Instance, arguments);
+                    return ProcStatus.Called;
+                }
+                default:
+                    throw new Exception("Call statement has an invalid source (" + source + ")");
             }
         }
 
@@ -1202,20 +1235,20 @@ namespace OpenDreamRuntime.Procs {
 
         #region Helpers
         private static bool IsTruthy(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.DreamObject) {
-                return (value.GetValueAsDreamObject() != null);
-            } else if (value.Type == DreamValue.DreamValueType.DreamResource) {
-                return true;
-            } else if (value.Type == DreamValue.DreamValueType.DreamPath) {
-                return true;
-            } else if (value.Type == DreamValue.DreamValueType.Float) {
-                return (value.GetValueAsFloat() != 0);
-            } else if (value.Type == DreamValue.DreamValueType.String) {
-                return (value.GetValueAsString() != "");
-            } else if (value.Type == DreamValue.DreamValueType.DreamProc) {
-                return value.Value != null;
-            } else {
-                throw new NotImplementedException("Truthy evaluation for " + value.Type + " is not implemented");
+            switch (value.Type) {
+                case DreamValue.DreamValueType.DreamObject:
+                    return (value.GetValueAsDreamObject() != null);
+                case DreamValue.DreamValueType.DreamResource:
+                case DreamValue.DreamValueType.DreamPath:
+                    return true;
+                case DreamValue.DreamValueType.Float:
+                    return (value.GetValueAsFloat() != 0);
+                case DreamValue.DreamValueType.String:
+                    return (value.GetValueAsString() != "");
+                case DreamValue.DreamValueType.DreamProc:
+                    return value.Value != null;
+                default:
+                    throw new NotImplementedException("Truthy evaluation for " + value.Type + " is not implemented");
             }
         }
 
@@ -1281,26 +1314,32 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsFloat() > second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Value == null) {
-                return first.GetValueAsFloat() > 0;
-            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                return 0 > second.GetValueAsFloat();
-            } else {
-                throw new Exception("Invalid greater than comparison on " + first + " and " + second);
+            switch (first.Type) {
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    return first.GetValueAsFloat() > second.GetValueAsFloat();
+                case DreamValue.DreamValueType.Float when second.Value == null:
+                    return first.GetValueAsFloat() > 0;
+                default: {
+                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
+                        return 0 > second.GetValueAsFloat();
+                    }
+                    throw new Exception("Invalid greater than comparison on " + first + " and " + second);
+                }
             }
         }
 
         private static bool IsLessThan(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return first.GetValueAsFloat() < second.GetValueAsFloat();
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Value == null) {
-                return first.GetValueAsFloat() < 0;
-            } else if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                return 0 < second.GetValueAsFloat();
-            } else {
-                throw new Exception("Invalid less than comparison between " + first + " and " + second);
+            switch (first.Type) {
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    return first.GetValueAsFloat() < second.GetValueAsFloat();
+                case DreamValue.DreamValueType.Float when second.Value == null:
+                    return first.GetValueAsFloat() < 0;
+                default: {
+                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
+                        return 0 < second.GetValueAsFloat();
+                    }
+                    throw new Exception("Invalid less than comparison between " + first + " and " + second);
+                }
             }
         }
         #endregion Helpers

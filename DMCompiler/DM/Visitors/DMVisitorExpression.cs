@@ -52,7 +52,7 @@ namespace DMCompiler.DM.Visitors {
             for (int i = 0; i < stringFormat.InterpolatedValues.Length; i++) {
                 expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
             }
-            
+
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);
         }
 
@@ -85,7 +85,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 Result = new Expressions.Field(field.Type, name);
-            }            
+            }
         }
 
 
@@ -150,7 +150,7 @@ namespace DMCompiler.DM.Visitors {
             var rhs = DMExpression.Create(_dmObject, _proc, subtract.B, _inferredPath);
             Result = new Expressions.Subtract(lhs, rhs);
         }
-        
+
         public void VisitMultiply(DMASTMultiply multiply) {
             var lhs = DMExpression.Create(_dmObject, _proc, multiply.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, multiply.B, _inferredPath);
@@ -270,7 +270,7 @@ namespace DMCompiler.DM.Visitors {
             var rhs = DMExpression.Create(_dmObject, _proc, notEqual.B, _inferredPath);
             Result = new Expressions.NotEqual(lhs, rhs);
         }
-        
+
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
             var lhs = DMExpression.Create(_dmObject, _proc, greaterThan.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, greaterThan.B, _inferredPath);
@@ -413,7 +413,7 @@ namespace DMCompiler.DM.Visitors {
 
             Result = new Expressions.IsTypeInferred(expr, expr.Path.Value);
         }
-        
+
         public void VisitList(DMASTList list) {
             Result = new Expressions.List(list);
         }
@@ -429,7 +429,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitIn(DMASTExpressionIn expressionIn) {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
-            var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);   
+            var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);
             Result = new Expressions.In(expr, container);
         }
 
@@ -454,7 +454,7 @@ namespace DMCompiler.DM.Visitors {
 
                 default:
                     throw new Exception("invalid argument count for call()");
-            }            
+            }
         }
     }
 }

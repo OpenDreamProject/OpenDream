@@ -207,7 +207,7 @@ namespace OpenDreamRuntime {
                 DMASTConstantInteger z = Constant() as DMASTConstantInteger;
                 if (z == null) Error("Expected an integer");
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
-                
+
                 return (x.Value, y.Value, z.Value);
             } else {
                 return null;

@@ -19,7 +19,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
-            
+
             if (variableName == "key" || variableName == "ckey") {
                 DreamConnection newClientConnection = Runtime.Server.GetConnectionFromCKey(variableValue.GetValueAsString());
 

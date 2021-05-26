@@ -42,7 +42,7 @@ namespace OpenDreamRuntime.Tests
 
         public override void Process()
         {
-			
+
         }
     }
 
@@ -277,4 +277,3 @@ namespace OpenDreamRuntime.Tests
 
     }
 }
-

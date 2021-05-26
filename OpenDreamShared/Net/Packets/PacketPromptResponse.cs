@@ -19,7 +19,7 @@ namespace OpenDreamShared.Net.Packets {
 
         public void ReadFromStream(PacketStream stream) {
             PromptId = stream.ReadUInt16();
-            
+
             Type = (DMValueType)stream.ReadUInt16();
             switch(Type) {
                 case DMValueType.Null: Value = null; break;

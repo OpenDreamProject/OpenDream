@@ -26,7 +26,7 @@ namespace OpenDreamRuntime
         public TaskFactory TaskFactory { get; }
         public TaskScheduler TaskScheduler => _taskScheduler;
         DreamTaskScheduler _taskScheduler;
-		
+
         public readonly DreamMap Map;
         public readonly DreamObjectTree ObjectTree;
         public readonly DreamStateManager StateManager;
@@ -34,7 +34,7 @@ namespace OpenDreamRuntime
 
         public readonly DreamResourceManager ResourceManager;
         public readonly DreamCompiledJson CompiledJson;
-        
+
         public readonly DreamObjectDefinition ListDefinition;
 
         public readonly DreamObject WorldInstance;
@@ -80,7 +80,7 @@ namespace OpenDreamRuntime
             Server.DreamConnectionRequest += OnDreamConnectionRequest;
 
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-        
+
             CompiledJson = LoadCompiledJson(executablePath);
             if (CompiledJson == null) {
                 throw new InvalidOperationException();
@@ -130,7 +130,7 @@ namespace OpenDreamRuntime
 
             while (!Shutdown) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-                
+
                 _taskScheduler.Process();
 
                 foreach (DreamConnection connection in Server.Connections) {

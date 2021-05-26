@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void Dispose() {
-            
+
         }
     }
 }

@@ -63,7 +63,7 @@ namespace DMCompiler.DM.Visitors {
             statementForList.Initializer?.Visit(this);
             statementForList.Body?.Visit(this);
         }
-        
+
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
             SimplifyExpression(ref statementForRange.RangeStart);
             SimplifyExpression(ref statementForRange.RangeEnd);
@@ -105,7 +105,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) {
-        
+
         }
 
         public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) {
@@ -113,7 +113,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
-            
+
         }
 
         public void VisitProcStatementDel(DMASTProcStatementDel statementDel) {
@@ -126,9 +126,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) {
-            
+
         }
-        
+
         public void VisitProcStatementLabel(DMASTProcStatementLabel statementLabel) {
 
         }
@@ -444,7 +444,7 @@ namespace DMCompiler.DM.Visitors {
             if (append != null) {
                 SimplifyExpression(ref append.A);
                 SimplifyExpression(ref append.B);
-                
+
                 return;
             }
 

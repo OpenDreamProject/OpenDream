@@ -362,7 +362,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
                                 default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
                             }
-                            
+
                             Advance();
                             break;
                         }
@@ -400,7 +400,7 @@ namespace OpenDreamShared.Compiler.DM {
                             } else {
                                 token = CreateToken(TokenType.Error, tokenText, "Invalid string");
                             }
-                            
+
                             Advance();
                             break;
                         }

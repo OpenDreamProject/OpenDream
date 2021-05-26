@@ -8,15 +8,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
         public DreamRuntime Runtime { get; }
         public virtual void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            
+
         }
 
         public virtual void OnObjectDeleted(DreamObject dreamObject) {
-            
+
         }
 
         public virtual void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            
+
         }
 
         public virtual DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
@@ -46,7 +46,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public virtual DreamValue OperatorCombine(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot combine " + a + " and " + b);
         }
-        
+
         public virtual DreamValue OperatorMask(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot mask " + a + " and " + b);
         }

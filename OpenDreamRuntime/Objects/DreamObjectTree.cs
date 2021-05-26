@@ -104,7 +104,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamObject CreateObject(DreamPath path) {
             return CreateObject(path, new DreamProcArguments(null));
         }
-        
+
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {
             List<DreamObjectTreeEntry> treeEntries = GetTreeEntryFromPath(path).GetAllDescendants(true, true);
 

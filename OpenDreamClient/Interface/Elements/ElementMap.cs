@@ -25,7 +25,7 @@ namespace OpenDreamClient.Interface.Elements {
         public ElementMap() {
             _dreamRenderer = new DreamRenderer();
             this.Children.Add(_dreamRenderer.OpenGLViewControl);
-            
+
             this.Focusable = true;
             this.IsEnabled = true;
             this.UseLayoutRounding = true;
@@ -36,7 +36,7 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void UpdateVisuals() {
-            
+
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y) {
@@ -45,7 +45,7 @@ namespace OpenDreamClient.Interface.Elements {
 
         private bool IsOverAtom(ATOM atom, (int X, int Y) screenCoordinates, bool isScreenAtom) {
             Rectangle iconRect = _dreamRenderer.GetIconRect(atom, isScreenAtom);
-            
+
             if (_dreamRenderer.IsAtomVisible(atom, isScreenAtom) && iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
                 int atomIconX = screenCoordinates.X - iconRect.X;
                 int atomIconY = screenCoordinates.Y - iconRect.Y;

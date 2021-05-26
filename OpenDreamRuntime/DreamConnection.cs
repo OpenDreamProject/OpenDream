@@ -143,7 +143,7 @@ namespace OpenDreamRuntime {
                     var statProc = ClientDreamObject.GetProc("Stat");
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
-                    SendPacket(new PacketUpdateStatPanels(_statPanels));        
+                    SendPacket(new PacketUpdateStatPanels(_statPanels));
                     return DreamValue.Null;
                 });
             }

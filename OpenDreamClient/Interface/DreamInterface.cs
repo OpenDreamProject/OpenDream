@@ -53,7 +53,7 @@ namespace OpenDreamClient.Interface {
                 } else if (PopupWindows.ContainsKey(windowName)) {
                     window = (ElementWindow)PopupWindows[windowName].Content;
                 }
-                
+
                 if (window != null) {
                     foreach (IElement element in window.ChildElements) {
                         if (element.ElementDescriptor.Name == elementName) return element;
@@ -182,11 +182,11 @@ namespace OpenDreamClient.Interface {
                 prompt.Show();
             }
         }
-        
+
         public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
             if (DefaultInfo != null) DefaultInfo.UpdateVerbs(pUpdateAvailableVerbs);
         }
-        
+
         public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
             if (DefaultInfo != null) DefaultInfo.UpdateStatPanels(pUpdateStatPanels);
         }

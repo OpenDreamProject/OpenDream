@@ -7,8 +7,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 
-
-
 namespace OpenDreamServer {
     class Connection : DreamConnection
     {
@@ -67,7 +65,7 @@ namespace OpenDreamServer {
                 ipAddress = IPAddress.Any;
             }
             _tcpListener = new TcpListener(ipAddress, port);
-            
+
             IPEndPoint endpoint = (IPEndPoint)_tcpListener.LocalEndpoint;
             Address = endpoint.Address;
             Port = endpoint.Port;
@@ -102,7 +100,7 @@ namespace OpenDreamServer {
             foreach (DreamConnection dreamConnection in Connections) {
                 try {
                     byte[] packetData;
-                    
+
                     while ((packetData = dreamConnection.ReadPacketData()) != null) {
                         IPacket packet = IPacket.CreatePacketFromData(packetData);
 

@@ -54,10 +54,10 @@ namespace DMCompiler.DM {
 
         public bool HasProc(string name) {
             if (Procs.ContainsKey(name)) return true;
-            
+
             return Parent?.HasProc(name) ?? false;
         }
-        
+
         public DMVariable GetGlobalVariable(string name) {
             if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
                 return variable;

@@ -43,7 +43,7 @@ namespace OpenDreamRuntime {
             Type = DreamValueType.DreamObject;
             Value = value;
         }
-        
+
         public DreamValue(DreamPath value) {
             Type = DreamValueType.DreamPath;
             Value = value;
@@ -127,7 +127,7 @@ namespace OpenDreamRuntime {
         public float GetValueAsFloat() {
             return (float)GetValueExpectingType(DreamValueType.Float);
         }
-        
+
         public bool TryGetValueAsFloat(out float value) {
             if (Type == DreamValueType.Float) {
                 value = (float)Value;
@@ -157,7 +157,7 @@ namespace OpenDreamRuntime {
 
             if (dreamObject?.Deleted == true) {
                 Value = null;
-            
+
                 return null;
             } else {
                 return dreamObject;
@@ -261,7 +261,7 @@ namespace OpenDreamRuntime {
                     throw new NotImplementedException("Cannot stringify " + this);
             }
         }
-        
+
         public override bool Equals(object obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {

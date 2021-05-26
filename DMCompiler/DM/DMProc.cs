@@ -149,7 +149,7 @@ namespace DMCompiler.DM {
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
-        
+
         public void CreateRangeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
@@ -224,7 +224,7 @@ namespace DMCompiler.DM {
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }
-        
+
         public void BreakIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_end");
         }
@@ -232,7 +232,7 @@ namespace DMCompiler.DM {
         public void Continue() {
             Jump(_loopStack.Peek() + "_continue");
         }
-        
+
         public void ContinueIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_continue");
         }
@@ -259,7 +259,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Write((byte)parameterType);
 
                     if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        if (parameterNames == null) 
+                        if (parameterNames == null)
                             throw new Exception("parameterNames was null while parameterTypes was:" + parameterTypes);
                         WriteString(parameterNames[namedParameterIndex++]);
                     }
@@ -304,7 +304,7 @@ namespace DMCompiler.DM {
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
         }
-        
+
         public void CallSelf() {
             WriteOpcode(DreamProcOpcode.CallSelf);
         }
@@ -377,7 +377,7 @@ namespace DMCompiler.DM {
         public void Divide() {
             WriteOpcode(DreamProcOpcode.Divide);
         }
-        
+
         public void Modulus() {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
@@ -461,7 +461,7 @@ namespace DMCompiler.DM {
         public void PushSrc() {
             WriteOpcode(DreamProcOpcode.PushSrc);
         }
-        
+
         public void PushUsr() {
             WriteOpcode(DreamProcOpcode.PushUsr);
         }

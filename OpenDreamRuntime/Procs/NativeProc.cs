@@ -14,7 +14,7 @@ namespace OpenDreamRuntime.Procs {
             public DreamObject Src;
             public DreamObject Usr;
             public DreamProcArguments Arguments;
-            
+
             private NativeProc _proc;
             public override DreamProc Proc => _proc;
 

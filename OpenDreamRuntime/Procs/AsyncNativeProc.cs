@@ -34,7 +34,7 @@ namespace OpenDreamRuntime.Procs {
                 Src = src;
                 Usr = usr;
                 Arguments = arguments;
-            }      
+            }
 
             // Used to avoid reentrant resumptions in our proc
             protected void SafeResume() {

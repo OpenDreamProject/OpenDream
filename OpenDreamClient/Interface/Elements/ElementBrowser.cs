@@ -39,7 +39,7 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void UpdateVisuals() {
-            
+
         }
 
         public void Output(string value, string jsFunction) {

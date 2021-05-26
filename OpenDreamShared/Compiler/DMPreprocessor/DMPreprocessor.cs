@@ -37,7 +37,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                         Token includedFileToken = GetNextToken(true);
                         if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFileToken.Text + "\" is not a valid include path");
-                        
+
                         string includedFile = (string)includedFileToken.Value;
                         string includedFileExtension = Path.GetExtension(includedFile);
                         string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile);
@@ -74,7 +74,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 if (!unnamed && parameterToken.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a macro parameter");
 
                                 string parameterName = unnamed ? "" : parameterToken.Text;
-                                
+
                                 parameterToken = GetNextToken(true);
                                 if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Period) {
                                     if (!unnamed) parameterToken = GetNextToken();
@@ -139,7 +139,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                             foreach (Token expandedToken in expandedTokens) {
                                 Token newToken = new Token(expandedToken.Type, expandedToken.Text, token.SourceFile, token.Line, token.Column, expandedToken.Value);
-                                
+
                                 _unprocessedTokens.Push(newToken);
                             }
                         } else {
@@ -188,7 +188,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         Token messageToken = GetNextToken(true);
                         while (messageToken.Type != TokenType.EndOfFile) {
                             if (messageToken.Type == TokenType.Newline) break;
-                            
+
                             messageBuilder.Append(messageToken.Text);
                             messageToken = GetNextToken();
                         }

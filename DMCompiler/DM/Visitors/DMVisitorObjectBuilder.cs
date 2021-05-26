@@ -39,7 +39,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitObjectDefinition(DMASTObjectDefinition objectDefinition) {
             DMObject oldObject = _currentObject;
-            
+
             _currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
             objectDefinition.InnerBlock?.Visit(this);
             _currentObject = oldObject;
@@ -96,7 +96,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             DMProc proc = new DMProc(procDefinition);
-            
+
             dmObject.AddProc(procName, proc);
             if (procDefinition.IsVerb) {
                 DMASTPath procPath = new DMASTPath(new DreamPath(".proc/" + procName));

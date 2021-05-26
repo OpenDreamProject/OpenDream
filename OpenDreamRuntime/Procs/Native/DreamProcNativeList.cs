@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = arguments.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(2, "End").GetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)instance;
-            
+
             return new(list.FindValue(element, start, end));
         }
 

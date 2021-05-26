@@ -91,7 +91,7 @@ namespace OpenDreamShared.Dream {
             for (int i = 0; i < Overlays.Count; i++) {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
             }
-            
+
             for (int i = 0; i < Underlays.Count; i++) {
                 if (appearance.Underlays[i] != Underlays[i]) return false;
             }
@@ -115,7 +115,7 @@ namespace OpenDreamShared.Dream {
             foreach (int overlay in Overlays) {
                 hashCode += overlay;
             }
-            
+
             foreach (int underlay in Underlays) {
                 hashCode += underlay;
             }
@@ -194,7 +194,7 @@ namespace OpenDreamShared.Dream {
                     packetStream.WriteUInt32((UInt32)overlay);
                 }
             }
-            
+
             if (Underlays.Count > 0) {
                 packetStream.WriteByte((byte)AppearanceProperty.Underlays);
                 packetStream.WriteByte((byte)Underlays.Count);
@@ -258,7 +258,7 @@ namespace OpenDreamShared.Dream {
 
                 property = (AppearanceProperty)packetStream.ReadByte();
             }
-            
+
             return appearance;
         }
 

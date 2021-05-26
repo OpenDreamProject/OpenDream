@@ -79,7 +79,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 //Windows
                 return new DreamValue(1);
-                
+
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

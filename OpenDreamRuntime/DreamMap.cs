@@ -71,7 +71,7 @@ namespace OpenDreamRuntime {
                     DreamObject area = GetMapLoaderArea(cellDefinition.Area?.Type ?? defaultArea);
 
                     if (turf == null) turf = Runtime.ObjectTree.CreateObject(defaultTurf);
-                    
+
                     int x = mapBlock.X + cell.Key.X - 1;
                     int y = mapBlock.Y + cell.Key.Y - 1;
 
@@ -124,7 +124,7 @@ namespace OpenDreamRuntime {
                 //Do this by turning the old turf object into the new one
                 existingTurf.CopyFrom(turf);
             }
-            
+
 
             Levels[z - 1].Cells[x - 1, y - 1].Turf = turf;
             Runtime.StateManager.AddTurfDelta(x - 1, y - 1, z - 1, turf);

@@ -57,7 +57,7 @@ namespace OpenDreamClient.Dream {
                 }
             }
         }
-        
+
         public int Z {
             get {
                 if (Type == AtomType.Turf) {

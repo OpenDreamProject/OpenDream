@@ -148,7 +148,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitSubtract(DMASTSubtract subtract) {
             var lhs = DMExpression.Create(_dmObject, _proc, subtract.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, subtract.B, _inferredPath);
-            Result = new Expressions.Add(lhs, rhs);
+            Result = new Expressions.Subtract(lhs, rhs);
         }
         
         public void VisitMultiply(DMASTMultiply multiply) {
@@ -434,7 +434,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCall(DMASTCall call) {
-            var procArgs = new ArgumentList(_dmObject, _proc, call.CallParameters, _inferredPath);
+            var procArgs = new ArgumentList(_dmObject, _proc, call.ProcParameters, _inferredPath);
 
             switch (call.CallParameters.Length) {
                 case 1:

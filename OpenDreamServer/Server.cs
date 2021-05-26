@@ -16,8 +16,6 @@ namespace OpenDreamServer {
         private readonly NetworkStream _tcpStream;
         private readonly BinaryReader _tcpStreamBinaryReader;
         private readonly BinaryWriter _tcpStreamBinaryWriter;
-        
-        public ClientData ClientData;
 
         public Connection(DreamRuntime runtime, TcpClient tcpClient)
             : base(runtime)

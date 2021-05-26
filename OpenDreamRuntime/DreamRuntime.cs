@@ -121,7 +121,7 @@ namespace OpenDreamRuntime
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);
-
+            
             WorldInstance.SpawnProc("New");
         }
 

@@ -17,7 +17,7 @@ namespace OpenDreamRuntime {
 
         public class MapCell {
             public DreamObject Area;
-            public UInt32 Turf;
+            public DreamObject Turf;
         }
 
         public class MapLevel {
@@ -99,6 +99,14 @@ namespace OpenDreamRuntime {
                 }
             }
         }
+        
+        public void RemoveLevel() {
+            MapLevel toRemove = Levels[^1];
+            foreach (MapCell cell in toRemove.Cells) {
+                cell.Turf.Delete();
+            }
+            Levels.Remove(toRemove);
+        }
 
         public void SetTurf(int x, int y, int z, DreamObject turf, bool replace = true) {
             if (!turf.IsSubtypeOf(DreamPath.Turf)) {
@@ -118,7 +126,7 @@ namespace OpenDreamRuntime {
             }
 
 
-            Levels[z - 1].Cells[x - 1, y - 1].Turf = Runtime.AtomIDs[turf];
+            Levels[z - 1].Cells[x - 1, y - 1].Turf = turf;
             Runtime.StateManager.AddTurfDelta(x - 1, y - 1, z - 1, turf);
         }
 
@@ -135,7 +143,7 @@ namespace OpenDreamRuntime {
 
         public DreamObject GetTurfAt(int x, int y, int z) {
             if (x >= 1 && x <= Runtime.Map.Width && y >= 1 && y <= Runtime.Map.Height && z >= 1 && z <= Runtime.Map.Levels.Count) {
-                return Runtime.AtomIDToAtom[Levels[z - 1].Cells[x - 1, y - 1].Turf];
+                return Levels[z - 1].Cells[x - 1, y - 1].Turf;
             } else {
                 return null;
             }

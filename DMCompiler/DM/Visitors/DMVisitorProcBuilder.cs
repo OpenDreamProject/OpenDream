@@ -63,7 +63,13 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
             //TODO: Proc attributes
             if (statementSet.Attribute.ToLower() == "waitfor") {
-                _proc.WaitFor(DMExpression.Eval(_dmObject, _proc, statementSet.Value) != 0.0);
+                var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
+
+                if (constant is not Expressions.Number) {
+                    throw new Exception($"waitfor attribute should be a number (got {constant})");
+                }
+
+                _proc.WaitFor(constant.IsTruthy());
             }
         }
 

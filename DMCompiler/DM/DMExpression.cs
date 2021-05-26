@@ -36,16 +36,14 @@ namespace DMCompiler.DM {
             expr.EmitPushValue(dmObject, proc);
         }
 
-        public static float Eval(DMObject dmObject, DMProc proc, DMASTExpression expression) {
+        public static Expressions.Constant Constant(DMObject dmObject, DMProc proc, DMASTExpression expression) {
             var expr = Create(dmObject, proc, expression, null);
-            return expr.Eval();
+            return expr.ToConstant();
         }
 
-        // Perform constant evaluation of the expression
-        // Throws if the expression can't be evaluated
-        // TODO: Return more than just float
-        public virtual float Eval() {
-            throw new Exception($"expression {this} can not be const-eval'd");
+        // Attempt to convert this expression into a Constant expression
+        public virtual Expressions.Constant ToConstant() {
+            throw new Exception($"expression {this} can not be const-evaluated");
         }
 
         // Emits code that pushes the result of this expression to the proc's stack
@@ -219,72 +217,6 @@ namespace DMCompiler.DM {
             }
         }
 
-        // null
-        class Null : DMExpression {
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                proc.PushNull();
-            }
-        }
-
-        // 4.0, -4.0
-        class Number : DMExpression {
-            float Value { get; }
-
-            public Number(int value) {
-                Value = value;
-            }
-
-            public Number(float value) {
-                Value = value;
-            }
-
-            public override float Eval() {
-                return Value;
-            }
-
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                proc.PushFloat(Value);
-            }
-        }
-
-        // "abc"
-        class String : DMExpression {
-            string Value { get; }
-
-            public String(string value) {
-                Value = value;
-            }
-
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                proc.PushString(Value);
-            }
-        }
-
-        // 'abc'
-        class Resource : DMExpression {
-            string Value { get; }
-
-            public Resource(string value) {
-                Value = value;
-            }
-
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                proc.PushResource(Value);
-            }
-        }
-
-        // /a/b/c
-        class Path : DMExpression {
-            DreamPath Value { get; }
-
-            public Path(DreamPath value) {
-                Value = value;
-            }
-
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                proc.PushPath(Value);
-            }
-        }
 
         // "abc[d]"
         class StringFormat : DMExpression {
@@ -311,8 +243,9 @@ namespace DMCompiler.DM {
                 : base(expr)
             {}
 
-            public override float Eval() {
-                return -Expr.Eval();
+            public override Constant ToConstant()
+            {
+                return Expr.ToConstant().Negate();
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -327,8 +260,9 @@ namespace DMCompiler.DM {
                 : base(expr)
             {}
 
-            public override float Eval() {
-                return (Expr.Eval() == 0) ? 1 : 0;
+            public override Constant ToConstant()
+            {
+                return Expr.ToConstant().Not();
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -343,8 +277,9 @@ namespace DMCompiler.DM {
                 : base(expr)
             {}
 
-            public override float Eval() {
-                return ~(int) Expr.Eval();
+            public override Constant ToConstant()
+            {
+                return Expr.ToConstant().BinaryNot();
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -418,8 +353,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return LHS.Eval() + RHS.Eval();
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Add(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -435,8 +373,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return LHS.Eval() - RHS.Eval();
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Subtract(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -452,8 +393,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return LHS.Eval() * RHS.Eval();
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Multiply(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -469,8 +413,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return LHS.Eval() / RHS.Eval();
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Divide(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -486,8 +433,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return LHS.Eval() % RHS.Eval();
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Modulo(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -497,14 +447,17 @@ namespace DMCompiler.DM {
             }
         }
 
-        // x ^ y
+        // x ** y
         class Power : BinaryOp {
             public Power(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return MathF.Pow(LHS.Eval(), RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Power(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -520,8 +473,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return ((int) LHS.Eval()) << ((int) RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.LeftShift(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -537,8 +493,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return ((int) LHS.Eval()) >> ((int) RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.RightShift(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -554,8 +513,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return ((int) LHS.Eval()) & ((int) RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.BinaryAnd(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -571,8 +533,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return ((int) LHS.Eval()) ^ ((int) RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.BinaryXor(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -588,8 +553,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return ((int) LHS.Eval()) | ((int) RHS.Eval());
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.BinaryOr(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -605,10 +573,6 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return (LHS.Eval() == RHS.Eval()) ? 1 : 0;
-            }
-
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
                 RHS.EmitPushValue(dmObject, proc);
@@ -621,10 +585,6 @@ namespace DMCompiler.DM {
             public NotEqual(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
-
-            public override float Eval() {
-                return (LHS.Eval() != RHS.Eval()) ? 1 : 0;
-            }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
@@ -639,10 +599,6 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return (LHS.Eval() > RHS.Eval()) ? 1 : 0;
-            }
-
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
                 RHS.EmitPushValue(dmObject, proc);
@@ -655,10 +611,6 @@ namespace DMCompiler.DM {
             public GreaterThanOrEqual(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
-
-            public override float Eval() {
-                return (LHS.Eval() >= RHS.Eval()) ? 1 : 0;
-            }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
@@ -674,10 +626,6 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                return (LHS.Eval() < RHS.Eval()) ? 1 : 0;
-            }
-
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
                 RHS.EmitPushValue(dmObject, proc);
@@ -690,10 +638,6 @@ namespace DMCompiler.DM {
             public LessThanOrEqual(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
-
-            public override float Eval() {
-                return (LHS.Eval() <= RHS.Eval()) ? 1 : 0;
-            }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 LHS.EmitPushValue(dmObject, proc);
@@ -708,10 +652,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                var lhs = LHS.Eval() != 0.0;
-                var rhs = RHS.Eval() != 0.0;
-                return (lhs || rhs) ? 1 : 0;
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.Or(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -730,10 +675,11 @@ namespace DMCompiler.DM {
                 : base(lhs, rhs)
             {}
 
-            public override float Eval() {
-                var lhs = LHS.Eval() != 0.0;
-                var rhs = RHS.Eval() != 0.0;
-                return (lhs && rhs) ? 1 : 0;
+            public override Constant ToConstant()
+            {
+                var lhs = LHS.ToConstant();
+                var rhs = RHS.ToConstant();
+                return lhs.And(rhs);
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -941,14 +887,15 @@ namespace DMCompiler.DM {
                 _c = c;
             }
 
-            public override float Eval() {
-                var a = _a.Eval() != 0.0;
+            public override Constant ToConstant()
+            {
+                var a = _a.ToConstant();
 
-                if (a) {
-                    return _b.Eval();
-                } else {
-                    return _c.Eval();
+                if (a.IsTruthy()) {
+                    return _b.ToConstant();
                 }
+
+                return _c.ToConstant();
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {

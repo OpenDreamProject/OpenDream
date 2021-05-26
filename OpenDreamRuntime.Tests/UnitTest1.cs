@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using System.Threading;
+using System;
 
 namespace OpenDreamRuntime.Tests
 {
@@ -187,5 +189,92 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(1), sync_result);
             Assert.AreEqual(1, runtime.ExceptionCount);
         }
+
+        [Test, Timeout(10000)]
+        public void WaitFor() {
+            var runtime = CreateRuntime();
+            DreamValue result_1 = DreamValue.Null;
+            DreamValue result_2 = DreamValue.Null;
+
+            DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc_1 = world.GetProc("waitfor_1_a");
+                result_1 = await state.Call(proc_1, world, null, new DreamProcArguments(null));
+
+                var proc_2 = world.GetProc("waitfor_2_a");
+                result_2 = await state.Call(proc_2, world, null, new DreamProcArguments(null));
+
+                state.Runtime.Shutdown = true;
+                return DreamValue.Null;
+            });
+
+            runtime.Run();
+
+            Assert.AreEqual(new DreamValue(3), result_1);
+            Assert.AreEqual(new DreamValue(2), result_2);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+
+        [Test]
+        public void Default() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("default_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            var obj = result.GetValueAsDreamObjectOfType(DreamPath.Datum);
+            Assert.IsNotNull(obj);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ValueInList() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("value_in_list");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), result);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+
+        [Test]
+        public void CallTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("call_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(13), result);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+
+        [Test]
+        public void SuperCallTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("super_call");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(127), result);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
     }
 }
+

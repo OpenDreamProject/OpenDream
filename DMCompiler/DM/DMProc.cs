@@ -41,6 +41,8 @@ namespace DMCompiler.DM {
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
+        private bool _waitFor = true;
+        private int _labelIdCounter = 0;
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
@@ -58,6 +60,7 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+            procDefinition.WaitFor = _waitFor;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
             if (Parameters.Count > 0) {
@@ -75,6 +78,10 @@ namespace DMCompiler.DM {
             }
 
             return procDefinition;
+        }
+
+        public void WaitFor(bool waitFor) {
+            _waitFor = waitFor;
         }
 
         public void AddParameter(string name, DMValueType type) {
@@ -166,6 +173,10 @@ namespace DMCompiler.DM {
 
         public void ListAppendAssociated() {
             WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        }
+
+        public string NewLabelName() {
+            return "label" + _labelIdCounter++;
         }
 
         public void LoopStart(string loopLabel) {

@@ -1,11 +1,13 @@
+using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using OpenDreamRuntime;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;	
-    
+using System.Net.Sockets;
+
+
 
 namespace OpenDreamServer {
     class Connection : DreamConnection
@@ -119,6 +121,7 @@ namespace OpenDreamServer {
         private void OnPacketRequestConnect(DreamConnection connection, PacketRequestConnect pRequestConnect) {
             if (!_ckeyToConnection.ContainsKey(pRequestConnect.CKey)) {
                 connection.CKey = pRequestConnect.CKey;
+                connection.ClientData = pRequestConnect.ClientData;
 
                 DreamConnectionRequest.Invoke(connection);
             } else {

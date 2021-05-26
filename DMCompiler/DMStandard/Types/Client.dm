@@ -17,6 +17,8 @@
 	var/inactivity = 0
 	var/key
 	var/ckey
+	
+	var/timezone
 
 	proc/New(TopicData)
 		view = world.view

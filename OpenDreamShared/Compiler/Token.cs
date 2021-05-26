@@ -66,6 +66,7 @@
         DM_If,
         DM_In,
         DM_Indent,
+        DM_IndeterminateArgs,
         DM_RightShift,
         DM_RightShiftEquals,
         DM_Integer,

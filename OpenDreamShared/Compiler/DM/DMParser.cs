@@ -913,19 +913,21 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTDefinitionParameter[] DefinitionParameters() {
-            List<DMASTDefinitionParameter> parameters = new List<DMASTDefinitionParameter>();
+            List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            while (parameter != null) {
-                parameters.Add(parameter);
+            if (parameter != null || Check(TokenType.DM_IndeterminateArgs)) {
+                if (parameter != null) parameters.Add(parameter);
 
-                if (Check(TokenType.DM_Comma)) {
+                while (Check(TokenType.DM_Comma)) {
                     Whitespace();
-                    parameter = DefinitionParameter();
 
-                    if (parameter == null) Error("Expected parameter definition");
-                } else {
-                    parameter = null;
+                    parameter = DefinitionParameter();
+                    if (parameter != null) {
+                        parameters.Add(parameter);
+                    } else if (!Check(TokenType.DM_IndeterminateArgs)) {
+                        Error("Expected parameter definition");
+                    }
                 }
             }
 

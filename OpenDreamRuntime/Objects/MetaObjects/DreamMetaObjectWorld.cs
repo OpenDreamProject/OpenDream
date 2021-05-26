@@ -32,7 +32,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "maxz") {
                 int newMaxZ = variableValue.GetValueAsInteger();
 
-                if (newMaxZ < oldVariableValue.GetValueAsInteger()) {
+                if (newMaxZ < Runtime.Map.Levels.Count) {
                     while (Runtime.Map.Levels.Count > newMaxZ) {
                         Runtime.Map.RemoveLevel();
                     }

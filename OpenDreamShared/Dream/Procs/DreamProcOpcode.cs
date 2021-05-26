@@ -81,6 +81,7 @@
         DereferenceProcConditional = 0x4F,
         JumpIfNullIdentifier = 0x50,
         Pop = 0x51,
+        PushCopy = 0x52,
     }
 
     public enum DreamProcOpcodeParameterType {

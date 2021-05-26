@@ -327,6 +327,34 @@ namespace OpenDreamRuntime.Tests
 
             Assert.AreEqual(1, runtime.ExceptionCount);
         }
+
+        [Test]
+        public void ConditionalMutateTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_mutate");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(4), result);
+            Assert.AreEqual(0, runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ListIndexMutateTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("list_index_mutate");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(30), result);
+            Assert.AreEqual(0, runtime.ExceptionCount);
+        }
     }
 }
 

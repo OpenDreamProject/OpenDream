@@ -237,6 +237,10 @@ namespace DMCompiler.DM {
             JumpIfFalse(_loopStack.Peek() + "_continue");
         }
 
+        public void PushCopy() {
+            WriteOpcode(DreamProcOpcode.PushCopy);
+        }
+
         public void Pop()
         {
             WriteOpcode(DreamProcOpcode.Pop);

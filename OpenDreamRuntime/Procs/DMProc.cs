@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
@@ -113,6 +114,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.DereferenceProcConditional,
             DMOpcodeHandlers.JumpIfNullIdentifier,
             DMOpcodeHandlers.Pop,
+            DMOpcodeHandlers.PushCopy,
         };
         #endregion
         
@@ -233,6 +235,10 @@ namespace OpenDreamRuntime.Procs {
 
         public void Push(DreamProcArguments value) {
             _stack.Push(value);
+        }
+
+        public void PushCopy() {
+            _stack.Push(_stack.Peek());
         }
 
         public void Pop() {

@@ -15,10 +15,9 @@ namespace OpenDreamRuntime.Procs {
         #region Values
         public static ProcStatus? Assign(DMProcState state) {
             DreamValue value = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            IDreamProcIdentifier identifier = state.PeekIdentifier();
 
             identifier.Assign(value);
-            state.Push(value);
             return null;
         }
 
@@ -312,6 +311,11 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? PushCopy(DMProcState state) {
+            state.PushCopy();
+            return null;
+        }
+
         public static ProcStatus? PushArgumentList(DMProcState state) {
             DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
             DreamValue argListValue = state.PopDreamValue();
@@ -480,7 +484,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Append(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            IDreamProcIdentifier identifier = state.PeekIdentifier();
             DreamValue first = identifier.GetValue();
 
             if (first.Type == DreamValue.DreamValueType.DreamObject) {
@@ -488,6 +492,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
+                        state.Pop();
                         state.Push(metaObject.OperatorAppend(first, second));
                     } else {
                         throw new Exception("Invalid append operation on " + first + " and " + second);
@@ -680,7 +685,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Combine(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            IDreamProcIdentifier identifier = state.PeekIdentifier();
             DreamValue first = identifier.GetValue();
 
             if (first.Type == DreamValue.DreamValueType.DreamObject) {
@@ -688,6 +693,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
+                        state.Pop();
                         state.Push(metaObject.OperatorCombine(first, second));
                     } else {
                         throw new Exception("Invalid combine operation on " + first + " and " + second);
@@ -725,7 +731,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Mask(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            IDreamProcIdentifier identifier = state.PeekIdentifier();
             DreamValue first = identifier.GetValue();
 
             switch (first.Type) {
@@ -733,6 +739,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
+                        state.Pop();
                         state.Push(metaObject.OperatorMask(first, second));
                     } else {
                         throw new Exception("Invalid mask operation on " + first + " and " + second);
@@ -806,7 +813,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Remove(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            IDreamProcIdentifier identifier = state.PeekIdentifier();
             DreamValue first = identifier.GetValue();
 
             switch (first.Type) {
@@ -814,6 +821,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
+                        state.Pop();
                         state.Push(metaObject.OperatorRemove(first, second));
                     } else {
                         throw new Exception("Invalid remove operation on " + first + " and " + second);

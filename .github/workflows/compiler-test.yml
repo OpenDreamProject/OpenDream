@@ -1,4 +1,4 @@
-name: Build & Compile TestGame
+name: Build & Test
 
 on:
   push:
@@ -10,8 +10,10 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
-
+    - name: Checkout Main
+      uses: actions/checkout@v2
+      with:
+        path: main
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -21,4 +23,11 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: DMCompiler\bin\Release\net5.0\DMCompiler.exe TestGame\environment.dme
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe main\TestGame\environment.dme
+    - name: Checkout Main
+      uses: actions/checkout@v2
+      with:
+        repository: wixoaGit/tgstation
+        path: tg
+    - name: Compile Modified /tg/station
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe tg\tgstation.dme 

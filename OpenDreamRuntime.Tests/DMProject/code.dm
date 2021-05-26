@@ -89,3 +89,17 @@
 
 /world/proc/call_test()
 	return call(src, "call_target")()
+
+//
+
+/datum/parent
+	proc/f(a)
+		return a
+
+/datum/parent/child
+	f(a)
+		return ..()
+
+/world/proc/super_call()
+	var/datum/parent/child/C = new()
+	. = C.f(127)

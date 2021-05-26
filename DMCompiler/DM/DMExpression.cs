@@ -952,7 +952,13 @@ namespace DMCompiler.DM {
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 _target.EmitPushProc(dmObject, proc);
-                _arguments.EmitPushArguments(dmObject, proc);
+
+                if (_arguments.Length == 0 && _target is ProcSuper) {
+                    proc.PushProcArguments();
+                } else {
+                    _arguments.EmitPushArguments(dmObject, proc);
+                }
+                
                 proc.Call();
             }
         }

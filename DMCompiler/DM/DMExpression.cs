@@ -360,11 +360,9 @@ namespace DMCompiler.DM {
             {}
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
-                proc.Append();
-                Expr.EmitPushValue(dmObject, proc);                
+                proc.Append();    
             }
         }
 
@@ -377,9 +375,10 @@ namespace DMCompiler.DM {
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
-                Expr.EmitPushValue(dmObject, proc);        
+                Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Append(); 
+                proc.Pop();
             }
         }
 
@@ -390,11 +389,9 @@ namespace DMCompiler.DM {
             {}
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Remove();
-                Expr.EmitPushValue(dmObject, proc);                
             }
         }
 
@@ -407,9 +404,10 @@ namespace DMCompiler.DM {
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
-                Expr.EmitPushValue(dmObject, proc);        
+                Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
-                proc.Remove(); 
+                proc.Remove();
+                proc.Pop();
             }
         }
 

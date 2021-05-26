@@ -362,7 +362,7 @@ namespace DMCompiler.DM {
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
-                proc.Append();    
+                proc.Append();
             }
         }
 
@@ -377,7 +377,7 @@ namespace DMCompiler.DM {
                 Expr.EmitPushValue(dmObject, proc);
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
-                proc.Append(); 
+                proc.Append();
                 proc.Pop();
             }
         }
@@ -1030,7 +1030,7 @@ namespace DMCompiler.DM {
                 var _procResult = _target.EmitPushProc(dmObject, proc);
 
                 switch (_procResult) {
-                    case ProcPushResult.Unconditional: 
+                    case ProcPushResult.Unconditional:
                         if (_arguments.Length == 0 && _target is ProcSuper) {
                             proc.PushProcArguments();
                         } else {

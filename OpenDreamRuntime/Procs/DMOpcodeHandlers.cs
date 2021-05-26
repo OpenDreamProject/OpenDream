@@ -417,7 +417,7 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(state.Instance));
             return null;
         }
-        
+
         public static ProcStatus? PushUsr(DMProcState state) {
             state.Push(new DreamValue(state.Usr));
             return null;
@@ -472,7 +472,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
             }
-            
+
             if (output != null) {
                 state.Push(output.Value);
             } else {
@@ -962,7 +962,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 state.Push(new DreamValue(0));
             }
-            
+
             return null;
         }
         #endregion Comparisons
@@ -974,7 +974,7 @@ namespace OpenDreamRuntime.Procs {
             state.Call(procIdentifier.Proc, procIdentifier.Instance, arguments);
             return ProcStatus.Called;
         }
-        
+
         public static ProcStatus? CallSelf(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
 
@@ -1110,7 +1110,7 @@ namespace OpenDreamRuntime.Procs {
             });
 
             state.Jump(jumpTo);
-            return null;        
+            return null;
         }
         #endregion Flow
 
@@ -1242,7 +1242,7 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(state.Runtime.Map.GetTurfAt(x, y, z)));
             return null;
         }
-        
+
         public static ProcStatus? Locate(DMProcState state) {
             DreamObject container = state.PopDreamValue().GetValueAsDreamObject();
             DreamValue value = state.PopDreamValue();
@@ -1374,7 +1374,7 @@ namespace OpenDreamRuntime.Procs {
                     }
                 }
             }
-            
+
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
         }
 

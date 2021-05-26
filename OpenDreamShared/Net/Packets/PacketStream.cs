@@ -50,7 +50,7 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteUInt32(UInt32 data) {
             _binaryWriter.Write(data);
         }
-        
+
         public Int32 ReadInt32() {
             return _binaryReader.ReadInt32();
         }

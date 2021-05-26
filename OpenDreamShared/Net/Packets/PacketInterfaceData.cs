@@ -129,7 +129,7 @@ namespace OpenDreamShared.Net.Packets {
                         stream.WriteUInt16((UInt16)elementDescriptor.Pos.Value.X);
                         stream.WriteUInt16((UInt16)elementDescriptor.Pos.Value.Y);
                     }
-					
+
                     if (elementDescriptor.Size.HasValue) {
                         stream.WriteByte((byte)AttributeType.Size);
                         stream.WriteUInt16((UInt16)elementDescriptor.Size.Value.Width);
@@ -141,7 +141,7 @@ namespace OpenDreamShared.Net.Packets {
                         stream.WriteUInt16((UInt16)elementDescriptor.Anchor1.Value.X);
                         stream.WriteUInt16((UInt16)elementDescriptor.Anchor1.Value.Y);
                     }
-					
+
                     if (elementDescriptor.Anchor2.HasValue) {
                         stream.WriteByte((byte)AttributeType.Anchor2);
                         stream.WriteUInt16((UInt16)elementDescriptor.Anchor2.Value.X);

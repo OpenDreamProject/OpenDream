@@ -66,11 +66,11 @@ namespace OpenDreamRuntime {
         public DreamValue Result { set; get; } = DreamValue.Null;
 
         public bool WaitFor => Proc != null ? Proc.WaitFor : true;
-        
+
         public ProcState(DreamThread thread) {
             Thread = thread;
         }
-        
+
         public ProcStatus Resume() {
             try {
                 return InternalResume();
@@ -107,7 +107,7 @@ namespace OpenDreamRuntime {
 
         private const int MaxStackDepth = 256;
 
-        private ProcState _current; 
+        private ProcState _current;
         private Stack<ProcState> _stack = new();
 
         // The amount of stack frames containing `WaitFor = false`
@@ -208,7 +208,7 @@ namespace OpenDreamRuntime {
 
             // Move over all stacks up to and including the first with `WaitFor = false` to a new DreamThread
             Stack<ProcState> newStackReversed = new();
-            
+
             // `WaitFor = true` frames
             while (_current.WaitFor) {
                 var frame = _current;

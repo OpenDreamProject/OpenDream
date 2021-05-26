@@ -108,7 +108,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementIf(DMASTProcStatementIf statement) {
             DMExpression.Emit(_dmObject, _proc, statement.Condition);
-            
+
             if (statement.ElseBody == null) {
                 string endLabel = _proc.NewLabelName();
 

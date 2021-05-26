@@ -180,15 +180,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
                 appearance.Direction = (AtomDirection)dir;
             }
-            
+
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
                 appearance.Invisibility = invisibility;
             }
-            
+
             if (atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX)) {
                 appearance.PixelX = pixelX;
             }
-            
+
             if (atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY)) {
                 appearance.PixelY = pixelY;
             }
@@ -260,7 +260,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             atomAppearance.Overlays.Add(overlayAppearance.GetID());
             UpdateAppearance(Runtime, atom, atomAppearance);
         }
-        
+
         private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
@@ -275,7 +275,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 UpdateAppearance(Runtime, atom, atomAppearance);
             }
         }
-        
+
         private void UnderlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
@@ -286,7 +286,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             atomAppearance.Underlays.Add(underlayAppearance.GetID());
             UpdateAppearance(Runtime, atom, atomAppearance);
         }
-        
+
         private void UnderlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 

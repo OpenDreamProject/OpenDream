@@ -117,7 +117,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.PushCopy,
         };
         #endregion
-        
+
         public readonly DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
@@ -181,7 +181,7 @@ namespace OpenDreamRuntime.Procs {
                     if (status == ProcStatus.Returned) {
                         _dreamValuePool.Return(LocalVariables, true); // TODO: This should be automatic (dispose pattern?)
                     }
-                    
+
                     return status.Value;
                 }
             }

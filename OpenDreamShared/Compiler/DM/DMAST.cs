@@ -551,7 +551,7 @@ namespace OpenDreamShared.Compiler.DM {
             visitor.VisitProcStatementBrowse(this);
         }
     }
-    
+
     public class DMASTProcStatementBrowseResource : DMASTProcStatement {
         public DMASTExpression Receiver;
         public DMASTExpression File;
@@ -703,7 +703,7 @@ namespace OpenDreamShared.Compiler.DM {
             visitor.VisitInput(this);
         }
     }
-    
+
     public class DMASTInitial : DMASTExpression {
         public DMASTExpression Expression;
 
@@ -729,7 +729,7 @@ namespace OpenDreamShared.Compiler.DM {
             visitor.VisitIsType(this);
         }
     }
-    
+
     public class DMASTImplicitIsType : DMASTExpression {
         public DMASTExpression Value;
 
@@ -755,7 +755,7 @@ namespace OpenDreamShared.Compiler.DM {
             visitor.VisitLocateCoordinates(this);
         }
     }
-    
+
     public class DMASTLocate : DMASTExpression {
         public DMASTExpression Expression;
         public DMASTExpression Container;

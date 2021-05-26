@@ -1,11 +1,11 @@
+using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using OpenDreamRuntime;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;	
-    
+using System.Net.Sockets;
 
 namespace OpenDreamServer {
     class Connection : DreamConnection
@@ -65,7 +65,7 @@ namespace OpenDreamServer {
                 ipAddress = IPAddress.Any;
             }
             _tcpListener = new TcpListener(ipAddress, port);
-            
+
             IPEndPoint endpoint = (IPEndPoint)_tcpListener.LocalEndpoint;
             Address = endpoint.Address;
             Port = endpoint.Port;
@@ -100,7 +100,7 @@ namespace OpenDreamServer {
             foreach (DreamConnection dreamConnection in Connections) {
                 try {
                     byte[] packetData;
-                    
+
                     while ((packetData = dreamConnection.ReadPacketData()) != null) {
                         IPacket packet = IPacket.CreatePacketFromData(packetData);
 
@@ -119,6 +119,7 @@ namespace OpenDreamServer {
         private void OnPacketRequestConnect(DreamConnection connection, PacketRequestConnect pRequestConnect) {
             if (!_ckeyToConnection.ContainsKey(pRequestConnect.CKey)) {
                 connection.CKey = pRequestConnect.CKey;
+                connection.ClientData = pRequestConnect.ClientData;
 
                 DreamConnectionRequest.Invoke(connection);
             } else {

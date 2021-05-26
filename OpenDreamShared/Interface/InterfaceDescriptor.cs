@@ -79,7 +79,7 @@ namespace OpenDreamShared.Interface {
     public class ElementDescriptorMap : ElementDescriptor {
         public ElementDescriptorMap(string name) : base(name) { }
     }
-    
+
     public class ElementDescriptorBrowser : ElementDescriptor {
         public ElementDescriptorBrowser(string name) : base(name) { }
     }

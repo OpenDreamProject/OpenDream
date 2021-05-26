@@ -89,7 +89,7 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void UpdateVisuals() {
-            
+
         }
 
         public void UpdateVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {

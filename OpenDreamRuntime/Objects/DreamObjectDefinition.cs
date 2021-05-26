@@ -88,13 +88,13 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
-            var proc = new NativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func); 
+            var proc = new NativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func);
             SetProcDefinition(name, proc);
         }
 
         public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func); 
+            var proc = new AsyncNativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func);
             SetProcDefinition(name, proc);
         }
 

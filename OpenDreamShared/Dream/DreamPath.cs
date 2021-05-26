@@ -176,7 +176,7 @@ namespace OpenDreamShared.Dream {
         }
 
         public override bool Equals(object obj) => obj is DreamPath other && Equals(other);
-        
+
         public bool Equals(DreamPath other) {
             if (other.Elements.Length != Elements.Length) return false;
 
@@ -186,13 +186,13 @@ namespace OpenDreamShared.Dream {
 
             return true;
         }
-        
+
         public override int GetHashCode() {
             return PathString.GetHashCode();
         }
 
         public static bool operator ==(DreamPath lhs, DreamPath rhs) => lhs.Equals(rhs);
-        
+
         public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
         private void Normalize() {

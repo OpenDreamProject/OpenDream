@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,13 +22,17 @@ namespace OpenDreamRuntime {
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc SuperProc { set; get; }
 
+        // If false, this proc will immediately return on the current thread during Resume instead of deferring.
+        public bool WaitFor { get; }
+
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected DreamProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamRuntime runtime, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
             Runtime = runtime;
             SuperProc = superProc;
+            WaitFor = waitFor;
             ArgumentNames = argumentNames ?? new();
             ArgumentTypes = argumentTypes ?? new();
         }
@@ -59,13 +62,15 @@ namespace OpenDreamRuntime {
 
     public abstract class ProcState {
         public DreamRuntime Runtime => Thread.Runtime;
-        public DreamThread Thread { get; }
+        public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
-        
+
+        public bool WaitFor => Proc != null ? Proc.WaitFor : true;
+
         public ProcState(DreamThread thread) {
             Thread = thread;
         }
-        
+
         public ProcStatus Resume() {
             try {
                 return InternalResume();
@@ -102,8 +107,11 @@ namespace OpenDreamRuntime {
 
         private const int MaxStackDepth = 256;
 
-        private ProcState _current; 
+        private ProcState _current;
         private Stack<ProcState> _stack = new();
+
+        // The amount of stack frames containing `WaitFor = false`
+        private int _syncCount = 0;
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
             var context = new DreamThread(proc.Runtime);
@@ -170,6 +178,10 @@ namespace OpenDreamRuntime {
                 throw new CancellingRuntime("stack depth limit reached");
             }
 
+            if (state.WaitFor == false) {
+                _syncCount++;
+            }
+
             if (_current != null) {
                 _stack.Push(_current);
             }
@@ -177,9 +189,53 @@ namespace OpenDreamRuntime {
         }
 
         public void PopProcState() {
+            if (_current.WaitFor == false) {
+                _syncCount--;
+            }
+
             if (!_stack.TryPop(out _current)) {
                 _current = null;
             }
+        }
+
+        // Used by implementations of DreamProc::InternalContinue to defer execution to be resumed later.
+        // This function may mutate `ProcState.Thread` on any of the states within this DreamThread's call stack
+        public ProcStatus HandleDefer() {
+            // When there are no `WaitFor = false` procs in our stack, just use the current thread
+            if (_syncCount <= 0) {
+                return ProcStatus.Deferred;
+            }
+
+            // Move over all stacks up to and including the first with `WaitFor = false` to a new DreamThread
+            Stack<ProcState> newStackReversed = new();
+
+            // `WaitFor = true` frames
+            while (_current.WaitFor) {
+                var frame = _current;
+                PopProcState();
+                newStackReversed.Push(frame);
+            }
+
+            // `WaitFor = false` frame
+            newStackReversed.Push(_current);
+            PopProcState();
+
+            DreamThread newThread = new DreamThread(Runtime);
+            foreach (var frame in newStackReversed) {
+                frame.Thread = newThread;
+                newThread.PushProcState(frame);
+            }
+
+            // Our returning proc state is expected to be on the stack at this point, so put it back
+            // For this small moment, the proc state will be on both threads.
+            PushProcState(newStackReversed.Peek());
+
+            // The old thread was emptied?
+            if (_current == null) {
+                throw new InvalidOperationException();
+            }
+
+            return ProcStatus.Returned;
         }
 
         public void AppendStackTrace(StringBuilder builder) {

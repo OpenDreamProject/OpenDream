@@ -2,7 +2,6 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectClient : DreamMetaObjectRoot {
@@ -64,6 +63,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return new DreamValue(connection.Address.ToString());
             } else if (variableName == "inactivity") {
                 return new DreamValue(0);
+            } else if (variableName == "timezone") {
+                DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);           
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

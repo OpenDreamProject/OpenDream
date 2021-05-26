@@ -38,7 +38,7 @@ namespace OpenDreamShared.Compiler.DMF {
                 if (macro) {
                     Newline();
                 }
-                
+
                 bool menu = Menu();
                 if (menu) {
                     Newline();
@@ -181,7 +181,7 @@ namespace OpenDreamShared.Compiler.DMF {
         public ElementDescriptorOutput ElementOutput(string elementName) {
             ElementDescriptorOutput element = new ElementDescriptorOutput(elementName);
             TokenType[] attributeTypes = new TokenType[] {
-                
+
             };
 
             Token attributeToken = Current();

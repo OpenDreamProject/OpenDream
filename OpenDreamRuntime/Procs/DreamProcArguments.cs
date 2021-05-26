@@ -6,13 +6,11 @@ namespace OpenDreamRuntime.Procs {
         public List<DreamValue> OrderedArguments;
         public Dictionary<string, DreamValue> NamedArguments;
 
-        public int ArgumentCount {
-            get => OrderedArguments.Count + NamedArguments.Count;
-        }
+        public int ArgumentCount => OrderedArguments.Count + NamedArguments.Count;
 
         public DreamProcArguments(List<DreamValue> orderedArguments, Dictionary<string, DreamValue> namedArguments = null) {
-            OrderedArguments = (orderedArguments != null) ? orderedArguments : new List<DreamValue>();
-            NamedArguments = (namedArguments != null) ? namedArguments : new Dictionary<string, DreamValue>();
+            OrderedArguments = orderedArguments ?? new List<DreamValue>();
+            NamedArguments = namedArguments ?? new Dictionary<string, DreamValue>();
         }
 
         public List<DreamValue> GetAllArguments() {
@@ -26,11 +24,11 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
             if (NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
                 return argumentValue;
-            } else if (OrderedArguments.Count > argumentPosition) {
-                return OrderedArguments[argumentPosition];
-            } else {
-                return DreamValue.Null;
             }
+            if (OrderedArguments.Count > argumentPosition) {
+                return OrderedArguments[argumentPosition];
+            }
+            return DreamValue.Null;
         }
 
         public DreamList CreateDreamList(DreamRuntime runtime) {

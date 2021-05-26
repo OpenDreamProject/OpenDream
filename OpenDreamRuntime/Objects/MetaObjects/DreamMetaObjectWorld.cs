@@ -32,9 +32,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "maxz") {
                 int newMaxZ = variableValue.GetValueAsInteger();
 
-                if (newMaxZ < oldVariableValue.GetValueAsInteger()) throw new NotImplementedException("Cannot set maxz lower than previous value");
-
-                while (Runtime.Map.Levels.Count < newMaxZ) Runtime.Map.AddLevel();
+                if (newMaxZ < Runtime.Map.Levels.Count) {
+                    while (Runtime.Map.Levels.Count > newMaxZ) {
+                        Runtime.Map.RemoveLevel();
+                    }
+                } else {
+                    while (Runtime.Map.Levels.Count < newMaxZ) {
+                        Runtime.Map.AddLevel();
+                    }
+                }
             }
         }
 
@@ -73,7 +79,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 //Windows
                 return new DreamValue(1);
-                
+
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

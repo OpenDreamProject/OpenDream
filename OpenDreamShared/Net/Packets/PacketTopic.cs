@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenDreamShared.Net.Packets {
+﻿namespace OpenDreamShared.Net.Packets {
     public class PacketTopic : IPacket {
         public PacketID PacketID => PacketID.Topic;
 

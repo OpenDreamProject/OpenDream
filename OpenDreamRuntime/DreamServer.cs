@@ -3,7 +3,6 @@ using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 
 namespace OpenDreamRuntime {
     public delegate void DreamConnectionReadyEventHandler(DreamConnection connection);

@@ -13,8 +13,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +26,7 @@ namespace OpenDreamRuntime
         public TaskFactory TaskFactory { get; }
         public TaskScheduler TaskScheduler => _taskScheduler;
         DreamTaskScheduler _taskScheduler;
-		
+
         public readonly DreamMap Map;
         public readonly DreamObjectTree ObjectTree;
         public readonly DreamStateManager StateManager;
@@ -36,7 +34,7 @@ namespace OpenDreamRuntime
 
         public readonly DreamResourceManager ResourceManager;
         public readonly DreamCompiledJson CompiledJson;
-        
+
         public readonly DreamObjectDefinition ListDefinition;
 
         public readonly DreamObject WorldInstance;
@@ -82,7 +80,7 @@ namespace OpenDreamRuntime
             Server.DreamConnectionRequest += OnDreamConnectionRequest;
 
             TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-        
+
             CompiledJson = LoadCompiledJson(executablePath);
             if (CompiledJson == null) {
                 throw new InvalidOperationException();
@@ -117,13 +115,13 @@ namespace OpenDreamRuntime
             RegisterPacketCallbacks();
 
             if (CompiledJson.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode);
+                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode, true);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);
-
+            
             WorldInstance.SpawnProc("New");
         }
 
@@ -132,7 +130,7 @@ namespace OpenDreamRuntime
 
             while (!Shutdown) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-                
+
                 _taskScheduler.Process();
 
                 foreach (DreamConnection connection in Server.Connections) {
@@ -157,6 +155,7 @@ namespace OpenDreamRuntime
                 int elapsedTime = (int)(new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() - TickStartTime);
                 int tickLength = (int)(100 * WorldInstance.GetVariable("tick_lag").GetValueAsFloat());
                 int timeToSleep = tickLength - elapsedTime;
+                WorldInstance.SetVariable("cpu", new DreamValue((float)elapsedTime / tickLength * 100));
                 if (timeToSleep > 0) Thread.Sleep(timeToSleep);
             }
         }

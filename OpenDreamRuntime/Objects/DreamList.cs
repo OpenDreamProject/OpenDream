@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using System;
 using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects {

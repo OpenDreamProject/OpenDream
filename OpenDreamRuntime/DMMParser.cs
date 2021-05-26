@@ -2,7 +2,6 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using System;
 using System.Collections.Generic;
 
 namespace OpenDreamRuntime {
@@ -208,7 +207,7 @@ namespace OpenDreamRuntime {
                 DMASTConstantInteger z = Constant() as DMASTConstantInteger;
                 if (z == null) Error("Expected an integer");
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
-                
+
                 return (x.Value, y.Value, z.Value);
             } else {
                 return null;

@@ -16,7 +16,7 @@ namespace OpenDreamClient.Renderer {
         public int CameraY {
             get => Program.OpenDream.Eye?.Y ?? 0;
         }
-        
+
         public int CameraZ {
             get => Program.OpenDream.Eye?.Z ?? 0;
         }
@@ -114,7 +114,7 @@ namespace OpenDreamClient.Renderer {
 
         private DreamTexture GetDreamTexture(DreamIcon icon) {
             DreamTexture texture = null;
-            
+
             if (icon != null && icon.IsValidIcon()) {
                 Rectangle textureRect = icon.GetTextureRect();
 
@@ -154,8 +154,9 @@ namespace OpenDreamClient.Renderer {
                 new Comparison<ATOM>((ATOM first, ATOM second) => {
                     int layerSort = DreamIcon.LayerSort(first.Icon, second.Icon);
 
-                    if (layerSort == 0) return (int)first.ID - (int)second.ID; //Sort by ID instead
-                    else return layerSort;
+                    if (layerSort == 0)
+                        return (int)first.ID - (int)second.ID; //Sort by ID instead
+                    return layerSort;
                 })
             );
 

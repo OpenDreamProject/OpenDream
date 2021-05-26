@@ -10,17 +10,26 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
-
+    - name: Checkout Main
+      uses: actions/checkout@v2
+      with:
+        path: main
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.100
-    - name: Install Dependencies
-      run: dotnet restore
+    - name: Install dependencies
+      run: dotnet restore main/OpenDream.sln
     - name: Build
-      run: dotnet build --configuration Debug --no-restore /m
+      run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: DMCompiler\bin\Debug\net5.0\DMCompiler.exe TestGame\environment.dme
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe main\TestGame\environment.dme
     - name: Run Unit Tests
-      run: dotnet test -c Release
+      run: dotnet test main/OpenDream.sln -c Release
+    - name: Checkout Modified /tg/station
+      uses: actions/checkout@v2
+      with:
+        repository: wixoaGit/tgstation
+        path: tg
+    - name: Compile Modified /tg/station
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe tg\tgstation.dme 

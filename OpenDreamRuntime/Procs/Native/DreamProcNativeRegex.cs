@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new NotImplementedException("Proc replacements are not implemented");
             } else if (replace.TryGetValueAsString(out string replaceString)) {
                 string replaced = dreamRegex.Regex.Replace(haystackString, replaceString, end - start, start - 1);
-                
+
                 instance.SetVariable("text", new DreamValue(replaced));
                 return new DreamValue(replaced);
             } else {

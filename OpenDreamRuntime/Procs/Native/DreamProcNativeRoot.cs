@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
@@ -389,7 +387,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return new DreamValue((file.Type == DreamValueType.DreamResource) ? 1 : 0);
         }
-        
+
         [DreamProc("islist")]
         [DreamProcParameter("Object")]
         public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -453,7 +451,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_ispath(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue value = arguments.GetArgument(0, "Val");
             DreamValue type = arguments.GetArgument(1, "Type");
-            
+
 
             if (value.TryGetValueAsPath(out DreamPath valuePath)) {
                 if (type.TryGetValueAsPath(out DreamPath typePath)) {
@@ -597,15 +595,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
             throw new Exception("Cannot check length of " + value + "");
         }
-        
+
         [DreamProc("list2params")]
         [DreamProcParameter("List")]
         public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
             if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) return new DreamValue(string.Empty);
-            
+
             StringBuilder paramBuilder = new StringBuilder();
-            
+
             List<DreamValue> values = list.GetValues();
             Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
             foreach (DreamValue entry in values) {
@@ -618,7 +616,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     paramBuilder.Append('&');
                 }
             }
-            
+
             //Remove trailing &
             paramBuilder.Remove(paramBuilder.Length-1, 1);
             return new DreamValue(paramBuilder.ToString());
@@ -679,7 +677,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return currentMax;
         }
-        
+
         [DreamProc("md5")]
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_md5(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -833,7 +831,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 int mobY = mob.GetVariable("y").GetValueAsInteger();
 
                 if (mobX == centerX && mobY == centerY) continue;
-                
+
                 if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
@@ -841,7 +839,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return new DreamValue(view);
         }
-        
+
         public static DreamList params2list(DreamRuntime runtime, string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
@@ -992,7 +990,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
         }
-        
+
         [DreamProc("roll")]
         [DreamProcParameter("ndice", Type = DreamValueType.Float | DreamValueType.String)]
         [DreamProcParameter("sides", Type = DreamValueType.Float)]
@@ -1105,7 +1103,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 connection.AddStatPanelLine(value.Stringify());
             }
         }
-        
+
         [DreamProc("stat")]
         [DreamProcParameter("Name")]
         [DreamProcParameter("Value")]
@@ -1117,7 +1115,7 @@ namespace OpenDreamRuntime.Procs.Native {
             OutputToStatPanel(connection, name, value);
             return DreamValue.Null;
         }
-        
+
         [DreamProc("statpanel")]
         [DreamProcParameter("Panel", Type = DreamValueType.String)]
         [DreamProcParameter("Name")]
@@ -1135,7 +1133,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return new DreamValue(1); //TODO: Know when the client is looking at the panel
         }
-        
+
         [DreamProc("tan")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_tan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

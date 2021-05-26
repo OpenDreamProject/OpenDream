@@ -1,6 +1,4 @@
 ﻿using OpenDreamShared.Dream;
-using System;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime {
     public class ServerIconAppearance : IconAppearance {

@@ -1,12 +1,9 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public class AsyncNativeProc : DreamProc {
@@ -37,7 +34,7 @@ namespace OpenDreamRuntime.Procs {
                 Src = src;
                 Usr = usr;
                 Arguments = arguments;
-            }      
+            }
 
             // Used to avoid reentrant resumptions in our proc
             protected void SafeResume() {
@@ -89,30 +86,31 @@ namespace OpenDreamRuntime.Procs {
 
                     _task = Thread.Runtime.TaskFactory.StartNew(() => inlined).Unwrap();
 
-                    _task.ContinueWith(_ => {
-                        // We have to resume now so that the execution context knows we have returned
-                        // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
-                        SafeResume();
-                    }, Thread.Runtime.TaskScheduler);
+                    // We have to resume now so that the execution context knows we have returned
+                    // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
+                    _task.ContinueWith(_ => SafeResume(), Thread.Runtime.TaskScheduler);
                 }
 
-                // We need to call a proc
-                if (_callProcNotify != null) {
-                    var callProcNotify = _callProcNotify;
-                    _callProcNotify = null;
+                // We need to call a proc.
+                while (_callProcNotify != null || _callResult != null)
+                {
+                    if (_callProcNotify != null) {
+                        var callProcNotify = _callProcNotify;
+                        _callProcNotify = null;
 
-                    Thread.PushProcState(callProcNotify);
-                    return ProcStatus.Called;
-                }
+                        Thread.PushProcState(callProcNotify);
+                        return ProcStatus.Called;
+                    }
 
-                // We've just finished calling a proc, notify our task
-                if (_callResult != null) {
-                    var callTcs = _callTcs;
-                    var callResult = _callResult.Value;
-                    _callTcs = null;
-                    _callResult = null;
+                    // We've just finished calling a proc, notify our task
+                    if (_callResult != null) {
+                        var callTcs = _callTcs;
+                        var callResult = _callResult.Value;
+                        _callTcs = null;
+                        _callResult = null;
 
-                    callTcs.SetResult(callResult);
+                        callTcs.SetResult(callResult);
+                    }
                 }
 
                 // If the task is finished, we're all done
@@ -126,7 +124,7 @@ namespace OpenDreamRuntime.Procs {
 
                 // Otherwise, we are still pending
                 _inResume = false;
-                return ProcStatus.Deferred;
+                return Thread.HandleDefer();
             }
 
             public override void AppendStackFrame(StringBuilder builder)
@@ -144,11 +142,11 @@ namespace OpenDreamRuntime.Procs {
         private Func<State, Task<DreamValue>> _taskFunc;
 
         private AsyncNativeProc(DreamRuntime runtime)
-            : base("<anonymous async proc>", runtime, null, null, null)
+            : base("<anonymous async proc>", runtime, null, false, null, null)
         {}
 
         public AsyncNativeProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(name, runtime, superProc, argumentNames, argumentTypes)
+            : base(name, runtime, superProc, true, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;

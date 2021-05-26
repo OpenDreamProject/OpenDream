@@ -1,7 +1,5 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
@@ -16,7 +14,7 @@ namespace OpenDreamRuntime.Procs {
             public DreamObject Src;
             public DreamObject Usr;
             public DreamProcArguments Arguments;
-            
+
             private NativeProc _proc;
             public override DreamProc Proc => _proc;
 
@@ -35,9 +33,8 @@ namespace OpenDreamRuntime.Procs {
 
                 try {
                     Result = _proc.Handler.Invoke(Src, Usr, Arguments);
-                } catch (Exception) {
-                    throw;
-                } finally {
+                }
+                finally {
                     DreamProcNativeRoot.RuntimeStack.Pop();
                 }
 
@@ -59,7 +56,7 @@ namespace OpenDreamRuntime.Procs {
         public HandlerFn Handler { get; }
 
         public NativeProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler)
-            : base(name, runtime, superProc, argumentNames, argumentTypes)
+            : base(name, runtime, superProc, true, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             Handler = handler;

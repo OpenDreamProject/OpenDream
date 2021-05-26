@@ -14,6 +14,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Net;
 
 namespace OpenDreamRuntime {
     public abstract class DreamConnection {
@@ -32,6 +33,7 @@ namespace OpenDreamRuntime {
         }
 
         public DreamObject ClientDreamObject;
+        public ClientData ClientData;
 
         private DreamObject _mobDreamObject;
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
@@ -143,7 +145,7 @@ namespace OpenDreamRuntime {
                     var statProc = ClientDreamObject.GetProc("Stat");
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
-                    SendPacket(new PacketUpdateStatPanels(_statPanels));        
+                    SendPacket(new PacketUpdateStatPanels(_statPanels));
                     return DreamValue.Null;
                 });
             }

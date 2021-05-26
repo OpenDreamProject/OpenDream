@@ -1,11 +1,11 @@
+using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using OpenDreamRuntime;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;	
-    
+using System.Net.Sockets;
 
 namespace OpenDreamServer {
     class Connection : DreamConnection
@@ -25,8 +25,7 @@ namespace OpenDreamServer {
             Address = tcpClient.Client.RemoteEndPoint != null ? ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address : IPAddress.Any;
         }
 
-        public override byte[] ReadPacketData()
-        {
+        public override byte[] ReadPacketData() {
             if (_tcpClient.Connected && _tcpStream.DataAvailable) {
                 UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
                 byte[] packetData = new byte[packetDataLength];
@@ -37,9 +36,8 @@ namespace OpenDreamServer {
                 }
 
                 return packetData;
-            } else {
-                return null;
             }
+            return null;
         }
 
         public override void SendPacket(IPacket packet)
@@ -67,7 +65,7 @@ namespace OpenDreamServer {
                 ipAddress = IPAddress.Any;
             }
             _tcpListener = new TcpListener(ipAddress, port);
-            
+
             IPEndPoint endpoint = (IPEndPoint)_tcpListener.LocalEndpoint;
             Address = endpoint.Address;
             Port = endpoint.Port;
@@ -100,9 +98,9 @@ namespace OpenDreamServer {
 
         private void ProcessPackets() {
             foreach (DreamConnection dreamConnection in Connections) {
-                byte[] packetData;
-
                 try {
+                    byte[] packetData;
+
                     while ((packetData = dreamConnection.ReadPacketData()) != null) {
                         IPacket packet = IPacket.CreatePacketFromData(packetData);
 
@@ -121,6 +119,7 @@ namespace OpenDreamServer {
         private void OnPacketRequestConnect(DreamConnection connection, PacketRequestConnect pRequestConnect) {
             if (!_ckeyToConnection.ContainsKey(pRequestConnect.CKey)) {
                 connection.CKey = pRequestConnect.CKey;
+                connection.ClientData = pRequestConnect.ClientData;
 
                 DreamConnectionRequest.Invoke(connection);
             } else {

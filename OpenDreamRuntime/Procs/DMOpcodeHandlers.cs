@@ -569,10 +569,16 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BitOr(DMProcState state) {
-            int second = state.PopDreamValue().GetValueAsInteger();
-            int first = state.PopDreamValue().GetValueAsInteger();
+            DreamValue value = state.PopDreamValue();
+            if (value.TryGetValueAsInteger(out int secondInt)) {
+                int first = state.PopDreamValue().GetValueAsInteger();
 
-            state.Push(new DreamValue(first | second));
+                state.Push(new DreamValue(first | secondInt));
+            } else if (value.TryGetValueAsDreamList(out DreamList secondList)) {
+                DreamList first = state.PopDreamValue().GetValueAsDreamList();
+
+                state.Push(new DreamValue(first.Union(secondList)));
+            }
             return null;
         }
 

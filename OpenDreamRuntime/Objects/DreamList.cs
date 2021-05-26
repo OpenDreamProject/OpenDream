@@ -140,6 +140,15 @@ namespace OpenDreamRuntime.Objects {
         public int GetLength() {
             return _values.Count;
         }
+
+        public DreamList Union(DreamList other) {
+            DreamList copy = CreateCopy();
+            copy._values.AddRange(other.GetValues());
+            foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
+                copy._associativeValues[key] = value;
+            }
+            return copy;
+        }
     }
 
     // /datum.vars list

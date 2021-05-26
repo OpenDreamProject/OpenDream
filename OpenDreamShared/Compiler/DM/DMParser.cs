@@ -917,7 +917,7 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
             if (parameter != null || Check(TokenType.DM_IndeterminateArgs)) {
-                parameters.Add(parameter);
+                if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
                     Whitespace();

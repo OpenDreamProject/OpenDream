@@ -18,7 +18,7 @@ namespace OpenDreamClient {
         public DreamResourceManager ResourceManager = null;
         public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
-        public ClientData ClientData = new ClientData();
+        public ClientData ClientData = new ClientData(setDefaults: true);
 
         public Map Map;
         public ATOM Eye;

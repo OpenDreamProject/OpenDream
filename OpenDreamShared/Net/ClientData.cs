@@ -1,33 +1,25 @@
 ﻿using System;
-using System.IO;
-using System.Runtime.Serialization;
+using OpenDreamShared.Net.Packets;
 
 namespace OpenDreamShared.Net {
-    [Serializable]
-    public class ClientData: ISerializable {
+    public class ClientData {
 
-        public readonly TimeZoneInfo Timezone;
-
-        public ClientData() {
-            Timezone = TimeZoneInfo.Local;
+        public TimeZoneInfo Timezone;
+        
+        public ClientData(bool setDefaults = false) {
+            if (setDefaults) {
+                Timezone = TimeZoneInfo.Local;
+            }
         }
 
-        public ClientData(SerializationInfo info, StreamingContext context) {
-            String tData = info.GetString(nameof(Timezone));
-            if (tData == null) 
-                throw new InvalidDataException("Invalid timezone data received from client.");
-            Timezone = TimeZoneInfo.FromSerializedString(tData);
+        public void WriteToPacket(PacketStream packetStream) {
+            packetStream.WriteString(Timezone.ToSerializedString());
         }
 
-        public void GetObjectData(SerializationInfo info, StreamingContext context) {
-            info.AddValue(nameof(Timezone), Timezone.ToSerializedString());
-        }
-
-        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
-            if (info == null) 
-                throw new ArgumentNullException(nameof(info));  
-
-            GetObjectData(info, context);
+        public static ClientData ReadFromPacket(PacketStream packetStream) {
+            return new ClientData() {
+                Timezone = TimeZoneInfo.FromSerializedString(packetStream.ReadString())
+            };
         }
     }
 }

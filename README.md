@@ -1,6 +1,6 @@
-# OpenDream
+[![OpenDream](.github/assets/OpenDream.png)](#)
 
-OpenDream is a C# project that aims to compile games made in the [DM language], and run them.
+**OpenDream** is a C# project that aims to compile games made in the [DM language], and run them.
 
 This project is currently in early stages, and is not feature-complete.
 

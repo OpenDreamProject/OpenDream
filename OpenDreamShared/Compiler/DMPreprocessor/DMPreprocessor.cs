@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -70,21 +70,25 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             Token parameterToken;
                             do {
                                 parameterToken = GetNextToken(true);
-                                if (parameterToken.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a macro parameter");
+                                bool unnamed = parameterToken.Type == TokenType.DM_Preproc_Punctuator_Period;
+                                if (!unnamed && parameterToken.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a macro parameter");
 
-                                string parameterName = parameterToken.Text;
+                                string parameterName = unnamed ? "" : parameterToken.Text;
 
                                 parameterToken = GetNextToken(true);
                                 if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Period) {
-                                    parameterToken = GetNextToken();
+                                    if (!unnamed) parameterToken = GetNextToken();
                                     if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a second period");
                                     parameterToken = GetNextToken();
                                     if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a third period");
 
                                     parameters.Add(parameterName + "...");
-
+                                    
                                     parameterToken = GetNextToken(true);
+                                    if (unnamed) break;
+                                    
                                 } else {
+                                    if (unnamed) throw new Exception("Expected a second period");
                                     parameters.Add(parameterName);
                                 }
                             } while (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Comma);

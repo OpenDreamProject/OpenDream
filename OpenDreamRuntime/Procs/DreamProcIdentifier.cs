@@ -1,7 +1,6 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Procs {
     interface IDreamProcIdentifier {
@@ -21,11 +20,11 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue GetValue() {
             if (Instance.TryGetVariable(IdentifierName, out DreamValue value)) {
                 return value;
-            } else if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
-                return Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value;
-            } else {
-                throw new Exception("Value '" + IdentifierName + "' doesn't exist");
             }
+            if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
+                return Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value;
+            }
+            throw new Exception("Value '" + IdentifierName + "' doesn't exist");
         }
 
         public void Assign(DreamValue value) {

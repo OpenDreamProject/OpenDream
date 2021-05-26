@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime;
-using System;
+﻿using System;
 
 namespace OpenDreamRuntime.Resources {
     //A special resource that outputs to the console

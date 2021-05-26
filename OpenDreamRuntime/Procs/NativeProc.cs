@@ -1,7 +1,5 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
@@ -35,9 +33,8 @@ namespace OpenDreamRuntime.Procs {
 
                 try {
                     Result = _proc.Handler.Invoke(Src, Usr, Arguments);
-                } catch (Exception) {
-                    throw;
-                } finally {
+                }
+                finally {
                     DreamProcNativeRoot.RuntimeStack.Pop();
                 }
 

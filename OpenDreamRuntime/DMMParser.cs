@@ -2,7 +2,6 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using System;
 using System.Collections.Generic;
 
 namespace OpenDreamRuntime {

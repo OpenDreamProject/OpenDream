@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;

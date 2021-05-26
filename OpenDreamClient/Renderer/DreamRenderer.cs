@@ -154,8 +154,9 @@ namespace OpenDreamClient.Renderer {
                 new Comparison<ATOM>((ATOM first, ATOM second) => {
                     int layerSort = DreamIcon.LayerSort(first.Icon, second.Icon);
 
-                    if (layerSort == 0) return (int)first.ID - (int)second.ID; //Sort by ID instead
-                    else return layerSort;
+                    if (layerSort == 0) 
+                        return (int)first.ID - (int)second.ID; //Sort by ID instead
+                    return layerSort;
                 })
             );
 

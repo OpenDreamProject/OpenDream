@@ -1,5 +1,4 @@
-﻿using DMCompiler.Compiler.DM;
-using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;

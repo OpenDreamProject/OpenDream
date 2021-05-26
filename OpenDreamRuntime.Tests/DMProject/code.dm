@@ -72,6 +72,10 @@
 /world/proc/default_test(datum/arg = new())
 	return arg
 
+/world/proc/crazy_inferred_types()
+	var/list/L = list()
+	L[new()] = new()
+
 /world/proc/value_in_list(test)
 	var/L = list(1, 2, 3)
 	if (4 in L)

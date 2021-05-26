@@ -53,7 +53,7 @@ namespace DMCompiler.DM {
         (string Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
 
-        public ArgumentList(DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments) {
+        public ArgumentList(DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {
             if (arguments == null) {
                 Expressions = new (string, DMExpression)[0];
                 return;
@@ -63,7 +63,7 @@ namespace DMCompiler.DM {
 
             int idx = 0;
             foreach(var arg in arguments) {
-                var expr = DMExpression.Create(dmObject, proc, arg.Value);
+                var expr = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
                 Expressions[idx++] = (arg.Name, expr);
             }
         }
@@ -990,8 +990,8 @@ namespace DMCompiler.DM {
             DMExpression _expr;
             DMExpression _index;
 
-            public ListIndex(DMExpression expr, DMExpression index)
-                : base(null)
+            public ListIndex(DMExpression expr, DMExpression index, DreamPath? path)
+                : base(path)
             {
                 _expr = expr;
                 _index = index;

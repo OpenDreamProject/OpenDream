@@ -22,7 +22,7 @@ There's 3 main parts: Compiler, Server, and Client
 
 ## Screenshots
 
-![](https://github.com/wixoaGit/OpenDream/blob/master/screenshot.png?raw=true)
-![](https://github.com/wixoaGit/OpenDream/blob/master/screenshot2.png?raw=true)
+![](https://github.com/wixoaGit/OpenDream/blob/master/.github/assets/screenshot.png?raw=true)
+![](https://github.com/wixoaGit/OpenDream/blob/master/.github/assets/screenshot2.png?raw=true)
 
 [DM Language]: http://secure.byond.com/

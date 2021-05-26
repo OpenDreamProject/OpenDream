@@ -19,9 +19,9 @@ jobs:
       with:
         dotnet-version: 5.0.100
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore main/OpenDream.sln
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m
+      run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Main

@@ -16,12 +16,12 @@ namespace OpenDreamShared.Net.Packets {
 
         public void ReadFromStream(PacketStream stream) {
             CKey = stream.ReadString();
-            ClientData = JsonSerializer.Deserialize<ClientData>(stream.ReadString());
+            ClientData = ClientData.ReadFromPacket(stream);
         }
 
         public void WriteToStream(PacketStream stream) {
             stream.WriteString(CKey);
-            stream.WriteString(JsonSerializer.Serialize(ClientData));
+            ClientData.WriteToPacket(stream);
         }
     }
 }

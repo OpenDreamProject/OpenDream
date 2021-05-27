@@ -578,7 +578,9 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(new DreamValue(firstInt | secondInt));
                 } else if (firstValue.TryGetValueAsDreamList(out DreamList firstList)) {    // List | 2
                     firstList.AddValue(secondValue);
+                    state.Push(new DreamValue(firstList));
                 } else {
+                    // TODO: Icon | 2
                     throw new NotImplementedException("| is only implemented for lists and numbers");
                 }
             }
@@ -590,9 +592,11 @@ namespace OpenDreamRuntime.Procs {
                 } else if (firstValue.Type == DreamValue.DreamValueType.Float) {            // 1 | List
                     throw new Exception("Type mismatch: " + firstValue + "(number) | " + secondList + "(/list)");
                 } else {
+                    // TODO: Icon | List
                     throw new NotImplementedException("| is only implemented for lists and numbers");
                 }
             }
+            // TODO: x | Icon
             return null;
         }
 

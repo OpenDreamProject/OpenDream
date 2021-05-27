@@ -31,23 +31,24 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     case '>':
                     case '<':
                     case '^':
-                    case ':':
                     case ';':
-                    case '?':
                     case '+':
                     case '-':
                     case '*':
                     case '~':
                     case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
+                    case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
                     case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
+                    case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
                     case '/': {
                         if (Advance() == '/') {
-                            while (Advance() != '\n' && !AtEndOfSource) ;
+                            while (Advance() != '\n' && !AtEndOfSource) {
+                            }
 
                             token = CreateToken(TokenType.Skip, "//");
                         } else if (GetCurrent() == '*') {
@@ -193,7 +194,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             if (current == '\\') {
                 if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
                     base.Advance();
-                    
+
                     current = Advance();
                     while (current == ' ' || current == '\t' || current == '\n')
                     {
@@ -241,7 +242,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 } else if (stringC == '\\') {
                     Advance();
                     textBuilder.Append(GetCurrent());
-                    
+
                     Advance();
                 } else if (stringC == terminator) {
                     if (isLong) {

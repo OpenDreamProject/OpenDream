@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Compiler.DM {
+﻿namespace DMCompiler.DM {
     struct DMResource {
         public string ResourcePath;
 

@@ -1,7 +1,5 @@
-﻿using System;
-
-namespace OpenDreamShared.Net.Packets {
-    class PacketResource : IPacket {
+﻿namespace OpenDreamShared.Net.Packets {
+    public class PacketResource : IPacket {
         public PacketID PacketID => PacketID.Resource;
 
         public string ResourcePath;

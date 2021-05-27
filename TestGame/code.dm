@@ -48,6 +48,9 @@
 	    var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
 	    for(var/item in out3)
 	    	usr << "The output should be between 1 and 10: [item]"
+	
+/mob/Stat()
+	statpanel("Status", "CPU: [world.cpu]")
 
 /world/New()
 	..()

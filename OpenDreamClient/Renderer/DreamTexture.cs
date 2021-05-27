@@ -1,11 +1,8 @@
 ﻿using OpenDreamClient.Resources.ResourceTypes;
 using SharpGL;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace OpenDreamClient.Renderer {
     class DreamTexture {
@@ -28,7 +25,7 @@ namespace OpenDreamClient.Renderer {
                 for (int y = 0; y < bitmapData.Height; y++) {
                     Marshal.Copy(bitmapData.Scan0 + (bitmapData.Stride * y), bytes, stride * y, stride);
                 }
-                
+
                 _gl.BindTexture(OpenGL.GL_TEXTURE_2D, TextureID);
                 _gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGBA, textureRect.Width, textureRect.Height, 0, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_INT_8_8_8_8_REV, bytes);
 

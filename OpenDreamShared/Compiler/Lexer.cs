@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace OpenDreamShared.Compiler {
-    class Lexer<SourceType> {
+    public class Lexer<SourceType> {
         public string SourceName { get; protected set; }
         public IEnumerable<SourceType> Source { get; protected set; }
         public int CurrentLine { get; protected set; } = 1;
@@ -65,7 +65,7 @@ namespace OpenDreamShared.Compiler {
         }
     }
 
-    class TextLexer : Lexer<char> {
+    public class TextLexer : Lexer<char> {
         protected string _source;
         protected int _currentPosition = 0;
 

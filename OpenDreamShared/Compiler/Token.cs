@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Compiler {
-    enum TokenType {
+    public enum TokenType {
         //Base lexer
         Error,
         Warning,
@@ -24,10 +24,12 @@
         DM_Preproc_Number,
         DM_Preproc_ParameterStringify,
         DM_Preproc_Punctuator,
+        DM_Preproc_Punctuator_Colon,
         DM_Preproc_Punctuator_Comma,
         DM_Preproc_Punctuator_LeftBracket,
         DM_Preproc_Punctuator_LeftParenthesis,
         DM_Preproc_Punctuator_Period,
+        DM_Preproc_Punctuator_Question,
         DM_Preproc_Punctuator_RightBracket,
         DM_Preproc_Punctuator_RightParenthesis,
         DM_Preproc_String,
@@ -66,6 +68,7 @@
         DM_If,
         DM_In,
         DM_Indent,
+        DM_IndeterminateArgs,
         DM_RightShift,
         DM_RightShiftEquals,
         DM_Integer,
@@ -90,6 +93,8 @@
         DM_PlusPlus,
         DM_Proc,
         DM_Question,
+        DM_QuestionColon,
+        DM_QuestionPeriod,
         DM_RawString,
         DM_Resource,
         DM_Return,
@@ -173,7 +178,7 @@
         DMF_ZoomMode
     }
 
-    class Token {
+    public class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;

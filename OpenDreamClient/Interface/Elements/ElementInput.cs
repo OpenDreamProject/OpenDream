@@ -13,7 +13,7 @@ namespace OpenDreamClient.Interface.Elements {
         private ElementDescriptorInput _elementDescriptor;
 
         public void UpdateVisuals() {
-            
+
         }
     }
 }

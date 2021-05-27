@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    class DMLexer : Lexer<Token> {
+    public class DMLexer : Lexer<Token> {
         public static List<string> ValidEscapeSequences = new List<string>() {
             "t", "n",
             "[", "]",
@@ -102,8 +102,9 @@ namespace OpenDreamShared.Compiler.DM {
                 } else {
                     switch (preprocToken.Type) {
                         case TokenType.DM_Preproc_Whitespace: {
-                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) ;
-                            
+                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) {
+                            }
+
                             token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
                             break;
                         }
@@ -112,25 +113,48 @@ namespace OpenDreamShared.Compiler.DM {
                         case TokenType.DM_Preproc_Punctuator_LeftBracket: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_RightBracket: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_Period: {
-                            if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
-                                token = CreateToken(TokenType.DM_SuperProc, "..");
+                        case TokenType.DM_Preproc_Punctuator_Colon: Advance(); token = CreateToken(TokenType.DM_Colon, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_Question:
+                            switch (Advance().Type) {
+                                case TokenType.DM_Preproc_Punctuator_Period:
+                                    token = CreateToken(TokenType.DM_QuestionPeriod, "?.");
+                                    Advance();
+                                    break;
 
-                                Advance();
-                            } else {
-                                token = CreateToken(TokenType.DM_Period, ".");
+                                case TokenType.DM_Preproc_Punctuator_Colon:
+                                    token = CreateToken(TokenType.DM_QuestionColon, "?:");
+                                    Advance();
+                                    break;
+
+                                default:
+                                    token = CreateToken(TokenType.DM_Question, "?");
+                                    break;
                             }
-
                             break;
-                        }
+                        case TokenType.DM_Preproc_Punctuator_Period:
+                            switch (Advance().Type) {
+                                case TokenType.DM_Preproc_Punctuator_Period:
+                                    if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
+                                        token = CreateToken(TokenType.DM_IndeterminateArgs, "...");
+
+                                        Advance();
+                                    } else {
+                                        token = CreateToken(TokenType.DM_SuperProc, "..");
+                                    }
+                                    
+                                    break;
+
+                                default:
+                                    token = CreateToken(TokenType.DM_Period, ".");
+                                    break;
+                            }
+                            break;
                         case TokenType.DM_Preproc_Punctuator: {
                             Advance();
 
                             string c = preprocToken.Text;
                             switch (c) {
                                 case ";": token = CreateToken(TokenType.DM_Semicolon, c); break;
-                                case ":": token = CreateToken(TokenType.DM_Colon, c); break;
-                                case "?": token = CreateToken(TokenType.DM_Question, c); break;
                                 case "{": token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
                                 case "}": {
                                     _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
@@ -361,7 +385,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
                                 default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
                             }
-                            
+
                             Advance();
                             break;
                         }
@@ -399,7 +423,7 @@ namespace OpenDreamShared.Compiler.DM {
                             } else {
                                 token = CreateToken(TokenType.Error, tokenText, "Invalid string");
                             }
-                            
+
                             Advance();
                             break;
                         }

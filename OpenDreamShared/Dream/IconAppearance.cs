@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    class IconAppearance {
+    public class IconAppearance {
         public enum AppearanceProperty {
             End,
             Icon,
@@ -19,7 +19,7 @@ namespace OpenDreamShared.Dream {
             Transform
         }
 
-        public static Dictionary<string, UInt32> Colors = new() {
+        public static readonly Dictionary<String, UInt32> Colors = new() {
             { "black", 0x000000FF },
             { "silver", 0xC0C0C0FF },
             { "gray", 0x808080FF },
@@ -28,7 +28,7 @@ namespace OpenDreamShared.Dream {
             { "maroon", 0x800000FF },
             { "red", 0xFF0000FF },
             { "purple", 0x800080FF },
-            { "fuschia", 0xFF00FFFF },
+            { "fuchsia", 0xFF00FFFF },
             { "magenta", 0xFF00FFFF },
             { "green", 0x00C000FF },
             { "lime", 0x00FF00FF },
@@ -91,7 +91,7 @@ namespace OpenDreamShared.Dream {
             for (int i = 0; i < Overlays.Count; i++) {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
             }
-            
+
             for (int i = 0; i < Underlays.Count; i++) {
                 if (appearance.Underlays[i] != Underlays[i]) return false;
             }
@@ -115,7 +115,7 @@ namespace OpenDreamShared.Dream {
             foreach (int overlay in Overlays) {
                 hashCode += overlay;
             }
-            
+
             foreach (int underlay in Underlays) {
                 hashCode += underlay;
             }
@@ -194,7 +194,7 @@ namespace OpenDreamShared.Dream {
                     packetStream.WriteUInt32((UInt32)overlay);
                 }
             }
-            
+
             if (Underlays.Count > 0) {
                 packetStream.WriteByte((byte)AppearanceProperty.Underlays);
                 packetStream.WriteByte((byte)Underlays.Count);
@@ -258,7 +258,7 @@ namespace OpenDreamShared.Dream {
 
                 property = (AppearanceProperty)packetStream.ReadByte();
             }
-            
+
             return appearance;
         }
 

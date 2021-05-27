@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 namespace OpenDreamShared.Dream {
-    struct DreamPath {
+    public struct DreamPath {
         public static readonly DreamPath Root = new DreamPath("/");
         public static readonly DreamPath List = new DreamPath("/list");
         public static readonly DreamPath Regex = new DreamPath("/regex");
@@ -175,23 +175,25 @@ namespace OpenDreamShared.Dream {
             return PathString;
         }
 
-        public override bool Equals(object obj) {
-            if (obj is DreamPath otherPath) {
-                if (otherPath.Elements.Length != Elements.Length) return false;
+        public override bool Equals(object obj) => obj is DreamPath other && Equals(other);
 
-                for (int i = 0; i < Elements.Length; i++) {
-                    if (Elements[i] != otherPath.Elements[i]) return false;
-                }
+        public bool Equals(DreamPath other) {
+            if (other.Elements.Length != Elements.Length) return false;
 
-                return true;
-            } else {
-                return base.Equals(obj);
+            for (int i = 0; i < Elements.Length; i++) {
+                if (Elements[i] != other.Elements[i]) return false;
             }
+
+            return true;
         }
 
         public override int GetHashCode() {
             return PathString.GetHashCode();
         }
+
+        public static bool operator ==(DreamPath lhs, DreamPath rhs) => lhs.Equals(rhs);
+
+        public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
         private void Normalize() {
             Stack<string> elements = new Stack<string>();

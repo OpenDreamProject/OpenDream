@@ -39,7 +39,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 if (HasParameters()) {
                     string parameterName = (token.Type == TokenType.DM_Preproc_TokenConcat || token.Type == TokenType.DM_Preproc_ParameterStringify) ? (string)token.Value : token.Text;
                     int parameterIndex = _parameters.IndexOf(parameterName);
-                    
+
                     if (parameterIndex != -1 && parameters.Count > parameterIndex) {
                         List<Token> parameter = parameters[parameterIndex];
 

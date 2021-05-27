@@ -12,6 +12,7 @@
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
+	var/cpu = 0
 	var/fps = null
 	var/tick_usage
 
@@ -22,6 +23,8 @@
 	var/view = 5
 
 	var/address
+	var/port
+	var/url
 	var/status
 	var/list/params = null
 	

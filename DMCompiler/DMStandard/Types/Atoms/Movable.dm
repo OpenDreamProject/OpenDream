@@ -6,6 +6,8 @@
 	proc/Bump(atom/Obstacle)
 	
 	proc/Move(atom/NewLoc, Dir=0)
+		if (isnull(NewLoc)) return
+
 		if (Dir != 0)
 				dir = Dir
 

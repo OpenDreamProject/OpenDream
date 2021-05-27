@@ -1,11 +1,10 @@
 ﻿using OpenDreamShared.Dream;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketStream : MemoryStream {
+    public class PacketStream : MemoryStream {
 
         private BinaryWriter _binaryWriter;
         private BinaryReader _binaryReader;
@@ -51,7 +50,7 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteUInt32(UInt32 data) {
             _binaryWriter.Write(data);
         }
-        
+
         public Int32 ReadInt32() {
             return _binaryReader.ReadInt32();
         }

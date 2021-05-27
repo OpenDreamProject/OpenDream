@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenDreamShared.Resources {
-    static class DMIParser {
+    public static class DMIParser {
         private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
             AtomDirection.South,
             AtomDirection.North,

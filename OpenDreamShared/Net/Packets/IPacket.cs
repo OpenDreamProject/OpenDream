@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Net.Packets {
-    interface IPacket {
+    public interface IPacket {
         public PacketID PacketID { get; }
 
         public void ReadFromStream(PacketStream stream);
@@ -48,7 +48,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private static void RegisterPacket<PacketClass>(PacketID packetID) where PacketClass : IPacket, new() {
-            if (PacketIDToType.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID.ToString() + "' was already registered");
+            if (PacketIDToType.ContainsKey(packetID)) throw new Exception("Packet ID '" + packetID + "' was already registered");
 
             PacketIDToType[packetID] = typeof(PacketClass);
         }

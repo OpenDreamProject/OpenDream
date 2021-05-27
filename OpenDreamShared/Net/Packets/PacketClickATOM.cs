@@ -2,7 +2,7 @@
 using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketClickAtom : IPacket {
+    public class PacketClickAtom : IPacket {
         public PacketID PacketID => PacketID.ClickAtom;
 
         public UInt32 AtomID;

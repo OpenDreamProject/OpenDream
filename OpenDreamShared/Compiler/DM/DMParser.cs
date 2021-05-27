@@ -8,7 +8,7 @@ using System.Text;
 using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
-    class DMParser : Parser<Token> {
+    public class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
@@ -180,7 +180,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Token dereferenceToken = Current();
                 TokenType[] dereferenceTokenTypes = new TokenType[] {
                     TokenType.DM_Period,
-                    TokenType.DM_Colon
+                    TokenType.DM_QuestionPeriod,
+                    TokenType.DM_Colon,
+                    TokenType.DM_QuestionColon,
                 };
 
                 if (Check(dereferenceTokenTypes)) {
@@ -189,8 +191,30 @@ namespace OpenDreamShared.Compiler.DM {
 
                     if (identifier != null) {
                         do {
-                            DereferenceType type = (dereferenceToken.Type == TokenType.DM_Period) ? DereferenceType.Direct : DereferenceType.Search;
-                            dereferences.Add(new Dereference(type, identifier.Identifier));
+                            DereferenceType type;
+                            bool conditional;
+                            switch (dereferenceToken.Type) {
+                                case TokenType.DM_Period:
+                                    type = DereferenceType.Direct;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionPeriod:
+                                    type = DereferenceType.Direct;
+                                    conditional = true;
+                                    break;
+                                case TokenType.DM_Colon:
+                                    type = DereferenceType.Search;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionColon:
+                                    type = DereferenceType.Search;
+                                    conditional = true;
+                                    break;
+                                default:
+                                    throw new InvalidOperationException();
+                            }
+
+                            dereferences.Add(new Dereference(type, conditional, identifier.Identifier));
 
                             dereferenceToken = Current();
                             if (Check(dereferenceTokenTypes)) {
@@ -206,7 +230,7 @@ namespace OpenDreamShared.Compiler.DM {
                         ReuseToken(dereferenceToken);
                         ReuseToken(leftToken);
                     }
-                } else { 
+                } else {
                     ReuseToken(leftToken);
                 }
             }
@@ -378,7 +402,7 @@ namespace OpenDreamShared.Compiler.DM {
                 {
                     Whitespace();
                 }
-                
+
 
                 return procStatement;
             }
@@ -395,7 +419,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTPath path = Path();
                 if (path == null) Error("Expected a variable name");
                 Whitespace();
-                
+
                 DMASTExpression value = null;
 
                 if (Check(TokenType.DM_Equals)) {
@@ -501,7 +525,7 @@ namespace OpenDreamShared.Compiler.DM {
                     if (delay == null) Error("Expected an expression");
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 }
-                
+
                 Whitespace();
                 Newline();
 
@@ -662,7 +686,7 @@ namespace OpenDreamShared.Compiler.DM {
                     DMASTExpression rangeEnd = Expression();
                     if (rangeEnd == null) Error("Expected an expression");
                     DMASTExpression step = new DMASTConstantInteger(1);
-                    
+
                     if (Check(TokenType.DM_Step)) {
                         Whitespace();
 
@@ -905,7 +929,7 @@ namespace OpenDreamShared.Compiler.DM {
                         return new DMASTCallParameter(assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
                     }
                 }
-                
+
                 return new DMASTCallParameter(expression);
             }
 
@@ -913,19 +937,21 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTDefinitionParameter[] DefinitionParameters() {
-            List<DMASTDefinitionParameter> parameters = new List<DMASTDefinitionParameter>();
+            List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            while (parameter != null) {
-                parameters.Add(parameter);
+            if (parameter != null || Check(TokenType.DM_IndeterminateArgs)) {
+                if (parameter != null) parameters.Add(parameter);
 
-                if (Check(TokenType.DM_Comma)) {
+                while (Check(TokenType.DM_Comma)) {
                     Whitespace();
-                    parameter = DefinitionParameter();
 
-                    if (parameter == null) Error("Expected parameter definition");
-                } else {
-                    parameter = null;
+                    parameter = DefinitionParameter();
+                    if (parameter != null) {
+                        parameters.Add(parameter);
+                    } else if (!Check(TokenType.DM_IndeterminateArgs)) {
+                        Error("Expected parameter definition");
+                    }
                 }
             }
 
@@ -1295,7 +1321,7 @@ namespace OpenDreamShared.Compiler.DM {
                         expression = new DMASTPostDecrement(expression);
                     }
                 }
-                
+
                 return expression;
             }
         }
@@ -1499,7 +1525,7 @@ namespace OpenDreamShared.Compiler.DM {
                     if (callable != null) {
                         Whitespace();
                         DMASTCallParameter[] callParameters = ProcCall();
-                        
+
                         if (callParameters != null) {
                             primary = new DMASTProcCall(callable, callParameters);
                         } else {
@@ -1542,7 +1568,7 @@ namespace OpenDreamShared.Compiler.DM {
                 case TokenType.DM_RawString: Advance(); return new DMASTConstantString((string)constantToken.Value);
                 case TokenType.DM_String: {
                     string tokenValue = (string)constantToken.Value;
-                    StringBuilder stringBuilder = new StringBuilder(); ;
+                    StringBuilder stringBuilder = new StringBuilder();
                     List<DMASTExpression> interpolationValues = new();
                     Advance();
 
@@ -1555,7 +1581,7 @@ namespace OpenDreamShared.Compiler.DM {
                         if (bracketNesting > 0) {
                             insideBrackets.Append(c);
                         }
-                        
+
                         if (c == '[') {
                             bracketNesting++;
                         } else if (c == ']' && bracketNesting > 0) {
@@ -1647,7 +1673,8 @@ namespace OpenDreamShared.Compiler.DM {
         protected bool Newline() {
             bool hasNewline = Check(TokenType.Newline);
 
-            while (Check(TokenType.Newline)) ;
+            while (Check(TokenType.Newline)) {
+            }
             return hasNewline;
         }
 
@@ -1666,12 +1693,12 @@ namespace OpenDreamShared.Compiler.DM {
             DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
-                
+
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;
                 Whitespace();
-                
+
                 do {
                     Token typeToken = Current();
 
@@ -1680,7 +1707,7 @@ namespace OpenDreamShared.Compiler.DM {
                         closed = Check(TokenType.DM_RightParenthesis);
                         if (closed) break;
                     }
-                    
+
                     Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected value type");
                     switch (typeToken.Text) {
                         case "anything": type |= DMValueType.Anything; break;
@@ -1697,8 +1724,8 @@ namespace OpenDreamShared.Compiler.DM {
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
                 } while (Check(TokenType.DM_Bar));
-                
-                if (parenthetical && !closed) { 
+
+                if (parenthetical && !closed) {
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
                 }

@@ -28,6 +28,7 @@ proc/html_encode(PlainText)
 proc/image(icon, loc, icon_state, layer, dir)
 proc/isarea(Loc1)
 proc/isfile(File)
+proc/islist(Object)
 proc/isloc(Loc1)
 proc/ismob(Loc1)
 proc/isnull(Val)
@@ -38,6 +39,7 @@ proc/isturf(Loc1)
 proc/json_decode(JSON)
 proc/json_encode(Value)
 proc/length(E)
+proc/list2params(List)
 proc/log(X, Y)
 proc/lowertext(T)
 proc/max(A)
@@ -155,7 +157,7 @@ proc/get_step(atom/Ref, Dir)
 	if (Dir & UP) z += 1
 	else if (Dir & DOWN) z -= 1
 
-	return locate(max(x, 1), max(y, 1), max(z, 1))
+	return locate(x, y, z)
 
 proc/get_dir(atom/Loc1, atom/Loc2)
 	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0

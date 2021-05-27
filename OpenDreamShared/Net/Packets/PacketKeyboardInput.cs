@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Net.Packets {
-    class PacketKeyboardInput : IPacket {
+    public class PacketKeyboardInput : IPacket {
         public PacketID PacketID => PacketID.KeyboardInput;
 
         public int[] KeysDown;

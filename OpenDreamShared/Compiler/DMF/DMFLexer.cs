@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
-    class DMFLexer : TextLexer {
+    public class DMFLexer : TextLexer {
         public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
             { "true", TokenType.DMF_True },
             { "false", TokenType.DMF_False },

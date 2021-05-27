@@ -115,7 +115,7 @@ namespace OpenDreamClient.Dream {
 
                 Overlays.Add(new DreamIcon(appearance));
             }
-            
+
             Underlays.Clear();
             foreach (int underlayId in Appearance.Underlays) {
                 IconAppearance appearance = Program.OpenDream.IconAppearances[underlayId];

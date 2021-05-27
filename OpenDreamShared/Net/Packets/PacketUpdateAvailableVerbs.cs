@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Net.Packets {
-    class PacketUpdateAvailableVerbs : IPacket {
+    public class PacketUpdateAvailableVerbs : IPacket {
         public PacketID PacketID => PacketID.UpdateAvailableVerbs;
 
         public string[] AvailableVerbs;

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketDeltaGameState : IPacket {
+    public class PacketDeltaGameState : IPacket {
         private enum SectionID {
             AtomCreations = 0x0,
             AtomDeletions = 0x1,
@@ -257,7 +257,7 @@ namespace OpenDreamShared.Net.Packets {
                     stream.WriteByte((byte)ClientValueID.Eye);
                     stream.WriteUInt32(ClientDelta.NewEyeID.Value);
                 }
-                
+
                 if (screenAdditions) {
                     stream.WriteByte((byte)ClientValueID.ScreenObjectAdditions);
 
@@ -279,7 +279,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteByte((byte)ClientValueID.End);
             }
         }
-        
+
         private void ReadNewIconAppearancesSection(PacketStream stream) {
             UInt32 newIconAppearancesCount = stream.ReadUInt32();
 

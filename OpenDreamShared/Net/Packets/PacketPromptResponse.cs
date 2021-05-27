@@ -2,7 +2,7 @@
 using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketPromptResponse : IPacket {
+    public class PacketPromptResponse : IPacket {
         public PacketID PacketID => PacketID.PromptResponse;
 
         public int PromptId;
@@ -19,7 +19,7 @@ namespace OpenDreamShared.Net.Packets {
 
         public void ReadFromStream(PacketStream stream) {
             PromptId = stream.ReadUInt16();
-            
+
             Type = (DMValueType)stream.ReadUInt16();
             switch(Type) {
                 case DMValueType.Null: Value = null; break;

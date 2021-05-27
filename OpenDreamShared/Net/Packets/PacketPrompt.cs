@@ -2,7 +2,7 @@
 using System;
 
 namespace OpenDreamShared.Net.Packets {
-    class PacketPrompt : IPacket {
+    public class PacketPrompt : IPacket {
         public PacketID PacketID => PacketID.Prompt;
 
         public int PromptId;

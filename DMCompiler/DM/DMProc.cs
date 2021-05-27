@@ -41,6 +41,8 @@ namespace DMCompiler.DM {
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
+        private bool _waitFor = true;
+        private int _labelIdCounter = 0;
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
@@ -58,6 +60,7 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+            procDefinition.WaitFor = _waitFor;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
             if (Parameters.Count > 0) {
@@ -75,6 +78,10 @@ namespace DMCompiler.DM {
             }
 
             return procDefinition;
+        }
+
+        public void WaitFor(bool waitFor) {
+            _waitFor = waitFor;
         }
 
         public void AddParameter(string name, DMValueType type) {
@@ -142,7 +149,7 @@ namespace DMCompiler.DM {
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
-        
+
         public void CreateRangeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
@@ -166,6 +173,10 @@ namespace DMCompiler.DM {
 
         public void ListAppendAssociated() {
             WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        }
+
+        public string NewLabelName() {
+            return "label" + _labelIdCounter++;
         }
 
         public void LoopStart(string loopLabel) {
@@ -213,7 +224,7 @@ namespace DMCompiler.DM {
         public void Break() {
             Jump(_loopStack.Peek() + "_end");
         }
-        
+
         public void BreakIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_end");
         }
@@ -221,9 +232,18 @@ namespace DMCompiler.DM {
         public void Continue() {
             Jump(_loopStack.Peek() + "_continue");
         }
-        
+
         public void ContinueIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_continue");
+        }
+
+        public void PushCopy() {
+            WriteOpcode(DreamProcOpcode.PushCopy);
+        }
+
+        public void Pop()
+        {
+            WriteOpcode(DreamProcOpcode.Pop);
         }
 
         public void PushProcArguments() {
@@ -248,7 +268,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Write((byte)parameterType);
 
                     if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        if (parameterNames == null) 
+                        if (parameterNames == null)
                             throw new Exception("parameterNames was null while parameterTypes was:" + parameterTypes);
                         WriteString(parameterNames[namedParameterIndex++]);
                     }
@@ -290,10 +310,15 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
+        public void JumpIfNullIdentifier(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfNullIdentifier);
+            WriteLabel(label);
+        }
+
         public void Call() {
             WriteOpcode(DreamProcOpcode.Call);
         }
-        
+
         public void CallSelf() {
             WriteOpcode(DreamProcOpcode.CallSelf);
         }
@@ -330,10 +355,21 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
+        public void DereferenceConditional(string identifier) {
+            WriteOpcode(DreamProcOpcode.DereferenceConditional);
+            WriteString(identifier);
+        }
+
         public void DereferenceProc(string identifier) {
             WriteOpcode(DreamProcOpcode.DereferenceProc);
             WriteString(identifier);
         }
+
+        public void DereferenceProcConditional(string identifier) {
+            WriteOpcode(DreamProcOpcode.DereferenceProcConditional);
+            WriteString(identifier);
+        }
+
 
         public void CreateObject() {
             WriteOpcode(DreamProcOpcode.CreateObject);
@@ -366,7 +402,7 @@ namespace DMCompiler.DM {
         public void Divide() {
             WriteOpcode(DreamProcOpcode.Divide);
         }
-        
+
         public void Modulus() {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
@@ -450,14 +486,9 @@ namespace DMCompiler.DM {
         public void PushSrc() {
             WriteOpcode(DreamProcOpcode.PushSrc);
         }
-        
+
         public void PushUsr() {
             WriteOpcode(DreamProcOpcode.PushUsr);
-        }
-
-        public void PushInt(int value) {
-            WriteOpcode(DreamProcOpcode.PushInt);
-            WriteInt(value);
         }
 
         public void PushFloat(float value) {

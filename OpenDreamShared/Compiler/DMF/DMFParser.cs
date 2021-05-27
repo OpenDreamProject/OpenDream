@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
-    class DMFParser : Parser<char> {
+    public class DMFParser : Parser<char> {
         private TokenType[] _sharedElementAttributeTypes = new TokenType[] {
             TokenType.DMF_Pos,
             TokenType.DMF_Size,
@@ -38,7 +38,7 @@ namespace OpenDreamShared.Compiler.DMF {
                 if (macro) {
                     Newline();
                 }
-                
+
                 bool menu = Menu();
                 if (menu) {
                     Newline();
@@ -181,7 +181,7 @@ namespace OpenDreamShared.Compiler.DMF {
         public ElementDescriptorOutput ElementOutput(string elementName) {
             ElementDescriptorOutput element = new ElementDescriptorOutput(elementName);
             TokenType[] attributeTypes = new TokenType[] {
-                
+
             };
 
             Token attributeToken = Current();
@@ -308,7 +308,8 @@ namespace OpenDreamShared.Compiler.DMF {
                 string menuName = String();
                 Newline();
 
-                while (MenuElement()) ;
+                while (MenuElement()) {
+                }
 
                 return true;
             } else {
@@ -348,7 +349,8 @@ namespace OpenDreamShared.Compiler.DMF {
         }
 
         public void Newline() {
-            while (Check(TokenType.Newline)) ;
+            while (Check(TokenType.Newline)) {
+            }
         }
 
         public (int X, int Y)? Coordinate() {

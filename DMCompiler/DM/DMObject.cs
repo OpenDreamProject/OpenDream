@@ -1,5 +1,4 @@
-﻿using DMCompiler.Compiler.DM;
-using DMCompiler.DM.Visitors;
+﻿using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
@@ -55,10 +54,10 @@ namespace DMCompiler.DM {
 
         public bool HasProc(string name) {
             if (Procs.ContainsKey(name)) return true;
-            
+
             return Parent?.HasProc(name) ?? false;
         }
-        
+
         public DMVariable GetGlobalVariable(string name) {
             if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
                 return variable;

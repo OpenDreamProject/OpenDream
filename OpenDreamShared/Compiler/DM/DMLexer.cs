@@ -134,8 +134,14 @@ namespace OpenDreamShared.Compiler.DM {
                         case TokenType.DM_Preproc_Punctuator_Period:
                             switch (Advance().Type) {
                                 case TokenType.DM_Preproc_Punctuator_Period:
-                                    token = CreateToken(TokenType.DM_SuperProc, "..");
-                                    Advance();
+                                    if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
+                                        token = CreateToken(TokenType.DM_IndeterminateArgs, "...");
+
+                                        Advance();
+                                    } else {
+                                        token = CreateToken(TokenType.DM_SuperProc, "..");
+                                    }
+                                    
                                     break;
 
                                 default:

@@ -830,14 +830,14 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcStatementSwitch.SwitchCase SwitchCase() {
             if (Check(TokenType.DM_If)) {
-                List<DMASTExpressionConstant> expressions = new();
+                List<DMASTExpression> expressions = new();
 
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 do {
                     Whitespace();
-                    DMASTExpressionConstant expression = Expression() as DMASTExpressionConstant;
-                    if (expression == null) Error("Expected a constant expression");
+                    DMASTExpression expression = Expression();
+                    if (expression == null) Error("Expected an expression");
                     expressions.Add(expression);
                 } while (Check(TokenType.DM_Comma));
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");

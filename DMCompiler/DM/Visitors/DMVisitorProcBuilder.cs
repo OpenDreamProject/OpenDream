@@ -270,8 +270,9 @@ namespace DMCompiler.DM.Visitors {
                 if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues) {
                     string caseLabel = _proc.NewLabelName();
 
-                    foreach (DMASTExpressionConstant value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
-                        DMExpression.Emit(_dmObject, _proc, value);
+                    foreach (DMASTExpression value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
+                        var constant = DMExpression.Constant(_dmObject, _proc, value);
+                        constant.EmitPushValue(_dmObject, _proc);
                         _proc.SwitchCase(caseLabel);
                     }
 

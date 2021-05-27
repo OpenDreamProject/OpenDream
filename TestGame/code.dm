@@ -49,15 +49,6 @@
 	    for(var/item in out3)
 	    	usr << "The output should be between 1 and 10: [item]"
 
-	verb/clamp_value()
-	    var/out1 = clamp(10, 1, 5)
-	    usr << "The output should be 5: [out1]"
-	    var/out2 = clamp(-10, 1, 5)
-	    usr << "The output should be 1: [out2]"
-	    var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
-	    for(var/item in out3)
-	    	usr << "The output should be between 1 and 10: [item]"
-
 /world/New()
 	..()
 	world.log << "World loaded!"

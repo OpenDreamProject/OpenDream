@@ -180,7 +180,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Token dereferenceToken = Current();
                 TokenType[] dereferenceTokenTypes = new TokenType[] {
                     TokenType.DM_Period,
-                    TokenType.DM_Colon
+                    TokenType.DM_QuestionPeriod,
+                    TokenType.DM_Colon,
+                    TokenType.DM_QuestionColon,
                 };
 
                 if (Check(dereferenceTokenTypes)) {
@@ -189,8 +191,30 @@ namespace OpenDreamShared.Compiler.DM {
 
                     if (identifier != null) {
                         do {
-                            DereferenceType type = (dereferenceToken.Type == TokenType.DM_Period) ? DereferenceType.Direct : DereferenceType.Search;
-                            dereferences.Add(new Dereference(type, identifier.Identifier));
+                            DereferenceType type;
+                            bool conditional;
+                            switch (dereferenceToken.Type) {
+                                case TokenType.DM_Period:
+                                    type = DereferenceType.Direct;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionPeriod:
+                                    type = DereferenceType.Direct;
+                                    conditional = true;
+                                    break;
+                                case TokenType.DM_Colon:
+                                    type = DereferenceType.Search;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionColon:
+                                    type = DereferenceType.Search;
+                                    conditional = true;
+                                    break;
+                                default:
+                                    throw new InvalidOperationException();
+                            }
+
+                            dereferences.Add(new Dereference(type, conditional, identifier.Identifier));
 
                             dereferenceToken = Current();
                             if (Check(dereferenceTokenTypes)) {

@@ -260,7 +260,6 @@ namespace OpenDreamRuntime.Tests
             Assert.Zero(runtime.ExceptionCount);
         }
 
-
         [Test]
         public void SuperCallTest() {
             var runtime = CreateRuntime();
@@ -275,5 +274,86 @@ namespace OpenDreamRuntime.Tests
             Assert.Zero(runtime.ExceptionCount);
         }
 
+        [Test]
+        public void ConditionalAccessTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_access_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), result);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ConditionalAccessErrorTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_access_test_error");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(1, runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ConditionalCallTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_call_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(DreamValue.Null, result);
+            Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ConditionalCallErrorTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_call_test_error");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(1, runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ConditionalMutateTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("conditional_mutate");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(4), result);
+            Assert.AreEqual(0, runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void ListIndexMutateTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("list_index_mutate");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(30), result);
+            Assert.AreEqual(0, runtime.ExceptionCount);
+        }
     }
 }

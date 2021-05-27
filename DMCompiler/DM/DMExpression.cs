@@ -7,6 +7,24 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
+        public enum ProcPushResult {
+            // The emitted code has pushed the proc onto the stack
+            Unconditional,
+
+            // The emitted code has pushed either null or the proc onto the stack
+            // If null was pushed, any calls to this proc should silently evaluate to null
+            Conditional,
+        }
+
+        public enum IdentifierPushResult {
+            // The emitted code has pushed the identifier onto the stack
+            Unconditional,
+
+            // The emitted code has pushed either null or the identifier onto the stack
+            // If null was pushed, any assignments to this identifier should silently evaluate to null
+            Conditional,
+        }
+
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
@@ -36,11 +54,11 @@ namespace DMCompiler.DM {
 
         // Emits code that pushes the identifier of this expression to the proc's stack
         // May throw if this expression is unable to be written
-        public virtual void EmitIdentifier(DMObject dmObject, DMProc proc) {
+        public virtual IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
             throw new Exception("attempt to assign to r-value");
         }
 
-        public virtual void EmitPushProc(DMObject dmObject, DMProc proc) {
+        public virtual ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             throw new Exception("attempt to use non-proc expression as proc");
         }
 
@@ -111,8 +129,9 @@ namespace DMCompiler.DM {
             }
 
             // At the moment this generally always matches EmitPushValue for any modifiable type
-            public override void EmitIdentifier(DMObject dmObject, DMProc proc) {
+            public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
                 EmitPushValue(dmObject, proc);
+                return IdentifierPushResult.Unconditional;
             }
         }
 
@@ -341,11 +360,9 @@ namespace DMCompiler.DM {
             {}
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Append();
-                Expr.EmitPushValue(dmObject, proc);
             }
         }
 
@@ -361,6 +378,7 @@ namespace DMCompiler.DM {
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Append();
+                proc.Pop();
             }
         }
 
@@ -371,11 +389,9 @@ namespace DMCompiler.DM {
             {}
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Remove();
-                Expr.EmitPushValue(dmObject, proc);
             }
         }
 
@@ -391,6 +407,7 @@ namespace DMCompiler.DM {
                 Expr.EmitPushValue(dmObject, proc);
                 proc.PushFloat(1);
                 proc.Remove();
+                proc.Pop();
             }
         }
 
@@ -731,128 +748,183 @@ namespace DMCompiler.DM {
 #endregion
 
 #region Binary Ops (with l-value mutation)
+        abstract class MutatingBinaryOp : BinaryOp {
+            public MutatingBinaryOp(DMExpression lhs, DMExpression rhs)
+                : base(lhs, rhs)
+            {}
+
+            public abstract void EmitOp(DMObject dmObject, DMProc proc);
+
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                switch (LHS.EmitIdentifier(dmObject, proc)) {
+                    case IdentifierPushResult.Unconditional:
+                        RHS.EmitPushValue(dmObject, proc);
+                        EmitOp(dmObject, proc);
+                        break;
+
+                    case IdentifierPushResult.Conditional:
+                        var skipLabel = proc.NewLabelName();
+                        var endLabel = proc.NewLabelName();
+                        proc.JumpIfNullIdentifier(skipLabel);
+                        RHS.EmitPushValue(dmObject, proc);
+                        EmitOp(dmObject, proc);
+                        proc.Jump(endLabel);
+                        proc.AddLabel(skipLabel);
+                        proc.Pop();
+                        proc.PushNull();
+                        proc.AddLabel(endLabel);
+                        break;
+                }
+
+            }
+        }
+
+        abstract class DoubleMutatingBinaryOp : BinaryOp {
+            public DoubleMutatingBinaryOp(DMExpression lhs, DMExpression rhs)
+                : base(lhs, rhs)
+            {}
+
+            public abstract void EmitOps(DMObject dmObject, DMProc proc);
+
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                var identifierPushResult = LHS.EmitIdentifier(dmObject, proc);
+                proc.PushCopy();
+
+                switch (identifierPushResult) {
+                    case IdentifierPushResult.Unconditional:
+                        RHS.EmitPushValue(dmObject, proc);
+                        EmitOps(dmObject, proc);
+                        break;
+
+                    case IdentifierPushResult.Conditional:
+                        var skipLabel = proc.NewLabelName();
+                        var endLabel = proc.NewLabelName();
+                        proc.JumpIfNullIdentifier(skipLabel);
+                        RHS.EmitPushValue(dmObject, proc);
+                        EmitOps(dmObject, proc);
+                        proc.Jump(endLabel);
+                        proc.AddLabel(skipLabel);
+                        proc.Pop();
+                        proc.Pop();
+                        proc.PushNull();
+                        proc.AddLabel(endLabel);
+                        break;
+                }
+
+            }
+        }
+
+        // x = y
+        class Assignment : MutatingBinaryOp {
+            public Assignment(DMExpression lhs, DMExpression rhs)
+                : base(lhs, rhs)
+            {}
+
+            public override void EmitOp(DMObject dmObject, DMProc proc)
+            {
+                proc.Assign();
+            }
+        }
+
         // x += y
-        class Append : BinaryOp {
+        class Append : MutatingBinaryOp {
             public Append(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOp(DMObject dmObject, DMProc proc) {
                 proc.Append();
             }
         }
 
         // x |= y
-        class Combine : BinaryOp {
+        class Combine : MutatingBinaryOp {
             public Combine(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOp(DMObject dmObject, DMProc proc) {
                 proc.Combine();
             }
         }
 
         // x -= y
-        class Remove : BinaryOp {
+        class Remove : MutatingBinaryOp {
             public Remove(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOp(DMObject dmObject, DMProc proc) {
                 proc.Remove();
             }
         }
 
         // x &= y
-        class Mask : BinaryOp {
+        class Mask : MutatingBinaryOp {
             public Mask(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOp(DMObject dmObject, DMProc proc) {
                 proc.Mask();
             }
         }
 
         // x *= y
-        class MultiplyAssign : BinaryOp {
+        class MultiplyAssign : DoubleMutatingBinaryOp {
             public MultiplyAssign(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitPushValue(dmObject, proc);
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
                 proc.Multiply();
                 proc.Assign();
             }
         }
 
         // x /= y
-        class DivideAssign : BinaryOp {
+        class DivideAssign : DoubleMutatingBinaryOp {
             public DivideAssign(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitPushValue(dmObject, proc);
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
                 proc.Divide();
                 proc.Assign();
             }
         }
 
         // x <<= y
-        class LeftShiftAssign : BinaryOp {
+        class LeftShiftAssign : DoubleMutatingBinaryOp {
             public LeftShiftAssign(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitPushValue(dmObject, proc);
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
                 proc.BitShiftLeft();
                 proc.Assign();
             }
         }
 
         // x >>= y
-        class RightShiftAssign : BinaryOp {
+        class RightShiftAssign : DoubleMutatingBinaryOp {
             public RightShiftAssign(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitPushValue(dmObject, proc);
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
                 proc.BitShiftRight();
                 proc.Assign();
             }
         }
 
         // x ^= y
-        class XorAssign : BinaryOp {
+        class XorAssign : DoubleMutatingBinaryOp {
             public XorAssign(DMExpression lhs, DMExpression rhs)
                 : base(lhs, rhs)
             {}
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitPushValue(dmObject, proc);
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
                 proc.BinaryXor();
                 proc.Assign();
             }
@@ -905,12 +977,13 @@ namespace DMCompiler.DM {
                 throw new Exception("attempt to use proc as value");
             }
 
-            public override void EmitPushProc(DMObject dmObject, DMProc proc) {
+            public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
                 if (!dmObject.HasProc(_identifier)) {
                     throw new Exception($"Type + {dmObject.Path} does not have a proc named `{_identifier}`");
                 }
 
                 proc.GetProc(_identifier);
+                return ProcPushResult.Unconditional;
             }
         }
 
@@ -924,8 +997,9 @@ namespace DMCompiler.DM {
                 proc.PushSelf();
             }
 
-            public override void EmitPushProc(DMObject dmObject, DMProc proc) {
+            public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
                 proc.PushSelf();
+                return ProcPushResult.Unconditional;
             }
         }
 
@@ -935,8 +1009,9 @@ namespace DMCompiler.DM {
                 throw new Exception("attempt to use proc as value");
             }
 
-            public override void EmitPushProc(DMObject dmObject, DMProc proc) {
+            public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
                 proc.PushSuperProc();
+                return ProcPushResult.Unconditional;
             }
         }
 
@@ -951,15 +1026,37 @@ namespace DMCompiler.DM {
             }
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                _target.EmitPushProc(dmObject, proc);
 
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
+                var _procResult = _target.EmitPushProc(dmObject, proc);
+
+                switch (_procResult) {
+                    case ProcPushResult.Unconditional:
+                        if (_arguments.Length == 0 && _target is ProcSuper) {
+                            proc.PushProcArguments();
+                        } else {
+                            _arguments.EmitPushArguments(dmObject, proc);
+                        }
+                        proc.Call();
+                        break;
+
+                    case ProcPushResult.Conditional: {
+                        var skipLabel = proc.NewLabelName();
+                        var endLabel = proc.NewLabelName();
+                        proc.JumpIfNullIdentifier(skipLabel);
+                        if (_arguments.Length == 0 && _target is ProcSuper) {
+                            proc.PushProcArguments();
+                        } else {
+                            _arguments.EmitPushArguments(dmObject, proc);
+                        }
+                        proc.Call();
+                        proc.Jump(endLabel);
+                        proc.AddLabel(skipLabel);
+                        proc.Pop();
+                        proc.PushNull();
+                        proc.AddLabel(endLabel);
+                        break;
+                    }
                 }
-
-                proc.Call();
             }
         }
 
@@ -1014,7 +1111,7 @@ namespace DMCompiler.DM {
         class Dereference : LValue {
             // Kind of a lazy port
             DMExpression _expr;
-            List<string> _fields = new();
+            List<(bool conditional, string field)> _fields = new();
 
             public override DreamPath? Path => _path;
             DreamPath? _path;
@@ -1029,23 +1126,32 @@ namespace DMCompiler.DM {
                 for (int i = 0; i < (includingLast ? dereferences.Length : dereferences.Length - 1); i++) {
                     DMASTDereference.Dereference deref = dereferences[i];
 
-                    if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                        if (current_path == null) {
-                            throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                    switch (deref.Type) {
+                        case DMASTDereference.DereferenceType.Direct: {
+                            if (current_path == null) {
+                                throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                            }
+
+                            DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
+
+                            var current = dmObject.GetVariable(deref.Property);
+                            if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
+                            if (current == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
+
+                            current_path = current.Type;
+                            _fields.Add((deref.Conditional, deref.Property));
+                            break;
                         }
 
-                        DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
+                        case DMASTDereference.DereferenceType.Search: {
+                            var current = new DMVariable(null, deref.Property, false);
+                            current_path = current.Type;
+                            _fields.Add((deref.Conditional, deref.Property));
+                            break;
+                        }
 
-                        var current = dmObject.GetVariable(deref.Property);
-                        if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
-                        if (current == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
-
-                        current_path = current.Type;
-                        _fields.Add(deref.Property);
-                    } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
-                        var current = new DMVariable(null, deref.Property, false);
-                        current_path = current.Type;
-                        _fields.Add(deref.Property);
+                        default:
+                            throw new InvalidOperationException();
                     }
                 }
 
@@ -1055,8 +1161,33 @@ namespace DMCompiler.DM {
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 _expr.EmitPushValue(dmObject, proc);
 
-                foreach (var field in _fields) {
-                    proc.Dereference(field);
+                foreach (var (conditional, field) in _fields) {
+                    if (conditional) {
+                        proc.DereferenceConditional(field);
+                    } else {
+                        proc.Dereference(field);
+                    }
+                }
+            }
+
+            public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
+                _expr.EmitPushValue(dmObject, proc);
+
+                bool lastConditional = false;
+                foreach (var (conditional, field) in _fields) {
+                    if (conditional) {
+                        proc.DereferenceConditional(field);
+                    } else {
+                        proc.Dereference(field);
+                    }
+
+                    lastConditional = conditional;
+                }
+
+                if (lastConditional) {
+                    return IdentifierPushResult.Conditional;
+                } else {
+                    return IdentifierPushResult.Unconditional;
                 }
             }
 
@@ -1065,10 +1196,15 @@ namespace DMCompiler.DM {
 
                 for (int idx = 0; idx < _fields.Count - 1; idx++)
                 {
-                    proc.Dereference(_fields[idx]);
+                    if (_fields[idx].conditional) {
+                        proc.DereferenceConditional(_fields[idx].field);
+                    } else {
+                        proc.Dereference(_fields[idx].field);
+                    }
                 }
 
-                proc.Initial(_fields[^1]);
+                // TODO: Handle conditional
+                proc.Initial(_fields[^1].field);
             }
         }
 
@@ -1076,24 +1212,36 @@ namespace DMCompiler.DM {
         class DereferenceProc : DMExpression {
             // Kind of a lazy port
             Dereference _parent;
+            bool _conditional;
             string _field;
 
             public DereferenceProc(DMExpression expr, DMASTDereferenceProc astNode) {
                 _parent = new Dereference(expr, astNode, false);
 
                 DMASTDereference.Dereference deref = astNode.Dereferences[^1];
-                if (deref.Type == DMASTDereference.DereferenceType.Direct) {
-                    if (_parent.Path == null) {
-                        throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                switch (deref.Type) {
+                    case DMASTDereference.DereferenceType.Direct: {
+                        if (_parent.Path == null) {
+                            throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                        }
+
+                        DreamPath type = _parent.Path.Value;
+                        DMObject dmObject = DMObjectTree.GetDMObject(type, false);
+
+                        if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
+                        _conditional = deref.Conditional;
+                        _field = deref.Property;
+                        break;
                     }
 
-                    DreamPath type = _parent.Path.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
+                    case DMASTDereference.DereferenceType.Search: {
+                        _conditional = deref.Conditional;
+                        _field = deref.Property;
+                        break;
+                    }
 
-                    if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
-                    _field = deref.Property;
-                } else if (deref.Type == DMASTDereference.DereferenceType.Search) { //No compile-time checks
-                    _field = deref.Property;
+                    default:
+                        throw new InvalidOperationException();
                 }
             }
 
@@ -1101,26 +1249,16 @@ namespace DMCompiler.DM {
                 throw new Exception("attempt to use proc as value");
             }
 
-            public override void EmitPushProc(DMObject dmObject, DMProc proc) {
+            public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
                 _parent.EmitPushValue(dmObject, proc);
-                proc.DereferenceProc(_field);
-            }
-        }
 
-        // x = y
-        class Assignment : DMExpression {
-            DMExpression LHS;
-            DMExpression RHS;
-
-            public Assignment(DMExpression lhs, DMExpression rhs) {
-                LHS = lhs;
-                RHS = rhs;
-            }
-
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-                LHS.EmitIdentifier(dmObject, proc);
-                RHS.EmitPushValue(dmObject, proc);
-                proc.Assign();
+                if (_conditional) {
+                    proc.DereferenceProcConditional(_field);
+                    return ProcPushResult.Conditional;
+                } else {
+                    proc.DereferenceProc(_field);
+                    return ProcPushResult.Unconditional;
+                }
             }
         }
 

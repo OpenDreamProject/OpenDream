@@ -1396,15 +1396,17 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTDereference : DMASTCallable {
         public enum DereferenceType {
             Direct,
-            Search
+            Search,
         }
 
         public struct Dereference {
             public DereferenceType Type;
+            public bool Conditional;
             public string Property;
 
-            public Dereference(DereferenceType type, string property) {
+            public Dereference(DereferenceType type, bool conditional, string property) {
                 Type = type;
+                Conditional = conditional;
                 Property = property;
             }
         }

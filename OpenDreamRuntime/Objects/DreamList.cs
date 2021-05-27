@@ -89,11 +89,7 @@ namespace OpenDreamRuntime.Objects {
 
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
-            foreach (DreamValue listValue in _values) {
-                if (value == listValue) return true;
-            }
-
-            return false;
+            return _values.Contains(value);
         }
 
         public int FindValue(DreamValue value, int start = 1, int end = 0) {

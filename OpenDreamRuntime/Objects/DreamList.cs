@@ -1,5 +1,6 @@
 ﻿using OpenDreamRuntime.Procs;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenDreamRuntime.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
@@ -142,12 +143,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList Union(DreamList other) {
-            DreamList copy = CreateCopy();
-            copy._values.AddRange(other.GetValues());
+            DreamList newList = new DreamList(Runtime);
+            newList._values = _values.Union(other.GetValues()).ToList();
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
-                copy._associativeValues[key] = value;
+                newList._associativeValues[key] = value;
             }
-            return copy;
+            return newList;
         }
     }
 

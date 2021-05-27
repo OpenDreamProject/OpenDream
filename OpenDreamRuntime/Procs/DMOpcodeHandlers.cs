@@ -568,16 +568,30 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? BitOr(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
-            if (value.TryGetValueAsInteger(out int secondInt)) {
-                int first = state.PopDreamValue().GetValueAsInteger();
+        public static ProcStatus? BitOr(DMProcState state) {                                // x | y
+            DreamValue secondValue = state.PopDreamValue();
 
-                state.Push(new DreamValue(first | secondInt));
-            } else if (value.TryGetValueAsDreamList(out DreamList secondList)) {
-                DreamList first = state.PopDreamValue().GetValueAsDreamList();
+            if (secondValue.TryGetValueAsInteger(out int secondInt)) {                      // x | 2
+                DreamValue firstValue = state.PopDreamValue();
 
-                state.Push(new DreamValue(first.Union(secondList)));
+                if (firstValue.TryGetValueAsInteger(out int firstInt)) {                    // 1 | 2
+                    state.Push(new DreamValue(firstInt | secondInt));
+                } else if (firstValue.TryGetValueAsDreamList(out DreamList firstList)) {    // List | 2
+                    firstList.AddValue(secondValue);
+                } else {
+                    throw new NotImplementedException("| is only implemented for lists and numbers");
+                }
+            }
+            else if (secondValue.TryGetValueAsDreamList(out DreamList secondList)) {        // x | List
+                DreamValue firstValue = state.PopDreamValue();
+
+                if (firstValue.TryGetValueAsDreamList(out DreamList firstList)) {           // List | List
+                    state.Push(new DreamValue(firstList.Union(secondList)));
+                } else if (firstValue.Type == DreamValue.DreamValueType.Float) {            // 1 | List
+                    throw new Exception("Type mismatch: " + firstValue + "(number) | " + secondList + "(/list)");
+                } else {
+                    throw new NotImplementedException("| is only implemented for lists and numbers");
+                }
             }
             return null;
         }

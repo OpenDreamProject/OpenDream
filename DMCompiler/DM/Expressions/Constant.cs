@@ -24,12 +24,12 @@ namespace DMCompiler.DM.Expressions {
 #endregion
 
 #region Binary Operations
-        public virtual Constant And(Constant rhs) {
+        public Constant And(Constant rhs) {
             var truthy = IsTruthy() && rhs.IsTruthy();
             return new Number(truthy ? 1 : 0);
         }
 
-        public virtual Constant Or(Constant rhs) {
+        public Constant Or(Constant rhs) {
             var truthy = IsTruthy() || rhs.IsTruthy();
             return new Number(truthy ? 1 : 0);
         }

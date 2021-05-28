@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    public class IconAppearance {
+    public class IconAppearance : IEquatable<IconAppearance> {
         public enum AppearanceProperty {
             End,
             Icon,
@@ -74,8 +74,9 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public override bool Equals(object obj) {
-            IconAppearance appearance = obj as IconAppearance;
+        public override bool Equals(object obj) => obj is IconAppearance appearance && Equals(appearance);
+
+        public bool Equals(IconAppearance appearance) {
             if (appearance == null) return false;
 
             if (appearance.Icon != Icon) return false;

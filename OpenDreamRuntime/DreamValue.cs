@@ -4,7 +4,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime {
-    public struct DreamValue {
+    public struct DreamValue : IEquatable<DreamValue> {
         [Flags]
         public enum DreamValueType {
             String = 1,

@@ -47,7 +47,7 @@ namespace OpenDreamRuntime.Tests
     }
 
     public class Tests {
-        [SetUp]
+        [OneTimeSetUp]
         public void Compile() {
             // Terrible platform-specific way to build our test dependencies
             var info = new ProcessStartInfo {

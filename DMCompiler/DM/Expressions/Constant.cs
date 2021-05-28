@@ -86,7 +86,7 @@ namespace DMCompiler.DM.Expressions {
             proc.PushNull();
         }
 
-        public override bool IsTruthy() => true;
+        public override bool IsTruthy() => false;
     }
 
     // 4.0, -4.0

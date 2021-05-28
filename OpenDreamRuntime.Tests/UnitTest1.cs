@@ -355,5 +355,20 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(30), result);
             Assert.AreEqual(0, runtime.ExceptionCount);
         }
+
+
+        [Test]
+        public void SwitchConstTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async(state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("switch_const");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.AreEqual(new DreamValue(1), result);
+            Assert.AreEqual(0, runtime.ExceptionCount);
+        }
     }
 }

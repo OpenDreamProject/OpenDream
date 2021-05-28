@@ -63,7 +63,13 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
             //TODO: Proc attributes
             if (statementSet.Attribute.ToLower() == "waitfor") {
-                _proc.WaitFor(DMExpression.Eval(_dmObject, _proc, statementSet.Value) != 0.0);
+                var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
+
+                if (constant is not Expressions.Number) {
+                    throw new Exception($"waitfor attribute should be a number (got {constant})");
+                }
+
+                _proc.WaitFor(constant.IsTruthy());
             }
         }
 
@@ -264,8 +270,9 @@ namespace DMCompiler.DM.Visitors {
                 if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues) {
                     string caseLabel = _proc.NewLabelName();
 
-                    foreach (DMASTExpressionConstant value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
-                        DMExpression.Emit(_dmObject, _proc, value);
+                    foreach (DMASTExpression value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
+                        var constant = DMExpression.Constant(_dmObject, _proc, value);
+                        constant.EmitPushValue(_dmObject, _proc);
                         _proc.SwitchCase(caseLabel);
                     }
 

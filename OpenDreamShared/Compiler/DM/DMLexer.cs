@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
@@ -449,7 +450,9 @@ namespace OpenDreamShared.Compiler.DM {
                             string text = preprocToken.Text;
                             if (text == "1.#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
-                            } else if (Int32.TryParse(text, out int intValue)) {
+                            } else if (text.StartsWith("0x") && Int32.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
+                                token = CreateToken(TokenType.DM_Integer, text, intValue);
+                            } else if (Int32.TryParse(text, out intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
                             } else if (Single.TryParse(text, out float floatValue)) {
                                 token = CreateToken(TokenType.DM_Float, text, floatValue);

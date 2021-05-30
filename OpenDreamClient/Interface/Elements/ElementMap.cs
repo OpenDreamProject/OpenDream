@@ -32,6 +32,7 @@ namespace OpenDreamClient.Interface.Elements {
             this.Background = Brushes.Black;
 
             this.MouseLeftButtonDown += OnLeftMouseDown;
+            this.SizeChanged += OnSizeChanged;
             this.Unloaded += OnUnloaded;
         }
 
@@ -40,7 +41,10 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y) {
-            return ((int)Math.Floor(x), (int)_dreamRenderer.OpenGLViewControl.Height - (int)Math.Floor(y));
+            x /= _dreamRenderer.OpenGLViewControl.Scale;
+            y /= _dreamRenderer.OpenGLViewControl.Scale;
+
+            return ((int)Math.Floor(x), (int)_dreamRenderer.OpenGLViewControl.ViewportHeight - (int)Math.Floor(y));
         }
 
         private bool IsOverAtom(ATOM atom, (int X, int Y) screenCoordinates, bool isScreenAtom) {
@@ -107,6 +111,13 @@ namespace OpenDreamClient.Interface.Elements {
             pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             pClickAtom.ModifierAlt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
             Program.OpenDream.Connection.SendPacket(pClickAtom);
+        }
+
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e) {
+            double widthScaling = Math.Max(1, Math.Floor(this.Width / _dreamRenderer.OpenGLViewControl.ViewportWidth));
+            double heightScaling = Math.Max(1, Math.Floor(this.Height / _dreamRenderer.OpenGLViewControl.ViewportHeight));
+
+            _dreamRenderer.SetScale(Math.Min(widthScaling, heightScaling));
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e) {

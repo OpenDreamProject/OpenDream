@@ -41,10 +41,12 @@ namespace OpenDreamClient.Renderer {
         }
 
         public void SetViewportSize(int width, int height) {
-            OpenGLViewControl.Width = width;
-            OpenGLViewControl.Height = height;
-            _gl.Viewport(0, 0, width, height);
+            OpenGLViewControl.SetViewport(width, height);
             _shader.SetViewportSize((float)width, (float)height);
+        }
+
+        public void SetScale(double scale) {
+            OpenGLViewControl.SetScale(scale);
         }
 
         public Rectangle GetIconRect(ATOM atom, bool useScreenLocation) {

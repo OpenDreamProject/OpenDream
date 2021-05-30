@@ -20,19 +20,21 @@ namespace OpenDreamClient.Renderer {
         public event RenderDelegate Render;
 
         public OpenGL GL = new OpenGL();
+        public int ViewportWidth { get; private set; }
+        public int ViewportHeight { get; private set; }
+        public double Scale { get; private set; }
 
         private DispatcherTimer _renderTimer = new DispatcherTimer(DispatcherPriority.Render);
-        private int _width, _height;
         private Image _image = new Image();
 
         public SharpGLControl(int width, int height) {
             _renderTimer.Interval = TimeSpan.FromMilliseconds(1000 / 60); //60 FPS
             _renderTimer.Tick += _renderTimer_Tick;
-            _width = width;
-            _height = height;
+            SetViewport(width, height);
 
             Content = _image;
-            RenderSize = new Size(_width, _height);
+            RenderSize = new Size(ViewportWidth, ViewportHeight);
+            RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.NearestNeighbor);
 
             Loaded += SharpGLControl_Loaded;
             Unloaded += SharpGLControl_Unloaded;
@@ -41,14 +43,26 @@ namespace OpenDreamClient.Renderer {
         public override void OnApplyTemplate() {
             base.OnApplyTemplate();
 
-            GL.SetDimensions(_width, _height);
-            GL.Create(SharpGL.Version.OpenGLVersion.OpenGL2_1, RenderContextType.FBO, _width, _height, 32, null);
-            GL.Viewport(0, 0, _width, _height);
+            GL.SetDimensions(ViewportWidth, ViewportHeight);
+            GL.Create(SharpGL.Version.OpenGLVersion.OpenGL2_1, RenderContextType.FBO, ViewportWidth, ViewportHeight, 32, null);
+            GL.Viewport(0, 0, ViewportWidth, ViewportHeight);
 
             GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             GL.DepthFunc(OpenGL.GL_LEQUAL);
 
             OpenGLContextCreated?.Invoke(GL);
+        }
+
+        public void SetViewport(int width, int height) {
+            ViewportWidth = width;
+            ViewportHeight = height;
+            SetScale(Scale);
+        }
+
+        public void SetScale(double scale) {
+            Scale = scale;
+            Width = ViewportWidth * Scale;
+            Height = ViewportHeight * Scale;
         }
 
         private static BitmapSource HBitmapToBitmapSource(IntPtr hBitmap) {

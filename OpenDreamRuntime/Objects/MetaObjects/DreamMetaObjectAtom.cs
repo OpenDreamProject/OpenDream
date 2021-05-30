@@ -115,7 +115,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList overlayList;
                 if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
-                    overlayList = new DreamList(Runtime);
+                    overlayList = DreamList.Create(Runtime);
                 }
 
                 overlayList.ValueAssigned += OverlayValueAssigned;
@@ -131,7 +131,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList underlayList;
                 if (!variableValue.TryGetValueAsDreamList(out underlayList)) {
-                    underlayList = new DreamList(Runtime);
+                    underlayList = DreamList.Create(Runtime);
                 }
 
                 underlayList.ValueAssigned += UnderlayValueAssigned;
@@ -142,7 +142,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "transform") {
-                DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix, new DreamProcArguments(new() { variableValue })); //Clone the matrix
+                // Clone the matrix
+                DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix);
+                matrix.InitInstant(new DreamProcArguments(new() { variableValue }));
 
                 return new DreamValue(matrix);
             } else {

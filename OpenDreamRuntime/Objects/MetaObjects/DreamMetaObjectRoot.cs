@@ -7,6 +7,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             Runtime = runtime;
         }
         public DreamRuntime Runtime { get; }
+
+        public virtual bool ShouldCallNew => false;
+
         public virtual void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
 
         }

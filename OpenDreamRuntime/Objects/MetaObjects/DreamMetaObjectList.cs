@@ -6,10 +6,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             : base(runtime)
 
         {}
+
+        public override bool ShouldCallNew => true;
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-
-            dreamObject.SpawnProc("New", creationArguments);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

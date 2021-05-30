@@ -70,7 +70,10 @@ namespace OpenDreamRuntime {
                     DreamObject turf = CreateMapObject(cellDefinition.Turf);
                     DreamObject area = GetMapLoaderArea(cellDefinition.Area?.Type ?? defaultArea);
 
-                    if (turf == null) turf = Runtime.ObjectTree.CreateObject(defaultTurf);
+                    if (turf == null) {
+                        turf = Runtime.ObjectTree.CreateObject(defaultTurf);
+                        turf.InitInstant(new DreamProcArguments(null));
+                    }
 
                     int x = mapBlock.X + cell.Key.X - 1;
                     int y = mapBlock.Y + cell.Key.Y - 1;
@@ -94,12 +97,15 @@ namespace OpenDreamRuntime {
             int z = Levels.Count;
             for (int x = 1; x <= Width; x++) {
                 for (int y = 1; y <= Height; y++) {
-                    SetTurf(x, y, z, Runtime.ObjectTree.CreateObject(defaultTurf), false);
+                    var turf = Runtime.ObjectTree.CreateObject(defaultTurf);
+                    turf.InitInstant(new DreamProcArguments(null));
+
+                    SetTurf(x, y, z, turf, false);
                     SetArea(x, y, z, area);
                 }
             }
         }
-        
+
         public void RemoveLevel() {
             MapLevel toRemove = Levels[^1];
             foreach (MapCell cell in toRemove.Cells) {
@@ -158,6 +164,7 @@ namespace OpenDreamRuntime {
                 return area;
             } else {
                 area = Runtime.ObjectTree.CreateObject(areaPath);
+                area.InitInstant(new DreamProcArguments(null));
 
                 _mapLoaderAreas.Add(areaPath, area);
                 return area;
@@ -182,7 +189,9 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            return new DreamObject(Runtime, definition, new DreamProcArguments(new() { new DreamValue(loc) }));
+            var obj = new DreamObject(Runtime, definition);
+            obj.InitInstant(new DreamProcArguments(new() { new DreamValue(loc) }));
+            return obj;
         }
     }
 }

@@ -12,14 +12,29 @@ namespace OpenDreamRuntime.Objects {
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = new();
 
-        public DreamList(DreamRuntime runtime) : base(runtime, runtime.ListDefinition, new DreamProcArguments(null)) {}
+        protected DreamList(DreamRuntime runtime)
+            : base(runtime, runtime.ListDefinition)
+        {}
 
-        public DreamList(DreamRuntime runtime, DreamProcArguments creationArguments) : base(runtime, runtime.ListDefinition, creationArguments) { }
+        public static DreamList CreateUninitialized(DreamRuntime runtime) {
+            return new DreamList(runtime);
+        }
 
-        public DreamList(DreamRuntime runtime, IEnumerable<object> collection) : base(runtime, runtime.ListDefinition, new DreamProcArguments(null)) {
+        public static DreamList Create(DreamRuntime runtime) {
+            var list = new DreamList(runtime);
+            list.InitInstant(new DreamProcArguments(null));
+            return list;
+        }
+
+        public static DreamList Create(DreamRuntime runtime, IEnumerable<object> collection) {
+            var list = new DreamList(runtime);
+            list.InitInstant(new DreamProcArguments(null));
+
             foreach (object value in collection) {
-                _values.Add(new DreamValue(value));
+                list._values.Add(new DreamValue(value));
             }
+
+            return list;
         }
 
         public bool IsAssociative() {
@@ -27,7 +42,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
-            DreamList copy = new DreamList(Runtime);
+            DreamList copy = Create(Runtime);
 
             if (end == 0 || end > _values.Count) end = _values.Count;
 
@@ -146,8 +161,14 @@ namespace OpenDreamRuntime.Objects {
     class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 
-        public DreamListVars(DreamObject dreamObject) : base(dreamObject.Runtime) {
+        private DreamListVars(DreamObject dreamObject) : base(dreamObject.Runtime) {
             _dreamObject = dreamObject;
+        }
+
+        public static DreamListVars Create(DreamObject dreamObject) {
+            var list = new DreamListVars(dreamObject);
+            list.InitInstant(new DreamProcArguments(null));
+            return list;
         }
 
         public override List<DreamValue> GetValues() {

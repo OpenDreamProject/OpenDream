@@ -2,8 +2,10 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace OpenDreamRuntime.Objects {
+
     public class DreamObject {
         public DreamRuntime Runtime { get; }
 
@@ -15,17 +17,47 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         private Dictionary<string, DreamValue> _variables = new();
 
-        public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
+        public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition) {
             Runtime = runtime;
             ObjectDefinition = objectDefinition;
-
-            ObjectDefinition.InitializionProc?.Spawn(this, new DreamProcArguments(new(), new()));
-
-            ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
         }
 
         ~DreamObject() {
             // Delete();
+        }
+
+        public DreamValue InitInstant(DreamProcArguments creationArguments) {
+            var initProc = InitProc(Runtime);
+            var result = initProc.Spawn(this, creationArguments);
+
+            if (result == DreamValue.Null) {
+                throw new InvalidOperationException("InitInstant called non-instant proc");
+            }
+
+            return result;
+        }
+
+        public static AsyncNativeProc InitProc(DreamRuntime runtime) {
+            return new AsyncNativeProc("DreamObject/(init)", runtime, null, null, null, null, InitAsync);
+        }
+
+        private static async Task<DreamValue> InitAsync(AsyncNativeProc.State state) {
+            var src = state.Src;
+
+            if (src.ObjectDefinition.InitializionProc != null) {
+                await state.Call(src.ObjectDefinition.InitializionProc, src, null, new DreamProcArguments(null));
+            }
+
+            if (src.ObjectDefinition.MetaObject != null) {
+                src.ObjectDefinition.MetaObject?.OnObjectCreated(src, state.Arguments);
+
+                if (src.ObjectDefinition.MetaObject.ShouldCallNew) {
+                    var newProc = src.GetProc("New");
+                    await state.Call(newProc, src, state.Usr, state.Arguments);
+                }
+            }
+
+            return new DreamValue(src);
         }
 
         public static DreamObject GetFromReferenceID(DreamRuntime runtime, int refID) {

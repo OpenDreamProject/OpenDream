@@ -113,7 +113,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (value.TryGetValueAsDreamList(out DreamList list))
             {
-                DreamList tmp = new DreamList(CurrentRuntime);
+                DreamList tmp = DreamList.Create(CurrentRuntime);
                 foreach (DreamValue val in list.GetValues())
                 {
                     tmp.AddValue(new DreamValue(Math.Clamp(val.GetValueAsFloat(), lVal, hVal)));
@@ -338,7 +338,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string path = arguments.GetArgument(0, "Path").GetValueAsString();
             var listing = CurrentRuntime.ResourceManager.GetListing(path);
-            DreamList list = new DreamList(CurrentRuntime, listing);
+            DreamList list = DreamList.Create(CurrentRuntime, listing);
             return new DreamValue(list);
         }
 
@@ -365,8 +365,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("layer", Type = DreamValueType.Float)]
         [DreamProcParameter("dir", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_image(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject imageObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Image, arguments);
-
+            DreamObject imageObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Image);
+            imageObject.InitInstant(arguments);
             return new DreamValue(imageObject);
         }
 
@@ -492,7 +492,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
             if (jsonElement.ValueKind == JsonValueKind.Array) {
-                DreamList list = new DreamList(CurrentRuntime);
+                DreamList list = DreamList.Create(CurrentRuntime);
 
                 foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                     DreamValue value = CreateValueFromJsonElement(childElement);
@@ -502,7 +502,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 return new DreamValue(list);
             } else if (jsonElement.ValueKind == JsonValueKind.Object) {
-                DreamList list = new DreamList(CurrentRuntime);
+                DreamList list = DreamList.Create(CurrentRuntime);
 
                 foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                     DreamValue value = CreateValueFromJsonElement(childProperty.Value);
@@ -776,7 +776,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = new DreamList(CurrentRuntime);
+            DreamList view = DreamList.Create(CurrentRuntime);
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -823,7 +823,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = new DreamList(CurrentRuntime);
+            DreamList view = DreamList.Create(CurrentRuntime);
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
@@ -845,7 +845,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamList params2list(DreamRuntime runtime, string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-            DreamList list = new DreamList(runtime);
+            DreamList list = DreamList.Create(runtime);
 
             foreach (string queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
@@ -870,7 +870,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (paramsValue.TryGetValueAsString(out string paramsString)) {
                 result = params2list(CurrentRuntime, paramsString);
             } else {
-                result = new DreamList(CurrentRuntime);
+                result = DreamList.Create(CurrentRuntime);
             }
 
             return new DreamValue(result);
@@ -1073,8 +1073,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("channel", Type = DreamValueType.Float)]
         [DreamProcParameter("volume", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sound(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject soundObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Sound, arguments);
-
+            DreamObject soundObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Sound);
+            soundObject.InitInstant(arguments);
             return new DreamValue(soundObject);
         }
 
@@ -1085,7 +1085,7 @@ namespace OpenDreamRuntime.Procs.Native {
             string text = arguments.GetArgument(0, "Text").GetValueAsString();
             string delimiter = arguments.GetArgument(1, "Delimiter").GetValueAsString();
             string[] splitText = text.Split(delimiter);
-            DreamList list = new DreamList(CurrentRuntime, splitText);
+            DreamList list = DreamList.Create(CurrentRuntime, splitText);
 
             return new DreamValue(list);
         }
@@ -1240,7 +1240,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamList list = new DreamList(CurrentRuntime);
+            DreamList list = DreamList.Create(CurrentRuntime);
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 DreamPath typePath = type.GetValueAsPath();
@@ -1309,7 +1309,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = new DreamList(CurrentRuntime);
+            DreamList view = DreamList.Create(CurrentRuntime);
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -1354,7 +1354,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = new DreamList(CurrentRuntime);
+            DreamList view = DreamList.Create(CurrentRuntime);
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();

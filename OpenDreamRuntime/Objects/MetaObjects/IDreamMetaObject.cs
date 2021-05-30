@@ -2,6 +2,8 @@
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     public interface IDreamMetaObject {
+        public bool ShouldCallNew { get; }
+
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments);
         public void OnObjectDeleted(DreamObject dreamObject);
         public void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue);

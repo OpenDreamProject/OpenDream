@@ -110,6 +110,8 @@ namespace OpenDreamRuntime
             ListDefinition = ObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
 
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
+            WorldInstance.InitInstant(new DreamProcArguments(null));
+
             ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
             RegisterPacketCallbacks();
@@ -121,7 +123,7 @@ namespace OpenDreamRuntime
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);
-            
+
             WorldInstance.SpawnProc("New");
         }
 
@@ -218,12 +220,16 @@ namespace OpenDreamRuntime
             Console.WriteLine("Connection request from '" + connection.CKey + "'");
             StateManager.AddClient(connection.CKey);
 
-            connection.ClientDreamObject = ObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
-            connection.SendPacket(new PacketInterfaceData(_clientInterface));
-            connection.SendPacket(new PacketFullGameState(StateManager.FullState));
-
             DreamThread.Run(this, async (state) => {
-                var client = connection.ClientDreamObject;
+                var client = ObjectTree.CreateObject(DreamPath.Client);
+                connection.ClientDreamObject = client;
+
+                var initProc = DreamObject.InitProc(state.Runtime);
+                await state.Call(initProc, client, null, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
+
+                connection.SendPacket(new PacketInterfaceData(_clientInterface));
+                connection.SendPacket(new PacketFullGameState(StateManager.FullState));
+
                 var newProc = client.GetProc("New");
 
                 var mob = await state.Call(newProc, client, null, new DreamProcArguments(null));

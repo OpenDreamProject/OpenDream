@@ -93,16 +93,14 @@ namespace OpenDreamRuntime.Objects {
             return GetTreeEntryFromPath(path).ObjectDefinition;
         }
 
-        public DreamObject CreateObject(DreamPath path, DreamProcArguments creationArguments) {
-            if (path.Equals(DreamPath.List)) {
-                return new DreamList(Runtime, creationArguments);
-            } else {
-                return new DreamObject(Runtime, GetObjectDefinitionFromPath(path), creationArguments);
-            }
-        }
-
+        // It is the job of whatever calls this function to then initialize the object
+        // by calling the result of DreamObject.InitProc or u DreamObject.InitInstant
         public DreamObject CreateObject(DreamPath path) {
-            return CreateObject(path, new DreamProcArguments(null));
+            if (path.Equals(DreamPath.List)) {
+                return DreamList.CreateUninitialized(Runtime);
+            } else {
+                return new DreamObject(Runtime, GetObjectDefinitionFromPath(path));
+            }
         }
 
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {

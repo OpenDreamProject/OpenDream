@@ -1013,7 +1013,8 @@ namespace OpenDreamShared.Compiler.DM {
                     TokenType.DM_SlashEquals,
                     TokenType.DM_LeftShiftEquals,
                     TokenType.DM_RightShiftEquals,
-                    TokenType.DM_XorEquals
+                    TokenType.DM_XorEquals,
+                    TokenType.DM_ModulusEquals
                 };
 
                 if (Check(assignTypes)) {
@@ -1032,6 +1033,7 @@ namespace OpenDreamShared.Compiler.DM {
                             case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(expression, value);
                             case TokenType.DM_RightShiftEquals: return new DMASTRightShiftAssign(expression, value);
                             case TokenType.DM_XorEquals: return new DMASTXorAssign(expression, value);
+                            case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(expression, value);
                         }
                     } else {
                         Error("Expected a value");

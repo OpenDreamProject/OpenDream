@@ -229,6 +229,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.XorAssign(lhs, rhs);
         }
 
+        public void VisitModulusAssign(DMASTModulusAssign modulusAssign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusAssign.A);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusAssign.B);
+            Result = new Expressions.ModulusAssign(lhs, rhs);
+        }
+
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             var lhs = DMExpression.Create(_dmObject, _proc, leftShift.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, leftShift.B, _inferredPath);

@@ -552,5 +552,17 @@ namespace DMCompiler.DM.Expressions {
                 proc.Assign();
             }
         }
+
+        // x %= y
+        class ModulusAssign : DoubleAssignmentBinaryOp {
+            public ModulusAssign(DMExpression lhs, DMExpression rhs)
+                : base(lhs, rhs)
+            {}
+
+            public override void EmitOps(DMObject dmObject, DMProc proc) {
+                proc.Modulus();
+                proc.Assign();
+            }
+        }
 #endregion
 }

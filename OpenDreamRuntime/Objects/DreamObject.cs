@@ -23,112 +23,18 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = objectDefinition;
         }
 
-        public void InitInstant(DreamProcArguments creationArguments) {
-            ObjectDefinition.InitializionProc?.Spawn(this, new DreamProcArguments(null));
+        public void InitSpawn(DreamProcArguments creationArguments) {
+            var thread = new DreamThread(Runtime);
+            var procState = InitProc(thread, null, creationArguments);
+            thread.PushProcState(procState);
 
-            if (ObjectDefinition.MetaObject != null) {
-                ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
-
-                if (ObjectDefinition.MetaObject.ShouldCallNew) {
-                    var newProc = GetProc("New");
-                    newProc.Spawn(this, creationArguments);
-                }
+            if (thread.Resume() == DreamValue.Null) {
+                throw new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!");
             }
         }
 
-        class OnObjectCreatedState : ProcState
-        {
-            public OnObjectCreatedState(DreamThread thread, DreamObject dreamObject, DreamProcArguments arguments)
-                : base(thread)
-            {
-                _dreamObject = dreamObject;
-                _arguments = arguments;
-            }
-
-            private DreamObject _dreamObject;
-            private DreamProcArguments _arguments;
-
-            public override DreamProc Proc => null;
-
-            public override void AppendStackFrame(StringBuilder builder)
-            {
-                builder.AppendLine("<OnObjectCreated>");
-            }
-
-            protected override ProcStatus InternalResume()
-            {
-                _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, _arguments);
-                return ProcStatus.Returned;
-            }
-        }
-
-        class ReturnObjectState : ProcState
-        {
-            public ReturnObjectState(DreamThread thread, DreamObject dreamObject)
-                : base(thread)
-            {
-                _dreamObject = dreamObject;
-            }
-
-            private DreamObject _dreamObject;
-
-            public override DreamProc Proc => null;
-
-            public override void AppendStackFrame(StringBuilder builder)
-            {
-                builder.AppendLine("<ReturnObject>");
-            }
-
-            protected override ProcStatus InternalResume()
-            {
-                Result = new DreamValue(_dreamObject);
-                return ProcStatus.Returned;
-            }
-        }
-
-        public ProcStatus? CallInitProcs(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
-            thread.PushProcState(new ReturnObjectState(thread, this));
-
-            if (ObjectDefinition.MetaObject != null) {
-                if (ObjectDefinition.MetaObject.ShouldCallNew) {
-                    var newProc = GetProc("New");
-                    var newProcState = newProc.CreateState(thread, this, usr, arguments);
-                    thread.PushProcState(newProcState);
-                }
-
-                var procState = new OnObjectCreatedState(thread, this, arguments);
-                thread.PushProcState(procState);
-            }
-
-            if (ObjectDefinition.InitializionProc != null) {
-                var procState = ObjectDefinition.InitializionProc.CreateState(thread, this, usr, new DreamProcArguments(null));
-                thread.PushProcState(procState);
-            }
-
-            return ProcStatus.Called;
-        }
-
-        public static AsyncNativeProc InitProc(DreamRuntime runtime) {
-            return new AsyncNativeProc("DreamObject/(init)", runtime, null, null, null, null, InitAsync);
-        }
-
-        private static async Task<DreamValue> InitAsync(AsyncNativeProc.State state) {
-            var src = state.Src;
-
-            if (src.ObjectDefinition.InitializionProc != null) {
-                await state.Call(src.ObjectDefinition.InitializionProc, src, null, new DreamProcArguments(null));
-            }
-
-            if (src.ObjectDefinition.MetaObject != null) {
-                src.ObjectDefinition.MetaObject?.OnObjectCreated(src, state.Arguments);
-
-                if (src.ObjectDefinition.MetaObject.ShouldCallNew) {
-                    var newProc = src.GetProc("New");
-                    await state.Call(newProc, src, state.Usr, state.Arguments);
-                }
-            }
-
-            return new DreamValue(src);
+        public ProcState InitProc(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
+            return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
         public static DreamObject GetFromReferenceID(DreamRuntime runtime, int refID) {

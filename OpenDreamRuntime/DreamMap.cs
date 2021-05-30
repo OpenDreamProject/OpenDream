@@ -72,7 +72,7 @@ namespace OpenDreamRuntime {
 
                     if (turf == null) {
                         turf = Runtime.ObjectTree.CreateObject(defaultTurf);
-                        turf.InitInstant(new DreamProcArguments(null));
+                        turf.InitSpawn(new DreamProcArguments(null));
                     }
 
                     int x = mapBlock.X + cell.Key.X - 1;
@@ -98,7 +98,7 @@ namespace OpenDreamRuntime {
             for (int x = 1; x <= Width; x++) {
                 for (int y = 1; y <= Height; y++) {
                     var turf = Runtime.ObjectTree.CreateObject(defaultTurf);
-                    turf.InitInstant(new DreamProcArguments(null));
+                    turf.InitSpawn(new DreamProcArguments(null));
 
                     SetTurf(x, y, z, turf, false);
                     SetArea(x, y, z, area);
@@ -164,7 +164,7 @@ namespace OpenDreamRuntime {
                 return area;
             } else {
                 area = Runtime.ObjectTree.CreateObject(areaPath);
-                area.InitInstant(new DreamProcArguments(null));
+                area.InitSpawn(new DreamProcArguments(null));
 
                 _mapLoaderAreas.Add(areaPath, area);
                 return area;
@@ -190,7 +190,7 @@ namespace OpenDreamRuntime {
             }
 
             var obj = new DreamObject(Runtime, definition);
-            obj.InitInstant(new DreamProcArguments(new() { new DreamValue(loc) }));
+            obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(loc) }));
             return obj;
         }
     }

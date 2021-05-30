@@ -23,13 +23,13 @@ namespace OpenDreamRuntime.Objects {
 
         public static DreamList Create(DreamRuntime runtime) {
             var list = new DreamList(runtime);
-            list.InitInstant(new DreamProcArguments(null));
+            list.InitSpawn(new DreamProcArguments(null));
             return list;
         }
 
         public static DreamList Create(DreamRuntime runtime, IEnumerable<object> collection) {
             var list = new DreamList(runtime);
-            list.InitInstant(new DreamProcArguments(null));
+            list.InitSpawn(new DreamProcArguments(null));
 
             foreach (object value in collection) {
                 list._values.Add(new DreamValue(value));
@@ -177,7 +177,7 @@ namespace OpenDreamRuntime.Objects {
 
         public static DreamListVars Create(DreamObject dreamObject) {
             var list = new DreamListVars(dreamObject);
-            list.InitInstant(new DreamProcArguments(null));
+            list.InitSpawn(new DreamProcArguments(null));
             return list;
         }
 

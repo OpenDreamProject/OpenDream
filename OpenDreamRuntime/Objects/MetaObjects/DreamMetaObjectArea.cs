@@ -7,8 +7,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             : base(runtime)
         {}
 
-        public override bool ShouldCallNew => false;
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = DreamList.Create(Runtime);
 

@@ -144,7 +144,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (variableName == "transform") {
                 // Clone the matrix
                 DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix);
-                matrix.InitInstant(new DreamProcArguments(new() { variableValue }));
+                matrix.InitSpawn(new DreamProcArguments(new() { variableValue }));
 
                 return new DreamValue(matrix);
             } else {

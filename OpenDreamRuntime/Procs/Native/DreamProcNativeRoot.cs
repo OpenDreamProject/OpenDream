@@ -366,7 +366,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("dir", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_image(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject imageObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Image);
-            imageObject.InitInstant(arguments);
+            imageObject.InitSpawn(arguments);
             return new DreamValue(imageObject);
         }
 
@@ -1074,7 +1074,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("volume", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sound(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject soundObject = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Sound);
-            soundObject.InitInstant(arguments);
+            soundObject.InitSpawn(arguments);
             return new DreamValue(soundObject);
         }
 

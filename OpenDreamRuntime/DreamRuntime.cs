@@ -110,7 +110,7 @@ namespace OpenDreamRuntime
             ListDefinition = ObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
 
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
-            WorldInstance.InitInstant(new DreamProcArguments(null));
+            WorldInstance.InitSpawn(new DreamProcArguments(null));
 
             ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
@@ -224,10 +224,7 @@ namespace OpenDreamRuntime
                 var client = ObjectTree.CreateObject(DreamPath.Client);
                 connection.ClientDreamObject = client;
 
-                // var initProc = DreamObject.InitProc(state.Runtime);
-                // await state.Call(initProc, client, null, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
-
-                client.InitInstant(new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
+                client.InitSpawn(new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
 
                 connection.SendPacket(new PacketInterfaceData(_clientInterface));
                 connection.SendPacket(new PacketFullGameState(StateManager.FullState));

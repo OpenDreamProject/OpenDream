@@ -79,6 +79,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 newAppearance.Invisibility = variableValue.GetValueAsInteger();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
+            } else if (variableName == "mouse_opacity") {
+                ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
+
+                newAppearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
                 if (!variableValue.TryGetValueAsString(out color)) {
@@ -183,6 +188,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
                 appearance.Invisibility = invisibility;
+            }
+
+            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
+                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }
 
             if (atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX)) {

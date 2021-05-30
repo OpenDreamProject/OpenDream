@@ -48,9 +48,9 @@ namespace OpenDreamClient.Interface.Elements {
 
             if (_dreamRenderer.IsAtomVisible(atom, isScreenAtom) && iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
                 int atomIconX = screenCoordinates.X - iconRect.X;
-                int atomIconY = screenCoordinates.Y - iconRect.Y;
+                int atomIconY = 32 - (screenCoordinates.Y - iconRect.Y);
 
-                return atom.Icon.GetPixel(atomIconX, 32 - atomIconY).A != 0;
+                return atom.Icon.IsMouseOver(atomIconX, atomIconY);
             }
 
             return false;

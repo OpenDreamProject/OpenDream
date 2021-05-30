@@ -173,7 +173,17 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	return dir
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
+	//TODO: Speed = step_size if Speed is 0
 	Ref.Move(get_step(Ref, Dir), Dir)
+
+/proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0)
+	//TODO: Consider obstacles
+
+	var/dist = get_dist(Ref, Trg)
+	if (dist <= Min) return
+
+	var/step_dir = get_dir(Ref, Trg)
+	step(Ref, step_dir, Speed)
 
 /proc/turn(Dir, Angle)
 	var/dirAngle = 0

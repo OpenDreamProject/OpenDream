@@ -168,7 +168,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 }
 
                                 c = next;
-                                if (IsNumeric(c) || c == '.' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
+                                if (IsHex(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
                                     textBuilder.Append(c);
                                 } else {
                                     break;

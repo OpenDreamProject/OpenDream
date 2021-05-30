@@ -516,9 +516,9 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public class SwitchCaseValues : SwitchCase {
-            public DMASTExpressionConstant[] Values;
+            public DMASTExpression[] Values;
 
-            public SwitchCaseValues(DMASTExpressionConstant[] values, DMASTProcBlockInner body) : base(body) {
+            public SwitchCaseValues(DMASTExpression[] values, DMASTProcBlockInner body) : base(body) {
                 Values = values;
             }
         }

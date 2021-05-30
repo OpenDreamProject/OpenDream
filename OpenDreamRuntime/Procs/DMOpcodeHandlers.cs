@@ -574,11 +574,31 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? BitOr(DMProcState state) {
-            int second = state.PopDreamValue().GetValueAsInteger();
-            int first = state.PopDreamValue().GetValueAsInteger();
+        public static ProcStatus? BitOr(DMProcState state) {                        // x | y
+            DreamValue second = state.PopDreamValue();
+            DreamValue first = state.PopDreamValue();
 
-            state.Push(new DreamValue(first | second));
+            if (first.Type == DreamValue.DreamValueType.DreamObject) {              // Object | y
+                if (first.Value != null) {
+                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+
+                    if (metaObject != null) {
+                        state.Push(metaObject.OperatorOr(first, second));
+                    } else {
+                        throw new Exception("Invalid or operation on " + first + " and " + second);
+                    }
+                } else {
+                    state.Push(DreamValue.Null);
+                }
+            } else if (second.Value != null) {                                      // Non-Object | y
+                switch (first.Type) {
+                    case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                        state.Push(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
+                        break;
+                    default:
+                        throw new Exception("Invalid or operation on " + first + " and " + second);
+                }
+            }
             return null;
         }
 

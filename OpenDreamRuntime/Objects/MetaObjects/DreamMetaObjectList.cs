@@ -94,6 +94,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return a;
         }
 
+        public override DreamValue OperatorOr(DreamValue a, DreamValue b) {
+            DreamList list = a.GetValueAsDreamList();
+
+            if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
+                list = list.Union(bList);
+            } else {                                                // List | x
+                list = list.CreateCopy();
+                list.AddValue(b);
+            }
+
+            return new DreamValue(list);
+        }
+
         public override DreamValue OperatorCombine(DreamValue a, DreamValue b) {
             DreamList list = a.GetValueAsDreamList();
 

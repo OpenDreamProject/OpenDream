@@ -138,3 +138,14 @@
 /world/proc/list_index_mutate()
 	var/list/L = list(1, 2, 3)
 	return L[2] *= 15
+
+/world/proc/switch_const()
+	var/a = 137
+	switch(a)
+		if(20)
+			. = 500
+		if(136 | 1)
+			. = 1
+		if(/datum, /mob)
+			. = 300
+		

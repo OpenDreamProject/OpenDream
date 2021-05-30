@@ -14,6 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OperatorSubtract(DreamValue a, DreamValue b);
         public DreamValue OperatorAppend(DreamValue a, DreamValue b);
         public DreamValue OperatorRemove(DreamValue a, DreamValue b);
+        public DreamValue OperatorOr(DreamValue a, DreamValue b);
         public DreamValue OperatorCombine(DreamValue a, DreamValue b);
         public DreamValue OperatorMask(DreamValue a, DreamValue b);
     }

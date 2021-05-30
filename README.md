@@ -6,9 +6,11 @@ This project is currently in early stages, and is not feature-complete.
 
 The compiler and server should work fine for Linux-based machines, but we currently rely on WPF and WebView2 for the client, so it's Windows-only.
 
+For more information or if you'd like to contribute, join our [Discord server](https://discord.gg/qreryhZxxs).
+
 ## Building
 
-To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
+OpenDream requires .NET 5. To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
 
 There's 3 main parts: Compiler, Server, and Client
 

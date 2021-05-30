@@ -23,10 +23,9 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateList(DMProcState state) {
             var list = state.Runtime.ObjectTree.CreateObject(DreamPath.List);
-            var initProc = DreamObject.InitProc(state.Runtime);
-            var initState = initProc.CreateState(state.Thread, list, state.Usr, new DreamProcArguments(null));
-            state.Thread.PushProcState(initState);
-            return ProcStatus.Called;
+            list.InitInstant(new DreamProcArguments(null));
+            state.Push(new DreamValue(list));
+            return null;
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
@@ -72,10 +71,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamObject newObject = state.Runtime.ObjectTree.CreateObject(objectPath);
 
-            var initProc = DreamObject.InitProc(state.Runtime);
-            var initState = initProc.CreateState(state.Thread, newObject, state.Usr, arguments);
-            state.Thread.PushProcState(initState);
-            return ProcStatus.Called;
+            return newObject.CallInitProcs(state.Thread, state.Usr, arguments);
         }
 
         public static ProcStatus? Dereference(DMProcState state) {

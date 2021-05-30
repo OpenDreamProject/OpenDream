@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OpenDreamRuntime.Objects {
@@ -33,6 +34,78 @@ namespace OpenDreamRuntime.Objects {
                     newProc.Spawn(this, creationArguments);
                 }
             }
+        }
+
+        class OnObjectCreatedState : ProcState
+        {
+            public OnObjectCreatedState(DreamThread thread, DreamObject dreamObject, DreamProcArguments arguments)
+                : base(thread)
+            {
+                _dreamObject = dreamObject;
+                _arguments = arguments;
+            }
+
+            private DreamObject _dreamObject;
+            private DreamProcArguments _arguments;
+
+            public override DreamProc Proc => null;
+
+            public override void AppendStackFrame(StringBuilder builder)
+            {
+                builder.AppendLine("<OnObjectCreated>");
+            }
+
+            protected override ProcStatus InternalResume()
+            {
+                _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, _arguments);
+                return ProcStatus.Returned;
+            }
+        }
+
+        class ReturnObjectState : ProcState
+        {
+            public ReturnObjectState(DreamThread thread, DreamObject dreamObject)
+                : base(thread)
+            {
+                _dreamObject = dreamObject;
+            }
+
+            private DreamObject _dreamObject;
+
+            public override DreamProc Proc => null;
+
+            public override void AppendStackFrame(StringBuilder builder)
+            {
+                builder.AppendLine("<ReturnObject>");
+            }
+
+            protected override ProcStatus InternalResume()
+            {
+                Result = new DreamValue(_dreamObject);
+                return ProcStatus.Returned;
+            }
+        }
+
+        public ProcStatus? CallInitProcs(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
+            thread.PushProcState(new ReturnObjectState(thread, this));
+
+            if (ObjectDefinition.MetaObject != null) {
+                if (ObjectDefinition.MetaObject.ShouldCallNew) {
+                    var newProc = GetProc("New");
+                    var newProcState = newProc.CreateState(thread, this, usr, arguments);
+                    thread.PushProcState(newProcState);
+                }
+
+                var procState = new OnObjectCreatedState(thread, this, arguments);
+                thread.PushProcState(procState);
+            }
+
+            if (ObjectDefinition.InitializionProc != null) {
+                var procState = ObjectDefinition.InitializionProc.CreateState(thread, this, usr, new DreamProcArguments(null));
+                thread.PushProcState(procState);
+            }
+
+            return ProcStatus.Called;
         }
 
         public static AsyncNativeProc InitProc(DreamRuntime runtime) {

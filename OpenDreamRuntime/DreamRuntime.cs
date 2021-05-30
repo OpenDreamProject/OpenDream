@@ -224,8 +224,10 @@ namespace OpenDreamRuntime
                 var client = ObjectTree.CreateObject(DreamPath.Client);
                 connection.ClientDreamObject = client;
 
-                var initProc = DreamObject.InitProc(state.Runtime);
-                await state.Call(initProc, client, null, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
+                // var initProc = DreamObject.InitProc(state.Runtime);
+                // await state.Call(initProc, client, null, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
+
+                client.InitInstant(new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
 
                 connection.SendPacket(new PacketInterfaceData(_clientInterface));
                 connection.SendPacket(new PacketFullGameState(StateManager.FullState));

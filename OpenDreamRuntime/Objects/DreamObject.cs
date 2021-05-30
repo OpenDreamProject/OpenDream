@@ -22,19 +22,17 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = objectDefinition;
         }
 
-        ~DreamObject() {
-            // Delete();
-        }
+        public void InitInstant(DreamProcArguments creationArguments) {
+            ObjectDefinition.InitializionProc?.Spawn(this, new DreamProcArguments(null));
 
-        public DreamValue InitInstant(DreamProcArguments creationArguments) {
-            var initProc = InitProc(Runtime);
-            var result = initProc.Spawn(this, creationArguments);
+            if (ObjectDefinition.MetaObject != null) {
+                ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
 
-            if (result == DreamValue.Null) {
-                throw new InvalidOperationException("InitInstant called non-instant proc");
+                if (ObjectDefinition.MetaObject.ShouldCallNew) {
+                    var newProc = GetProc("New");
+                    newProc.Spawn(this, creationArguments);
+                }
             }
-
-            return result;
         }
 
         public static AsyncNativeProc InitProc(DreamRuntime runtime) {

@@ -36,7 +36,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override void AppendStackFrame(StringBuilder builder)
         {
-            builder.AppendLine($"<InitDreamObject {_dreamObject}");
+            builder.AppendLine($"<InitDreamObject {_dreamObject}>");
         }
 
         protected override ProcStatus InternalResume()

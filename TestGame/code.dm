@@ -5,6 +5,8 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/world/name = "foobar"
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"

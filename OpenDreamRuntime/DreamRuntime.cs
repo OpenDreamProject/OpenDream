@@ -177,7 +177,7 @@ namespace OpenDreamRuntime
                 return null;
             }
 
-            CompiledJson.SourceFileName = Path.GetFileNameWithoutExtension(path);
+            compiledJson.SourceFileName = Path.GetFileNameWithoutExtension(path);
 
             return compiledJson;
         }

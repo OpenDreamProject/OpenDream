@@ -82,6 +82,7 @@
         JumpIfNullIdentifier = 0x50,
         Pop = 0x51,
         PushCopy = 0x52,
+        IsSaved = 0x53
     }
 
     public enum DreamProcOpcodeParameterType {

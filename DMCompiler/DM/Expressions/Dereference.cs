@@ -103,6 +103,22 @@ namespace DMCompiler.DM.Expressions {
             // TODO: Handle conditional
             proc.Initial(_fields[^1].field);
         }
+
+        public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
+            _expr.EmitPushValue(dmObject, proc);
+
+            for (int idx = 0; idx < _fields.Count - 1; idx++)
+            {
+                if (_fields[idx].conditional) {
+                    proc.DereferenceConditional(_fields[idx].field);
+                } else {
+                    proc.Dereference(_fields[idx].field);
+                }
+            }
+
+            // TODO: Handle conditional
+            proc.IsSaved(_fields[^1].field);
+        }
     }
 
     // x.y.z()

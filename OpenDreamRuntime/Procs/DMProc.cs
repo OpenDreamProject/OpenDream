@@ -115,6 +115,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.JumpIfNullIdentifier,
             DMOpcodeHandlers.Pop,
             DMOpcodeHandlers.PushCopy,
+            DMOpcodeHandlers.IsSaved
         };
         #endregion
 

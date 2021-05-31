@@ -138,6 +138,35 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // issaved(x)
+    class IsSaved : DMExpression {
+        DMExpression _expr;
+
+        public IsSaved(DMExpression expr) {
+            _expr = expr;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (_expr is Field field) {
+                field.EmitPushIsSaved(proc);
+                return;
+            }
+
+            if (_expr is Dereference dereference) {
+                dereference.EmitPushIsSaved(dmObject, proc);
+                return;
+            }
+
+            if (_expr is Local)
+            {
+                proc.PushFloat(0);
+                return;
+            }
+
+            throw new Exception($"can't get saved value of {_expr}");
+        }
+    }
+
     // istype(x, y)
     class IsType : DMExpression {
         DMExpression _expr;

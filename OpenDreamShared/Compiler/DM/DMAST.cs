@@ -44,6 +44,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
+        public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
         public void VisitIsType(DMASTIsType isType) { throw new NotImplementedException(); }
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) { throw new NotImplementedException(); }
@@ -714,6 +715,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitInitial(this);
+        }
+    }
+
+    public class DMASTIsSaved : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTIsSaved(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitIsSaved(this);
         }
     }
 

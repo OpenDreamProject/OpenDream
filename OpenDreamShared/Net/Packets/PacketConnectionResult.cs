@@ -6,7 +6,7 @@ namespace OpenDreamShared.Net.Packets {
 
         public bool ConnectionSuccessful;
         public String ErrorMessage = String.Empty;
-        public String WorldName = "OpenDream World";
+        public String WorldName;
 
         public PacketConnectionResult() { }
 

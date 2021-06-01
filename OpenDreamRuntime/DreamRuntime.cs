@@ -227,7 +227,7 @@ namespace OpenDreamRuntime
             // Set to <world> part of <world>.json unless we define world.name - final fallback to "OpenDream World"
             String worldName;
             DreamValue worldInstanceName = WorldInstance.GetVariable("name");
-            if (worldInstanceName.Value != null ) {
+            if (worldInstanceName != DreamValue.Null) {
                 worldName = worldInstanceName.Stringify();
             } else if (CompiledJson.SourceFileName != null) {
                 worldName = CompiledJson.SourceFileName;

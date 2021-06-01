@@ -1316,6 +1316,31 @@ namespace OpenDreamRuntime.Procs {
 
             return null;
         }
+
+        public static ProcStatus? IsSaved(DMProcState state) {
+            DreamValue owner = state.PopDreamValue();
+            string property = state.ReadString();
+
+            DreamObjectDefinition objectDefinition;
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                objectDefinition = dreamObject.ObjectDefinition;
+            } else if (owner.TryGetValueAsPath(out DreamPath path)) {
+                objectDefinition = state.Runtime.ObjectTree.GetObjectDefinitionFromPath(path);
+            } else {
+                throw new Exception("Invalid owner for issaved() call " + owner);
+            }
+
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            if (objectDefinition.HasGlobalVariable(property))
+            {
+                state.Push(new DreamValue(0));
+            }
+            else
+            {
+                state.Push(new DreamValue(1));
+            }
+            return null;
+        }
         #endregion Others
 
         #region Helpers

@@ -404,6 +404,11 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.LocateCoordinates(_x, _y, _z);
         }
 
+        public void VisitIsSaved(DMASTIsSaved isSaved) {
+            var expr = DMExpression.Create(_dmObject, _proc, isSaved.Expression, _inferredPath);
+            Result = new Expressions.IsSaved(expr);
+        }
+
         public void VisitIsType(DMASTIsType isType) {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
             var path = DMExpression.Create(_dmObject, _proc, isType.Type, _inferredPath);

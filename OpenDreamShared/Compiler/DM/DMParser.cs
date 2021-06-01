@@ -1444,6 +1444,10 @@ namespace OpenDreamShared.Compiler.DM {
                                 if (callParameters.Length != 1) Error("initial() requires 1 argument");
 
                                 return new DMASTInitial(callParameters[0].Value);
+                            } else if (identifier != null && identifier.Identifier == "issaved") {
+                                if (callParameters.Length != 1) Error("issaved() requires 1 argument");
+
+                                return new DMASTIsSaved(callParameters[0].Value);
                             } else if (identifier != null && identifier.Identifier == "istype") {
                                 if (callParameters.Length == 1) {
                                     return new DMASTImplicitIsType(callParameters[0].Value);

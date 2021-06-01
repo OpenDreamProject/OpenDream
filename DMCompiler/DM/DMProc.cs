@@ -532,6 +532,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsNull);
         }
 
+        public void IsSaved(string propertyName) {
+            WriteOpcode(DreamProcOpcode.IsSaved);
+            WriteString(propertyName);
+        }
+
         public void IsType() {
             WriteOpcode(DreamProcOpcode.IsType);
         }

@@ -80,6 +80,11 @@ namespace DMCompiler.DM.Expressions {
             proc.PushSrc();
             proc.Initial(Name);
         }
+
+        public void EmitPushIsSaved(DMProc proc) {
+            proc.PushSrc();
+            proc.IsSaved(Name);
+        }
     }
 
 }

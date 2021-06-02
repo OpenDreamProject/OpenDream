@@ -20,6 +20,16 @@ namespace OpenDreamClient.Interface {
 
         private Window _defaultWindow;
 
+        public DreamInterface(OpenDream openDream) {
+            openDream.DisconnectedFromServer += OpenDream_DisconnectedFromServer;
+        }
+
+        private void OpenDream_DisconnectedFromServer() {
+            DefaultWindow.Shutdown();
+            _defaultWindow?.Close();
+            _defaultWindow = null;
+        }
+
         public void LoadInterfaceDescriptor(InterfaceDescriptor interfaceDescriptor) {
             InterfaceDescriptor = interfaceDescriptor;
 
@@ -112,6 +122,7 @@ namespace OpenDreamClient.Interface {
             LoadInterfaceDescriptor(pInterfaceData.InterfaceDescriptor);
 
             _defaultWindow = CreateDefaultWindow();
+            _defaultWindow.Show();
         }
 
         public void HandlePacketOutput(PacketOutput pOutput) {
@@ -194,15 +205,14 @@ namespace OpenDreamClient.Interface {
         private Window CreateDefaultWindow() {
             Window defaultWindow = CreateWindow(DefaultWindow);
 
-            defaultWindow.Closed += OnDefaultWindowClosed;
+            defaultWindow.Closing += OnDefaultWindowClosing;
             defaultWindow.KeyDown += OnDefaultWindowKeyDown;
             defaultWindow.KeyUp += OnDefaultWindowKeyUp;
-            defaultWindow.Show();
 
             return defaultWindow;
         }
 
-        private void OnDefaultWindowClosed(object sender, EventArgs e) {
+        private void OnDefaultWindowClosing(object sender, EventArgs e) {
             _defaultWindow = null;
 
             Program.OpenDream.DisconnectFromServer();

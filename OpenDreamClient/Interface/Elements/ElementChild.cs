@@ -35,6 +35,11 @@ namespace OpenDreamClient.Interface.Elements {
             UpdateGrid();
         }
 
+        public void Shutdown() {
+            LeftElement.Shutdown();
+            RightElement.Shutdown();
+        }
+
         private void UpdateGrid() {
             this.ColumnDefinitions.Clear();
             this.RowDefinitions.Clear();

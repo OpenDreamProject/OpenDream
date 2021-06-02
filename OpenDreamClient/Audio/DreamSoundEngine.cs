@@ -6,6 +6,14 @@ namespace OpenDreamClient.Audio {
     class DreamSoundEngine {
         private DreamSoundChannel[] _channels = new DreamSoundChannel[1024];
 
+        public DreamSoundEngine(OpenDream openDream) {
+            openDream.DisconnectedFromServer += OpenDream_DisconnectedFromServer;
+        }
+
+        private void OpenDream_DisconnectedFromServer() {
+            StopAllChannels();
+        }
+
         public void PlaySound(int channel, ResourceSound sound, float volume) {
             if (channel == 0) { //First available channel
                 for (int i = 0; i < _channels.Length; i++) {

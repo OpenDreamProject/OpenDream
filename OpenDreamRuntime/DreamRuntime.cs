@@ -134,6 +134,8 @@ namespace OpenDreamRuntime
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
                 _taskScheduler.Process();
+                StateManager.FinalizeCurrentDeltaState();
+                Server.Process();
 
                 foreach (DreamConnection connection in Server.Connections) {
                     connection.UpdateStat();
@@ -148,9 +150,6 @@ namespace OpenDreamRuntime
                         connection.ClientDreamObject?.SpawnProc("West");
                     }
                 }
-
-                StateManager.FinalizeCurrentDeltaState();
-                Server.Process();
 
                 TickCount++;
 
@@ -201,6 +200,7 @@ namespace OpenDreamRuntime
 
             return descriptor;
         }
+
         private void RegisterPacketCallbacks() {
             Server.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, ResourceManager.HandleRequestResourcePacket);
             Server.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));

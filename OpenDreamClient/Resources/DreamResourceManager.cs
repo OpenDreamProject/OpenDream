@@ -17,11 +17,11 @@ namespace OpenDreamClient.Resources {
             }
         }
 
-        private Dictionary<string, LoadingResourceEntry> _loadingResources = new Dictionary<string, LoadingResourceEntry>();
-        private Dictionary<string, Resource> _resourceCache = new Dictionary<string, Resource>();
+        private Dictionary<string, LoadingResourceEntry> _loadingResources = new();
+        private Dictionary<string, Resource> _resourceCache = new();
         private DirectoryInfo _cacheDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "opendreamcache"));
 
-        public DreamResourceManager() {
+        public DreamResourceManager(OpenDream openDream) {
             if (_cacheDirectory.Exists) {
                 foreach (FileInfo file in _cacheDirectory.EnumerateFiles()) {
                     file.Delete();

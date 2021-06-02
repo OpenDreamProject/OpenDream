@@ -33,11 +33,14 @@ namespace OpenDreamClient.Interface.Elements {
 
             this.MouseLeftButtonDown += OnLeftMouseDown;
             this.SizeChanged += OnSizeChanged;
-            this.Unloaded += OnUnloaded;
         }
 
         public void UpdateVisuals() {
 
+        }
+
+        public void Shutdown() {
+            _dreamRenderer.StopRendering();
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y) {
@@ -118,10 +121,6 @@ namespace OpenDreamClient.Interface.Elements {
             double heightScaling = Math.Max(1, Math.Floor(this.Height / _dreamRenderer.OpenGLViewControl.ViewportHeight));
 
             _dreamRenderer.SetScale(Math.Min(widthScaling, heightScaling));
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e) {
-            _dreamRenderer.StopRendering();
         }
     }
 }

@@ -6,5 +6,6 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void UpdateVisuals();
         public void Output(string value, string data) { }
+        public void Shutdown() { }
     }
 }

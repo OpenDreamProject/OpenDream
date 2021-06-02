@@ -8,11 +8,16 @@ using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Windows;
 using System.Windows.Threading;
 
 namespace OpenDreamClient {
-    class OpenDream : Application {
+    delegate void ConnectedToServerEventHandler();
+    delegate void DisconnectedFromServerEventHandler();
+
+    class OpenDream {
+        public event ConnectedToServerEventHandler ConnectedToServer;
+        public event DisconnectedFromServerEventHandler DisconnectedFromServer;
+
         public DreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
@@ -22,15 +27,22 @@ namespace OpenDreamClient {
 
         public Map Map;
         public ATOM Eye;
-        public List<IconAppearance> IconAppearances { get; private set; } = null;
-        public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = null;
-        public List<ATOM> ScreenObjects { get; private set; } = null;
+        public List<IconAppearance> IconAppearances { get; private set; } = new();
+        public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = new();
+        public List<ATOM> ScreenObjects { get; private set; } = new();
 
+        private string _username;
         private DispatcherTimer _updateTimer = new DispatcherTimer();
 
-        public OpenDream() {
+        public OpenDream(string username) {
+            _username = username;
             _updateTimer.Interval = TimeSpan.FromMilliseconds(1000 / 20);
             _updateTimer.Tick += UpdateTimerTick;
+
+            Interface = new DreamInterface(this);
+            SoundEngine = new DreamSoundEngine(this);
+            ResourceManager = new DreamResourceManager(this);
+            StateManager = new DreamStateManager();
 
             RegisterPacketCallbacks();
         }
@@ -44,45 +56,24 @@ namespace OpenDreamClient {
             ATOMs.Remove(atom.ID);
         }
 
-        public void ConnectToServer(string ip, int port, string username) {
+        public void ConnectToServer(string ip, int port) {
             if (Connection.Connected) throw new InvalidOperationException("Already connected to a server!");
             Connection.Connect(ip, port);
 
-            PacketRequestConnect pRequestConnect = new PacketRequestConnect(username, ClientData);
+            PacketRequestConnect pRequestConnect = new PacketRequestConnect(_username, ClientData);
             Connection.SendPacket(pRequestConnect);
 
-            Interface = new DreamInterface();
-            SoundEngine = new DreamSoundEngine();
-            ResourceManager = new DreamResourceManager();
-            StateManager = new DreamStateManager();
-
-            IconAppearances = new List<IconAppearance>();
-            ATOMs = new Dictionary<UInt32, ATOM>();
-            ScreenObjects = new List<ATOM>();
-
-            MainWindow.Hide();
             _updateTimer.Start();
+            ConnectedToServer?.Invoke();
         }
 
         public void DisconnectFromServer() {
             if (!Connection.Connected) return;
 
             _updateTimer.Stop();
-            SoundEngine.StopAllChannels();
             Connection.Close();
 
-            Interface = null;
-            SoundEngine = null;
-            ResourceManager = null;
-            StateManager = null;
-            ClientData = null;
-
-            Map = null;
-            ATOMs = null;
-            ScreenObjects = null;
-            IconAppearances = null;
-
-            MainWindow.Show();
+            DisconnectedFromServer?.Invoke();
         }
 
         private void RegisterPacketCallbacks() {

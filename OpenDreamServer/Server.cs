@@ -10,6 +10,7 @@ using System.Net.Sockets;
 namespace OpenDreamServer {
     class Connection : DreamConnection
     {
+
         private readonly TcpClient _tcpClient;
         private readonly NetworkStream _tcpStream;
         private readonly BinaryReader _tcpStreamBinaryReader;
@@ -27,28 +28,38 @@ namespace OpenDreamServer {
 
         public override byte[] ReadPacketData() {
             if (_tcpClient.Connected && _tcpStream.DataAvailable) {
-                UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
-                byte[] packetData = new byte[packetDataLength];
+                try {
+                    UInt32 packetDataLength = _tcpStreamBinaryReader.ReadUInt32();
+                    byte[] packetData = new byte[packetDataLength];
 
-                int bytesRead = _tcpStream.Read(packetData, 0, (int)packetDataLength);
-                while (bytesRead < packetDataLength) {
-                    bytesRead += _tcpStream.Read(packetData, bytesRead, (int)packetDataLength - bytesRead);
+                    int bytesRead = _tcpStream.Read(packetData, 0, (int)packetDataLength);
+                    while (bytesRead < packetDataLength) {
+                        bytesRead += _tcpStream.Read(packetData, bytesRead, (int)packetDataLength - bytesRead);
+                    }
+
+                    return packetData;
+                } catch (IOException) {
+                    _tcpClient.Close(); //TODO: Handle disconnects better
                 }
-
-                return packetData;
             }
+
             return null;
         }
 
-        public override void SendPacket(IPacket packet)
-        {
-            PacketStream stream = new PacketStream();
+        public override void SendPacket(IPacket packet) {
+            if (_tcpClient.Connected) {
+                PacketStream stream = new PacketStream();
 
-            stream.WriteByte((byte)packet.PacketID);
-            packet.WriteToStream(stream);
+                stream.WriteByte((byte)packet.PacketID);
+                packet.WriteToStream(stream);
 
-            _tcpStreamBinaryWriter.Write((UInt32)stream.Length);
-            _tcpStream.Write(stream.ToArray());
+                try {
+                    _tcpStreamBinaryWriter.Write((UInt32)stream.Length);
+                    _tcpStream.Write(stream.ToArray());
+                } catch (IOException) {
+                    _tcpClient.Close(); //TODO: Handle disconnects better
+                }
+            }
         }
     }
 
@@ -57,7 +68,7 @@ namespace OpenDreamServer {
         public DreamRuntime Runtime { private set; get; }
 
         private readonly TcpListener _tcpListener;
-        private Dictionary<string, DreamConnection> _ckeyToConnection = new Dictionary<string, DreamConnection>();
+        private Dictionary<string, DreamConnection> _ckeyToConnection = new();
 
         public Server(String addr, int port) {
             if (!IPAddress.TryParse(addr, out IPAddress ipAddress)) {
@@ -90,7 +101,7 @@ namespace OpenDreamServer {
         private void ProcessConnections() {
             while (_tcpListener.Pending()) {
                 TcpClient tcpClient = _tcpListener.AcceptTcpClient();
-                DreamConnection dreamConnection = new Connection(Runtime, tcpClient);
+                Connection dreamConnection = new Connection(Runtime, tcpClient);
 
                 Connections.Add(dreamConnection);
             }

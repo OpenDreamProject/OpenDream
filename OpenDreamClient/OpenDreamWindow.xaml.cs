@@ -7,14 +7,18 @@ namespace OpenDreamClient {
     /// Interaction logic for OpenDreamWindow.xaml
     /// </summary>
     public partial class OpenDreamWindow : Window {
-        private Regex _portInputRegex = new Regex("[^0-9.-]+");
+        private readonly Regex _portInputRegex = new Regex("[^0-9.-]+");
 
-        public OpenDreamWindow() {
+        private OpenDreamApplication _application;
+
+        public OpenDreamWindow(OpenDreamApplication application) {
+            _application = application;
+
             InitializeComponent();
         }
 
         private void ConnectButton_Clicked(object sender, RoutedEventArgs e) {
-            Program.OpenDream.ConnectToServer(IPInput.Text, int.Parse(PortInput.Text), UsernameInput.Text);
+            _application.ConnectToDream(IPInput.Text, int.Parse(PortInput.Text), UsernameInput.Text);
         }
 
         private void PortInput_PreviewTextInput(object sender, TextCompositionEventArgs e) {

@@ -15,7 +15,7 @@ namespace OpenDreamRuntime {
         public readonly List<DreamConnection> Connections = new();
         public abstract event DreamConnectionReadyEventHandler DreamConnectionRequest;
 
-        protected Dictionary<PacketID, Action<DreamConnection, IPacket>> _packetIDToCallback = new Dictionary<PacketID, Action<DreamConnection, IPacket>>();
+        protected Dictionary<PacketID, Action<DreamConnection, IPacket>> _packetIDToCallback = new();
 
         public IPAddress Address { protected set; get; }
         public int Port { protected set; get; }

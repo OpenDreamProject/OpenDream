@@ -1,7 +1,8 @@
 ﻿using OpenDreamShared.Interface;
+using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Elements {
-    class ElementWindow : System.Windows.Controls.Canvas, IElement {
+    class ElementWindow : Canvas, IElement {
         public IElement[] ChildElements;
         public ElementDescriptor ElementDescriptor {
             get => _elementDescriptor;
@@ -19,6 +20,12 @@ namespace OpenDreamClient.Interface.Elements {
         public void UpdateVisuals() {
             foreach (IElement childElement in ChildElements) {
                 childElement.UpdateVisuals();
+            }
+        }
+
+        public void Shutdown() {
+            foreach (IElement element in ChildElements) {
+                element.Shutdown();
             }
         }
     }

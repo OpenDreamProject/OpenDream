@@ -6,10 +6,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             : base(runtime)
         {}
 
+        public override bool ShouldCallNew => true;
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-
-            dreamObject.SpawnProc("New", creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
@@ -24,7 +24,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "parent_type") {
                 return new DreamValue(Runtime.ObjectTree.GetTreeEntryFromPath(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
             } else if (variableName == "vars") {
-                return new DreamValue(new DreamListVars(dreamObject));
+                return new DreamValue(DreamListVars.Create(dreamObject));
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

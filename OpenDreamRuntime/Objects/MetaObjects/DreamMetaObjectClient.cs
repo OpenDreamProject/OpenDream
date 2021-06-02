@@ -42,7 +42,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList screenList;
                 if (!variableValue.TryGetValueAsDreamList(out screenList)) {
-                    screenList = new DreamList(Runtime);
+                    screenList = DreamList.Create(Runtime);
                 }
 
                 screenList.ValueAssigned += ScreenValueAssigned;
@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return new DreamValue(0);
             } else if (variableName == "timezone") {
                 DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);           
+                return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

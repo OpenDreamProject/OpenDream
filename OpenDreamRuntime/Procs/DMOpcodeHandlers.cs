@@ -22,8 +22,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateList(DMProcState state) {
-            state.Push(new DreamValue(state.Runtime.ObjectTree.CreateObject(DreamPath.List)));
-            return null;
+            var list = state.Runtime.ObjectTree.CreateObject(DreamPath.List);
+
+            var initProcState = list.InitProc(state.Thread, state.Usr, new DreamProcArguments(null));
+            state.Thread.PushProcState(initProcState);
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
@@ -67,9 +70,9 @@ namespace OpenDreamRuntime.Procs {
             DreamProcArguments arguments = state.PopArguments();
             DreamPath objectPath = state.PopDreamValue().GetValueAsPath();
 
-            DreamObject newObject = state.Runtime.ObjectTree.CreateObject(objectPath, arguments);
-            state.Push(new DreamValue(newObject));
-            return null;
+            DreamObject newObject = state.Runtime.ObjectTree.CreateObject(objectPath);
+            state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? Dereference(DMProcState state) {
@@ -521,7 +524,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = new DreamList(state.Runtime);
+                DreamList newList = DreamList.Create(state.Runtime);
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
@@ -644,7 +647,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = new DreamList(state.Runtime);
+                DreamList newList = DreamList.Create(state.Runtime);
                 List<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {

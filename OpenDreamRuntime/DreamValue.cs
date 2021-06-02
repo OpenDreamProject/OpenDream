@@ -265,6 +265,7 @@ namespace OpenDreamRuntime {
         public override bool Equals(object obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
+            if (Type != other.Type) return false;
             if (Value == null) return other.Value == null;
             return Value.Equals(other.Value);
         }

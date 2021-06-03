@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamShared.Net.Packets {
-    public enum PacketID {
+    public enum PacketID : byte {
         Invalid = 0x0,
         ConnectionResult = 0x1,
         RequestConnect = 0x2,
@@ -20,6 +20,7 @@
         PromptResponse = 0x11,
         CallVerb = 0x12,
         UpdateAvailableVerbs = 0x13,
-        UpdateStatPanels = 0x14
+        UpdateStatPanels = 0x14,
+        SelectStatPanel = 0x15
     }
 }

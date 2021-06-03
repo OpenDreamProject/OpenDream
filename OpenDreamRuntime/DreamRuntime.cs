@@ -208,6 +208,7 @@ namespace OpenDreamRuntime
             Server.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic));
             Server.RegisterPacketCallback(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
             Server.RegisterPacketCallback(PacketID.CallVerb, (DreamConnection connection, PacketCallVerb pCallVerb) => connection.HandlePacketCallVerb(pCallVerb));
+            Server.RegisterPacketCallback(PacketID.SelectStatPanel, (DreamConnection connection, PacketSelectStatPanel pSelectStatPanel) => connection.HandlePacketSelectStatPanel(pSelectStatPanel));
         }
 
         private void OnDeltaStateFinalized(DreamDeltaState deltaState) {

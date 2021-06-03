@@ -1128,7 +1128,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue value = arguments.GetArgument(2, "Value");
             DreamConnection connection = CurrentRuntime.Server.GetConnectionFromMob(usr);
 
-            connection.SelectStatPanel(panel);
+            connection.SetOutputStatPanel(panel);
             if (name != DreamValue.Null || value != DreamValue.Null) {
                 OutputToStatPanel(connection, name, value);
             }

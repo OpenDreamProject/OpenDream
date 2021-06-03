@@ -9,8 +9,11 @@ using System.Windows.Media;
 
 namespace OpenDreamClient.Interface.Elements {
     class InfoPanel : TabItem {
+        public string PanelName { get; private set; }
+
         public InfoPanel(string name) {
-            Header = name;
+            PanelName = name;
+            Header = PanelName;
         }
     }
 
@@ -78,11 +81,11 @@ namespace OpenDreamClient.Interface.Elements {
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        private string[] _verbs = Array.Empty<string>();
-
         public ElementInfo() {
             this.BorderBrush = Brushes.Black;
             this.BorderThickness = new Thickness(1);
+
+            SelectionChanged += OnSelectionChanged;
 
             _verbPanel = new VerbPanel("Verbs");
             Items.Add(_verbPanel);
@@ -94,6 +97,11 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void UpdateVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
             _verbPanel.UpdateVerbs(pUpdateAvailableVerbs.AvailableVerbs);
+        }
+
+        public void SelectStatPanel(string statPanelName) {
+            _statPanels.TryGetValue(statPanelName, out StatPanel panel);
+            SelectedItem = panel;
         }
 
         public void UpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
@@ -117,6 +125,12 @@ namespace OpenDreamClient.Interface.Elements {
 
                 panel.UpdateLines(updatingPanel.Value);
             }
+        }
+
+        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
+            InfoPanel panel = (InfoPanel)e.AddedItems[0];
+
+            Program.OpenDream.Connection.SendPacket(new PacketSelectStatPanel(panel.PanelName));
         }
     }
 }

@@ -28,6 +28,14 @@ namespace OpenDreamRuntime {
         public readonly List<int> PressedKeys = new();
         public DreamRuntime Runtime { get; }
 
+        public string SelectedStatPanel {
+            get => _selectedStatPanel;
+            set {
+                _selectedStatPanel = value;
+                SendPacket(new PacketSelectStatPanel(_selectedStatPanel));
+            }
+        }
+
         public DreamConnection(DreamRuntime runtime) {
             Runtime = runtime;
         }
@@ -39,7 +47,7 @@ namespace OpenDreamRuntime {
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
         private Dictionary<string, DreamProc> _availableVerbs = new();
         private Dictionary<string, List<string>> _statPanels = new();
-        private string _selectedStatPanel;
+        private string _outputStatPanel, _selectedStatPanel;
 
         public DreamObject MobDreamObject {
             get => _mobDreamObject;
@@ -151,16 +159,16 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void SelectStatPanel(string name) {
-            _selectedStatPanel = name;
+        public void SetOutputStatPanel(string name) {
+            _outputStatPanel = name;
         }
 
         public void AddStatPanelLine(string text) {
             List<string> statPanelLines;
-            if (!_statPanels.TryGetValue(_selectedStatPanel, out statPanelLines)) {
+            if (!_statPanels.TryGetValue(_outputStatPanel, out statPanelLines)) {
                 statPanelLines = new List<string>();
 
-                _statPanels.Add(_selectedStatPanel, statPanelLines);
+                _statPanels.Add(_outputStatPanel, statPanelLines);
             }
 
             statPanelLines.Add(text);
@@ -186,6 +194,7 @@ namespace OpenDreamRuntime {
             return promptTask;
         }
 
+        #region Packet Handlers
         public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
             if (_promptEvents.TryGetValue(pPromptResponse.PromptId, out Action<DreamValue> promptEvent)) {
 
@@ -272,5 +281,10 @@ namespace OpenDreamRuntime {
                 });
             }
         }
+
+        public void HandlePacketSelectStatPanel(PacketSelectStatPanel pSelectStatPanel) {
+            _selectedStatPanel = pSelectStatPanel.StatPanel;
+        }
+#endregion Packet Handlers
     }
 }

@@ -51,11 +51,6 @@ namespace OpenDreamClient {
             ATOMs.Add(atom.ID, atom);
         }
 
-        public void RemoveATOM(ATOM atom) {
-            atom.Loc = null;
-            ATOMs.Remove(atom.ID);
-        }
-
         public void ConnectToServer(string ip, int port) {
             if (Connection.Connected) throw new InvalidOperationException("Already connected to a server!");
             Connection.Connect(ip, port);
@@ -89,6 +84,7 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
             Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => Interface.HandlePacketUpdateAvailableVerbs(packet));
             Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => Interface.HandlePacketUpdateStatPanels(packet));
+            Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => Interface.HandlePacketSelectStatPanel(packet));
         }
 
         private void UpdateTimerTick(object sender, EventArgs e) {

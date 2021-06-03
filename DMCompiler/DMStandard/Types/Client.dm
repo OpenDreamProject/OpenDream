@@ -3,9 +3,10 @@
 	var/list/screen = list()
 	var/list/images = list()
 
-	var/mob/mob
 	var/atom/statobj
+	var/statpanel
 
+	var/mob/mob
 	var/atom/eye
 	var/view
 	var/pixel_x = 0

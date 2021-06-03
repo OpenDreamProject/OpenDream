@@ -118,6 +118,7 @@ namespace OpenDreamClient.Interface {
             return popup;
         }
 
+        #region Packet Handlers
         public void HandlePacketInterfaceData(PacketInterfaceData pInterfaceData) {
             LoadInterfaceDescriptor(pInterfaceData.InterfaceDescriptor);
 
@@ -201,6 +202,11 @@ namespace OpenDreamClient.Interface {
         public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
             if (DefaultInfo != null) DefaultInfo.UpdateStatPanels(pUpdateStatPanels);
         }
+
+        public void HandlePacketSelectStatPanel(PacketSelectStatPanel pSelectStatPanel) {
+            if (DefaultInfo != null) DefaultInfo.SelectStatPanel(pSelectStatPanel.StatPanel);
+        }
+        #endregion Packet Handlers
 
         private Window CreateDefaultWindow() {
             Window defaultWindow = CreateWindow(DefaultWindow);

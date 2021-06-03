@@ -48,6 +48,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 screenList.ValueAssigned += ScreenValueAssigned;
                 screenList.BeforeValueRemoved += ScreenBeforeValueRemoved;
                 _screenListToClient[screenList] = dreamObject;
+            } else if (variableName == "statpanel") {
+                DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+
+                connection.SelectedStatPanel = variableValue.GetValueAsString();
             }
         }
 
@@ -66,6 +70,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "timezone") {
                 DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                 return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
+            } else if (variableName == "statpanel") {
+                DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                return new(connection.SelectedStatPanel);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

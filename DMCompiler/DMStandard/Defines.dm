@@ -42,3 +42,12 @@
 //world.system_type
 #define UNIX 0
 #define MS_WINDOWS 1
+
+//Icon blending functions
+#define ICON_ADD 0
+#define ICON_SUBTRACT 1
+#define ICON_MULTIPLY 2
+#define ICON_OVERLAY 3
+#define ICON_AND 4
+#define ICON_OR 5
+#define ICON_UNDERLAY 6

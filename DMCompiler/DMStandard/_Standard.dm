@@ -84,6 +84,7 @@ proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 #include "Defines.dm"
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
+#include "Types\Icon.dm"
 #include "Types\Image.dm"
 #include "Types\List.dm"
 #include "Types\Matrix.dm"

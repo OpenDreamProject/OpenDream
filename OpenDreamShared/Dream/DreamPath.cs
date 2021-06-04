@@ -10,6 +10,7 @@ namespace OpenDreamShared.Dream {
         public static readonly DreamPath Regex = new DreamPath("/regex");
         public static readonly DreamPath Sound = new DreamPath("/sound");
         public static readonly DreamPath Image = new DreamPath("/image");
+        public static readonly DreamPath Icon = new DreamPath("/icon");
         public static readonly DreamPath MutableAppearance = new DreamPath("/mutable_appearance");
         public static readonly DreamPath World = new DreamPath("/world");
         public static readonly DreamPath Client = new DreamPath("/client");

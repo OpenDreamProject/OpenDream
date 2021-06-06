@@ -188,6 +188,14 @@ namespace OpenDreamRuntime
 
             var descriptor = dmfParser.Interface();
 
+            if (dmfParser.Warnings.Count > 0) {
+                Console.WriteLine("Warnings while parsing the interface file");
+
+                foreach (CompilerWarning warning in dmfParser.Warnings) {
+                    Console.WriteLine(warning);
+                }
+            }
+
             if (dmfParser.Errors.Count > 0) {
                 Console.WriteLine("Errors while parsing the interface file");
 

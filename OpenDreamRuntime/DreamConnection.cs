@@ -207,7 +207,7 @@ namespace OpenDreamRuntime {
                 };
 
                 promptEvent.Invoke(value);
-                _promptEvents[pPromptResponse.PromptId] = null;
+                _promptEvents.Remove(pPromptResponse.PromptId);
             }
         }
 

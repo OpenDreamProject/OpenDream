@@ -3,22 +3,18 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFParser : Parser<char> {
-        private TokenType[] _sharedElementAttributeTypes = new TokenType[] {
-            TokenType.DMF_Pos,
-            TokenType.DMF_Size,
-            TokenType.DMF_Anchor1,
-            TokenType.DMF_Anchor2,
-            TokenType.DMF_IsDefault,
-            TokenType.DMF_IsVisible,
-            TokenType.DMF_SavedParams,
-            TokenType.DMF_Icon,
-            TokenType.DMF_BackgroundColor,
-            TokenType.DMF_Border,
-            TokenType.DMF_FontFamily,
-            TokenType.DMF_FontSize,
-            TokenType.DMF_TextColor,
-            TokenType.DMF_IsDisabled,
-            TokenType.DMF_RightClick
+        private static readonly List<TokenType> _validAttributeValueTypes = new() {
+            TokenType.DMF_None,
+            TokenType.DMF_String,
+            TokenType.DMF_Integer,
+            TokenType.DMF_Boolean,
+            TokenType.DMF_Position,
+            TokenType.DMF_Dimension,
+            TokenType.DMF_Color,
+            TokenType.DMF_Resource,
+            TokenType.DMF_Sunken,
+            TokenType.DMF_PushBox,
+            TokenType.DMF_Distort
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -55,7 +51,9 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public WindowDescriptor Window() {
             if (Check(TokenType.DMF_Window)) {
-                string windowName = String();
+                Token windowNameToken = Current();
+                Consume(TokenType.DMF_String, "Expected a window name");
+                string windowName = (string)windowNameToken.Value;
                 Newline();
 
                 List<ElementDescriptor> elementDescriptors = new();
@@ -74,228 +72,51 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public ElementDescriptor Element() {
             if (Check(TokenType.DMF_Elem)) {
-                string elementName = String();
+                Token elementNameToken = Current();
+                Consume(TokenType.DMF_String, "Expected an element name");
+                string elementName = (string)elementNameToken.Value;
                 Newline();
-                Consume(TokenType.DMF_Type, "Expected 'type'");
-                Consume(TokenType.DMF_Equals, "Expected '='");
-                Token elementType = Current();
 
-                Advance();
-                Newline();
-                switch (elementType.Type) {
-                    case TokenType.DMF_Main: return ElementMain(elementName);
-                    case TokenType.DMF_Map: return ElementMap(elementName);
-                    case TokenType.DMF_Child: return ElementChild(elementName);
-                    case TokenType.DMF_Output: return ElementOutput(elementName);
-                    case TokenType.DMF_Info: return ElementInfo(elementName);
-                    case TokenType.DMF_Input: return ElementInput(elementName);
-                    case TokenType.DMF_Button: return ElementButton(elementName);
-                    case TokenType.DMF_Browser: return ElementBrowser(elementName);
-                    default: Error("Invalid element type '" + elementType.Text + "'"); break;
+                Dictionary<string, Token> attributes = new();
+                Token attributeToken;
+
+                while ((attributeToken = Current()).Type == TokenType.DMF_Attribute ||
+                        attributeToken.Type == TokenType.DMF_Macro ||
+                        attributeToken.Type == TokenType.DMF_Menu
+                ) {
+                    Advance();
+                    Consume(TokenType.DMF_Equals, "Expected '='");
+
+                    attributes.Add(attributeToken.Text, Current());
+                    Advance();
+                    Newline();
                 }
+
+                if (!attributes.TryGetValue("type", out Token elementType)) Error("Element '" + elementName + "' does not have a 'type' attribute");
+                ElementDescriptor descriptor = elementType.Type switch {
+                    TokenType.DMF_Main => new ElementDescriptorMain(elementName),
+                    TokenType.DMF_Map => new ElementDescriptorMap(elementName),
+                    TokenType.DMF_Child => new ElementDescriptorChild(elementName),
+                    TokenType.DMF_Output => new ElementDescriptorOutput(elementName),
+                    TokenType.DMF_Info => new ElementDescriptorInfo(elementName),
+                    TokenType.DMF_Input => new ElementDescriptorInput(elementName),
+                    TokenType.DMF_Button => new ElementDescriptorButton(elementName),
+                    TokenType.DMF_Browser => new ElementDescriptorBrowser(elementName),
+                    _ => null
+                };
+
+                if (descriptor == null) Error("Invalid descriptor type '" + elementType.Text + "'");
+                else SetAttributes(descriptor, attributes);
+
+                return descriptor;
             }
 
             return null;
         }
 
-        public ElementDescriptorMain ElementMain(string elementName) {
-            ElementDescriptorMain element = new ElementDescriptorMain(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-                TokenType.DMF_IsPane,
-                TokenType.DMF_Macro,
-                TokenType.DMF_Menu,
-                TokenType.DMF_StatusBar
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    case TokenType.DMF_IsPane: element.IsPane = Boolean(); break;
-                    case TokenType.DMF_Macro: String(); break;
-                    case TokenType.DMF_Menu: String(); break;
-                    case TokenType.DMF_StatusBar: Boolean(); break;
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorMap ElementMap(string elementName) {
-            ElementDescriptorMap element = new ElementDescriptorMap(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-                TokenType.DMF_ZoomMode
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    case TokenType.DMF_ZoomMode: {
-                        Check(TokenType.DMF_Distort);
-
-                        break;
-                    }
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorChild ElementChild(string elementName) {
-            ElementDescriptorChild element = new ElementDescriptorChild(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-                TokenType.DMF_Left,
-                TokenType.DMF_Right,
-                TokenType.DMF_IsVert
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    case TokenType.DMF_Left: element.Left = String(); break;
-                    case TokenType.DMF_Right: element.Right = String(); break;
-                    case TokenType.DMF_IsVert: element.IsVert = Boolean(); break;
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorOutput ElementOutput(string elementName) {
-            ElementDescriptorOutput element = new ElementDescriptorOutput(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorInfo ElementInfo(string elementName) {
-            ElementDescriptorInfo element = new ElementDescriptorInfo(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorInput ElementInput(string elementName) {
-            ElementDescriptorInput element = new ElementDescriptorInput(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorButton ElementButton(string elementName) {
-            ElementDescriptorButton element = new ElementDescriptorButton(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-                TokenType.DMF_ButtonType,
-                TokenType.DMF_Text,
-                TokenType.DMF_Command
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    case TokenType.DMF_ButtonType:{
-                        Check(TokenType.DMF_PushBox);
-
-                        break;
-                    }
-                    case TokenType.DMF_Text: element.Text = String(); break;
-                    case TokenType.DMF_Command: String(); break;
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
-        public ElementDescriptorBrowser ElementBrowser(string elementName) {
-            ElementDescriptorBrowser element = new ElementDescriptorBrowser(elementName);
-            TokenType[] attributeTypes = new TokenType[] {
-                TokenType.DMF_AutoFormat
-            };
-
-            Token attributeToken = Current();
-            while (Check(_sharedElementAttributeTypes) || Check(attributeTypes)) {
-                Consume(TokenType.DMF_Equals, "Expected '='");
-
-                switch (attributeToken.Type) {
-                    case TokenType.DMF_AutoFormat: Boolean(); break;
-                    default: SetSharedAttribute(element, attributeToken); break;
-                }
-
-                Newline();
-                attributeToken = Current();
-            }
-
-            return element;
-        }
-
         public bool Macro() {
             if (Check(TokenType.DMF_Macro)) {
-                string macroName = String();
+                Consume(TokenType.DMF_String, "Expected a macro name");
 
                 return true;
             } else {
@@ -305,7 +126,7 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public bool Menu() {
             if (Check(TokenType.DMF_Menu)) {
-                string menuName = String();
+                Consume(TokenType.DMF_String, "Expected a menu name");
                 Newline();
 
                 while (MenuElement()) {
@@ -319,27 +140,13 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public bool MenuElement() {
             if (Check(TokenType.DMF_Elem)) {
-                TokenType[] attributeTypes = new TokenType[] {
-                    TokenType.DMF_Name,
-                    TokenType.DMF_Command,
-                    TokenType.DMF_Category,
-                    TokenType.DMF_SavedParams
-                };
-
                 Check(TokenType.DMF_String);
-                Newline();
-                while (Check(attributeTypes)) {
-                    Consume(TokenType.DMF_Equals, "Expected '='");
-                    Token attributeToken = Current();
-                    Advance();
-                    Newline();
 
-                    switch (attributeToken.Type) {
-                        case TokenType.DMF_Name: String(); break;
-                        case TokenType.DMF_Command: String(); break;
-                        case TokenType.DMF_Category: String(); break;
-                        case TokenType.DMF_SavedParams: String(); break;
-                    }
+                Newline();
+                while (Check(TokenType.DMF_Attribute)) {
+                    Consume(TokenType.DMF_Equals, "Expected '='");
+                    Advance(); //Attribute value
+                    Newline();
                 }
 
                 return true;
@@ -353,53 +160,6 @@ namespace OpenDreamShared.Compiler.DMF {
             }
         }
 
-        public (int X, int Y)? Coordinate() {
-            if (Check(TokenType.DMF_None)) {
-                return null;
-            } else {
-                Token xToken = Current();
-                Consume(TokenType.DMF_Integer, "Expected a coordinate");
-                Consume(TokenType.DMF_Comma, "Expected ','");
-                Token yToken = Current();
-                Consume(TokenType.DMF_Integer, "Expected a number");
-
-                return ((int)xToken.Value, (int)yToken.Value);
-            }
-        }
-
-        public (int W, int H) Size() {
-            Token wToken = Current();
-            Consume(TokenType.DMF_Integer, "Expected a size");
-            Consume(TokenType.DMF_X, "Expected 'x'");
-            Token hToken = Current();
-            Consume(TokenType.DMF_Integer, "Expected a number");
-
-            return ((int)wToken.Value, (int)hToken.Value);
-        }
-
-        public int Integer() {
-            Token integerToken = Current();
-            Consume(TokenType.DMF_Integer, "Expected an integer");
-
-            return (int)integerToken.Value;
-        }
-
-        public bool Boolean() {
-            if (Check(TokenType.DMF_True)) {
-                return true;
-            } else {
-                Consume(TokenType.DMF_False, "Expected a boolean");
-                return false;
-            }
-        }
-
-        public string String() {
-            Token stringToken = Current();
-            Consume(TokenType.DMF_String, "Expected a string");
-
-            return (string)stringToken.Value;
-        }
-
         public string Resource() {
             Token resourceToken = Current();
             Consume(TokenType.DMF_Resource, "Expected a resource");
@@ -407,64 +167,20 @@ namespace OpenDreamShared.Compiler.DMF {
             return (string)resourceToken.Value;
         }
 
-        public int? Color() {
-            if (Check(TokenType.DMF_None)) {
-                return null;
-            } else {
-                Token colorToken = Current();
-                Consume(TokenType.DMF_Color, "Expected a color");
+        private void SetAttributes(ElementDescriptor elementDescriptor, Dictionary<string, Token> attributes) {
+            foreach (KeyValuePair<string, Token> attribute in attributes) {
+                if (attribute.Key == "type") continue;
+                if (!_validAttributeValueTypes.Contains(attribute.Value.Type)) Error("Invalid attribute value (" + attribute.Value.Text + ")");
 
-                return (int)colorToken.Value;
-            }
-        }
-
-        private void SetSharedAttribute(ElementDescriptor element, Token attributeToken) {
-            switch (attributeToken.Type) {
-                case TokenType.DMF_Pos: {
-                    (int X, int Y)? coordinate = Coordinate();
-
-                    if (coordinate.HasValue) element.Pos = new System.Drawing.Point(coordinate.Value.X, coordinate.Value.Y);
-                    break;
+                if (elementDescriptor.HasAttribute(attribute.Key)) {
+                    if (attribute.Value.Type == TokenType.DMF_None) {
+                        elementDescriptor.SetAttribute(attribute.Key, null);
+                    } else {
+                        elementDescriptor.SetAttribute(attribute.Key, attribute.Value.Value);
+                    }
+                } else {
+                    Warning("Invalid attribute '" + attribute.Key + "' on element '" + elementDescriptor.Name + "'");
                 }
-                case TokenType.DMF_Size: {
-                    (int W, int H) size = Size();
-
-                    element.Size = new System.Drawing.Size(size.W, size.H);
-                    break;
-                }
-                case TokenType.DMF_Anchor1: {
-                    (int X, int Y)? anchor1 = Coordinate();
-
-                    if (anchor1.HasValue) element.Anchor1 = new System.Drawing.Point(anchor1.Value.X, anchor1.Value.Y);
-                    break;
-                }
-                case TokenType.DMF_Anchor2: {
-                    (int X, int Y)? anchor2 = Coordinate();
-
-                    if (anchor2.HasValue) element.Anchor2 = new System.Drawing.Point(anchor2.Value.X, anchor2.Value.Y);
-                    break;
-                }
-                case TokenType.DMF_Border: {
-                    Check(TokenType.DMF_Sunken);
-
-                    break;
-                }
-                case TokenType.DMF_BackgroundColor: {
-                    int? color = Color();
-
-                    if (color.HasValue) element.BackgroundColor = System.Drawing.Color.FromArgb(color.Value);
-                    break;
-                }
-                case TokenType.DMF_IsDefault: element.IsDefault = Boolean(); break;
-                case TokenType.DMF_SavedParams: String(); break;
-                case TokenType.DMF_Icon: Resource(); break;
-                case TokenType.DMF_IsVisible: element.IsVisible = Boolean(); break;
-                case TokenType.DMF_FontFamily: String(); break;
-                case TokenType.DMF_FontSize: Integer(); break;
-                case TokenType.DMF_TextColor: Color(); break;
-                case TokenType.DMF_IsDisabled: Boolean(); break;
-                case TokenType.DMF_RightClick: Boolean(); break;
-                default: Error("Invalid attribute '" + attributeToken.Text + "'"); break;
             }
         }
     }

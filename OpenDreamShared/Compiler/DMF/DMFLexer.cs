@@ -5,26 +5,7 @@ using System.Text;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFLexer : TextLexer {
-        private static Dictionary<string, TokenType> _keywords = new() {
-            { "macro", TokenType.DMF_Macro },
-            { "menu", TokenType.DMF_Menu },
-            { "window", TokenType.DMF_Window },
-            { "elem", TokenType.DMF_Elem },
-            { "MAIN", TokenType.DMF_Main },
-            { "CHILD", TokenType.DMF_Child },
-            { "MAP", TokenType.DMF_Map },
-            { "OUTPUT", TokenType.DMF_Output },
-            { "INFO", TokenType.DMF_Info },
-            { "INPUT", TokenType.DMF_Input },
-            { "BUTTON", TokenType.DMF_Button },
-            { "BROWSER", TokenType.DMF_Browser },
-            { "sunken", TokenType.DMF_Sunken },
-            { "pushbox", TokenType.DMF_PushBox },
-            { "distort", TokenType.DMF_Distort },
-            { "none", TokenType.DMF_None }
-        };
-
-        private List<string> _validAttributes = new() {
+        public static readonly List<string> ValidAttributes = new() {
             "type",
             "pos",
             "size",
@@ -53,6 +34,25 @@ namespace OpenDreamShared.Compiler.DMF {
             "right-click",
             "icon",
             "text"
+        };
+
+        private static Dictionary<string, TokenType> _keywords = new() {
+            { "macro", TokenType.DMF_Macro },
+            { "menu", TokenType.DMF_Menu },
+            { "window", TokenType.DMF_Window },
+            { "elem", TokenType.DMF_Elem },
+            { "MAIN", TokenType.DMF_Main },
+            { "CHILD", TokenType.DMF_Child },
+            { "MAP", TokenType.DMF_Map },
+            { "OUTPUT", TokenType.DMF_Output },
+            { "INFO", TokenType.DMF_Info },
+            { "INPUT", TokenType.DMF_Input },
+            { "BUTTON", TokenType.DMF_Button },
+            { "BROWSER", TokenType.DMF_Browser },
+            { "sunken", TokenType.DMF_Sunken },
+            { "pushbox", TokenType.DMF_PushBox },
+            { "distort", TokenType.DMF_Distort },
+            { "none", TokenType.DMF_None }
         };
 
         public DMFLexer(string sourceName, string source) : base(sourceName, source) { }
@@ -126,7 +126,7 @@ namespace OpenDreamShared.Compiler.DMF {
                                 token = CreateToken(TokenType.DMF_Boolean, text, true);
                             } else if (text == "false") {
                                 token = CreateToken(TokenType.DMF_Boolean, text, false);
-                            } else if (_validAttributes.Contains(text)) {
+                            } else if (ValidAttributes.Contains(text)) {
                                 token = CreateToken(TokenType.DMF_Attribute, text);
                             } else {
                                 throw new Exception("Invalid keyword '" + text + "'");

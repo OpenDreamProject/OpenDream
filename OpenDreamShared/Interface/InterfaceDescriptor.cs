@@ -47,6 +47,8 @@ namespace OpenDreamShared.Interface {
         public bool IsVisible = true;
         [InterfaceAttribute("is-default")]
         public bool IsDefault = false;
+        [InterfaceAttribute("is-disabled")]
+        public bool IsDisabled = false;
 
         private Dictionary<string, FieldInfo> _attributeNameToField = new();
 

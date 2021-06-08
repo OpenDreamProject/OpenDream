@@ -1,19 +1,13 @@
 ﻿using OpenDreamShared.Interface;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Elements {
-    class ElementInput : TextBox, IElement {
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorInput)value;
-            }
-        }
+    class ElementInput : InterfaceElement {
+        public ElementInput(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
-        private ElementDescriptorInput _elementDescriptor;
-
-        public void UpdateVisuals() {
-
+        protected override FrameworkElement CreateUIElement() {
+            return new TextBox();
         }
     }
 }

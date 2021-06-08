@@ -1,17 +1,22 @@
 ﻿using OpenDreamClient.Interface.Elements;
 using OpenDreamClient.Interface.Prompts;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DMF;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
+using System.Web;
 using System.Windows;
+using System.Windows.Input;
 
 namespace OpenDreamClient.Interface {
     class DreamInterface {
         public Dictionary<string, ElementWindow> Windows = new();
-        public Dictionary<string, Window> PopupWindows = new();
+        public Dictionary<string, BrowsePopup> PopupWindows = new();
         public InterfaceDescriptor InterfaceDescriptor { get; private set; } = null;
 
         public ElementWindow DefaultWindow;
@@ -34,15 +39,19 @@ namespace OpenDreamClient.Interface {
             InterfaceDescriptor = interfaceDescriptor;
 
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
-                ElementWindow window = InterfaceHelpers.CreateWindowFromDescriptor(windowDescriptor);
+                ElementWindow window = new ElementWindow(windowDescriptor);
 
                 Windows.Add(windowDescriptor.Name, window);
-                if (window.ElementDescriptor.IsDefault) {
+                if (window.IsDefault) {
                     DefaultWindow = window;
                 }
+            }
 
-                foreach (IElement element in window.ChildElements) {
-                    if (element.ElementDescriptor.IsDefault) {
+            foreach (ElementWindow window in Windows.Values) {
+                window.CreateChildElements();
+
+                foreach (InterfaceElement element in window.ChildElements) {
+                    if (element.IsDefault) {
                         if (element is ElementOutput elementOutput) DefaultOutput = elementOutput;
                         else if (element is ElementInfo elementInfo) DefaultInfo = elementInfo;
                     }
@@ -50,7 +59,7 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        public IElement FindElementWithName(string name) {
+        public InterfaceElement FindElementWithName(string name) {
             string[] split = name.Split(".");
 
             if (split.Length == 2) {
@@ -60,62 +69,28 @@ namespace OpenDreamClient.Interface {
 
                 if (Windows.ContainsKey(windowName)) {
                     window = Windows[windowName];
-                } else if (PopupWindows.ContainsKey(windowName)) {
-                    window = (ElementWindow)PopupWindows[windowName].Content;
+                } else if (PopupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
+                    window = popup.WindowElement;
                 }
 
                 if (window != null) {
-                    foreach (IElement element in window.ChildElements) {
-                        if (element.ElementDescriptor.Name == elementName) return element;
+                    foreach (InterfaceElement element in window.ChildElements) {
+                        if (element.Name == elementName) return element;
                     }
                 }
             } else {
                 string elementName = split[0];
 
                 foreach (ElementWindow window in Windows.Values) {
-                    foreach (IElement element in window.ChildElements) {
-                        if (element.ElementDescriptor.Name == elementName) return element;
+                    foreach (InterfaceElement element in window.ChildElements) {
+                        if (element.Name == elementName) return element;
                     }
                 }
+
+                if (Windows.TryGetValue(elementName, out ElementWindow windowElement)) return windowElement;
             }
 
             return null;
-        }
-
-        public Window CreateWindow(ElementWindow windowElement) {
-            Window window = new Window();
-
-            window.Width = windowElement.ElementDescriptor.Size.Value.Width;
-            window.Height = windowElement.ElementDescriptor.Size.Value.Height;
-            window.Content = windowElement;
-
-            windowElement.UpdateVisuals();
-            return window;
-        }
-
-        public Window CreatePopupWindow(string windowName, System.Drawing.Size windowSize) {
-            WindowDescriptor popupWindowDescriptor = new WindowDescriptor(windowName, new() {
-                new ElementDescriptorMain("main") {
-                    Size = windowSize
-                },
-                new ElementDescriptorBrowser("browser") {
-                    Size = windowSize,
-                    Anchor1 = new System.Drawing.Point(0, 0),
-                    Anchor2 = new System.Drawing.Point(100, 100)
-                }
-            });
-
-            Window popup = CreateWindow(InterfaceHelpers.CreateWindowFromDescriptor(popupWindowDescriptor));
-            popup.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            popup.Owner = _defaultWindow;
-            popup.Width = windowSize.Width;
-            popup.Height = windowSize.Height;
-            popup.Closed += (object sender, EventArgs e) => {
-                PopupWindows.Remove(windowName);
-            };
-
-            PopupWindows.Add(windowName, popup);
-            return popup;
         }
 
         #region Packet Handlers
@@ -127,7 +102,7 @@ namespace OpenDreamClient.Interface {
         }
 
         public void HandlePacketOutput(PacketOutput pOutput) {
-            IElement interfaceElement;
+            InterfaceElement interfaceElement;
             string data = null;
 
             if (pOutput.Control != null) {
@@ -144,8 +119,7 @@ namespace OpenDreamClient.Interface {
 
         public void HandlePacketBrowse(PacketBrowse pBrowse) {
             if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
-                if (PopupWindows.TryGetValue(pBrowse.Window, out Window popup)) {
-                    popup.Owner = null; //Without this, the main window ends up minimized
+                if (PopupWindows.TryGetValue(pBrowse.Window, out BrowsePopup popup)) {
                     popup.Close();
                 }
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
@@ -157,14 +131,19 @@ namespace OpenDreamClient.Interface {
                     outputBrowser = FindElementWithName(pBrowse.Window) as ElementBrowser;
 
                     if (outputBrowser == null) {
-                        Window popup;
+                        BrowsePopup popup;
 
-                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup)) popup = CreatePopupWindow(pBrowse.Window, pBrowse.Size);
+                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup)) {
+                            popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _defaultWindow);
+                            popup.Closed += (object sender, EventArgs e) => {
+                                PopupWindows.Remove(pBrowse.Window);
+                            };
 
-                        ElementWindow windowElement = (ElementWindow)popup.Content;
-                        outputBrowser = (ElementBrowser)windowElement.ChildElements[0];
-                        popup.Show();
-                        popup.Focus();
+                            PopupWindows.Add(pBrowse.Window, popup);
+                        }
+
+                        outputBrowser = popup.Browser;
+                        popup.Open();
                     }
                 } else {
                     //TODO: Find embedded browser panel
@@ -196,20 +175,46 @@ namespace OpenDreamClient.Interface {
         }
 
         public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
-            if (DefaultInfo != null) DefaultInfo.UpdateVerbs(pUpdateAvailableVerbs);
+            DefaultInfo?.UpdateVerbs(pUpdateAvailableVerbs);
         }
 
         public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
-            if (DefaultInfo != null) DefaultInfo.UpdateStatPanels(pUpdateStatPanels);
+            DefaultInfo?.UpdateStatPanels(pUpdateStatPanels);
         }
 
         public void HandlePacketSelectStatPanel(PacketSelectStatPanel pSelectStatPanel) {
-            if (DefaultInfo != null) DefaultInfo.SelectStatPanel(pSelectStatPanel.StatPanel);
+            DefaultInfo?.SelectStatPanel(pSelectStatPanel.StatPanel);
+        }
+
+        public void HandlePacketWinSet(PacketWinSet pWinSet) {
+            if (String.IsNullOrEmpty(pWinSet.ControlId)) throw new NotImplementedException("ControlId is null or empty");
+
+            InterfaceElement element = FindElementWithName(pWinSet.ControlId);
+            if (element == null) throw new Exception("Invalid element \"" + pWinSet.ControlId + "\"");
+
+            //params2list
+            string winsetParams = pWinSet.Params.Replace(";", "&");
+            NameValueCollection query = HttpUtility.ParseQueryString(winsetParams);
+
+            foreach (string attribute in query.AllKeys) {
+                if (DMFLexer.ValidAttributes.Contains(attribute)) {
+                    string value = query.GetValues(attribute)[^1];
+
+                    Token attributeValue = new DMFLexer(null, value).GetNextToken();
+                    if (DMFParser.ValidAttributeValueTypes.Contains(attributeValue.Type)) {
+                        element.SetAttribute(attribute, attributeValue.Value);
+                    } else {
+                        throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");
+                    }
+                } else {
+                    throw new Exception("Invalid attribute \"" + attribute + "\"");
+                }
+            }
         }
         #endregion Packet Handlers
 
         private Window CreateDefaultWindow() {
-            Window defaultWindow = CreateWindow(DefaultWindow);
+            Window defaultWindow = DefaultWindow.CreateWindow();
 
             defaultWindow.Closing += OnDefaultWindowClosing;
             defaultWindow.KeyDown += OnDefaultWindowKeyDown;
@@ -224,8 +229,8 @@ namespace OpenDreamClient.Interface {
             Program.OpenDream.DisconnectFromServer();
         }
 
-        private void OnDefaultWindowKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
-            int keyCode = InterfaceHelpers.KeyToKeyCode(e.Key);
+        private void OnDefaultWindowKeyDown(object sender, KeyEventArgs e) {
+            int keyCode = KeyToKeyCode(e.Key);
 
             if (keyCode != -1) {
                 e.Handled = true;
@@ -234,14 +239,31 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        private void OnDefaultWindowKeyUp(object sender, System.Windows.Input.KeyEventArgs e) {
-            int keyCode = InterfaceHelpers.KeyToKeyCode(e.Key);
+        private void OnDefaultWindowKeyUp(object sender, KeyEventArgs e) {
+            int keyCode = KeyToKeyCode(e.Key);
 
             if (keyCode != -1) {
                 e.Handled = true;
 
                 Program.OpenDream.Connection.SendPacket(new PacketKeyboardInput(new int[0] { }, new int[1] { keyCode }));
             }
+        }
+
+        private static int KeyToKeyCode(Key key) {
+            int keyCode = key switch {
+                Key.W => 87,
+                Key.A => 65,
+                Key.S => 83,
+                Key.D => 68,
+                Key.Up => 38,
+                Key.Down => 40,
+                Key.Left => 37,
+                Key.Right => 39,
+                Key.T => 84,
+                _ => -1
+            };
+
+            return keyCode;
         }
     }
 }

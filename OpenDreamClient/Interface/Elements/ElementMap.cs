@@ -11,35 +11,29 @@ using OpenDreamShared.Dream;
 using Rectangle = System.Drawing.Rectangle;
 
 namespace OpenDreamClient.Interface.Elements {
-    class ElementMap : Grid, IElement {
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorMap)value;
-            }
-        }
-
-        private ElementDescriptorMap _elementDescriptor;
+    class ElementMap : InterfaceElement {
         private DreamRenderer _dreamRenderer;
+        private Grid _grid;
 
-        public ElementMap() {
+        public ElementMap(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+
+        protected override FrameworkElement CreateUIElement() {
+            _grid = new Grid() {
+                Focusable = true,
+                IsEnabled = true,
+                UseLayoutRounding = true,
+                Background = Brushes.Black
+            };
+            _grid.MouseLeftButtonDown += OnLeftMouseDown;
+            _grid.SizeChanged += OnSizeChanged;
+
             _dreamRenderer = new DreamRenderer();
-            this.Children.Add(_dreamRenderer.OpenGLViewControl);
+            _grid.Children.Add(_dreamRenderer.OpenGLViewControl);
 
-            this.Focusable = true;
-            this.IsEnabled = true;
-            this.UseLayoutRounding = true;
-            this.Background = Brushes.Black;
-
-            this.MouseLeftButtonDown += OnLeftMouseDown;
-            this.SizeChanged += OnSizeChanged;
+            return _grid;
         }
 
-        public void UpdateVisuals() {
-
-        }
-
-        public void Shutdown() {
+        public override void Shutdown() {
             _dreamRenderer.StopRendering();
         }
 
@@ -107,7 +101,7 @@ namespace OpenDreamClient.Interface.Elements {
 
             if (clickedATOM == null) return;
             e.Handled = true;
-            this.Focus();
+            _grid.Focus();
 
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY, screenLocation);
             pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
@@ -117,8 +111,8 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         private void OnSizeChanged(object sender, SizeChangedEventArgs e) {
-            double widthScaling = Math.Max(1, Math.Floor(this.Width / _dreamRenderer.OpenGLViewControl.ViewportWidth));
-            double heightScaling = Math.Max(1, Math.Floor(this.Height / _dreamRenderer.OpenGLViewControl.ViewportHeight));
+            double widthScaling = Math.Max(1, Math.Floor(_grid.Width / _dreamRenderer.OpenGLViewControl.ViewportWidth));
+            double heightScaling = Math.Max(1, Math.Floor(_grid.Height / _dreamRenderer.OpenGLViewControl.ViewportHeight));
 
             _dreamRenderer.SetScale(Math.Min(widthScaling, heightScaling));
         }

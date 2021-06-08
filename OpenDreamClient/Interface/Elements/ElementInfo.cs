@@ -69,30 +69,24 @@ namespace OpenDreamClient.Interface.Elements {
         }
     }
 
-    class ElementInfo : TabControl, IElement {
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorInfo)value;
-            }
-        }
-
-        private ElementDescriptorInfo _elementDescriptor;
+    class ElementInfo : InterfaceElement {
+        private TabControl _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        public ElementInfo() {
-            this.BorderBrush = Brushes.Black;
-            this.BorderThickness = new Thickness(1);
+        public ElementInfo(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
-            SelectionChanged += OnSelectionChanged;
+        protected override FrameworkElement CreateUIElement() {
+            _tabControl = new TabControl() {
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(1)
+            };
+            _tabControl.SelectionChanged += OnSelectionChanged;
 
             _verbPanel = new VerbPanel("Verbs");
-            Items.Add(_verbPanel);
-        }
+            _tabControl.Items.Add(_verbPanel);
 
-        public void UpdateVisuals() {
-
+            return _tabControl;
         }
 
         public void UpdateVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
@@ -101,14 +95,14 @@ namespace OpenDreamClient.Interface.Elements {
 
         public void SelectStatPanel(string statPanelName) {
             _statPanels.TryGetValue(statPanelName, out StatPanel panel);
-            SelectedItem = panel;
+            _tabControl.SelectedItem = panel;
         }
 
         public void UpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
             //Remove any panels the packet doesn't contain
             foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels) {
                 if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key)) {
-                    Items.Remove(existingPanel.Value);
+                    _tabControl.Items.Remove(existingPanel.Value);
                     _statPanels.Remove(existingPanel.Key);
                 }
             }
@@ -119,7 +113,7 @@ namespace OpenDreamClient.Interface.Elements {
                 if (!_statPanels.TryGetValue(updatingPanel.Key, out panel)) {
                     panel = new StatPanel(updatingPanel.Key);
 
-                    Items.Insert(Items.Count - 1, panel);
+                    _tabControl.Items.Insert(_tabControl.Items.Count - 1, panel);
                     _statPanels.Add(updatingPanel.Key, panel);
                 }
 

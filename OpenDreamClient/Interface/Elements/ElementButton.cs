@@ -1,19 +1,24 @@
 ﻿using OpenDreamShared.Interface;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Elements {
-    class ElementButton : Button, IElement {
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorButton)value;
-            }
+    class ElementButton : InterfaceElement {
+        private Button _button;
+
+        public ElementButton(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+
+        protected override FrameworkElement CreateUIElement() {
+            _button = new Button();
+
+            return _button;
         }
 
-        private ElementDescriptorButton _elementDescriptor;
+        public override void UpdateElementDescriptor() {
+            base.UpdateElementDescriptor();
 
-        public void UpdateVisuals() {
-            this.Content = _elementDescriptor.Text;
+            ElementDescriptorButton elementDescriptor = (ElementDescriptorButton)_elementDescriptor;
+            _button.Content = elementDescriptor.Text;
         }
     }
 }

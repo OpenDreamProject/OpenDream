@@ -194,6 +194,10 @@ namespace OpenDreamRuntime {
             return promptTask;
         }
 
+        public void WinSet(string controlId, string @params) {
+            SendPacket(new PacketWinSet(controlId, @params));
+        }
+
         #region Packet Handlers
         public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
             if (_promptEvents.TryGetValue(pPromptResponse.PromptId, out Action<DreamValue> promptEvent)) {

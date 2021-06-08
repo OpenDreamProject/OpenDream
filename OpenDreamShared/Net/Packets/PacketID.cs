@@ -21,6 +21,7 @@
         CallVerb = 0x12,
         UpdateAvailableVerbs = 0x13,
         UpdateStatPanels = 0x14,
-        SelectStatPanel = 0x15
+        SelectStatPanel = 0x15,
+        WinSet = 0x16
     }
 }

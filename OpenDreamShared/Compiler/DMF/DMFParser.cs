@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFParser : Parser<char> {
-        private static readonly List<TokenType> _validAttributeValueTypes = new() {
+        public static readonly List<TokenType> ValidAttributeValueTypes = new() {
             TokenType.DMF_None,
             TokenType.DMF_String,
             TokenType.DMF_Integer,
@@ -14,7 +14,16 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Resource,
             TokenType.DMF_Sunken,
             TokenType.DMF_PushBox,
-            TokenType.DMF_Distort
+            TokenType.DMF_Distort,
+
+            TokenType.DMF_Main,
+            TokenType.DMF_Input,
+            TokenType.DMF_Button,
+            TokenType.DMF_Child,
+            TokenType.DMF_Output,
+            TokenType.DMF_Info,
+            TokenType.DMF_Map,
+            TokenType.DMF_Browser
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -78,18 +87,12 @@ namespace OpenDreamShared.Compiler.DMF {
                 Newline();
 
                 Dictionary<string, Token> attributes = new();
-                Token attributeToken;
 
-                while ((attributeToken = Current()).Type == TokenType.DMF_Attribute ||
-                        attributeToken.Type == TokenType.DMF_Macro ||
-                        attributeToken.Type == TokenType.DMF_Menu
-                ) {
-                    Advance();
-                    Consume(TokenType.DMF_Equals, "Expected '='");
+                while (true) {
+                    (string, Token)? attributeAssign = AttributeAssign();
 
-                    attributes.Add(attributeToken.Text, Current());
-                    Advance();
-                    Newline();
+                    if (attributeAssign.HasValue) attributes.Add(attributeAssign.Value.Item1, attributeAssign.Value.Item2);
+                    else break;
                 }
 
                 if (!attributes.TryGetValue("type", out Token elementType)) Error("Element '" + elementName + "' does not have a 'type' attribute");
@@ -143,16 +146,29 @@ namespace OpenDreamShared.Compiler.DMF {
                 Check(TokenType.DMF_String);
 
                 Newline();
-                while (Check(TokenType.DMF_Attribute)) {
-                    Consume(TokenType.DMF_Equals, "Expected '='");
-                    Advance(); //Attribute value
-                    Newline();
+                while (AttributeAssign() != null) {
                 }
 
                 return true;
             } else {
                 return false;
             }
+        }
+
+        public (string, Token)? AttributeAssign() {
+            Token attributeToken = Current();
+
+            if (Check(TokenType.DMF_Attribute) || Check(TokenType.DMF_Macro) || Check(TokenType.DMF_Menu)) {
+                Consume(TokenType.DMF_Equals, "Expected '='");
+
+                Token attributeValue = Current();
+                if (!Check(ValidAttributeValueTypes)) Error("Invalid attribute value (" + attributeValue.Text + ")");
+
+                Newline();
+                return (attributeToken.Text, attributeValue);
+            }
+
+            return null;
         }
 
         public void Newline() {
@@ -170,7 +186,6 @@ namespace OpenDreamShared.Compiler.DMF {
         private void SetAttributes(ElementDescriptor elementDescriptor, Dictionary<string, Token> attributes) {
             foreach (KeyValuePair<string, Token> attribute in attributes) {
                 if (attribute.Key == "type") continue;
-                if (!_validAttributeValueTypes.Contains(attribute.Value.Type)) Error("Invalid attribute value (" + attribute.Value.Text + ")");
 
                 if (elementDescriptor.HasAttribute(attribute.Key)) {
                     if (attribute.Value.Type == TokenType.DMF_None) {

@@ -1,34 +1,33 @@
 ﻿using OpenDreamShared.Interface;
 using System;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace OpenDreamClient.Interface.Elements {
-    class ElementOutput : Border, IElement {
-        public TextBox TextBox = new TextBox();
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorOutput)value;
-            }
+    class ElementOutput : InterfaceElement {
+        private TextBox _textBox;
+        private Border _border;
+
+        public ElementOutput(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+
+        protected override FrameworkElement CreateUIElement() {
+            _textBox = new TextBox() {
+                IsReadOnly = true
+            };
+
+            _border = new Border() {
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(1),
+                Child = _textBox
+            };
+
+            return _border;
         }
 
-        private ElementDescriptorOutput _elementDescriptor;
-
-        public ElementOutput() {
-            this.BorderBrush = Brushes.Black;
-            this.BorderThickness = new System.Windows.Thickness(1);
-
-            this.TextBox.IsReadOnly = true;
-            this.Child = TextBox;
-        }
-
-        public void UpdateVisuals() {
-
-        }
-
-        public void Output(string value, string data) {
-            TextBox.AppendText(value + Environment.NewLine);
+        public override void Output(string value, string data) {
+            _textBox.AppendText(value);
+            _textBox.AppendText(Environment.NewLine);
         }
     }
 }

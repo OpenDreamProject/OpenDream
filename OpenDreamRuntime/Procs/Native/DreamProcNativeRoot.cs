@@ -1393,5 +1393,28 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return DreamValue.Null;
         }
+
+        [DreamProc("winset")]
+        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueType.String)]
+        [DreamProcParameter("params", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_winset(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue player = arguments.GetArgument(0, "player");
+            DreamValue controlId = arguments.GetArgument(1, "control_id");
+            string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
+            string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
+            DreamConnection connection;
+
+            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
+                connection = CurrentRuntime.Server.GetConnectionFromMob(mob);
+            } else {
+                DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
+
+                connection = CurrentRuntime.Server.GetConnectionFromClient(client);
+            }
+
+            connection.WinSet(winsetControlId, winsetParams);
+            return DreamValue.Null;
+        }
     }
 }

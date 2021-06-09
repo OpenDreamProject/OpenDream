@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Windows.Media.Imaging;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 
@@ -29,6 +31,19 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
 
             return new Rectangle(frame.X, frame.Y, Description.Width, Description.Height);
+        }
+
+        public BitmapSource CreateWPFImageSource() {
+            MemoryStream ms = new MemoryStream();
+            BitmapImage image = new BitmapImage();
+
+            ImageBitmap.Save(ms, ImageFormat.Png);
+            image.BeginInit();
+            ms.Seek(0, SeekOrigin.Begin);
+            image.StreamSource = ms;
+            image.EndInit();
+
+            return image;
         }
 
         private bool IsValidPNG() {

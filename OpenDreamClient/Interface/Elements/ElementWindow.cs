@@ -1,9 +1,12 @@
-﻿using OpenDreamShared.Interface;
+﻿using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Interface;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace OpenDreamClient.Interface.Elements {
     class ElementWindow : InterfaceElement {
@@ -11,6 +14,7 @@ namespace OpenDreamClient.Interface.Elements {
 
         private WindowDescriptor _windowDescriptor;
         private Canvas _canvas;
+        private List<Window> _openWindows = new();
 
         public ElementWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor.MainElementDescriptor, null) {
             _windowDescriptor = windowDescriptor;
@@ -29,6 +33,16 @@ namespace OpenDreamClient.Interface.Elements {
 
         public override void UpdateElementDescriptor() {
             // Don't call base.UpdateElementDescriptor();
+
+            ElementDescriptorMain elementDescriptor = (ElementDescriptorMain)_elementDescriptor;
+
+            if (elementDescriptor.Icon != null) {
+                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(elementDescriptor.Icon, iconResource => {
+                    SetIcon(iconResource.CreateWPFImageSource());
+                });
+            } else {
+                SetIcon(null);
+            }
         }
 
         public override void Shutdown() {
@@ -65,8 +79,10 @@ namespace OpenDreamClient.Interface.Elements {
             window.Height = _elementDescriptor.Size?.Height ?? 440;
             window.Closing += (object sender, CancelEventArgs e) => {
                 window.Owner = null; //Without this, the owning window ends up minimized
+                _openWindows.Remove(window);
             };
 
+            _openWindows.Add(window);
             return window;
         }
 
@@ -96,6 +112,12 @@ namespace OpenDreamClient.Interface.Elements {
                         control.Height = Math.Max(height, 0);
                     }
                 }
+            }
+        }
+
+        private void SetIcon(ImageSource icon) {
+            foreach (Window window in _openWindows) {
+                window.Icon = icon;
             }
         }
     }

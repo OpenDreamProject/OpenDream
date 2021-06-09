@@ -169,6 +169,8 @@ namespace OpenDreamShared.Interface {
     public class ElementDescriptorMain : ElementDescriptor {
         [InterfaceAttribute("is-pane")]
         public bool IsPane = false;
+        [InterfaceAttribute("icon")]
+        public string Icon = null;
 
         public ElementDescriptorMain(string name) : base(name) { }
     }

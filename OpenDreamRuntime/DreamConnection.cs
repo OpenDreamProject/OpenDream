@@ -135,6 +135,7 @@ namespace OpenDreamRuntime {
 
             if (MobDreamObject != null) {
                 List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+
                 foreach (DreamValue mobVerbPath in mobVerbPaths) {
                     DreamPath path = mobVerbPath.GetValueAsPath();
 

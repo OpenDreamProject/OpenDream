@@ -10,6 +10,7 @@ namespace OpenDreamClient.Interface.Elements {
 
         protected override FrameworkElement CreateUIElement() {
             _button = new Button();
+            _button.Click += OnButtonClick;
 
             return _button;
         }
@@ -19,6 +20,14 @@ namespace OpenDreamClient.Interface.Elements {
 
             ElementDescriptorButton elementDescriptor = (ElementDescriptorButton)_elementDescriptor;
             _button.Content = elementDescriptor.Text;
+        }
+
+        private void OnButtonClick(object sender, RoutedEventArgs e) {
+            ElementDescriptorButton elementDescriptor = (ElementDescriptorButton)_elementDescriptor;
+
+            if (elementDescriptor.Command != null) {
+                Program.OpenDream.RunCommand(elementDescriptor.Command);
+            }
         }
     }
 }

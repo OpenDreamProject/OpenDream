@@ -193,6 +193,8 @@ namespace OpenDreamShared.Interface {
     public class ElementDescriptorButton : ElementDescriptor {
         [InterfaceAttribute("text")]
         public string Text = null;
+        [InterfaceAttribute("command")]
+        public string Command = null;
 
         public ElementDescriptorButton(string name) : base(name) { }
     }

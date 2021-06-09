@@ -71,6 +71,15 @@ namespace OpenDreamClient {
             DisconnectedFromServer?.Invoke();
         }
 
+        public void RunCommand(string command) {
+            string[] split = command.Split(" ");
+            string verb = split[0];
+
+            if (split.Length > 1) throw new NotImplementedException("Command argument parsing is not implemented");
+
+            Connection.SendPacket(new PacketCallVerb(verb));
+        }
+
         private void RegisterPacketCallbacks() {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
             Connection.RegisterPacketCallback<PacketInterfaceData>(PacketID.InterfaceData, packet => Interface.HandlePacketInterfaceData(packet));

@@ -21,13 +21,15 @@ namespace OpenDreamClient.Interface.Elements {
         private TextBlock _textBlock;
 
         public StatPanel(string name) : base(name) {
-            _textBlock = new TextBlock();
-            _textBlock.HorizontalAlignment = HorizontalAlignment.Stretch;
-            _textBlock.VerticalAlignment = VerticalAlignment.Stretch;
-            _textBlock.FontFamily = new FontFamily("Courier New");
+            _textBlock = new TextBlock() {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                FontFamily = new FontFamily("Courier New")
+            };
 
-            ScrollViewer scrollViewer = new ScrollViewer();
-            scrollViewer.Content = _textBlock;
+            ScrollViewer scrollViewer = new ScrollViewer() {
+                Content = _textBlock
+            };
             AddChild(scrollViewer);
         }
 
@@ -54,14 +56,15 @@ namespace OpenDreamClient.Interface.Elements {
             _wrapPanel.Children.Clear();
 
             foreach (string verbName in verbs) {
-                Button verbButton = new Button();
+                Button verbButton = new Button() {
+                    Content = verbName.Replace("_", "__"), //WPF uses underscores for mnemonics; they need to be replaced with a double underscore
+                    Margin = new Thickness(2),
+                    Padding = new Thickness(6, 0, 6, 2),
+                    MinWidth = 100
+                };
 
-                verbButton.Content = verbName.Replace("_", "__"); //WPF uses underscores for mnemonics; they need to be replaced with a double underscore
-                verbButton.Margin = new Thickness(2);
-                verbButton.Padding = new Thickness(6, 0, 6, 2);
-                verbButton.MinWidth = 100;
                 verbButton.Click += new RoutedEventHandler((object sender, RoutedEventArgs e) => {
-                    Program.OpenDream.Connection.SendPacket(new PacketCallVerb(verbName));
+                    Program.OpenDream.RunCommand(verbName);
                 });
 
                 _wrapPanel.Children.Add(verbButton);

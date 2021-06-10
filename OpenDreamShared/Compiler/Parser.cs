@@ -7,7 +7,7 @@ namespace OpenDreamShared.Compiler {
 
         private Lexer<SourceType> _lexer;
         private Token _currentToken;
-        private Stack<Token> _tokenStack = new Stack<Token>();
+        private Stack<Token> _tokenStack = new();
 
         public Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;

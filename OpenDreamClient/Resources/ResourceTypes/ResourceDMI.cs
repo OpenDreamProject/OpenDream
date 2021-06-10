@@ -13,7 +13,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         public Bitmap ImageBitmap;
         public DMIParser.ParsedDMIDescription Description;
 
-        private readonly byte[] _pngHeader = new byte[8] { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+        private readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
 
         public ResourceDMI(string resourcePath, byte[] data) : base(resourcePath, data) {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");

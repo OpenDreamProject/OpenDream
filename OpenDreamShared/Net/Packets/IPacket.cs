@@ -13,7 +13,6 @@ namespace OpenDreamShared.Net.Packets {
         static IPacket() {
             RegisterPacket<PacketConnectionResult>(PacketID.ConnectionResult);
             RegisterPacket<PacketRequestConnect>(PacketID.RequestConnect);
-            RegisterPacket<PacketInterfaceData>(PacketID.InterfaceData);
             RegisterPacket<PacketOutput>(PacketID.Output);
             RegisterPacket<PacketRequestResource>(PacketID.RequestResource);
             RegisterPacket<PacketResource>(PacketID.Resource);

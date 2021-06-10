@@ -6,24 +6,32 @@ namespace OpenDreamShared.Net.Packets {
 
         public bool ConnectionSuccessful;
         public string ErrorMessage = String.Empty;
+        public string InterfaceData = String.Empty;
 
         public PacketConnectionResult() { }
 
-        public PacketConnectionResult(bool connectionSuccessful, string errorMessage) {
+        public PacketConnectionResult(bool connectionSuccessful, string errorMessage, string interfaceData) {
             ConnectionSuccessful = connectionSuccessful;
             ErrorMessage = errorMessage;
+            InterfaceData = interfaceData;
         }
 
         public void ReadFromStream(PacketStream stream) {
             ConnectionSuccessful = stream.ReadBool();
-            if (!ConnectionSuccessful) {
+
+            if (ConnectionSuccessful) {
+                InterfaceData = stream.ReadString();
+            } else {
                 ErrorMessage = stream.ReadString();
             }
         }
 
         public void WriteToStream(PacketStream stream) {
             stream.WriteBool(ConnectionSuccessful);
-            if (!ConnectionSuccessful) {
+
+            if (ConnectionSuccessful) {
+                stream.WriteString(InterfaceData);
+            } else {
                 stream.WriteString(ErrorMessage);
             }
         }

@@ -134,7 +134,7 @@ namespace OpenDreamServer {
 
                 DreamConnectionRequest.Invoke(connection);
             } else {
-                connection.SendPacket(new PacketConnectionResult(false, "A connection with your ckey already exists"));
+                connection.SendPacket(new PacketConnectionResult(false, "A connection with your ckey already exists", null));
             }
         }
     }

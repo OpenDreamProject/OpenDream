@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
@@ -10,13 +9,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         {}
 
+        public override bool ShouldCallNew => true;
+
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
-
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
-
-            //New() is not called here
-        }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);

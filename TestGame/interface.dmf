@@ -1,3 +1,12 @@
+menu "menu"
+	elem 
+		name = "Menu"
+		command = ""
+	elem
+		name = "Quit"
+		command = ".quit"
+		category = "Menu"
+
 window "mapwindow"
 	elem "mapwindow"
 		type = MAIN
@@ -20,8 +29,8 @@ window "infowindow"
 		is-pane = true
 	elem "info"
 		type = CHILD
-		pos = 0,30
-		size = 640x445
+		pos = 0,0
+		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
 		left = "statwindow"
@@ -61,6 +70,7 @@ window "mainwindow"
 		type = MAIN
 		size = 640x440
 		is-default = true
+		menu = "menu"
 	elem "split"
 		type = CHILD
 		pos = 3,0

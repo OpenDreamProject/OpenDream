@@ -13,6 +13,8 @@ namespace OpenDreamClient.Interface.Elements {
         public List<InterfaceElement> ChildElements = new();
 
         private WindowDescriptor _windowDescriptor;
+        private DockPanel _dockPanel;
+        private Menu _menu;
         private Canvas _canvas;
         private List<Window> _openWindows = new();
 
@@ -21,20 +23,39 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         protected override FrameworkElement CreateUIElement() {
+            _dockPanel = new DockPanel();
+
+            _menu = new Menu();
+            DockPanel.SetDock(_menu, Dock.Top);
+            _dockPanel.Children.Add(_menu);
+
             _canvas = new Canvas() {
                 Margin = new Thickness(0),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
             _canvas.SizeChanged += (object sender, SizeChangedEventArgs e) => UpdateAnchors();
+            DockPanel.SetDock(_canvas, Dock.Bottom);
+            _dockPanel.Children.Add(_canvas);
 
-            return _canvas;
+            return _dockPanel;
         }
 
         public override void UpdateElementDescriptor() {
             // Don't call base.UpdateElementDescriptor();
 
             ElementDescriptorMain elementDescriptor = (ElementDescriptorMain)_elementDescriptor;
+
+            if (elementDescriptor.Menu != null) {
+                _menu.Visibility = Visibility.Visible;
+
+                InterfaceDescriptor interfaceDescriptor = Program.OpenDream.Interface.InterfaceDescriptor;
+
+                interfaceDescriptor.MenuDescriptors.TryGetValue(elementDescriptor.Menu, out MenuDescriptor menuDescriptor);
+                CreateMenu(menuDescriptor);
+            } else {
+                _menu.Visibility = Visibility.Collapsed;
+            }
 
             if (elementDescriptor.Icon != null) {
                 Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(elementDescriptor.Icon, iconResource => {
@@ -52,7 +73,7 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void CreateChildElements() {
-            foreach (ElementDescriptor elementDescriptor in _windowDescriptor.ElementDescriptors) {
+            foreach (WindowElementDescriptor elementDescriptor in _windowDescriptor.ElementDescriptors) {
                 if (elementDescriptor == _windowDescriptor.MainElementDescriptor) continue;
 
                 InterfaceElement element = elementDescriptor switch {
@@ -119,6 +140,55 @@ namespace OpenDreamClient.Interface.Elements {
             foreach (Window window in _openWindows) {
                 window.Icon = icon;
             }
+        }
+
+        private void CreateMenu(MenuDescriptor menuDescriptor) {
+            _menu.Items.Clear();
+            if (menuDescriptor == null) return;
+
+            Dictionary<string, List<MenuElementDescriptor>> categories = new();
+
+            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements) {
+                if (elementDescriptor.Category == null) {
+                    categories.Add(elementDescriptor.Name, new());
+                } else {
+                    if (!categories.ContainsKey(elementDescriptor.Category)) categories.Add(elementDescriptor.Category, new());
+
+                    categories[elementDescriptor.Category].Add(elementDescriptor);
+                }
+            }
+
+            foreach (KeyValuePair<string, List<MenuElementDescriptor>> categoryPair in categories) {
+                MenuItem category = CreateMenuItem(categoryPair.Key, null, false);
+
+                _menu.Items.Add(category);
+                foreach (MenuElementDescriptor elementDescriptor in categoryPair.Value) {
+                    if (String.IsNullOrEmpty(elementDescriptor.Name)) {
+                        category.Items.Add(new Separator());
+                    } else {
+                        MenuItem item = CreateMenuItem(elementDescriptor.Name, elementDescriptor.Command, elementDescriptor.CanCheck);
+                        
+                        category.Items.Add(item);
+                    }
+                }
+            }
+        }
+
+        private MenuItem CreateMenuItem(string name, string command, bool isCheckable) {
+            if (name.StartsWith("&")) name = name.Substring(1); //TODO: First character in name becomes a selection shortcut
+
+            MenuItem item = new MenuItem() {
+                Header = name,
+                IsCheckable = isCheckable
+            };
+
+            if (!String.IsNullOrEmpty(command)) {
+                item.Click += (object sender, RoutedEventArgs e) => {
+                    Program.OpenDream.RunCommand(command);
+                };
+            }
+
+            return item;
         }
     }
 }

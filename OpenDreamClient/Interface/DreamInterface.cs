@@ -35,7 +35,31 @@ namespace OpenDreamClient.Interface {
             _defaultWindow = null;
         }
 
-        public void LoadInterfaceDescriptor(InterfaceDescriptor interfaceDescriptor) {
+        public void LoadInterfaceFromSource(string source) {
+            DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
+            DMFParser dmfParser = new DMFParser(dmfLexer);
+            InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
+
+            if (dmfParser.Warnings.Count > 0) {
+                Console.WriteLine("Warnings while parsing interface data");
+
+                foreach (CompilerWarning warning in dmfParser.Warnings) {
+                    Console.WriteLine(warning);
+                }
+            }
+
+            if (dmfParser.Errors.Count > 0) {
+                foreach (CompilerError error in dmfParser.Errors) {
+                    Console.WriteLine(error);
+                }
+
+                throw new Exception("Errors while parsing interface data");
+            }
+
+            LoadInterface(interfaceDescriptor);
+        }
+
+        public void LoadInterface(InterfaceDescriptor interfaceDescriptor) {
             InterfaceDescriptor = interfaceDescriptor;
 
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
@@ -57,6 +81,9 @@ namespace OpenDreamClient.Interface {
                     }
                 }
             }
+
+            _defaultWindow = CreateDefaultWindow();
+            _defaultWindow.Show();
         }
 
         public InterfaceElement FindElementWithName(string name) {
@@ -94,12 +121,6 @@ namespace OpenDreamClient.Interface {
         }
 
         #region Packet Handlers
-        public void HandlePacketInterfaceData(PacketInterfaceData pInterfaceData) {
-            LoadInterfaceDescriptor(pInterfaceData.InterfaceDescriptor);
-
-            _defaultWindow = CreateDefaultWindow();
-            _defaultWindow.Show();
-        }
 
         public void HandlePacketOutput(PacketOutput pOutput) {
             InterfaceElement interfaceElement;
@@ -172,10 +193,6 @@ namespace OpenDreamClient.Interface {
                 prompt.Owner = _defaultWindow;
                 prompt.Show();
             }
-        }
-
-        public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
-            DefaultInfo?.UpdateVerbs(pUpdateAvailableVerbs);
         }
 
         public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {

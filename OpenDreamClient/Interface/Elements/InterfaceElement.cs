@@ -14,10 +14,10 @@ namespace OpenDreamClient.Interface.Elements {
         public System.Drawing.Point? Anchor1 { get => _elementDescriptor.Anchor1; }
         public System.Drawing.Point? Anchor2 { get => _elementDescriptor.Anchor2; }
 
-        protected ElementDescriptor _elementDescriptor;
+        protected WindowElementDescriptor _elementDescriptor;
         protected ElementWindow _window;
 
-        public InterfaceElement(ElementDescriptor elementDescriptor, ElementWindow window) {
+        public InterfaceElement(WindowElementDescriptor elementDescriptor, ElementWindow window) {
             _elementDescriptor = elementDescriptor;
             _window = window;
             UIElement = CreateUIElement();

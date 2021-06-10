@@ -30,13 +30,14 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public InterfaceDescriptor Interface() {
             List<WindowDescriptor> windowDescriptors = new();
+            Dictionary<string, MenuDescriptor> menuDescriptors = new();
 
             bool parsing = true;
             while (parsing) {
                 WindowDescriptor windowDescriptor = Window();
                 if (windowDescriptor != null) {
-                    Newline();
                     windowDescriptors.Add(windowDescriptor);
+                    Newline();
                 }
 
                 bool macro = Macro();
@@ -44,18 +45,19 @@ namespace OpenDreamShared.Compiler.DMF {
                     Newline();
                 }
 
-                bool menu = Menu();
-                if (menu) {
+                MenuDescriptor menu = Menu();
+                if (menu != null) {
+                    menuDescriptors.Add(menu.Name, menu);
                     Newline();
                 }
 
-                if (windowDescriptor == null && !macro && !menu) {
+                if (windowDescriptor == null && !macro && menu == null) {
                     parsing = false;
                 }
             }
 
             Consume(TokenType.EndOfFile, "Expected EOF");
-            return new InterfaceDescriptor(windowDescriptors);
+            return new InterfaceDescriptor(windowDescriptors, menuDescriptors);
         }
 
         public WindowDescriptor Window() {
@@ -65,8 +67,8 @@ namespace OpenDreamShared.Compiler.DMF {
                 string windowName = (string)windowNameToken.Value;
                 Newline();
 
-                List<ElementDescriptor> elementDescriptors = new();
-                ElementDescriptor elementDescriptor;
+                List<WindowElementDescriptor> elementDescriptors = new();
+                WindowElementDescriptor elementDescriptor;
                 do {
                     elementDescriptor = Element();
 
@@ -74,29 +76,22 @@ namespace OpenDreamShared.Compiler.DMF {
                 } while (elementDescriptor != null);
 
                 return new WindowDescriptor(windowName, elementDescriptors);
-            } else {
-                return null;
             }
+
+            return null;
         }
 
-        public ElementDescriptor Element() {
+        public WindowElementDescriptor Element() {
             if (Check(TokenType.DMF_Elem)) {
                 Token elementNameToken = Current();
                 Consume(TokenType.DMF_String, "Expected an element name");
                 string elementName = (string)elementNameToken.Value;
                 Newline();
 
-                Dictionary<string, Token> attributes = new();
-
-                while (true) {
-                    (string, Token)? attributeAssign = AttributeAssign();
-
-                    if (attributeAssign.HasValue) attributes.Add(attributeAssign.Value.Item1, attributeAssign.Value.Item2);
-                    else break;
-                }
+                Dictionary<string, Token> attributes = Attributes();
 
                 if (!attributes.TryGetValue("type", out Token elementType)) Error("Element '" + elementName + "' does not have a 'type' attribute");
-                ElementDescriptor descriptor = elementType.Type switch {
+                WindowElementDescriptor descriptor = elementType.Type switch {
                     TokenType.DMF_Main => new ElementDescriptorMain(elementName),
                     TokenType.DMF_Map => new ElementDescriptorMap(elementName),
                     TokenType.DMF_Child => new ElementDescriptorChild(elementName),
@@ -127,32 +122,39 @@ namespace OpenDreamShared.Compiler.DMF {
             }
         }
 
-        public bool Menu() {
+        public MenuDescriptor Menu() {
             if (Check(TokenType.DMF_Menu)) {
+                Token menuNameToken = Current();
                 Consume(TokenType.DMF_String, "Expected a menu name");
                 Newline();
 
-                while (MenuElement()) {
+                List<MenuElementDescriptor> menuElements = new();
+                MenuElementDescriptor menuElement;
+                while ((menuElement = MenuElement()) != null) {
+                    menuElements.Add(menuElement);
                 }
 
-                return true;
-            } else {
-                return false;
+                return new MenuDescriptor((string)menuNameToken.Value, menuElements);
             }
+
+            return null;
         }
 
-        public bool MenuElement() {
+        public MenuElementDescriptor MenuElement() {
             if (Check(TokenType.DMF_Elem)) {
-                Check(TokenType.DMF_String);
-
+                Token elementNameToken = Current();
+                bool hasName = Check(TokenType.DMF_String);
                 Newline();
-                while (AttributeAssign() != null) {
-                }
 
-                return true;
-            } else {
-                return false;
+                MenuElementDescriptor descriptor = new MenuElementDescriptor(hasName ? (string)elementNameToken.Value : null);
+                Dictionary<string, Token> attributes = Attributes();
+
+                SetAttributes(descriptor, attributes);
+
+                return descriptor;
             }
+
+            return null;
         }
 
         public (string, Token)? AttributeAssign() {
@@ -169,6 +171,19 @@ namespace OpenDreamShared.Compiler.DMF {
             }
 
             return null;
+        }
+
+        public Dictionary<string, Token> Attributes() {
+            Dictionary<string, Token> attributes = new();
+
+            while (true) {
+                (string, Token)? attributeAssign = AttributeAssign();
+
+                if (attributeAssign.HasValue) attributes.Add(attributeAssign.Value.Item1, attributeAssign.Value.Item2);
+                else break;
+            }
+
+            return attributes;
         }
 
         public void Newline() {

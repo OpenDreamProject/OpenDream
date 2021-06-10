@@ -15,7 +15,7 @@ namespace OpenDreamClient.Interface.Elements {
         private DreamRenderer _dreamRenderer;
         private Grid _grid;
 
-        public ElementMap(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementMap(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _grid = new Grid() {

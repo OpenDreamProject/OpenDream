@@ -15,7 +15,7 @@ namespace OpenDreamClient.Interface.Elements {
         private string _fileSource;
         private bool _webViewReady;
 
-        public ElementBrowser(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementBrowser(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _dockPanel = new DockPanel();

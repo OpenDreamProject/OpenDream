@@ -7,7 +7,7 @@ namespace OpenDreamClient.Interface.Elements {
         private Grid _grid;
         private ElementWindow _leftElement, _rightElement;
 
-        public ElementChild(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementChild(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _grid = new Grid();

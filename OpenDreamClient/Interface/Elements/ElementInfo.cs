@@ -52,10 +52,11 @@ namespace OpenDreamClient.Interface.Elements {
             AddChild(_wrapPanel);
         }
 
-        public void UpdateVerbs(string[] verbs) {
+        public void RefreshVerbs() {
             _wrapPanel.Children.Clear();
+            if (Program.OpenDream.AvailableVerbs == null) return;
 
-            foreach (string verbName in verbs) {
+            foreach (string verbName in Program.OpenDream.AvailableVerbs) {
                 Button verbButton = new Button() {
                     Content = verbName.Replace("_", "__"), //WPF uses underscores for mnemonics; they need to be replaced with a double underscore
                     Margin = new Thickness(2),
@@ -77,7 +78,7 @@ namespace OpenDreamClient.Interface.Elements {
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        public ElementInfo(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementInfo(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _tabControl = new TabControl() {
@@ -89,11 +90,13 @@ namespace OpenDreamClient.Interface.Elements {
             _verbPanel = new VerbPanel("Verbs");
             _tabControl.Items.Add(_verbPanel);
 
+            RefreshVerbs();
+
             return _tabControl;
         }
 
-        public void UpdateVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
-            _verbPanel.UpdateVerbs(pUpdateAvailableVerbs.AvailableVerbs);
+        public void RefreshVerbs() {
+            _verbPanel.RefreshVerbs();
         }
 
         public void SelectStatPanel(string statPanelName) {

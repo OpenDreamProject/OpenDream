@@ -9,7 +9,7 @@ namespace OpenDreamClient.Interface.Elements {
         private TextBox _textBox;
         private Border _border;
 
-        public ElementOutput(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementOutput(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _textBox = new TextBox() {

@@ -27,6 +27,7 @@ namespace OpenDreamClient {
 
         public Map Map;
         public ATOM Eye;
+        public string[] AvailableVerbs { get; private set; } = null;
         public List<IconAppearance> IconAppearances { get; private set; } = new();
         public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = new();
         public List<ATOM> ScreenObjects { get; private set; } = new();
@@ -77,12 +78,14 @@ namespace OpenDreamClient {
 
             if (split.Length > 1) throw new NotImplementedException("Command argument parsing is not implemented");
 
-            Connection.SendPacket(new PacketCallVerb(verb));
+            switch (verb) {
+                case ".quit": DisconnectFromServer(); break;
+                default: Connection.SendPacket(new PacketCallVerb(verb)); break;
+            }
         }
 
         private void RegisterPacketCallbacks() {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
-            Connection.RegisterPacketCallback<PacketInterfaceData>(PacketID.InterfaceData, packet => Interface.HandlePacketInterfaceData(packet));
             Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
             Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => ResourceManager.HandlePacketResource(packet));
             Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => StateManager.HandlePacketFullGameState(packet));
@@ -91,7 +94,7 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
             Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => ResourceManager.HandlePacketBrowseResource(packet));
             Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
-            Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => Interface.HandlePacketUpdateAvailableVerbs(packet));
+            Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => HandlePacketUpdateAvailableVerbs(packet));
             Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => Interface.HandlePacketUpdateStatPanels(packet));
             Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => Interface.HandlePacketSelectStatPanel(packet));
             Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => Interface.HandlePacketWinSet(packet));
@@ -104,10 +107,17 @@ namespace OpenDreamClient {
         }
 
         private void HandlePacketConnectionResult(PacketConnectionResult pConnectionResult) {
-            if (!pConnectionResult.ConnectionSuccessful) {
+            if (pConnectionResult.ConnectionSuccessful) {
+                Interface.LoadInterfaceFromSource(pConnectionResult.InterfaceData);
+            } else {
                 Console.WriteLine("Connection was unsuccessful: " + pConnectionResult.ErrorMessage);
                 DisconnectFromServer();
             }
+        }
+
+        public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
+            AvailableVerbs = pUpdateAvailableVerbs.AvailableVerbs;
+            Interface.DefaultInfo?.RefreshVerbs();
         }
     }
 }

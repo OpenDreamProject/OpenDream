@@ -43,8 +43,6 @@ namespace OpenDreamRuntime
         public int TickCount = 0;
         public long TickStartTime = 0;
 
-        private readonly InterfaceDescriptor _clientInterface;
-
         public bool Shutdown;
 
         // Global state that may not really (really really) belong here
@@ -83,11 +81,6 @@ namespace OpenDreamRuntime
 
             CompiledJson = LoadCompiledJson(executablePath);
             if (CompiledJson == null) {
-                throw new InvalidOperationException();
-            }
-
-            _clientInterface = LoadInterface(CompiledJson.Interface);
-            if (_clientInterface == null) {
                 throw new InvalidOperationException();
             }
 
@@ -181,34 +174,6 @@ namespace OpenDreamRuntime
             return compiledJson;
         }
 
-        private InterfaceDescriptor LoadInterface(string path) {
-            DreamResource interfaceResource = ResourceManager.LoadResource(path);
-            DMFLexer dmfLexer = new DMFLexer(path, interfaceResource.ReadAsString());
-            DMFParser dmfParser = new DMFParser(dmfLexer);
-
-            var descriptor = dmfParser.Interface();
-
-            if (dmfParser.Warnings.Count > 0) {
-                Console.WriteLine("Warnings while parsing the interface file");
-
-                foreach (CompilerWarning warning in dmfParser.Warnings) {
-                    Console.WriteLine(warning);
-                }
-            }
-
-            if (dmfParser.Errors.Count > 0) {
-                Console.WriteLine("Errors while parsing the interface file");
-
-                foreach (CompilerError error in dmfParser.Errors) {
-                    Console.WriteLine(error);
-                }
-
-                return null;
-            }
-
-            return descriptor;
-        }
-
         private void RegisterPacketCallbacks() {
             Server.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, ResourceManager.HandleRequestResourcePacket);
             Server.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));
@@ -229,27 +194,14 @@ namespace OpenDreamRuntime
             Console.WriteLine("Connection request from '" + connection.CKey + "'");
             StateManager.AddClient(connection.CKey);
 
-            DreamThread.Run(this, async (state) => {
-                var client = ObjectTree.CreateObject(DreamPath.Client);
-                connection.ClientDreamObject = client;
+            var client = ObjectTree.CreateObject(DreamPath.Client);
+            connection.ClientDreamObject = client;
 
-                client.InitSpawn(new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
+            DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
+            connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
+            connection.SendPacket(new PacketFullGameState(StateManager.FullState));
 
-                connection.SendPacket(new PacketInterfaceData(_clientInterface));
-                connection.SendPacket(new PacketFullGameState(StateManager.FullState));
-
-                var newProc = client.GetProc("New");
-
-                var mob = await state.Call(newProc, client, null, new DreamProcArguments(null));
-
-                if (mob.Value != null) {
-                    connection.SendPacket(new PacketConnectionResult(true, ""));
-                } else {
-                    connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
-                }
-
-                return DreamValue.Null;
-            });
+            client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 
     }

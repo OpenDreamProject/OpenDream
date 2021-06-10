@@ -7,7 +7,6 @@ namespace OpenDreamShared.Net.Packets {
         public PacketID PacketID => PacketID.FullGameState;
 
         public DreamFullState FullState;
-        public UInt32 GameStateID;
         public UInt32 EyeID;
         public UInt32[] ScreenObjects;
 
@@ -18,8 +17,7 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         public void ReadFromStream(PacketStream stream) {
-            GameStateID = stream.ReadUInt32();
-            FullState = new DreamFullState(GameStateID);
+            FullState = new DreamFullState(stream.ReadUInt32());
 
             ReadIconAppearancesSection(stream);
             ReadAtomsSection(stream);

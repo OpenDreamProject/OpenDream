@@ -1,4 +1,4 @@
-﻿/var/global/world/world = null
+﻿/var/world/world = null
 
 proc/abs(A)
 proc/animate(Object, time, loop, easing, flags)

@@ -75,26 +75,22 @@ namespace OpenDreamShared.Compiler.DMF {
                     case '"': {
                         string text = c.ToString();
 
-                        do {
+                        while (Advance() != c && !AtEndOfSource) {
                             if (GetCurrent() == '\\') {
                                 Advance();
 
-                                if (GetCurrent() == '"' || GetCurrent() == '\\') {
-                                    Advance();
-
-                                    text += GetCurrent();
-                                } else if (GetCurrent() == 't') {
-                                    Advance();
-
-                                    text += '\t';
-                                } else {
-                                    throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
+                                switch (GetCurrent()) {
+                                    case '"':
+                                    case '\\': text += GetCurrent(); break;
+                                    case 't': text += '\t'; break;
+                                    default: throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
                                 }
                             } else {
-                                text += Advance();
+                                text += GetCurrent();
                             }
-                        } while (GetCurrent() != c && !AtEndOfSource);
+                        } 
                         if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
+                        text += c;
                         Advance();
 
                         if (c == '"') token = CreateToken(TokenType.DMF_String, text, text.Substring(1, text.Length - 2));

@@ -6,7 +6,7 @@ namespace OpenDreamClient.Interface.Elements {
     class ElementButton : InterfaceElement {
         private Button _button;
 
-        public ElementButton(ElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ElementButton(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _button = new Button();

@@ -3,7 +3,7 @@
         Invalid = 0x0,
         ConnectionResult = 0x1,
         RequestConnect = 0x2,
-        InterfaceData = 0x3,
+        //0x3
         Output = 0x4,
         RequestResource = 0x5,
         Resource = 0x6,

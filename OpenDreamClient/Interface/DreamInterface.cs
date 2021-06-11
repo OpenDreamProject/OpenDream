@@ -12,6 +12,7 @@ using System.IO;
 using System.Web;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace OpenDreamClient.Interface {
     class DreamInterface {
@@ -22,6 +23,7 @@ namespace OpenDreamClient.Interface {
         public ElementWindow DefaultWindow;
         public ElementOutput DefaultOutput;
         public ElementInfo DefaultInfo;
+        public ElementMap DefaultMap;
 
         private Window _defaultWindow;
 
@@ -76,8 +78,11 @@ namespace OpenDreamClient.Interface {
 
                 foreach (InterfaceElement element in window.ChildElements) {
                     if (element.IsDefault) {
-                        if (element is ElementOutput elementOutput) DefaultOutput = elementOutput;
-                        else if (element is ElementInfo elementInfo) DefaultInfo = elementInfo;
+                        switch (element) {
+                            case ElementOutput elementOutput: DefaultOutput = elementOutput; break;
+                            case ElementInfo elementInfo: DefaultInfo = elementInfo; break;
+                            case ElementMap elementMap: DefaultMap = elementMap; break;
+                        }
                     }
                 }
             }
@@ -120,8 +125,32 @@ namespace OpenDreamClient.Interface {
             return null;
         }
 
-        #region Packet Handlers
+        public void SaveScreenshot(bool openDialog) {
+            if (DefaultMap == null) return;
 
+            BitmapSource screenshot = DefaultMap.CreateScreenshot();
+
+            //TODO: Support automatically choosing a location if openDialog == false
+            System.Windows.Forms.SaveFileDialog dialog = new() {
+                Title = "Screenshot",
+                FileName = "screenshot.png",
+                DefaultExt = "png",
+                Filter = "PNG|*.png",
+                AddExtension = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+            };
+
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+                PngBitmapEncoder encoder = new PngBitmapEncoder();
+
+                encoder.Frames.Add(BitmapFrame.Create(screenshot));
+                using (FileStream file = File.OpenWrite(dialog.FileName)) {
+                    encoder.Save(file);
+                }
+            }
+        }
+
+        #region Packet Handlers
         public void HandlePacketOutput(PacketOutput pOutput) {
             InterfaceElement interfaceElement;
             string data = null;

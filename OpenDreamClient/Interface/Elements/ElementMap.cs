@@ -8,6 +8,7 @@ using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
 using OpenDreamShared.Dream;
+using System.Windows.Media.Imaging;
 using Rectangle = System.Drawing.Rectangle;
 
 namespace OpenDreamClient.Interface.Elements {
@@ -35,6 +36,18 @@ namespace OpenDreamClient.Interface.Elements {
 
         public override void Shutdown() {
             _dreamRenderer.StopRendering();
+        }
+
+        public BitmapSource CreateScreenshot() {
+            SharpGLControl control = _dreamRenderer.OpenGLViewControl;
+            DpiScale dpi = VisualTreeHelper.GetDpi(control);
+            double dpiX = dpi.PixelsPerInchX;
+            double dpiY = dpi.PixelsPerInchY;
+
+            RenderTargetBitmap renderTarget = new RenderTargetBitmap((int)control.Width, (int)control.Height, dpiX, dpiY, PixelFormats.Pbgra32);
+            renderTarget.Render(control);
+
+            return renderTarget;
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y) {

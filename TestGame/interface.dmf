@@ -3,6 +3,10 @@ menu "menu"
 		name = "Menu"
 		command = ""
 	elem
+		name = "Screenshot"
+		command = ".screenshot"
+		category = "Menu"
+	elem
 		name = "Quit"
 		command = ".quit"
 		category = "Menu"

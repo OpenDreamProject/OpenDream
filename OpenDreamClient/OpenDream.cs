@@ -76,11 +76,15 @@ namespace OpenDreamClient {
             string[] split = command.Split(" ");
             string verb = split[0];
 
-            if (split.Length > 1) throw new NotImplementedException("Command argument parsing is not implemented");
-
             switch (verb) {
                 case ".quit": DisconnectFromServer(); break;
-                default: Connection.SendPacket(new PacketCallVerb(verb)); break;
+                case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
+                default: {
+                    if (split.Length > 1) throw new NotImplementedException("Verb argument parsing is not implemented");
+
+                    Connection.SendPacket(new PacketCallVerb(verb));
+                    break;
+                }
             }
         }
 

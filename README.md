@@ -23,6 +23,7 @@ There's 3 main parts: Compiler, Server, and Client
 **Client:** Run `OpenDreamClient.exe`. You will be prompted to choose a server address, port, and username. The defaults should work for a locally hosted server.
 
 ## Screenshots
+The following screenshots are taken from a stripped-down version of /tg/station available [here](https://github.com/wixoaGit/tgstation).
 
 ![](https://github.com/wixoaGit/OpenDream/blob/master/.github/assets/screenshot.png?raw=true)
 ![](https://github.com/wixoaGit/OpenDream/blob/master/.github/assets/screenshot2.png?raw=true)

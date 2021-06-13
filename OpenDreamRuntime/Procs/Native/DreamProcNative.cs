@@ -6,6 +6,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
             DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arccos);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arcsin);

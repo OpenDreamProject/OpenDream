@@ -236,6 +236,23 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public bool IsTruthy() {
+            switch (Type) {
+                case DreamValue.DreamValueType.DreamObject:
+                case DreamValue.DreamValueType.DreamProc:
+                    return Value != null;
+                case DreamValue.DreamValueType.DreamResource:
+                case DreamValue.DreamValueType.DreamPath:
+                    return true;
+                case DreamValue.DreamValueType.Float:
+                    return (float)Value != 0;
+                case DreamValue.DreamValueType.String:
+                    return (string)Value != "";
+                default:
+                    throw new NotImplementedException("Truthy evaluation for " + this + " is not implemented");
+            }
+        }
+
         public string Stringify() {
             switch (Type) {
                 case DreamValueType.String:

@@ -224,6 +224,13 @@ namespace OpenDreamClient.Interface {
             }
         }
 
+        public void HandlePacketAlert(PacketAlert pAlert) {
+            AlertWindow alert = new AlertWindow(pAlert.PromptId, pAlert.Title, pAlert.Message, pAlert.Button1, pAlert.Button2, pAlert.Button3);
+
+            alert.Owner = _defaultWindow;
+            alert.Show();
+        }
+
         public void HandlePacketUpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
             DefaultInfo?.UpdateStatPanels(pUpdateStatPanels);
         }

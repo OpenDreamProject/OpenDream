@@ -19,11 +19,44 @@ namespace OpenDreamRuntime.Procs.Native {
         public static Stack<DreamRuntime> RuntimeStack = new();
 
         [DreamProc("abs")]
-        [DreamProcParameter("A")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_abs(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             float number = arguments.GetArgument(0, "A").GetValueAsFloat();
 
             return new DreamValue(Math.Abs(number));
+        }
+
+        [DreamProc("alert")]
+        [DreamProcParameter("Usr", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Message", Type = DreamValueType.String)]
+        [DreamProcParameter("Title", Type = DreamValueType.String)]
+        [DreamProcParameter("Button1", Type = DreamValueType.String)]
+        [DreamProcParameter("Button2", Type = DreamValueType.String)]
+        [DreamProcParameter("Button3", Type = DreamValueType.String)]
+        public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.State state) {
+            DreamObject mob;
+            string message, title, button1, button2, button3;
+
+            DreamValue usrArgument = state.Arguments.GetArgument(0, "Usr");
+            if (usrArgument.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out mob)) {
+                message = state.Arguments.GetArgument(1, "Message").Stringify();
+                title = state.Arguments.GetArgument(2, "Title").Stringify();
+                button1 = state.Arguments.GetArgument(3, "Button1").Stringify();
+                button2 = state.Arguments.GetArgument(4, "Button2").Stringify();
+                button3 = state.Arguments.GetArgument(5, "Button3").Stringify();
+            } else {
+                mob = state.Usr;
+                message = usrArgument.Stringify();
+                title = state.Arguments.GetArgument(1, "Message").Stringify();
+                button1 = state.Arguments.GetArgument(2, "Title").Stringify();
+                button2 = state.Arguments.GetArgument(3, "Button1").Stringify();
+                button3 = state.Arguments.GetArgument(4, "Button2").Stringify();
+            }
+
+            if (String.IsNullOrEmpty(button1)) button1 = "Ok";
+
+            DreamConnection connection = state.Runtime.Server.GetConnectionFromMob(mob);
+            return await connection.Alert(title, message, button1, button2, button3);
         }
 
         [DreamProc("animate")]
@@ -261,8 +294,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_findtext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            string text = arguments.GetArgument(0, "Haystack").GetValueAsString().ToLower();
-            string needle = arguments.GetArgument(1, "Needle").GetValueAsString().ToLower();
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
             int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
@@ -270,12 +303,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.IndexOf(needle, start - 1, end - start);
-            if (needleIndex != -1) {
-                return new DreamValue(needleIndex + 1); //1-indexed
-            } else {
-                return new DreamValue(0);
-            }
+            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            return new DreamValue(needleIndex + 1); //1-indexed
         }
 
         [DreamProc("findtextEx")]

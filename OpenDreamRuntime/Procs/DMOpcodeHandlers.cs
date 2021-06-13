@@ -680,7 +680,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue a = state.PopDreamValue();
             int jumpPosition = state.ReadInt();
 
-            if (!IsTruthy(a)) {
+            if (!a.IsTruthy()) {
                 state.Push(a);
                 state.Jump(jumpPosition);
             }
@@ -691,7 +691,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? BooleanNot(DMProcState state) {
             DreamValue value = state.PopDreamValue();
 
-            state.Push(new DreamValue(IsTruthy(value) ? 0 : 1));
+            state.Push(new DreamValue(value.IsTruthy() ? 0 : 1));
             return null;
         }
 
@@ -699,7 +699,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue a = state.PopDreamValue();
             int jumpPosition = state.ReadInt();
 
-            if (IsTruthy(a)) {
+            if (a.IsTruthy()) {
                 state.Push(a);
                 state.Jump(jumpPosition);
             }
@@ -1068,7 +1068,7 @@ namespace OpenDreamRuntime.Procs {
             int position = state.ReadInt();
             DreamValue value = state.PopDreamValue();
 
-            if (!IsTruthy(value)) {
+            if (!value.IsTruthy()) {
                 state.Jump(position);
             }
 
@@ -1079,7 +1079,7 @@ namespace OpenDreamRuntime.Procs {
             int position = state.ReadInt();
             DreamValue value = state.PopDreamValue();
 
-            if (IsTruthy(value)) {
+            if (value.IsTruthy()) {
                 state.Jump(position);
             }
 
@@ -1347,23 +1347,6 @@ namespace OpenDreamRuntime.Procs {
         #endregion Others
 
         #region Helpers
-        private static bool IsTruthy(DreamValue value) {
-            switch (value.Type) {
-                case DreamValue.DreamValueType.DreamObject:
-                    return (value.GetValueAsDreamObject() != null);
-                case DreamValue.DreamValueType.DreamResource:
-                case DreamValue.DreamValueType.DreamPath:
-                    return true;
-                case DreamValue.DreamValueType.Float:
-                    return (value.GetValueAsFloat() != 0);
-                case DreamValue.DreamValueType.String:
-                    return (value.GetValueAsString() != "");
-                case DreamValue.DreamValueType.DreamProc:
-                    return value.Value != null;
-                default:
-                    throw new NotImplementedException("Truthy evaluation for " + value.Type + " is not implemented");
-            }
-        }
 
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {

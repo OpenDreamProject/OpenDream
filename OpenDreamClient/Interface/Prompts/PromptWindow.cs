@@ -39,7 +39,7 @@ namespace OpenDreamClient.Interface.Prompts {
             MinWidth = 300;
             MinHeight = 150;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            Closed += PromptWindow_Closed;
+            Closing += PromptWindow_Closing;
             AddChild(stackPanel);
 
             PromptControl.Focus();
@@ -53,7 +53,8 @@ namespace OpenDreamClient.Interface.Prompts {
             FinishPrompt(DMValueType.Null, null);
         }
 
-        private void PromptWindow_Closed(object sender, System.EventArgs e) {
+        private void PromptWindow_Closing(object sender, EventArgs e) {
+            Owner = null;
             FinishPrompt(DMValueType.Null, null);
         }
 

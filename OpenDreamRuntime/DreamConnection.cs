@@ -195,6 +195,26 @@ namespace OpenDreamRuntime {
             return promptTask;
         }
 
+        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
+            Task<DreamValue> alertTask = new Task<DreamValue>(() => {
+                ManualResetEvent alertWaitHandle = new ManualResetEvent(false);
+                int promptId = _promptEvents.Count;
+
+                DreamValue alertResponse = DreamValue.Null;
+                _promptEvents[promptId] = (DreamValue response) => {
+                    alertResponse = response;
+                    alertWaitHandle.Set();
+                };
+
+                SendPacket(new PacketAlert(promptId, title, message, button1, button2, button3));
+                alertWaitHandle.WaitOne();
+                return alertResponse;
+            });
+
+            alertTask.Start();
+            return alertTask;
+        }
+
         public void WinSet(string controlId, string @params) {
             SendPacket(new PacketWinSet(controlId, @params));
         }

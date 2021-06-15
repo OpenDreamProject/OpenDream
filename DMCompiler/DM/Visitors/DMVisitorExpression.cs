@@ -50,7 +50,11 @@ namespace DMCompiler.DM.Visitors {
             var expressions = new DMExpression[stringFormat.InterpolatedValues.Length];
 
             for (int i = 0; i < stringFormat.InterpolatedValues.Length; i++) {
-                expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
+                if (stringFormat.InterpolatedValues[i] is null) {
+                    expressions[i] = new Expressions.Null();
+                } else {
+                    expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
+                }
             }
 
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);

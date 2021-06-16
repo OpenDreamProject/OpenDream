@@ -8,6 +8,7 @@
 
 	var/mob/mob
 	var/atom/eye
+	var/perspective = MOB_PERSPECTIVE
 	var/view
 	var/pixel_x = 0
 	var/pixel_y = 0

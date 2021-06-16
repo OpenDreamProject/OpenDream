@@ -80,7 +80,7 @@ namespace OpenDreamClient.Renderer {
                 bitSrc = null;
             } finally {
                 Win32.DeleteObject(hBitmap);
-                //GC.Collect(); TODO: Find an alternatice to calling GC.Collect()
+                //GC.Collect(); TODO: Find an alternative to calling GC.Collect()
             }
 
             return bitSrc;

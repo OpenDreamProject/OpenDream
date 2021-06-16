@@ -91,7 +91,7 @@ namespace OpenDreamClient.Interface.Elements {
             }
 
             if (clickedATOM == null) {
-                foreach (ATOM turf in Program.OpenDream.Map.Levels[_dreamRenderer.CameraZ].Turfs) {
+                foreach (ATOM turf in Program.OpenDream.Map.Levels[_dreamRenderer.Camera.Z].Turfs) {
                     foreach (ATOM atom in turf.Contents) {
                         bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
 

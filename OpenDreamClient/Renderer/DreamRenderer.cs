@@ -1,4 +1,5 @@
 ﻿using OpenDreamClient.Dream;
+using OpenDreamShared.Dream;
 using SharpGL;
 using System;
 using System.Collections.Generic;
@@ -8,23 +9,13 @@ using System.Windows;
 namespace OpenDreamClient.Renderer {
     class DreamRenderer {
         public SharpGLControl OpenGLViewControl;
-
-        public int CameraX {
-            get => Program.OpenDream.Eye?.X ?? 0;
-        }
-
-        public int CameraY {
-            get => Program.OpenDream.Eye?.Y ?? 0;
-        }
-
-        public int CameraZ {
-            get => Program.OpenDream.Eye?.Z ?? 0;
-        }
+        public (int X, int Y, int Z) Camera;
 
         private OpenGL _gl;
         private OpenGLShader _shader;
         private uint _iconVerticesBuffer;
         private uint _iconTextureCoordBuffer;
+        private readonly int _viewDistance = 7;
 
         private static Dictionary<(string, Rectangle), DreamTexture> _textureCache = new();
 
@@ -54,8 +45,8 @@ namespace OpenDreamClient.Renderer {
             if (useScreenLocation) {
                 position = atom.ScreenLocation.GetScreenCoordinates(32);
             }  else {
-                int tileX = atom.X - CameraX + 7;
-                int tileY = atom.Y - CameraY + 7;
+                int tileX = atom.X - Camera.X + 7;
+                int tileY = atom.Y - Camera.Y + 7;
 
                 position = new System.Drawing.Point(tileX * 32 + atom.Icon.Appearance.PixelX, tileY * 32 + atom.Icon.Appearance.PixelY);
             }
@@ -114,6 +105,23 @@ namespace OpenDreamClient.Renderer {
             SetViewportSize(480, 480);
         }
 
+        private void UpdateCameraPosition() {
+            ATOM Eye = Program.OpenDream.Eye;
+
+            if (Eye != null) {
+                Camera = (Eye.X, Eye.Y, Eye.Z);
+
+                if (Program.OpenDream.Perspective.HasFlag(ClientPerspective.Edge)) {
+                    Map map = Program.OpenDream.Map;
+
+                    Camera.X = Math.Min(Math.Max(Camera.X, _viewDistance), map.Width - _viewDistance);
+                    Camera.Y = Math.Min(Math.Max(Camera.Y, _viewDistance), map.Height - _viewDistance);
+                }
+            } else {
+                Camera = (1, 1, 1);
+            }
+        }
+
         private DreamTexture GetDreamTexture(DreamIcon icon) {
             DreamTexture texture = null;
 
@@ -131,10 +139,11 @@ namespace OpenDreamClient.Renderer {
         }
 
         private void RenderFrame(OpenGL gl) {
+            UpdateCameraPosition();
             _gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);
 
             if (Program.OpenDream.Map != null) {
-                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(CameraX - 8, CameraY - 8, CameraZ, 16, 16);
+                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(Camera.X - _viewDistance - 1, Camera.Y - _viewDistance - 1, Camera.Z, 16, 16);
                 List<ATOM> mapAtoms = new();
 
                 foreach (ATOM turf in turfs) {
@@ -168,7 +177,7 @@ namespace OpenDreamClient.Renderer {
 
                     _shader.SetTranslation((float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
                 } else {
-                    _shader.SetTranslation((atom.X - CameraX) * 32.0f, (atom.Y - CameraY) * 32.0f);
+                    _shader.SetTranslation((atom.X - Camera.X) * 32.0f, (atom.Y - Camera.Y) * 32.0f);
                 }
 
                 if (IsAtomVisible(atom, useScreenLocation)) DrawDreamIcon(atom.Icon, !useScreenLocation);

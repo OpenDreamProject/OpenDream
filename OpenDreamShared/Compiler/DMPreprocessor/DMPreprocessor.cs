@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Runtime.InteropServices;
 
 namespace OpenDreamShared.Compiler.DMPreprocessor {
     public class DMPreprocessor {
@@ -24,10 +23,6 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         }
 
         public void IncludeFile(string includePath, string file) {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                file = file.Replace('\\', '/');
-            }
             string source = File.ReadAllText(Path.Combine(includePath, file));
             source = source.Replace("\r\n", "\n");
             source += '\n';

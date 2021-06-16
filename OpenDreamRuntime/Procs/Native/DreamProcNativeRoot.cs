@@ -1054,6 +1054,15 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(total);
         }
 
+        [DreamProc("shutdown")]
+        [DreamProcParameter("Addr", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Natural", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_shutdown(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            CurrentRuntime.Shutdown = true;
+            return DreamValue.Null;
+        }
+
         [DreamProc("sin")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sin(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

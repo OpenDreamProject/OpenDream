@@ -66,23 +66,28 @@ namespace OpenDreamClient.Dream {
                 });
             }
 
-            if (pFullGameState.EyeID != UInt32.MaxValue) {
-                if (Program.OpenDream.ATOMs.ContainsKey(pFullGameState.EyeID)) {
-                    Program.OpenDream.Eye = Program.OpenDream.ATOMs[pFullGameState.EyeID];
+            if (pFullGameState.ClientState != null) {
+                UInt32 eyeId = pFullGameState.ClientState.EyeID;
+                if (eyeId != UInt32.MaxValue) {
+                    if (Program.OpenDream.ATOMs.TryGetValue(eyeId, out ATOM eye)) {
+                        Program.OpenDream.Eye = eye;
+                    } else {
+                        Console.WriteLine("Full game state packet gives an invalid atom for the eye (ID " + eyeId + ")");
+                        Program.OpenDream.Eye = null;
+                    }
                 } else {
-                    Console.WriteLine("Full game state packet gives an invalid atom for the eye (ID " + pFullGameState.EyeID + ")");
                     Program.OpenDream.Eye = null;
                 }
-            } else {
-                Program.OpenDream.Eye = null;
-            }
 
-            Program.OpenDream.ScreenObjects.Clear();
-            foreach (UInt32 screenObjectAtomID in pFullGameState.ScreenObjects) {
-                if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
-                    Program.OpenDream.ScreenObjects.Add(Program.OpenDream.ATOMs[screenObjectAtomID]);
-                } else {
-                    Console.WriteLine("Full games state packet defines a screen object that doesn't exist, and was ignored (ID " + screenObjectAtomID + ")");
+                Program.OpenDream.Perspective = pFullGameState.ClientState.Perspective;
+
+                Program.OpenDream.ScreenObjects.Clear();
+                foreach (UInt32 screenObjectAtomID in pFullGameState.ClientState.ScreenObjects) {
+                    if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
+                        Program.OpenDream.ScreenObjects.Add(Program.OpenDream.ATOMs[screenObjectAtomID]);
+                    } else {
+                        Console.WriteLine("Full games state packet defines a screen object that doesn't exist, and was ignored (ID " + screenObjectAtomID + ")");
+                    }
                 }
             }
         }
@@ -212,17 +217,19 @@ namespace OpenDreamClient.Dream {
 
         private void ApplyClientDelta(DreamDeltaState.ClientDelta clientDelta) {
             if (clientDelta.NewEyeID.HasValue) {
-                ATOM newEye = null;
+                UInt32 newEyeId = clientDelta.NewEyeID.Value;
 
-                if (clientDelta.NewEyeID.Value != UInt32.MaxValue) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(clientDelta.NewEyeID.Value)) {
-                        newEye = Program.OpenDream.ATOMs[clientDelta.NewEyeID.Value];
-                    } else {
-                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM, and was ignored (ID " + clientDelta.NewEyeID.Value + ")");
+                if (newEyeId != UInt32.MaxValue) {
+                    if (!Program.OpenDream.ATOMs.TryGetValue(newEyeId, out Program.OpenDream.Eye)) {
+                        Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM  (ID " + newEyeId + ")");
                     }
+                } else {
+                    Program.OpenDream.Eye = null;
                 }
+            }
 
-                Program.OpenDream.Eye = newEye;
+            if (clientDelta.NewPerspective.HasValue) {
+                Program.OpenDream.Perspective = clientDelta.NewPerspective.Value;
             }
 
             if (clientDelta.ScreenObjectAdditions != null) {

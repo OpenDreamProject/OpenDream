@@ -13,7 +13,7 @@
 #define NORTHWEST 9 // NORTH | WEST
 
 #define FLOAT_LAYER -1
-//#define AREA_LAYER 1
+#define AREA_LAYER 1
 #define TURF_LAYER 2
 #define OBJ_LAYER 3
 #define MOB_LAYER 4
@@ -62,3 +62,8 @@
 #define SEE_THRU		(1<<6) // can see through opaque objects
 #define SEE_BLACKNESS	(1<<7) // render dark tiles as blackness
 #define BLIND			(1<<8) // can't see anything
+
+//client.perspective
+#define MOB_PERSPECTIVE 0
+#define EYE_PERSPECTIVE 1
+#define EDGE_PERSPECTIVE 2

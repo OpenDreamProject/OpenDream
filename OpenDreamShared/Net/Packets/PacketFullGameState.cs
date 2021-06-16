@@ -7,13 +7,13 @@ namespace OpenDreamShared.Net.Packets {
         public PacketID PacketID => PacketID.FullGameState;
 
         public DreamFullState FullState;
-        public UInt32 EyeID;
-        public UInt32[] ScreenObjects;
+        public DreamFullState.Client ClientState;
 
         public PacketFullGameState() { }
 
-        public PacketFullGameState(DreamFullState fullState) {
+        public PacketFullGameState(DreamFullState fullState, string ckey) {
             FullState = fullState;
+            FullState.Clients.TryGetValue(ckey, out ClientState);
         }
 
         public void ReadFromStream(PacketStream stream) {
@@ -116,19 +116,31 @@ namespace OpenDreamShared.Net.Packets {
         }
 
         private void ReadClientSection(PacketStream stream) {
-            EyeID = stream.ReadUInt32();
+            if (!stream.ReadBool()) return;
+
+            ClientState = new DreamFullState.Client();
+            ClientState.EyeID = stream.ReadUInt32();
+            ClientState.Perspective = (ClientPerspective)stream.ReadByte();
+            ClientState.ScreenObjects = new List<UInt32>();
 
             UInt32 screenObjectCount = stream.ReadUInt32();
-            ScreenObjects = new UInt32[screenObjectCount];
             for (int i = 0; i < screenObjectCount; i++) {
-                ScreenObjects[i] = stream.ReadUInt32();
+                ClientState.ScreenObjects[i] = stream.ReadUInt32();
             }
         }
 
         private void WriteClientSection(PacketStream stream) {
-            stream.WriteUInt32(UInt32.MaxValue);
+            stream.WriteBool(ClientState != null);
 
-            stream.WriteUInt32(0);
+            if (ClientState != null) {
+                stream.WriteUInt32(ClientState.EyeID);
+                stream.WriteByte((byte)ClientState.Perspective);
+
+                stream.WriteUInt32((UInt32)ClientState.ScreenObjects.Count);
+                foreach (UInt32 screenObject in ClientState.ScreenObjects) {
+                    stream.WriteUInt32(screenObject);
+                }
+            }
         }
     }
 }

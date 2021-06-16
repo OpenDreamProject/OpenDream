@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 
@@ -13,6 +14,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
+        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            base.OnObjectCreated(dreamObject, creationArguments);
+
+            DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+
+            ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
+            if (perspective != ClientPerspective.Mob) {
+                Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
+            }
+        }
+
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
@@ -22,13 +34,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 UInt32 eyeID = (eye != null) ? Runtime.AtomIDs[eye] : UInt32.MaxValue;
 
                 Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
+            } else if (variableName == "perspective") {
+                string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
+
+                Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
             } else if (variableName == "mob") {
                 DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
 
                 connection.MobDreamObject = variableValue.GetValueAsDreamObject();
             } else if (variableName == "screen") {
                 if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
-
                     oldList.Cut();
                     oldList.ValueAssigned -= ScreenValueAssigned;
                     oldList.BeforeValueRemoved -= ScreenBeforeValueRemoved;

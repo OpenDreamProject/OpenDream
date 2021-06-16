@@ -24,10 +24,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         }
 
         public void IncludeFile(string includePath, string file) {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                file = file.Replace('\\', '/');
-            }
+            file = file.Replace('\\', Path.DirectorySeparatorChar);
             string source = File.ReadAllText(Path.Combine(includePath, file));
             source = source.Replace("\r\n", "\n");
             source += '\n';

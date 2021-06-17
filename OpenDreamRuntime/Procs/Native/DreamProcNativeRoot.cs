@@ -1059,7 +1059,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Natural", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_shutdown(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            CurrentRuntime.Shutdown = true;
+            DreamValue addrValue = arguments.GetArgument(0, "Addr");
+            if (addrValue == DreamValue.Null) {
+                CurrentRuntime.Shutdown = true;
+            }
+            else {
+                throw new NotImplementedException();
+            }
             return DreamValue.Null;
         }
 

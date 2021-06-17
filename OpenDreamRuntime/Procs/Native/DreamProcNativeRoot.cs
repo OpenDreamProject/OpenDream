@@ -1055,7 +1055,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("shutdown")]
-        [DreamProcParameter("Addr", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Addr", Type = DreamValueType.String | DreamValueType.DreamObject)]
         [DreamProcParameter("Natural", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_shutdown(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {

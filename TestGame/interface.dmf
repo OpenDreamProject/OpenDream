@@ -1,3 +1,32 @@
+macro "macro"
+	elem 
+		name = "North+REP"
+		command = ".north"
+	elem 
+		name = "South+REP"
+		command = ".south"
+	elem 
+		name = "East+REP"
+		command = ".east"
+	elem 
+		name = "West+REP"
+		command = ".west"
+	elem 
+		name = "Northeast+REP"
+		command = ".northeast"
+	elem 
+		name = "Northwest+REP"
+		command = ".northwest"
+	elem 
+		name = "Southeast+REP"
+		command = ".southeast"
+	elem 
+		name = "Southwest+REP"
+		command = ".southwest"
+	elem 
+		name = "Center+REP"
+		command = ".center"
+
 menu "menu"
 	elem 
 		name = "Menu"
@@ -75,6 +104,7 @@ window "mainwindow"
 		size = 640x440
 		is-default = true
 		menu = "menu"
+		macro = "macro"
 	elem "split"
 		type = CHILD
 		pos = 3,0

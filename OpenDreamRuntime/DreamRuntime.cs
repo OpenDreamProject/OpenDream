@@ -132,16 +132,6 @@ namespace OpenDreamRuntime
 
                 foreach (DreamConnection connection in Server.Connections) {
                     connection.UpdateStat();
-
-                    if (connection.PressedKeys.Contains(38)) {
-                        connection.ClientDreamObject?.SpawnProc("North");
-                    } else if (connection.PressedKeys.Contains(39)) {
-                        connection.ClientDreamObject?.SpawnProc("East");
-                    } else if (connection.PressedKeys.Contains(40)) {
-                        connection.ClientDreamObject?.SpawnProc("South");
-                    } else if (connection.PressedKeys.Contains(37)) {
-                        connection.ClientDreamObject?.SpawnProc("West");
-                    }
                 }
 
                 TickCount++;
@@ -176,7 +166,6 @@ namespace OpenDreamRuntime
 
         private void RegisterPacketCallbacks() {
             Server.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, ResourceManager.HandleRequestResourcePacket);
-            Server.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));
             Server.RegisterPacketCallback(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => connection.HandlePacketClickAtom(pClickAtom));
             Server.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic));
             Server.RegisterPacketCallback(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));

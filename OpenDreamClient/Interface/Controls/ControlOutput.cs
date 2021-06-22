@@ -4,12 +4,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementOutput : InterfaceElement {
+namespace OpenDreamClient.Interface.Controls {
+    class ControlOutput : InterfaceControl {
         private TextBox _textBox;
         private Border _border;
 
-        public ElementOutput(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _textBox = new TextBox() {

@@ -2,12 +2,12 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementChild : InterfaceElement {
+namespace OpenDreamClient.Interface.Controls {
+    class ControlChild : InterfaceControl {
         private Grid _grid;
-        private ElementWindow _leftElement, _rightElement;
+        private ControlWindow _leftElement, _rightElement;
 
-        public ElementChild(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _grid = new Grid();
@@ -18,24 +18,24 @@ namespace OpenDreamClient.Interface.Elements {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ElementDescriptorChild elementDescriptor = (ElementDescriptorChild)_elementDescriptor;
+            ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)_elementDescriptor;
 
             _grid.Children.Remove(_leftElement?.UIElement);
             _grid.Children.Remove(_rightElement?.UIElement);
 
-            if (elementDescriptor.Left != null) {
-                _leftElement = Program.OpenDream.Interface.Windows[elementDescriptor.Left];
+            if (controlDescriptor.Left != null) {
+                _leftElement = Program.OpenDream.Interface.Windows[controlDescriptor.Left];
 
                 _grid.Children.Add(_leftElement.UIElement);
             }
 
-            if (elementDescriptor.Right != null) {
-                _rightElement = Program.OpenDream.Interface.Windows[elementDescriptor.Right];
+            if (controlDescriptor.Right != null) {
+                _rightElement = Program.OpenDream.Interface.Windows[controlDescriptor.Right];
 
                 _grid.Children.Add(_rightElement.UIElement);
             }
 
-            UpdateGrid(elementDescriptor.IsVert);
+            UpdateGrid(controlDescriptor.IsVert);
         }
 
         public override void Shutdown() {

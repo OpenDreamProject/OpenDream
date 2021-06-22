@@ -1177,7 +1177,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 OutputToStatPanel(connection, name, value);
             }
 
-            return new DreamValue(1); //TODO: Know when the client is looking at the panel
+            return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
         }
 
         [DreamProc("tan")]

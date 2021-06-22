@@ -9,7 +9,7 @@
         Resource = 0x6,
         FullGameState = 0x7,
         DeltaGameState = 0x8,
-        KeyboardInput = 0x9,
+        //0x9
         Topic = 0xA,
         ClickAtom = 0xB,
         ScreenViewChanges = 0xC,

@@ -13,10 +13,12 @@ using System.Windows.Threading;
 namespace OpenDreamClient {
     delegate void ConnectedToServerEventHandler();
     delegate void DisconnectedFromServerEventHandler();
+    delegate void ClientTickEventHandler();
 
     class OpenDream {
         public event ConnectedToServerEventHandler ConnectedToServer;
         public event DisconnectedFromServerEventHandler DisconnectedFromServer;
+        public event ClientTickEventHandler ClientTick;
 
         public DreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
@@ -108,6 +110,8 @@ namespace OpenDreamClient {
         }
 
         private void UpdateTimerTick(object sender, EventArgs e) {
+            ClientTick?.Invoke();
+
             if (Connection.Connected) {
                 Connection.ProcessPackets();
             }

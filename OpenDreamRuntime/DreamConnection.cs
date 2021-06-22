@@ -25,7 +25,6 @@ namespace OpenDreamRuntime {
         // Implementation
         public string CKey;
         public IPAddress Address;
-        public readonly List<int> PressedKeys = new();
         public DreamRuntime Runtime { get; }
 
         public string SelectedStatPanel {
@@ -236,16 +235,6 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandlePacketKeyboardInput(PacketKeyboardInput pKeyboardInput) {
-            foreach (int key in pKeyboardInput.KeysDown) {
-                if (!PressedKeys.Contains(key)) PressedKeys.Add(key);
-            }
-
-            foreach (int key in pKeyboardInput.KeysUp) {
-                PressedKeys.Remove(key);
-            }
-        }
-
         public void HandlePacketClickAtom(PacketClickAtom pClickAtom) {
             if (Runtime.AtomIDToAtom.TryGetValue(pClickAtom.AtomID, out DreamObject atom)) {
                 NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
@@ -288,22 +277,39 @@ namespace OpenDreamRuntime {
         }
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
-            if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
-                DreamThread.Run(Runtime, async (state) => {
-                    Dictionary<String, DreamValue> arguments = new();
+            switch (pCallVerb.VerbName) {
+                //TODO: Move these verbs to DM code
+                case ".north": ClientDreamObject.SpawnProc("North"); break;
+                case ".east": ClientDreamObject.SpawnProc("East"); break;
+                case ".south": ClientDreamObject.SpawnProc("South"); break;
+                case ".west": ClientDreamObject.SpawnProc("West"); break;
+                case ".northeast": ClientDreamObject.SpawnProc("Northeast"); break;
+                case ".southeast": ClientDreamObject.SpawnProc("Southeast"); break;
+                case ".southwest": ClientDreamObject.SpawnProc("Southwest"); break;
+                case ".northwest": ClientDreamObject.SpawnProc("Northwest"); break;
+                case ".center": ClientDreamObject.SpawnProc("Center"); break;
 
-                    for (int i = 0; i < verb.ArgumentNames.Count; i++) {
-                        String argumentName = verb.ArgumentNames[i];
-                        DMValueType argumentType = verb.ArgumentTypes[i];
-                        DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
-                                                        argumentName, defaultValue: String.Empty); // No default value for verbs
+                default: {
+                    if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
+                        DreamThread.Run(Runtime, async (state) => {
+                            Dictionary<String, DreamValue> arguments = new();
 
-                        arguments.Add(argumentName, value);
+                            for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                                String argumentName = verb.ArgumentNames[i];
+                                DMValueType argumentType = verb.ArgumentTypes[i];
+                                DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
+                                                                argumentName, defaultValue: String.Empty); // No default value for verbs
+
+                                arguments.Add(argumentName, value);
+                            }
+
+                            await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
+                            return DreamValue.Null;
+                        });
                     }
 
-                    await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
-                    return DreamValue.Null;
-                });
+                    break;
+                }
             }
         }
 

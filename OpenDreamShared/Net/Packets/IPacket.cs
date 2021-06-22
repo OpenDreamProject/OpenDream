@@ -19,7 +19,6 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketResource>(PacketID.Resource);
             RegisterPacket<PacketFullGameState>(PacketID.FullGameState);
             RegisterPacket<PacketDeltaGameState>(PacketID.DeltaGameState);
-            RegisterPacket<PacketKeyboardInput>(PacketID.KeyboardInput);
             RegisterPacket<PacketTopic>(PacketID.Topic);
             RegisterPacket<PacketClickAtom>(PacketID.ClickAtom);
             RegisterPacket<PacketSound>(PacketID.Sound);

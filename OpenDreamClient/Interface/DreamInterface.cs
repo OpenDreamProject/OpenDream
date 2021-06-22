@@ -1,4 +1,4 @@
-﻿using OpenDreamClient.Interface.Elements;
+﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DMF;
@@ -11,24 +11,25 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Web;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace OpenDreamClient.Interface {
     class DreamInterface {
-        public Dictionary<string, ElementWindow> Windows = new();
+        public Dictionary<string, ControlWindow> Windows = new();
         public Dictionary<string, BrowsePopup> PopupWindows = new();
         public InterfaceDescriptor InterfaceDescriptor { get; private set; } = null;
 
-        public ElementWindow DefaultWindow;
-        public ElementOutput DefaultOutput;
-        public ElementInfo DefaultInfo;
-        public ElementMap DefaultMap;
+        public ControlWindow DefaultWindow;
+        public ControlOutput DefaultOutput;
+        public ControlInfo DefaultInfo;
+        public ControlMap DefaultMap;
 
         private Window _defaultWindow;
+        private MacroHandler _macroHandler;
 
         public DreamInterface(OpenDream openDream) {
             openDream.DisconnectedFromServer += OpenDream_DisconnectedFromServer;
+            _macroHandler = new MacroHandler(openDream);
         }
 
         private void OpenDream_DisconnectedFromServer() {
@@ -64,8 +65,13 @@ namespace OpenDreamClient.Interface {
         public void LoadInterface(InterfaceDescriptor interfaceDescriptor) {
             InterfaceDescriptor = interfaceDescriptor;
 
+            _macroHandler.ClearMacroSets();
+            foreach (MacroSetDescriptor macroSetDescriptor in interfaceDescriptor.MacroSetDescriptors) {
+                _macroHandler.AddMacroSet(new MacroSet(macroSetDescriptor));
+            }
+
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
-                ElementWindow window = new ElementWindow(windowDescriptor);
+                ControlWindow window = new ControlWindow(windowDescriptor);
 
                 Windows.Add(windowDescriptor.Name, window);
                 if (window.IsDefault) {
@@ -73,15 +79,15 @@ namespace OpenDreamClient.Interface {
                 }
             }
 
-            foreach (ElementWindow window in Windows.Values) {
-                window.CreateChildElements();
+            foreach (ControlWindow window in Windows.Values) {
+                window.CreateChildControls();
 
-                foreach (InterfaceElement element in window.ChildElements) {
-                    if (element.IsDefault) {
-                        switch (element) {
-                            case ElementOutput elementOutput: DefaultOutput = elementOutput; break;
-                            case ElementInfo elementInfo: DefaultInfo = elementInfo; break;
-                            case ElementMap elementMap: DefaultMap = elementMap; break;
+                foreach (InterfaceControl control in window.ChildControls) {
+                    if (control.IsDefault) {
+                        switch (control) {
+                            case ControlOutput controlOutput: DefaultOutput = controlOutput; break;
+                            case ControlInfo controlInfo: DefaultInfo = controlInfo; break;
+                            case ControlMap controlMap: DefaultMap = controlMap; break;
                         }
                     }
                 }
@@ -97,7 +103,7 @@ namespace OpenDreamClient.Interface {
             if (split.Length == 2) {
                 string windowName = split[0];
                 string elementName = split[1];
-                ElementWindow window = null;
+                ControlWindow window = null;
 
                 if (Windows.ContainsKey(windowName)) {
                     window = Windows[windowName];
@@ -106,20 +112,20 @@ namespace OpenDreamClient.Interface {
                 }
 
                 if (window != null) {
-                    foreach (InterfaceElement element in window.ChildElements) {
+                    foreach (InterfaceControl element in window.ChildControls) {
                         if (element.Name == elementName) return element;
                     }
                 }
             } else {
                 string elementName = split[0];
 
-                foreach (ElementWindow window in Windows.Values) {
-                    foreach (InterfaceElement element in window.ChildElements) {
+                foreach (ControlWindow window in Windows.Values) {
+                    foreach (InterfaceControl element in window.ChildControls) {
                         if (element.Name == elementName) return element;
                     }
                 }
 
-                if (Windows.TryGetValue(elementName, out ElementWindow windowElement)) return windowElement;
+                if (Windows.TryGetValue(elementName, out ControlWindow windowElement)) return windowElement;
             }
 
             return null;
@@ -152,13 +158,13 @@ namespace OpenDreamClient.Interface {
 
         #region Packet Handlers
         public void HandlePacketOutput(PacketOutput pOutput) {
-            InterfaceElement interfaceElement;
+            InterfaceControl interfaceElement;
             string data = null;
 
             if (pOutput.Control != null) {
                 string[] split = pOutput.Control.Split(":");
 
-                interfaceElement = FindElementWithName(split[0]);
+                interfaceElement = (InterfaceControl)FindElementWithName(split[0]);
                 if (split.Length > 1) data = split[1];
             } else {
                 interfaceElement = DefaultOutput;
@@ -174,11 +180,11 @@ namespace OpenDreamClient.Interface {
                 }
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
                 string htmlFileName;
-                ElementBrowser outputBrowser;
+                ControlBrowser outputBrowser;
 
                 if (pBrowse.Window != null) {
                     htmlFileName = pBrowse.Window;
-                    outputBrowser = FindElementWithName(pBrowse.Window) as ElementBrowser;
+                    outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
                         BrowsePopup popup;
@@ -270,8 +276,8 @@ namespace OpenDreamClient.Interface {
             Window defaultWindow = DefaultWindow.CreateWindow();
 
             defaultWindow.Closing += OnDefaultWindowClosing;
-            defaultWindow.KeyDown += OnDefaultWindowKeyDown;
-            defaultWindow.KeyUp += OnDefaultWindowKeyUp;
+            defaultWindow.KeyDown += _macroHandler.HandleKeyDown;
+            defaultWindow.KeyUp += _macroHandler.HandleKeyUp;
 
             return defaultWindow;
         }
@@ -280,43 +286,6 @@ namespace OpenDreamClient.Interface {
             _defaultWindow = null;
 
             Program.OpenDream.DisconnectFromServer();
-        }
-
-        private void OnDefaultWindowKeyDown(object sender, KeyEventArgs e) {
-            int keyCode = KeyToKeyCode(e.Key);
-
-            if (keyCode != -1) {
-                e.Handled = true;
-
-                Program.OpenDream.Connection.SendPacket(new PacketKeyboardInput(new int[1] { keyCode }, new int[0] { }));
-            }
-        }
-
-        private void OnDefaultWindowKeyUp(object sender, KeyEventArgs e) {
-            int keyCode = KeyToKeyCode(e.Key);
-
-            if (keyCode != -1) {
-                e.Handled = true;
-
-                Program.OpenDream.Connection.SendPacket(new PacketKeyboardInput(new int[0] { }, new int[1] { keyCode }));
-            }
-        }
-
-        private static int KeyToKeyCode(Key key) {
-            int keyCode = key switch {
-                Key.W => 87,
-                Key.A => 65,
-                Key.S => 83,
-                Key.D => 68,
-                Key.Up => 38,
-                Key.Down => 40,
-                Key.Left => 37,
-                Key.Right => 39,
-                Key.T => 84,
-                _ => -1
-            };
-
-            return keyCode;
         }
     }
 }

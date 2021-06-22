@@ -1,39 +1,38 @@
-﻿using OpenDreamClient.Interface.Elements;
+﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamShared.Interface;
 using System;
 using System.Windows;
 
 namespace OpenDreamClient.Interface {
-
     class BrowsePopup {
         public event EventHandler Closed;
 
-        public ElementBrowser Browser;
-        public ElementWindow WindowElement;
+        public ControlBrowser Browser;
+        public ControlWindow WindowElement;
 
         private Window _window;
 
         public BrowsePopup(string name, System.Drawing.Size size, Window ownerWindow) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name, new() {
-                new ElementDescriptorMain("main") {
+                new ControlDescriptorMain("main") {
                     Size = size
                 },
-                new ElementDescriptorBrowser("browser") {
+                new ControlDescriptorBrowser("browser") {
                     Size = size,
                     Anchor1 = new System.Drawing.Point(0, 0),
                     Anchor2 = new System.Drawing.Point(100, 100)
                 }
             });
 
-            WindowElement = new ElementWindow(popupWindowDescriptor);
-            WindowElement.CreateChildElements();
+            WindowElement = new ControlWindow(popupWindowDescriptor);
+            WindowElement.CreateChildControls();
 
             _window = WindowElement.CreateWindow();
             _window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             _window.Owner = ownerWindow;
             _window.Closed += OnWindowClosed;
 
-            Browser = (ElementBrowser)WindowElement.ChildElements[0];
+            Browser = (ControlBrowser)WindowElement.ChildControls[0];
         }
 
         public void Open() {

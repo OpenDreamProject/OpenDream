@@ -52,3 +52,18 @@
 
 	proc/West()
 		Move(get_step(mob, WEST), WEST)
+
+	proc/Northeast()
+		Move(get_step(mob, NORTHEAST), NORTHEAST)
+	
+	proc/Southeast()
+		Move(get_step(mob, SOUTHEAST), SOUTHEAST)
+
+	proc/Southwest()
+		Move(get_step(mob, SOUTHWEST), SOUTHWEST)
+
+	proc/Northwest()
+		Move(get_step(mob, NORTHWEST), NORTHWEST)
+
+	proc/Center()
+		//TODO: walk(usr, 0)

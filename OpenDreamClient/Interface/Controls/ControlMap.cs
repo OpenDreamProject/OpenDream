@@ -11,12 +11,12 @@ using OpenDreamShared.Dream;
 using System.Windows.Media.Imaging;
 using Rectangle = System.Drawing.Rectangle;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementMap : InterfaceElement {
+namespace OpenDreamClient.Interface.Controls {
+    class ControlMap : InterfaceControl {
         private DreamRenderer _dreamRenderer;
         private Grid _grid;
 
-        public ElementMap(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _grid = new Grid() {

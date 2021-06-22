@@ -3,14 +3,13 @@ using OpenDreamShared.Interface;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementWindow : InterfaceElement {
-        public List<InterfaceElement> ChildElements = new();
+namespace OpenDreamClient.Interface.Controls {
+    class ControlWindow : InterfaceControl {
+        public List<InterfaceControl> ChildControls = new();
 
         private WindowDescriptor _windowDescriptor;
         private DockPanel _dockPanel;
@@ -18,7 +17,7 @@ namespace OpenDreamClient.Interface.Elements {
         private Canvas _canvas;
         private List<Window> _openWindows = new();
 
-        public ElementWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor.MainElementDescriptor, null) {
+        public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor.MainControlDescriptor, null) {
             _windowDescriptor = windowDescriptor;
         }
 
@@ -32,7 +31,7 @@ namespace OpenDreamClient.Interface.Elements {
             _canvas = new Canvas() {
                 Margin = new Thickness(0),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
+                VerticalAlignment = VerticalAlignment.Stretch,
             };
             _canvas.SizeChanged += (object sender, SizeChangedEventArgs e) => UpdateAnchors();
             DockPanel.SetDock(_canvas, Dock.Bottom);
@@ -44,21 +43,21 @@ namespace OpenDreamClient.Interface.Elements {
         public override void UpdateElementDescriptor() {
             // Don't call base.UpdateElementDescriptor();
 
-            ElementDescriptorMain elementDescriptor = (ElementDescriptorMain)_elementDescriptor;
+            ControlDescriptorMain controlDescriptor = (ControlDescriptorMain)_elementDescriptor;
 
-            if (elementDescriptor.Menu != null) {
+            if (controlDescriptor.Menu != null) {
                 _menu.Visibility = Visibility.Visible;
 
                 InterfaceDescriptor interfaceDescriptor = Program.OpenDream.Interface.InterfaceDescriptor;
 
-                interfaceDescriptor.MenuDescriptors.TryGetValue(elementDescriptor.Menu, out MenuDescriptor menuDescriptor);
+                interfaceDescriptor.MenuDescriptors.TryGetValue(controlDescriptor.Menu, out MenuDescriptor menuDescriptor);
                 CreateMenu(menuDescriptor);
             } else {
                 _menu.Visibility = Visibility.Collapsed;
             }
 
-            if (elementDescriptor.Icon != null) {
-                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(elementDescriptor.Icon, iconResource => {
+            if (controlDescriptor.Icon != null) {
+                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(controlDescriptor.Icon, iconResource => {
                     SetIcon(iconResource.CreateWPFImageSource());
                 });
             } else {
@@ -67,28 +66,28 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public override void Shutdown() {
-            foreach (InterfaceElement element in ChildElements) {
-                element.Shutdown();
+            foreach (InterfaceControl control in ChildControls) {
+                control.Shutdown();
             }
         }
 
-        public void CreateChildElements() {
-            foreach (WindowElementDescriptor elementDescriptor in _windowDescriptor.ElementDescriptors) {
-                if (elementDescriptor == _windowDescriptor.MainElementDescriptor) continue;
+        public void CreateChildControls() {
+            foreach (ControlDescriptor controlDescriptor in _windowDescriptor.ControlDescriptors) {
+                if (controlDescriptor == _windowDescriptor.MainControlDescriptor) continue;
 
-                InterfaceElement element = elementDescriptor switch {
-                    ElementDescriptorChild => new ElementChild(elementDescriptor, this),
-                    ElementDescriptorInput => new ElementInput(elementDescriptor, this),
-                    ElementDescriptorButton => new ElementButton(elementDescriptor, this),
-                    ElementDescriptorOutput => new ElementOutput(elementDescriptor, this),
-                    ElementDescriptorInfo => new ElementInfo(elementDescriptor, this),
-                    ElementDescriptorMap => new ElementMap(elementDescriptor, this),
-                    ElementDescriptorBrowser => new ElementBrowser(elementDescriptor, this),
+                InterfaceControl control = controlDescriptor switch {
+                    ControlDescriptorChild => new ControlChild(controlDescriptor, this),
+                    ControlDescriptorInput => new ControlInput(controlDescriptor, this),
+                    ControlDescriptorButton => new ControlButton(controlDescriptor, this),
+                    ControlDescriptorOutput => new ControlOutput(controlDescriptor, this),
+                    ControlDescriptorInfo => new ControlInfo(controlDescriptor, this),
+                    ControlDescriptorMap => new ControlMap(controlDescriptor, this),
+                    ControlDescriptorBrowser => new ControlBrowser(controlDescriptor, this),
                     _ => throw new Exception("Invalid descriptor")
                 };
 
-                ChildElements.Add(element);
-                _canvas.Children.Add(element.UIElement);
+                ChildControls.Add(control);
+                _canvas.Children.Add(control.UIElement);
             }
         }
 
@@ -96,8 +95,8 @@ namespace OpenDreamClient.Interface.Elements {
             Window window = new Window();
 
             window.Content = UIElement;
-            window.Width = _elementDescriptor.Size?.Width ?? 640;
-            window.Height = _elementDescriptor.Size?.Height ?? 440;
+            window.Width = _controlDescriptor.Size?.Width ?? 640;
+            window.Height = _controlDescriptor.Size?.Height ?? 440;
             window.Closing += (object sender, CancelEventArgs e) => {
                 window.Owner = null; //Without this, the owning window ends up minimized
                 _openWindows.Remove(window);
@@ -108,29 +107,29 @@ namespace OpenDreamClient.Interface.Elements {
         }
 
         public void UpdateAnchors() {
-            foreach (InterfaceElement element in ChildElements) {
-                FrameworkElement control = element.UIElement;
+            foreach (InterfaceControl control in ChildControls) {
+                FrameworkElement element = control.UIElement;
 
-                if (element.Anchor1.HasValue) {
-                    System.Drawing.Point elementPos = element.Pos.GetValueOrDefault();
+                if (control.Anchor1.HasValue) {
+                    System.Drawing.Point elementPos = control.Pos.GetValueOrDefault();
                     System.Drawing.Size windowSize = Size.GetValueOrDefault();
 
-                    double offset1X = elementPos.X - (windowSize.Width * element.Anchor1.Value.X / 100);
-                    double offset1Y = elementPos.Y - (windowSize.Height * element.Anchor1.Value.Y / 100);
-                    double left = (_canvas.ActualWidth * element.Anchor1.Value.X / 100) + offset1X;
-                    double top = (_canvas.ActualHeight * element.Anchor1.Value.Y / 100) + offset1Y;
-                    Canvas.SetLeft(control, Math.Max(left, 0));
-                    Canvas.SetTop(control, Math.Max(top, 0));
+                    double offset1X = elementPos.X - (windowSize.Width * control.Anchor1.Value.X / 100);
+                    double offset1Y = elementPos.Y - (windowSize.Height * control.Anchor1.Value.Y / 100);
+                    double left = (_canvas.ActualWidth * control.Anchor1.Value.X / 100) + offset1X;
+                    double top = (_canvas.ActualHeight * control.Anchor1.Value.Y / 100) + offset1Y;
+                    Canvas.SetLeft(element, Math.Max(left, 0));
+                    Canvas.SetTop(element, Math.Max(top, 0));
 
-                    if (element.Anchor2.HasValue) {
-                        System.Drawing.Size elementSize = element.Size.GetValueOrDefault();
+                    if (control.Anchor2.HasValue) {
+                        System.Drawing.Size elementSize = control.Size.GetValueOrDefault();
 
-                        double offset2X = (elementPos.X + elementSize.Width) - (windowSize.Width * element.Anchor2.Value.X / 100);
-                        double offset2Y = (elementPos.Y + elementSize.Height) - (windowSize.Height * element.Anchor2.Value.Y / 100);
-                        double width = (_canvas.ActualWidth * element.Anchor2.Value.X / 100) + offset2X - left;
-                        double height = (_canvas.ActualHeight * element.Anchor2.Value.Y / 100) + offset2Y - top;
-                        control.Width = Math.Max(width, 0);
-                        control.Height = Math.Max(height, 0);
+                        double offset2X = (elementPos.X + elementSize.Width) - (windowSize.Width * control.Anchor2.Value.X / 100);
+                        double offset2Y = (elementPos.Y + elementSize.Height) - (windowSize.Height * control.Anchor2.Value.Y / 100);
+                        double width = (_canvas.ActualWidth * control.Anchor2.Value.X / 100) + offset2X - left;
+                        double height = (_canvas.ActualHeight * control.Anchor2.Value.Y / 100) + offset2Y - top;
+                        element.Width = Math.Max(width, 0);
+                        element.Height = Math.Max(height, 0);
                     }
                 }
             }

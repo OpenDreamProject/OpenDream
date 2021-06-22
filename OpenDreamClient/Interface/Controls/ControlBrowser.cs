@@ -7,15 +7,15 @@ using OpenDreamShared.Net.Packets;
 using System.Web;
 using System.Windows;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementBrowser : InterfaceElement {
+namespace OpenDreamClient.Interface.Controls {
+    class ControlBrowser : InterfaceControl {
         private WebView2 _webView;
         private DockPanel _dockPanel;
         private Label _loadingLabel;
         private string _fileSource;
         private bool _webViewReady;
 
-        public ElementBrowser(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _dockPanel = new DockPanel();

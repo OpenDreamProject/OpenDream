@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace OpenDreamClient.Interface.Elements {
+namespace OpenDreamClient.Interface.Controls {
     class InfoPanel : TabItem {
         public string PanelName { get; private set; }
 
@@ -73,12 +73,12 @@ namespace OpenDreamClient.Interface.Elements {
         }
     }
 
-    class ElementInfo : InterfaceElement {
+    class ControlInfo : InterfaceControl {
         private TabControl _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        public ElementInfo(WindowElementDescriptor elementDescriptor, ElementWindow window) : base(elementDescriptor, window) { }
+        public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override FrameworkElement CreateUIElement() {
             _tabControl = new TabControl() {

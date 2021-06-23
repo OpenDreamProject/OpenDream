@@ -214,14 +214,14 @@ namespace OpenDreamClient.Interface {
 
         public void HandlePacketPrompt(PacketPrompt pPrompt) {
             PromptWindow prompt = null;
-            int promptTypeBitflag = (int)pPrompt.Types;
+            bool canCancel = pPrompt.Types.HasFlag(DMValueType.Null);
 
-            if ((promptTypeBitflag & (int)DMValueType.Text) != 0) {
-                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
-            } else if ((promptTypeBitflag & (int)DMValueType.Num) != 0) {
-                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
-            } else if ((promptTypeBitflag & (int)DMValueType.Message) != 0) {
-                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue);
+            if (pPrompt.Types.HasFlag(DMValueType.Text)) {
+                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if (pPrompt.Types.HasFlag(DMValueType.Num)) {
+                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if (pPrompt.Types.HasFlag(DMValueType.Message)) {
+                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
             }
 
             if (prompt != null) {

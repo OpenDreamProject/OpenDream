@@ -160,18 +160,13 @@ namespace OpenDreamRuntime {
         }
 
         public void SetOutputStatPanel(string name) {
+            if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
+
             _outputStatPanel = name;
         }
 
         public void AddStatPanelLine(string text) {
-            List<string> statPanelLines;
-            if (!_statPanels.TryGetValue(_outputStatPanel, out statPanelLines)) {
-                statPanelLines = new List<string>();
-
-                _statPanels.Add(_outputStatPanel, statPanelLines);
-            }
-
-            statPanelLines.Add(text);
+            _statPanels[_outputStatPanel].Add(text);
         }
 
         public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {

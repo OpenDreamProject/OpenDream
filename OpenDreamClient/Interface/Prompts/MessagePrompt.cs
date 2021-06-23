@@ -1,13 +1,12 @@
 ﻿using System;
 using OpenDreamShared.Dream.Procs;
-using System.Windows;
 using System.Windows.Controls;
 
 namespace OpenDreamClient.Interface.Prompts {
-    class MessagePrompt : PromptWindow {
-        public MessagePrompt(int promptId, String title, String message, String defaultValue) : base(promptId, title, message, defaultValue) { }
+    class MessagePrompt : InputWindow {
+        public MessagePrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message, defaultValue, canCancel) { }
 
-        protected override Control CreatePromptControl(String defaultValue) {
+        protected override Control CreateInputControl(String defaultValue) {
             return new TextBox {
                 MinHeight = 100,
                 MaxWidth = 500,
@@ -19,8 +18,8 @@ namespace OpenDreamClient.Interface.Prompts {
             };
         }
 
-        protected override void OkButton_Click(object sender, RoutedEventArgs e) {
-            FinishPrompt(DMValueType.Message, ((TextBox)PromptControl).Text);
+        protected override void OkButtonClicked() {
+            FinishPrompt(DMValueType.Message, ((TextBox)_inputControl).Text);
         }
     }
 }

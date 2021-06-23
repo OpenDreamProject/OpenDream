@@ -1,4 +1,6 @@
-﻿namespace OpenDreamShared.Dream.Procs {
+﻿using System;
+
+namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,
@@ -95,6 +97,7 @@
         Ref = 0x1
     }
 
+    [Flags]
     public enum DMValueType {
         Anything = 0x0,
         Null = 0x1,

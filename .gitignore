@@ -25,6 +25,13 @@
 /TestGame/environment.json
 /OpenDreamRuntime.Tests/DMProject/environment.json
 
+# Dream Maker output
+*.dmb
+*.int
+*.lk
+*.rsc
+*.rsc.lk
+
 # JetBrains Rider
 .idea/
 *.sln.iml

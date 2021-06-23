@@ -109,6 +109,7 @@ namespace OpenDreamShared.Dream.Procs {
         Message = 0x40,
         Area = 0x80,
         Color = 0x100,
-        File = 0x200
+        File = 0x200,
+        Password = 0x400,
     }
 }

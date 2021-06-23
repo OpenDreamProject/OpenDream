@@ -219,9 +219,9 @@ namespace OpenDreamRuntime {
 
                 DreamValue value = pPromptResponse.Type switch {
                     DMValueType.Null => DreamValue.Null,
-                    DMValueType.Text => new DreamValue((string)pPromptResponse.Value),
                     DMValueType.Num => new DreamValue((int)pPromptResponse.Value),
-                    DMValueType.Message => new DreamValue((string)pPromptResponse.Value),
+                    DMValueType.Color or DMValueType.Text or DMValueType.Message or DMValueType.Password =>
+                        new DreamValue((string)pPromptResponse.Value),
                     _ => throw new Exception("Invalid prompt response '" + pPromptResponse.Type + "'")
                 };
 

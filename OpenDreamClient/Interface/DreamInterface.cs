@@ -222,6 +222,10 @@ namespace OpenDreamClient.Interface {
                 prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
             } else if (pPrompt.Types.HasFlag(DMValueType.Message)) {
                 prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if (pPrompt.Types.HasFlag(DMValueType.Color)) {
+                prompt = new ColorPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if (pPrompt.Types.HasFlag(DMValueType.Password)) {
+                prompt = new PasswordPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
             }
 
             if (prompt != null) {

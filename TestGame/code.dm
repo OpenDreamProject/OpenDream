@@ -41,13 +41,19 @@
 		usr << "The total shown on the dice is: [result]"
 
 	verb/clamp_value()
-	    var/out1 = clamp(10, 1, 5)
-	    usr << "The output should be 5: [out1]"
-	    var/out2 = clamp(-10, 1, 5)
-	    usr << "The output should be 1: [out2]"
-	    var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
-	    for(var/item in out3)
-	    	usr << "The output should be between 1 and 10: [item]"
+		var/out1 = clamp(10, 1, 5)
+		usr << "The output should be 5: [out1]"
+		var/out2 = clamp(-10, 1, 5)
+		usr << "The output should be 1: [out2]"
+		var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
+		for(var/item in out3)
+			usr << "The output should be between 1 and 10: [item]"
+
+	verb/pick_color(color as color)
+		usr << color
+
+	verb/pick_password(password as password)
+		usr << password
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")

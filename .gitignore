@@ -22,20 +22,15 @@
 /DMCompiler/obj
 /DMCompiler/Properties
 /packages/System.Net.Sockets.4.3.0
-
 /TestGame/environment.json
-/TestGame/*.dmb
-/TestGame/*.int
-/TestGame/*.lk
-/TestGame/*.rsc
-/TestGame/*.rsc.lk
-
 /OpenDreamRuntime.Tests/DMProject/environment.json
-/OpenDreamRuntime.Tests/DMProject/*.dmb
-/OpenDreamRuntime.Tests/DMProject/*.int
-/OpenDreamRuntime.Tests/DMProject/*.lk
-/OpenDreamRuntime.Tests/DMProject/*.rsc
-/OpenDreamRuntime.Tests/DMProject/*.rsc.lk
+
+# Dream Maker output
+*.dmb
+*.int
+*.lk
+*.rsc
+*.rsc.lk
 
 # JetBrains Rider
 .idea/

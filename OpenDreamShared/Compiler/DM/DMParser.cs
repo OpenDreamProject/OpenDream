@@ -1607,6 +1607,7 @@ namespace OpenDreamShared.Compiler.DM {
                                         preprocToken.Column = constantToken.Column;
                                         preprocTokens.Add(preprocToken);
                                     }
+                                    preprocTokens.Add(new Token(TokenType.EndOfFile, "\0", constantToken.SourceFile, constantToken.Line, constantToken.Column, null));
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
                                     DMParser expressionParser = new DMParser(expressionLexer);

@@ -35,7 +35,7 @@
 	verb/md5_ckey()
 		var/hash = md5(ckey)
 		usr << "The md5 hash of your ckey is: [hash]"
-	    
+
 	verb/roll_dice(dice as text)
 		var/result = roll(dice)
 		usr << "The total shown on the dice is: [result]"
@@ -48,7 +48,7 @@
 	    var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
 	    for(var/item in out3)
 	    	usr << "The output should be between 1 and 10: [item]"
-	
+
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
 

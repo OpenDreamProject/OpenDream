@@ -1,86 +1,48 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace OpenDreamShared.Interface {
     public class InterfaceDescriptor {
         public List<WindowDescriptor> WindowDescriptors;
+        public List<MacroSetDescriptor> MacroSetDescriptors;
+        public Dictionary<string, MenuDescriptor> MenuDescriptors;
 
-        public InterfaceDescriptor(List<WindowDescriptor> windowDescriptors) {
+        public InterfaceDescriptor(List<WindowDescriptor> windowDescriptors, List<MacroSetDescriptor> macroSetDescriptors, Dictionary<string, MenuDescriptor> menuDescriptors) {
             WindowDescriptors = windowDescriptors;
-        }
-    }
-
-    public class WindowDescriptor {
-        public string Name;
-        public List<ElementDescriptor> ElementDescriptors;
-        public ElementDescriptorMain MainElementDescriptor { get; private set; } = null;
-
-        public WindowDescriptor(string name, List<ElementDescriptor> elementDescriptors) {
-            Name = name;
-            ElementDescriptors = elementDescriptors;
-
-            foreach (ElementDescriptor elementDescriptor in ElementDescriptors) {
-                if (elementDescriptor is ElementDescriptorMain) {
-                    MainElementDescriptor = (ElementDescriptorMain)elementDescriptor;
-                }
-            }
+            MacroSetDescriptors = macroSetDescriptors;
+            MenuDescriptors = menuDescriptors;
         }
     }
 
     public class ElementDescriptor {
+        [InterfaceAttribute("name")]
         public string Name;
 
-        public Point? Pos = null;
-        public Size? Size = null;
-        public Point? Anchor1 = null;
-        public Point? Anchor2 = null;
-        public Color? BackgroundColor = null;
-        public bool? IsVisible = null;
-
-        public bool IsDefault = false;
+        private Dictionary<string, FieldInfo> _attributeNameToField = new();
 
         public ElementDescriptor(string name) {
             Name = name;
+
+            foreach (FieldInfo field in GetType().GetFields()) {
+                InterfaceAttributeAttribute attribute = field.GetCustomAttribute<InterfaceAttributeAttribute>();
+
+                if (attribute != null) _attributeNameToField.Add(attribute.Name, field);
+            }
         }
-    }
 
-    public class ElementDescriptorMain : ElementDescriptor {
-        public bool IsPane = false;
+        public bool HasAttribute(string name) {
+            return _attributeNameToField.ContainsKey(name);
+        }
 
-        public ElementDescriptorMain(string name) : base(name) { }
-    }
+        public void SetAttribute(string name, object value) {
+            FieldInfo field = _attributeNameToField[name];
 
-    public class ElementDescriptorChild : ElementDescriptor {
-        public string Left = null;
-        public string Right = null;
-        public bool IsVert = false;
-
-        public ElementDescriptorChild(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorInput : ElementDescriptor {
-        public ElementDescriptorInput(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorButton : ElementDescriptor {
-        public string Text = null;
-
-        public ElementDescriptorButton(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorOutput : ElementDescriptor {
-        public ElementDescriptorOutput(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorInfo : ElementDescriptor {
-        public ElementDescriptorInfo(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorMap : ElementDescriptor {
-        public ElementDescriptorMap(string name) : base(name) { }
-    }
-
-    public class ElementDescriptorBrowser : ElementDescriptor {
-        public ElementDescriptorBrowser(string name) : base(name) { }
+            try {
+                field.SetValue(this, value);
+            } catch (ArgumentException) {
+                throw new Exception("Cannot set attribute '" + name + "' to " + value);
+            }
+        }
     }
 }

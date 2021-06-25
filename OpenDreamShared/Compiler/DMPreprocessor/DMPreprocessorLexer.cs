@@ -31,20 +31,20 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     case '>':
                     case '<':
                     case '^':
-                    case ':':
                     case ';':
-                    case '?':
                     case '+':
                     case '-':
                     case '*':
                     case '~':
                     case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
+                    case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
                     case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
+                    case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
                     case '/': {
                         if (Advance() == '/') {
                             while (Advance() != '\n' && !AtEndOfSource) {
@@ -168,7 +168,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 }
 
                                 c = next;
-                                if (IsNumeric(c) || c == '.' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
+                                if (IsHex(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
                                     textBuilder.Append(c);
                                 } else {
                                     break;

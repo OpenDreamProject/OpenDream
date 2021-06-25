@@ -6,6 +6,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
             DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arccos);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_arcsin);
@@ -62,6 +63,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_roll);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_shutdown);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sin);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
@@ -85,6 +87,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_viewers);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
             DreamObjectDefinition list = objectTree.GetObjectDefinitionFromPath(DreamPath.List);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Add);

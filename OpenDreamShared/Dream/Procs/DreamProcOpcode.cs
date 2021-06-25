@@ -1,4 +1,6 @@
-﻿namespace OpenDreamShared.Dream.Procs {
+﻿using System;
+
+namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         GetIdentifier = 0x2,
@@ -76,7 +78,13 @@
         LocateCoord = 0x4A,
         Locate = 0x4B,
         IsNull = 0x4C,
-        Spawn = 0x4D
+        Spawn = 0x4D,
+        DereferenceConditional = 0x4E,
+        DereferenceProcConditional = 0x4F,
+        JumpIfNullIdentifier = 0x50,
+        Pop = 0x51,
+        PushCopy = 0x52,
+        IsSaved = 0x53
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -89,6 +97,7 @@
         Ref = 0x1
     }
 
+    [Flags]
     public enum DMValueType {
         Anything = 0x0,
         Null = 0x1,

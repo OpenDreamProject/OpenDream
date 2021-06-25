@@ -6,10 +6,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             : base(runtime)
 
         {}
+
+        public override bool ShouldCallNew => true;
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-
-            dreamObject.SpawnProc("New", creationArguments);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
@@ -91,6 +92,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             return a;
+        }
+
+        public override DreamValue OperatorOr(DreamValue a, DreamValue b) {
+            DreamList list = a.GetValueAsDreamList();
+
+            if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
+                list = list.Union(bList);
+            } else {                                                // List | x
+                list = list.CreateCopy();
+                list.AddValue(b);
+            }
+
+            return new DreamValue(list);
         }
 
         public override DreamValue OperatorCombine(DreamValue a, DreamValue b) {

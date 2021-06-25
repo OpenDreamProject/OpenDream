@@ -79,6 +79,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 newAppearance.Invisibility = variableValue.GetValueAsInteger();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
+            } else if (variableName == "mouse_opacity") {
+                ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
+
+                newAppearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "color") {
                 string color;
                 if (!variableValue.TryGetValueAsString(out color)) {
@@ -115,7 +120,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList overlayList;
                 if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
-                    overlayList = new DreamList(Runtime);
+                    overlayList = DreamList.Create(Runtime);
                 }
 
                 overlayList.ValueAssigned += OverlayValueAssigned;
@@ -131,7 +136,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList underlayList;
                 if (!variableValue.TryGetValueAsDreamList(out underlayList)) {
-                    underlayList = new DreamList(Runtime);
+                    underlayList = DreamList.Create(Runtime);
                 }
 
                 underlayList.ValueAssigned += UnderlayValueAssigned;
@@ -142,7 +147,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "transform") {
-                DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix, new DreamProcArguments(new() { variableValue })); //Clone the matrix
+                // Clone the matrix
+                DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix);
+                matrix.InitSpawn(new DreamProcArguments(new() { variableValue }));
 
                 return new DreamValue(matrix);
             } else {
@@ -183,6 +190,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
                 appearance.Invisibility = invisibility;
+            }
+
+            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
+                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }
 
             if (atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX)) {

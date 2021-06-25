@@ -23,6 +23,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         }
 
         public void IncludeFile(string includePath, string file) {
+            file = file.Replace('\\', Path.DirectorySeparatorChar);
             string source = File.ReadAllText(Path.Combine(includePath, file));
             source = source.Replace("\r\n", "\n");
             source += '\n';
@@ -218,6 +219,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Punctuator:
                     case TokenType.DM_Preproc_Punctuator_Comma:
                     case TokenType.DM_Preproc_Punctuator_Period:
+                    case TokenType.DM_Preproc_Punctuator_Colon:
+                    case TokenType.DM_Preproc_Punctuator_Question:
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:

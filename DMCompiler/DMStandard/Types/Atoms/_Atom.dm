@@ -26,6 +26,7 @@
 	var/alpha = 255
 	var/color = "#FFFFFF"
 	var/invisibility = 0
+	var/mouse_opacity = 1
 	var/luminosity = 0
 	var/opacity = 0
 	var/matrix/transform

@@ -13,6 +13,7 @@ namespace OpenDreamShared.Dream {
 
         public class Client {
             public UInt32 EyeID = UInt32.MaxValue;
+            public ClientPerspective Perspective = ClientPerspective.Mob;
             public List<UInt32> ScreenObjects = new();
         }
 
@@ -65,13 +66,8 @@ namespace OpenDreamShared.Dream {
                 DreamDeltaState.AtomDelta atomDelta = atomDeltaPair.Value;
                 Atom atom = Atoms[atomID];
 
-                if (atomDelta.NewIconAppearanceID.HasValue) {
-                    atom.IconAppearanceID = atomDelta.NewIconAppearanceID.Value;
-                }
-
-                if (atomDelta.ScreenLocation.HasValue) {
-                    atom.ScreenLocation = atomDelta.ScreenLocation.Value;
-                }
+                atom.IconAppearanceID = atomDelta.NewIconAppearanceID ?? atom.IconAppearanceID;
+                atom.ScreenLocation = atomDelta.ScreenLocation ?? atom.ScreenLocation;
             }
 
             foreach (KeyValuePair<(int X, int Y, int Z), UInt32> turfDelta in deltaState.TurfDeltas) {
@@ -90,9 +86,8 @@ namespace OpenDreamShared.Dream {
                     Clients[clientDelta.Key] = client;
                 }
 
-                if (clientDelta.Value.NewEyeID.HasValue) {
-                    client.EyeID = clientDelta.Value.NewEyeID.Value;
-                }
+                client.EyeID = clientDelta.Value.NewEyeID ?? client.EyeID;
+                client.Perspective = clientDelta.Value.NewPerspective ?? client.Perspective;
 
                 if (clientDelta.Value.ScreenObjectAdditions != null) {
                     foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {

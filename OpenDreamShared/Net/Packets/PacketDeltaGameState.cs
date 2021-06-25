@@ -24,7 +24,8 @@ namespace OpenDreamShared.Net.Packets {
             End = 0x0,
             Eye = 0x1,
             ScreenObjectAdditions = 0x2,
-            ScreenObjectRemovals = 0x3
+            ScreenObjectRemovals = 0x3,
+            Perspective = 0x4
         }
 
         public PacketID PacketID => PacketID.DeltaGameState;
@@ -223,39 +224,52 @@ namespace OpenDreamShared.Net.Packets {
             do {
                 valueID = (ClientValueID)stream.ReadByte();
 
-                if (valueID == ClientValueID.Eye) {
-                    ClientDelta.NewEyeID = stream.ReadUInt32();
-                } else if (valueID == ClientValueID.ScreenObjectAdditions) {
-                    UInt32 screenObjectAdditionCount = stream.ReadUInt32();
+                switch (valueID) {
+                    case ClientValueID.Eye: ClientDelta.NewEyeID = stream.ReadUInt32(); break;
+                    case ClientValueID.Perspective: ClientDelta.NewPerspective = (ClientPerspective)stream.ReadByte(); break;
+                    case ClientValueID.ScreenObjectAdditions: {
+                        UInt32 screenObjectAdditionCount = stream.ReadUInt32();
 
-                    ClientDelta.ScreenObjectAdditions = new List<UInt32>();
-                    for (int i = 0; i < screenObjectAdditionCount; i++) {
-                        ClientDelta.ScreenObjectAdditions.Add(stream.ReadUInt32());
-                    }
-                } else if (valueID == ClientValueID.ScreenObjectRemovals) {
-                    UInt32 screenObjectRemovalCount = stream.ReadUInt32();
+                        ClientDelta.ScreenObjectAdditions = new List<UInt32>();
+                        for (int i = 0; i < screenObjectAdditionCount; i++) {
+                            ClientDelta.ScreenObjectAdditions.Add(stream.ReadUInt32());
+                        }
 
-                    ClientDelta.ScreenObjectRemovals = new List<UInt32>();
-                    for (int i = 0; i < screenObjectRemovalCount; i++) {
-                        ClientDelta.ScreenObjectRemovals.Add(stream.ReadUInt32());
+                        break;
                     }
-                } else if (valueID != ClientValueID.End) {
-                    throw new Exception("Invalid client value ID in delta game state packet (" + valueID.ToString() + ")");
+                    case ClientValueID.ScreenObjectRemovals: {
+                        UInt32 screenObjectRemovalCount = stream.ReadUInt32();
+
+                        ClientDelta.ScreenObjectRemovals = new List<UInt32>();
+                        for (int i = 0; i < screenObjectRemovalCount; i++) {
+                            ClientDelta.ScreenObjectRemovals.Add(stream.ReadUInt32());
+                        }
+
+                        break;
+                    }
+                    case ClientValueID.End: break;
+                    default: throw new Exception("Invalid client value ID in delta game state packet (" + valueID.ToString() + ")");
                 }
             } while (valueID != ClientValueID.End);
         }
 
         private void WriteClientSection(PacketStream stream) {
             bool newEye = ClientDelta.NewEyeID.HasValue;
+            bool newPerspective = ClientDelta.NewPerspective.HasValue;
             bool screenAdditions = (ClientDelta.ScreenObjectAdditions != null && ClientDelta.ScreenObjectAdditions.Count > 0);
             bool screenRemovals = (ClientDelta.ScreenObjectRemovals != null && ClientDelta.ScreenObjectRemovals.Count > 0);
 
-            if (newEye || screenAdditions || screenRemovals) {
+            if (newEye || newPerspective || screenAdditions || screenRemovals) {
                 stream.WriteByte((byte)SectionID.Client);
 
                 if (newEye) {
                     stream.WriteByte((byte)ClientValueID.Eye);
                     stream.WriteUInt32(ClientDelta.NewEyeID.Value);
+                }
+
+                if (newPerspective) {
+                    stream.WriteByte((byte)ClientValueID.Perspective);
+                    stream.WriteByte((byte)ClientDelta.NewPerspective.Value);
                 }
 
                 if (screenAdditions) {

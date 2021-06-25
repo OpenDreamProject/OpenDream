@@ -1,11 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFLexer : TextLexer {
-        public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
-            { "true", TokenType.DMF_True },
-            { "false", TokenType.DMF_False },
+        public static readonly List<string> ValidAttributes = new() {
+            "type",
+            "pos",
+            "size",
+            "anchor1",
+            "anchor2",
+            "is-default",
+            "is-pane",
+            "is-vert",
+            "is-visible",
+            "is-disabled",
+            "left",
+            "right",
+            "name",
+            "command",
+            "category",
+            "saved-params",
+            "background-color",
+            "border",
+            "button-type",
+            "font-family",
+            "font-size",
+            "zoom-mode",
+            "text-color",
+            "auto-format",
+            "statusbar",
+            "right-click",
+            "icon",
+            "text"
+        };
+
+        private static Dictionary<string, TokenType> _keywords = new() {
             { "macro", TokenType.DMF_Macro },
             { "menu", TokenType.DMF_Menu },
             { "window", TokenType.DMF_Window },
@@ -18,34 +49,6 @@ namespace OpenDreamShared.Compiler.DMF {
             { "INPUT", TokenType.DMF_Input },
             { "BUTTON", TokenType.DMF_Button },
             { "BROWSER", TokenType.DMF_Browser },
-            { "type", TokenType.DMF_Type },
-            { "pos", TokenType.DMF_Pos },
-            { "size", TokenType.DMF_Size },
-            { "anchor1", TokenType.DMF_Anchor1 },
-            { "anchor2", TokenType.DMF_Anchor2 },
-            { "is-default", TokenType.DMF_IsDefault },
-            { "is-pane", TokenType.DMF_IsPane },
-            { "is-vert", TokenType.DMF_IsVert },
-            { "is-visible", TokenType.DMF_IsVisible },
-            { "is-disabled", TokenType.DMF_IsDisabled },
-            { "left", TokenType.DMF_Left },
-            { "right", TokenType.DMF_Right },
-            { "name", TokenType.DMF_Name },
-            { "command", TokenType.DMF_Command },
-            { "category", TokenType.DMF_Category },
-            { "saved-params", TokenType.DMF_SavedParams },
-            { "background-color", TokenType.DMF_BackgroundColor },
-            { "border", TokenType.DMF_Border },
-            { "button-type", TokenType.DMF_ButtonType },
-            { "font-family", TokenType.DMF_FontFamily },
-            { "font-size", TokenType.DMF_FontSize },
-            { "zoom-mode", TokenType.DMF_ZoomMode },
-            { "text-color", TokenType.DMF_TextColor },
-            { "auto-format", TokenType.DMF_AutoFormat },
-            { "statusbar", TokenType.DMF_StatusBar },
-            { "right-click", TokenType.DMF_RightClick },
-            { "icon", TokenType.DMF_Icon },
-            { "text", TokenType.DMF_Text },
             { "sunken", TokenType.DMF_Sunken },
             { "pushbox", TokenType.DMF_PushBox },
             { "distort", TokenType.DMF_Distort },
@@ -68,32 +71,26 @@ namespace OpenDreamShared.Compiler.DMF {
                         break;
                     }
                     case '=': Advance(); token = CreateToken(TokenType.DMF_Equals, c); break;
-                    case 'x': Advance(); token = CreateToken(TokenType.DMF_X, c); break;
-                    case ',': Advance(); token = CreateToken(TokenType.DMF_Comma, c); break;
                     case '\'':
                     case '"': {
                         string text = c.ToString();
 
-                        do {
+                        while (Advance() != c && !AtEndOfSource) {
                             if (GetCurrent() == '\\') {
                                 Advance();
 
-                                if (GetCurrent() == '"' || GetCurrent() == '\\') {
-                                    Advance();
-
-                                    text += GetCurrent();
-                                } else if (GetCurrent() == 't') {
-                                    Advance();
-
-                                    text += '\t';
-                                } else {
-                                    throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
+                                switch (GetCurrent()) {
+                                    case '"':
+                                    case '\\': text += GetCurrent(); break;
+                                    case 't': text += '\t'; break;
+                                    default: throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
                                 }
                             } else {
-                                text += Advance();
+                                text += GetCurrent();
                             }
-                        } while (GetCurrent() != c && !AtEndOfSource);
+                        } 
                         if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
+                        text += c;
                         Advance();
 
                         if (c == '"') token = CreateToken(TokenType.DMF_String, text, text.Substring(1, text.Length - 2));
@@ -110,7 +107,7 @@ namespace OpenDreamShared.Compiler.DMF {
                         }
 
                         Advance();
-                        token = CreateToken(TokenType.DMF_Color, text, Convert.ToInt32(text.Substring(1), 16));
+                        token = CreateToken(TokenType.DMF_Color, text, Color.FromArgb(Convert.ToInt32(text.Substring(1), 16)));
                         break;
                     }
                     default: {
@@ -119,27 +116,63 @@ namespace OpenDreamShared.Compiler.DMF {
 
                             while ((IsAlphanumeric(Advance()) || GetCurrent() == '-') && !AtEndOfSource) text += GetCurrent();
 
-                            if (Keywords.ContainsKey(text)) {
-                                token = CreateToken(Keywords[text], text);
+                            if (_keywords.TryGetValue(text, out TokenType keyword)) {
+                                token = CreateToken(keyword, text);
+                            } else if (text == "true") {
+                                token = CreateToken(TokenType.DMF_Boolean, text, true);
+                            } else if (text == "false") {
+                                token = CreateToken(TokenType.DMF_Boolean, text, false);
+                            } else if (ValidAttributes.Contains(text)) {
+                                token = CreateToken(TokenType.DMF_Attribute, text);
                             } else {
                                 throw new Exception("Invalid keyword '" + text + "'");
                             }
-                        } else if (IsNumeric(c) || c == '-') {
-                            string text = c.ToString();
 
-                            while (IsNumeric(Advance()) && !AtEndOfSource) text += GetCurrent();
-
-                            token = CreateToken(TokenType.DMF_Integer, text, int.Parse(text));
-                        } else {
-                            Advance();
+                            break;
                         }
 
+                        string number = Number();
+                        if (number != null) {
+                            if (GetCurrent() == 'x') {
+                                Advance();
+
+                                string number2 = Number();
+                                if (number2 == null) token = CreateToken(TokenType.Error, "Expected another number");
+                                else token = CreateToken(TokenType.DMF_Dimension, number + "x" + number2, new Size(int.Parse(number), int.Parse(number2)));
+                            } else if (GetCurrent() == ',') {
+                                Advance();
+
+                                string number2 = Number();
+                                if (number2 == null) token = CreateToken(TokenType.Error, "Expected another number");
+                                else token = CreateToken(TokenType.DMF_Position, number + "," + number2, new Point(int.Parse(number), int.Parse(number2)));
+                            } else {
+                                token = CreateToken(TokenType.DMF_Integer, number, int.Parse(number));
+                            }
+
+                            break;
+                        }
+
+                        Advance();
                         break;
                     }
                 }
             }
 
             return token;
+        }
+
+        private string Number() {
+            char c = GetCurrent();
+
+            if (IsNumeric(c) || c == '-') {
+                StringBuilder text = new StringBuilder(c.ToString());
+
+                while (IsNumeric(Advance()) && !AtEndOfSource) text.Append(GetCurrent());
+
+                return text.ToString();
+            }
+
+            return null;
         }
     }
 }

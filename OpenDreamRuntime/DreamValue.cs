@@ -4,7 +4,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime {
-    public struct DreamValue {
+    public struct DreamValue : IEquatable<DreamValue> {
         [Flags]
         public enum DreamValueType {
             String = 1,
@@ -236,6 +236,23 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public bool IsTruthy() {
+            switch (Type) {
+                case DreamValue.DreamValueType.DreamObject:
+                case DreamValue.DreamValueType.DreamProc:
+                    return Value != null;
+                case DreamValue.DreamValueType.DreamResource:
+                case DreamValue.DreamValueType.DreamPath:
+                    return true;
+                case DreamValue.DreamValueType.Float:
+                    return (float)Value != 0;
+                case DreamValue.DreamValueType.String:
+                    return (string)Value != "";
+                default:
+                    throw new NotImplementedException("Truthy evaluation for " + this + " is not implemented");
+            }
+        }
+
         public string Stringify() {
             switch (Type) {
                 case DreamValueType.String:
@@ -265,6 +282,7 @@ namespace OpenDreamRuntime {
         public override bool Equals(object obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
+            if (Type != other.Type) return false;
             if (Value == null) return other.Value == null;
             return Value.Equals(other.Value);
         }

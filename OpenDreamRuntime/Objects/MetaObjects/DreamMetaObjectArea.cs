@@ -8,7 +8,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         {}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamList contents = new DreamList(Runtime);
+            DreamList contents = DreamList.Create(Runtime);
 
             contents.ValueAssigned += (DreamList list, DreamValue key, DreamValue value) => {
                 if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject turf)) {

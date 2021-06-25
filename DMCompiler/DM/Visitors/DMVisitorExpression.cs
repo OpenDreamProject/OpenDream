@@ -50,7 +50,11 @@ namespace DMCompiler.DM.Visitors {
             var expressions = new DMExpression[stringFormat.InterpolatedValues.Length];
 
             for (int i = 0; i < stringFormat.InterpolatedValues.Length; i++) {
-                expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
+                if (stringFormat.InterpolatedValues[i] is null) {
+                    expressions[i] = new Expressions.Null();
+                } else {
+                    expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
+                }
             }
 
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);
@@ -229,6 +233,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.XorAssign(lhs, rhs);
         }
 
+        public void VisitModulusAssign(DMASTModulusAssign modulusAssign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusAssign.A);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusAssign.B);
+            Result = new Expressions.ModulusAssign(lhs, rhs);
+        }
+
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             var lhs = DMExpression.Create(_dmObject, _proc, leftShift.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, leftShift.B, _inferredPath);
@@ -396,6 +406,11 @@ namespace DMCompiler.DM.Visitors {
             var _y = DMExpression.Create(_dmObject, _proc, locateCoordinates.Y, _inferredPath);
             var _z = DMExpression.Create(_dmObject, _proc, locateCoordinates.Z, _inferredPath);
             Result = new Expressions.LocateCoordinates(_x, _y, _z);
+        }
+
+        public void VisitIsSaved(DMASTIsSaved isSaved) {
+            var expr = DMExpression.Create(_dmObject, _proc, isSaved.Expression, _inferredPath);
+            Result = new Expressions.IsSaved(expr);
         }
 
         public void VisitIsType(DMASTIsType isType) {

@@ -32,7 +32,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamList CreateDreamList(DreamRuntime runtime) {
-            DreamList list = new DreamList(runtime);
+            DreamList list = DreamList.Create(runtime);
 
             foreach (DreamValue argument in OrderedArguments) {
                 list.AddValue(argument);

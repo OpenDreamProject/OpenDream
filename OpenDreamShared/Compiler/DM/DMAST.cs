@@ -44,6 +44,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
+        public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
         public void VisitIsType(DMASTIsType isType) { throw new NotImplementedException(); }
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) { throw new NotImplementedException(); }
@@ -82,6 +83,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) { throw new NotImplementedException(); }
         public void VisitRightShiftAssign(DMASTRightShiftAssign rightShiftAssign) { throw new NotImplementedException(); }
         public void VisitXorAssign(DMASTXorAssign xorAssign) { throw new NotImplementedException(); }
+        public void VisitModulusAssign(DMASTModulusAssign modulusAssign) { throw new NotImplementedException(); }
         public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
         public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
@@ -516,9 +518,9 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public class SwitchCaseValues : SwitchCase {
-            public DMASTExpressionConstant[] Values;
+            public DMASTExpression[] Values;
 
-            public SwitchCaseValues(DMASTExpressionConstant[] values, DMASTProcBlockInner body) : base(body) {
+            public SwitchCaseValues(DMASTExpression[] values, DMASTProcBlockInner body) : base(body) {
                 Values = values;
             }
         }
@@ -713,6 +715,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitInitial(this);
+        }
+    }
+
+    public class DMASTIsSaved : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTIsSaved(DMASTExpression expression) {
+            Expression = expression;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitIsSaved(this);
         }
     }
 
@@ -1209,6 +1223,19 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
+    public class DMASTModulusAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTModulusAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitModulusAssign(this);
+        }
+    }
+
     public class DMASTOr : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -1396,15 +1423,17 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTDereference : DMASTCallable {
         public enum DereferenceType {
             Direct,
-            Search
+            Search,
         }
 
         public struct Dereference {
             public DereferenceType Type;
+            public bool Conditional;
             public string Property;
 
-            public Dereference(DereferenceType type, string property) {
+            public Dereference(DereferenceType type, bool conditional, string property) {
                 Type = type;
+                Conditional = conditional;
                 Property = property;
             }
         }

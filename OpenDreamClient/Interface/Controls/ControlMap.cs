@@ -8,39 +8,53 @@ using OpenDreamClient.Renderer;
 using OpenDreamClient.Dream;
 using OpenDreamShared.Net.Packets;
 using OpenDreamShared.Dream;
+using System.Windows.Media.Imaging;
 using Rectangle = System.Drawing.Rectangle;
 
-namespace OpenDreamClient.Interface.Elements {
-    class ElementMap : Grid, IElement {
-        public ElementDescriptor ElementDescriptor {
-            get => _elementDescriptor;
-            set {
-                _elementDescriptor = (ElementDescriptorMap)value;
-            }
-        }
-
-        private ElementDescriptorMap _elementDescriptor;
+namespace OpenDreamClient.Interface.Controls {
+    class ControlMap : InterfaceControl {
         private DreamRenderer _dreamRenderer;
+        private Grid _grid;
 
-        public ElementMap() {
+        public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+
+        protected override FrameworkElement CreateUIElement() {
+            _grid = new Grid() {
+                Focusable = true,
+                IsEnabled = true,
+                UseLayoutRounding = true,
+                Background = Brushes.Black
+            };
+            _grid.MouseLeftButtonDown += OnLeftMouseDown;
+            _grid.SizeChanged += OnSizeChanged;
+
             _dreamRenderer = new DreamRenderer();
-            this.Children.Add(_dreamRenderer.OpenGLViewControl);
+            _grid.Children.Add(_dreamRenderer.OpenGLViewControl);
 
-            this.Focusable = true;
-            this.IsEnabled = true;
-            this.UseLayoutRounding = true;
-            this.Background = Brushes.Black;
-
-            this.MouseLeftButtonDown += OnLeftMouseDown;
-            this.Unloaded += OnUnloaded;
+            return _grid;
         }
 
-        public void UpdateVisuals() {
+        public override void Shutdown() {
+            _dreamRenderer.StopRendering();
+        }
 
+        public BitmapSource CreateScreenshot() {
+            SharpGLControl control = _dreamRenderer.OpenGLViewControl;
+            DpiScale dpi = VisualTreeHelper.GetDpi(control);
+            double dpiX = dpi.PixelsPerInchX;
+            double dpiY = dpi.PixelsPerInchY;
+
+            RenderTargetBitmap renderTarget = new RenderTargetBitmap((int)control.Width, (int)control.Height, dpiX, dpiY, PixelFormats.Pbgra32);
+            renderTarget.Render(control);
+
+            return renderTarget;
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y) {
-            return ((int)Math.Floor(x), (int)_dreamRenderer.OpenGLViewControl.Height - (int)Math.Floor(y));
+            x /= _dreamRenderer.OpenGLViewControl.Scale;
+            y /= _dreamRenderer.OpenGLViewControl.Scale;
+
+            return ((int)Math.Floor(x), (int)_dreamRenderer.OpenGLViewControl.ViewportHeight - (int)Math.Floor(y));
         }
 
         private bool IsOverAtom(ATOM atom, (int X, int Y) screenCoordinates, bool isScreenAtom) {
@@ -48,9 +62,9 @@ namespace OpenDreamClient.Interface.Elements {
 
             if (_dreamRenderer.IsAtomVisible(atom, isScreenAtom) && iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
                 int atomIconX = screenCoordinates.X - iconRect.X;
-                int atomIconY = screenCoordinates.Y - iconRect.Y;
+                int atomIconY = 32 - (screenCoordinates.Y - iconRect.Y);
 
-                return atom.Icon.GetPixel(atomIconX, 32 - atomIconY).A != 0;
+                return atom.Icon.IsMouseOver(atomIconX, atomIconY);
             }
 
             return false;
@@ -77,7 +91,7 @@ namespace OpenDreamClient.Interface.Elements {
             }
 
             if (clickedATOM == null) {
-                foreach (ATOM turf in Program.OpenDream.Map.Levels[_dreamRenderer.CameraZ].Turfs) {
+                foreach (ATOM turf in Program.OpenDream.Map.Levels[_dreamRenderer.Camera.Z].Turfs) {
                     foreach (ATOM atom in turf.Contents) {
                         bool isAbove = (clickedATOM == null || clickedATOM.Icon.Appearance.Layer <= atom.Icon.Appearance.Layer);
 
@@ -100,7 +114,7 @@ namespace OpenDreamClient.Interface.Elements {
 
             if (clickedATOM == null) return;
             e.Handled = true;
-            this.Focus();
+            _grid.Focus();
 
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY, screenLocation);
             pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
@@ -109,8 +123,11 @@ namespace OpenDreamClient.Interface.Elements {
             Program.OpenDream.Connection.SendPacket(pClickAtom);
         }
 
-        private void OnUnloaded(object sender, RoutedEventArgs e) {
-            _dreamRenderer.StopRendering();
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e) {
+            double widthScaling = Math.Max(1, Math.Floor(_grid.Width / _dreamRenderer.OpenGLViewControl.ViewportWidth));
+            double heightScaling = Math.Max(1, Math.Floor(_grid.Height / _dreamRenderer.OpenGLViewControl.ViewportHeight));
+
+            _dreamRenderer.SetScale(Math.Min(widthScaling, heightScaling));
         }
     }
 }

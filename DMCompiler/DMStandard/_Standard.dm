@@ -1,6 +1,7 @@
-﻿/var/global/world/world = null
+﻿/var/world/world = null
 
 proc/abs(A)
+proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
 proc/animate(Object, time, loop, easing, flags)
 proc/arccos(X)
 proc/arcsin(X)
@@ -57,6 +58,7 @@ proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/rgb(R, G, B, A)
 proc/roll(ndice = 1, sides)
 proc/round(A, B)
+proc/shutdown(Addr,Natural = 0)
 proc/sin(X)
 proc/sleep(Delay)
 proc/sorttext(T1, T2)
@@ -80,10 +82,12 @@ proc/view(Dist = 4, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+proc/winset(player, control_id, params)
 
 #include "Defines.dm"
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
+#include "Types\Icon.dm"
 #include "Types\Image.dm"
 #include "Types\List.dm"
 #include "Types\Matrix.dm"
@@ -173,7 +177,17 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	return dir
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
+	//TODO: Speed = step_size if Speed is 0
 	Ref.Move(get_step(Ref, Dir), Dir)
+
+/proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0)
+	//TODO: Consider obstacles
+
+	var/dist = get_dist(Ref, Trg)
+	if (dist <= Min) return
+
+	var/step_dir = get_dir(Ref, Trg)
+	step(Ref, step_dir, Speed)
 
 /proc/turn(Dir, Angle)
 	var/dirAngle = 0

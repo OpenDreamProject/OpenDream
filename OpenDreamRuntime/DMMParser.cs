@@ -119,7 +119,7 @@ namespace OpenDreamRuntime {
                             } else if (varOverride.Value is DMASTConstantNull) {
                                 varValue = DreamValue.Null;
                             } else if (varOverride.Value is DMASTList dmastList) {
-                                DreamList list = new DreamList(Runtime);
+                                DreamList list = DreamList.Create(Runtime);
 
                                 //TODO: Fill list
 

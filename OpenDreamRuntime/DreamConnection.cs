@@ -25,8 +25,15 @@ namespace OpenDreamRuntime {
         // Implementation
         public string CKey;
         public IPAddress Address;
-        public readonly List<int> PressedKeys = new();
         public DreamRuntime Runtime { get; }
+
+        public string SelectedStatPanel {
+            get => _selectedStatPanel;
+            set {
+                _selectedStatPanel = value;
+                SendPacket(new PacketSelectStatPanel(_selectedStatPanel));
+            }
+        }
 
         public DreamConnection(DreamRuntime runtime) {
             Runtime = runtime;
@@ -39,7 +46,7 @@ namespace OpenDreamRuntime {
         private Dictionary<int, Action<DreamValue>> _promptEvents = new();
         private Dictionary<string, DreamProc> _availableVerbs = new();
         private Dictionary<string, List<string>> _statPanels = new();
-        private string _selectedStatPanel;
+        private string _outputStatPanel, _selectedStatPanel;
 
         public DreamObject MobDreamObject {
             get => _mobDreamObject;
@@ -127,6 +134,7 @@ namespace OpenDreamRuntime {
 
             if (MobDreamObject != null) {
                 List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+
                 foreach (DreamValue mobVerbPath in mobVerbPaths) {
                     DreamPath path = mobVerbPath.GetValueAsPath();
 
@@ -151,19 +159,14 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void SelectStatPanel(string name) {
-            _selectedStatPanel = name;
+        public void SetOutputStatPanel(string name) {
+            if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
+
+            _outputStatPanel = name;
         }
 
         public void AddStatPanelLine(string text) {
-            List<string> statPanelLines;
-            if (!_statPanels.TryGetValue(_selectedStatPanel, out statPanelLines)) {
-                statPanelLines = new List<string>();
-
-                _statPanels.Add(_selectedStatPanel, statPanelLines);
-            }
-
-            statPanelLines.Add(text);
+            _statPanels[_outputStatPanel].Add(text);
         }
 
         public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {
@@ -186,6 +189,31 @@ namespace OpenDreamRuntime {
             return promptTask;
         }
 
+        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
+            Task<DreamValue> alertTask = new Task<DreamValue>(() => {
+                ManualResetEvent alertWaitHandle = new ManualResetEvent(false);
+                int promptId = _promptEvents.Count;
+
+                DreamValue alertResponse = DreamValue.Null;
+                _promptEvents[promptId] = (DreamValue response) => {
+                    alertResponse = response;
+                    alertWaitHandle.Set();
+                };
+
+                SendPacket(new PacketAlert(promptId, title, message, button1, button2, button3));
+                alertWaitHandle.WaitOne();
+                return alertResponse;
+            });
+
+            alertTask.Start();
+            return alertTask;
+        }
+
+        public void WinSet(string controlId, string @params) {
+            SendPacket(new PacketWinSet(controlId, @params));
+        }
+
+        #region Packet Handlers
         public void HandlePacketPromptResponse(PacketPromptResponse pPromptResponse) {
             if (_promptEvents.TryGetValue(pPromptResponse.PromptId, out Action<DreamValue> promptEvent)) {
 
@@ -198,17 +226,7 @@ namespace OpenDreamRuntime {
                 };
 
                 promptEvent.Invoke(value);
-                _promptEvents[pPromptResponse.PromptId] = null;
-            }
-        }
-
-        public void HandlePacketKeyboardInput(PacketKeyboardInput pKeyboardInput) {
-            foreach (int key in pKeyboardInput.KeysDown) {
-                if (!PressedKeys.Contains(key)) PressedKeys.Add(key);
-            }
-
-            foreach (int key in pKeyboardInput.KeysUp) {
-                PressedKeys.Remove(key);
+                _promptEvents.Remove(pPromptResponse.PromptId);
             }
         }
 
@@ -254,23 +272,45 @@ namespace OpenDreamRuntime {
         }
 
         public void HandlePacketCallVerb(PacketCallVerb pCallVerb) {
-            if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
-                DreamThread.Run(Runtime, async (state) => {
-                    Dictionary<String, DreamValue> arguments = new();
+            switch (pCallVerb.VerbName) {
+                //TODO: Move these verbs to DM code
+                case ".north": ClientDreamObject.SpawnProc("North"); break;
+                case ".east": ClientDreamObject.SpawnProc("East"); break;
+                case ".south": ClientDreamObject.SpawnProc("South"); break;
+                case ".west": ClientDreamObject.SpawnProc("West"); break;
+                case ".northeast": ClientDreamObject.SpawnProc("Northeast"); break;
+                case ".southeast": ClientDreamObject.SpawnProc("Southeast"); break;
+                case ".southwest": ClientDreamObject.SpawnProc("Southwest"); break;
+                case ".northwest": ClientDreamObject.SpawnProc("Northwest"); break;
+                case ".center": ClientDreamObject.SpawnProc("Center"); break;
 
-                    for (int i = 0; i < verb.ArgumentNames.Count; i++) {
-                        String argumentName = verb.ArgumentNames[i];
-                        DMValueType argumentType = verb.ArgumentTypes[i];
-                        DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
-                                                        argumentName, defaultValue: String.Empty); // No default value for verbs
+                default: {
+                    if (_availableVerbs.TryGetValue(pCallVerb.VerbName, out DreamProc verb)) {
+                        DreamThread.Run(Runtime, async (state) => {
+                            Dictionary<String, DreamValue> arguments = new();
 
-                        arguments.Add(argumentName, value);
+                            for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                                String argumentName = verb.ArgumentNames[i];
+                                DMValueType argumentType = verb.ArgumentTypes[i];
+                                DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
+                                                                argumentName, defaultValue: String.Empty); // No default value for verbs
+
+                                arguments.Add(argumentName, value);
+                            }
+
+                            await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
+                            return DreamValue.Null;
+                        });
                     }
 
-                    await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
-                    return DreamValue.Null;
-                });
+                    break;
+                }
             }
         }
+
+        public void HandlePacketSelectStatPanel(PacketSelectStatPanel pSelectStatPanel) {
+            _selectedStatPanel = pSelectStatPanel.StatPanel;
+        }
+#endregion Packet Handlers
     }
 }

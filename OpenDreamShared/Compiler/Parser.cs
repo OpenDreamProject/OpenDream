@@ -7,7 +7,7 @@ namespace OpenDreamShared.Compiler {
 
         private Lexer<SourceType> _lexer;
         private Token _currentToken;
-        private Stack<Token> _tokenStack = new Stack<Token>();
+        private Stack<Token> _tokenStack = new();
 
         public Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;
@@ -52,7 +52,7 @@ namespace OpenDreamShared.Compiler {
             return false;
         }
 
-        protected bool Check(TokenType[] types) {
+        protected bool Check(IEnumerable<TokenType> types) {
             TokenType currentType = Current().Type;
             foreach (TokenType type in types) {
                 if (currentType == type) {

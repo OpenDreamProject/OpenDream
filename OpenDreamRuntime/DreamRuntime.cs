@@ -43,8 +43,6 @@ namespace OpenDreamRuntime
         public int TickCount = 0;
         public long TickStartTime = 0;
 
-        private readonly InterfaceDescriptor _clientInterface;
-
         public bool Shutdown;
 
         // Global state that may not really (really really) belong here
@@ -86,11 +84,6 @@ namespace OpenDreamRuntime
                 throw new InvalidOperationException();
             }
 
-            _clientInterface = LoadInterface(CompiledJson.Interface);
-            if (_clientInterface == null) {
-                throw new InvalidOperationException();
-            }
-
             ObjectTree.LoadFromJson(CompiledJson.RootObject);
             ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot(this));
             ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList(this));
@@ -110,6 +103,8 @@ namespace OpenDreamRuntime
             ListDefinition = ObjectTree.GetObjectDefinitionFromPath(DreamPath.List);
 
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
+            WorldInstance.InitSpawn(new DreamProcArguments(null));
+
             ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
 
             RegisterPacketCallbacks();
@@ -121,7 +116,7 @@ namespace OpenDreamRuntime
 
             Map = new DreamMap(this);
             Map.LoadMap(CompiledJson.Maps[0]);
-            
+
             WorldInstance.SpawnProc("New");
         }
 
@@ -132,23 +127,12 @@ namespace OpenDreamRuntime
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
                 _taskScheduler.Process();
+                StateManager.FinalizeCurrentDeltaState();
+                Server.Process();
 
                 foreach (DreamConnection connection in Server.Connections) {
                     connection.UpdateStat();
-
-                    if (connection.PressedKeys.Contains(38)) {
-                        connection.ClientDreamObject?.SpawnProc("North");
-                    } else if (connection.PressedKeys.Contains(39)) {
-                        connection.ClientDreamObject?.SpawnProc("East");
-                    } else if (connection.PressedKeys.Contains(40)) {
-                        connection.ClientDreamObject?.SpawnProc("South");
-                    } else if (connection.PressedKeys.Contains(37)) {
-                        connection.ClientDreamObject?.SpawnProc("West");
-                    }
                 }
-
-                StateManager.FinalizeCurrentDeltaState();
-                Server.Process();
 
                 TickCount++;
 
@@ -180,32 +164,13 @@ namespace OpenDreamRuntime
             return compiledJson;
         }
 
-        private InterfaceDescriptor LoadInterface(string path) {
-            DreamResource interfaceResource = ResourceManager.LoadResource(path);
-            DMFLexer dmfLexer = new DMFLexer(path, interfaceResource.ReadAsString());
-            DMFParser dmfParser = new DMFParser(dmfLexer);
-
-            var descriptor = dmfParser.Interface();
-
-            if (dmfParser.Errors.Count > 0) {
-                Console.WriteLine("Errors while parsing the interface file");
-
-                foreach (CompilerError error in dmfParser.Errors) {
-                    Console.WriteLine(error);
-                }
-
-                return null;
-            }
-
-            return descriptor;
-        }
         private void RegisterPacketCallbacks() {
             Server.RegisterPacketCallback<PacketRequestResource>(PacketID.RequestResource, ResourceManager.HandleRequestResourcePacket);
-            Server.RegisterPacketCallback(PacketID.KeyboardInput, (DreamConnection connection, PacketKeyboardInput pKeyboardInput) => connection.HandlePacketKeyboardInput(pKeyboardInput));
             Server.RegisterPacketCallback(PacketID.ClickAtom, (DreamConnection connection, PacketClickAtom pClickAtom) => connection.HandlePacketClickAtom(pClickAtom));
             Server.RegisterPacketCallback(PacketID.Topic, (DreamConnection connection, PacketTopic pTopic) => connection.HandlePacketTopic(pTopic));
             Server.RegisterPacketCallback(PacketID.PromptResponse, (DreamConnection connection, PacketPromptResponse pPromptResponse) => connection.HandlePacketPromptResponse(pPromptResponse));
             Server.RegisterPacketCallback(PacketID.CallVerb, (DreamConnection connection, PacketCallVerb pCallVerb) => connection.HandlePacketCallVerb(pCallVerb));
+            Server.RegisterPacketCallback(PacketID.SelectStatPanel, (DreamConnection connection, PacketSelectStatPanel pSelectStatPanel) => connection.HandlePacketSelectStatPanel(pSelectStatPanel));
         }
 
         private void OnDeltaStateFinalized(DreamDeltaState deltaState) {
@@ -218,24 +183,14 @@ namespace OpenDreamRuntime
             Console.WriteLine("Connection request from '" + connection.CKey + "'");
             StateManager.AddClient(connection.CKey);
 
-            connection.ClientDreamObject = ObjectTree.CreateObject(DreamPath.Client, new DreamProcArguments(new List<DreamValue>() { DreamValue.Null }));
-            connection.SendPacket(new PacketInterfaceData(_clientInterface));
-            connection.SendPacket(new PacketFullGameState(StateManager.FullState));
+            var client = ObjectTree.CreateObject(DreamPath.Client);
+            connection.ClientDreamObject = client;
 
-            DreamThread.Run(this, async (state) => {
-                var client = connection.ClientDreamObject;
-                var newProc = client.GetProc("New");
+            DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
+            connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
+            connection.SendPacket(new PacketFullGameState(StateManager.FullState, connection.CKey));
 
-                var mob = await state.Call(newProc, client, null, new DreamProcArguments(null));
-
-                if (mob.Value != null) {
-                    connection.SendPacket(new PacketConnectionResult(true, ""));
-                } else {
-                    connection.SendPacket(new PacketConnectionResult(false, "The connection was disallowed"));
-                }
-
-                return DreamValue.Null;
-            });
+            client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 
     }

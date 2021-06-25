@@ -7,6 +7,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             Runtime = runtime;
         }
         public DreamRuntime Runtime { get; }
+
+        public virtual bool ShouldCallNew => false;
+
         public virtual void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
 
         }
@@ -41,6 +44,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public virtual DreamValue OperatorRemove(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot remove " + b + " from " + a);
+        }
+        public virtual DreamValue OperatorOr(DreamValue a, DreamValue b) {
+            throw new InvalidOperationException("Cannot or " + a + " and " + b);
         }
 
         public virtual DreamValue OperatorCombine(DreamValue a, DreamValue b) {

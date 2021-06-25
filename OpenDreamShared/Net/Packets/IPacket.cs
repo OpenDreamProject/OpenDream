@@ -8,18 +8,17 @@ namespace OpenDreamShared.Net.Packets {
         public void ReadFromStream(PacketStream stream);
         public void WriteToStream(PacketStream stream);
 
-        public static Dictionary<PacketID, Type> PacketIDToType { get; } = new Dictionary<PacketID, Type>();
+        public static Dictionary<PacketID, Type> PacketIDToType { get; } = new();
 
         static IPacket() {
             RegisterPacket<PacketConnectionResult>(PacketID.ConnectionResult);
             RegisterPacket<PacketRequestConnect>(PacketID.RequestConnect);
-            RegisterPacket<PacketInterfaceData>(PacketID.InterfaceData);
+            RegisterPacket<PacketAlert>(PacketID.Alert);
             RegisterPacket<PacketOutput>(PacketID.Output);
             RegisterPacket<PacketRequestResource>(PacketID.RequestResource);
             RegisterPacket<PacketResource>(PacketID.Resource);
             RegisterPacket<PacketFullGameState>(PacketID.FullGameState);
             RegisterPacket<PacketDeltaGameState>(PacketID.DeltaGameState);
-            RegisterPacket<PacketKeyboardInput>(PacketID.KeyboardInput);
             RegisterPacket<PacketTopic>(PacketID.Topic);
             RegisterPacket<PacketClickAtom>(PacketID.ClickAtom);
             RegisterPacket<PacketSound>(PacketID.Sound);
@@ -30,6 +29,8 @@ namespace OpenDreamShared.Net.Packets {
             RegisterPacket<PacketCallVerb>(PacketID.CallVerb);
             RegisterPacket<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs);
             RegisterPacket<PacketUpdateStatPanels>(PacketID.UpdateStatPanels);
+            RegisterPacket<PacketSelectStatPanel>(PacketID.SelectStatPanel);
+            RegisterPacket<PacketWinSet>(PacketID.WinSet);
         }
 
         public static IPacket CreatePacketFromData(byte[] packetData) {

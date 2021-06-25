@@ -10,12 +10,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         {}
 
+        public override bool ShouldCallNew => true;
+
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            //New() is not called here
+            DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+
+            ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
+            if (perspective != ClientPerspective.Mob) {
+                Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
+            }
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
@@ -27,13 +34,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 UInt32 eyeID = (eye != null) ? Runtime.AtomIDs[eye] : UInt32.MaxValue;
 
                 Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
+            } else if (variableName == "perspective") {
+                string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
+
+                Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
             } else if (variableName == "mob") {
                 DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
 
                 connection.MobDreamObject = variableValue.GetValueAsDreamObject();
             } else if (variableName == "screen") {
                 if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
-
                     oldList.Cut();
                     oldList.ValueAssigned -= ScreenValueAssigned;
                     oldList.BeforeValueRemoved -= ScreenBeforeValueRemoved;
@@ -42,12 +52,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 DreamList screenList;
                 if (!variableValue.TryGetValueAsDreamList(out screenList)) {
-                    screenList = new DreamList(Runtime);
+                    screenList = DreamList.Create(Runtime);
                 }
 
                 screenList.ValueAssigned += ScreenValueAssigned;
                 screenList.BeforeValueRemoved += ScreenBeforeValueRemoved;
                 _screenListToClient[screenList] = dreamObject;
+            } else if (variableName == "statpanel") {
+                DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+
+                connection.SelectedStatPanel = variableValue.GetValueAsString();
             }
         }
 
@@ -65,7 +79,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return new DreamValue(0);
             } else if (variableName == "timezone") {
                 DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);           
+                return new((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
+            } else if (variableName == "statpanel") {
+                DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                return new(connection.SelectedStatPanel);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

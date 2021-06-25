@@ -1,14 +1,13 @@
 ﻿using OpenDreamShared.Dream.Procs;
 using System;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace OpenDreamClient.Interface.Prompts {
-    class NumberPrompt : PromptWindow {
-        public NumberPrompt(int promptId, String title, String message, String defaultValue) : base(promptId, title, message, defaultValue) { }
+    class NumberPrompt : InputWindow {
+        public NumberPrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message, defaultValue, canCancel) { }
 
-        protected override Control CreatePromptControl(String defaultValue) {
+        protected override Control CreateInputControl(String defaultValue) {
             TextBox numberInput = new() {
                 Text = defaultValue
             };
@@ -28,10 +27,11 @@ namespace OpenDreamClient.Interface.Prompts {
             }
         }
 
-        protected override void OkButton_Click(object sender, RoutedEventArgs e) {
-            if (!Int32.TryParse(((TextBox)PromptControl).Text, out Int32 num)) {
-                Console.Error.WriteLine("Error while trying to convert " + ((TextBox)PromptControl).Text + " to a number.");
+        protected override void OkButtonClicked() {
+            if (!Int32.TryParse(((TextBox)_inputControl).Text, out Int32 num)) {
+                Console.Error.WriteLine("Error while trying to convert " + ((TextBox)_inputControl).Text + " to a number.");
             }
+
             FinishPrompt(DMValueType.Num, num);
         }
     }

@@ -75,6 +75,14 @@ namespace OpenDreamClient.Dream {
             }
         }
 
+        public bool IsMouseOver(int x, int y) {
+            if (Appearance.MouseOpacity == MouseOpacity.Transparent) return false;
+            if (Appearance.MouseOpacity == MouseOpacity.Opaque) return true;
+
+            //Assumed to be MouseOpacity.PixelOpaque
+            return GetPixel(x, y).A != 0;
+        }
+
         public Rectangle GetTextureRect() {
             return DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
         }

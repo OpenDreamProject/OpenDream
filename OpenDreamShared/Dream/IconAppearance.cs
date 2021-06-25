@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
-    public class IconAppearance {
+    public class IconAppearance : IEquatable<IconAppearance> {
         public enum AppearanceProperty {
             End,
             Icon,
@@ -16,7 +16,8 @@ namespace OpenDreamShared.Dream {
             Invisibility,
             Overlays,
             Underlays,
-            Transform
+            Transform,
+            MouseOpacity
         }
 
         public static readonly Dictionary<String, UInt32> Colors = new() {
@@ -49,6 +50,7 @@ namespace OpenDreamShared.Dream {
         public UInt32 Color = 0xFFFFFFFF;
         public float Layer;
         public int Invisibility;
+        public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         public List<int> Overlays = new();
         public List<int> Underlays = new();
         public float[] Transform = new float[6] {   1, 0,
@@ -66,6 +68,7 @@ namespace OpenDreamShared.Dream {
             Color = appearance.Color;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
+            MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<int>(appearance.Overlays);
             Underlays = new List<int>(appearance.Underlays);
 
@@ -74,8 +77,9 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public override bool Equals(object obj) {
-            IconAppearance appearance = obj as IconAppearance;
+        public override bool Equals(object obj) => obj is IconAppearance appearance && Equals(appearance);
+
+        public bool Equals(IconAppearance appearance) {
             if (appearance == null) return false;
 
             if (appearance.Icon != Icon) return false;
@@ -86,6 +90,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Invisibility != Invisibility) return false;
+            if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
 
             for (int i = 0; i < Overlays.Count; i++) {
@@ -111,6 +116,7 @@ namespace OpenDreamShared.Dream {
             hashCode += Color.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Invisibility;
+            hashCode += MouseOpacity.GetHashCode();
 
             foreach (int overlay in Overlays) {
                 hashCode += overlay;
@@ -186,6 +192,11 @@ namespace OpenDreamShared.Dream {
                 packetStream.WriteByte((byte)Invisibility);
             }
 
+            if (MouseOpacity != MouseOpacity.PixelOpaque) {
+                packetStream.WriteByte((byte)AppearanceProperty.MouseOpacity);
+                packetStream.WriteByte((byte)MouseOpacity);
+            }
+
             if (Overlays.Count > 0) {
                 packetStream.WriteByte((byte)AppearanceProperty.Overlays);
                 packetStream.WriteByte((byte)Overlays.Count);
@@ -228,6 +239,7 @@ namespace OpenDreamShared.Dream {
                     case AppearanceProperty.Color: appearance.Color = packetStream.ReadUInt32(); break;
                     case AppearanceProperty.Layer: appearance.Layer = packetStream.ReadFloat(); break;
                     case AppearanceProperty.Invisibility: appearance.Invisibility = packetStream.ReadByte(); break;
+                    case AppearanceProperty.MouseOpacity: appearance.MouseOpacity = (MouseOpacity)packetStream.ReadByte(); break;
                     case AppearanceProperty.Overlays: {
                         int overlayCount = packetStream.ReadByte();
 

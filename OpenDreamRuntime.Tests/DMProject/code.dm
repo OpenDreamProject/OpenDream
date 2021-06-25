@@ -103,3 +103,49 @@
 /world/proc/super_call()
 	var/datum/parent/child/C = new()
 	. = C.f(127)
+
+/datum/recursive
+	var/datum/recursive/inner
+	var/val = 2
+
+	proc/get_inner()
+		. = inner
+
+/world/proc/conditional_access_test()
+	var/datum/recursive/R = new()
+	R?.inner?.inner = CRASH("this shouldn't be evaluated")
+	R.inner = 1
+	return R?.inner
+
+/world/proc/conditional_access_test_error()
+	var/datum/recursive/R = new()
+	return R?.inner.inner
+
+/world/proc/conditional_call_test()
+	var/datum/recursive/R = new()
+	return R?.inner?.get_inner(CRASH("this shouldn't be evaluated"))
+ 
+/world/proc/conditional_call_test_error()
+ 	var/datum/recursive/R = new()
+ 	return R?.inner.get_inner()
+
+/world/proc/conditional_mutate()
+	var/datum/recursive/R = null
+	R?.val *= CRASH("this shouldn't be evaluated")
+	R = new()
+	return R?.val *= 2
+
+/world/proc/list_index_mutate()
+	var/list/L = list(1, 2, 3)
+	return L[2] *= 15
+
+/world/proc/switch_const()
+	var/a = 137
+	switch(a)
+		if(20)
+			. = 500
+		if(136 | 1)
+			. = 1
+		if(/datum, /mob)
+			. = 300
+		

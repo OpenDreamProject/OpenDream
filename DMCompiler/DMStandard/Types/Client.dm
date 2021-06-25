@@ -3,10 +3,12 @@
 	var/list/screen = list()
 	var/list/images = list()
 
-	var/mob/mob
 	var/atom/statobj
+	var/statpanel
 
+	var/mob/mob
 	var/atom/eye
+	var/perspective = MOB_PERSPECTIVE
 	var/view
 	var/pixel_x = 0
 	var/pixel_y = 0
@@ -50,3 +52,18 @@
 
 	proc/West()
 		Move(get_step(mob, WEST), WEST)
+
+	proc/Northeast()
+		Move(get_step(mob, NORTHEAST), NORTHEAST)
+	
+	proc/Southeast()
+		Move(get_step(mob, SOUTHEAST), SOUTHEAST)
+
+	proc/Southwest()
+		Move(get_step(mob, SOUTHWEST), SOUTHWEST)
+
+	proc/Northwest()
+		Move(get_step(mob, NORTHWEST), NORTHWEST)
+
+	proc/Center()
+		//TODO: walk(usr, 0)

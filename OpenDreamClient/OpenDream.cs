@@ -8,11 +8,18 @@ using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Windows;
 using System.Windows.Threading;
 
 namespace OpenDreamClient {
-    class OpenDream : Application {
+    delegate void ConnectedToServerEventHandler();
+    delegate void DisconnectedFromServerEventHandler();
+    delegate void ClientTickEventHandler();
+
+    class OpenDream {
+        public event ConnectedToServerEventHandler ConnectedToServer;
+        public event DisconnectedFromServerEventHandler DisconnectedFromServer;
+        public event ClientTickEventHandler ClientTick;
+
         public DreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
@@ -22,15 +29,25 @@ namespace OpenDreamClient {
 
         public Map Map;
         public ATOM Eye;
-        public List<IconAppearance> IconAppearances { get; private set; } = null;
-        public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = null;
-        public List<ATOM> ScreenObjects { get; private set; } = null;
+        public ClientPerspective Perspective;
 
+        public string[] AvailableVerbs { get; private set; } = null;
+        public List<IconAppearance> IconAppearances { get; private set; } = new();
+        public Dictionary<UInt32, ATOM> ATOMs { get; private set; } = new();
+        public List<ATOM> ScreenObjects { get; private set; } = new();
+
+        private string _username;
         private DispatcherTimer _updateTimer = new DispatcherTimer();
 
-        public OpenDream() {
+        public OpenDream(string username) {
+            _username = username;
             _updateTimer.Interval = TimeSpan.FromMilliseconds(1000 / 20);
             _updateTimer.Tick += UpdateTimerTick;
+
+            Interface = new DreamInterface(this);
+            SoundEngine = new DreamSoundEngine(this);
+            ResourceManager = new DreamResourceManager(this);
+            StateManager = new DreamStateManager();
 
             RegisterPacketCallbacks();
         }
@@ -39,55 +56,44 @@ namespace OpenDreamClient {
             ATOMs.Add(atom.ID, atom);
         }
 
-        public void RemoveATOM(ATOM atom) {
-            atom.Loc = null;
-            ATOMs.Remove(atom.ID);
-        }
-
-        public void ConnectToServer(string ip, int port, string username) {
+        public void ConnectToServer(string ip, int port) {
             if (Connection.Connected) throw new InvalidOperationException("Already connected to a server!");
             Connection.Connect(ip, port);
 
-            PacketRequestConnect pRequestConnect = new PacketRequestConnect(username, ClientData);
+            PacketRequestConnect pRequestConnect = new PacketRequestConnect(_username, ClientData);
             Connection.SendPacket(pRequestConnect);
 
-            Interface = new DreamInterface();
-            SoundEngine = new DreamSoundEngine();
-            ResourceManager = new DreamResourceManager();
-            StateManager = new DreamStateManager();
-
-            IconAppearances = new List<IconAppearance>();
-            ATOMs = new Dictionary<UInt32, ATOM>();
-            ScreenObjects = new List<ATOM>();
-
-            MainWindow.Hide();
             _updateTimer.Start();
+            ConnectedToServer?.Invoke();
         }
 
         public void DisconnectFromServer() {
             if (!Connection.Connected) return;
 
             _updateTimer.Stop();
-            SoundEngine.StopAllChannels();
             Connection.Close();
 
-            Interface = null;
-            SoundEngine = null;
-            ResourceManager = null;
-            StateManager = null;
-            ClientData = null;
+            DisconnectedFromServer?.Invoke();
+        }
 
-            Map = null;
-            ATOMs = null;
-            ScreenObjects = null;
-            IconAppearances = null;
+        public void RunCommand(string command) {
+            string[] split = command.Split(" ");
+            string verb = split[0];
 
-            MainWindow.Show();
+            switch (verb) {
+                case ".quit": DisconnectFromServer(); break;
+                case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
+                default: {
+                    if (split.Length > 1) throw new NotImplementedException("Verb argument parsing is not implemented");
+
+                    Connection.SendPacket(new PacketCallVerb(verb));
+                    break;
+                }
+            }
         }
 
         private void RegisterPacketCallbacks() {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
-            Connection.RegisterPacketCallback<PacketInterfaceData>(PacketID.InterfaceData, packet => Interface.HandlePacketInterfaceData(packet));
             Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
             Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => ResourceManager.HandlePacketResource(packet));
             Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => StateManager.HandlePacketFullGameState(packet));
@@ -96,21 +102,33 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
             Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => ResourceManager.HandlePacketBrowseResource(packet));
             Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
-            Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => Interface.HandlePacketUpdateAvailableVerbs(packet));
+            Connection.RegisterPacketCallback<PacketAlert>(PacketID.Alert, packet => Interface.HandlePacketAlert(packet));
+            Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => HandlePacketUpdateAvailableVerbs(packet));
             Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => Interface.HandlePacketUpdateStatPanels(packet));
+            Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => Interface.HandlePacketSelectStatPanel(packet));
+            Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => Interface.HandlePacketWinSet(packet));
         }
 
         private void UpdateTimerTick(object sender, EventArgs e) {
+            ClientTick?.Invoke();
+
             if (Connection.Connected) {
                 Connection.ProcessPackets();
             }
         }
 
         private void HandlePacketConnectionResult(PacketConnectionResult pConnectionResult) {
-            if (!pConnectionResult.ConnectionSuccessful) {
+            if (pConnectionResult.ConnectionSuccessful) {
+                Interface.LoadInterfaceFromSource(pConnectionResult.InterfaceData);
+            } else {
                 Console.WriteLine("Connection was unsuccessful: " + pConnectionResult.ErrorMessage);
                 DisconnectFromServer();
             }
+        }
+
+        public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
+            AvailableVerbs = pUpdateAvailableVerbs.AvailableVerbs;
+            Interface.DefaultInfo?.RefreshVerbs();
         }
     }
 }

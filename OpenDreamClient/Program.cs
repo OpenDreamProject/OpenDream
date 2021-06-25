@@ -2,13 +2,11 @@
 
 namespace OpenDreamClient {
     class Program {
-        public static OpenDream OpenDream = new OpenDream();
+        public static OpenDream OpenDream;
 
         [STAThread]
         static void Main(string[] args) {
-            OpenDream.MainWindow = new OpenDreamWindow();
-            OpenDream.MainWindow.Show();
-            OpenDream.Run();
+            new OpenDreamApplication().Run();
         }
     }
 }

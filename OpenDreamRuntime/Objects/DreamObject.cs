@@ -2,8 +2,11 @@
 using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenDreamRuntime.Objects {
+
     public class DreamObject {
         public DreamRuntime Runtime { get; }
 
@@ -15,17 +18,23 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         private Dictionary<string, DreamValue> _variables = new();
 
-        public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition, DreamProcArguments creationArguments) {
+        public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition) {
             Runtime = runtime;
             ObjectDefinition = objectDefinition;
-
-            ObjectDefinition.InitializionProc?.Spawn(this, new DreamProcArguments(new(), new()));
-
-            ObjectDefinition.MetaObject?.OnObjectCreated(this, creationArguments);
         }
 
-        ~DreamObject() {
-            // Delete();
+        public void InitSpawn(DreamProcArguments creationArguments) {
+            var thread = new DreamThread(Runtime);
+            var procState = InitProc(thread, null, creationArguments);
+            thread.PushProcState(procState);
+
+            if (thread.Resume() == DreamValue.Null) {
+                throw new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!");
+            }
+        }
+
+        public ProcState InitProc(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
+            return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
         public static DreamObject GetFromReferenceID(DreamRuntime runtime, int refID) {

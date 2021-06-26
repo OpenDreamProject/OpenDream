@@ -42,8 +42,12 @@ namespace OpenDreamClient.Renderer {
 
         public Rectangle GetIconRect(ATOM atom, bool useScreenLocation) {
             System.Drawing.Point position;
+            System.Drawing.Size size = new System.Drawing.Size(32, 32);
+
             if (useScreenLocation) {
                 position = atom.ScreenLocation.GetScreenCoordinates(32);
+                size.Width *= atom.ScreenLocation.RepeatX;
+                size.Height *= atom.ScreenLocation.RepeatY;
             }  else {
                 int tileX = atom.X - Camera.X + 7;
                 int tileY = atom.Y - Camera.Y + 7;
@@ -51,7 +55,7 @@ namespace OpenDreamClient.Renderer {
                 position = new System.Drawing.Point(tileX * 32 + atom.Icon.Appearance.PixelX, tileY * 32 + atom.Icon.Appearance.PixelY);
             }
 
-            return new Rectangle(position, new System.Drawing.Size(32, 32));
+            return new Rectangle(position, size);
         }
 
         public bool IsAtomVisible(ATOM atom, bool useScreenLocation) {
@@ -176,8 +180,12 @@ namespace OpenDreamClient.Renderer {
                     System.Drawing.Point screenCoordinates = atom.ScreenLocation.GetScreenCoordinates(32);
 
                     _shader.SetTranslation((float)screenCoordinates.X - (32 * 7), (float)screenCoordinates.Y - (32 * 7));
+                    _gl.Uniform1(_shader.RepeatXUniform, atom.ScreenLocation.RepeatX);
+                    _gl.Uniform1(_shader.RepeatYUniform, atom.ScreenLocation.RepeatY);
                 } else {
                     _shader.SetTranslation((atom.X - Camera.X) * 32.0f, (atom.Y - Camera.Y) * 32.0f);
+                    _gl.Uniform1(_shader.RepeatXUniform, 1);
+                    _gl.Uniform1(_shader.RepeatYUniform, 1);
                 }
 
                 if (IsAtomVisible(atom, useScreenLocation)) DrawDreamIcon(atom.Icon, !useScreenLocation);
@@ -207,6 +215,7 @@ namespace OpenDreamClient.Renderer {
                 _gl.ActiveTexture(OpenGL.GL_TEXTURE0);
                 _gl.BindTexture(OpenGL.GL_TEXTURE_2D, texture.TextureID);
                 _gl.Uniform1(_shader.TextureSamplerUniform, 0);
+                _gl.Uniform1(_shader.IconSizeUniform, 32);
                 _shader.SetColor(icon.Appearance.Color);
                 _gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, 6);
             }

@@ -155,8 +155,8 @@ namespace OpenDreamClient.Dream {
                         }
                     }
 
-                    if (atomDelta.ScreenLocation.HasValue) {
-                        atom.ScreenLocation = atomDelta.ScreenLocation.Value;
+                    if (atomDelta.ScreenLocation != null) {
+                        atom.ScreenLocation = atomDelta.ScreenLocation;
                     }
                 } else {
                     Console.WriteLine("Delta state packet contains delta values for an invalid ATOM, and was ignored (ID " + atomID + ")");

@@ -1601,13 +1601,13 @@ namespace OpenDreamShared.Compiler.DM {
                                     DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.SourceFile, insideBracketsText);
                                     List<Token> preprocTokens = new();
                                     Token preprocToken;
-                                    while ((preprocToken = preprocLexer.GetNextToken()).Type != TokenType.EndOfFile) {
+                                    do {
+                                        preprocToken = preprocLexer.GetNextToken();
                                         preprocToken.SourceFile = constantToken.SourceFile;
                                         preprocToken.Line = constantToken.Line;
                                         preprocToken.Column = constantToken.Column;
                                         preprocTokens.Add(preprocToken);
-                                    }
-                                    preprocTokens.Add(new Token(TokenType.EndOfFile, "\0", constantToken.SourceFile, constantToken.Line, constantToken.Column, null));
+                                    } while (preprocToken.Type != TokenType.EndOfFile);
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
                                     DMParser expressionParser = new DMParser(expressionLexer);

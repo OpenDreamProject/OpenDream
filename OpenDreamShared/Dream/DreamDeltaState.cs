@@ -7,7 +7,7 @@ namespace OpenDreamShared.Dream {
             public AtomType Type;
             public UInt32 LocationID = UInt32.MaxValue;
             public int IconAppearanceID;
-            public ScreenLocation ScreenLocation = new ScreenLocation();
+            public ScreenLocation ScreenLocation = new ScreenLocation(0, 0, 0, 0);
 
             public AtomCreation(AtomType type, int appearanceID) {
                 Type = type;
@@ -27,7 +27,7 @@ namespace OpenDreamShared.Dream {
 
         public class AtomDelta {
             public int? NewIconAppearanceID = null;
-            public ScreenLocation? ScreenLocation;
+            public ScreenLocation ScreenLocation;
         }
 
         public class ClientDelta {

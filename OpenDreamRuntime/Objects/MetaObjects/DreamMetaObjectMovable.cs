@@ -71,11 +71,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void UpdateScreenLocation(DreamObject movable, DreamValue screenLocationValue) {
             ScreenLocation screenLocation;
-            if (screenLocationValue.Value != null) {
-                string screenLocationString = screenLocationValue.GetValueAsString();
+            if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
             } else {
-                screenLocation = new ScreenLocation();
+                screenLocation = new ScreenLocation(0, 0, 0, 0);
             }
 
             Runtime.StateManager.AddAtomScreenLocationDelta(movable, screenLocation);

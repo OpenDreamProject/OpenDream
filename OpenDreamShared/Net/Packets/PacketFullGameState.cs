@@ -60,7 +60,7 @@ namespace OpenDreamShared.Net.Packets {
                 atom.LocationID = stream.ReadUInt32();
                 atom.IconAppearanceID = (int)stream.ReadUInt32();
                 if (atom.Type == AtomType.Movable) {
-                    atom.ScreenLocation = stream.ReadScreenLocation();
+                    atom.ScreenLocation = ScreenLocation.ReadFromPacket(stream);
                 }
 
                 FullState.Atoms[atom.AtomID] = atom;
@@ -76,7 +76,7 @@ namespace OpenDreamShared.Net.Packets {
                 stream.WriteUInt32(atom.Value.LocationID);
                 stream.WriteUInt32((UInt32)atom.Value.IconAppearanceID);
                 if (atom.Value.Type == AtomType.Movable) {
-                    stream.WriteScreenLocation(atom.Value.ScreenLocation);
+                    atom.Value.ScreenLocation.WriteToPacket(stream);
                 }
             }
         }

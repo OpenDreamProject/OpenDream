@@ -8,7 +8,7 @@ namespace OpenDreamClient.Dream {
         public AtomType Type;
         public DreamIcon Icon { get; } = new DreamIcon();
         public List<ATOM> Contents = new();
-        public ScreenLocation ScreenLocation = new ScreenLocation();
+        public ScreenLocation ScreenLocation = new ScreenLocation(0, 0, 0, 0);
 
         public ATOM Loc {
             get {

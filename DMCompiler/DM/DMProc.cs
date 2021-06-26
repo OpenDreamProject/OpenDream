@@ -227,7 +227,7 @@ namespace DMCompiler.DM {
         }
         
         public void Goto(string label) {
-            Jump(label);
+            Jump(label + "_codelabel");
         }
 
         public void PushProcArguments() {

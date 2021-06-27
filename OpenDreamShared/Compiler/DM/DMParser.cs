@@ -418,13 +418,42 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 DMASTPath path = Path();
                 if (path == null) Error("Expected a variable name");
-                Whitespace();
 
                 DMASTExpression value = null;
 
+                if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
+                {
+                    //Type information
+                    if (path.Path.PathString.Substring(0, 4) != "list")
+                    {
+                        path = new DMASTPath(new DreamPath("list/"  + path.Path.PathString));
+                    }
+
+                    var size = Expression() as DMASTExpressionConstant;
+                    if (size is not DMASTConstantInteger)
+                    {
+                        Error("list length must be an integer");
+                        return null;
+                    }
+
+                    Consume(TokenType.DM_RightBracket, "Expected ']'");
+
+                    value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                            new[] {new DMASTCallParameter(size)});
+                }
+
+                Whitespace();
+
                 if (Check(TokenType.DM_Equals)) {
-                    Whitespace();
-                    value = Expression();
+                    if (value is not null)
+                    {
+                        Error("list doubly initialized");
+                    }
+                    else
+                    {
+                        Whitespace();
+                        value = Expression();
+                    }
                 }
 
                 return new DMASTProcStatementVarDeclaration(path, value);

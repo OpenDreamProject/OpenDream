@@ -9,19 +9,26 @@ namespace OpenDreamShared.Compiler.DM {
             "t", "n",
             "[", "]",
             "\\", "\"", "'",
+            "<", ">",
 
             "icon",
             "Roman", "roman",
             "The", "the",
             "A", "a", "An", "an",
+            "th",
             "s",
+            "He", "he",
+            "She", "she",
             "him",
+            "himself", "herself",
             "His", "his",
             "Hers", "hers",
+            "icon",
             "ref",
             "improper", "proper",
             "red", "blue", "green", "black",
             "..."
+            //TODO: ASCII/Unicode values
         };
 
         public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
@@ -142,7 +149,7 @@ namespace OpenDreamShared.Compiler.DM {
                                     } else {
                                         token = CreateToken(TokenType.DM_SuperProc, "..");
                                     }
-                                    
+
                                     break;
 
                                 default:

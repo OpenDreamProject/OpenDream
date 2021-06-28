@@ -424,7 +424,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
                 {
                     //Type information
-                    if (path.Path.PathString.Substring(0, 4) != "list")
+                    if (path.Path.FindElement("list") != 0)
                     {
                         path = new DMASTPath(new DreamPath("list/"  + path.Path.PathString));
                     }

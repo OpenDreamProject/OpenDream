@@ -431,7 +431,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                     Whitespace();
 
-                    var size = new DMASTConstantInteger(0);
+                    DMASTConstantInteger size = null;
                     if (!Check(TokenType.DM_RightBracket))
                     {
                         var expr = Expression() as DMASTExpressionConstant;
@@ -442,8 +442,12 @@ namespace OpenDreamShared.Compiler.DM {
                         Consume(TokenType.DM_RightBracket, "Expected ']'");
                     }
 
-                    value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                    if (size is not null)
+                    {
+                        value = new DMASTNewPath(new DMASTPath(DreamPath.List),
                             new[] {new DMASTCallParameter(size)});
+                    }
+
                 }
 
                 Whitespace();

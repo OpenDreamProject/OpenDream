@@ -2,6 +2,7 @@
 	parent_type = /datum
 
 	var/name = "atom"
+	var/text
 	var/desc = null
 	var/suffix = null
 	var/list/verbs = list()
@@ -34,6 +35,9 @@
 	var/gender = "neuter"
 	var/density = FALSE
 
+	proc/New()
+		text = length(name) ? name[1] : null
+
 	proc/Click(location, control, params)
 
 	proc/Entered(atom/movable/Obj, atom/OldLoc)
@@ -52,5 +56,5 @@
 
 	proc/Exit(atom/movable/O, atom/newloc)
 		return TRUE
-	
+
 	proc/Stat()

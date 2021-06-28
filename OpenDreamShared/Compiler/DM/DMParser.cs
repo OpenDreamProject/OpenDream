@@ -447,7 +447,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_Equals)) {
                     if (value is not null)
                     {
-                        Error("list doubly initialized");
+                        Error("List doubly initialized");
                     }
                     else
                     {

@@ -431,22 +431,8 @@ namespace OpenDreamShared.Compiler.DM {
 
                     Whitespace();
 
-                    DMASTConstantInteger size = null;
-                    if (!Check(TokenType.DM_RightBracket))
-                    {
-                        var expr = Expression() as DMASTExpressionConstant;
-                        if (expr is DMASTConstantInteger integer)
-                        {
-                            size = integer;
-                        }
-                        else
-                        {
-                            size = new DMASTConstantInteger(0);
-                        }
-
-                        Whitespace();
-                        Consume(TokenType.DM_RightBracket, "Expected ']'");
-                    }
+                    DMASTExpression size = Expression();
+                    Consume(TokenType.DM_RightBracket, "Expected ']'");
 
                     if (size is not null)
                     {

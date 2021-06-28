@@ -421,17 +421,26 @@ namespace OpenDreamShared.Compiler.DM {
 
                 DMASTExpression value = null;
 
-                if (Check(TokenType.DM_LeftBracket) && !Check(TokenType.DM_RightBracket)) //TODO: Multidimensional lists
+                if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
                 {
                     //Type information
                     if (path.Path.FindElement("list") != 0)
                     {
-                        path = new DMASTPath(new DreamPath("list/"  + path.Path.PathString));
+                        path = new DMASTPath(new DreamPath("list/" + path.Path.PathString));
                     }
 
-                    var size = Expression();
+                    Whitespace();
 
-                    Consume(TokenType.DM_RightBracket, "Expected ']'");
+                    var size = new DMASTConstantInteger(0);
+                    if (!Check(TokenType.DM_RightBracket))
+                    {
+                        var expr = Expression() as DMASTExpressionConstant;
+                        if (expr is DMASTConstantInteger integer)
+                        {
+                            size = integer;
+                        }
+                        Consume(TokenType.DM_RightBracket, "Expected ']'");
+                    }
 
                     value = new DMASTNewPath(new DMASTPath(DreamPath.List),
                             new[] {new DMASTCallParameter(size)});

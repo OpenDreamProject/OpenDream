@@ -421,7 +421,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 DMASTExpression value = null;
 
-                if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
+                if (Check(TokenType.DM_LeftBracket) && !Check(TokenType.DM_RightBracket)) //TODO: Multidimensional lists
                 {
                     //Type information
                     if (path.Path.FindElement("list") != 0)
@@ -429,12 +429,7 @@ namespace OpenDreamShared.Compiler.DM {
                         path = new DMASTPath(new DreamPath("list/"  + path.Path.PathString));
                     }
 
-                    var size = Expression() as DMASTExpressionConstant;
-                    if (size is not DMASTConstantInteger)
-                    {
-                        Error("list length must be an integer");
-                        return null;
-                    }
+                    var size = Expression();
 
                     Consume(TokenType.DM_RightBracket, "Expected ']'");
 

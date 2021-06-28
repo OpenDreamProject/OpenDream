@@ -439,6 +439,10 @@ namespace OpenDreamShared.Compiler.DM {
                         {
                             size = integer;
                         }
+                        else
+                        {
+                            size = new DMASTConstantInteger(0);
+                        }
 
                         Whitespace();
                         Consume(TokenType.DM_RightBracket, "Expected ']'");

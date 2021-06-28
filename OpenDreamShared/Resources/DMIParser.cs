@@ -19,7 +19,7 @@ namespace OpenDreamShared.Resources {
         public class ParsedDMIDescription {
             public string Source;
             public float Version;
-            public int Width, Height;
+            public int Width = 32, Height = 32;
             public string DefaultStateName;
             public Dictionary<string, ParsedDMIState> States;
 

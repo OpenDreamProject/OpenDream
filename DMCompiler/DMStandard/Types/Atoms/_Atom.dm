@@ -35,7 +35,7 @@
 	var/gender = "neuter"
 	var/density = FALSE
 
-	proc/New()
+	New()
 		text = length(name) ? name[1] : null
 
 	proc/Click(location, control, params)

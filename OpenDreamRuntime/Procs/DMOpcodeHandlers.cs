@@ -236,9 +236,18 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? IndexList(DMProcState state) {
             DreamValue index = state.PopDreamValue();
-            DreamList list = state.PopDreamValue().GetValueAsDreamList();
+            DreamValue indexing = state.PopDreamValue();
 
-            state.Push(new DreamProcIdentifierListIndex(list, index));
+            if (indexing.TryGetValueAsDreamList(out DreamList list)) {
+                state.Push(new DreamProcIdentifierListIndex(list, index));
+            } else if (indexing.TryGetValueAsString(out string text)) {
+                char c = text[index.GetValueAsInteger() - 1];
+
+                state.Push(new DreamValue(Convert.ToString(c)));
+            } else {
+                throw new Exception("Cannot index " + indexing);
+            }
+            
             return null;
         }
 

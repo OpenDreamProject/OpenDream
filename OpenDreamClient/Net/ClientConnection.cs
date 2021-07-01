@@ -67,10 +67,10 @@ namespace OpenDreamClient.Net {
                     try {
                         _packetIDToCallback[packet.PacketID]?.Invoke(packet);
                     } catch (Exception e) {
-                        Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID + "): " + e.Message);
+                        Console.Error.WriteLine("Error while handling received packet (" + packet.PacketID + "): " + e);
                     }
                 } catch (Exception e) {
-                    Console.WriteLine("Error while processing packets: " + e.Message);
+                    Console.WriteLine("Error while processing packets: " + e);
                 }
             }
         }

@@ -44,8 +44,6 @@ namespace OpenDreamClient.Interface {
             InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
 
             if (dmfParser.Warnings.Count > 0) {
-                Console.WriteLine("Warnings while parsing interface data");
-
                 foreach (CompilerWarning warning in dmfParser.Warnings) {
                     Console.WriteLine(warning);
                 }

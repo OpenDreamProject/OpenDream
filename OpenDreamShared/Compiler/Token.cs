@@ -144,7 +144,9 @@
         DMF_Output,
         DMF_Position,
         DMF_PushBox,
+        DMF_PushButton,
         DMF_Resource,
+        DMF_Stretch,
         DMF_String,
         DMF_Sunken,
         DMF_Window

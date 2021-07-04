@@ -105,6 +105,7 @@ window "mainwindow"
 		is-default = true
 		menu = "menu"
 		macro = "macro"
+		icon = "icons/mob.dmi"
 	elem "split"
 		type = CHILD
 		pos = 3,0

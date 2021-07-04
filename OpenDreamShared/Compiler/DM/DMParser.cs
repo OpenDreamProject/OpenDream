@@ -843,7 +843,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] SwitchInner() {
-            List<DMASTProcStatementSwitch.SwitchCase> switchCases = new List<DMASTProcStatementSwitch.SwitchCase>();
+            List<DMASTProcStatementSwitch.SwitchCase> switchCases = new();
             DMASTProcStatementSwitch.SwitchCase switchCase = SwitchCase();
 
             if (switchCase != null) {
@@ -867,7 +867,16 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     DMASTExpression expression = Expression();
                     if (expression == null) Error("Expected an expression");
-                    expressions.Add(expression);
+
+                    if (Check(TokenType.DM_To)) {
+                        Whitespace();
+                        DMASTExpression rangeEnd = Expression();
+                        if (rangeEnd == null) Error("Expected an upper limit");
+
+                        expressions.Add(new DMASTSwitchCaseRange(expression, rangeEnd));
+                    } else {
+                        expressions.Add(expression);
+                    }
                 } while (Check(TokenType.DM_Comma));
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 Whitespace();

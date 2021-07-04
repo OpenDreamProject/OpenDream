@@ -1125,6 +1125,23 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? SwitchCaseRange(DMProcState state) {
+            int casePosition = state.ReadInt();
+            DreamValue rangeUpper = state.PopDreamValue();
+            DreamValue rangeLower = state.PopDreamValue();
+            DreamValue value = state.PopDreamValue();
+
+            bool matchesLower = IsGreaterThan(value, rangeLower) || IsEqual(value, rangeLower);
+            bool matchesUpper = IsLessThan(value, rangeUpper) || IsEqual(value, rangeUpper);
+            if (matchesLower && matchesUpper) {
+                state.Jump(casePosition);
+            } else {
+                state.Push(value);
+            }
+
+            return null;
+        }
+
         //Copy & run the interpreter in a new thread
         //Jump the current thread to after the spawn's code
         // TODO: If delay negative, do a switcharoo

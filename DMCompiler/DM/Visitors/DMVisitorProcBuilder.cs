@@ -275,13 +275,22 @@ namespace DMCompiler.DM.Visitors {
 
             DMExpression.Emit(_dmObject, _proc, statementSwitch.Value);
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
-                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues) {
+                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
                     string caseLabel = _proc.NewLabelName();
 
-                    foreach (DMASTExpression value in ((DMASTProcStatementSwitch.SwitchCaseValues)switchCase).Values) {
-                        var constant = DMExpression.Constant(_dmObject, _proc, value);
-                        constant.EmitPushValue(_dmObject, _proc);
-                        _proc.SwitchCase(caseLabel);
+                    foreach (DMASTExpression value in switchCaseValues.Values) {
+                        if (value is DMASTSwitchCaseRange range) {
+                            var lower = DMExpression.Constant(_dmObject, _proc, range.RangeStart);
+                            var upper = DMExpression.Constant(_dmObject, _proc, range.RangeEnd);
+
+                            lower.EmitPushValue(_dmObject, _proc);
+                            upper.EmitPushValue(_dmObject, _proc);
+                            _proc.SwitchCaseRange(caseLabel);
+                        } else {
+                            var constant = DMExpression.Constant(_dmObject, _proc, value);
+                            constant.EmitPushValue(_dmObject, _proc);
+                            _proc.SwitchCase(caseLabel);
+                        }
                     }
 
                     valueCases.Add((caseLabel, switchCase.Body));

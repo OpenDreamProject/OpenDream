@@ -204,6 +204,11 @@ namespace DMCompiler.DM {
             WriteLabel(caseLabel);
         }
 
+        public void SwitchCaseRange(string caseLabel) {
+            WriteOpcode(DreamProcOpcode.SwitchCaseRange);
+            WriteLabel(caseLabel);
+        }
+
         public void Browse() {
             WriteOpcode(DreamProcOpcode.Browse);
         }

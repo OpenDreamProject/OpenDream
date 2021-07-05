@@ -8,6 +8,7 @@ namespace OpenDreamShared.Dream {
         public static readonly DreamPath Root = new DreamPath("/");
         public static readonly DreamPath List = new DreamPath("/list");
         public static readonly DreamPath Regex = new DreamPath("/regex");
+        public static readonly DreamPath Savefile = new DreamPath("/savefile");
         public static readonly DreamPath Sound = new DreamPath("/sound");
         public static readonly DreamPath Image = new DreamPath("/image");
         public static readonly DreamPath Icon = new DreamPath("/icon");

@@ -238,8 +238,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue index = state.PopDreamValue();
             DreamValue indexing = state.PopDreamValue();
 
-            if (indexing.TryGetValueAsDreamList(out DreamList list)) {
-                state.Push(new DreamProcIdentifierListIndex(list, index));
+            if (indexing.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                state.Push(new DreamProcIdentifierIndex(dreamObject, index));
             } else if (indexing.TryGetValueAsString(out string text)) {
                 char c = text[index.GetValueAsInteger() - 1];
 
@@ -610,42 +610,65 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? BitShiftLeft(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            object first = state.Pop();
+            IDreamProcIdentifier firstIdentifier = first as IDreamProcIdentifier;
 
-            switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when first.Value != null: { //Output operation
-                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+            //Savefiles get special treatment
+            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
+            if (first is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
+                index.Assign(second);
+
+                return null;
+            }
+
+            DreamValue firstValue = firstIdentifier?.GetValue() ?? (DreamValue)first;
+
+            switch (firstValue.Type) {
+                case DreamValue.DreamValueType.DreamObject when firstValue.Value != null: { //Output operation
+                    IDreamMetaObject metaObject = firstValue.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Push(metaObject.OperatorOutput(first, second));
+                        state.Push(metaObject.OperatorOutput(firstValue, second));
                     } else {
-                        throw new Exception("Invalid output operation on " + first + " and " + second);
+                        throw new Exception("Invalid output operation on " + firstValue + " and " + second);
                     }
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:
-                    first.GetValueAsDreamResource().Output(second);
+                    firstValue.GetValueAsDreamResource().Output(second);
 
                     state.Push(DreamValue.Null);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
+                    state.Push(new DreamValue(firstValue.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
                 default:
-                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
+                    throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
             }
 
             return null;
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            object second = state.Pop();
+            IDreamProcIdentifier secondIdentifier = second as IDreamProcIdentifier;
 
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
+            //Savefiles get special treatment
+            //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
+            if (state.Peek() is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
+                state.Pop();
+
+                secondIdentifier.Assign(index.GetValue());
+                return null;
+            }
+
+            DreamValue first = state.PopDreamValue();
+            DreamValue secondValue = secondIdentifier?.GetValue() ?? (DreamValue)second;
+
+            if (first.Type == DreamValue.DreamValueType.Float && secondValue.Type == DreamValue.DreamValueType.Float) {
+                state.Push(new DreamValue(first.GetValueAsInteger() >> secondValue.GetValueAsInteger()));
             } else {
-                throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
+                throw new Exception("Invalid bit shift right operation on " + first + " and " + secondValue);
             }
 
             return null;

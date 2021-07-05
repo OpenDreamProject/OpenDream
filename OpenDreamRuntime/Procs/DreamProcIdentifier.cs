@@ -75,25 +75,21 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
-    struct DreamProcIdentifierListIndex : IDreamProcIdentifier {
-        public DreamList List;
-        public DreamValue ListIndex;
+    struct DreamProcIdentifierIndex : IDreamProcIdentifier {
+        public DreamObject Object;
+        public DreamValue Index;
 
-        public DreamProcIdentifierListIndex(DreamList list, DreamValue listIndex) {
-            List = list;
-            ListIndex = listIndex;
-
-            if (!list.IsSubtypeOf(DreamPath.List)) {
-                throw new ArgumentException("Parameter must be a dream object of type " + DreamPath.List, nameof(list));
-            }
+        public DreamProcIdentifierIndex(DreamObject dreamObject, DreamValue index) {
+            Object = dreamObject;
+            Index = index;
         }
 
         public DreamValue GetValue() {
-            return List.GetValue(ListIndex);
+            return Object.ObjectDefinition.MetaObject?.OperatorIndex(Object, Index) ?? DreamValue.Null;
         }
 
         public void Assign(DreamValue value) {
-            List.SetValue(ListIndex, value);
+            Object.ObjectDefinition.MetaObject?.OperatorIndexAssign(Object, Index, value);
         }
     }
 

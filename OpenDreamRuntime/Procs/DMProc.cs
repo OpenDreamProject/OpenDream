@@ -242,8 +242,12 @@ namespace OpenDreamRuntime.Procs {
             _stack.Push(_stack.Peek());
         }
 
-        public void Pop() {
-            _stack.Pop();
+        public object Pop() {
+            return _stack.Pop();
+        }
+
+        public object Peek() {
+            return _stack.Peek();
         }
 
         public IDreamProcIdentifier PeekIdentifier() {

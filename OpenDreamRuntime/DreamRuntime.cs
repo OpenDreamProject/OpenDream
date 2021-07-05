@@ -87,6 +87,7 @@ namespace OpenDreamRuntime
             ObjectTree.LoadFromJson(CompiledJson.RootObject);
             ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot(this));
             ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList(this));
+            ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile(this));
             ObjectTree.SetMetaObject(DreamPath.Sound, new DreamMetaObjectSound(this));
             ObjectTree.SetMetaObject(DreamPath.Image, new DreamMetaObjectImage(this));
             ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld(this));

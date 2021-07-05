@@ -101,6 +101,9 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObjectDefinition regex = objectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
+
+            DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
+            regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
         }
     }
 }

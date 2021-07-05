@@ -22,7 +22,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             DreamRegex regex;
 
             if (pattern.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out DreamObject copyFrom)) {
-                regex = ObjectToDreamRegex[dreamObject];
+                regex = ObjectToDreamRegex[copyFrom];
             } else if (pattern.TryGetValueAsString(out string patternString)) {
                 regex = new DreamRegex();
 
@@ -40,6 +40,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             ObjectToDreamRegex.Add(dreamObject, regex);
             base.OnObjectCreated(dreamObject, creationArguments);
+        }
+
+        public override void OnObjectDeleted(DreamObject dreamObject) {
+            ObjectToDreamRegex.Remove(dreamObject);
+
+            base.OnObjectDeleted(dreamObject);
         }
     }
 }

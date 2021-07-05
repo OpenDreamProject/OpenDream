@@ -56,5 +56,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public virtual DreamValue OperatorMask(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot mask " + a + " and " + b);
         }
+
+        public virtual DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
+            throw new InvalidOperationException("Cannot index " + dreamObject);
+        }
+
+        public virtual void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
+            throw new InvalidOperationException("Cannot assign " + value + " to index " + index + " of " + dreamObject);
+        }
     }
 }

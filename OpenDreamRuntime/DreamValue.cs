@@ -314,6 +314,7 @@ namespace OpenDreamRuntime {
             switch (value.Type) {
                 case DreamValue.DreamValueType.String: writer.WriteString("Value", (string)value.Value); break;
                 case DreamValue.DreamValueType.Float: writer.WriteNumber("Value", (float)value.Value); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: writer.WriteNull("Value"); break;
                 default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
             }
 
@@ -336,6 +337,15 @@ namespace OpenDreamRuntime {
             switch (type) {
                 case DreamValue.DreamValueType.String: value = new DreamValue(reader.GetString()); break;
                 case DreamValue.DreamValueType.Float: value = new DreamValue((float)reader.GetSingle()); break;
+                case DreamValue.DreamValueType.DreamObject when reader.TokenType == JsonTokenType.Null: {
+                    if (reader.TokenType == JsonTokenType.Null) {
+                        value = DreamValue.Null;
+                    } else {
+                        throw new NotImplementedException("Json deserialization for DreamObjects are not implemented");
+                    }
+
+                    break;
+                }
                 default: throw new NotImplementedException("Json deserialization for type " + type + " is not implemented");
             }
             reader.Read();

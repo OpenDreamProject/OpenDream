@@ -1,5 +1,7 @@
 using JetBrains.Annotations;
+using Robust.Client.Graphics;
 using Robust.Shared.ContentPack;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient
 {
@@ -8,17 +10,19 @@ namespace OpenDreamClient
     {
         public override void PreInit()
         {
-            base.PreInit();
+            IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
         }
 
         public override void Init()
         {
-            base.Init();
+            ClientOpenDreamIoC.Register();
+
+            IoCManager.BuildGraph();
         }
 
         public override void PostInit()
         {
-            base.PostInit();
+
         }
     }
 }

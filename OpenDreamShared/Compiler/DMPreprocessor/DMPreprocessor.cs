@@ -15,8 +15,11 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         private List<Token> _result = new();
         private List<Token> _currentLine = new();
         private bool _isCurrentLineWhitespaceOnly = true;
-        private Dictionary<string, DMMacro> _defines = new();
         private bool _enableDirectives;
+        private Dictionary<string, DMMacro> _defines = new() {
+            { "__LINE__", new DMMacroLine() },
+            { "__FILE__", new DMMacroFile() }
+        };
 
         public DMPreprocessor(bool enableDirectives) {
             _enableDirectives = enableDirectives;
@@ -132,7 +135,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 }
                             }
 
-                            List<Token> expandedTokens = macro.Expand(parameters);
+                            List<Token> expandedTokens = macro.Expand(token, parameters);
 
                             //Put the tokens at the beginning of the macro on the top of the stack
                             //Can't use a queue because macros within a macro have to be processed before the rest of the macro

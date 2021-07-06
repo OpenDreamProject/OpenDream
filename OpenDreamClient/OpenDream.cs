@@ -21,7 +21,7 @@ namespace OpenDreamClient {
         public event ClientTickEventHandler ClientTick;
 
         public DreamSoundEngine SoundEngine = null;
-        public DreamStateManager StateManager = null;
+        public Dream.DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
         public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
@@ -47,7 +47,7 @@ namespace OpenDreamClient {
             Interface = new DreamInterface(this);
             SoundEngine = new DreamSoundEngine(this);
             ResourceManager = new DreamResourceManager(this);
-            StateManager = new DreamStateManager();
+            StateManager = new Dream.DreamStateManager();
 
             RegisterPacketCallbacks();
         }

@@ -1,7 +1,13 @@
+using System.Globalization;
 using JetBrains.Annotations;
+using OpenDreamClient.States;
+using Robust.Client.CEF;
 using Robust.Client.Graphics;
+using Robust.Client.UserInterface;
 using Robust.Shared.ContentPack;
 using Robust.Shared.IoC;
+using Robust.Shared.Localization;
+using Robust.Shared.Timing;
 
 namespace OpenDreamClient
 {
@@ -11,18 +17,33 @@ namespace OpenDreamClient
         public override void PreInit()
         {
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
+            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
         }
 
         public override void Init()
         {
             ClientOpenDreamIoC.Register();
-
             IoCManager.BuildGraph();
+
+            IoCManager.Resolve<CefManager>().Initialize();
+            IoCManager.Resolve<DreamStateManager>().Initialize();
         }
 
         public override void PostInit()
         {
 
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            IoCManager.Resolve<CefManager>().Shutdown();
+        }
+
+        public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
+        {
+            IoCManager.Resolve<CefManager>().Update();
         }
     }
 }

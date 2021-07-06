@@ -1,12 +1,14 @@
-﻿using System;
+﻿using Robust.Client;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
-    class Program {
-        public static OpenDream OpenDream;
+    public static class Program
+    {
+        internal static OpenDream OpenDream => IoCManager.Resolve<OpenDream>();
 
-        [STAThread]
-        static void Main(string[] args) {
-            new OpenDreamApplication().Run();
+        static void Main(string[] args)
+        {
+            ContentStart.Start(args);
         }
     }
 }

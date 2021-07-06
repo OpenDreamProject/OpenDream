@@ -26,7 +26,7 @@ namespace OpenDreamClient
             IoCManager.BuildGraph();
 
             IoCManager.Resolve<CefManager>().Initialize();
-            IoCManager.Resolve<DreamStateManager>().Initialize();
+            IoCManager.Resolve<DreamUserInterfaceStateManager>().Initialize();
         }
 
         public override void PostInit()

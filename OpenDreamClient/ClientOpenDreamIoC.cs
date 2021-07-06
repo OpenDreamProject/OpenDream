@@ -12,7 +12,7 @@ namespace OpenDreamClient
             SharedOpenDreamIoC.Register();
 
             IoCManager.Register<CefManager>();
-            IoCManager.Register<DreamStateManager>();
+            IoCManager.Register<DreamUserInterfaceStateManager>();
         }
     }
 }

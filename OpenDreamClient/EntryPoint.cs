@@ -43,6 +43,10 @@ namespace OpenDreamClient
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
         {
+            if (level != ModUpdateLevel.PreEngine)
+                return;
+
+            IoCManager.Resolve<OpenDream>().Update(frameEventArgs.DeltaSeconds);
             IoCManager.Resolve<CefManager>().Update();
         }
     }

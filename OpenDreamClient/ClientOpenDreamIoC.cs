@@ -11,6 +11,7 @@ namespace OpenDreamClient
         {
             SharedOpenDreamIoC.Register();
 
+            IoCManager.Register<OpenDream>();
             IoCManager.Register<CefManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();
         }

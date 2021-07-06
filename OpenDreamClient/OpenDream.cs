@@ -8,20 +8,21 @@ using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
-using System.Windows.Threading;
 
 namespace OpenDreamClient {
     delegate void ConnectedToServerEventHandler();
     delegate void DisconnectedFromServerEventHandler();
     delegate void ClientTickEventHandler();
 
-    class OpenDream {
+    internal class OpenDream {
         public event ConnectedToServerEventHandler ConnectedToServer;
         public event DisconnectedFromServerEventHandler DisconnectedFromServer;
         public event ClientTickEventHandler ClientTick;
 
+        private const float UpdateTime = 0.05f;
+
         public DreamSoundEngine SoundEngine = null;
-        public Dream.DreamStateManager StateManager = null;
+        public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
         public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
@@ -37,17 +38,15 @@ namespace OpenDreamClient {
         public List<ATOM> ScreenObjects { get; private set; } = new();
 
         private string _username;
-        private DispatcherTimer _updateTimer = new DispatcherTimer();
+        private float _updateTimer = 0f;
 
         public OpenDream(string username) {
             _username = username;
-            _updateTimer.Interval = TimeSpan.FromMilliseconds(1000 / 20);
-            _updateTimer.Tick += UpdateTimerTick;
 
             Interface = new DreamInterface(this);
             SoundEngine = new DreamSoundEngine(this);
             ResourceManager = new DreamResourceManager(this);
-            StateManager = new Dream.DreamStateManager();
+            StateManager = new DreamStateManager();
 
             RegisterPacketCallbacks();
         }
@@ -63,14 +62,14 @@ namespace OpenDreamClient {
             PacketRequestConnect pRequestConnect = new PacketRequestConnect(_username, ClientData);
             Connection.SendPacket(pRequestConnect);
 
-            _updateTimer.Start();
+            _updateTimer = 0f;
             ConnectedToServer?.Invoke();
         }
 
         public void DisconnectFromServer() {
             if (!Connection.Connected) return;
 
-            _updateTimer.Stop();
+            _updateTimer = 0f;
             Connection.Close();
 
             DisconnectedFromServer?.Invoke();
@@ -109,7 +108,18 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => Interface.HandlePacketWinSet(packet));
         }
 
-        private void UpdateTimerTick(object sender, EventArgs e) {
+        public void Update(float frameTime)
+        {
+            if (!Connection.Connected)
+                return;
+
+            _updateTimer += frameTime;
+
+            if (_updateTimer < UpdateTime)
+                return;
+
+            _updateTimer -= UpdateTime;
+
             ClientTick?.Invoke();
 
             if (Connection.Connected) {

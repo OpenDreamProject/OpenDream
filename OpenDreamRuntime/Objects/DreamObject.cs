@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Objects {
             thread.PushProcState(procState);
 
             if (thread.Resume() == DreamValue.Null) {
-                throw new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!");
+                throw new InvalidOperationException($"DreamObject.InitSpawn ({this.ObjectDefinition.Type}) called a yielding proc!");
             }
         }
 

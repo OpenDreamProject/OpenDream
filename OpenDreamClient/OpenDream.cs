@@ -8,6 +8,7 @@ using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient {
     delegate void ConnectedToServerEventHandler();
@@ -21,16 +22,16 @@ namespace OpenDreamClient {
 
         private const float UpdateTime = 0.05f;
 
-        public DreamSoundEngine SoundEngine = null;
-        public DreamStateManager StateManager = null;
-        public DreamResourceManager ResourceManager = null;
+        [ViewVariables] public DreamSoundEngine SoundEngine = null;
+        [ViewVariables] public DreamStateManager StateManager = null;
+        [ViewVariables] public DreamResourceManager ResourceManager = null;
         //public DreamInterface Interface = null;
-        public ClientConnection Connection = new ClientConnection();
-        public ClientData ClientData = new ClientData(setDefaults: true);
+        [ViewVariables] public ClientConnection Connection = new ClientConnection();
+        [ViewVariables] public ClientData ClientData = new ClientData(setDefaults: true);
 
-        public Map Map;
-        public ATOM Eye;
-        public ClientPerspective Perspective;
+        [ViewVariables] public Map Map;
+        [ViewVariables] public ATOM Eye;
+        [ViewVariables] public ClientPerspective Perspective;
 
         public string[] AvailableVerbs { get; private set; } = null;
         public List<IconAppearance> IconAppearances { get; private set; } = new();
@@ -41,7 +42,8 @@ namespace OpenDreamClient {
         private float _updateTimer = 0f;
 
         public OpenDream() {
-            _username = "Test";
+            // TODO ROBUST: Obviously, fix this.
+            _username = DateTime.Now.GetHashCode().ToString();
 
             //Interface = new DreamInterface(this);
             SoundEngine = new DreamSoundEngine(this);

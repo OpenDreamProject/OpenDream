@@ -1,15 +1,17 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient.Dream {
     public class ATOM {
-        public UInt32 ID;
-        public AtomType Type;
-        public DreamIcon Icon { get; } = new DreamIcon();
-        public List<ATOM> Contents = new();
-        public ScreenLocation ScreenLocation = new ScreenLocation(0, 0, 0, 0);
+        [ViewVariables] public UInt32 ID;
+        [ViewVariables] public AtomType Type;
+        [ViewVariables] public DreamIcon Icon { get; } = new DreamIcon();
+        [ViewVariables] public List<ATOM> Contents = new();
+        [ViewVariables] public ScreenLocation ScreenLocation = new ScreenLocation(0, 0, 0, 0);
 
+        [ViewVariables]
         public ATOM Loc {
             get {
                 if (Type == AtomType.Turf) {
@@ -28,6 +30,7 @@ namespace OpenDreamClient.Dream {
             }
         }
 
+        [ViewVariables]
         public int X {
             get {
                 if (Type == AtomType.Turf) {
@@ -43,6 +46,7 @@ namespace OpenDreamClient.Dream {
             }
         }
 
+        [ViewVariables]
         public int Y {
             get {
                 if (Type == AtomType.Turf) {
@@ -58,6 +62,7 @@ namespace OpenDreamClient.Dream {
             }
         }
 
+        [ViewVariables]
         public int Z {
             get {
                 if (Type == AtomType.Turf) {
@@ -73,8 +78,8 @@ namespace OpenDreamClient.Dream {
             }
         }
 
-        private ATOM _loc = null;
-        private int _x, _y, _z; //Only used for turfs
+        [ViewVariables] private ATOM _loc = null;
+        [ViewVariables] private int _x, _y, _z; //Only used for turfs
 
         public ATOM(UInt32 id, AtomType type, int appearanceId) {
             ID = id;

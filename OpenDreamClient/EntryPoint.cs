@@ -1,6 +1,7 @@
 using System.Globalization;
 using JetBrains.Annotations;
 using OpenDreamClient.States;
+using Robust.Client;
 using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -31,7 +32,8 @@ namespace OpenDreamClient
 
         public override void PostInit()
         {
-
+            IoCManager.Resolve<IBaseClient>().StartSinglePlayer();
+            IoCManager.Resolve<OpenDream>().ConnectToServer("127.0.0.1", 25566);
         }
 
         protected override void Dispose(bool disposing)

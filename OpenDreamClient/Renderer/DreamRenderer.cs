@@ -1,4 +1,4 @@
-﻿using OpenDreamClient.Dream;
+﻿/*using OpenDreamClient.Dream;
 using OpenDreamShared.Dream;
 using SharpGL;
 using System;
@@ -15,7 +15,7 @@ namespace OpenDreamClient.Renderer {
         private OpenGLShader _shader;
         private uint _iconVerticesBuffer;
         private uint _iconTextureCoordBuffer;
-        private readonly int _viewDistance = 7;
+
 
         private static Dictionary<(string, Rectangle), DreamTexture> _textureCache = new();
 
@@ -226,3 +226,4 @@ namespace OpenDreamClient.Renderer {
         }
     }
 }
+*/

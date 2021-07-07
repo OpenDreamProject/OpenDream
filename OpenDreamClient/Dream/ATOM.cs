@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace OpenDreamClient.Dream {
-    class ATOM {
+    public class ATOM {
         public UInt32 ID;
         public AtomType Type;
         public DreamIcon Icon { get; } = new DreamIcon();

@@ -5,7 +5,7 @@ namespace OpenDreamShared.Net {
     public class ClientData {
 
         public TimeZoneInfo Timezone;
-        
+
         public ClientData(bool setDefaults = false) {
             if (setDefaults) {
                 Timezone = TimeZoneInfo.Local;
@@ -18,7 +18,7 @@ namespace OpenDreamShared.Net {
 
         public static ClientData ReadFromPacket(PacketStream packetStream) {
             return new ClientData() {
-                Timezone = TimeZoneInfo.FromSerializedString(packetStream.ReadString())
+                Timezone = TimeZoneInfo.Local // TODO ROBUST: Fix this
             };
         }
     }

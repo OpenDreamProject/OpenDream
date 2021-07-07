@@ -12,7 +12,7 @@ namespace OpenDreamClient.Audio {
         }
 
         public void Stop() {
-            Stream.Stop();
+            Stream?.Stop();
         }
     }
 }

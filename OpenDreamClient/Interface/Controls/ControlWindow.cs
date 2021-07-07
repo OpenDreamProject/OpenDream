@@ -1,4 +1,4 @@
-﻿using OpenDreamClient.Resources.ResourceTypes;
+﻿/*using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Interface;
 using System;
 using System.Collections.Generic;
@@ -169,7 +169,7 @@ namespace OpenDreamClient.Interface.Controls {
                         category.Items.Add(new Separator());
                     } else {
                         MenuItem item = CreateMenuItem(elementDescriptor.Name, elementDescriptor.Command, elementDescriptor.CanCheck);
-                        
+
                         category.Items.Add(item);
                     }
                 }
@@ -194,3 +194,4 @@ namespace OpenDreamClient.Interface.Controls {
         }
     }
 }
+*/

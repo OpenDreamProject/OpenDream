@@ -1,4 +1,4 @@
-﻿using SharpGL;
+﻿/*using SharpGL;
 using System;
 using System.IO;
 using System.Text;
@@ -86,4 +86,4 @@ namespace OpenDreamClient.Renderer {
             return shader;
         }
     }
-}
+}*/

@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamClient.Resources.ResourceTypes {
-    class Resource {
+    public class Resource {
         public string ResourcePath;
         public byte[] Data;
 

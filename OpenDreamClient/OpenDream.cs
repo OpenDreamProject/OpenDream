@@ -1,6 +1,6 @@
 ﻿using OpenDreamClient.Audio;
 using OpenDreamClient.Dream;
-using OpenDreamClient.Interface;
+//using OpenDreamClient.Interface;
 using OpenDreamClient.Net;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Dream;
@@ -24,7 +24,7 @@ namespace OpenDreamClient {
         public DreamSoundEngine SoundEngine = null;
         public DreamStateManager StateManager = null;
         public DreamResourceManager ResourceManager = null;
-        public DreamInterface Interface = null;
+        //public DreamInterface Interface = null;
         public ClientConnection Connection = new ClientConnection();
         public ClientData ClientData = new ClientData(setDefaults: true);
 
@@ -40,10 +40,10 @@ namespace OpenDreamClient {
         private string _username;
         private float _updateTimer = 0f;
 
-        public OpenDream(string username) {
-            _username = username;
+        public OpenDream() {
+            _username = "Test";
 
-            Interface = new DreamInterface(this);
+            //Interface = new DreamInterface(this);
             SoundEngine = new DreamSoundEngine(this);
             ResourceManager = new DreamResourceManager(this);
             StateManager = new DreamStateManager();
@@ -81,7 +81,7 @@ namespace OpenDreamClient {
 
             switch (verb) {
                 case ".quit": DisconnectFromServer(); break;
-                case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
+                //case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
                 default: {
                     if (split.Length > 1) throw new NotImplementedException("Verb argument parsing is not implemented");
 
@@ -93,19 +93,26 @@ namespace OpenDreamClient {
 
         private void RegisterPacketCallbacks() {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
-            Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
+            Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => {});
+            //Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
             Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => ResourceManager.HandlePacketResource(packet));
             Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => StateManager.HandlePacketFullGameState(packet));
             Connection.RegisterPacketCallback<PacketDeltaGameState>(PacketID.DeltaGameState, packet => StateManager.HandlePacketDeltaGameState(packet));
             Connection.RegisterPacketCallback<PacketSound>(PacketID.Sound, packet => SoundEngine.HandlePacketSound(packet));
-            Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
+            Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => {});
+            //Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
             Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => ResourceManager.HandlePacketBrowseResource(packet));
-            Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
-            Connection.RegisterPacketCallback<PacketAlert>(PacketID.Alert, packet => Interface.HandlePacketAlert(packet));
+            Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => {});
+            //Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
+            Connection.RegisterPacketCallback<PacketAlert>(PacketID.Alert, packet => {});
+            //Connection.RegisterPacketCallback<PacketAlert>(PacketID.Alert, packet => Interface.HandlePacketAlert(packet));
             Connection.RegisterPacketCallback<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs, packet => HandlePacketUpdateAvailableVerbs(packet));
-            Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => Interface.HandlePacketUpdateStatPanels(packet));
-            Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => Interface.HandlePacketSelectStatPanel(packet));
-            Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => Interface.HandlePacketWinSet(packet));
+            Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => {});
+            //Connection.RegisterPacketCallback<PacketUpdateStatPanels>(PacketID.UpdateStatPanels, packet => Interface.HandlePacketUpdateStatPanels(packet));
+            Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => {});
+            //Connection.RegisterPacketCallback<PacketSelectStatPanel>(PacketID.SelectStatPanel, packet => Interface.HandlePacketSelectStatPanel(packet));
+            Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => {});
+            //Connection.RegisterPacketCallback<PacketWinSet>(PacketID.WinSet, packet => Interface.HandlePacketWinSet(packet));
         }
 
         public void Update(float frameTime)
@@ -129,7 +136,7 @@ namespace OpenDreamClient {
 
         private void HandlePacketConnectionResult(PacketConnectionResult pConnectionResult) {
             if (pConnectionResult.ConnectionSuccessful) {
-                Interface.LoadInterfaceFromSource(pConnectionResult.InterfaceData);
+                //Interface.LoadInterfaceFromSource(pConnectionResult.InterfaceData);
             } else {
                 Console.WriteLine("Connection was unsuccessful: " + pConnectionResult.ErrorMessage);
                 DisconnectFromServer();
@@ -138,7 +145,7 @@ namespace OpenDreamClient {
 
         public void HandlePacketUpdateAvailableVerbs(PacketUpdateAvailableVerbs pUpdateAvailableVerbs) {
             AvailableVerbs = pUpdateAvailableVerbs.AvailableVerbs;
-            Interface.DefaultInfo?.RefreshVerbs();
+            //Interface.DefaultInfo?.RefreshVerbs();
         }
     }
 }

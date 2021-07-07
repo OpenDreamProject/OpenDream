@@ -1,4 +1,4 @@
-﻿using OpenDreamClient.Resources.ResourceTypes;
+﻿/*using OpenDreamClient.Resources.ResourceTypes;
 using SharpGL;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -41,3 +41,4 @@ namespace OpenDreamClient.Renderer {
         }
     }
 }
+*/

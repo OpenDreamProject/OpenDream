@@ -1,4 +1,4 @@
-﻿using SharpGL;
+﻿/*using SharpGL;
 using SharpGL.RenderContextProviders;
 using System;
 using System.ComponentModel;
@@ -118,4 +118,4 @@ namespace OpenDreamClient.Renderer {
             _renderTimer.Stop();
         }
     }
-}
+}*/

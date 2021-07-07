@@ -9,7 +9,7 @@ using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
-    class ResourceDMI : Resource {
+    public class ResourceDMI : Resource {
         public Texture Texture { get; }
         public DMIParser.ParsedDMIDescription Description { get; }
 
@@ -22,11 +22,11 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             Description = ParseDMI();
         }
 
-        public Box2 GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
+        public UIBox2 GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
             DMIParser.ParsedDMIState state = Description.GetState(stateName);
             DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
 
-            return Box2.FromDimensions(new Vector2(frame.X, frame.Y), new Vector2(Description.Width, Description.Height));
+            return UIBox2.FromDimensions(new Vector2(frame.X, frame.Y), new Vector2(Description.Width, Description.Height));
         }
 
         private bool IsValidPNG() {

@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Interface;
+﻿/*using OpenDreamShared.Interface;
 
 namespace OpenDreamClient.Interface {
     class InterfaceElement {
@@ -16,7 +16,7 @@ namespace OpenDreamClient.Interface {
         }
 
         public virtual void UpdateElementDescriptor() {
-            
+
         }
 
         public virtual void Shutdown() {
@@ -24,3 +24,4 @@ namespace OpenDreamClient.Interface {
         }
     }
 }
+*/

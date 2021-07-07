@@ -7,7 +7,7 @@ using Robust.Shared.Maths;
 using Color = System.Drawing.Color;
 
 namespace OpenDreamClient.Dream {
-    class DreamIcon {
+    public class DreamIcon {
         public ResourceDMI DMI { get; private set; } = null;
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
@@ -88,7 +88,7 @@ namespace OpenDreamClient.Dream {
             return GetPixel(x, y).A != 0;
         }
 
-        public Box2 GetTextureRect() {
+        public UIBox2 GetTextureRect() {
             return DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
         }
 

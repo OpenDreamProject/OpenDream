@@ -1,5 +1,6 @@
 using System.Globalization;
 using JetBrains.Annotations;
+using OpenDreamClient.Renderer;
 using OpenDreamClient.States;
 using Robust.Client;
 using Robust.Client.CEF;
@@ -26,14 +27,16 @@ namespace OpenDreamClient
             ClientOpenDreamIoC.Register();
             IoCManager.BuildGraph();
 
-            IoCManager.Resolve<CefManager>().Initialize();
+            //IoCManager.Resolve<CefManager>().Initialize();
             IoCManager.Resolve<DreamUserInterfaceStateManager>().Initialize();
         }
 
         public override void PostInit()
         {
+            IoCManager.Resolve<ILightManager>().Enabled = false;
             IoCManager.Resolve<IBaseClient>().StartSinglePlayer();
             IoCManager.Resolve<OpenDream>().ConnectToServer("127.0.0.1", 25566);
+            IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamOverlay());
         }
 
         protected override void Dispose(bool disposing)
@@ -49,7 +52,7 @@ namespace OpenDreamClient
                 return;
 
             IoCManager.Resolve<OpenDream>().Update(frameEventArgs.DeltaSeconds);
-            IoCManager.Resolve<CefManager>().Update();
+            //IoCManager.Resolve<CefManager>().Update();
         }
     }
 }

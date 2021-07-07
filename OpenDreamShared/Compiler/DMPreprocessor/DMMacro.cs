@@ -31,7 +31,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             return _parameters != null;
         }
 
-        public virtual List<Token> Expand(List<List<Token>> parameters) {
+        public virtual List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             if (parameters == null && HasParameters()) throw new ArgumentException("This macro requires parameters");
 
             List<Token> expandedTokens = new();
@@ -76,6 +76,26 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             }
 
             return expandedTokens;
+        }
+    }
+
+    class DMMacroLine : DMMacro {
+        public DMMacroLine() : base(null, null) { }
+
+        public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+            return new() {
+                new Token(TokenType.DM_Preproc_Number, replacing.Line.ToString(), replacing.SourceFile, replacing.Line, replacing.Column, null)
+            };
+        }
+    }
+
+    class DMMacroFile : DMMacro {
+        public DMMacroFile() : base(null, null) { }
+
+        public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+            return new() {
+                new Token(TokenType.DM_Preproc_ConstantString, $"\"{replacing.SourceFile}\"", replacing.SourceFile, replacing.Line, replacing.Column, replacing.SourceFile)
+            };
         }
     }
 }

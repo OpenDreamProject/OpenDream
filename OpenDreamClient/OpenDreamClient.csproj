@@ -5,6 +5,7 @@
     <TargetFramework>$(TargetFramework)</TargetFramework>
     <LangVersion>9</LangVersion>
     <IsPackable>false</IsPackable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\bin\OpenDreamClient\</OutputPath>
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
   </PropertyGroup>

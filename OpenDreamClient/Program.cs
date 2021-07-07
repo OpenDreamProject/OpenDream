@@ -9,7 +9,14 @@ namespace OpenDreamClient {
 
         static void Main(string[] args)
         {
-            ContentStart.Start(args);
+            // TODO ROBUST: This is temporary, it should use ContentStart.Start() in the future.
+            ContentStart.StartLibrary(args, new GameControllerOptions()
+            {
+                Sandboxing = false,
+                UserDataDirectoryName = "OpenDream",
+                ContentModulePrefix = "OpenDream",
+                ContentBuildDirectory = "OpenDreamClient",
+            });
         }
     }
 }

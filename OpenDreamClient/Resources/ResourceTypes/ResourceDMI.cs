@@ -1,56 +1,39 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using System.Windows.Media.Imaging;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
+using Robust.Client.Graphics;
+using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
     class ResourceDMI : Resource {
-        public Bitmap ImageBitmap;
-        public DMIParser.ParsedDMIDescription Description;
+        public Texture Texture { get; }
+        public DMIParser.ParsedDMIDescription Description { get; }
 
-        private readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
 
         public ResourceDMI(string resourcePath, byte[] data) : base(resourcePath, data) {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
-            ImageBitmap = (Bitmap)Image.FromStream(new MemoryStream(data));
+            Texture = IoCManager.Resolve<IClyde>().LoadTextureFromPNGStream(new MemoryStream(data));
             Description = ParseDMI();
         }
 
-        ~ResourceDMI() {
-            ImageBitmap.Dispose();
-        }
-
-        public Rectangle GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
+        public Box2 GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
             DMIParser.ParsedDMIState state = Description.GetState(stateName);
             DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
 
-            return new Rectangle(frame.X, frame.Y, Description.Width, Description.Height);
-        }
-
-        public BitmapSource CreateWPFImageSource() {
-            MemoryStream ms = new MemoryStream();
-            BitmapImage image = new BitmapImage();
-
-            ImageBitmap.Save(ms, ImageFormat.Png);
-            image.BeginInit();
-            ms.Seek(0, SeekOrigin.Begin);
-            image.StreamSource = ms;
-            image.EndInit();
-
-            return image;
+            return Box2.FromDimensions(new Vector2(frame.X, frame.Y), new Vector2(Description.Width, Description.Height));
         }
 
         private bool IsValidPNG() {
-            if (Data.Length < _pngHeader.Length) return false;
+            if (Data.Length < PngHeader.Length) return false;
 
-            for (int i=0; i<_pngHeader.Length; i++) {
-                if (Data[i] != _pngHeader[i]) return false;
+            for (int i=0; i<PngHeader.Length; i++) {
+                if (Data[i] != PngHeader[i]) return false;
             }
 
             return true;
@@ -104,7 +87,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             string dmiDescription = ReadDMIDescription();
 
             try {
-                return DMIParser.ParseDMIDescription(dmiDescription, ImageBitmap.Width);
+                return DMIParser.ParseDMIDescription(dmiDescription, Texture.Width);
             } catch (Exception e) {
                 Console.WriteLine("Error while parsing dmi '" + ResourcePath + "': " + e.Message);
             }

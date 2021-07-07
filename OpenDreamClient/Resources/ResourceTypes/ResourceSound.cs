@@ -1,46 +1,31 @@
-﻿using NAudio.Vorbis;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System;
+﻿using System;
 using System.IO;
+using Robust.Client.Audio;
+using Robust.Client.Graphics;
+using Robust.Shared.Audio;
+using Robust.Shared.IoC;
+using Robust.Shared.Player;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
-    class ResourceSound : Resource {
-        private WaveOutEvent _outputDevice = new WaveOutEvent();
-        private MixingSampleProvider _mixer = null;
+    class ResourceSound : Resource
+    {
+        private readonly AudioStream _stream;
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {
             if (!resourcePath.EndsWith(".ogg")) {
                 throw new Exception("Only *.ogg audio files are supported");
             }
 
-            _mixer = new MixingSampleProvider(new VorbisSampleProvider(new MemoryStream(data)).WaveFormat);
-            _outputDevice.Init(_mixer);
+            _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
         }
 
-        ~ResourceSound() {
-            _outputDevice.Stop();
-            _outputDevice.Dispose();
+        public IPlayingAudioStream Play(AudioParams parameters)
+        {
+            return SoundSystem.Play(Filter.Local(), ResourcePath, parameters);
         }
 
-        public ISampleProvider Play(float volume) {
-            ISampleProvider sampleProvider = new VorbisSampleProvider(new MemoryStream(Data));
-
-            if (volume != 1.0f) {
-                VolumeSampleProvider volumeProvider = new VolumeSampleProvider(sampleProvider);
-                volumeProvider.Volume = volume;
-
-                sampleProvider = volumeProvider;
-            }
-
-            _mixer.AddMixerInput(sampleProvider);
-            _outputDevice.Play();
-
-            return sampleProvider;
-        }
-
-        public void Stop(ISampleProvider sampleProvider) {
-            _mixer.RemoveMixerInput(sampleProvider);
+        public void Stop(IPlayingAudioStream playingStream) {
+            playingStream.Stop();
         }
     }
 }

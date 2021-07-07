@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
+using Robust.Shared.Maths;
+using Color = System.Drawing.Color;
 
 namespace OpenDreamClient.Dream {
     class DreamIcon {
@@ -55,9 +56,13 @@ namespace OpenDreamClient.Dream {
         public Color GetPixel(int x, int y) {
             UpdateAnimation();
 
+            // TODO ROBUST: Fix this.
+            return Color.White;
+
+            /*
             Rectangle textureRect = DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
             if (x > 0 && x < textureRect.Width && y > 0 && y < textureRect.Height) {
-                Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
+                Color pixel = DMI.Texture.GetPixel(textureRect.X + x, textureRect.Y + y);
 
                 if (pixel.A == Color.Transparent.A || !IsValidIcon()) {
                     foreach (DreamIcon overlay in Overlays) {
@@ -72,7 +77,7 @@ namespace OpenDreamClient.Dream {
                 }
             } else {
                 return Color.Transparent;
-            }
+            }*/
         }
 
         public bool IsMouseOver(int x, int y) {
@@ -83,7 +88,7 @@ namespace OpenDreamClient.Dream {
             return GetPixel(x, y).A != 0;
         }
 
-        public Rectangle GetTextureRect() {
+        public Box2 GetTextureRect() {
             return DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
         }
 

@@ -1,6 +1,6 @@
-﻿using NAudio.Wave;
-using OpenDreamClient.Resources.ResourceTypes;
+﻿using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Net.Packets;
+using Robust.Shared.Audio;
 
 namespace OpenDreamClient.Audio {
     class DreamSoundEngine {
@@ -30,8 +30,8 @@ namespace OpenDreamClient.Audio {
 
             StopChannel(channel);
 
-            ISampleProvider sampleProvider = sound.Play(volume);
-            _channels[channel - 1] = new DreamSoundChannel(sound, sampleProvider);
+            var stream = sound.Play(AudioParams.Default.WithVolume(volume));
+            _channels[channel - 1] = new DreamSoundChannel(sound, stream);
         }
 
         public void StopChannel(int channel) {

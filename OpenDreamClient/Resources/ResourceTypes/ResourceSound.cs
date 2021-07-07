@@ -23,9 +23,5 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         {
             return SoundSystem.Play(Filter.Local(), ResourcePath, parameters);
         }
-
-        public void Stop(IPlayingAudioStream playingStream) {
-            playingStream.Stop();
-        }
     }
 }

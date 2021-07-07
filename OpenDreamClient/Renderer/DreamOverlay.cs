@@ -6,6 +6,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
+using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient.Renderer
 {
@@ -14,9 +15,11 @@ namespace OpenDreamClient.Renderer
         [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly OpenDream _openDream = default!;
 
+        [ViewVariables]
         public (int X, int Y, int Z) Camera;
         private readonly int _viewDistance = 7;
 
+        [ViewVariables]
         private static Dictionary<(string, UIBox2), Texture> _textureCache = new();
 
         public override OverlaySpace Space => OverlaySpace.ScreenSpace | OverlaySpace.WorldSpace;
@@ -97,26 +100,27 @@ namespace OpenDreamClient.Renderer
             if (_openDream.Map == null)
                 return;
 
-            if (args.Space.HasFlag(OverlaySpace.WorldSpace))
+            switch (args.Space)
             {
-                List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(Camera.X - _viewDistance - 1, Camera.Y - _viewDistance - 1, Camera.Z, 16, 16);
-                List<ATOM> mapAtoms = new();
+                case OverlaySpace.WorldSpace:
+                {
+                    List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(Camera.X - _viewDistance - 1, Camera.Y - _viewDistance - 1, Camera.Z, 16, 16);
+                    List<ATOM> mapAtoms = new();
 
-                foreach (ATOM turf in turfs) {
-                    if (IsAtomVisible(turf, false)) {
-                        mapAtoms.Add(turf);
-                        mapAtoms.AddRange(turf.Contents);
+                    foreach (ATOM turf in turfs) {
+                        if (IsAtomVisible(turf, false)) {
+                            mapAtoms.Add(turf);
+                            mapAtoms.AddRange(turf.Contents);
+                        }
                     }
+
+                    DrawAtoms(mapAtoms, args.WorldHandle);
+                    break;
                 }
-
-                DrawAtoms(mapAtoms, args.WorldHandle);
+                case OverlaySpace.ScreenSpace:
+                    DrawAtoms(Program.OpenDream.ScreenObjects, args.ScreenHandle);
+                    break;
             }
-
-            if (args.Space.HasFlag(OverlaySpace.ScreenSpace))
-            {
-                DrawAtoms(Program.OpenDream.ScreenObjects, args.ScreenHandle);
-            }
-
         }
 
         private void DrawAtoms(List<ATOM> atoms, DrawingHandleScreen handle)
@@ -127,7 +131,7 @@ namespace OpenDreamClient.Renderer
             {
                 var screenCoordinates = atom.ScreenLocation.GetScreenCoordinates(32);
 
-                handle.SetTransform(new Vector2(screenCoordinates.X - (32 * 7), screenCoordinates.Y - (32 * 7)), Angle.Zero);
+                handle.SetTransform(new Vector2(screenCoordinates.X, screenCoordinates.Y), Angle.Zero);
 
                 if (IsAtomVisible(atom, true))
                     DrawDreamIcon(atom.Icon, false, handle);
@@ -142,7 +146,7 @@ namespace OpenDreamClient.Renderer
 
             foreach (var atom in atoms)
             {
-                handle.SetTransform(new Vector2((atom.X - Camera.X) * 32.0f, (atom.Y - Camera.Y) * 32.0f), Angle.Zero);
+                handle.SetTransform(new Vector2((atom.X - Camera.X), (atom.Y - Camera.Y)), Angle.Zero);
 
                 if (IsAtomVisible(atom, false))
                     DrawDreamIcon(atom.Icon, true, handle);
@@ -178,9 +182,9 @@ namespace OpenDreamClient.Renderer
 
             if (texture != null) {
                 if(handle is DrawingHandleScreen screen)
-                    screen.DrawTexture(texture, Vector2.Zero);
+                    screen.DrawTexture(texture, new Vector2(pixelX, pixelY));
                 else if(handle is DrawingHandleWorld world)
-                    world.DrawTexture(texture, Vector2.Zero);
+                    world.DrawTexture(texture, new Vector2(pixelX / 32f, pixelY / 32f));
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

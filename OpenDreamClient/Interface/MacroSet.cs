@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Input;
+using Robust.Client.Input;
+using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface {
     class MacroSet {
@@ -58,61 +60,87 @@ namespace OpenDreamClient.Interface {
             Command = macroDescriptor.Command;
         }
 
-        private static Key KeyNameToKey(string keyName) {
-            if (keyName.Length == 1) {
-                char c = keyName[0];
-
-                if (c >= 'A' && c <= 'Z') {
-                    return (Key)(c - 21); //I'm not typing all these out individually
-                } else if (c >= '0' && c <= '9') {
-                    return (Key)(c - 14); //Same here
-                }
-            } else {
-                switch (keyName) {
-                    case "NUMPAD0": return Key.NumPad0;
-                    case "NUMPAD1": return Key.NumPad1;
-                    case "NUMPAD2": return Key.NumPad2;
-                    case "NUMPAD3": return Key.NumPad3;
-                    case "NUMPAD4": return Key.NumPad4;
-                    case "NUMPAD5": return Key.NumPad5;
-                    case "NUMPAD6": return Key.NumPad6;
-                    case "NUMPAD7": return Key.NumPad7;
-                    case "NUMPAD8": return Key.NumPad8;
-                    case "NUMPAD9": return Key.NumPad9;
-                    case "NORTH": return Key.Up;
-                    case "SOUTH": return Key.Down;
-                    case "EAST": return Key.Right;
-                    case "WEST": return Key.Left;
-                    case "NORTHWEST": return Key.Home;
-                    case "SOUTHWEST": return Key.End;
-                    case "NORTHEAST": return Key.PageUp;
-                    case "SOUTHEAST": return Key.PageDown;
-                    case "CENTER": return Key.Clear;
-                    case "RETURN": return Key.Enter;
-                    case "ESCAPE": return Key.Escape;
-                    case "TAB": return Key.Tab;
-                    case "SPACE": return Key.Space;
-                    case "BACK": return Key.Back;
-                    case "INSERT": return Key.Insert;
-                    case "DELETE": return Key.Delete;
-                    case "PAUSE": return Key.Pause;
-                    case "SNAPSHOT": return Key.PrintScreen;
-                    case "LWIN": return Key.LWin;
-                    case "RWIN": return Key.RWin;
-                    case "APPS": return Key.Apps;
-                    case "MULTIPLY": return Key.Multiply;
-                    case "ADD": return Key.Add;
-                    case "SUBTRACT": return Key.Subtract;
-                    case "DIVIDE": return Key.Divide;
-
-                    //TODO: Right shift/ctrl/alt
-                    case "SHIFT": return Key.LeftShift;
-                    case "CTRL": return Key.LeftCtrl;
-                    case "ALT": return Key.LeftAlt;
-                }
-            }
-
-            throw new Exception("Invalid key name \"" + keyName + "\"");
+        private static Key KeyNameToKey(string keyName)
+        {
+            return keyName switch
+            {
+                "A" => Key.A,
+                "B" => Key.B,
+                "C" => Key.C,
+                "D" => Key.D,
+                "E" => Key.E,
+                "F" => Key.F,
+                "G" => Key.G,
+                "H" => Key.H,
+                "I" => Key.I,
+                "J" => Key.J,
+                "K" => Key.K,
+                "L" => Key.L,
+                "M" => Key.M,
+                "N" => Key.N,
+                "O" => Key.O,
+                "P" => Key.P,
+                "Q" => Key.Q,
+                "R" => Key.R,
+                "S" => Key.S,
+                "T" => Key.T,
+                "U" => Key.U,
+                "V" => Key.V,
+                "W" => Key.W,
+                "X" => Key.X,
+                "Y" => Key.Y,
+                "Z" => Key.Z,
+                "0" => Key.Num0,
+                "1" => Key.Num1,
+                "2" => Key.Num2,
+                "3" => Key.Num3,
+                "4" => Key.Num4,
+                "5" => Key.Num5,
+                "6" => Key.Num6,
+                "7" => Key.Num7,
+                "8" => Key.Num8,
+                "9" => Key.Num9,
+                "NUMPAD0" => Key.NumpadNum0,
+                "NUMPAD1" => Key.NumpadNum1,
+                "NUMPAD2" => Key.NumpadNum2,
+                "NUMPAD3" => Key.NumpadNum3,
+                "NUMPAD4" => Key.NumpadNum4,
+                "NUMPAD5" => Key.NumpadNum5,
+                "NUMPAD6" => Key.NumpadNum6,
+                "NUMPAD7" => Key.NumpadNum7,
+                "NUMPAD8" => Key.NumpadNum8,
+                "NUMPAD9" => Key.NumpadNum9,
+                "NORTH" => Key.Up,
+                "SOUTH" => Key.Down,
+                "EAST" => Key.Right,
+                "WEST" => Key.Left,
+                "NORTHWEST" => Key.Home,
+                "SOUTHWEST" => Key.End,
+                "NORTHEAST" => Key.PageUp,
+                "SOUTHEAST" => Key.PageDown,
+                //"CENTER" => Key.Clear;
+                "RETURN" => Key.Return,
+                "ESCAPE" => Key.Escape,
+                "TAB" => Key.Tab,
+                "SPACE" => Key.Space,
+                "BACK" => Key.BackSpace,
+                "INSERT" => Key.Insert,
+                "DELETE" => Key.Delete,
+                "PAUSE" => Key.Pause,
+                //"SNAPSHOT" => Key.PrintScreen;
+                //"LWIN" => Key.LWin;
+                //"RWIN" => Key.RWin;
+                //"APPS" => Key.Apps;
+                "MULTIPLY" => Key.NumpadMultiply,
+                "ADD" => Key.NumpadAdd,
+                "SUBTRACT" => Key.NumpadSubtract,
+                "DIVIDE" => Key.NumpadDivide,
+                //TODO: Right shift/ctrl/alt
+                "SHIFT" => Key.Shift,
+                "CTRL" => Key.Control,
+                "ALT" => Key.Alt,
+                _ => throw new Exception("Invalid key name \"" + keyName + "\"")
+            };
         }
     }
 }

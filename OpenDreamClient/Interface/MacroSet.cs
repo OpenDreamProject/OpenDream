@@ -1,4 +1,4 @@
-﻿/*using OpenDreamShared.Interface;
+﻿using OpenDreamShared.Interface;
 using System;
 using System.Collections.Generic;
 using Key = Robust.Client.Input.Keyboard.Key;
@@ -19,7 +19,7 @@ namespace OpenDreamClient.Interface {
         }
     }
 
-    class Macro : InterfaceElement {
+    class Macro : IInterfaceElement {
         public enum MacroSuffix {
             None,
             Repeat,
@@ -27,35 +27,55 @@ namespace OpenDreamClient.Interface {
         }
 
         public Key Key;
-        public ModifierKeys Modifier;
+        // TODO ROBUST: Modifiers...
+        //public ModifierKeys Modifier;
         public MacroSuffix Suffix;
         public string Command;
+        private ElementDescriptor _elementDescriptor;
 
-        public Macro(MacroDescriptor macroDescriptor) : base(macroDescriptor) {
+        public Macro(MacroDescriptor macroDescriptor)
+        {
+            _elementDescriptor = macroDescriptor;
             UpdateElementDescriptor();
         }
 
-        public override void UpdateElementDescriptor() {
-            base.UpdateElementDescriptor();
+        public string Name => _elementDescriptor.Name;
 
+        ElementDescriptor IInterfaceElement.ElementDescriptor
+        {
+            get => _elementDescriptor;
+            set => _elementDescriptor = value;
+        }
+
+        public void SetAttribute(string name, object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UpdateElementDescriptor() {
             MacroDescriptor macroDescriptor = (MacroDescriptor)_elementDescriptor;
             string macroName = macroDescriptor.Name.ToUpper();
 
-            if (macroName.StartsWith("SHIFT+")) Modifier = ModifierKeys.Shift;
-            else if (macroName.StartsWith("CTRL+")) Modifier = ModifierKeys.Control;
-            else if (macroName.StartsWith("ALT+")) Modifier = ModifierKeys.Alt;
-            else Modifier = ModifierKeys.None;
+            //if (macroName.StartsWith("SHIFT+")) Modifier = ModifierKeys.Shift;
+            //else if (macroName.StartsWith("CTRL+")) Modifier = ModifierKeys.Control;
+            //else if (macroName.StartsWith("ALT+")) Modifier = ModifierKeys.Alt;
+            //else Modifier = ModifierKeys.None;
 
             if (macroName.EndsWith("+REP")) Suffix = MacroSuffix.Repeat;
             else if (macroName.EndsWith("+UP")) Suffix = MacroSuffix.Release;
             else Suffix = MacroSuffix.None;
 
             //Remove the modifier and suffix, if they exist
-            if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+"));
+            //if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+"));
             if (Suffix != MacroSuffix.None) macroName = macroName.Substring(0, macroName.LastIndexOf("+"));
 
             Key = KeyNameToKey(macroName);
             Command = macroDescriptor.Command;
+        }
+
+        public void Shutdown()
+        {
+            throw new NotImplementedException();
         }
 
         private static Key KeyNameToKey(string keyName)
@@ -116,7 +136,7 @@ namespace OpenDreamClient.Interface {
                 "SOUTHWEST" => Key.End,
                 "NORTHEAST" => Key.PageUp,
                 "SOUTHEAST" => Key.PageDown,
-                //"CENTER" => Key.Clear;
+                //"CENTER" => Key.Clear,
                 "RETURN" => Key.Return,
                 "ESCAPE" => Key.Escape,
                 "TAB" => Key.Tab,
@@ -125,10 +145,10 @@ namespace OpenDreamClient.Interface {
                 "INSERT" => Key.Insert,
                 "DELETE" => Key.Delete,
                 "PAUSE" => Key.Pause,
-                //"SNAPSHOT" => Key.PrintScreen;
-                //"LWIN" => Key.LWin;
-                //"RWIN" => Key.RWin;
-                //"APPS" => Key.Apps;
+                //"SNAPSHOT" => Key.PrintScreen,
+                "LWIN" => Key.LSystem,
+                "RWIN" => Key.RSystem,
+                //"APPS" => Key.Apps,
                 "MULTIPLY" => Key.NumpadMultiply,
                 "ADD" => Key.NumpadAdd,
                 "SUBTRACT" => Key.NumpadSubtract,
@@ -142,4 +162,4 @@ namespace OpenDreamClient.Interface {
         }
     }
 }
-*/
+

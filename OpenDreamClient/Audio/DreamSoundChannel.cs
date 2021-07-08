@@ -19,6 +19,7 @@ namespace OpenDreamClient.Audio
 
         public void Dispose()
         {
+            Stop();
             Source?.Dispose();
         }
     }

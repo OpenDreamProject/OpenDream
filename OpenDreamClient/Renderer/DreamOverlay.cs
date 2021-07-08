@@ -77,13 +77,13 @@ namespace OpenDreamClient.Renderer
         }
 
         private void UpdateCameraPosition() {
-            ATOM Eye = Program.OpenDream.Eye;
+            ATOM Eye = _openDream.Eye;
 
             if (Eye != null) {
                 Camera = (Eye.X, Eye.Y, Eye.Z);
 
-                if (Program.OpenDream.Perspective.HasFlag(ClientPerspective.Edge)) {
-                    Map map = Program.OpenDream.Map;
+                if (_openDream.Perspective.HasFlag(ClientPerspective.Edge)) {
+                    Map map = _openDream.Map;
 
                     Camera.X = Math.Min(Math.Max(Camera.X, _viewDistance), map.Width - _viewDistance);
                     Camera.Y = Math.Min(Math.Max(Camera.Y, _viewDistance), map.Height - _viewDistance);
@@ -104,7 +104,7 @@ namespace OpenDreamClient.Renderer
             {
                 case OverlaySpace.WorldSpace:
                 {
-                    List<ATOM> turfs = Program.OpenDream.Map.GetTurfs(Camera.X - _viewDistance - 1, Camera.Y - _viewDistance - 1, Camera.Z, 16, 16);
+                    List<ATOM> turfs = _openDream.Map.GetTurfs(Camera.X - _viewDistance - 1, Camera.Y - _viewDistance - 1, Camera.Z, 16, 16);
                     List<ATOM> mapAtoms = new();
 
                     foreach (ATOM turf in turfs) {
@@ -118,7 +118,7 @@ namespace OpenDreamClient.Renderer
                     break;
                 }
                 case OverlaySpace.ScreenSpace:
-                    DrawAtoms(Program.OpenDream.ScreenObjects, args.ScreenHandle);
+                    DrawAtoms(_openDream.ScreenObjects, args.ScreenHandle);
                     break;
             }
         }

@@ -1,6 +1,7 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.IoC;
 using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient.Dream {
@@ -84,9 +85,10 @@ namespace OpenDreamClient.Dream {
         public ATOM(UInt32 id, AtomType type, int appearanceId) {
             ID = id;
             Type = type;
-            Icon.Appearance = Program.OpenDream.IconAppearances[appearanceId];
+            var openDream = IoCManager.Resolve<OpenDream>();
+            Icon.Appearance = openDream.IconAppearances[appearanceId];
 
-            Program.OpenDream.AddATOM(this);
+            openDream.AddATOM(this);
         }
     }
 }

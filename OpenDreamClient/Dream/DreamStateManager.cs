@@ -2,23 +2,29 @@
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Dream {
-    class DreamStateManager {
+    [UsedImplicitly]
+    internal class DreamStateManager
+    {
+        [Dependency] private readonly OpenDream _openDream = default!;
+
         public void HandlePacketFullGameState(PacketFullGameState pFullGameState) {
             DreamFullState fullState = pFullGameState.FullState;
 
-            Program.OpenDream.IconAppearances.Clear();
+            _openDream.IconAppearances.Clear();
             foreach (IconAppearance iconAppearance in fullState.IconAppearances) {
-                Program.OpenDream.IconAppearances.Add(iconAppearance);
+                _openDream.IconAppearances.Add(iconAppearance);
             }
 
-            Program.OpenDream.ATOMs.Clear();
+            _openDream.ATOMs.Clear();
             Dictionary<ATOM, UInt32> atomLocations = new();
             foreach (KeyValuePair<UInt32, DreamFullState.Atom> stateAtom in fullState.Atoms) {
                 ATOM atom = new ATOM(stateAtom.Key, stateAtom.Value.Type, stateAtom.Value.IconAppearanceID);
 
-                atom.Icon.Appearance = Program.OpenDream.IconAppearances[stateAtom.Value.IconAppearanceID];
+                atom.Icon.Appearance = _openDream.IconAppearances[stateAtom.Value.IconAppearanceID];
                 atom.ScreenLocation = stateAtom.Value.ScreenLocation;
                 atomLocations.Add(atom, stateAtom.Value.LocationID);
             }
@@ -27,8 +33,8 @@ namespace OpenDreamClient.Dream {
                 UInt32 locationId = atomLocation.Value;
 
                 if (locationId != UInt32.MaxValue) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(locationId)) {
-                        atomLocation.Key.Loc = Program.OpenDream.ATOMs[locationId];
+                    if (_openDream.ATOMs.ContainsKey(locationId)) {
+                        atomLocation.Key.Loc = _openDream.ATOMs[locationId];
                     } else {
                         Console.WriteLine("Full game state packet gave an atom an invalid location, which was ignored (ID " + atomLocation.Key.ID + ")(Location ID " + locationId + ")");
                     }
@@ -37,7 +43,7 @@ namespace OpenDreamClient.Dream {
                 }
             }
 
-            Program.OpenDream.Map = new Map();
+            _openDream.Map = new Map();
             for (int z = 0; z < fullState.Levels.Count; z++) {
                 DreamFullState.Level level = fullState.Levels[z];
                 int levelWidth = level.Turfs.GetLength(0);
@@ -48,8 +54,8 @@ namespace OpenDreamClient.Dream {
                     for (int y = 0; y < levelHeight; y++) {
                         UInt32 turfAtomID = level.Turfs[x, y];
 
-                        if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
-                            ATOM turf = Program.OpenDream.ATOMs[turfAtomID];
+                        if (_openDream.ATOMs.ContainsKey(turfAtomID)) {
+                            ATOM turf = _openDream.ATOMs[turfAtomID];
 
                             turf.X = x;
                             turf.Y = y;
@@ -61,7 +67,7 @@ namespace OpenDreamClient.Dream {
                     }
                 }
 
-                Program.OpenDream.Map.Levels.Add(new Map.Level() {
+                _openDream.Map.Levels.Add(new Map.Level() {
                     Turfs = turfs
                 });
             }
@@ -69,22 +75,22 @@ namespace OpenDreamClient.Dream {
             if (pFullGameState.ClientState != null) {
                 UInt32 eyeId = pFullGameState.ClientState.EyeID;
                 if (eyeId != UInt32.MaxValue) {
-                    if (Program.OpenDream.ATOMs.TryGetValue(eyeId, out ATOM eye)) {
-                        Program.OpenDream.Eye = eye;
+                    if (_openDream.ATOMs.TryGetValue(eyeId, out ATOM eye)) {
+                        _openDream.Eye = eye;
                     } else {
                         Console.WriteLine("Full game state packet gives an invalid atom for the eye (ID " + eyeId + ")");
-                        Program.OpenDream.Eye = null;
+                        _openDream.Eye = null;
                     }
                 } else {
-                    Program.OpenDream.Eye = null;
+                    _openDream.Eye = null;
                 }
 
-                Program.OpenDream.Perspective = pFullGameState.ClientState.Perspective;
+                _openDream.Perspective = pFullGameState.ClientState.Perspective;
 
-                Program.OpenDream.ScreenObjects.Clear();
+                _openDream.ScreenObjects.Clear();
                 foreach (UInt32 screenObjectAtomID in pFullGameState.ClientState.ScreenObjects) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
-                        Program.OpenDream.ScreenObjects.Add(Program.OpenDream.ATOMs[screenObjectAtomID]);
+                    if (_openDream.ATOMs.ContainsKey(screenObjectAtomID)) {
+                        _openDream.ScreenObjects.Add(_openDream.ATOMs[screenObjectAtomID]);
                     } else {
                         Console.WriteLine("Full games state packet defines a screen object that doesn't exist, and was ignored (ID " + screenObjectAtomID + ")");
                     }
@@ -96,7 +102,7 @@ namespace OpenDreamClient.Dream {
             DreamDeltaState deltaState = pDeltaGameState.DeltaState;
 
             foreach (IconAppearance appearance in deltaState.NewIconAppearances) {
-                Program.OpenDream.IconAppearances.Add(appearance);
+                _openDream.IconAppearances.Add(appearance);
             }
 
             Dictionary<ATOM, UInt32> atomLocations = new();
@@ -104,10 +110,10 @@ namespace OpenDreamClient.Dream {
                 UInt32 atomID = atomCreationPair.Key;
                 DreamDeltaState.AtomCreation atomCreation = atomCreationPair.Value;
 
-                if (!Program.OpenDream.ATOMs.ContainsKey(atomID)) {
+                if (!_openDream.ATOMs.ContainsKey(atomID)) {
                     ATOM atom = new ATOM(atomID, atomCreation.Type, atomCreation.IconAppearanceID);
 
-                    atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomCreation.IconAppearanceID];
+                    atom.Icon.Appearance = _openDream.IconAppearances[atomCreation.IconAppearanceID];
                     atom.ScreenLocation = atomCreation.ScreenLocation;
                     atomLocations.Add(atom, atomCreation.LocationID);
                 } else {
@@ -119,8 +125,8 @@ namespace OpenDreamClient.Dream {
                 UInt32 locationId = atomLocation.Value;
 
                 if (locationId != UInt32.MaxValue) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(locationId)) {
-                        atomLocation.Key.Loc = Program.OpenDream.ATOMs[locationId];
+                    if (_openDream.ATOMs.ContainsKey(locationId)) {
+                        atomLocation.Key.Loc = _openDream.ATOMs[locationId];
                     } else {
                         Console.WriteLine("Full game state packet gave an atom an invalid location, which was ignored (ID " + atomLocation.Key.ID + ")(Location ID " + locationId + ")");
                     }
@@ -130,11 +136,11 @@ namespace OpenDreamClient.Dream {
             }
 
             foreach (UInt32 atomID in deltaState.AtomDeletions) {
-                if (Program.OpenDream.ATOMs.ContainsKey(atomID)) {
-                    ATOM atom = Program.OpenDream.ATOMs[atomID];
+                if (_openDream.ATOMs.ContainsKey(atomID)) {
+                    ATOM atom = _openDream.ATOMs[atomID];
 
                     atom.Loc = null;
-                    Program.OpenDream.ATOMs.Remove(atomID);
+                    _openDream.ATOMs.Remove(atomID);
                 } else {
                     Console.WriteLine("Delta state packet gives an atom deletion for an invalid atom, and was ignored (ID " + atomID + ")");
                 }
@@ -144,12 +150,12 @@ namespace OpenDreamClient.Dream {
                 UInt32 atomID = atomDeltaPair.Key;
                 DreamDeltaState.AtomDelta atomDelta = atomDeltaPair.Value;
 
-                if (Program.OpenDream.ATOMs.ContainsKey(atomID)) {
-                    ATOM atom = Program.OpenDream.ATOMs[atomID];
+                if (_openDream.ATOMs.ContainsKey(atomID)) {
+                    ATOM atom = _openDream.ATOMs[atomID];
 
                     if (atomDelta.NewIconAppearanceID.HasValue) {
-                        if (Program.OpenDream.IconAppearances.Count > atomDelta.NewIconAppearanceID.Value) {
-                            atom.Icon.Appearance = Program.OpenDream.IconAppearances[atomDelta.NewIconAppearanceID.Value];
+                        if (_openDream.IconAppearances.Count > atomDelta.NewIconAppearanceID.Value) {
+                            atom.Icon.Appearance = _openDream.IconAppearances[atomDelta.NewIconAppearanceID.Value];
                         } else {
                             Console.WriteLine("Invalid appearance ID " + atomDelta.NewIconAppearanceID.Value);
                         }
@@ -164,12 +170,12 @@ namespace OpenDreamClient.Dream {
             }
 
             foreach (DreamDeltaState.AtomLocationDelta atomLocationDelta in deltaState.AtomLocationDeltas) {
-                if (Program.OpenDream.ATOMs.ContainsKey(atomLocationDelta.AtomID)) {
-                    ATOM atom = Program.OpenDream.ATOMs[atomLocationDelta.AtomID];
+                if (_openDream.ATOMs.ContainsKey(atomLocationDelta.AtomID)) {
+                    ATOM atom = _openDream.ATOMs[atomLocationDelta.AtomID];
 
                     if (atomLocationDelta.LocationID != UInt32.MaxValue) {
-                        if (Program.OpenDream.ATOMs.ContainsKey(atomLocationDelta.LocationID)) {
-                            atom.Loc = Program.OpenDream.ATOMs[atomLocationDelta.LocationID];
+                        if (_openDream.ATOMs.ContainsKey(atomLocationDelta.LocationID)) {
+                            atom.Loc = _openDream.ATOMs[atomLocationDelta.LocationID];
                         } else {
                             Console.WriteLine("Delta state packet gave an atom a new invalid location, so it was not changed (ID " + atomLocationDelta.AtomID + ")(Location ID " + atomLocationDelta.LocationID + ")");
                         }
@@ -187,24 +193,24 @@ namespace OpenDreamClient.Dream {
                 int z = turfDelta.Key.Z;
                 UInt32 turfAtomID = turfDelta.Value;
 
-                if (z >= Program.OpenDream.Map.Levels.Count) { //Z-Level doesn't exist, create it
-                    while (Program.OpenDream.Map.Levels.Count <= z) {
-                        int levelWidth = Program.OpenDream.Map.Levels[0].Turfs.GetLength(0);
-                        int levelHeight = Program.OpenDream.Map.Levels[0].Turfs.GetLength(1);
+                if (z >= _openDream.Map.Levels.Count) { //Z-Level doesn't exist, create it
+                    while (_openDream.Map.Levels.Count <= z) {
+                        int levelWidth = _openDream.Map.Levels[0].Turfs.GetLength(0);
+                        int levelHeight = _openDream.Map.Levels[0].Turfs.GetLength(1);
 
-                        Program.OpenDream.Map.Levels.Add(new Map.Level() {
+                        _openDream.Map.Levels.Add(new Map.Level() {
                             Turfs = new ATOM[levelWidth, levelHeight]
                         });
                     }
                 }
 
-                if (Program.OpenDream.ATOMs.ContainsKey(turfAtomID)) {
-                    ATOM turf = Program.OpenDream.ATOMs[turfAtomID];
+                if (_openDream.ATOMs.ContainsKey(turfAtomID)) {
+                    ATOM turf = _openDream.ATOMs[turfAtomID];
 
                     turf.X = x;
                     turf.Y = y;
                     turf.Z = z;
-                    Program.OpenDream.Map.Levels[z].Turfs[x, y] = turf;
+                    _openDream.Map.Levels[z].Turfs[x, y] = turf;
                 } else {
                     Console.WriteLine("Delta state packet sets a turf to an invalid atom, and was ignored (ID " + turfAtomID + ")(Location " + x + ", " + y + ", " + z + ")");
                 }
@@ -220,25 +226,25 @@ namespace OpenDreamClient.Dream {
                 UInt32 newEyeId = clientDelta.NewEyeID.Value;
 
                 if (newEyeId != UInt32.MaxValue) {
-                    if (!Program.OpenDream.ATOMs.TryGetValue(newEyeId, out Program.OpenDream.Eye)) {
+                    if (!_openDream.ATOMs.TryGetValue(newEyeId, out _openDream.Eye)) {
                         Console.WriteLine("Delta state packet gives a new eye with an invalid ATOM  (ID " + newEyeId + ")");
                     }
                 } else {
-                    Program.OpenDream.Eye = null;
+                    _openDream.Eye = null;
                 }
             }
 
             if (clientDelta.NewPerspective.HasValue) {
-                Program.OpenDream.Perspective = clientDelta.NewPerspective.Value;
+                _openDream.Perspective = clientDelta.NewPerspective.Value;
             }
 
             if (clientDelta.ScreenObjectAdditions != null) {
                 foreach (UInt32 screenObjectAtomID in clientDelta.ScreenObjectAdditions) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
-                        ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
+                    if (_openDream.ATOMs.ContainsKey(screenObjectAtomID)) {
+                        ATOM screenObject = _openDream.ATOMs[screenObjectAtomID];
 
-                        if (!Program.OpenDream.ScreenObjects.Contains(screenObject)) {
-                            Program.OpenDream.ScreenObjects.Add(screenObject);
+                        if (!_openDream.ScreenObjects.Contains(screenObject)) {
+                            _openDream.ScreenObjects.Add(screenObject);
                         } else {
                             Console.WriteLine("Delta state packet says to add a screen object that's already there, and was ignored (ID " + screenObjectAtomID + ")");
                         }
@@ -250,11 +256,11 @@ namespace OpenDreamClient.Dream {
 
             if (clientDelta.ScreenObjectRemovals != null) {
                 foreach (UInt32 screenObjectAtomID in clientDelta.ScreenObjectRemovals) {
-                    if (Program.OpenDream.ATOMs.ContainsKey(screenObjectAtomID)) {
-                        ATOM screenObject = Program.OpenDream.ATOMs[screenObjectAtomID];
+                    if (_openDream.ATOMs.ContainsKey(screenObjectAtomID)) {
+                        ATOM screenObject = _openDream.ATOMs[screenObjectAtomID];
 
-                        if (Program.OpenDream.ScreenObjects.Contains(screenObject)) {
-                            Program.OpenDream.ScreenObjects.Remove(screenObject);
+                        if (_openDream.ScreenObjects.Contains(screenObject)) {
+                            _openDream.ScreenObjects.Remove(screenObject);
                         } else {
                             Console.WriteLine("Delta state packet says to remove a screen object that's not there, and was ignored (ID " + screenObjectAtomID + ")");
                         }

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Resources;
+using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
+using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 using Color = System.Drawing.Color;
 
@@ -110,7 +113,10 @@ namespace OpenDreamClient.Dream {
                 return;
             }
 
-            Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(Appearance.Icon, (ResourceDMI dmi) => {
+            var openDream = IoCManager.Resolve<OpenDream>();
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+            resourceManager.LoadResourceAsync<ResourceDMI>(Appearance.Icon, (ResourceDMI dmi) => {
                 if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
@@ -120,7 +126,7 @@ namespace OpenDreamClient.Dream {
 
             Overlays.Clear();
             foreach (int overlayId in Appearance.Overlays) {
-                IconAppearance appearance = Program.OpenDream.IconAppearances[overlayId];
+                IconAppearance appearance = openDream.IconAppearances[overlayId];
 
                 if (appearance.Direction == AtomDirection.None) {
                     appearance = new IconAppearance(appearance) { Direction = Appearance.Direction };
@@ -131,7 +137,7 @@ namespace OpenDreamClient.Dream {
 
             Underlays.Clear();
             foreach (int underlayId in Appearance.Underlays) {
-                IconAppearance appearance = Program.OpenDream.IconAppearances[underlayId];
+                IconAppearance appearance = openDream.IconAppearances[underlayId];
 
                 if (appearance.Direction == AtomDirection.None) {
                     appearance = new IconAppearance(appearance) { Direction = Appearance.Direction };

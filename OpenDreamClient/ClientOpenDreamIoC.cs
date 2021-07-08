@@ -1,3 +1,6 @@
+using OpenDreamClient.Audio;
+using OpenDreamClient.Dream;
+using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
 using Robust.Client.CEF;
@@ -12,6 +15,9 @@ namespace OpenDreamClient
             SharedOpenDreamIoC.Register();
 
             IoCManager.Register<OpenDream>();
+            IoCManager.Register<DreamSoundEngine>();
+            IoCManager.Register<DreamStateManager>();
+            IoCManager.Register<DreamResourceManager>();
             IoCManager.Register<CefManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();
         }

@@ -8,6 +8,7 @@ using OpenDreamShared.Net;
 using OpenDreamShared.Net.Packets;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.IoC;
 using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient {
@@ -16,15 +17,16 @@ namespace OpenDreamClient {
     delegate void ClientTickEventHandler();
 
     internal class OpenDream {
+        [Dependency] private readonly DreamSoundEngine _soundEngine = default!;
+        [Dependency] private readonly DreamStateManager _stateManager = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+
         public event ConnectedToServerEventHandler ConnectedToServer;
         public event DisconnectedFromServerEventHandler DisconnectedFromServer;
         public event ClientTickEventHandler ClientTick;
 
         private const float UpdateTime = 0.05f;
 
-        [ViewVariables] public DreamSoundEngine SoundEngine = null;
-        [ViewVariables] public DreamStateManager StateManager = null;
-        [ViewVariables] public DreamResourceManager ResourceManager = null;
         //public DreamInterface Interface = null;
         [ViewVariables] public ClientConnection Connection = new ClientConnection();
         [ViewVariables] public ClientData ClientData = new ClientData(setDefaults: true);
@@ -46,9 +48,6 @@ namespace OpenDreamClient {
             _username = DateTime.Now.GetHashCode().ToString();
 
             //Interface = new DreamInterface(this);
-            SoundEngine = new DreamSoundEngine(this);
-            ResourceManager = new DreamResourceManager(this);
-            StateManager = new DreamStateManager();
 
             RegisterPacketCallbacks();
         }
@@ -97,13 +96,13 @@ namespace OpenDreamClient {
             Connection.RegisterPacketCallback<PacketConnectionResult>(PacketID.ConnectionResult, HandlePacketConnectionResult);
             Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => {});
             //Connection.RegisterPacketCallback<PacketOutput>(PacketID.Output, packet => Interface.HandlePacketOutput(packet));
-            Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => ResourceManager.HandlePacketResource(packet));
-            Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => StateManager.HandlePacketFullGameState(packet));
-            Connection.RegisterPacketCallback<PacketDeltaGameState>(PacketID.DeltaGameState, packet => StateManager.HandlePacketDeltaGameState(packet));
-            Connection.RegisterPacketCallback<PacketSound>(PacketID.Sound, packet => SoundEngine.HandlePacketSound(packet));
+            Connection.RegisterPacketCallback<PacketResource>(PacketID.Resource, packet => _resourceManager.HandlePacketResource(packet));
+            Connection.RegisterPacketCallback<PacketFullGameState>(PacketID.FullGameState, packet => _stateManager.HandlePacketFullGameState(packet));
+            Connection.RegisterPacketCallback<PacketDeltaGameState>(PacketID.DeltaGameState, packet => _stateManager.HandlePacketDeltaGameState(packet));
+            Connection.RegisterPacketCallback<PacketSound>(PacketID.Sound, packet => _soundEngine.HandlePacketSound(packet));
             Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => {});
             //Connection.RegisterPacketCallback<PacketBrowse>(PacketID.Browse, packet => Interface.HandlePacketBrowse(packet));
-            Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => ResourceManager.HandlePacketBrowseResource(packet));
+            Connection.RegisterPacketCallback<PacketBrowseResource>(PacketID.BrowseResource, packet => _resourceManager.HandlePacketBrowseResource(packet));
             Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => {});
             //Connection.RegisterPacketCallback<PacketPrompt>(PacketID.Prompt, packet => Interface.HandlePacketPrompt(packet));
             Connection.RegisterPacketCallback<PacketAlert>(PacketID.Alert, packet => {});

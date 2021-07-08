@@ -4,9 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Resources {
-    class DreamResourceManager {
+    internal class DreamResourceManager
+    {
+        [Dependency] private readonly OpenDream _openDream = default!;
+
         private struct LoadingResourceEntry {
             public Type ResourceType;
             public List<Action<Resource>> LoadCallbacks;
@@ -39,7 +43,7 @@ namespace OpenDreamClient.Resources {
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourcePath)) {
                     _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
-                    Program.OpenDream.Connection.SendPacket(new PacketRequestResource(resourcePath));
+                    _openDream.Connection.SendPacket(new PacketRequestResource(resourcePath));
                     Task.Delay(5000).ContinueWith(r => {
                         if (_loadingResources.ContainsKey(resourcePath)) {
                             Console.WriteLine("Resource '" + resourcePath + "' was requested, but is still not recieved 5 seconds later.");

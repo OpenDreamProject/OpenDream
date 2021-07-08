@@ -12,7 +12,7 @@ namespace DMCompiler.DM {
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = null;
 
-        private static List<DMASTProcStatement> _globalInitProcStatements = new();
+        private static List<Expressions.Assignment> _globalInitProcAssigns = new();
 
         private static uint _dmObjectIdCounter = 0;
 
@@ -45,18 +45,18 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
-        public static void AddGlobalInitProcStatement(DMASTProcStatement statement) {
-            _globalInitProcStatements.Add(statement);
+        public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {
+            _globalInitProcAssigns.Add(assign);
         }
 
         public static void CreateGlobalInitProc() {
-            if (_globalInitProcStatements.Count == 0) return;
+            if (_globalInitProcAssigns.Count == 0) return;
 
             GlobalInitProc = new DMProc(null);
-            DMVisitorProcBuilder globalInitProcBuilder = new DMVisitorProcBuilder(DMObjectTree.GetDMObject(DreamPath.Root), GlobalInitProc);
 
-            foreach (DMASTProcStatement statement in _globalInitProcStatements) {
-                statement.Visit(globalInitProcBuilder);
+            DMObject root = GetDMObject(DreamPath.Root);
+            foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
+                assign.EmitPushValue(root, GlobalInitProc);
             }
         }
 

@@ -70,7 +70,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
         public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
-        public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
+        public void VisitSubtract(DMASTSubtract subtract) { throw new CompileErrorException("DMASTSubstract"); }
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) { throw new NotImplementedException(); }
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) { throw new NotImplementedException(); }
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }

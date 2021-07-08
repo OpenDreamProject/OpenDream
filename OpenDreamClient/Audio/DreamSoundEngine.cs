@@ -17,7 +17,8 @@ namespace OpenDreamClient.Audio {
         public void PlaySound(int channel, ResourceSound sound, float volume) {
             if (channel == 0) { //First available channel
                 for (int i = 0; i < _channels.Length; i++) {
-                    if (_channels[i] == null) {
+                    if (_channels[i] == null || !_channels[i].Source.IsPlaying) {
+                        _channels[i]?.Dispose();
                         channel = i;
                         break;
                     }
@@ -30,13 +31,16 @@ namespace OpenDreamClient.Audio {
 
             StopChannel(channel);
 
-            var stream = sound.Play(AudioParams.Default.WithVolume(volume));
-            _channels[channel - 1] = new DreamSoundChannel(sound, stream);
+            var source = sound.Play(AudioParams.Default.WithVolume(volume));
+            _channels[channel - 1] = new DreamSoundChannel(source);
         }
 
         public void StopChannel(int channel) {
-            if (_channels[channel - 1] != null) {
-                _channels[channel - 1].Stop();
+            if (_channels[channel - 1] != null)
+            {
+                var ch = _channels[channel - 1];
+                ch.Stop();
+                ch.Dispose();
                 _channels[channel - 1] = null;
             }
         }

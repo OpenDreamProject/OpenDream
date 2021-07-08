@@ -1,18 +1,25 @@
-﻿using OpenDreamClient.Resources.ResourceTypes;
-using Robust.Shared.Audio;
+﻿using System;
+using Robust.Client.Graphics;
 
-namespace OpenDreamClient.Audio {
-    class DreamSoundChannel {
-        public ResourceSound Sound;
-        public IPlayingAudioStream Stream;
+namespace OpenDreamClient.Audio
+{
+    class DreamSoundChannel : IDisposable
+    {
+        public IClydeAudioSource Source { get; }
 
-        public DreamSoundChannel(ResourceSound sound, IPlayingAudioStream stream) {
-            Sound = sound;
-            Stream = stream;
+        public DreamSoundChannel(IClydeAudioSource source)
+        {
+            Source = source;
         }
 
-        public void Stop() {
-            Stream?.Stop();
+        public void Stop()
+        {
+            Source?.StopPlaying();
+        }
+
+        public void Dispose()
+        {
+            Source?.Dispose();
         }
     }
 }

@@ -19,9 +19,17 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
         }
 
-        public IPlayingAudioStream Play(AudioParams parameters)
+        public IClydeAudioSource Play(AudioParams audioParams)
         {
-            return SoundSystem.Play(Filter.Local(), ResourcePath, parameters);
+            var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
+
+            source.SetPitch(audioParams.PitchScale);
+            source.SetVolume(audioParams.Volume);
+            source.SetPlaybackPosition(audioParams.PlayOffsetSeconds);
+            source.IsLooping = audioParams.Loop;
+
+            source.StartPlaying();
+            return source;
         }
     }
 }

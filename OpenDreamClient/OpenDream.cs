@@ -84,7 +84,11 @@ namespace OpenDreamClient {
                 case ".quit": DisconnectFromServer(); break;
                 case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
                 default: {
-                    if (split.Length > 1) throw new NotImplementedException("Verb argument parsing is not implemented");
+                    if (split.Length > 1)
+                    {
+                        Console.Error.WriteLine("Verb argument parsing is not implemented yet.");
+                        return;
+                    }
 
                     Connection.SendPacket(new PacketCallVerb(verb));
                     break;

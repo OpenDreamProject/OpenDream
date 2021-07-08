@@ -1,8 +1,6 @@
 ﻿/*using OpenDreamShared.Interface;
 using System;
 using System.Collections.Generic;
-using System.Windows.Input;
-using Robust.Client.Input;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface {

@@ -1,5 +1,5 @@
 ﻿/*using System.Collections.Generic;
-using System.Windows.Input;
+using Robust.Client.Input;
 
 namespace OpenDreamClient.Interface {
     class MacroHandler {
@@ -25,7 +25,7 @@ namespace OpenDreamClient.Interface {
 
             foreach (Macro macro in macros) {
                 if (macro.Suffix == Macro.MacroSuffix.Release) continue;
-                e.Handled = true;
+                e.Handle();
 
                 if (macro.Suffix == Macro.MacroSuffix.Repeat) {
                     if (_repeatingMacros.Contains(macro)) continue;
@@ -43,7 +43,7 @@ namespace OpenDreamClient.Interface {
             foreach (Macro macro in macros) {
                 _repeatingMacros.Remove(macro);
 
-                e.Handled = true;
+                e.Handle();
                 if (macro.Suffix == Macro.MacroSuffix.Release) _openDream.RunCommand(macro.Command);
             }
         }
@@ -54,7 +54,7 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        private List<Macro> GetMacrosWithKey(Key key) {
+        private List<Macro> GetMacrosWithKey(Keyboard.Key key) {
             List<Macro> macros = new();
 
             //TODO: Only check the macro set the relevant window uses, instead of all macro sets

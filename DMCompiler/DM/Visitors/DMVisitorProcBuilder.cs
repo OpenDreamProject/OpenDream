@@ -1,7 +1,5 @@
-﻿using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using System;
+﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
@@ -74,7 +72,7 @@ namespace DMCompiler.DM.Visitors {
                 var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
                 if (constant is not Expressions.Number) {
-                    throw new Exception($"waitfor attribute should be a number (got {constant})");
+                    throw new CompileErrorException($"waitfor attribute should be a number (got {constant})");
                 }
 
                 _proc.WaitFor(constant.IsTruthy());
@@ -340,6 +338,10 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void HandleCompileErrorException(CompileErrorException exception) {
+            Program.VisitorErrors.Add(exception.Error);
         }
     }
 }

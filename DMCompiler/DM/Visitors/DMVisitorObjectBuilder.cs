@@ -1,6 +1,6 @@
-﻿using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using System;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
@@ -70,7 +70,7 @@ namespace DMCompiler.DM.Visitors {
             if (varOverride.VarName == "parent_type") {
                 DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                if (parentType == null) throw new Exception("Expected a constant path");
+                if (parentType == null) throw new CompileErrorException("Expected a constant path");
                 _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
             } else {
                 _currentVariable = new DMVariable(null, varOverride.VarName, false);
@@ -92,7 +92,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                throw new Exception("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
             }
 
             DMProc proc = new DMProc(procDefinition);
@@ -147,7 +147,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitStringFormat(DMASTStringFormat stringFormat) {
-            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a formatted string.");
+            if (!_currentVariable.IsGlobal) throw new CompileErrorException("Initial value of '" + _currentVariable.Name + "' cannot be a formatted string.");
 
             DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), stringFormat);
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
@@ -157,7 +157,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {
-            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a proc call.");
+            if (!_currentVariable.IsGlobal) throw new CompileErrorException("Initial value of '" + _currentVariable.Name + "' cannot be a proc call.");
 
             DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), procCall);
             DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
@@ -190,5 +190,9 @@ namespace DMCompiler.DM.Visitors {
             _valueStack.Push(constantFloat.Value);
         }
         #endregion Values
+
+        public void HandleCompileErrorException(CompileErrorException exception) {
+            Program.VisitorErrors.Add(exception.Error);
+        }
     }
 }

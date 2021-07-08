@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
 using System;
 
 namespace DMCompiler.DM.Visitors {
@@ -542,6 +543,10 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
             #endregion Others
+        }
+
+        public void HandleCompileErrorException(CompileErrorException exception) {
+            Program.VisitorErrors.Add(exception.Error);
         }
     }
 }

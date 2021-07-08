@@ -624,14 +624,15 @@ namespace OpenDreamRuntime.Procs {
             DreamValue firstValue = firstIdentifier?.GetValue() ?? (DreamValue)first;
 
             switch (firstValue.Type) {
-                case DreamValue.DreamValueType.DreamObject when firstValue.Value != null: { //Output operation
-                    IDreamMetaObject metaObject = firstValue.GetValueAsDreamObject().ObjectDefinition.MetaObject;
-
-                    if (metaObject != null) {
-                        state.Push(metaObject.OperatorOutput(firstValue, second));
+                case DreamValue.DreamValueType.DreamObject: { //Output operation
+                    if (firstValue == DreamValue.Null) {
+                        state.Push(new DreamValue(0));
                     } else {
-                        throw new Exception("Invalid output operation on " + firstValue + " and " + second);
+                        IDreamMetaObject metaObject = firstValue.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+
+                        state.Push(metaObject?.OperatorOutput(firstValue, second) ?? DreamValue.Null);
                     }
+                    
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:
@@ -665,7 +666,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.PopDreamValue();
             DreamValue secondValue = secondIdentifier?.GetValue() ?? (DreamValue)second;
 
-            if (first.Type == DreamValue.DreamValueType.Float && secondValue.Type == DreamValue.DreamValueType.Float) {
+            if (first == DreamValue.Null) {
+                state.Push(new DreamValue(0));
+            } else if (first.Type == DreamValue.DreamValueType.Float && secondValue.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() >> secondValue.GetValueAsInteger()));
             } else {
                 throw new Exception("Invalid bit shift right operation on " + first + " and " + secondValue);

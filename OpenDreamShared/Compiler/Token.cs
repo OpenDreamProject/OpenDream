@@ -86,6 +86,7 @@
         DM_Modulus,
         DM_ModulusEquals,
         DM_New,
+        DM_NewList,
         DM_Null,
         DM_Period,
         DM_Plus,

@@ -124,6 +124,12 @@ namespace OpenDreamRuntime {
                                 //TODO: Fill list
 
                                 varValue = new DreamValue(list);
+                            } else if (varOverride.Value is DMASTNewList dmastNewList) {
+                                DreamList list = DreamList.Create(Runtime);
+
+                                //TODO: Fill list
+
+                                varValue = new DreamValue(list);
                             } else {
                                 Error("Invalid var value (" + varOverride.Value + ")");
 

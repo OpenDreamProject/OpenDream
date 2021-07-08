@@ -147,9 +147,17 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public string PathElement() {
-            Token elementToken = Current();
+            TokenType[] validPathElementTokens = {
+                TokenType.DM_Identifier,
+                TokenType.DM_Var,
+                TokenType.DM_Proc,
+                TokenType.DM_List,
+                TokenType.DM_NewList,
+                TokenType.DM_Step
+            };
 
-            if (Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Var, TokenType.DM_Proc, TokenType.DM_List, TokenType.DM_Step })) {
+            Token elementToken = Current();
+            if (Check(validPathElementTokens)) {
                 return elementToken.Text;
             } else {
                 return null;
@@ -1594,6 +1602,13 @@ namespace OpenDreamShared.Compiler.DM {
                     DMASTCallParameter[] values = ProcCall(false);
 
                     primary = new DMASTList(values);
+                }
+
+                if (primary == null && Check(TokenType.DM_NewList)) {
+                    Whitespace();
+                    DMASTCallParameter[] values = ProcCall(false);
+
+                    primary = new DMASTNewList(values);
                 }
 
                 if (primary != null) Whitespace();

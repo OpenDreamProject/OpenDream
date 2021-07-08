@@ -242,6 +242,26 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // newlist(...)
+    class NewList : DMExpression {
+        DMExpression[] _parameters;
+
+        public NewList(DMExpression[] parameters) {
+            _parameters = parameters;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.CreateList();
+
+            foreach (DMExpression parameter in _parameters) {
+                parameter.EmitPushValue(dmObject, proc);
+                proc.PushArguments(0);
+                proc.CreateObject();
+                proc.ListAppend();
+            }
+        }
+    }
+
     // input(...)
     class Input : DMExpression {
         // Lazy

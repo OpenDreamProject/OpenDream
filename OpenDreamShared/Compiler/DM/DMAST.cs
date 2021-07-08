@@ -43,6 +43,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitSwitchCaseRange(DMASTSwitchCaseRange switchCaseRange) { throw new NotImplementedException(); }
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
+        public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -701,6 +702,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitList(this);
+        }
+    }
+
+    public class DMASTNewList : DMASTExpression {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewList(DMASTCallParameter[] parameters) {
+            Parameters = parameters;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewList(this);
         }
     }
 

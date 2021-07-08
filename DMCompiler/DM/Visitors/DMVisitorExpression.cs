@@ -433,6 +433,19 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.List(list);
         }
 
+        public void VisitNewList(DMASTNewList newList) {
+            DMExpression[] expressions = new DMExpression[newList.Parameters.Length];
+
+            for (int i = 0; i < newList.Parameters.Length; i++) {
+                DMASTCallParameter parameter = newList.Parameters[i];
+                if (parameter.Name != null) throw new Exception("newlist() does not take named arguments");
+
+                expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
+            }
+
+            Result = new Expressions.NewList(expressions);
+        }
+
         public void VisitInput(DMASTInput input) {
             Result = new Expressions.Input(input);
         }

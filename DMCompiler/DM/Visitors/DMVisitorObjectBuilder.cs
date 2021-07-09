@@ -71,10 +71,9 @@ namespace DMCompiler.DM.Visitors {
                 _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
             } else {
                 DMVariable variable = new DMVariable(null, varOverride.VarName, false);
-
                 DMExpression expression = DMExpression.Create(_currentObject, null, varOverride.Value, null);
-                SetVariableValue(variable, expression);
 
+                SetVariableValue(variable, expression);
                 _currentObject.VariableOverrides[variable.Name] = variable;
             }
 

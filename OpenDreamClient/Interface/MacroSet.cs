@@ -69,6 +69,18 @@ namespace OpenDreamClient.Interface {
                 }
             } else {
                 switch (keyName) {
+                    case "F1": return Key.F1;
+                    case "F2": return Key.F2;
+                    case "F3": return Key.F3;
+                    case "F4": return Key.F4;
+                    case "F5": return Key.F5;
+                    case "F6": return Key.F6;
+                    case "F7": return Key.F7;
+                    case "F8": return Key.F8;
+                    case "F9": return Key.F9;
+                    case "F10": return Key.F10;
+                    case "F11": return Key.F11;
+                    case "F12": return Key.F12;
                     case "NUMPAD0": return Key.NumPad0;
                     case "NUMPAD1": return Key.NumPad1;
                     case "NUMPAD2": return Key.NumPad2;

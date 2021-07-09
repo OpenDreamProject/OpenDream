@@ -40,11 +40,11 @@ namespace OpenDreamShared.Compiler {
     public class CompileErrorException : Exception {
         public CompilerError Error;
 
-        public CompileErrorException(CompilerError error) {
+        public CompileErrorException(CompilerError error) : base(error.Message) {
             Error = error;
         }
 
-        public CompileErrorException(string message) {
+        public CompileErrorException(string message) : base(message) {
             Error = new CompilerError(null, message);
         }
     }

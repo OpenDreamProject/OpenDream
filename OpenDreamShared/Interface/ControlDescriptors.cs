@@ -92,4 +92,11 @@ namespace OpenDreamShared.Interface {
     public class ControlDescriptorBrowser : ControlDescriptor {
         public ControlDescriptorBrowser(string name) : base(name) { }
     }
+
+    public class ControlDescriptorLabel : ControlDescriptor {
+        [InterfaceAttribute("text")]
+        public string Text = null;
+
+        public ControlDescriptorLabel(string name) : base(name) { }
+    }
 }

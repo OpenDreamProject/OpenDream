@@ -123,6 +123,7 @@ namespace OpenDreamShared.Compiler.DMF {
             { "elem", TokenType.DMF_Elem },
             { "INFO", TokenType.DMF_Info },
             { "INPUT", TokenType.DMF_Input },
+            { "LABEL", TokenType.DMF_Label },
             { "macro", TokenType.DMF_Macro },
             { "MAIN", TokenType.DMF_Main },
             { "MAP", TokenType.DMF_Map },

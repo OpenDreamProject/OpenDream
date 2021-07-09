@@ -137,6 +137,7 @@
         DMF_Info,
         DMF_Input,
         DMF_Integer,
+        DMF_Label,
         DMF_Macro,
         DMF_Main,
         DMF_Map,

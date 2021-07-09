@@ -25,7 +25,8 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Output,
             TokenType.DMF_Info,
             TokenType.DMF_Map,
-            TokenType.DMF_Browser
+            TokenType.DMF_Browser,
+            TokenType.DMF_Label
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -104,6 +105,7 @@ namespace OpenDreamShared.Compiler.DMF {
                     TokenType.DMF_Input => new ControlDescriptorInput(elementName),
                     TokenType.DMF_Button => new ControlDescriptorButton(elementName),
                     TokenType.DMF_Browser => new ControlDescriptorBrowser(elementName),
+                    TokenType.DMF_Label => new ControlDescriptorLabel(elementName),
                     _ => null
                 };
 

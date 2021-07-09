@@ -520,7 +520,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
-                if (loc.Type != DreamValueType.DreamObject || loc.Value == null || !loc.GetValueAsDreamObject().IsSubtypeOf(DreamPath.Turf)) {
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out _)) {
                     return new DreamValue(0);
                 }
             }

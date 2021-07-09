@@ -135,12 +135,12 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("ckeyEx")]
-        [DreamProcParameter("Key", Type = DreamValueType.String)]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
         public static DreamValue NativeProc_ckeyEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            string key = arguments.GetArgument(0, "Key").GetValueAsString();
+            string text = arguments.GetArgument(0, "Text").GetValueAsString();
 
-            key = Regex.Replace(key, "[\\^]|[^A-z0-9@_-]", ""); //Remove all punctuation except - and _
-            return new DreamValue(key);
+            text = Regex.Replace(text, "[\\^]|[^A-z0-9@_-]", ""); //Remove all punctuation except - and _
+            return new DreamValue(text);
         }
 
         [DreamProc("clamp")]

@@ -136,9 +136,11 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public MacroDescriptor Macro() {
             if (Check(TokenType.DMF_Elem)) {
+                Token macroIdToken = Current();
+                bool hasId = Check(TokenType.DMF_String);
                 Newline();
 
-                MacroDescriptor descriptor = new MacroDescriptor();
+                MacroDescriptor descriptor = new MacroDescriptor(hasId ? macroIdToken.Text : null);
                 Dictionary<string, Token> attributes = Attributes();
 
                 SetAttributes(descriptor, attributes);

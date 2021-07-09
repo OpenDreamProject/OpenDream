@@ -12,9 +12,13 @@ namespace OpenDreamShared.Interface {
     }
 
     public class MacroDescriptor : ElementDescriptor {
+        public string Id;
+
         [InterfaceAttribute("command")]
         public string Command;
 
-        public MacroDescriptor() : base(null) { }
+        public MacroDescriptor(string id) : base(null) {
+            Id = id;
+        }
     }
 }

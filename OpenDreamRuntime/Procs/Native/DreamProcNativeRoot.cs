@@ -380,6 +380,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
+        [DreamProc("hascall")]
+        [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("ProcName", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_hascall(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
+            var procName = arguments.GetArgument(1, "ProcName").GetValueAsString();
+            return new DreamValue(obj.ObjectDefinition.HasProc(procName) ? 1 : 0);
+        }
+
         [DreamProc("html_decode")]
         [DreamProcParameter("HtmlText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_html_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

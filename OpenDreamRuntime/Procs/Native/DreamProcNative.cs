@@ -30,6 +30,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_flick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_flist);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_hascall);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);

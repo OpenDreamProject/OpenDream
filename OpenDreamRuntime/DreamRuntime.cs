@@ -190,8 +190,7 @@ namespace OpenDreamRuntime
             DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
             connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
             connection.SendPacket(new PacketFullGameState(StateManager.FullState, connection.CKey));
-
-            client.SetVariable("connection", new DreamValue("seeker"));
+            
             client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 

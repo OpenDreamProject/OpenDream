@@ -130,7 +130,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string key = arguments.GetArgument(0, "Key").GetValueAsString();
 
-            key = Regex.Replace(key.ToLower(), "[^a-z]", ""); //Remove all punctuation and make lowercase
+            key = Regex.Replace(key.ToLower(), "[\\^]|[^a-z0-9@]", ""); //Remove all punctuation and make lowercase
+            return new DreamValue(key);
+        }
+
+        [DreamProc("ckeyEx")]
+        [DreamProcParameter("Key", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_ckeyEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string key = arguments.GetArgument(0, "Key").GetValueAsString();
+
+            key = Regex.Replace(key, "[\\^]|[^A-z0-9@_-]", ""); //Remove all punctuation except - and _
             return new DreamValue(key);
         }
 

@@ -1,4 +1,4 @@
-﻿/var/world/world = null
+/var/world/world = null
 
 proc/abs(A)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
@@ -8,6 +8,7 @@ proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
 proc/ckey(Key)
+proc/ckeyEx(Key)
 proc/clamp(Value, Low, High)
 proc/cmptext(T1)
 proc/copytext(T, Start = 1, End = 0)

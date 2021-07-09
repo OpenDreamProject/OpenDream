@@ -51,7 +51,7 @@ namespace OpenDreamClient.Interface {
             else Suffix = MacroSuffix.None;
 
             //Remove the modifier and suffix, if they exist
-            if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+"));
+            if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+") + 1);
             if (Suffix != MacroSuffix.None) macroName = macroName.Substring(0, macroName.LastIndexOf("+"));
 
             Key = KeyNameToKey(macroName);

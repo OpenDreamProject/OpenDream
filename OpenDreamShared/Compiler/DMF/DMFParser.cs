@@ -17,6 +17,16 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_PushButton,
             TokenType.DMF_Distort,
             TokenType.DMF_Stretch,
+            TokenType.DMF_Center,
+            TokenType.DMF_Left,
+            TokenType.DMF_Right,
+            TokenType.DMF_Top,
+            TokenType.DMF_TopLeft,
+            TokenType.DMF_TopRight,
+            TokenType.DMF_Bottom,
+            TokenType.DMF_BottomLeft,
+            TokenType.DMF_BottomRight,
+            TokenType.DMF_Vertical,
 
             TokenType.DMF_Main,
             TokenType.DMF_Input,
@@ -191,7 +201,7 @@ namespace OpenDreamShared.Compiler.DMF {
         public (string, Token)? AttributeAssign() {
             Token attributeToken = Current();
 
-            if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu, TokenType.DMF_Stretch })) {
+            if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu, TokenType.DMF_Stretch, TokenType.DMF_Left, TokenType.DMF_Right })) {
                 if (!Check(TokenType.DMF_Equals)) {
                     ReuseToken(attributeToken);
 

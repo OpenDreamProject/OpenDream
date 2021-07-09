@@ -126,8 +126,12 @@
         //DMF
         DMF_Attribute,
         DMF_Boolean,
+        DMF_Bottom,
+        DMF_BottomLeft,
+        DMF_BottomRight,
         DMF_Browser,
         DMF_Button,
+        DMF_Center,
         DMF_Child,
         DMF_Color,
         DMF_Dimension,
@@ -138,6 +142,7 @@
         DMF_Input,
         DMF_Integer,
         DMF_Label,
+        DMF_Left,
         DMF_Macro,
         DMF_Main,
         DMF_Map,
@@ -148,9 +153,14 @@
         DMF_PushBox,
         DMF_PushButton,
         DMF_Resource,
+        DMF_Right,
         DMF_Stretch,
         DMF_String,
         DMF_Sunken,
+        DMF_Top,
+        DMF_TopLeft,
+        DMF_TopRight,
+        DMF_Vertical,
         DMF_Window
     }
 

@@ -122,20 +122,22 @@ proc/block(var/atom/Start, var/atom/End)
 	return atoms
 
 proc/range(Dist, atom/Center = usr)
-	var/list/range = list()
+	. = list()
+
+	if (isnull(Center)) return 
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
 			var/turf/t = locate(x, y, Center.z)
 
 			if (t != null)
-				range.Add(t)
-				range.Add(t.contents)
-
-	return range
+				. += t
+				. += t.contents
 
 proc/orange(Dist = 5, var/atom/Center = usr)
-	var/list/orange = list()
+	. = list()
+
+	if (isnull(Center)) return
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
@@ -143,10 +145,8 @@ proc/orange(Dist = 5, var/atom/Center = usr)
 
 			var/turf/t = locate(x, y, Center.z)
 			if (t != null)
-				orange.Add(t)
-				orange.Add(t.contents)
-
-	return orange
+				. += t
+				. += t.contents
 
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null

@@ -148,4 +148,16 @@
 			. = 1
 		if(/datum, /mob)
 			. = 300
-		
+
+/world/proc/clamp_value()
+	var/out1 = clamp(10, 1, 5)
+	if (out1 != 5) return 0
+	var/out2 = clamp(-10, 1, 5)
+	if (out2 != 1) return 0
+	var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
+	for(var/item in out3)
+		if (item < 1 || item > 10) return 0
+	return 1
+
+/world/proc/md5_test()
+	return md5("md5_test")

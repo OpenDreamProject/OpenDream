@@ -32,22 +32,9 @@
 	verb/move_down()
 		step(src, DOWN)
 
-	verb/md5_ckey()
-		var/hash = md5(ckey)
-		usr << "The md5 hash of your ckey is: [hash]"
-
 	verb/roll_dice(dice as text)
 		var/result = roll(dice)
 		usr << "The total shown on the dice is: [result]"
-
-	verb/clamp_value()
-		var/out1 = clamp(10, 1, 5)
-		usr << "The output should be 5: [out1]"
-		var/out2 = clamp(-10, 1, 5)
-		usr << "The output should be 1: [out2]"
-		var/out3 = clamp(list(-10, 5, 40, -40), 1, 10)
-		for(var/item in out3)
-			usr << "The output should be between 1 and 10: [item]"
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")

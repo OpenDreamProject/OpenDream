@@ -27,7 +27,7 @@ namespace OpenDreamClient.Interface {
         }
 
         public Key Key;
-        public ModifierKeys Modifier;
+        public ModifierKeys Modifier = ModifierKeys.None;
         public MacroSuffix Suffix;
         public string Command;
 
@@ -41,17 +41,26 @@ namespace OpenDreamClient.Interface {
             MacroDescriptor macroDescriptor = (MacroDescriptor)_elementDescriptor;
             string macroName = macroDescriptor.Name.ToUpper();
 
-            if (macroName.StartsWith("SHIFT+")) Modifier = ModifierKeys.Shift;
-            else if (macroName.StartsWith("CTRL+")) Modifier = ModifierKeys.Control;
-            else if (macroName.StartsWith("ALT+")) Modifier = ModifierKeys.Alt;
-            else Modifier = ModifierKeys.None;
+            if (macroName.Contains("SHIFT+")) {
+                Modifier |= ModifierKeys.Shift;
+                macroName = macroName.Replace("SHIFT+", "");
+            }
+
+            if (macroName.Contains("CTRL+")) {
+                Modifier |= ModifierKeys.Control;
+                macroName = macroName.Replace("CTRL+", "");
+            }
+
+            if (macroName.StartsWith("ALT+")) {
+                Modifier = ModifierKeys.Alt;
+                macroName = macroName.Replace("ALT+", "");
+            }
 
             if (macroName.EndsWith("+REP")) Suffix = MacroSuffix.Repeat;
             else if (macroName.EndsWith("+UP")) Suffix = MacroSuffix.Release;
             else Suffix = MacroSuffix.None;
 
-            //Remove the modifier and suffix, if they exist
-            if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+") + 1);
+            //Remove the suffix, if it exists
             if (Suffix != MacroSuffix.None) macroName = macroName.Substring(0, macroName.LastIndexOf("+"));
 
             Key = KeyNameToKey(macroName);

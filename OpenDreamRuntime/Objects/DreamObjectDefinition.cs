@@ -152,10 +152,7 @@ namespace OpenDreamRuntime.Objects {
 
         private void CopyVariablesFrom(DreamObjectDefinition definition)
         {
-            Variables = new Dictionary<string, DreamValue>(definition.Variables.Count);
-            foreach (KeyValuePair<string, DreamValue> variable in definition.Variables) {
-                Variables.Add(variable.Key, variable.Value);
-            }
+            Variables = new Dictionary<string, DreamValue>(definition.Variables);
 
             GlobalVariables = new Dictionary<string, DreamGlobalVariable>(definition.GlobalVariables.Count);
             foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in definition.GlobalVariables) {

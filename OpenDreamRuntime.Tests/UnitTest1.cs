@@ -370,5 +370,33 @@ namespace OpenDreamRuntime.Tests
             Assert.AreEqual(new DreamValue(1), result);
             Assert.AreEqual(0, runtime.ExceptionCount);
         }
+
+        [Test]
+        public void ClampValueTest() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async (state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("clamp_value");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.Zero(runtime.ExceptionCount);
+            Assert.AreEqual(new DreamValue(1), result);
+        }
+
+        [Test]
+        public void Md5Test() {
+            var runtime = CreateRuntime();
+
+            var result = DreamThread.Run(runtime, async (state) => {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("md5_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.Zero(runtime.ExceptionCount);
+            Assert.AreEqual(new DreamValue("c74318b61a3024520c466f828c043c79"), result);
+        }
     }
 }

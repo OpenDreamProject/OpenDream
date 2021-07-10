@@ -150,14 +150,11 @@ namespace OpenDreamRuntime.Objects {
             else return false;
         }
 
-        private void CopyVariablesFrom(DreamObjectDefinition definition) {
-            foreach (KeyValuePair<string, DreamValue> variable in definition.Variables) {
-                Variables.Add(variable.Key, variable.Value);
-            }
+        private void CopyVariablesFrom(DreamObjectDefinition definition)
+        {
+            Variables = new Dictionary<string, DreamValue>(definition.Variables);
 
-            foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in definition.GlobalVariables) {
-                GlobalVariables.Add(globalVariable.Key, globalVariable.Value);
-            }
+            GlobalVariables = new Dictionary<string, DreamGlobalVariable>(definition.GlobalVariables);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 
@@ -26,14 +27,14 @@ namespace DMCompiler.DM.Expressions {
                 switch (deref.Type) {
                     case DMASTDereference.DereferenceType.Direct: {
                         if (current_path == null) {
-                            throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                            throw new CompileErrorException("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
                         }
 
                         DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
 
                         var current = dmObject.GetVariable(deref.Property);
                         if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
-                        if (current == null) throw new Exception("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
+                        if (current == null) throw new CompileErrorException("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
 
                         current_path = current.Type;
                         _fields.Add((deref.Conditional, deref.Property));
@@ -135,13 +136,13 @@ namespace DMCompiler.DM.Expressions {
             switch (deref.Type) {
                 case DMASTDereference.DereferenceType.Direct: {
                     if (_parent.Path == null) {
-                        throw new Exception("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
+                        throw new CompileErrorException("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
                     }
 
                     DreamPath type = _parent.Path.Value;
                     DMObject dmObject = DMObjectTree.GetDMObject(type, false);
 
-                    if (!dmObject.HasProc(deref.Property)) throw new Exception("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
+                    if (!dmObject.HasProc(deref.Property)) throw new CompileErrorException("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
                     _conditional = deref.Conditional;
                     _field = deref.Property;
                     break;
@@ -159,7 +160,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new Exception("attempt to use proc as value");
+            throw new CompileErrorException("attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {

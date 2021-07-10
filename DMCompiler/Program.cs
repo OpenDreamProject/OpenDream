@@ -15,6 +15,9 @@ namespace DMCompiler {
         public static List<string> IncludedMaps = new();
         public static string IncludedInterface = null;
 
+        //This is ugly
+        public static List<CompilerError> VisitorErrors = new();
+
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
 
@@ -91,6 +94,14 @@ namespace DMCompiler {
 
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
+
+            if (VisitorErrors.Count > 0) {
+                foreach (CompilerError error in VisitorErrors) {
+                    Console.WriteLine(error);
+                }
+
+                return false;
+            }
 
             return true;
         }

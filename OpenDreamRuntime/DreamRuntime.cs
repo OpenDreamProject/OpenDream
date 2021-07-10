@@ -51,7 +51,7 @@ namespace OpenDreamRuntime
         public Dictionary<DreamObject, DreamList> AreaContents = new();
         public Dictionary<DreamObject, UInt32> AtomIDs = new();
         public Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
-        public ConcurrentDictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new();
+        public Dictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new(1);
         public UInt32 AtomIDCounter;
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom = new();
@@ -190,7 +190,7 @@ namespace OpenDreamRuntime
             DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
             connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
             connection.SendPacket(new PacketFullGameState(StateManager.FullState, connection.CKey));
-
+            
             client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 

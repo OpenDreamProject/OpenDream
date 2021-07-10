@@ -19,7 +19,8 @@
 	var/inactivity = 0
 	var/key
 	var/ckey
-	
+	var/connection
+
 	var/timezone
 
 	proc/New(TopicData)

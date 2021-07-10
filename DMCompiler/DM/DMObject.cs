@@ -14,7 +14,7 @@ namespace DMCompiler.DM {
         public Dictionary<string, DMVariable> Variables = new();
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
         public Dictionary<string, DMVariable> GlobalVariables = new();
-        public List<DMASTProcStatement> InitializationProcStatements = new();
+        public List<DMExpression> InitializationProcExpressions = new();
         public DMProc InitializationProc = null;
 
         public DMObject(UInt32 id, DreamPath path, DMObject parent) {
@@ -24,11 +24,11 @@ namespace DMCompiler.DM {
         }
 
         public void CompileProcs() {
-            if (InitializationProcStatements.Count > 0) {
-                DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(this, CreateInitializationProc());
+            if (InitializationProcExpressions.Count > 0) {
+                CreateInitializationProc();
 
-                foreach (DMASTProcStatement statement in InitializationProcStatements) {
-                    statement.Visit(initProcBuilder);
+                foreach (DMExpression expression in InitializationProcExpressions) {
+                    expression.EmitPushValue(this, InitializationProc);
                 }
             }
 
@@ -65,7 +65,7 @@ namespace DMCompiler.DM {
             return Parent?.GetGlobalVariable(name);
         }
 
-        public DMProc CreateInitializationProc() {
+        public void CreateInitializationProc() {
             if (InitializationProc == null) {
                 InitializationProc = new DMProc(null);
 
@@ -79,8 +79,6 @@ namespace DMCompiler.DM {
                 InitializationProc.AddLabel("no_super");
                 InitializationProc.ResolveLabels();
             }
-
-            return InitializationProc;
         }
 
         public DreamObjectJson CreateJsonRepresentation() {
@@ -93,11 +91,11 @@ namespace DMCompiler.DM {
                 objectJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    objectJson.Variables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
+                    objectJson.Variables.Add(variable.Key, variable.Value.GetJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    objectJson.Variables[variable.Key] = CreateDreamObjectJsonVariable(variable.Value.Value);
+                    objectJson.Variables[variable.Key] = variable.Value.GetJsonRepresentation();
                 }
             }
 
@@ -105,7 +103,7 @@ namespace DMCompiler.DM {
                 objectJson.GlobalVariables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
-                    objectJson.GlobalVariables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
+                    objectJson.GlobalVariables.Add(variable.Key, variable.Value.GetJsonRepresentation());
                 }
             }
 
@@ -119,7 +117,7 @@ namespace DMCompiler.DM {
                 objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
 
                 foreach (KeyValuePair<string, List<DMProc>> procs in Procs) {
-                    List<ProcDefinitionJson> procJson = new List<ProcDefinitionJson>();
+                    List<ProcDefinitionJson> procJson = new();
 
                     foreach (DMProc proc in procs.Value) {
                         procJson.Add(proc.GetJsonRepresentation());
@@ -130,28 +128,6 @@ namespace DMCompiler.DM {
             }
 
             return objectJson;
-        }
-
-        private static object CreateDreamObjectJsonVariable(object value) {
-            if (value is int || value is float || value is string) {
-                return value;
-            } else if (value is null) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Null }
-                };
-            } else if (value is DMResource resource) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Resource },
-                    { "resourcePath", resource.ResourcePath }
-                };
-            } else if (value is DreamPath path) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Path },
-                    { "value", path.PathString }
-                };
-            } else {
-                throw new Exception("Invalid variable value");
-            }
         }
     }
 }

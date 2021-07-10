@@ -1,3 +1,4 @@
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using System;
 
@@ -15,11 +16,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Negate() {
-            throw new Exception($"const operation `-{this}` is invalid");
+            throw new CompileErrorException($"const operation `-{this}` is invalid");
         }
 
         public virtual Constant BinaryNot() {
-            throw new Exception($"const operation `~{this}` is invalid");
+            throw new CompileErrorException($"const operation `~{this}` is invalid");
         }
 #endregion
 
@@ -35,47 +36,47 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Add(Constant rhs) {
-            throw new Exception($"const operation `{this} + {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} + {rhs}` is invalid");
         }
 
         public virtual Constant Subtract(Constant rhs) {
-            throw new Exception($"const operation `{this} - {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} - {rhs}` is invalid");
         }
 
         public virtual Constant Multiply(Constant rhs) {
-            throw new Exception($"const operation `{this} * {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} * {rhs}` is invalid");
         }
 
         public virtual Constant Divide(Constant rhs) {
-            throw new Exception($"const operation `{this} / {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} / {rhs}` is invalid");
         }
 
         public virtual Constant Modulo(Constant rhs) {
-            throw new Exception($"const operation `{this} % {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} % {rhs}` is invalid");
         }
 
         public virtual Constant Power(Constant rhs) {
-            throw new Exception($"const operation `{this} ** {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} ** {rhs}` is invalid");
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new Exception($"const operation `{this} << {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} << {rhs}` is invalid");
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new Exception($"const operation `{this} >> {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} >> {rhs}` is invalid");
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
-            throw new Exception($"const operation `{this} & {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} & {rhs}` is invalid");
         }
 
         public virtual Constant BinaryXor(Constant rhs) {
-            throw new Exception($"const operation `{this} ^ {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} ^ {rhs}` is invalid");
         }
 
         public virtual Constant BinaryOr(Constant rhs) {
-            throw new Exception($"const operation `{this} | {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} | {rhs}` is invalid");
         }
 #endregion
     }
@@ -91,7 +92,7 @@ namespace DMCompiler.DM.Expressions {
 
     // 4.0, -4.0
     class Number : Constant {
-        float Value { get; }
+        public float Value { get; }
 
         public Number(int value) {
             Value = value;
@@ -209,7 +210,7 @@ namespace DMCompiler.DM.Expressions {
 
     // "abc"
     class String : Constant {
-        string Value { get; }
+        public string Value { get; }
 
         public String(string value) {
             Value = value;
@@ -232,7 +233,7 @@ namespace DMCompiler.DM.Expressions {
 
     // 'abc'
     class Resource : Constant {
-        string Value { get; }
+        public string Value { get; }
 
         public Resource(string value) {
             Value = value;
@@ -247,7 +248,7 @@ namespace DMCompiler.DM.Expressions {
 
     // /a/b/c
     class Path : Constant {
-        DreamPath Value { get; }
+        public DreamPath Value { get; }
 
         public Path(DreamPath value) {
             Value = value;

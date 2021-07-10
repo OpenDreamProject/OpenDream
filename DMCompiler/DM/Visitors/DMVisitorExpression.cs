@@ -1,8 +1,6 @@
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using System;
-using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {
@@ -85,7 +83,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (field == null) {
-                    throw new Exception($"unknown identifier {name}");
+                    throw new CompileErrorException($"unknown identifier {name}");
                 }
 
                 Result = new Expressions.Field(field.Type, name);
@@ -109,7 +107,7 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new Exception("arglist must have 1 argument");
+                    if (procCall.Parameters.Length != 1) throw new CompileErrorException("arglist must have 1 argument");
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
                     Result = new Expressions.Arglist(expr);
@@ -347,7 +345,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
-                throw new Exception("An inferred new requires a type!");
+                throw new CompileErrorException("An inferred new requires a type!");
             }
 
             var args = new ArgumentList(_dmObject, _proc, newInferred.Parameters, _inferredPath);
@@ -391,7 +389,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (locate.Expression == null) {
                 if (_inferredPath == null) {
-                    throw new Exception("inferred lcoate requires a type");
+                    throw new CompileErrorException("inferred lcoate requires a type");
                 }
                 Result = new Expressions.LocateInferred(_inferredPath.Value, container);
                 return;
@@ -423,7 +421,7 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
 
             if (expr.Path is null) {
-                throw new Exception("An inferred istype requires a type!");
+                throw new CompileErrorException("An inferred istype requires a type!");
             }
 
             Result = new Expressions.IsTypeInferred(expr, expr.Path.Value);
@@ -431,6 +429,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitList(DMASTList list) {
             Result = new Expressions.List(list);
+        }
+
+        public void VisitNewList(DMASTNewList newList) {
+            DMExpression[] expressions = new DMExpression[newList.Parameters.Length];
+
+            for (int i = 0; i < newList.Parameters.Length; i++) {
+                DMASTCallParameter parameter = newList.Parameters[i];
+                if (parameter.Name != null) throw new CompileErrorException("newlist() does not take named arguments");
+
+                expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
+            }
+
+            Result = new Expressions.NewList(expressions);
         }
 
         public void VisitInput(DMASTInput input) {
@@ -468,8 +479,12 @@ namespace DMCompiler.DM.Visitors {
                     break;
 
                 default:
-                    throw new Exception("invalid argument count for call()");
+                    throw new CompileErrorException("invalid argument count for call()");
             }
+        }
+
+        public void HandleCompileErrorException(CompileErrorException exception) {
+            Program.VisitorErrors.Add(exception.Error);
         }
     }
 }

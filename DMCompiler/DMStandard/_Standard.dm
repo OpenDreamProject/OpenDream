@@ -1,4 +1,4 @@
-﻿/var/world/world = null
+/var/world/world = null
 
 proc/abs(A)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
@@ -8,6 +8,7 @@ proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
 proc/ckey(Key)
+proc/ckeyEx(Text)
 proc/clamp(Value, Low, High)
 proc/cmptext(T1)
 proc/copytext(T, Start = 1, End = 0)
@@ -24,6 +25,7 @@ proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
 proc/flick(Icon, Object)
 proc/flist(Path)
+proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
 proc/image(icon, loc, icon_state, layer, dir)
@@ -105,7 +107,7 @@ proc/winset(player, control_id, params)
 
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()
-	
+
 	var/startX = min(Start.x, End.x)
 	var/startY = min(Start.y, End.y)
 	var/startZ = min(Start.z, End.z)
@@ -116,24 +118,26 @@ proc/block(var/atom/Start, var/atom/End)
 		for (var/y=startY; y<=endY; y++)
 			for (var/x=startX; x<=endX; x++)
 				atoms.Add(locate(x, y, z))
-	
+
 	return atoms
 
 proc/range(Dist, atom/Center = usr)
-	var/list/range = list()
+	. = list()
+
+	if (isnull(Center)) return 
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
 			var/turf/t = locate(x, y, Center.z)
 
 			if (t != null)
-				range.Add(t)
-				range.Add(t.contents)
-
-	return range
+				. += t
+				. += t.contents
 
 proc/orange(Dist = 5, var/atom/Center = usr)
-	var/list/orange = list()
+	. = list()
+
+	if (isnull(Center)) return
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
@@ -141,14 +145,12 @@ proc/orange(Dist = 5, var/atom/Center = usr)
 
 			var/turf/t = locate(x, y, Center.z)
 			if (t != null)
-				orange.Add(t)
-				orange.Add(t.contents)
-
-	return orange
+				. += t
+				. += t.contents
 
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null
-	
+
 	var/x = Ref.x
 	var/y = Ref.y
 	var/z = Ref.z
@@ -246,7 +248,7 @@ proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
 	if (isnull(List)) CRASH("Invalid list")
-	
+
 	return List.Join(Glue, Start, End)
 
 proc/lentext(T)

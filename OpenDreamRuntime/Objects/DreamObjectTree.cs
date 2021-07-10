@@ -154,17 +154,15 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        private DreamValue GetDreamValueFromJsonElement(JsonElement jsonElement) {
+        private DreamValue GetDreamValueFromJsonElement(object value) {
+            if (value == null) return DreamValue.Null;
+
+            JsonElement jsonElement = (JsonElement)value;
             switch (jsonElement.ValueKind) {
                 case JsonValueKind.String:
                     return new DreamValue(jsonElement.GetString());
-                case JsonValueKind.Number when jsonElement.GetRawText().Contains("."):
+                case JsonValueKind.Number:
                     return new DreamValue(jsonElement.GetSingle());
-                case JsonValueKind.Number: {
-                    if (!jsonElement.TryGetInt32(out int value)) value = Int32.MaxValue;
-
-                    return new DreamValue(value);
-                }
                 case JsonValueKind.Object: {
                     JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
 
@@ -184,8 +182,6 @@ namespace OpenDreamRuntime.Objects {
                                     throw new Exception("Property 'resourcePath' must be a string or null");
                             }
                         }
-                        case JsonVariableType.Null:
-                            return DreamValue.Null;
                         case JsonVariableType.Path:
                             return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
                         default:
@@ -200,8 +196,7 @@ namespace OpenDreamRuntime.Objects {
         private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamObjectJson jsonObject) {
             if (jsonObject.Variables != null) {
                 foreach (KeyValuePair<string, object> jsonVariable in jsonObject.Variables) {
-                    JsonElement jsonElement = (JsonElement)jsonVariable.Value;
-                    DreamValue value = GetDreamValueFromJsonElement(jsonElement);
+                    DreamValue value = GetDreamValueFromJsonElement(jsonVariable.Value);
 
                     objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
                 }
@@ -209,8 +204,7 @@ namespace OpenDreamRuntime.Objects {
 
             if (jsonObject.GlobalVariables != null) {
                 foreach (KeyValuePair<string, object> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                    JsonElement jsonElement = (JsonElement)jsonGlobalVariable.Value;
-                    DreamValue value = GetDreamValueFromJsonElement(jsonElement);
+                    DreamValue value = GetDreamValueFromJsonElement(jsonGlobalVariable.Value);
                     DreamGlobalVariable globalVariable = new DreamGlobalVariable(value);
 
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);

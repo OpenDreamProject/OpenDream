@@ -1,17 +1,13 @@
-﻿using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using System;
-using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorObjectBuilder : DMASTVisitor {
-        private Stack<object> _valueStack = new();
         private DMObject _currentObject = null;
-        private DMVariable _currentVariable = null;
 
         public void BuildObjectTree(DMASTFile astFile) {
             DMObjectTree.Reset();
-            _valueStack.Clear();
             astFile.Visit(this);
 
             foreach (DMObject dmObject in DMObjectTree.AllObjects.Values) {
@@ -47,18 +43,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
+            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
-            _currentVariable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
 
-            if (_currentVariable.IsGlobal) {
-                _currentObject.GlobalVariables[_currentVariable.Name] = _currentVariable;
+            if (variable.IsGlobal) {
+                _currentObject.GlobalVariables[variable.Name] = variable;
             } else {
-                _currentObject.Variables[_currentVariable.Name] = _currentVariable;
+                _currentObject.Variables[variable.Name] = variable;
             }
 
-            varDefinition.Value.Visit(this);
-            _currentVariable.Value = _valueStack.Pop();
+            DMExpression expression = DMExpression.Create(_currentObject, null, varDefinition.Value, varDefinition.Type);
+            SetVariableValue(variable, expression);
+
             _currentObject = oldObject;
         }
 
@@ -70,14 +67,14 @@ namespace DMCompiler.DM.Visitors {
             if (varOverride.VarName == "parent_type") {
                 DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                if (parentType == null) throw new Exception("Expected a constant path");
+                if (parentType == null) throw new CompileErrorException("Expected a constant path");
                 _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
             } else {
-                _currentVariable = new DMVariable(null, varOverride.VarName, false);
-                varOverride.Value.Visit(this);
-                _currentVariable.Value = _valueStack.Pop();
+                DMVariable variable = new DMVariable(null, varOverride.VarName, false);
+                DMExpression expression = DMExpression.Create(_currentObject, null, varOverride.Value, null);
 
-                _currentObject.VariableOverrides[_currentVariable.Name] = _currentVariable;
+                SetVariableValue(variable, expression);
+                _currentObject.VariableOverrides[variable.Name] = variable;
             }
 
             _currentObject = oldObject;
@@ -92,103 +89,53 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                throw new Exception("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
             }
 
             DMProc proc = new DMProc(procDefinition);
 
             dmObject.AddProc(procName, proc);
             if (procDefinition.IsVerb) {
-                DMASTPath procPath = new DMASTPath(new DreamPath(".proc/" + procName));
-                DMASTAppend verbAppend = new DMASTAppend(new DMASTIdentifier("verbs"), new DMASTConstantPath(procPath));
+                Expressions.Field field = new Expressions.Field(DreamPath.List, "verbs");
+                DreamPath procPath = new DreamPath(".proc/" + procName);
+                Expressions.Append append = new Expressions.Append(field, new Expressions.Path(procPath));
 
-                dmObject.InitializationProcStatements.Add(new DMASTProcStatementExpression(verbAppend));
+                dmObject.InitializationProcExpressions.Add(append);
             }
         }
 
-        #region Values
-        public void VisitNewPath(DMASTNewPath newPath) {
-            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), newPath);
-            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
+        public void HandleCompileErrorException(CompileErrorException exception) {
+            Program.VisitorErrors.Add(exception.Error);
+        }
 
-            if (_currentVariable.IsGlobal) {
-                DMObjectTree.AddGlobalInitProcStatement(statement);
+        private void SetVariableValue(DMVariable variable, DMExpression expression) {
+            switch (expression) {
+                case Expressions.List:
+                case Expressions.NewPath:
+                    variable.Value = new Expressions.Null();
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.StringFormat:
+                case Expressions.ProcCall:
+                    if (!variable.IsGlobal) throw new CompileErrorException($"Invalid initial value for \"{variable.Name}\"");
+
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                default:
+                    variable.Value = expression.ToConstant();
+                    break;
+            }
+        }
+
+        private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {
+            Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
+            Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+
+            if (variable.IsGlobal) {
+                DMObjectTree.AddGlobalInitProcAssign(assign);
             } else {
-                _currentObject.InitializationProcStatements.Add(statement);
+                _currentObject.InitializationProcExpressions.Add(assign);
             }
-
-            _valueStack.Push(null);
         }
-
-        public void VisitNewInferred(DMASTNewInferred newInferred) {
-            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), newInferred);
-            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
-
-            if (_currentVariable.IsGlobal) {
-                DMObjectTree.AddGlobalInitProcStatement(statement);
-            } else {
-                _currentObject.InitializationProcStatements.Add(statement);
-            }
-
-            _valueStack.Push(null);
-        }
-
-        public void VisitList(DMASTList list) {
-            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), list);
-            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
-
-            if (_currentVariable.IsGlobal) {
-                DMObjectTree.AddGlobalInitProcStatement(statement);
-            } else {
-                _currentObject.InitializationProcStatements.Add(statement);
-            }
-
-            _valueStack.Push(null);
-        }
-
-        public void VisitStringFormat(DMASTStringFormat stringFormat) {
-            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a formatted string.");
-
-            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), stringFormat);
-            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
-            DMObjectTree.AddGlobalInitProcStatement(statement);
-
-            _valueStack.Push(null);
-        }
-
-        public void VisitProcCall(DMASTProcCall procCall) {
-            if (!_currentVariable.IsGlobal) throw new Exception("Initial value of '" + _currentVariable.Name + "' cannot be a proc call.");
-
-            DMASTAssign assign = new DMASTAssign(new DMASTIdentifier(_currentVariable.Name), procCall);
-            DMASTProcStatementExpression statement = new DMASTProcStatementExpression(assign);
-            DMObjectTree.AddGlobalInitProcStatement(statement);
-
-            _valueStack.Push(null);
-        }
-
-        public void VisitConstantNull(DMASTConstantNull constantNull) {
-            _valueStack.Push(null);
-        }
-
-        public void VisitConstantPath(DMASTConstantPath constantPath) {
-            _valueStack.Push(constantPath.Value.Path);
-        }
-
-        public void VisitConstantString(DMASTConstantString constantPath) {
-            _valueStack.Push(constantPath.Value);
-        }
-
-        public void VisitConstantResource(DMASTConstantResource constantResource) {
-            _valueStack.Push(new DMResource(constantResource.Path));
-        }
-
-        public void VisitConstantInteger(DMASTConstantInteger constantInteger) {
-            _valueStack.Push(constantInteger.Value);
-        }
-
-        public void VisitConstantFloat(DMASTConstantFloat constantFloat) {
-            _valueStack.Push(constantFloat.Value);
-        }
-        #endregion Values
     }
 }

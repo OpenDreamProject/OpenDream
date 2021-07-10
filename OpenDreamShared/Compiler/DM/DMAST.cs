@@ -3,7 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Compiler.DM {
-    public interface DMASTVisitor {
+    public interface DMASTVisitor : ASTVisitor {
         public void VisitFile(DMASTFile file) { throw new NotImplementedException(); }
         public void VisitBlockInner(DMASTBlockInner block) { throw new NotImplementedException(); }
         public void VisitProcBlockInner(DMASTProcBlockInner procBlock) { throw new NotImplementedException(); }
@@ -43,6 +43,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitSwitchCaseRange(DMASTSwitchCaseRange switchCaseRange) { throw new NotImplementedException(); }
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
+        public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -69,7 +70,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
         public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
-        public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
+        public void VisitSubtract(DMASTSubtract subtract) { throw new CompileErrorException("DMASTSubstract"); }
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) { throw new NotImplementedException(); }
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) { throw new NotImplementedException(); }
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }
@@ -137,7 +138,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitFile(this);
+            try {
+                visitor.VisitFile(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -149,7 +154,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBlockInner(this);
+            try {
+                visitor.VisitBlockInner(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -161,7 +170,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcBlockInner(this);
+            try {
+                visitor.VisitProcBlockInner(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -175,7 +188,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitObjectDefinition(this);
+            try {
+                visitor.VisitObjectDefinition(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -206,7 +223,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcDefinition(this);
+            try {
+                visitor.VisitProcDefinition(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -218,7 +239,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPath(this);
+            try {
+                visitor.VisitPath(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -246,7 +271,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitObjectVarDefinition(this);
+            try {
+                visitor.VisitObjectVarDefinition(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -262,7 +291,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitObjectVarOverride(this);
+            try {
+                visitor.VisitObjectVarOverride(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -274,7 +307,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementExpression(this);
+            try {
+                visitor.VisitProcStatementExpression(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -293,7 +330,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementVarDeclaration(this);
+            try {
+                visitor.VisitProcStatementVarDeclaration(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -305,19 +346,31 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementReturn(this);
+            try {
+                visitor.VisitProcStatementReturn(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
     public class DMASTProcStatementBreak : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementBreak(this);
+            try {
+                visitor.VisitProcStatementBreak(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
     public class DMASTProcStatementContinue : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementContinue(this);
+            try {
+                visitor.VisitProcStatementContinue(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -329,7 +382,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementGoto(this);
+            try {
+                visitor.VisitProcStatementGoto(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -341,7 +398,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementLabel(this);
+            try {
+                visitor.VisitProcStatementLabel(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -353,7 +414,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementDel(this);
+            try {
+                visitor.VisitProcStatementDel(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -367,7 +432,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementSet(this);
+            try {
+                visitor.VisitProcStatementSet(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -381,7 +450,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementSpawn(this);
+            try {
+                visitor.VisitProcStatementSpawn(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -397,7 +470,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementIf(this);
+            try {
+                visitor.VisitProcStatementIf(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -424,7 +501,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForStandard(this);
+            try {
+                visitor.VisitProcStatementForStandard(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -438,7 +519,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForList(this);
+            try {
+                visitor.VisitProcStatementForList(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -454,7 +539,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForRange(this);
+            try {
+                visitor.VisitProcStatementForRange(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -473,7 +562,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForLoop(this);
+            try {
+                visitor.VisitProcStatementForLoop(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -487,7 +580,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementWhile(this);
+            try {
+                visitor.VisitProcStatementWhile(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -501,7 +598,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementDoWhile(this);
+            try {
+                visitor.VisitProcStatementDoWhile(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -535,7 +636,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementSwitch(this);
+            try {
+                visitor.VisitProcStatementSwitch(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -551,7 +656,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementBrowse(this);
+            try {
+                visitor.VisitProcStatementBrowse(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -567,7 +676,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementBrowseResource(this);
+            try {
+                visitor.VisitProcStatementBrowseResource(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -583,7 +696,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementOutputControl(this);
+            try {
+                visitor.VisitProcStatementOutputControl(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -595,7 +712,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitIdentifier(this);
+            try {
+                visitor.VisitIdentifier(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -607,7 +728,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantInteger(this);
+            try {
+                visitor.VisitConstantInteger(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -619,7 +744,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantFloat(this);
+            try {
+                visitor.VisitConstantFloat(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -631,7 +760,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantString(this);
+            try {
+                visitor.VisitConstantString(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -643,13 +776,21 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantResource(this);
+            try {
+                visitor.VisitConstantResource(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
     public class DMASTConstantNull : DMASTExpressionConstant {
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantNull(this);
+            try {
+                visitor.VisitConstantNull(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -661,7 +802,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitConstantPath(this);
+            try {
+                visitor.VisitConstantPath(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -674,7 +819,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitSwitchCaseRange(this);
+            try {
+                visitor.VisitSwitchCaseRange(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -688,7 +837,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitStringFormat(this);
+            try {
+                visitor.VisitStringFormat(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -700,7 +853,27 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitList(this);
+            try {
+                visitor.VisitList(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
+    public class DMASTNewList : DMASTExpression {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewList(DMASTCallParameter[] parameters) {
+            Parameters = parameters;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitNewList(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -716,7 +889,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitInput(this);
+            try {
+                visitor.VisitInput(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -728,7 +905,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitInitial(this);
+            try {
+                visitor.VisitInitial(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -740,7 +921,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitIsSaved(this);
+            try {
+                visitor.VisitIsSaved(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -754,7 +939,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitIsType(this);
+            try {
+                visitor.VisitIsType(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -766,7 +955,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitImplicitIsType(this);
+            try {
+                visitor.VisitImplicitIsType(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -780,7 +973,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLocateCoordinates(this);
+            try {
+                visitor.VisitLocateCoordinates(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -794,7 +991,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLocate(this);
+            try {
+                visitor.VisitLocate(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -807,7 +1008,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCall(this);
+            try {
+                visitor.VisitCall(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -820,7 +1025,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitAssign(this);
+            try {
+                visitor.VisitAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -834,7 +1043,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewPath(this);
+            try {
+                visitor.VisitNewPath(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -848,7 +1061,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewIdentifier(this);
+            try {
+                visitor.VisitNewIdentifier(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -862,7 +1079,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewDereference(this);
+            try {
+                visitor.VisitNewDereference(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -874,7 +1095,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewInferred(this);
+            try {
+                visitor.VisitNewInferred(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -886,7 +1111,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNot(this);
+            try {
+                visitor.VisitNot(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -898,7 +1127,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNegate(this);
+            try {
+                visitor.VisitNegate(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -911,7 +1144,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitEqual(this);
+            try {
+                visitor.VisitEqual(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -924,7 +1161,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitNotEqual(this);
+            try {
+                visitor.VisitNotEqual(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -937,7 +1178,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLessThan(this);
+            try {
+                visitor.VisitLessThan(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -950,7 +1195,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLessThanOrEqual(this);
+            try {
+                visitor.VisitLessThanOrEqual(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -963,7 +1212,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitGreaterThan(this);
+            try {
+                visitor.VisitGreaterThan(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -976,7 +1229,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitGreaterThanOrEqual(this);
+            try {
+                visitor.VisitGreaterThanOrEqual(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -989,7 +1246,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitMultiply(this);
+            try {
+                visitor.VisitMultiply(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1002,7 +1263,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitDivide(this);
+            try {
+                visitor.VisitDivide(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1015,7 +1280,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitModulus(this);
+            try {
+                visitor.VisitModulus(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1028,7 +1297,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPower(this);
+            try {
+                visitor.VisitPower(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1041,7 +1314,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitAdd(this);
+            try {
+                visitor.VisitAdd(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1054,7 +1331,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitSubtract(this);
+            try {
+                visitor.VisitSubtract(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1066,7 +1347,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPreIncrement(this);
+            try {
+                visitor.VisitPreIncrement(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1078,7 +1363,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPreDecrement(this);
+            try {
+                visitor.VisitPreDecrement(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1090,7 +1379,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPostIncrement(this);
+            try {
+                visitor.VisitPostIncrement(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1102,7 +1395,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitPostDecrement(this);
+            try {
+                visitor.VisitPostDecrement(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1116,7 +1413,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitTernary(this);
+            try {
+                visitor.VisitTernary(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1129,7 +1430,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitAppend(this);
+            try {
+                visitor.VisitAppend(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1142,7 +1447,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitRemove(this);
+            try {
+                visitor.VisitRemove(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1155,7 +1464,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCombine(this);
+            try {
+                visitor.VisitCombine(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1168,7 +1481,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitMask(this);
+            try {
+                visitor.VisitMask(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1181,7 +1498,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitMultiplyAssign(this);
+            try {
+                visitor.VisitMultiplyAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1194,7 +1515,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitDivideAssign(this);
+            try {
+                visitor.VisitDivideAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1207,7 +1532,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLeftShiftAssign(this);
+            try {
+                visitor.VisitLeftShiftAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1220,7 +1549,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitRightShiftAssign(this);
+            try {
+                visitor.VisitRightShiftAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1233,7 +1566,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitXorAssign(this);
+            try {
+                visitor.VisitXorAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1246,7 +1583,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitModulusAssign(this);
+            try {
+                visitor.VisitModulusAssign(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1259,7 +1600,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitOr(this);
+            try {
+                visitor.VisitOr(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1272,7 +1617,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitAnd(this);
+            try {
+                visitor.VisitAnd(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1285,7 +1634,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBinaryAnd(this);
+            try {
+                visitor.VisitBinaryAnd(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1298,7 +1651,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBinaryXor(this);
+            try {
+                visitor.VisitBinaryXor(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1311,7 +1668,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBinaryOr(this);
+            try {
+                visitor.VisitBinaryOr(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1323,7 +1684,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitBinaryNot(this);
+            try {
+                visitor.VisitBinaryNot(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1336,7 +1701,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitLeftShift(this);
+            try {
+                visitor.VisitLeftShift(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1349,7 +1718,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitRightShift(this);
+            try {
+                visitor.VisitRightShift(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1363,7 +1736,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitIn(this);
+            try {
+                visitor.VisitIn(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1377,7 +1754,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitListIndex(this);
+            try {
+                visitor.VisitListIndex(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1391,7 +1772,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcCall(this);
+            try {
+                visitor.VisitProcCall(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1405,7 +1790,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallParameter(this);
+            try {
+                visitor.VisitCallParameter(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1430,7 +1819,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitDefinitionParameter(this);
+            try {
+                visitor.VisitDefinitionParameter(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1461,7 +1854,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
-            visitor.VisitDereference(this);
+            try {
+                visitor.VisitDereference(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1469,7 +1866,11 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitDereferenceProc(this);
+            try {
+                visitor.VisitDereferenceProc(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
@@ -1481,19 +1882,31 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableProcIdentifier(this);
+            try {
+                visitor.VisitCallableProcIdentifier(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
     public class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableSuper(this);
+            try {
+                visitor.VisitCallableSuper(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 
     public class DMASTCallableSelf : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
-            visitor.VisitCallableSelf(this);
+            try {
+                visitor.VisitCallableSelf(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
         }
     }
 }

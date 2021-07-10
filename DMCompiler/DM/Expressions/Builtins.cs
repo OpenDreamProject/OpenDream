@@ -1,4 +1,4 @@
-using System;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 
@@ -31,7 +31,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new Exception("invalid use of `arglist`");
+            throw new CompileErrorException("invalid use of `arglist`");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
@@ -163,7 +163,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new Exception($"can't get saved value of {_expr}");
+            throw new CompileErrorException($"can't get saved value of {_expr}");
         }
     }
 
@@ -242,6 +242,26 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // newlist(...)
+    class NewList : DMExpression {
+        DMExpression[] _parameters;
+
+        public NewList(DMExpression[] parameters) {
+            _parameters = parameters;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.CreateList();
+
+            foreach (DMExpression parameter in _parameters) {
+                parameter.EmitPushValue(dmObject, proc);
+                proc.PushArguments(0);
+                proc.CreateObject();
+                proc.ListAppend();
+            }
+        }
+    }
+
     // input(...)
     class Input : DMExpression {
         // Lazy
@@ -252,14 +272,14 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new Exception("Invalid input() parameter count");
+            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new CompileErrorException("Invalid input() parameter count");
 
             //Push input's four arguments, pushing null for the missing ones
             for (int i = 3; i >= 0; i--) {
                 if (i < _astNode.Parameters.Length) {
                     DMASTCallParameter parameter = _astNode.Parameters[i];
 
-                    if (parameter.Name != null) throw new Exception("input() does not take named arguments");
+                    if (parameter.Name != null) throw new CompileErrorException("input() does not take named arguments");
                     DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();
@@ -291,7 +311,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new Exception($"can't get initial value of {_expr}");
+            throw new CompileErrorException($"can't get initial value of {_expr}");
         }
     }
 

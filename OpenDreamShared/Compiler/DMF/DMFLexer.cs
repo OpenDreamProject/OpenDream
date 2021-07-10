@@ -59,7 +59,6 @@ namespace OpenDreamShared.Compiler.DMF {
             "is-vert",
             "is-visible",
             "keep-aspect",
-            "left",
             "legacy-size",
             "letterbox",
             "line-color",
@@ -78,7 +77,6 @@ namespace OpenDreamShared.Compiler.DMF {
             "on-tab",
             "pos",
             "prefix-color",
-            "right",
             "right-click",
             "saved-params",
             "size",
@@ -95,6 +93,7 @@ namespace OpenDreamShared.Compiler.DMF {
             "tab-background-color",
             "tab-font-family",
             "tab-font-size",
+            "tab-font-style",
             "tab-text-color",
             "tabs",
             "text",
@@ -116,13 +115,19 @@ namespace OpenDreamShared.Compiler.DMF {
         };
 
         private static readonly Dictionary<string, TokenType> _keywords = new() {
+            { "bottom", TokenType.DMF_Bottom },
+            { "bottom-left", TokenType.DMF_BottomLeft },
+            { "bottom-right", TokenType.DMF_BottomRight },
             { "BROWSER", TokenType.DMF_Browser },
             { "BUTTON", TokenType.DMF_Button },
             { "CHILD", TokenType.DMF_Child },
+            { "center", TokenType.DMF_Center },
             { "distort", TokenType.DMF_Distort },
             { "elem", TokenType.DMF_Elem },
             { "INFO", TokenType.DMF_Info },
             { "INPUT", TokenType.DMF_Input },
+            { "LABEL", TokenType.DMF_Label },
+            { "left", TokenType.DMF_Left },
             { "macro", TokenType.DMF_Macro },
             { "MAIN", TokenType.DMF_Main },
             { "MAP", TokenType.DMF_Map },
@@ -131,8 +136,13 @@ namespace OpenDreamShared.Compiler.DMF {
             { "OUTPUT", TokenType.DMF_Output },
             { "pushbox", TokenType.DMF_PushBox },
             { "pushbutton", TokenType.DMF_PushButton },
+            { "right", TokenType.DMF_Right },
             { "stretch", TokenType.DMF_Stretch },
             { "sunken", TokenType.DMF_Sunken },
+            { "top", TokenType.DMF_Top },
+            { "top-left", TokenType.DMF_TopLeft },
+            { "top-right", TokenType.DMF_TopRight },
+            { "vertical", TokenType.DMF_Vertical },
             { "window", TokenType.DMF_Window }
         };
 

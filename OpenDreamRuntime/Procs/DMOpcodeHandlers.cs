@@ -43,17 +43,16 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            //Enumerate a copy of the list
-            List<DreamValue> values = new();
-            if (list != null) {
-                values.Capacity = list.GetLength();
-
-                foreach (DreamValue value in list.GetValues()) {
-                    values.Add(value);
-                }
+            if (list == null)
+            {
+                List<DreamValue> values = new List<DreamValue>();
+                state.EnumeratorStack.Push(values.GetEnumerator());
+            }
+            else
+            {
+                state.EnumeratorStack.Push(list.GetValues().GetEnumerator());
             }
 
-            state.EnumeratorStack.Push(values.GetEnumerator());
             return null;
         }
 
@@ -247,7 +246,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 throw new Exception("Cannot index " + indexing);
             }
-            
+
             return null;
         }
 
@@ -632,7 +631,7 @@ namespace OpenDreamRuntime.Procs {
 
                         state.Push(metaObject?.OperatorOutput(firstValue, second) ?? DreamValue.Null);
                     }
-                    
+
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:

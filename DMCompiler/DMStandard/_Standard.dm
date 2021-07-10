@@ -28,6 +28,7 @@ proc/flist(Path)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
+proc/icon_states(Icon, mode)
 proc/image(icon, loc, icon_state, layer, dir)
 proc/isarea(Loc1)
 proc/isfile(File)
@@ -124,7 +125,7 @@ proc/block(var/atom/Start, var/atom/End)
 proc/range(Dist, atom/Center = usr)
 	. = list()
 
-	if (isnull(Center)) return 
+	if (isnull(Center)) return
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)

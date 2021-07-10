@@ -1,7 +1,10 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -52,6 +55,81 @@ namespace OpenDreamShared.Resources {
         public class ParsedDMIFrame {
             public int X, Y;
             public float Delay;
+        }
+
+        private static uint _readBigEndianUint32(BinaryReader reader)
+        {
+            byte[] bytes = reader.ReadBytes(4);
+            Array.Reverse(bytes); //Little to Big-Endian
+            return BitConverter.ToUInt32(bytes);
+        }
+
+        private static (uint, string) _readChunk(BinaryReader reader)
+        {
+            uint chunkLength = _readBigEndianUint32(reader);
+            string chunkType = new string(reader.ReadChars(4));
+
+            return (chunkLength, chunkType);
+        }
+
+        private static (uint, uint) _readIHDRChunk(BinaryReader reader, MemoryStream stream)
+        {
+            var (chunkLength, chunkType) = _readChunk(reader);
+            if (chunkType != "IHDR")
+            {
+                throw new ArgumentException($"Expected IHDR chunk, got ${chunkType} instead.");
+            }
+
+            var width = _readBigEndianUint32(reader);
+            var height = _readBigEndianUint32(reader);
+
+            stream.Seek(chunkLength + 4 - sizeof(uint) * 2, SeekOrigin.Current);
+
+            return (width, height);
+        }
+
+        public static (string, uint, uint) ReadDMIDescription(byte[] bytes) {
+            MemoryStream stream = new MemoryStream(bytes);
+            BinaryReader reader = new BinaryReader(stream);
+
+            stream.Seek(8, SeekOrigin.Begin);
+
+            var (width, height) = _readIHDRChunk(reader, stream);
+
+            while (stream.Position < stream.Length) {
+                var (chunkLength, chunkType) = _readChunk(reader);
+
+                if (chunkType != "zTXt") {
+                    stream.Seek(chunkLength + 4, SeekOrigin.Current);
+                } else {
+                    long chunkDataPosition = stream.Position;
+                    string keyword = String.Empty + reader.ReadChar();
+
+                    while (reader.PeekChar() != 0 && keyword.Length < 79) {
+                        keyword += reader.ReadChar();
+                    }
+                    stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
+
+                    if (keyword == "Description") {
+                        stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
+
+                        DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                        MemoryStream uncompressedDataStream = new MemoryStream();
+
+                        deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+
+                        byte[] uncompressedData = new byte[uncompressedDataStream.Length];
+                        uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                        uncompressedDataStream.Read(uncompressedData);
+
+                        return (Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length), width, height);
+                    } else {
+                        stream.Position = chunkDataPosition + chunkLength + 4;
+                    }
+                }
+            }
+
+            throw new ArgumentException("Did not find a DMI description");
         }
 
         public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, int imageWidth) {

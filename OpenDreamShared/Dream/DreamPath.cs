@@ -198,7 +198,7 @@ namespace OpenDreamShared.Dream {
         public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
         private void Normalize() {
-            Stack<string> elements = new Stack<string>();
+            Stack<string> elements = new Stack<string>(Elements.Length);
 
             foreach (string element in Elements) {
                 if (element == "..") {

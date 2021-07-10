@@ -124,7 +124,7 @@ proc/block(var/atom/Start, var/atom/End)
 proc/range(Dist, atom/Center = usr)
 	. = list()
 
-	if (isnull(Center)) return 
+	if (isnull(Center)) return
 
 	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
 		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
@@ -239,12 +239,22 @@ proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
 
 	return get_step(Ref, dir)
 
+proc/get_step_rand(atom/movable/Ref)
+	// BYOND's implementation seems to be heavily weighted in favor of Ref's dir.
+	var/dir = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
+
+	return get_step(Ref, dir)
+
 proc/hearers(Depth = world.view, Center = usr)
 	//TODO: Actual cursed hearers implementation
 	return viewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 	Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
+
+proc/step_rand(atom/movable/Ref, Speed=0)
+	var/target = get_step_rand(Ref)
+	return Ref.Move(target, get_dir(Ref, target))
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
 	if (isnull(List)) CRASH("Invalid list")

@@ -16,6 +16,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime
 {
@@ -23,16 +24,22 @@ namespace OpenDreamRuntime
     {
         public readonly Thread MainThread;
 
-        public TaskFactory TaskFactory { get; }
-        public TaskScheduler TaskScheduler => _taskScheduler;
-        DreamTaskScheduler _taskScheduler;
+        //public TaskFactory TaskFactory { get; }
+        //public TaskScheduler TaskScheduler => _taskScheduler;
+        //DreamTaskScheduler _taskScheduler;
 
         public readonly DreamMap Map;
-        public readonly DreamObjectTree ObjectTree;
-        public readonly DreamStateManager StateManager;
         public readonly DreamServer Server;
 
-        public readonly DreamResourceManager ResourceManager;
+        [Dependency] private readonly DreamStateManager _stateManager = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+
+        // TODO ROBUST: Remove these below and make everything use dependencies and IoC.
+        public DreamResourceManager ResourceManager => _resourceManager;
+        public DreamObjectTree ObjectTree => _objectTree;
+        public DreamStateManager StateManager => _stateManager;
+
         public readonly DreamCompiledJson CompiledJson;
 
         public readonly DreamObjectDefinition ListDefinition;
@@ -65,14 +72,8 @@ namespace OpenDreamRuntime
             // Something is doing something fucky with relative dirs, somewhere
             executablePath = Path.GetFullPath(executablePath);
 
-            ResourceManager = new DreamResourceManager(this, Path.GetDirectoryName(executablePath));
-
-            // This initialization isn't great
-            ObjectTree = new(this);
-            StateManager = new(this);
-
-            _taskScheduler = new();
-            TaskFactory = new TaskFactory(_taskScheduler);
+            //_taskScheduler = new();
+            //TaskFactory = new TaskFactory(_taskScheduler);
 
             StateManager.DeltaStateFinalized += OnDeltaStateFinalized;
             Server.DreamConnectionRequest += OnDreamConnectionRequest;
@@ -127,7 +128,7 @@ namespace OpenDreamRuntime
             while (!Shutdown) {
                 TickStartTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
 
-                _taskScheduler.Process();
+                //_taskScheduler.Process();
                 StateManager.FinalizeCurrentDeltaState();
                 Server.Process();
 
@@ -190,7 +191,7 @@ namespace OpenDreamRuntime
             DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
             connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
             connection.SendPacket(new PacketFullGameState(StateManager.FullState, connection.CKey));
-            
+
             client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 

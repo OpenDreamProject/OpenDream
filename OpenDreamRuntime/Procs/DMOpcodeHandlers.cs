@@ -247,7 +247,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 throw new Exception("Cannot index " + indexing);
             }
-            
+
             return null;
         }
 
@@ -632,7 +632,7 @@ namespace OpenDreamRuntime.Procs {
 
                         state.Push(metaObject?.OperatorOutput(firstValue, second) ?? DreamValue.Null);
                     }
-                    
+
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:
@@ -1179,10 +1179,10 @@ namespace OpenDreamRuntime.Procs {
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
-            state.Runtime.TaskFactory.StartNew(async () => {
+            new Task(async () => {
                 await Task.Delay(delayMilliseconds);
                 newContext.Resume();
-            });
+            }).Start();
 
             state.Jump(jumpTo);
             return null;

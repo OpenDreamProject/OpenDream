@@ -84,11 +84,13 @@ namespace OpenDreamRuntime.Procs {
                         return ProcStatus.Returned;
                     }
 
-                    _task = Thread.Runtime.TaskFactory.StartNew(() => inlined).Unwrap();
+                    // TODO ROBUST: Is this correct?
+                    _task = new Task<Task>(() => inlined).Unwrap();
+                    _task.Start();
 
                     // We have to resume now so that the execution context knows we have returned
                     // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
-                    _task.ContinueWith(_ => SafeResume(), Thread.Runtime.TaskScheduler);
+                    _task.ContinueWith(_ => SafeResume());
                 }
 
                 // We need to call a proc.

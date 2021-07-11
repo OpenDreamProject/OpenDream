@@ -1,21 +1,22 @@
-﻿namespace OpenDreamShared.Net.Packets {
-    public class PacketRequestResource : IPacket {
-        public PacketID PacketID => PacketID.RequestResource;
+﻿using System;
+using Lidgren.Network;
+using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
-        public string ResourcePath;
+namespace OpenDreamShared.Net.Packets {
+    [Serializable, NetSerializable]
+    public class PacketRequestResource : NetMessage
+    {
+        public string ResourcePath { get; set; }
 
-        public PacketRequestResource() { }
-
-        public PacketRequestResource(string resourcePath) {
-            ResourcePath = resourcePath;
+        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        {
+            ResourcePath = buffer.ReadString();
         }
 
-        public void ReadFromStream(PacketStream stream) {
-            ResourcePath = stream.ReadString();
-        }
-
-        public void WriteToStream(PacketStream stream) {
-            stream.WriteString(ResourcePath);
+        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        {
+            buffer.Write(ResourcePath);
         }
     }
 }

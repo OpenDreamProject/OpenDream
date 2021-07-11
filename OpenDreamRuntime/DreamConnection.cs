@@ -17,26 +17,13 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Net;
 
 namespace OpenDreamRuntime {
-    public abstract class DreamConnection {
-        // Interface
-        public abstract byte[] ReadPacketData();
-        public abstract void SendPacket(IPacket packet);
-
-        // Implementation
-        public string CKey;
-        public IPAddress Address;
-        public DreamRuntime Runtime { get; }
-
+    public class DreamConnection {
         public string SelectedStatPanel {
             get => _selectedStatPanel;
             set {
                 _selectedStatPanel = value;
                 SendPacket(new PacketSelectStatPanel(_selectedStatPanel));
             }
-        }
-
-        public DreamConnection(DreamRuntime runtime) {
-            Runtime = runtime;
         }
 
         public DreamObject ClientDreamObject;

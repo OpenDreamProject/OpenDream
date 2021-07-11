@@ -1,7 +1,9 @@
 ﻿using System.Text.Json;
+using Lidgren.Network;
+using Robust.Shared.Network;
 
 namespace OpenDreamShared.Net.Packets {
-    public class PacketRequestConnect : IPacket {
+    public class PacketRequestConnect : NetMessage {
         public PacketID PacketID => PacketID.RequestConnect;
 
         public string CKey;
@@ -22,6 +24,16 @@ namespace OpenDreamShared.Net.Packets {
         public void WriteToStream(PacketStream stream) {
             stream.WriteString(CKey);
             ClientData.WriteToPacket(stream);
+        }
+
+        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        {
+            CKey = buffer.ReadString();
+        }
+
+        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

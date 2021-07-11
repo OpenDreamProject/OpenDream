@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,17 +44,16 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            //Enumerate a copy of the list
-            List<DreamValue> values = new();
-            if (list != null) {
-                values.Capacity = list.GetLength();
-
-                foreach (DreamValue value in list.GetValues()) {
-                    values.Add(value);
-                }
+            if (list == null)
+            {
+                state.EnumeratorStack.Push(Enumerable.Empty<DreamValue>().GetEnumerator());
+            }
+            else
+            {
+                var values = new List<DreamValue>(list.GetValues());
+                state.EnumeratorStack.Push(values.GetEnumerator());
             }
 
-            state.EnumeratorStack.Push(values.GetEnumerator());
             return null;
         }
 

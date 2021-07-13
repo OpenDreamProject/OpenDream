@@ -418,9 +418,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new NotImplementedException();
             }
             var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
-            var (data, width, _) = DMIParser.ReadDMIDescription(resource.ResourceData);
-            var description =  DMIParser.ParseDMIDescription(data, (int)width);
-            return new DreamValue(DreamList.Create(CurrentRuntime, description.States.Keys));
+            var description = DMIParser.ReadDMIDescription(resource.ResourceData);
+            var states = DMIParser.GetIconStatesFromDescription(description);
+            return new DreamValue(DreamList.Create(CurrentRuntime, states));
         }
 
         [DreamProc("image")]

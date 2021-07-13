@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -72,29 +73,11 @@ namespace OpenDreamShared.Resources {
             return (chunkLength, chunkType);
         }
 
-        private static (uint, uint) _readIHDRChunk(BinaryReader reader, MemoryStream stream)
-        {
-            var (chunkLength, chunkType) = _readChunk(reader);
-            if (chunkType != "IHDR")
-            {
-                throw new ArgumentException($"Expected IHDR chunk, got ${chunkType} instead.");
-            }
-
-            var width = _readBigEndianUint32(reader);
-            var height = _readBigEndianUint32(reader);
-
-            stream.Seek(chunkLength + 4 - sizeof(uint) * 2, SeekOrigin.Current);
-
-            return (width, height);
-        }
-
-        public static (string, uint, uint) ReadDMIDescription(byte[] bytes) {
+        public static string ReadDMIDescription(byte[] bytes) {
             MemoryStream stream = new MemoryStream(bytes);
             BinaryReader reader = new BinaryReader(stream);
 
             stream.Seek(8, SeekOrigin.Begin);
-
-            var (width, height) = _readIHDRChunk(reader, stream);
 
             while (stream.Position < stream.Length) {
                 var (chunkLength, chunkType) = _readChunk(reader);
@@ -122,7 +105,7 @@ namespace OpenDreamShared.Resources {
                         uncompressedDataStream.Seek(0, SeekOrigin.Begin);
                         uncompressedDataStream.Read(uncompressedData);
 
-                        return (Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length), width, height);
+                        return Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
                     } else {
                         stream.Position = chunkDataPosition + chunkLength + 4;
                     }
@@ -130,6 +113,43 @@ namespace OpenDreamShared.Resources {
             }
 
             throw new ArgumentException("Did not find a DMI description");
+        }
+
+        public static List<string> GetIconStatesFromDescription(string dmiDescription)
+        {
+            var states = new List<string>();
+            dmiDescription = TrimDescription(dmiDescription);
+
+            var lines = dmiDescription.Split("\n");
+            foreach (var line in lines)
+            {
+                var equalsIndex = line.IndexOf('=');
+
+                if (equalsIndex == -1)
+                {
+                    throw new Exception("Invalid line in DMI description: \"" + line + "\"");
+                }
+                var key = line[..equalsIndex].Trim();
+                var value = line[(equalsIndex + 1)..].Trim();
+
+                if (key != "state")
+                {
+                    continue;
+                }
+                var stateName = ParseString(value);
+                states.Add(stateName);
+            }
+
+            return states;
+        }
+
+        private static string TrimDescription(string dmiDescription)
+        {
+            return dmiDescription
+                .Replace("# BEGIN DMI", "")
+                .Replace("# END DMI", "")
+                .Replace("\t", "")
+                .Trim();
         }
 
         public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, int imageWidth) {
@@ -143,10 +163,7 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            dmiDescription = dmiDescription.Replace("# BEGIN DMI", "");
-            dmiDescription = dmiDescription.Replace("# END DMI", "");
-            dmiDescription = dmiDescription.Replace("\t", "");
-            dmiDescription = dmiDescription.Trim();
+            dmiDescription = TrimDescription(dmiDescription);
             description.Source = dmiDescription;
 
             string[] lines = dmiDescription.Split("\n");

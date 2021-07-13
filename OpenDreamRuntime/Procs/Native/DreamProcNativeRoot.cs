@@ -412,6 +412,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("mode", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
+            var modeArg = arguments.GetArgument(1, "mode");
+            if (modeArg.Value != null)
+            {
+                if (!modeArg.TryGetValueAsFloat(out var mode) || mode != 0)
+                {
+                    throw new NotImplementedException();
+                }
+
+            }
             var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
             var (data, width, _) = DMIParser.ReadDMIDescription(resource.ResourceData);
             var description =  DMIParser.ParseDMIDescription(data, (int)width);

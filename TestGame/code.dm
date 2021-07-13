@@ -41,4 +41,6 @@
 
 /world/New()
 	..()
+	var/mob/M = new
+	world.log << json_encode(icon_states(M.icon, "string"))
 	world.log << "World loaded!"

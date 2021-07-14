@@ -33,6 +33,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_hascall);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_icon_states);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_image);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isarea);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isfile);

@@ -1,7 +1,11 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -54,6 +58,100 @@ namespace OpenDreamShared.Resources {
             public float Delay;
         }
 
+        private static uint _readBigEndianUint32(BinaryReader reader)
+        {
+            byte[] bytes = reader.ReadBytes(4);
+            Array.Reverse(bytes); //Little to Big-Endian
+            return BitConverter.ToUInt32(bytes);
+        }
+
+        private static (uint, string) _readChunk(BinaryReader reader)
+        {
+            uint chunkLength = _readBigEndianUint32(reader);
+            string chunkType = new string(reader.ReadChars(4));
+
+            return (chunkLength, chunkType);
+        }
+
+        public static string ReadDMIDescription(byte[] bytes) {
+            MemoryStream stream = new MemoryStream(bytes);
+            BinaryReader reader = new BinaryReader(stream);
+
+            stream.Seek(8, SeekOrigin.Begin);
+
+            while (stream.Position < stream.Length) {
+                var (chunkLength, chunkType) = _readChunk(reader);
+
+                if (chunkType != "zTXt") {
+                    stream.Seek(chunkLength + 4, SeekOrigin.Current);
+                } else {
+                    long chunkDataPosition = stream.Position;
+                    string keyword = String.Empty + reader.ReadChar();
+
+                    while (reader.PeekChar() != 0 && keyword.Length < 79) {
+                        keyword += reader.ReadChar();
+                    }
+                    stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
+
+                    if (keyword == "Description") {
+                        stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
+
+                        DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                        MemoryStream uncompressedDataStream = new MemoryStream();
+
+                        deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+
+                        byte[] uncompressedData = new byte[uncompressedDataStream.Length];
+                        uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                        uncompressedDataStream.Read(uncompressedData);
+
+                        return Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
+                    } else {
+                        stream.Position = chunkDataPosition + chunkLength + 4;
+                    }
+                }
+            }
+
+            throw new ArgumentException("Did not find a DMI description");
+        }
+
+        public static List<string> GetIconStatesFromDescription(string dmiDescription)
+        {
+            var states = new List<string>();
+            dmiDescription = TrimDescription(dmiDescription);
+
+            var lines = dmiDescription.Split("\n");
+            foreach (var line in lines)
+            {
+                var equalsIndex = line.IndexOf('=');
+
+                if (equalsIndex == -1)
+                {
+                    throw new Exception("Invalid line in DMI description: \"" + line + "\"");
+                }
+                var key = line[..equalsIndex].Trim();
+                var value = line[(equalsIndex + 1)..].Trim();
+
+                if (key != "state")
+                {
+                    continue;
+                }
+                var stateName = ParseString(value);
+                states.Add(stateName);
+            }
+
+            return states;
+        }
+
+        private static string TrimDescription(string dmiDescription)
+        {
+            return dmiDescription
+                .Replace("# BEGIN DMI", "")
+                .Replace("# END DMI", "")
+                .Replace("\t", "")
+                .Trim();
+        }
+
         public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, int imageWidth) {
             ParsedDMIDescription description = new ParsedDMIDescription();
             ParsedDMIState currentState = null;
@@ -65,10 +163,7 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            dmiDescription = dmiDescription.Replace("# BEGIN DMI", "");
-            dmiDescription = dmiDescription.Replace("# END DMI", "");
-            dmiDescription = dmiDescription.Replace("\t", "");
-            dmiDescription = dmiDescription.Trim();
+            dmiDescription = TrimDescription(dmiDescription);
             description.Source = dmiDescription;
 
             string[] lines = dmiDescription.Split("\n");

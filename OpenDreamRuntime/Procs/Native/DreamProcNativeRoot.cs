@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Resources;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -404,6 +405,22 @@ namespace OpenDreamRuntime.Procs.Native {
             string plainText = arguments.GetArgument(0, "PlainText").GetValueAsString();
 
             return new DreamValue(HttpUtility.HtmlEncode(plainText));
+        }
+
+        [DreamProc("icon_states")]
+        [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
+        [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
+            if (mode != 0)
+            {
+                throw new NotImplementedException();
+            }
+            var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
+            var description = DMIParser.ReadDMIDescription(resource.ResourceData);
+            var states = DMIParser.GetIconStatesFromDescription(description);
+            return new DreamValue(DreamList.Create(CurrentRuntime, states));
         }
 
         [DreamProc("image")]

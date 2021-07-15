@@ -117,9 +117,9 @@ namespace OpenDreamClient.Interface.Controls {
             _grid.Focus();
 
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY, screenLocation);
-            pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-            pClickAtom.ModifierAlt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
+            pClickAtom.ModifierShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            pClickAtom.ModifierCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            pClickAtom.ModifierAlt = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
             Program.OpenDream.Connection.SendPacket(pClickAtom);
         }
 

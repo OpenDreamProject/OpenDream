@@ -115,7 +115,7 @@ namespace OpenDreamClient.Renderer {
             if (Eye != null) {
                 Camera = (Eye.X, Eye.Y, Eye.Z);
 
-                if (Program.OpenDream.Perspective.HasFlag(ClientPerspective.Edge)) {
+                if ((Program.OpenDream.Perspective & ClientPerspective.Edge) == ClientPerspective.Edge) {
                     Map map = Program.OpenDream.Map;
 
                     Camera.X = Math.Min(Math.Max(Camera.X, _viewDistance), map.Width - _viewDistance);

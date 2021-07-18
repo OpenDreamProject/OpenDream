@@ -87,10 +87,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                     if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a third period");
 
                                     parameters.Add(parameterName + "...");
-                                    
+
                                     parameterToken = GetNextToken(true);
                                     if (unnamed) break;
-                                    
+
                                 } else {
                                     if (unnamed) throw new Exception("Expected a second period");
                                     parameters.Add(parameterName);
@@ -152,6 +152,14 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             _currentLine.Add(token);
                         }
 
+                        break;
+                    }
+                    case TokenType.DM_Preproc_If:
+                    {
+                        //TODO Implement #if properly
+                        SkipIfBody();
+                        _isCurrentLineWhitespaceOnly = false;
+                        _currentLine.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
                         break;
                     }
                     case TokenType.DM_Preproc_Ifdef: {
@@ -261,7 +269,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
             Token token;
             while ((token = GetNextToken()).Type != TokenType.EndOfFile) {
-                if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
+                if (token.Type == TokenType.DM_Preproc_If || token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
                     ifdefCount++;
                 } else if (token.Type == TokenType.DM_Preproc_EndIf) {
                     ifdefCount--;

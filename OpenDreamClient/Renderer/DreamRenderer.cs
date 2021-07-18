@@ -63,7 +63,7 @@ namespace OpenDreamClient.Renderer {
             Rectangle iconRect = GetIconRect(atom, useScreenLocation);
 
 
-            //101 is always invisible
+            //101 is always invisible, otherwise it's invisible if mob see_invisible is less
             if (atom.Icon.Appearance.Invisibility == 101 || Program.OpenDream.SeeInvisible < atom.Icon.Appearance.Invisibility) return false;
 
             return (iconRect.X >= -iconRect.Width && iconRect.X <= OpenGLViewControl.Width &&

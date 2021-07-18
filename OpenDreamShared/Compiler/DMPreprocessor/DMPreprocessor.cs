@@ -158,7 +158,6 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     {
                         //TODO Implement #if properly
                         SkipIfBody();
-                        _isCurrentLineWhitespaceOnly = false;
                         _currentLine.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
                         break;
                     }

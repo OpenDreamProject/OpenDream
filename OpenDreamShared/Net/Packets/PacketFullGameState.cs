@@ -121,6 +121,7 @@ namespace OpenDreamShared.Net.Packets {
             ClientState = new DreamFullState.Client();
             ClientState.EyeID = stream.ReadUInt32();
             ClientState.Perspective = (ClientPerspective)stream.ReadByte();
+            ClientState.SeeInvisible = (byte)stream.ReadByte();
             ClientState.ScreenObjects = new List<UInt32>();
 
             UInt32 screenObjectCount = stream.ReadUInt32();
@@ -135,6 +136,7 @@ namespace OpenDreamShared.Net.Packets {
             if (ClientState != null) {
                 stream.WriteUInt32(ClientState.EyeID);
                 stream.WriteByte((byte)ClientState.Perspective);
+                stream.WriteByte(ClientState.SeeInvisible);
 
                 stream.WriteUInt32((UInt32)ClientState.ScreenObjects.Count);
                 foreach (UInt32 screenObject in ClientState.ScreenObjects) {

@@ -470,9 +470,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                             break;
                         }
-                        case TokenType.EndOfFile:
-                        case TokenType.Error:
-                        case TokenType.Warning: token = preprocToken; Advance(); break;
+                        case TokenType.EndOfFile: token = preprocToken; Advance(); break;
                         default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                     }
                 }
@@ -483,6 +481,12 @@ namespace OpenDreamShared.Compiler.DM {
 
         protected override Token Advance() {
             Token current = base.Advance();
+
+            //Warnings and errors go straight to output, no processing
+            while (current.Type is TokenType.Warning or TokenType.Error) {
+                _pendingTokenQueue.Enqueue(current);
+                current = base.Advance();
+            }
 
             //Skip any newlines when inside brackets
             if (bracketNesting != 0) {

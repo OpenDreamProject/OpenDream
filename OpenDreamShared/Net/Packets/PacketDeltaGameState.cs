@@ -25,7 +25,8 @@ namespace OpenDreamShared.Net.Packets {
             Eye = 0x1,
             ScreenObjectAdditions = 0x2,
             ScreenObjectRemovals = 0x3,
-            Perspective = 0x4
+            Perspective = 0x4,
+            SeeInvisible = 0x5
         }
 
         public PacketID PacketID => PacketID.DeltaGameState;
@@ -227,6 +228,7 @@ namespace OpenDreamShared.Net.Packets {
                 switch (valueID) {
                     case ClientValueID.Eye: ClientDelta.NewEyeID = stream.ReadUInt32(); break;
                     case ClientValueID.Perspective: ClientDelta.NewPerspective = (ClientPerspective)stream.ReadByte(); break;
+                    case ClientValueID.SeeInvisible: ClientDelta.NewSeeInvisible = (byte)stream.ReadByte(); break;
                     case ClientValueID.ScreenObjectAdditions: {
                         UInt32 screenObjectAdditionCount = stream.ReadUInt32();
 
@@ -256,10 +258,11 @@ namespace OpenDreamShared.Net.Packets {
         private void WriteClientSection(PacketStream stream) {
             bool newEye = ClientDelta.NewEyeID.HasValue;
             bool newPerspective = ClientDelta.NewPerspective.HasValue;
+            bool newSeeInvisible = ClientDelta.NewSeeInvisible.HasValue;
             bool screenAdditions = (ClientDelta.ScreenObjectAdditions != null && ClientDelta.ScreenObjectAdditions.Count > 0);
             bool screenRemovals = (ClientDelta.ScreenObjectRemovals != null && ClientDelta.ScreenObjectRemovals.Count > 0);
 
-            if (newEye || newPerspective || screenAdditions || screenRemovals) {
+            if (newEye || newPerspective || newSeeInvisible || screenAdditions || screenRemovals) {
                 stream.WriteByte((byte)SectionID.Client);
 
                 if (newEye) {
@@ -270,6 +273,11 @@ namespace OpenDreamShared.Net.Packets {
                 if (newPerspective) {
                     stream.WriteByte((byte)ClientValueID.Perspective);
                     stream.WriteByte((byte)ClientDelta.NewPerspective.Value);
+                }
+
+                if (newSeeInvisible)
+                {
+                    stream.WriteByte(ClientDelta.NewSeeInvisible.Value);
                 }
 
                 if (screenAdditions) {

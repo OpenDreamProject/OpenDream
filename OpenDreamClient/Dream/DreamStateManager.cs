@@ -80,6 +80,7 @@ namespace OpenDreamClient.Dream {
                 }
 
                 Program.OpenDream.Perspective = pFullGameState.ClientState.Perspective;
+                Program.OpenDream.SeeInvisible = pFullGameState.ClientState.SeeInvisible;
 
                 Program.OpenDream.ScreenObjects.Clear();
                 foreach (UInt32 screenObjectAtomID in pFullGameState.ClientState.ScreenObjects) {
@@ -230,6 +231,10 @@ namespace OpenDreamClient.Dream {
 
             if (clientDelta.NewPerspective.HasValue) {
                 Program.OpenDream.Perspective = clientDelta.NewPerspective.Value;
+            }
+
+            if (clientDelta.NewSeeInvisible.HasValue) {
+                Program.OpenDream.SeeInvisible = clientDelta.NewSeeInvisible.Value;
             }
 
             if (clientDelta.ScreenObjectAdditions != null) {

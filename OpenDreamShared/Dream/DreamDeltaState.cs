@@ -33,6 +33,7 @@ namespace OpenDreamShared.Dream {
         public class ClientDelta {
             public UInt32? NewEyeID;
             public ClientPerspective? NewPerspective;
+            public byte? NewSeeInvisible;
             public List<UInt32> ScreenObjectAdditions;
             public List<UInt32> ScreenObjectRemovals;
         }
@@ -108,6 +109,11 @@ namespace OpenDreamShared.Dream {
 
         public void AddClientPerspectiveDelta(string ckey, ClientPerspective newPerspective) {
             GetClientDelta(ckey).NewPerspective = newPerspective;
+        }
+
+        public void AddClientSeeInvisibleDelta(string ckey, byte newSeeInvisible)
+        {
+            GetClientDelta(ckey).NewSeeInvisible = newSeeInvisible;
         }
 
         public void AddClientScreenObject(string ckey, UInt32 screenObjectID) {

@@ -21,9 +21,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "key" || variableName == "ckey") {
-                DreamConnection newClientConnection = Runtime.Server.GetConnectionFromCKey(variableValue.GetValueAsString());
+                DreamConnection newClientConnection =
+                    Runtime.Server.GetConnectionFromCKey(variableValue.GetValueAsString());
 
                 newClientConnection.MobDreamObject = dreamObject;
+            }
+            else if (variableName == "see_invisible") {
+                string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
+                Runtime.StateManager.AddClientSeeInvisibleDelta(ckey, (byte)variableValue.GetValueAsInteger());
+
             } else if (variableName == "client" && variableValue != oldVariableValue) {
                 DreamObject newClient = variableValue.GetValueAsDreamObject();
                 DreamObject oldClient = oldVariableValue.GetValueAsDreamObject();

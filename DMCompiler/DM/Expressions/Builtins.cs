@@ -1,6 +1,8 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -240,6 +242,31 @@ namespace DMCompiler.DM.Expressions {
                 }
             }
         }
+
+        public override object ToJsonRepresentation() {
+            List<object> list = new();
+
+            foreach (DMASTCallParameter parameter in _astNode.Values) {
+                DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
+
+                if (associatedAssign != null) {
+                    throw new CompileErrorException("Associated-value json serialization is not implemented");
+                } else {
+                    DMExpression value = DMExpression.Create(null, null, parameter.Value);
+
+                    if (parameter.Name != null) {
+                        throw new CompileErrorException("Associated-value json serialization is not implemented");
+                    } else {
+                        list.Add(value.ToJsonRepresentation());
+                    }
+                }
+            }
+
+            return new Dictionary<string, object>() {
+                { "type", JsonVariableType.List },
+                { "values", list }
+            };
+        }
     }
 
     // newlist(...)
@@ -259,6 +286,10 @@ namespace DMCompiler.DM.Expressions {
                 proc.CreateObject();
                 proc.ListAppend();
             }
+        }
+
+        public override object ToJsonRepresentation() {
+            return null; //TODO
         }
     }
 

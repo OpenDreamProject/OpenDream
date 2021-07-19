@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
@@ -12,9 +13,6 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
-        public static List<string> IncludedMaps = new();
-        public static string IncludedInterface = null;
-
         //This is ugly
         public static List<CompilerError> VisitorErrors = new();
 
@@ -25,8 +23,9 @@ namespace DMCompiler {
             if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(args[0], "json");
+                List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
-                SaveJson(preprocessor.IncludedMaps, preprocessor.IncludedInterface, outputFile);
+                SaveJson(maps, preprocessor.IncludedInterface, outputFile);
             } else {
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
@@ -106,7 +105,32 @@ namespace DMCompiler {
             return true;
         }
 
-        private static void SaveJson(List<string> maps, string interfaceFile, string outputFile) {
+        private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
+            List<DreamMapJson> maps = new();
+            
+            foreach (string mapPath in mapPaths) {
+                DMPreprocessor preprocessor = new DMPreprocessor(false);
+                preprocessor.IncludeFile(String.Empty, mapPath);
+
+                DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
+                DMMParser parser = new DMMParser(lexer);
+                DreamMapJson map = parser.ParseMap();
+
+                if (parser.Errors.Count > 0) {
+                    foreach (CompilerError error in parser.Errors) {
+                        Console.WriteLine(error);
+                    }
+
+                    continue;
+                }
+
+                maps.Add(map);
+            }
+
+            return maps;
+        }
+
+        private static void SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;

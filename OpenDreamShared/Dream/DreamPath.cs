@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace OpenDreamShared.Dream {
     public struct DreamPath {
@@ -31,10 +32,12 @@ namespace OpenDreamShared.Dream {
             UpwardSearch
         }
 
+        [JsonIgnore]
         public string LastElement {
             get => Elements.Last();
         }
 
+        [JsonIgnore]
         public string[] Elements {
             get => _elements;
             set {
@@ -60,6 +63,7 @@ namespace OpenDreamShared.Dream {
                 _pathString = pathStringBuilder.ToString();
                 return _pathString;
             }
+            set => SetFromString(value);
         }
 
         public PathType Type;

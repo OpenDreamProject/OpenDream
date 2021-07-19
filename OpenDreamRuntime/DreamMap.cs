@@ -1,9 +1,7 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Compiler.DMPreprocessor;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 
@@ -39,23 +37,9 @@ namespace OpenDreamRuntime {
 
         private Dictionary<DreamPath, DreamObject> _mapLoaderAreas = new();
 
-        public void LoadMap(string filePath) {
-            DMPreprocessor dmmPreprocessor = new DMPreprocessor(false);
-            dmmPreprocessor.IncludeFile(Runtime.ResourceManager.RootPath, filePath);
-
-            DMMParser dmmParser = new DMMParser(Runtime, new DMLexer(filePath, dmmPreprocessor.GetResult()));
-            DMMParser.Map map = dmmParser.ParseMap();
-
-            if (dmmParser.Errors.Count > 0) {
-                foreach (CompilerError error in dmmParser.Errors) {
-                    Console.WriteLine(error);
-                }
-
-                throw new Exception("Errors while parsing map");
-            }
-
-            Width = map.MaxX - 1;
-            Height = map.MaxY - 1;
+        public void LoadMap(DreamMapJson map) {
+            Width = map.MaxX;
+            Height = map.MaxY;
             Levels = new List<MapLevel>(map.MaxZ);
             for (int z = 1; z <= map.MaxZ; z++) {
                 Levels.Add(new MapLevel(Width, Height));
@@ -64,9 +48,12 @@ namespace OpenDreamRuntime {
             DreamPath defaultTurf = Runtime.WorldInstance.GetVariable("turf").GetValueAsPath();
             DreamPath defaultArea = Runtime.WorldInstance.GetVariable("area").GetValueAsPath();
 
-            foreach (DMMParser.MapBlock mapBlock in map.Blocks) {
-                foreach (KeyValuePair<(int X, int Y), string> cell in mapBlock.Cells) {
-                    DMMParser.CellDefinition cellDefinition = map.CellDefinitions[cell.Value];
+            foreach (MapBlockJson mapBlock in map.Blocks) {
+                int blockX = 1;
+                int blockY = 1;
+
+                foreach (string cell in mapBlock.Cells) {
+                    CellDefinitionJson cellDefinition = map.CellDefinitions[cell];
                     DreamObject turf = CreateMapObject(cellDefinition.Turf);
                     DreamObject area = GetMapLoaderArea(cellDefinition.Area?.Type ?? defaultArea);
 
@@ -75,13 +62,19 @@ namespace OpenDreamRuntime {
                         turf.InitSpawn(new DreamProcArguments(null));
                     }
 
-                    int x = mapBlock.X + cell.Key.X - 1;
-                    int y = mapBlock.Y + cell.Key.Y - 1;
+                    int x = mapBlock.X + blockX - 1;
+                    int y = mapBlock.Y + mapBlock.Height - blockY;
 
                     SetTurf(x, y, mapBlock.Z, turf, false);
                     SetArea(x, y, mapBlock.Z, area);
-                    foreach (DMMParser.MapObject mapObject in cellDefinition.Objects) {
+                    foreach (MapObjectJson mapObject in cellDefinition.Objects) {
                         CreateMapObject(mapObject, turf);
+                    }
+
+                    blockX++;
+                    if (blockX > mapBlock.Width) {
+                        blockX = 1;
+                        blockY++;
                     }
                 }
             }
@@ -171,7 +164,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        private DreamObject CreateMapObject(DMMParser.MapObject mapObject, DreamObject loc = null) {
+        private DreamObject CreateMapObject(MapObjectJson mapObject, DreamObject loc = null) {
             if (!Runtime.ObjectTree.HasTreeEntry(mapObject.Type)) {
                 Console.WriteLine("MAP LOAD: Skipping " + mapObject.Type);
 
@@ -179,12 +172,12 @@ namespace OpenDreamRuntime {
             }
 
             DreamObjectDefinition definition = Runtime.ObjectTree.GetObjectDefinitionFromPath(mapObject.Type);
-            if (mapObject.VarOverrides.Count > 0) {
+            if (mapObject.VarOverrides?.Count > 0) {
                 definition = new DreamObjectDefinition(definition);
 
-                foreach (KeyValuePair<string, DreamValue> varOverride in mapObject.VarOverrides) {
+                foreach (KeyValuePair<string, object> varOverride in mapObject.VarOverrides) {
                     if (definition.HasVariable(varOverride.Key)) {
-                        definition.Variables[varOverride.Key] = varOverride.Value;
+                        definition.Variables[varOverride.Key] = Runtime.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value);
                     }
                 }
             }

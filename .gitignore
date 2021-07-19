@@ -280,6 +280,9 @@ Thumbs.db
 ehthumbs.db
 
 /.vs
+/Content.Server/bin
+/Content.Server/obj
+/Content.Server/Properties
 /OpenDreamClient/bin
 /OpenDreamClient/obj
 /OpenDreamClient/Properties

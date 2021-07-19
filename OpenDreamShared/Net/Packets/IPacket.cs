@@ -10,29 +10,6 @@ namespace OpenDreamShared.Net.Packets {
 
         public static Dictionary<PacketID, Type> PacketIDToType { get; } = new();
 
-        static IPacket() {
-            RegisterPacket<PacketConnectionResult>(PacketID.ConnectionResult);
-            RegisterPacket<PacketRequestConnect>(PacketID.RequestConnect);
-            RegisterPacket<PacketAlert>(PacketID.Alert);
-            RegisterPacket<PacketOutput>(PacketID.Output);
-            RegisterPacket<PacketRequestResource>(PacketID.RequestResource);
-            RegisterPacket<PacketResource>(PacketID.Resource);
-            RegisterPacket<PacketFullGameState>(PacketID.FullGameState);
-            RegisterPacket<PacketDeltaGameState>(PacketID.DeltaGameState);
-            RegisterPacket<PacketTopic>(PacketID.Topic);
-            RegisterPacket<PacketClickAtom>(PacketID.ClickAtom);
-            RegisterPacket<PacketSound>(PacketID.Sound);
-            RegisterPacket<PacketBrowse>(PacketID.Browse);
-            RegisterPacket<PacketBrowseResource>(PacketID.BrowseResource);
-            RegisterPacket<PacketPrompt>(PacketID.Prompt);
-            RegisterPacket<PacketPromptResponse>(PacketID.PromptResponse);
-            RegisterPacket<PacketCallVerb>(PacketID.CallVerb);
-            RegisterPacket<PacketUpdateAvailableVerbs>(PacketID.UpdateAvailableVerbs);
-            RegisterPacket<PacketUpdateStatPanels>(PacketID.UpdateStatPanels);
-            RegisterPacket<PacketSelectStatPanel>(PacketID.SelectStatPanel);
-            RegisterPacket<PacketWinSet>(PacketID.WinSet);
-        }
-
         public static IPacket CreatePacketFromData(byte[] packetData) {
             PacketStream stream = new PacketStream(packetData);
             PacketID packetID = (PacketID)stream.ReadByte();

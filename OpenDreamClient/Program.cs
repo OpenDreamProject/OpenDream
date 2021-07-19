@@ -1,5 +1,4 @@
 ﻿using Robust.Client;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
     public static class Program

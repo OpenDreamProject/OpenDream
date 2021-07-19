@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿/*using System.Text.Json;
 using Lidgren.Network;
 using Robust.Shared.Network;
 
@@ -37,3 +37,4 @@ namespace OpenDreamShared.Net.Packets {
         }
     }
 }
+*/

@@ -60,8 +60,8 @@ namespace OpenDreamClient {
             if (Connection.Connected) throw new InvalidOperationException("Already connected to a server!");
             Connection.Connect(ip, port);
 
-            PacketRequestConnect pRequestConnect = new PacketRequestConnect(_username, ClientData);
-            Connection.SendPacket(pRequestConnect);
+            //PacketRequestConnect pRequestConnect = new PacketRequestConnect(_username, ClientData);
+            //Connection.SendPacket(pRequestConnect);
 
             _updateTimer = 0f;
             ConnectedToServer?.Invoke();

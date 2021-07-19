@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDreamRuntime", "OpenDre
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDreamRuntime.Tests", "OpenDreamRuntime.Tests\OpenDreamRuntime.Tests.csproj", "{A4AE56A1-A3AF-4D2A-B24E-39E279303C32}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamShared", "OpenDreamShared\OpenDreamShared.csproj", "{2879AF7A-6026-4A95-9F6E-37489FFE764E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDreamShared", "OpenDreamShared\OpenDreamShared.csproj", "{2879AF7A-6026-4A95-9F6E-37489FFE764E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RobustToolbox", "RobustToolbox", "{DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}"
 EndProject
@@ -84,17 +84,19 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamlX.Runtime", "RobustToolbox\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj", "{293D0AEA-7934-461C-9DAD-EC1827CE9DE3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MSBuild", "MSBuild", "{3DF1DC34-2235-4F4F-8513-14B1284EC70B}"
-ProjectSection(SolutionItems) = preProject
-	RobustToolbox\MSBuild\Robust.Analyzers.targets = RobustToolbox\MSBuild\Robust.Analyzers.targets
-	RobustToolbox\MSBuild\Robust.DefineConstants.targets = RobustToolbox\MSBuild\Robust.DefineConstants.targets
-	RobustToolbox\MSBuild\Robust.Engine.targets = RobustToolbox\MSBuild\Robust.Engine.targets
-	RobustToolbox\MSBuild\Robust.Properties.targets = RobustToolbox\MSBuild\Robust.Properties.targets
-	RobustToolbox\MSBuild\XamlIL.targets = RobustToolbox\MSBuild\XamlIL.targets
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		RobustToolbox\MSBuild\Robust.Analyzers.targets = RobustToolbox\MSBuild\Robust.Analyzers.targets
+		RobustToolbox\MSBuild\Robust.DefineConstants.targets = RobustToolbox\MSBuild\Robust.DefineConstants.targets
+		RobustToolbox\MSBuild\Robust.Engine.targets = RobustToolbox\MSBuild\Robust.Engine.targets
+		RobustToolbox\MSBuild\Robust.Properties.targets = RobustToolbox\MSBuild\Robust.Properties.targets
+		RobustToolbox\MSBuild\XamlIL.targets = RobustToolbox\MSBuild\XamlIL.targets
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cefglue", "cefglue", "{534AFACE-24AF-4F54-B7B0-951C5D62DF34}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CefGlue", "RobustToolbox\cefglue\CefGlue\CefGlue.csproj", "{CBF4EBB8-A6A0-446F-82D4-B1D24FF5B3FF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Content.Server", "Content.Server\Content.Server.csproj", "{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -352,6 +354,14 @@ Global
 		{CBF4EBB8-A6A0-446F-82D4-B1D24FF5B3FF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CBF4EBB8-A6A0-446F-82D4-B1D24FF5B3FF}.Release|x64.ActiveCfg = Release|Any CPU
 		{CBF4EBB8-A6A0-446F-82D4-B1D24FF5B3FF}.Release|x64.Build.0 = Release|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Debug|x64.Build.0 = Debug|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Release|x64.ActiveCfg = Release|Any CPU
+		{2F7EE143-7BED-4731-90F0-E45AD7CC5E02}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

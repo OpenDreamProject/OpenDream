@@ -43,7 +43,7 @@ namespace OpenDreamClient.Resources {
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourcePath)) {
                     _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
-                    _openDream.Connection.SendPacket(new PacketRequestResource(resourcePath));
+                    //_openDream.Connection.SendPacket(new PacketRequestResource(resourcePath));
                     Task.Delay(5000).ContinueWith(r => {
                         if (_loadingResources.ContainsKey(resourcePath)) {
                             Console.WriteLine("Resource '" + resourcePath + "' was requested, but is still not recieved 5 seconds later.");

@@ -277,6 +277,7 @@ namespace OpenDreamShared.Net.Packets {
 
                 if (newSeeInvisible)
                 {
+                    stream.WriteByte((byte)ClientValueID.SeeInvisible);
                     stream.WriteByte((byte)ClientDelta.NewSeeInvisible.Value);
                 }
 

@@ -152,10 +152,19 @@ namespace OpenDreamRuntime.Objects {
                             return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
                         case JsonVariableType.List:
                             DreamList list = DreamList.Create(Runtime);
-                            JsonElement values = jsonElement.GetProperty("values");
 
-                            foreach (JsonElement listValue in values.EnumerateArray()) {
-                                list.AddValue(GetDreamValueFromJsonElement(listValue));
+                            if (jsonElement.TryGetProperty("values", out JsonElement values)) {
+                                foreach (JsonElement listValue in values.EnumerateArray()) {
+                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                }
+                            }
+
+                            if (jsonElement.TryGetProperty("associatedValues", out JsonElement associatedValues)) {
+                                foreach (JsonProperty associatedValue in associatedValues.EnumerateObject()) {
+                                    DreamValue key = new DreamValue(associatedValue.Name);
+
+                                    list.SetValue(key, GetDreamValueFromJsonElement(associatedValue.Value));
+                                }
                             }
 
                             return new DreamValue(list);

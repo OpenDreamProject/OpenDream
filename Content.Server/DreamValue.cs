@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Content.Server.DM;
 using Content.Server.Dream;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 
 namespace Content.Server {
     [JsonConverter(typeof(DreamValueJsonConverter))]

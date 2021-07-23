@@ -7,10 +7,6 @@ namespace Content.Server.Dream.MetaObjects {
 
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
-        }
-
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
 

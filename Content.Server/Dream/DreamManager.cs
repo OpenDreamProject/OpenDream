@@ -1,8 +1,8 @@
 ﻿using Content.Server.DM;
 using Content.Server.Dream.MetaObjects;
 using Content.Server.Dream.NativeProcs;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using Content.Shared.Dream;
+using Content.Shared.Json;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
@@ -18,14 +18,11 @@ namespace Content.Server.Dream {
         [Dependency] IConfigurationManager _configManager = null;
         [Dependency] IPlayerManager _playerManager = null;
         [Dependency] IDreamMapManager _dreamMapManager = null;
-        [Dependency] IAtomManager _atomManager = null;
 
         public DreamObjectTree ObjectTree { get; private set; }
         public int DMExceptionCount { get; set; }
 
         public DreamList WorldContentsList { get; set; }
-
-        public DreamObject c { get; set; }
 
         private Dictionary<DreamObject, NetUserId> _clientToUserId = new();
 

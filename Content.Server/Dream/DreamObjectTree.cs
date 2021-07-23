@@ -1,9 +1,9 @@
-﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+﻿using Content.Shared.Dream;
+using Content.Shared.Json;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using OpenDreamShared.Dream.Procs;
+using Content.Shared.Dream.Procs;
 using Content.Server.DM;
 using Content.Server.Dream.MetaObjects;
 using GlobalVariable = Content.Server.Dream.DreamObjectDefinition.GlobalVariable;
@@ -170,10 +170,9 @@ namespace Content.Server.Dream {
 
                             switch (resourcePathElement.ValueKind) {
                                 case JsonValueKind.String: {
-                                    //DreamResource resource = Runtime.ResourceManager.LoadResource(resourcePathElement.GetString());
+                                    DreamResource resource = new DreamResource(resourcePathElement.GetString());
 
-                                    //return new DreamValue(resource);
-                                    return DreamValue.Null;
+                                    return new DreamValue(resource);
                                 }
                                 case JsonValueKind.Null:
                                     return DreamValue.Null;

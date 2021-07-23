@@ -1,5 +1,5 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;

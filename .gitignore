@@ -283,6 +283,7 @@ ehthumbs.db
 /Content.Server/bin
 /Content.Server/obj
 /Content.Server/Properties
+/Content.Server/server_config.toml
 /OpenDreamClient/bin
 /OpenDreamClient/obj
 /OpenDreamClient/Properties

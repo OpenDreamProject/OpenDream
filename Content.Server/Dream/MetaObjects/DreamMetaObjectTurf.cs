@@ -1,5 +1,5 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using Robust.Shared.IoC;
 
 namespace Content.Server.Dream.MetaObjects {

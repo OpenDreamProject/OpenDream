@@ -1,13 +1,13 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 using System;
 
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
-        [Dependency] private IDreamManager _dreamManager;
-        [Dependency] private IGameTiming _gameTiming;
+        [Dependency] private IDreamManager _dreamManager = null;
+        [Dependency] private IGameTiming _gameTiming = null;
 
         private ViewRange _viewRange;
 
@@ -33,8 +33,6 @@ namespace Content.Server.Dream.MetaObjects {
             } else {
                 _viewRange = new ViewRange(view.GetValueAsInteger());
             }
-
-            //New() is not called here
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

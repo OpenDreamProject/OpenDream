@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Content.Server.Dream;
-using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
+using Content.Shared.Dream.Procs;
 
 namespace Content.Server.DM {
     public class AsyncNativeProc : DreamProc {

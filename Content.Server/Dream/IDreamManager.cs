@@ -2,7 +2,6 @@
 
 namespace Content.Server.Dream {
     interface IDreamManager {
-        public DreamObject c { get; set; }
         public DreamObjectTree ObjectTree { get; }
         public int DMExceptionCount { get; set; }
 

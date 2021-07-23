@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Content.Server.Dream;
-using OpenDreamShared.Dream.Procs;
+using Content.Shared.Dream.Procs;
 using Robust.Shared.IoC;
 
 namespace Content.Server.DM {

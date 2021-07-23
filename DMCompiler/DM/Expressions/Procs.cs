@@ -1,4 +1,4 @@
-using OpenDreamShared.Compiler;
+using Content.Shared.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)

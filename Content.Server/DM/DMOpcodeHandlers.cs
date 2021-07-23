@@ -1,7 +1,7 @@
 ﻿using Content.Server.Dream;
 using Content.Server.Dream.MetaObjects;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using Content.Shared.Dream;
+using Content.Shared.Dream.Procs;
 using Robust.Shared.IoC;
 using System;
 using System.Collections.Generic;

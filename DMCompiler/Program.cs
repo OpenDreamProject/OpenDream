@@ -5,10 +5,10 @@ using System.Reflection;
 using System.Text.Json;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Compiler.DMPreprocessor;
-using OpenDreamShared.Json;
+using Content.Shared.Compiler;
+using Content.Shared.Compiler.DM;
+using Content.Shared.Compiler.DMPreprocessor;
+using Content.Shared.Json;
 
 namespace DMCompiler {
     class Program {

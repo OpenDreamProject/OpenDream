@@ -1,6 +1,6 @@
 ﻿using Content.Server.DM;
 using Content.Server.Dream.MetaObjects;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Reflection;

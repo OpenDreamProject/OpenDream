@@ -1,5 +1,5 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.IoC;
 
@@ -45,10 +45,7 @@ namespace Content.Server.Dream.MetaObjects {
                     IPlayerSession session = _dreamManager.GetSessionFromClient(dreamObject);
 
                     if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
-                        _atomManager.GetAtomEntity(mob).GetComponent<Robust.Server.GameObjects.SpriteComponent>().DrawDepth = 10;
-                        mob.SetVariable("icon", new("mob.png"));
                         session.AttachToEntity(_atomManager.GetAtomEntity(mob));
-                        _dreamManager.c = mob;
                     } else {
                         session.DetachFromEntity();
                     }
@@ -93,12 +90,6 @@ namespace Content.Server.Dream.MetaObjects {
                 case "ckey":
                 {
                     return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
-                }
-                case "mob":
-                {
-                    //var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    //return new DreamValue(connection.MobDreamObject);
-                    return DreamValue.Null;
                 }
                 case "address":
                 {

@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
+    <ProjectReference Include="..\Content.Shared\Content.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

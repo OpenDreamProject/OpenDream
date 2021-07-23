@@ -1,11 +1,10 @@
 using Content.Server.Dream;
-using OpenDreamShared.Dream.Procs;
+using Content.Shared.Dream.Procs;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Content.Server.DM {
     public enum ProcStatus {

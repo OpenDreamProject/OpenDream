@@ -1,8 +1,11 @@
-﻿using OpenDreamShared.Dream;
+﻿using Content.Shared.Dream;
+using Robust.Shared.IoC;
 
 namespace Content.Server.Dream.NativeProcs {
     static class DreamProcNative {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
+            DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
+
             DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);

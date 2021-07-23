@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Content.Server.Dream;
-using OpenDreamShared.Dream.Procs;
+using Content.Shared.Dream.Procs;
 
 namespace Content.Server.DM {
     public class NativeProc : DreamProc {

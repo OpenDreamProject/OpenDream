@@ -1,5 +1,5 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
@@ -22,7 +22,6 @@ namespace Content.Server.Dream {
                 for (int y = 1; y <= 10; y++) {
                     DreamObject turf = _dreamManager.ObjectTree.CreateObject(DreamPath.Turf);
                     turf.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
-                    turf.SetVariable("icon", new DreamValue("turf.png"));
                     SetTurf(x, y, 1, turf);
                 }
             }

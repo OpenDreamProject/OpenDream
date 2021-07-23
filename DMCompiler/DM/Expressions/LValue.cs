@@ -1,4 +1,4 @@
-using OpenDreamShared.Dream;
+using Content.Shared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {

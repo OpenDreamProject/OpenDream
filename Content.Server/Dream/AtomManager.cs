@@ -3,24 +3,19 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
-using System;
+using Robust.Shared.Utility;
 using System.Collections.Generic;
 
 namespace Content.Server.Dream {
     class AtomManager : IAtomManager {
         [Dependency] IEntityManager _entityManager = null;
-        [Dependency] IMapManager _mapManager = null;
 
         private Dictionary<DreamObject, IEntity> _atomToEntity = new();
 
         public IEntity CreateAtomEntity(DreamObject atom) {
             IEntity entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
-            SpriteComponent sprite = entity.AddComponent<SpriteComponent>();
-            sprite.BaseRSIPath = String.Empty;
-            sprite.Directional = true;
-            sprite.AddLayerWithTexture("empty.png");
-
+            CreateSpriteComponent(entity, atom);
             _atomToEntity.Add(atom, entity);
             return entity;
         }
@@ -31,6 +26,41 @@ namespace Content.Server.Dream {
 
         public void DeleteAtomEntity(DreamObject atom) {
             GetAtomEntity(atom).Delete();
+        }
+
+        private void CreateSpriteComponent(IEntity entity, DreamObject atom) {
+            DMISpriteComponent sprite = entity.AddComponent<DMISpriteComponent>();
+
+            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
+                sprite.Icon = new ResourcePath(icon.ResourcePath);
+            }
+
+            if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
+                sprite.IconState = iconState;
+            }
+
+            if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
+                //TODO
+            }
+
+            if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
+                //TODO
+            }
+
+            if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
+                //TODO
+            }
+
+            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
+               //TODO
+            }
+
+            atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
+            atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
+            //sprite.Offset = new Vector2(pixelX, pixelY);
+
+            //TODO: Better layer conversion
+            //sprite.DrawDepth = (int)(atom.GetVariable("layer").GetValueAsFloat() * 1000);
         }
     }
 }

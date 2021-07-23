@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
+﻿using Content.Shared.Compiler;
+using Content.Shared.Compiler.DM;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {

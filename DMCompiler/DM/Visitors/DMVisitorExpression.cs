@@ -1,6 +1,6 @@
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Dream;
+using Content.Shared.Compiler;
+using Content.Shared.Compiler.DM;
+using Content.Shared.Dream;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {

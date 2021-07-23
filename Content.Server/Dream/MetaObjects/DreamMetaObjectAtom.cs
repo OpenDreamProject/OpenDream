@@ -1,40 +1,12 @@
 ﻿using Content.Server.DM;
-using OpenDreamShared.Dream;
-using Robust.Server.GameObjects;
-using Robust.Shared.GameObjects;
+using Content.Shared.Dream;
 using Robust.Shared.IoC;
-using Robust.Shared.Maths;
-using System;
-using System.Collections.Generic;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
-
-        private const int BASE_ICON_LAYER = 0;
-        private static readonly Dictionary<String, Color> _colors = new() {
-            { "black", new Color(0, 0, 0) },
-            { "silver", new Color(192, 192, 192) },
-            { "gray", new Color(128, 128, 128) },
-            { "grey", new Color(128, 128, 128) },
-            { "white", new Color(255, 255, 255) },
-            { "maroon", new Color(128, 0, 0) },
-            { "red", new Color(255, 0, 0) },
-            { "purple", new Color(128, 0, 128) },
-            { "fuchsia", new Color(255, 0, 255) },
-            { "magenta", new Color(255, 0, 255) },
-            { "green", new Color(0, 192, 0) },
-            { "lime", new Color(0, 255, 0) },
-            { "olive", new Color(128, 128, 0) },
-            { "gold", new Color(128, 128, 0) },
-            { "yellow", new Color(255, 255, 0) },
-            { "navy", new Color(0, 0, 128) },
-            { "blue", new Color(0, 0, 255) },
-            { "teal", new Color(0, 128, 128) },
-            { "aqua", new Color(0, 255, 255) },
-            { "cyan", new Color(0, 255, 255) }
-        };
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _atomManager.CreateAtomEntity(dreamObject);
@@ -46,10 +18,6 @@ namespace Content.Server.Dream.MetaObjects {
             } else if (creationArguments.ArgumentCount == 0) {
                 creationArguments.OrderedArguments.Add(DreamValue.Null); //First argument is loc, which is null
             }
-
-            //ServerIconAppearance atomAppearance = BuildAtomAppearance(dreamObject);
-            //Runtime.StateManager.AddAtomCreation(dreamObject, atomAppearance);
-            //UpdateAppearance(Runtime, dreamObject, atomAppearance);
 
             base.OnObjectCreated(dreamObject, creationArguments);
         }
@@ -68,42 +36,25 @@ namespace Content.Server.Dream.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "icon") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.LayerSetTexture(BASE_ICON_LAYER, variableValue.GetValueAsString());
+                sprite.Icon = new ResourcePath(variableValue.GetValueAsString());
             } else if (variableName == "icon_state") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.LayerSetState(BASE_ICON_LAYER, variableValue.GetValueAsString());
+                sprite.IconState = variableValue.GetValueAsString();
             } else if (variableName == "pixel_x") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
-
-                sprite.Offset = new Vector2(variableValue.GetValueAsInteger(), sprite.Offset.Y);
+                //TODO
             } else if (variableName == "pixel_y") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
-
-                sprite.Offset = new Vector2(sprite.Offset.X, variableValue.GetValueAsInteger());
+                //TODO
             } else if (variableName == "layer") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
-                float layer = variableValue.GetValueAsFloat();
-
-                //TODO: Better layer conversion
-                sprite.DrawDepth = (int)(layer * 1000);
+                //TODO
             } else if (variableName == "invisibility") {
                 //TODO
             } else if (variableName == "mouse_opacity") {
                 //TODO
             } else if (variableName == "color") {
-                SpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<SpriteComponent>();
-                Color color = Color.White;
-
-                if (variableValue.TryGetValueAsString(out string colorText)) {
-                    if (!_colors.TryGetValue(colorText, out color)) {
-                        color = Color.TryFromHex(colorText) ?? Color.White;
-                    }
-                }
-
-                sprite.LayerSetColor(BASE_ICON_LAYER, color);
+                //TODO
             } else if (variableName == "dir") {
                 AtomDirection dir = (AtomDirection)variableValue.GetValueAsInteger();
 
@@ -173,55 +124,7 @@ namespace Content.Server.Dream.MetaObjects {
             }
         }
 
-        /*protected static void UpdateAppearance(DreamRuntime runtime, DreamObject atom, ServerIconAppearance newAppearance) {
-            if (!runtime.AtomToAppearance.TryGetValue(atom, out ServerIconAppearance oldAppearance) || oldAppearance.GetID() != newAppearance.GetID()) {
-                runtime.AtomToAppearance[atom] = newAppearance;
-
-                atom.Runtime.StateManager.AddAtomIconAppearanceDelta(atom, newAppearance);
-            }
-        }
-
-        private ServerIconAppearance BuildAtomAppearance(DreamObject atom) {
-            ServerIconAppearance appearance = new ServerIconAppearance(Runtime);
-
-            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource resource)) {
-                appearance.Icon = resource.ResourcePath;
-            }
-
-            if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
-                appearance.IconState = iconState;
-            }
-
-            if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
-                appearance.SetColor(color);
-            }
-
-            if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
-            }
-
-            if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
-            }
-
-            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
-            }
-
-            if (atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX)) {
-                appearance.PixelX = pixelX;
-            }
-
-            if (atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY)) {
-                appearance.PixelY = pixelY;
-            }
-
-            appearance.Layer = atom.GetVariable("layer").GetValueAsFloat();
-
-            return appearance;
-        }
-
-        private ServerIconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
+        /*private ServerIconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
             ServerIconAppearance appearance = new ServerIconAppearance(Runtime);
 
             if (value.TryGetValueAsString(out string valueString)) {

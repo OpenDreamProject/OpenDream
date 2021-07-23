@@ -4,13 +4,21 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 
 namespace Content.Server {
-    class EntryPoint : GameServer {
+    public class EntryPoint : GameServer {
         private IDreamManager _dreamManager;
 
         public override void Init() {
             IoCManager.Resolve<IComponentFactory>().DoAutoRegistrations();
 
             ServerContentIoC.Register();
+
+            // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
+            foreach (var callback in TestingCallbacks)
+            {
+                var cast = (ServerModuleTestingCallbacks) callback;
+                cast.ServerBeforeIoC?.Invoke();
+            }
+
             IoCManager.BuildGraph();
         }
 

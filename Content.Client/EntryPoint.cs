@@ -10,6 +10,15 @@ namespace Content.Client {
         public override void Init() {
             IoCManager.Resolve<IComponentFactory>().DoAutoRegistrations();
 
+            // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
+            foreach (var callback in TestingCallbacks)
+            {
+                var cast = (ClientModuleTestingCallbacks) callback;
+                cast.ClientBeforeIoC?.Invoke();
+            }
+
+            IoCManager.BuildGraph();
+
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             //IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
         }

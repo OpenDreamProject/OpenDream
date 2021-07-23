@@ -7,7 +7,7 @@
 //using System.Threading;
 //using System;
 
-//namespace OpenDreamRuntime.Tests
+//namespace Content.Tests
 //{
 //    class TestConnection : DreamConnection {
 //        public TestConnection(DreamRuntime runtime)

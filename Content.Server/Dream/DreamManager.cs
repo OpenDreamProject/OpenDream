@@ -45,7 +45,7 @@ namespace Content.Server.Dream {
         }
 
         public void Shutdown() {
-            
+
         }
 
         public IPlayerSession GetSessionFromClient(DreamObject client) {

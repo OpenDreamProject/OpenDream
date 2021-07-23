@@ -1,5 +1,4 @@
-﻿using Content.Shared.Net.Packets;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 
@@ -50,30 +49,6 @@ namespace Content.Shared.Dream {
 
         public override string ToString() {
             return X + ":" + PixelOffsetX + "," + Y + ":" + PixelOffsetY;
-        }
-
-        public void WriteToPacket(PacketStream stream) {
-            stream.WriteSByte((sbyte)X);
-            stream.WriteSByte((sbyte)Y);
-            stream.WriteSByte((sbyte)PixelOffsetX);
-            stream.WriteSByte((sbyte)PixelOffsetY);
-
-            stream.WriteBool(Range != null);
-            Range?.WriteToPacket(stream);
-        }
-
-        public static ScreenLocation ReadFromPacket(PacketStream stream) {
-            int X = stream.ReadSByte();
-            int Y = stream.ReadSByte();
-            int pixelOffsetX = stream.ReadSByte();
-            int pixelOffsetY = stream.ReadSByte();
-
-            ScreenLocation range = null;
-            if (stream.ReadBool()) {
-                range = ReadFromPacket(stream);
-            }
-
-            return new ScreenLocation(X, Y, pixelOffsetX, pixelOffsetY, range);
         }
 
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {

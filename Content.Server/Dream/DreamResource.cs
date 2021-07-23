@@ -1,25 +1,32 @@
-﻿using Robust.Shared.Log;
+﻿using Robust.Shared.ContentPack;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
+using Robust.Shared.Utility;
 using System;
 using System.IO;
 using System.Text;
 
 namespace Content.Server.Dream {
     public class DreamResource {
-        public string ResourcePath;
+        public string ResourcePath { get => _resourcePath.ToString(); }
         public byte[] ResourceData {
             get {
-                //if (_resourceData == null && File.Exists(_filePath)) {
-                //    _resourceData = File.ReadAllBytes(_filePath);
-                //}
+                if (_resourceData == null && _resourceManager.TryContentFileRead(_resourcePath, out Stream stream)) {
+                    _resourceData = stream.CopyToArray();
+                }
 
                 return _resourceData;
             }
         }
 
+        private IResourceManager _resourceManager = IoCManager.Resolve<IResourceManager>();
         private byte[] _resourceData = null;
+        private ResourcePath _resourcePath = null;
 
         public DreamResource(string resourcePath) {
-            ResourcePath = resourcePath;
+            if (resourcePath != null) {
+                _resourcePath = new ResourcePath("/Game") / new ResourcePath(resourcePath);
+            }
         }
 
         public virtual string ReadAsString() {

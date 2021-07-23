@@ -415,8 +415,7 @@ namespace Content.Server.DM {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            //state.Push(new DreamValue(state.Runtime.ResourceManager.LoadResource(resourcePath)));
-            state.Push(DreamValue.Null);
+            state.Push(new DreamValue(new DreamResource(resourcePath)));
             return null;
         }
 

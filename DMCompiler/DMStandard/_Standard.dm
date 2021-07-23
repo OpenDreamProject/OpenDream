@@ -28,6 +28,7 @@ proc/flist(Path)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
+proc/icon_states(Icon, mode = 0)
 proc/image(icon, loc, icon_state, layer, dir)
 proc/isarea(Loc1)
 proc/isfile(File)
@@ -248,6 +249,9 @@ proc/get_step_rand(atom/movable/Ref)
 proc/hearers(Depth = world.view, Center = usr)
 	//TODO: Actual cursed hearers implementation
 	return viewers(Depth, Center)
+
+proc/ohearers(Depth = world.view, Center = usr)
+	return oviewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
 	Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))

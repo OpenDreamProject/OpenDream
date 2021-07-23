@@ -1,8 +1,10 @@
 ﻿using Content.Server.DM;
 using Content.Shared.Dream;
+using Content.Shared.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -402,6 +404,22 @@ namespace Content.Server.Dream.NativeProcs {
             string plainText = arguments.GetArgument(0, "PlainText").GetValueAsString();
 
             return new DreamValue(HttpUtility.HtmlEncode(plainText));
+        }
+
+        [DreamProc("icon_states")]
+        [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
+        [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
+            if (mode != 0)
+            {
+                throw new NotImplementedException();
+            }
+            var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
+            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+
+            return new DreamValue(DreamList.Create(parsedDMI.States.Keys));
         }
 
         [DreamProc("image")]

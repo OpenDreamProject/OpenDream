@@ -14,6 +14,7 @@ namespace Content.Shared.Dream {
         public class Client {
             public UInt32 EyeID = UInt32.MaxValue;
             public ClientPerspective Perspective = ClientPerspective.Mob;
+            public byte SeeInvisible = 0;
             public List<UInt32> ScreenObjects = new();
         }
 
@@ -88,6 +89,7 @@ namespace Content.Shared.Dream {
 
                 client.EyeID = clientDelta.Value.NewEyeID ?? client.EyeID;
                 client.Perspective = clientDelta.Value.NewPerspective ?? client.Perspective;
+                client.SeeInvisible = clientDelta.Value.NewSeeInvisible ?? client.SeeInvisible;
 
                 if (clientDelta.Value.ScreenObjectAdditions != null) {
                     foreach (UInt32 screenObjectID in clientDelta.Value.ScreenObjectAdditions) {

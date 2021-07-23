@@ -6,7 +6,7 @@
     <LangVersion>9</LangVersion>
     <IsPackable>false</IsPackable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>../bin/OpenDreamShared</OutputPath>
+    <OutputPath>../bin/Content.Shared</OutputPath>
   </PropertyGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>

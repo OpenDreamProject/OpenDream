@@ -46,6 +46,11 @@ namespace DMCompiler.DM {
             throw new CompileErrorException($"expression {this} can not be const-evaluated");
         }
 
+        // Attempt to create a json-serializable version of this expression
+        public virtual object ToJsonRepresentation() {
+            throw new CompileErrorException($"expression {this} can not be serialized to json");
+        }
+
         // Emits code that pushes the result of this expression to the proc's stack
         // May throw if this expression is unable to be pushed to the stack
         public abstract void EmitPushValue(DMObject dmObject, DMProc proc);

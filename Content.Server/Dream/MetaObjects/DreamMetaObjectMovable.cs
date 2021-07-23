@@ -31,26 +31,35 @@ namespace Content.Server.Dream.MetaObjects {
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            if (variableName == "x" || variableName == "y" || variableName == "z") {
-                int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
-                int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
-                int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
-                DreamObject newLocation = _dreamMapManager.GetTurf(x, y, z);
+            switch (variableName) {
+                case "x":
+                case "y":
+                case "z": {
+                    int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
+                    int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
+                    int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
+                    DreamObject newLocation = _dreamMapManager.GetTurf(x, y, z);
 
-                dreamObject.SetVariable("loc", new DreamValue(newLocation));
-            } else if (variableName == "loc") {
-                IEntity entity = _atomManager.GetAtomEntity(dreamObject);
-
-                if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
-                    IEntity locEntity = _atomManager.GetAtomEntity(loc);
-
-                    entity.Transform.AttachParent(locEntity);
-                    entity.Transform.LocalPosition = Vector2.Zero;
-                } else {
-                    entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
+                    dreamObject.SetVariable("loc", new DreamValue(newLocation));
+                    break;
                 }
-            } else if (variableName == "screen_loc") {
-                UpdateScreenLocation(dreamObject, variableValue);
+                case "loc": {
+                    IEntity entity = _atomManager.GetAtomEntity(dreamObject);
+
+                    if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
+                        IEntity locEntity = _atomManager.GetAtomEntity(loc);
+
+                        entity.Transform.AttachParent(locEntity);
+                        entity.Transform.LocalPosition = Vector2.Zero;
+                    } else {
+                        entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
+                    }
+
+                    break;
+                }
+                case "screen_loc":
+                    UpdateScreenLocation(dreamObject, variableValue);
+                    break;
             }
         }
 

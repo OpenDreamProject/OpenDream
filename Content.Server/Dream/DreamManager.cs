@@ -7,7 +7,6 @@ using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +19,7 @@ namespace Content.Server.Dream {
         [Dependency] IDreamMapManager _dreamMapManager = null;
 
         public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
         public DreamList WorldContentsList { get; set; }
@@ -34,12 +34,12 @@ namespace Content.Server.Dream {
             SetMetaObjects();
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
-            DreamObject world = ObjectTree.CreateObject(DreamPath.World);
-            ObjectTree.Root.ObjectDefinition.GlobalVariables["world"].Value = new DreamValue(world);
-            world.InitSpawn(new DreamProcArguments(null));
+            WorldInstance = ObjectTree.CreateObject(DreamPath.World);
+            ObjectTree.Root.ObjectDefinition.GlobalVariables["world"].Value = new DreamValue(WorldInstance);
+            WorldInstance.InitSpawn(new DreamProcArguments(null));
 
-            _dreamMapManager.LoadMap(null);
-            world.SpawnProc("New");
+            _dreamMapManager.LoadMaps(json.Maps);
+            WorldInstance.SpawnProc("New");
 
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
         }

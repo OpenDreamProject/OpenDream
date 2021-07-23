@@ -1,8 +1,6 @@
-﻿using Robust.Server.GameObjects;
-using Robust.Shared.GameObjects;
+﻿using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 using System.Collections.Generic;
 
@@ -57,10 +55,9 @@ namespace Content.Server.Dream {
 
             atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
             atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            //sprite.Offset = new Vector2(pixelX, pixelY);
+            //TODO: Pixel offset
 
-            //TODO: Better layer conversion
-            //sprite.DrawDepth = (int)(atom.GetVariable("layer").GetValueAsFloat() * 1000);
+            //TODO: Layers
         }
     }
 }

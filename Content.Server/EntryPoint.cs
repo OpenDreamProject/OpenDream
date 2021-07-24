@@ -8,7 +8,8 @@ namespace Content.Server {
         private IDreamManager _dreamManager;
 
         public override void Init() {
-            IoCManager.Resolve<IComponentFactory>().DoAutoRegistrations();
+            IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
+            componentFactory.DoAutoRegistrations();
 
             ServerContentIoC.Register();
 
@@ -20,6 +21,7 @@ namespace Content.Server {
             }
 
             IoCManager.BuildGraph();
+            componentFactory.GenerateNetIds();
         }
 
         public override void PostInit() {

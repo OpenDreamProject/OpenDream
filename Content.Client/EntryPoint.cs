@@ -8,7 +8,8 @@ using Robust.Shared.IoC;
 namespace Content.Client {
     public class EntryPoint : GameClient {
         public override void Init() {
-            IoCManager.Resolve<IComponentFactory>().DoAutoRegistrations();
+            IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
+            componentFactory.DoAutoRegistrations();
 
             // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
             foreach (var callback in TestingCallbacks)
@@ -18,6 +19,7 @@ namespace Content.Client {
             }
 
             IoCManager.BuildGraph();
+            componentFactory.GenerateNetIds();
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             //IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();

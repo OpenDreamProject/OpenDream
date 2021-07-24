@@ -2,18 +2,19 @@
 using Robust.Shared.Serialization;
 using Robust.Shared.Utility;
 using System;
+using Robust.Shared.GameStates;
 
 namespace Content.Shared {
+    [NetworkedComponent]
     public class SharedDMISpriteComponent : Component {
         public override string Name => "DMISprite";
-        public override uint? NetID => ContentNetIDs.DMI_SPRITE;
 
         [Serializable, NetSerializable]
         protected class DMISpriteComponentState : ComponentState {
             public readonly ResourcePath Icon;
             public readonly string IconState;
 
-            public DMISpriteComponentState(ResourcePath icon, string iconState) : base(ContentNetIDs.DMI_SPRITE) {
+            public DMISpriteComponentState(ResourcePath icon, string iconState) {
                 Icon = icon;
                 IconState = iconState;
             }

@@ -11,10 +11,10 @@ using System.IO;
 namespace Content.Client.Resources {
     class DMIResource : BaseResource {
         public struct State {
-            public Dictionary<AtomDirection, AtlasTexture[]> Frames;
+            private Dictionary<AtomDirection, AtlasTexture[]> _frames;
 
             public State(Texture texture, DMIParser.ParsedDMIState parsedState, int width, int height) {
-                Frames = new Dictionary<AtomDirection, AtlasTexture[]>();
+                _frames = new Dictionary<AtomDirection, AtlasTexture[]>();
 
                 foreach (KeyValuePair<AtomDirection, DMIParser.ParsedDMIFrame[]> pair in parsedState.Directions) {
                     AtomDirection dir = pair.Key;
@@ -27,8 +27,15 @@ namespace Content.Client.Resources {
                         frames[i] = new AtlasTexture(texture, new UIBox2(parsedFrame.X, parsedFrame.Y, parsedFrame.X + width, parsedFrame.Y + height));
                     }
 
-                    Frames.Add(dir, frames);
+                    _frames.Add(dir, frames);
                 }
+            }
+
+            public AtlasTexture[] GetFrames(AtomDirection direction) {
+                if (!_frames.TryGetValue(direction, out AtlasTexture[] frames))
+                    frames = _frames[AtomDirection.South];
+
+                return frames;
             }
         }
 

@@ -18,13 +18,15 @@ namespace Content.Shared {
             public readonly Color Color;
             public readonly Vector2i PixelOffset;
             public readonly AtomDirection Direction;
+            public readonly float Layer;
 
-            public DMISpriteComponentState(ResourcePath icon, string iconState, AtomDirection direction, Vector2i pixelOfffset, Color color) {
+            public DMISpriteComponentState(ResourcePath icon, string iconState, AtomDirection direction, Vector2i pixelOfffset, Color color, float layer) {
                 Icon = icon;
                 IconState = iconState;
                 Direction = direction;
                 PixelOffset = pixelOfffset;
                 Color = color;
+                Layer = layer;
             }
         }
     }

@@ -63,13 +63,17 @@ namespace Content.Server.Dream {
         }
 
         private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e) {
+            IPlayerSession session = e.Session;
+
             switch (e.NewStatus) {
                 case SessionStatus.Connected:
                     e.Session.JoinGame();
                     break;
                 case SessionStatus.InGame: {
                     DreamObject client = ObjectTree.CreateObject(DreamPath.Client);
-                    _clientToUserId[client] = e.Session.UserId;
+
+                    _clientToUserId[client] = session.UserId;
+                    session.Data.ContentDataUncast = new PlayerSessionData(client);
                     client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
 
                     break;

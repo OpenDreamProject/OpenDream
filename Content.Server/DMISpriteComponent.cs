@@ -16,6 +16,7 @@ namespace Content.Server {
         private AtomDirection _direction = AtomDirection.South;
         private Vector2i _pixelOffset = Vector2i.Zero;
         private Color _color = Color.White;
+        private float _layer = 0.0f;
 
         public ResourcePath Icon {
             get => _icon;
@@ -57,8 +58,16 @@ namespace Content.Server {
             }
         }
 
+        public float Layer {
+            get => _layer;
+            set {
+                _layer = value;
+                Dirty();
+            }
+        }
+
         public override ComponentState GetComponentState(ICommonSession player) {
-            return new DMISpriteComponentState(Icon, IconState, Direction, PixelOffset, Color);
+            return new DMISpriteComponentState(Icon, IconState, Direction, PixelOffset, Color, Layer);
         }
 
         public void SetAppearanceFromAtom(DreamObject atom) {

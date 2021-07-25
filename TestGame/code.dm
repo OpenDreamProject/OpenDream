@@ -39,6 +39,10 @@
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
 
+/client/Click(var/atom/A)
+	..()
+	Move(A, get_dir(mob, A))
+
 /world/New()
 	..()
 	world.log << "World loaded!"

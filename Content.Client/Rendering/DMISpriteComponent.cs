@@ -13,6 +13,7 @@ namespace OpenDreamClient.Rendering {
         public AtomDirection Direction { get; set; }
         public Vector2i PixelOffset { get; set; }
         public Color Color { get; set; }
+        public float Layer { get; set; }
 
         public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
             if (curState == null)
@@ -24,6 +25,12 @@ namespace OpenDreamClient.Rendering {
             Direction = state.Direction;
             PixelOffset = state.PixelOffset;
             Color = state.Color;
+            Layer = state.Layer;
+        }
+
+        public bool IsMouseOver(Vector2 position) {
+            //TODO: mouse_opacity
+            return true;
         }
     }
 }

@@ -1,0 +1,46 @@
+﻿using Content.Server.DM;
+using Content.Server.Dream;
+using Content.Shared.Input;
+using Robust.Server.Player;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using System;
+using System.Collections.Specialized;
+using System.Web;
+
+namespace Content.Server.Input {
+    class MouseInputSystem : SharedMouseInputSystem {
+        [Dependency] private IAtomManager _atomManager = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
+
+        public override void Initialize() {
+            base.Initialize();
+
+            SubscribeNetworkEvent<EntityClickedEvent>(OnEntityClicked);
+        }
+
+        private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
+            IEntity entity = _entityManager.GetEntity(e.EntityUid);
+            DreamObject atom = _atomManager.GetAtomFromEntity(entity);
+            if (atom == null)
+                return;
+
+            IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
+            PlayerSessionData sessionData = (PlayerSessionData)session.Data.ContentDataUncast;
+
+            sessionData.Client.SpawnProc("Click", ConstructClickArguments(atom));
+        }
+
+        private DreamProcArguments ConstructClickArguments(DreamObject atom) {
+            NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
+            //TODO: click params ("icon-x", "icon-y", "screen-loc", "shift", "ctrl", "alt")
+
+            return new DreamProcArguments(new() {
+                new DreamValue(atom),
+                DreamValue.Null,
+                DreamValue.Null,
+                new DreamValue(paramsBuilder.ToString())
+            });
+        }
+    }
+}

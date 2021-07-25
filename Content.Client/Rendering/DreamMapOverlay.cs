@@ -6,6 +6,7 @@ using Robust.Client.ResourceManagement;
 using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
 namespace Content.Client.Rendering {
     class DreamMapOverlay : Overlay {
@@ -27,8 +28,10 @@ namespace Content.Client.Rendering {
 
                 if (_resourceCache.TryGetResource(sprite.Icon, out DMIResource dmi)) {
                     DMIResource.State dmiState = dmi.States[sprite.IconState];
+                    Vector2 position = transform.WorldPosition;
+                    position += sprite.PixelOffset / new Vector2(32, 32); //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
                     
-                    handle.DrawTexture(dmiState.Frames[Shared.Dream.AtomDirection.South][0], transform.WorldPosition);
+                    handle.DrawTexture(dmiState.Frames[sprite.Direction][0], position, sprite.Color);
                 }
             }
         }

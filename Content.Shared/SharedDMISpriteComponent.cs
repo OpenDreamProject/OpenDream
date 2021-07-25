@@ -3,6 +3,8 @@ using Robust.Shared.Serialization;
 using Robust.Shared.Utility;
 using System;
 using Robust.Shared.GameStates;
+using Robust.Shared.Maths;
+using Content.Shared.Dream;
 
 namespace Content.Shared {
     [NetworkedComponent]
@@ -13,10 +15,16 @@ namespace Content.Shared {
         protected class DMISpriteComponentState : ComponentState {
             public readonly ResourcePath Icon;
             public readonly string IconState;
+            public readonly Color Color;
+            public readonly Vector2i PixelOffset;
+            public readonly AtomDirection Direction;
 
-            public DMISpriteComponentState(ResourcePath icon, string iconState) {
+            public DMISpriteComponentState(ResourcePath icon, string iconState, AtomDirection direction, Vector2i pixelOfffset, Color color) {
                 Icon = icon;
                 IconState = iconState;
+                Direction = direction;
+                PixelOffset = pixelOfffset;
+                Color = color;
             }
         }
     }

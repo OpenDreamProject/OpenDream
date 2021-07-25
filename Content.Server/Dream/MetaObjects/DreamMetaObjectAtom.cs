@@ -1,6 +1,7 @@
 ﻿using Content.Server.DM;
 using Content.Shared.Dream;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Dream.MetaObjects {
@@ -44,9 +45,13 @@ namespace Content.Server.Dream.MetaObjects {
 
                 sprite.IconState = variableValue.GetValueAsString();
             } else if (variableName == "pixel_x") {
-                //TODO
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
+
+                sprite.PixelOffset = new Vector2i(variableValue.GetValueAsInteger(), sprite.PixelOffset.Y);
             } else if (variableName == "pixel_y") {
-                //TODO
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
+
+                sprite.PixelOffset = new Vector2i(sprite.PixelOffset.X, variableValue.GetValueAsInteger());
             } else if (variableName == "layer") {
                 //TODO
             } else if (variableName == "invisibility") {
@@ -54,11 +59,13 @@ namespace Content.Server.Dream.MetaObjects {
             } else if (variableName == "mouse_opacity") {
                 //TODO
             } else if (variableName == "color") {
-                //TODO
-            } else if (variableName == "dir") {
-                AtomDirection dir = (AtomDirection)variableValue.GetValueAsInteger();
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                //TODO
+                sprite.Color = DreamColors.GetColor(variableValue.GetValueAsString());
+            } else if (variableName == "dir") {
+                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
+
+                sprite.Direction = (AtomDirection)variableValue.GetValueAsInteger();
             } else if (variableName == "transform") {
                 DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
 

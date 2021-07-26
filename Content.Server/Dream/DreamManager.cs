@@ -7,7 +7,9 @@ using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Network;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -27,9 +29,10 @@ namespace Content.Server.Dream {
         private Dictionary<DreamObject, NetUserId> _clientToUserId = new();
 
         public void Initialize() {
-            string jsonFile = _configManager.GetCVar<string>("opendream.json");
-            string jsonSource = File.ReadAllText(jsonFile);
-            DreamCompiledJson json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
+            DreamCompiledJson json = LoadJson();
+            if (json == null)
+                return;
+
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
             DreamProcNative.SetupNativeProcs(ObjectTree);
@@ -50,6 +53,18 @@ namespace Content.Server.Dream {
 
         public IPlayerSession GetSessionFromClient(DreamObject client) {
             return _playerManager.GetSessionByUserId(_clientToUserId[client]);
+        }
+
+        private DreamCompiledJson LoadJson() {
+            string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
+                Logger.Error("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
+
+                return null;
+            }
+
+            string jsonSource = File.ReadAllText(jsonPath);
+            return JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
         }
 
         private void SetMetaObjects() {

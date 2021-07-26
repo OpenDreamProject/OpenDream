@@ -33,4 +33,4 @@ loginlocal = true
 
 [opendream]
 # The path to DMCompiler's output
-json = ""
+json_path = ""

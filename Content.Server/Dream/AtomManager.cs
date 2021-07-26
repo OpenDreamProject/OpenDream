@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Content.Server.Dream {
     class AtomManager : IAtomManager {
-        [Dependency] IEntityManager _entityManager = null;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         private Dictionary<DreamObject, IEntity> _atomToEntity = new();
         private Dictionary<IEntity, DreamObject> _entityToAtom = new();

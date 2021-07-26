@@ -6,7 +6,7 @@ namespace Content.Shared.Input {
     public class SharedMouseInputSystem : EntitySystem {
         [Serializable, NetSerializable]
         public class EntityClickedEvent : EntityEventArgs {
-            public EntityUid EntityUid { get; set; }
+            public EntityUid EntityUid { get; }
 
             public EntityClickedEvent(EntityUid entityUid) {
                 EntityUid = entityUid;

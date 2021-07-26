@@ -16,9 +16,9 @@ using System.Text.Json;
 
 namespace Content.Server.Dream {
     class DreamManager : IDreamManager {
-        [Dependency] IConfigurationManager _configManager = null;
-        [Dependency] IPlayerManager _playerManager = null;
-        [Dependency] IDreamMapManager _dreamMapManager = null;
+        [Dependency] private readonly IConfigurationManager _configManager = default!;
+        [Dependency] private readonly IPlayerManager _playerManager = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         public DreamObjectTree ObjectTree { get; private set; }
         public DreamObject WorldInstance { get; private set; }

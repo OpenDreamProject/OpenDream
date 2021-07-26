@@ -1,9 +1,11 @@
+using Content.Client.Interface;
 using Content.Client.Rendering;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Utility;
 
 namespace Content.Client {
     public class EntryPoint : GameClient {
@@ -18,6 +20,7 @@ namespace Content.Client {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
+            ClientContentIoC.Register();
             IoCManager.BuildGraph();
             componentFactory.GenerateNetIds();
 
@@ -30,6 +33,7 @@ namespace Content.Client {
 
             IoCManager.Resolve<IBaseClient>().ConnectToServer("127.0.0.1", 25566);
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
+            IoCManager.Resolve<IDreamInterfaceManager>().LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
         }
     }
 }

@@ -11,9 +11,9 @@ using System.Collections.Generic;
 
 namespace Content.Server.Dream {
     class DreamMapManager : IDreamMapManager {
-        [Dependency] IMapManager _mapManager = null;
-        [Dependency] IDreamManager _dreamManager = null;
-        [Dependency] IAtomManager _atomManager = null;
+        [Dependency] private readonly IMapManager _mapManager = default!;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
 
         public Vector2i Size { get; private set; }
         public int Levels { get; private set; }

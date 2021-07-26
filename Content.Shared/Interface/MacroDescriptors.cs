@@ -12,7 +12,11 @@ namespace Content.Shared.Interface {
     }
 
     public class MacroDescriptor : ElementDescriptor {
-        public string Id;
+        public string Id {
+            get => _id ?? Command;
+            set => _id = value;
+        }
+        private string _id;
 
         [InterfaceAttribute("command")]
         public string Command;

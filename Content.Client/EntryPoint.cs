@@ -13,6 +13,8 @@ namespace Content.Client {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 
+            ClientContentIoC.Register();
+
             // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
             foreach (var callback in TestingCallbacks)
             {
@@ -20,7 +22,6 @@ namespace Content.Client {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
-            ClientContentIoC.Register();
             IoCManager.BuildGraph();
             componentFactory.GenerateNetIds();
 
@@ -31,7 +32,6 @@ namespace Content.Client {
         public override void PostInit() {
             IoCManager.Resolve<ILightManager>().Enabled = false;
 
-            IoCManager.Resolve<IBaseClient>().ConnectToServer("127.0.0.1", 25566);
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
             IoCManager.Resolve<IDreamInterfaceManager>().LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
         }

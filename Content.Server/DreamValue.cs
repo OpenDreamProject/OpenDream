@@ -37,6 +37,8 @@ namespace Content.Server {
 
         public DreamValue(UInt32 value) : this((float)value) { }
 
+        public DreamValue(double value) : this((float)value) { }
+
         public DreamValue(DreamResource value) {
             Type = DreamValueType.DreamResource;
             Value = value;

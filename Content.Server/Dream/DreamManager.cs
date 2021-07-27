@@ -41,6 +41,11 @@ namespace Content.Server.Dream {
             ObjectTree.Root.ObjectDefinition.GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             WorldInstance.InitSpawn(new DreamProcArguments(null));
 
+            if (json.GlobalInitProc != null) {
+                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, true);
+                globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
+            }
+
             _dreamMapManager.LoadMaps(json.Maps);
             WorldInstance.SpawnProc("New");
 

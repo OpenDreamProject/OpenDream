@@ -15,7 +15,7 @@ namespace Content.Client.Interface {
 
         public void LoadDMF(ResourcePath dmfPath) {
             if (!_resourceCache.TryGetResource(dmfPath, out DMFResource dmf) || dmf.Interface == null) {
-                Logger.Error($"Error(s) while loading DMF '${dmfPath}'");
+                Logger.Error($"Error(s) while loading DMF '{dmfPath}'");
 
                 return;
             }

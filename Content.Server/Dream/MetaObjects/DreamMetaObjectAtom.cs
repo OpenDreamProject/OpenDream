@@ -39,7 +39,7 @@ namespace Content.Server.Dream.MetaObjects {
             if (variableName == "icon") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.Icon = new ResourcePath(variableValue.GetValueAsString());
+                sprite.Icon = new ResourcePath(variableValue.GetValueAsDreamResource().ResourcePath);
             } else if (variableName == "icon_state") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
@@ -61,7 +61,11 @@ namespace Content.Server.Dream.MetaObjects {
             } else if (variableName == "color") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.Color = DreamColors.GetColor(variableValue.GetValueAsString());
+                if (variableValue.TryGetValueAsString(out string color)) {
+                    sprite.Color = DreamColors.GetColor(color);
+                } else {
+                    sprite.Color = DreamColors.GetColor("white");
+                }
             } else if (variableName == "dir") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 

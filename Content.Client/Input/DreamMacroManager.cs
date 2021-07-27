@@ -72,7 +72,7 @@ namespace Content.Client.Input {
             macroName = macroName.Replace("+UP", String.Empty);
             macroName = macroName.Replace("+REP", String.Empty);
 
-            //TODO: +REP and modifiers
+            //TODO: modifiers
             return new KeyBindingRegistration() {
                 BaseKey = KeyNameToKey(macroName),
                 Function = function

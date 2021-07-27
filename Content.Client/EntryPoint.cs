@@ -13,6 +13,8 @@ namespace Content.Client {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 
+            ClientContentIoC.Register();
+
             // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
             foreach (var callback in TestingCallbacks)
             {
@@ -20,7 +22,6 @@ namespace Content.Client {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
-            ClientContentIoC.Register();
             IoCManager.BuildGraph();
             componentFactory.GenerateNetIds();
 

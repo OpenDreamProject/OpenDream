@@ -39,33 +39,34 @@ namespace Content.Client.Input {
             _inputManager.Contexts.SetActiveContext(InputContextPrefix + macroSet.Name);
         }
 
-        public void RunActiveMacros() {
-            DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
-
-            foreach (MacroDescriptor macro in _activeMacros) {
-                commandSystem.RunCommand(macro.Command);
-            }
-        }
-
         private void OnMacroPress(MacroDescriptor macro) {
             if (String.IsNullOrEmpty(macro.Command))
                 return;
 
-            _entitySystemManager.GetEntitySystem<DreamCommandSystem>().RunCommand(macro.Command);
-            if (macro.Name.EndsWith("+REP")) {
-                _activeMacros.Add(macro);
+            if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+                if (macro.Name.EndsWith("+REP")) {
+                    commandSystem.StartRepeatingCommand(macro.Command);
+                } else {
+                    commandSystem.RunCommand(macro.Command);
+                }
             }
+            
         }
 
         private void OnMacroRelease(MacroDescriptor macro) {
-            _activeMacros.Remove(macro);
-            if (!macro.Name.EndsWith("+UP") || String.IsNullOrEmpty(macro.Command))
+            if (String.IsNullOrEmpty(macro.Command))
                 return;
 
-            _entitySystemManager.GetEntitySystem<DreamCommandSystem>().RunCommand(macro.Command);
+            if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+                if (macro.Name.EndsWith("+REP")) {
+                    commandSystem.StopRepeatingCommand(macro.Command);
+                } else if (macro.Name.EndsWith("+UP")) {
+                    commandSystem.RunCommand(macro.Command);
+                }
+            }
         }
 
-        private KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
+            private KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
             macroName = macroName.Replace("SHIFT+", String.Empty);
             macroName = macroName.Replace("CTRL+", String.Empty);
             macroName = macroName.Replace("ALT+", String.Empty);
@@ -164,6 +165,5 @@ namespace Content.Client.Input {
     interface IDreamMacroManager {
         public void LoadMacroSets(List<MacroSetDescriptor> macroSets);
         public void SetActiveMacroSet(MacroSetDescriptor macroSet);
-        public void RunActiveMacros();
     }
 }

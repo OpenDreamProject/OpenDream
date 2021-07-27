@@ -6,5 +6,13 @@ namespace Content.Client.Input {
             //TODO: Local client commands (.quit, .winset, .screenshot, etc)
             RaiseNetworkEvent(new CommandEvent(command));
         }
+
+        public void StartRepeatingCommand(string command) {
+            RaiseNetworkEvent(new RepeatCommandEvent(command));
+        }
+
+        public void StopRepeatingCommand(string command) {
+            RaiseNetworkEvent(new StopRepeatCommandEvent(command));
+        }
     }
 }

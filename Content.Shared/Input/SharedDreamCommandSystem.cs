@@ -12,5 +12,23 @@ namespace Content.Shared.Input {
                 Command = command;
             }
         }
+
+        [Serializable, NetSerializable]
+        public class RepeatCommandEvent : EntityEventArgs {
+            public string Command { get; }
+
+            public RepeatCommandEvent(string command) {
+                Command = command;
+            }
+        }
+
+        [Serializable, NetSerializable]
+        public class StopRepeatCommandEvent : EntityEventArgs {
+            public string Command { get; }
+
+            public StopRepeatCommandEvent(string command) {
+                Command = command;
+            }
+        }
     }
 }

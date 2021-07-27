@@ -15,6 +15,9 @@ namespace Content.Client.Input {
 
         private const string InputContextPrefix = "macroSet_";
 
+        // Macros with +REP that are currently held
+        private List<MacroDescriptor> _activeMacros = new();
+
         public void LoadMacroSets(List<MacroSetDescriptor> macroSets) {
             IInputContextContainer contexts = _inputManager.Contexts;
 
@@ -36,14 +39,26 @@ namespace Content.Client.Input {
             _inputManager.Contexts.SetActiveContext(InputContextPrefix + macroSet.Name);
         }
 
+        public void RunActiveMacros() {
+            DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+
+            foreach (MacroDescriptor macro in _activeMacros) {
+                commandSystem.RunCommand(macro.Command);
+            }
+        }
+
         private void OnMacroPress(MacroDescriptor macro) {
             if (String.IsNullOrEmpty(macro.Command))
                 return;
 
             _entitySystemManager.GetEntitySystem<DreamCommandSystem>().RunCommand(macro.Command);
+            if (macro.Name.EndsWith("+REP")) {
+                _activeMacros.Add(macro);
+            }
         }
 
         private void OnMacroRelease(MacroDescriptor macro) {
+            _activeMacros.Remove(macro);
             if (!macro.Name.EndsWith("+UP") || String.IsNullOrEmpty(macro.Command))
                 return;
 
@@ -149,5 +164,6 @@ namespace Content.Client.Input {
     interface IDreamMacroManager {
         public void LoadMacroSets(List<MacroSetDescriptor> macroSets);
         public void SetActiveMacroSet(MacroSetDescriptor macroSet);
+        public void RunActiveMacros();
     }
 }

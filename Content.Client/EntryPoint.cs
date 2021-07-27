@@ -31,7 +31,6 @@ namespace Content.Client {
         public override void PostInit() {
             IoCManager.Resolve<ILightManager>().Enabled = false;
 
-            IoCManager.Resolve<IBaseClient>().ConnectToServer("127.0.0.1", 25566);
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
             IoCManager.Resolve<IDreamInterfaceManager>().LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
         }

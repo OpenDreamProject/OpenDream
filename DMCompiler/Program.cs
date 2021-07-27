@@ -12,11 +12,11 @@ using Content.Shared.Compiler.DMPreprocessor;
 using Content.Shared.Json;
 
 namespace DMCompiler {
-    class Program {
+    public static class Program {
         //This is ugly
         public static List<CompilerError> VisitorErrors = new();
 
-        static void Main(string[] args) {
+        public static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
 
             DMPreprocessor preprocessor = Preprocess(args);
@@ -107,7 +107,7 @@ namespace DMCompiler {
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
-            
+
             foreach (string mapPath in mapPaths) {
                 DMPreprocessor preprocessor = new DMPreprocessor(false);
                 preprocessor.IncludeFile(String.Empty, mapPath);

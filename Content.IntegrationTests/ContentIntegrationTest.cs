@@ -53,6 +53,10 @@ namespace Content.IntegrationTests {
                 LoadContentResources = true,
             };
 
+            // Set compiled json path by default.
+            if (!options.CVarOverrides.ContainsKey(OpenDreamCVars.JsonPath.Name))
+                options.CVarOverrides[OpenDreamCVars.JsonPath.Name] = SetupCompileDm.CompiledProject;
+
             options.ContentStart = true;
 
             options.ContentAssemblies = new[] {

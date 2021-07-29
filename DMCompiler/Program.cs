@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -19,6 +19,8 @@ namespace DMCompiler {
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
 
+            DateTime startTime = DateTime.Now;
+
             DMPreprocessor preprocessor = Preprocess(args);
             if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
@@ -26,6 +28,9 @@ namespace DMCompiler {
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                DateTime endTime = DateTime.Now;
+                TimeSpan duration = endTime - startTime;
+                Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
             } else {
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
@@ -43,10 +48,12 @@ namespace DMCompiler {
                 string extension = Path.GetExtension(arg);
 
                 if (extension != ".dme" && extension != ".dm") {
-                    Console.WriteLine(arg + " is not a valid DME or DM file");
+                    Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
 
                     return false;
                 }
+
+                Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
             }
 
             return true;
@@ -107,7 +114,7 @@ namespace DMCompiler {
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
-            
+
             foreach (string mapPath in mapPaths) {
                 DMPreprocessor preprocessor = new DMPreprocessor(false);
                 preprocessor.IncludeFile(String.Empty, mapPath);

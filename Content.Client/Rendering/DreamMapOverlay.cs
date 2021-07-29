@@ -31,8 +31,8 @@ namespace Content.Client.Rendering {
                 if (transform.MapID != eyeTransform.MapID) //Only render our z-level
                     continue;
 
-                if (_resourceCache.TryGetResource(sprite.Icon, out DMIResource dmi)) {
-                    DMIResource.State dmiState = dmi.States[sprite.IconState];
+                if (sprite.DMI != null) {
+                    DMIResource.State dmiState = sprite.DMI.States[sprite.IconState];
                     AtlasTexture[] frames = dmiState.GetFrames(sprite.Direction);
                     Vector2 position = transform.WorldPosition;
                     position += sprite.PixelOffset / new Vector2(32, 32); //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32

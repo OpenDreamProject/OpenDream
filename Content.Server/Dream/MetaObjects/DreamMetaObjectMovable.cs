@@ -49,8 +49,10 @@ namespace Content.Server.Dream.MetaObjects {
                     if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
                         IEntity locEntity = _atomManager.GetAtomEntity(loc);
 
-                        entity.Transform.AttachParent(locEntity);
-                        entity.Transform.LocalPosition = Vector2.Zero;
+                        if (locEntity.Transform != entity.Transform) {
+                            entity.Transform.AttachParent(locEntity);
+                            entity.Transform.LocalPosition = Vector2.Zero;
+                        }
                     } else {
                         entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
                     }

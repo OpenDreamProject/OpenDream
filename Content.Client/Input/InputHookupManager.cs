@@ -60,7 +60,7 @@ namespace Content.Client.Input {
         }
 
         private IList<IEntity> GetEntitiesUnderMouse(MapCoordinates coords) {
-            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position - new Vector2(0.5f, 0.5f), (1, 1)));
+            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (1, 1)));
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (IEntity entity in entities) {

@@ -40,6 +40,7 @@ namespace Content.Client.Resources {
         }
 
         public Texture Texture;
+        public Vector2i IconSize;
         public Dictionary<string, State> States;
 
         public override void Load(IResourceCache cache, ResourcePath path) {
@@ -49,6 +50,7 @@ namespace Content.Client.Resources {
             dmiStream.Seek(0, SeekOrigin.Begin);
 
             Texture = IoCManager.Resolve<IClyde>().LoadTextureFromPNGStream(dmiStream);
+            IconSize = new Vector2i(description.Width, description.Height);
             States = new Dictionary<string, State>();
             foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
                 States.Add(parsedState.Name, new State(Texture, parsedState, description.Width, description.Height));

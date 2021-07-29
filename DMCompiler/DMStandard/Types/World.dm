@@ -38,3 +38,6 @@
 		
 	proc/Repop()
 		CRASH("/world.Repop() will not be implemented")
+
+	proc/Export(Addr, File, Persist, Clients)
+		

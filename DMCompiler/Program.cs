@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -18,6 +18,8 @@ namespace DMCompiler {
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
+            Console.WriteLine($"Compiling {GetDMEName(args)}");
+            DateTime startTime = DateTime.Now;
 
             DMPreprocessor preprocessor = Preprocess(args);
             if (Compile(preprocessor.GetResult())) {
@@ -26,10 +28,27 @@ namespace DMCompiler {
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                DateTime endTime = DateTime.Now;
+                TimeSpan duration = endTime - startTime;
+                Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
             } else {
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
             }
+        }
+
+        private static string GetDMEName(string[] args)
+        {
+            foreach (string arg in args) {
+                string extension = Path.GetExtension(arg);
+
+                if (extension == ".dme")
+                {
+                    return Path.GetFileName(arg);
+                }
+            }
+
+            return "Unknown";
         }
 
         private static bool VerifyArguments(string[] args) {

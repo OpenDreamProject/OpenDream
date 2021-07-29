@@ -18,7 +18,7 @@ namespace DMCompiler {
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
-            Console.WriteLine($"Compiling {GetDMEName(args)}");
+
             DateTime startTime = DateTime.Now;
 
             DMPreprocessor preprocessor = Preprocess(args);
@@ -37,20 +37,6 @@ namespace DMCompiler {
             }
         }
 
-        private static string GetDMEName(string[] args)
-        {
-            foreach (string arg in args) {
-                string extension = Path.GetExtension(arg);
-
-                if (extension == ".dme")
-                {
-                    return Path.GetFileName(arg);
-                }
-            }
-
-            return "Unknown";
-        }
-
         private static bool VerifyArguments(string[] args) {
             if (args.Length < 1) {
                 Console.WriteLine("At least one DME or DM file must be provided as an argument");
@@ -62,10 +48,12 @@ namespace DMCompiler {
                 string extension = Path.GetExtension(arg);
 
                 if (extension != ".dme" && extension != ".dm") {
-                    Console.WriteLine(arg + " is not a valid DME or DM file");
+                    Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
 
                     return false;
                 }
+
+                Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
             }
 
             return true;
@@ -126,7 +114,7 @@ namespace DMCompiler {
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
-            
+
             foreach (string mapPath in mapPaths) {
                 DMPreprocessor preprocessor = new DMPreprocessor(false);
                 preprocessor.IncludeFile(String.Empty, mapPath);

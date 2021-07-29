@@ -1181,7 +1181,7 @@ namespace Content.Server.DM {
             new Task(async () => {
                 await Task.Delay(delayMilliseconds);
                 newContext.Resume();
-            }).Start();
+            }).Start(TaskScheduler.FromCurrentSynchronizationContext());
 
             state.Jump(jumpTo);
             return null;

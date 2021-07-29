@@ -109,6 +109,9 @@ namespace Content.Server.Dream.NativeProcs {
 
             //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
             //regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
+
+            DreamObjectDefinition world = objectTree.GetObjectDefinitionFromPath(DreamPath.World);
+            world.SetNativeProc(DreamProcNativeWorld.NativeProc_Export);
         }
     }
 }

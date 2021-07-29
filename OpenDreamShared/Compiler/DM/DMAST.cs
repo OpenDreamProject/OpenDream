@@ -10,6 +10,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitObjectDefinition(DMASTObjectDefinition statement) { throw new NotImplementedException(); }
         public void VisitPath(DMASTPath path) { throw new NotImplementedException(); }
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) { throw new NotImplementedException(); }
+        public void VisitMultipleObjectVarDefinitions(DMASTMultipleObjectVarDefinitions multipleObjectVarDefinitions) { throw new NotImplementedException(); }
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) { throw new NotImplementedException(); }
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
@@ -273,6 +274,22 @@ namespace OpenDreamShared.Compiler.DM {
         public void Visit(DMASTVisitor visitor) {
             try {
                 visitor.VisitObjectVarDefinition(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
+    public class DMASTMultipleObjectVarDefinitions : DMASTStatement {
+        public DMASTObjectVarDefinition[] VarDefinitions;
+
+        public DMASTMultipleObjectVarDefinitions(DMASTObjectVarDefinition[] varDefinitions) {
+            VarDefinitions = varDefinitions;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitMultipleObjectVarDefinitions(this);
             } catch (CompileErrorException exception) {
                 visitor.HandleCompileErrorException(exception);
             }

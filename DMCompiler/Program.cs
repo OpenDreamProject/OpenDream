@@ -13,8 +13,7 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
-        //This is ugly
-        public static List<CompilerError> VisitorErrors = new();
+        public static int _errorCount = 0;
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
@@ -101,15 +100,17 @@ namespace DMCompiler {
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
 
-            if (VisitorErrors.Count > 0) {
-                foreach (CompilerError error in VisitorErrors) {
-                    Console.WriteLine(error);
-                }
-
+            if (_errorCount > 0) {
                 return false;
             }
 
             return true;
+        }
+
+        //This is ugly
+        public static void Error(CompilerError error) {
+            Console.WriteLine(error);
+            _errorCount++;
         }
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {

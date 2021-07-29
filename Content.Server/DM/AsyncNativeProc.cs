@@ -24,7 +24,6 @@ namespace Content.Server.DM {
             private DreamValue? _callResult;
 
             private bool _inResume;
-            private bool _hasReturned;
 
             public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
                 : base(thread)
@@ -62,7 +61,6 @@ namespace Content.Server.DM {
 
             private async Task InternalResumeAsync() {
                 Result = await _taskFunc(this);
-                _hasReturned = true;
             }
 
             protected override ProcStatus InternalResume()
@@ -72,24 +70,24 @@ namespace Content.Server.DM {
                 // We've just been created, start our task
                 if (_task == null) {
                     // Pull execution of our task outside of StartNew to allow it to inline here
-                    var inlined  = InternalResumeAsync();
+                    _task = InternalResumeAsync();
 
                     // Shortcut: If our proc was synchronous, we don't need to schedule
                     //           This also means we won't reach Resume on a finished proc through our continuation
-                    if (_hasReturned) {
-                        if (inlined.Exception != null) {
-                            throw inlined.Exception;
+                    if (_task.IsCompleted) {
+                        if (_task.Exception != null) {
+                            throw _task.Exception;
                         }
 
                         return ProcStatus.Returned;
                     }
 
-                    //_task = IoCManager.Resolve<IDreamManager>().TaskFactory.StartNew(() => inlined).Unwrap();
-                    throw new NotImplementedException("Yielding is not implemented");
-
                     // We have to resume now so that the execution context knows we have returned
                     // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
-                    _task.ContinueWith(_ => SafeResume());
+                    _task.ContinueWith(
+                        (_, inst) => ((State)inst).SafeResume(),
+                        this,
+                        TaskScheduler.FromCurrentSynchronizationContext());
                 }
 
                 // We need to call a proc.
@@ -115,7 +113,7 @@ namespace Content.Server.DM {
                 }
 
                 // If the task is finished, we're all done
-                if (_hasReturned) {
+                if (_task.IsCompleted) {
                     if (_task.Exception != null) {
                         throw _task.Exception;
                     }

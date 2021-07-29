@@ -56,6 +56,8 @@ namespace Content.Shared.Compiler.DM {
                 Whitespace();
 
                 _currentPath = _currentPath.Combine(path.Path);
+
+                //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
                     DMASTDefinitionParameter[] parameters = DefinitionParameters();
@@ -76,24 +78,57 @@ namespace Content.Shared.Compiler.DM {
                 } else {
                     DMASTBlockInner block = Block();
 
+                    //Object definition
                     if (block != null) {
                         statement = new DMASTObjectDefinition(_currentPath, block);
                     } else {
-                        if (Check(TokenType.DM_Equals)) {
-                            Whitespace();
-                            DMASTExpression value = Expression();
+                        //Var definition(s)
+                        if (_currentPath.FindElement("var") != -1) {
+                            DreamPath varPath = _currentPath;
+                            List<DMASTObjectVarDefinition> varDefinitions = new();
 
-                            if (_currentPath.FindElement("var") != -1) {
-                                statement = new DMASTObjectVarDefinition(_currentPath, value);
+                            while (true) {
+                                Whitespace();
+
+                                DMASTExpression value;
+                                if (Check(TokenType.DM_Equals)) {
+                                    Whitespace();
+                                    value = Expression();
+                                    if (value == null) Error("Expected an expression");
+                                } else {
+                                    value = new DMASTConstantNull();
+                                }
+
+                                AsTypes();
+
+                                varDefinitions.Add(new DMASTObjectVarDefinition(varPath, value));
+                                if (Check(TokenType.DM_Comma)) {
+                                    Whitespace();
+                                    DMASTPath newVarPath = Path();
+                                    if (newVarPath == null) Error("Expected a var definition");
+                                    if (newVarPath.Path.Elements.Length > 1) Error("Invalid var name"); //TODO: This is valid DM
+
+                                    varPath = _currentPath.AddToPath("../" + newVarPath.Path.PathString);
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (varDefinitions.Count == 1) {
+                                statement = varDefinitions[0];
                             } else {
-                                statement = new DMASTObjectVarOverride(_currentPath, value);
+                                statement = new DMASTMultipleObjectVarDefinitions(varDefinitions.ToArray());
                             }
                         } else {
-                            if (_currentPath.FindElement("var") != -1) {
+                            //Var override
+                            if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
-                                AsTypes();
-                                statement = new DMASTObjectVarDefinition(_currentPath, new DMASTConstantNull());
+                                DMASTExpression value = Expression();
+                                if (value == null) Error("Expected an expression");
+
+                                statement = new DMASTObjectVarOverride(_currentPath, value);
                             } else {
+                                //Empty object definition
                                 statement = new DMASTObjectDefinition(_currentPath, null);
                             }
                         }
@@ -1753,7 +1788,6 @@ namespace Content.Shared.Compiler.DM {
             DMValueType type = DMValueType.Anything;
 
             if (Check(TokenType.DM_As)) {
-
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;

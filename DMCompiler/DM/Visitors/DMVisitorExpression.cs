@@ -484,7 +484,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.VisitorErrors.Add(exception.Error);
+            Program.Error(exception.Error);
         }
     }
 }

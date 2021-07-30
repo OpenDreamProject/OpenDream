@@ -29,9 +29,7 @@ namespace Content.Server.Dream.MetaObjects {
                 int y = dreamObject.GetVariable("y").GetValueAsInteger();
                 int z = dreamObject.GetVariable("z").GetValueAsInteger();
 
-                //return new DreamValue(Runtime.Map.GetAreaAt(x, y, z));
-                //TODO
-                return DreamValue.Null;
+                return new DreamValue(_dreamMapManager.GetAreaAt(x, y, z));
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

@@ -7,6 +7,7 @@ using System;
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
+        [Dependency] private IDreamMapManager _dreamMapManager = null;
         [Dependency] private IGameTiming _gameTiming = null;
 
         private ViewRange _viewRange;
@@ -41,21 +42,8 @@ namespace Content.Server.Dream.MetaObjects {
             switch (variableName) {
                 case "fps":
                     _gameTiming.TickRate = (byte)variableValue.GetValueAsInteger(); break;
-                case "maxz": {
-                    int newMaxZ = variableValue.GetValueAsInteger();
-
-                    /*if (newMaxZ < Runtime.Map.Levels.Count) {
-                        while (Runtime.Map.Levels.Count > newMaxZ) {
-                            Runtime.Map.RemoveLevel();
-                        }
-                    } else {
-                        while (Runtime.Map.Levels.Count < newMaxZ) {
-                            Runtime.Map.AddLevel();
-                        }
-                    }*/
-
-                    break;
-                }
+                case "maxz":
+                    _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
             }
         }
 
@@ -75,12 +63,12 @@ namespace Content.Server.Dream.MetaObjects {
                     //TODO: This can only go up to 100%, tick_usage should be able to go higher
                     return new DreamValue((float)_gameTiming.TickFraction / ushort.MaxValue);
                 }
-                //case "maxx":
-                //    return new DreamValue(Runtime.Map.Width);
-                //case "maxy":
-                //    return new DreamValue(Runtime.Map.Height);
-                //case "maxz":
-                //    return new DreamValue(Runtime.Map.Levels.Count);
+                case "maxx":
+                    return new DreamValue(_dreamMapManager.Size.X);
+                case "maxy":
+                    return new DreamValue(_dreamMapManager.Size.Y);
+                case "maxz":
+                    return new DreamValue(_dreamMapManager.Levels);
                 //case "address":
                 //    return new(Runtime.Server.Address.ToString());
                 //case "port":

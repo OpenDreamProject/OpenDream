@@ -1,4 +1,5 @@
-﻿using Content.Shared.Json;
+﻿using Content.Shared.Dream;
+using Content.Shared.Json;
 using Robust.Shared.Maths;
 using System.Collections.Generic;
 
@@ -10,6 +11,10 @@ namespace Content.Server.Dream {
         public void Initialize();
         public void LoadMaps(List<DreamMapJson> maps);
         public void SetTurf(int x, int y, int z, DreamObject turf);
+        public void SetArea(int x, int y, int z, DreamObject area);
         public DreamObject GetTurf(int x, int y, int z);
+        public DreamObject GetArea(DreamPath type);
+        public DreamObject GetAreaAt(int x, int y, int z);
+        public void SetZLevels(int levels);
     }
 }

@@ -1,5 +1,4 @@
-﻿using Content.Server.DM;
-using Robust.Shared.IoC;
+﻿using Robust.Shared.IoC;
 
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectDatum : DreamMetaObjectRoot {

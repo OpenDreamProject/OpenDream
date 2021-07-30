@@ -254,13 +254,15 @@ namespace Content.Server.Dream.NativeProcs {
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_fexists(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue file = arguments.GetArgument(0, "File");
-            string filePath;
 
-            if (!file.TryGetValueAsString(out filePath)) {
-                filePath = file.GetValueAsDreamResource().ResourcePath;
+            DreamResource resource;
+            if (file.TryGetValueAsString(out string filePath)) {
+                resource = new DreamResource(filePath);
+            } else {
+                resource = file.GetValueAsDreamResource();
             }
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.DoesFileExist(filePath) ? 1 : 0);
+            return new DreamValue(resource.Exists() ? 1 : 0);
         }
 
         [DreamProc("file")]
@@ -271,7 +273,7 @@ namespace Content.Server.Dream.NativeProcs {
             if (path.Type == DreamValueType.String) {
                 DreamResource resource = new DreamResource(path.GetValueAsString());
 
-                return DreamValue.Null;//return new DreamValue(resource);
+                return new DreamValue(resource);
             } else if (path.Type == DreamValueType.DreamResource) {
                 return path;
             } else {
@@ -294,7 +296,6 @@ namespace Content.Server.Dream.NativeProcs {
             string text = resource.ReadAsString();
             if (text != null) return new DreamValue(text);
             else return DreamValue.Null;
-
         }
 
         [DreamProc("findtext")]

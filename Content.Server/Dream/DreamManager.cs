@@ -37,6 +37,7 @@ namespace Content.Server.Dream {
             SetMetaObjects();
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
+            _dreamMapManager.Initialize();
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
             ObjectTree.Root.ObjectDefinition.GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             WorldInstance.InitSpawn(new DreamProcArguments(null));
@@ -75,10 +76,12 @@ namespace Content.Server.Dream {
         private void SetMetaObjects() {
             ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
             ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
+            ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
             ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
             ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
             ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
             ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
+            ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
         }
 

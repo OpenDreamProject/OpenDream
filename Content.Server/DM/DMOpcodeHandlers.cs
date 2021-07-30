@@ -37,7 +37,7 @@ namespace Content.Server.DM {
                 if (listObject == null) {
                     list = null;
                 } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
-                    //list = listObject.GetVariable("contents").GetValueAsDreamList();
+                    list = listObject.GetVariable("contents").GetValueAsDreamList();
                 } else {
                     throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);
                 }

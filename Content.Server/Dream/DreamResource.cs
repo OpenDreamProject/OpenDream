@@ -2,9 +2,7 @@
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Utility;
-using System;
 using System.IO;
-using System.Text;
 
 namespace Content.Server.Dream {
     public class DreamResource {
@@ -29,13 +27,16 @@ namespace Content.Server.Dream {
             }
         }
 
+        public bool Exists() {
+            return _resourceManager.ContentFileExists(_resourcePath);
+        }
+
         public virtual string ReadAsString() {
-            //if (!File.Exists(_filePath)) return null;
+            if (!Exists()) return null;
 
-            //string resourceString = Encoding.ASCII.GetString(ResourceData);
-
-            //resourceString = resourceString.Replace("\r\n", "\n");
-            return null;//return resourceString;
+            string text = _resourceManager.ContentFileReadAllText(_resourcePath);
+            text = text.Replace("\r\n", "\n");
+            return text;
         }
 
         public virtual void Clear() {

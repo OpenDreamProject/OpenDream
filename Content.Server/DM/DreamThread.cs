@@ -5,6 +5,7 @@ using Robust.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Content.Server.DM {
     public enum ProcStatus {
@@ -110,12 +111,12 @@ namespace Content.Server.DM {
             return context.Resume();
         }
 
-        /*public static DreamValue Run(Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+        public static DreamValue Run(Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
             var context = new DreamThread();
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
             context.PushProcState(state);
             return context.Resume();
-        }*/
+        }
 
         public DreamValue Resume() {
             while (_current != null) {

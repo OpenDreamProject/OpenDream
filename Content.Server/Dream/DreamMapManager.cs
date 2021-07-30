@@ -20,12 +20,15 @@ namespace Content.Server.Dream {
 
         private Dictionary<MapCoordinates, DreamObject> _turfs = new();
 
+        public void Initialize() {
+            _mapManager.CreateNewMapEntity(MapId.Nullspace);
+        }
+
         public void LoadMaps(List<DreamMapJson> maps) {
             if (maps.Count == 0) throw new ArgumentException("No maps were given");
             else if (maps.Count > 1) throw new NotImplementedException("Loading more than one map is not implemented");
             DreamMapJson map = maps[0];
 
-            _mapManager.CreateNewMapEntity(MapId.Nullspace);
             Size = new Vector2i(map.MaxX, map.MaxY);
             Levels = map.MaxZ;
 

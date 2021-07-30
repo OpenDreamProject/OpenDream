@@ -1,5 +1,6 @@
 ﻿using Content.Server.DM;
 using Content.Shared.Dream;
+using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 using Robust.Shared.Utility;
@@ -121,6 +122,17 @@ namespace Content.Server.Dream.MetaObjects {
                     return new(_atomManager.GetAtomEntity(dreamObject).Transform.WorldPosition.Y);
                 case "z":
                     return new((int)_atomManager.GetAtomEntity(dreamObject).Transform.MapID);
+                case "contents":
+                    DreamList contents = DreamList.Create();
+                    IEntity entity = _atomManager.GetAtomEntity(dreamObject);
+
+                    foreach (ITransformComponent child in entity.Transform.Children) {
+                        DreamObject childAtom = _atomManager.GetAtomFromEntity(child.Owner);
+
+                        contents.AddValue(new DreamValue(childAtom));
+                    }
+
+                    return new(contents);
                 case "transform":
                     // Clone the matrix
                     //DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix);

@@ -7,6 +7,7 @@ namespace Content.Server.Dream {
         public Vector2i Size { get; }
         public int Levels { get; }
 
+        public void Initialize();
         public void LoadMaps(List<DreamMapJson> maps);
         public void SetTurf(int x, int y, int z, DreamObject turf);
         public DreamObject GetTurf(int x, int y, int z);

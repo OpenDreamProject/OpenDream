@@ -94,18 +94,18 @@ namespace Content.Server.Dream.NativeProcs {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
-            //DreamObjectDefinition list = objectTree.GetObjectDefinitionFromPath(DreamPath.List);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Add);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Copy);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Cut);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Find);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Insert);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
-            //list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
+            DreamObjectDefinition list = objectTree.GetObjectDefinitionFromPath(DreamPath.List);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Add);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Copy);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Cut);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Find);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Insert);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
+            list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
 
-            //DreamObjectDefinition regex = objectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
-            //regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
-            //regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
+            DreamObjectDefinition regex = objectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
+            regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
+            regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
 
             //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
             //regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);

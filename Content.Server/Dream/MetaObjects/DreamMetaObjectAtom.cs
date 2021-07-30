@@ -40,11 +40,16 @@ namespace Content.Server.Dream.MetaObjects {
             if (variableName == "icon") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.Icon = new ResourcePath(variableValue.GetValueAsDreamResource().ResourcePath);
+                if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
+                    sprite.Icon = new ResourcePath(resource.ResourcePath);
+                } else {
+                    sprite.Icon = null;
+                }
             } else if (variableName == "icon_state") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
-                sprite.IconState = variableValue.GetValueAsString();
+                variableValue.TryGetValueAsString(out string iconState);
+                sprite.IconState = iconState;
             } else if (variableName == "pixel_x") {
                 DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
 
@@ -72,8 +77,6 @@ namespace Content.Server.Dream.MetaObjects {
 
                 sprite.Direction = (AtomDirection)variableValue.GetValueAsInteger();
             } else if (variableName == "transform") {
-                DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
-
                 //TODO
             } else if (variableName == "overlays") {
                 //TODO

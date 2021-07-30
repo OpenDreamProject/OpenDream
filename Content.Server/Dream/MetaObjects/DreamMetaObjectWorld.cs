@@ -56,12 +56,13 @@ namespace Content.Server.Dream.MetaObjects {
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.ServerTime.TotalMilliseconds / 100);
+                    return new DreamValue(_gameTiming.CurTime.TotalMilliseconds / 100);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {
                     //TODO: This can only go up to 100%, tick_usage should be able to go higher
-                    return new DreamValue((float)_gameTiming.TickFraction / ushort.MaxValue);
+                    float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
+                    return new DreamValue(tickUsage * 100);
                 }
                 case "maxx":
                     return new DreamValue(_dreamMapManager.Size.X);

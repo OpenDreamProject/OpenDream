@@ -25,9 +25,14 @@ namespace Content.Server.Dream {
 
         private List<Cell[,]> _levels = new();
         private Dictionary<DreamPath, DreamObject> _areas = new();
+        private DreamPath _defaultArea, _defaultTurf;
 
         public void Initialize() {
             _mapManager.CreateNewMapEntity(MapId.Nullspace);
+
+            DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinitionFromPath(DreamPath.World);
+            _defaultArea = worldDefinition.Variables["area"].GetValueAsPath();
+            _defaultTurf = worldDefinition.Variables["turf"].GetValueAsPath();
         }
 
         public void LoadMaps(List<DreamMapJson> maps) {
@@ -38,19 +43,12 @@ namespace Content.Server.Dream {
             Size = new Vector2i(map.MaxX, map.MaxY);
             SetZLevels(map.MaxZ);
 
-            for (int z = 1; z <= Levels; z++) {
-                _mapManager.CreateMap(new MapId(z));
-            }
-
-            DreamPath defaultTurf = _dreamManager.WorldInstance.GetVariable("turf").GetValueAsPath();
-            DreamPath defaultArea = _dreamManager.WorldInstance.GetVariable("area").GetValueAsPath();
-
             foreach (MapBlockJson block in map.Blocks) {
-                LoadMapBlock(block, map.CellDefinitions, defaultTurf, defaultArea);
+                LoadMapBlock(block, map.CellDefinitions);
             }
         }
 
-        public void SetTurf(int x, int y, int z, DreamObject turf) {
+        public void SetTurf(int x, int y, int z, DreamObject turf, bool replace = true) {
             if (!IsValidCoordinate(x, y, z)) throw new ArgumentException("Invalid coordinates");
 
             _levels[z - 1][x - 1, y - 1].Turf = turf;
@@ -60,7 +58,12 @@ namespace Content.Server.Dream {
             entity.Transform.AttachParent(_mapManager.GetMapEntity(new MapId(z)));
             entity.Transform.LocalPosition = new Vector2(x, y);
 
-            //TODO: Every reference to the old turf should point to the new one
+            if (replace) {
+                //Every reference to the old turf becomes the new turf
+                //Do this by turning the old turf object into the new one
+                DreamObject existingTurf = GetTurf(x, y, z);
+                existingTurf.CopyFrom(turf);
+            }
         }
 
         public void SetArea(int x, int y, int z, DreamObject area) {
@@ -99,9 +102,23 @@ namespace Content.Server.Dream {
             if (levels > Levels) {
                 for (int z = Levels + 1; z <= levels; z++) {
                     _levels.Add(new Cell[Size.X, Size.Y]);
+                    _mapManager.CreateMap(new MapId(z));
+
+                    for (int x = 1; x <= Size.X; x++) {
+                        for (int y = 1; y <= Size.Y; y++) {
+                            DreamObject turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
+
+                            turf.InitSpawn(new(null));
+                            SetTurf(x, y, z, turf, replace: false);
+                            SetArea(x, y, z, GetArea(_defaultArea));
+                        }
+                    }
                 }
             } else if (levels < Levels) {
                 _levels.RemoveRange(levels, Levels - levels);
+                for (int z = Levels; z > levels; z--) {
+                    _mapManager.DeleteMap(new MapId(z));
+                }
             }
         }
 
@@ -109,17 +126,18 @@ namespace Content.Server.Dream {
             return (x <= Size.X && y <= Size.Y && z <= Levels) && (x >= 1 && y >= 1 && z >= 1);
         }
 
-        private void LoadMapBlock(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions, DreamPath defaultTurf, DreamPath defaultArea) {
+        private void LoadMapBlock(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions) {
             int blockX = 1;
             int blockY = 1;
 
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
                 DreamObject turf = CreateMapObject(cellDefinition.Turf);
-                DreamObject area = GetArea(cellDefinition.Area?.Type ?? defaultArea);
+                DreamObject area = GetArea(cellDefinition.Area?.Type ?? _defaultArea);
 
+                //Turf's type didn't exist and was skipped
                 if (turf == null) {
-                    turf = _dreamManager.ObjectTree.CreateObject(defaultTurf);
+                    turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
                     turf.InitSpawn(new DreamProcArguments(null));
                 }
 

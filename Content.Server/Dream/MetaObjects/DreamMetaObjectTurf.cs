@@ -3,6 +3,7 @@ using Robust.Shared.IoC;
 
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectTurf : DreamMetaObjectAtom {
+        private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
@@ -10,9 +11,10 @@ namespace Content.Server.Dream.MetaObjects {
 
             if (variableName == "loc") {
                 if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject replacedTurf)) {
+                    //Transfer all the old turf's contents
                     DreamList contents = replacedTurf.GetVariable("contents").GetValueAsDreamList();
-                    while (contents.GetLength() > 0) { //Transfer all the old turf's contents
-                        contents.GetValues()[0].GetValueAsDreamObjectOfType(DreamPath.Atom).SetVariable("loc", new DreamValue(dreamObject));
+                    foreach (DreamValue child in contents.GetValues()) {
+                        child.GetValueAsDreamObjectOfType(DreamPath.Movable).SetVariable("loc", new DreamValue(dreamObject));
                     }
 
                     int x = replacedTurf.GetVariable("x").GetValueAsInteger();

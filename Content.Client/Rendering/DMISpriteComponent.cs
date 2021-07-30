@@ -17,7 +17,9 @@ namespace OpenDreamClient.Rendering {
             get => _icon;
             set {
                 _icon = value;
-                DMI = _resourceCache.GetResource<DMIResource>(_icon);
+                if (_icon != null && _resourceCache.TryGetResource(_icon, out DMIResource dmi)) {
+                    DMI = dmi;
+                }
             }
         }
         private ResourcePath _icon;
@@ -46,7 +48,7 @@ namespace OpenDreamClient.Rendering {
         public Box2 GetWorldAABB(Vector2? worldPos = null, Angle? worldRot = null) {
             Vector2 position = (worldPos ?? Vector2.Zero) + (0.5f, 0.5f);
             //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
-            Vector2 size = DMI.IconSize / (32, 32) / 2;
+            Vector2 size = (DMI?.IconSize ?? Vector2.Zero) / (32, 32) / 2;
 
             return new Box2(position, position + size);
         }

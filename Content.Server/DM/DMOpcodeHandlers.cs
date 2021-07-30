@@ -1312,7 +1312,7 @@ namespace Content.Server.DM {
             int z = state.PopDreamValue().GetValueAsInteger();
             int y = state.PopDreamValue().GetValueAsInteger();
             int x = state.PopDreamValue().GetValueAsInteger();
-
+            
             state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }
@@ -1447,14 +1447,14 @@ namespace Content.Server.DM {
 
                     break;
                 }
-                /*case DreamValue.DreamValueType.DreamResource: {
-                    //DreamResource firstValue = first.GetValueAsDreamResource();
+                case DreamValue.DreamValueType.DreamResource: {
+                    DreamResource firstValue = first.GetValueAsDreamResource();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamResource: return firstValue.ResourcePath == second.GetValueAsDreamResource().ResourcePath;
                         default: return false;
                     }
-                }*/
+                }
             }
 
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");

@@ -99,7 +99,9 @@ namespace Content.Server {
             atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
             PixelOffset = new Vector2i(pixelX, pixelY);
 
-            //TODO: Layer
+            if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
+                Layer = layer;
+            }
         }
     }
 }

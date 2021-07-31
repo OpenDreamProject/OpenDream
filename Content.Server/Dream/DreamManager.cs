@@ -62,6 +62,15 @@ namespace Content.Server.Dream {
             return _playerManager.GetSessionByUserId(_clientToUserId[client]);
         }
 
+        public DreamObject GetClientFromMob(DreamObject mob) {
+            foreach (DreamObject client in _clientToUserId.Keys) {
+                if (client.GetVariable("mob").GetValueAsDreamObject() == mob)
+                    return client;
+            }
+
+            return null;
+        }
+
         private DreamCompiledJson LoadJson() {
             string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
@@ -85,6 +94,7 @@ namespace Content.Server.Dream {
             ObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
+            ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
         }
 
         private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e) {

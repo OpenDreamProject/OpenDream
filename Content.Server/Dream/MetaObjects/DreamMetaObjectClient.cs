@@ -19,41 +19,39 @@ namespace Content.Server.Dream.MetaObjects {
             }
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue)
-        {
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            switch (variableName)
-            {
-                case "eye":
-                {
+            switch (variableName) {
+                case "eye": {
                     string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
                     DreamObject eye = variableValue.GetValueAsDreamObject();
 
                     //Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
                     break;
                 }
-                case "perspective":
-                {
+                case "perspective": {
                     string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
 
                     //Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
                     break;
                 }
-                case "mob":
-                {
-                    IPlayerSession session = _dreamManager.GetSessionFromClient(dreamObject);
+                case "mob": {
+                    if (oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject oldMob)) {
+                        oldMob.SpawnProc("Logout");
+                    }
 
+                    IPlayerSession session = _dreamManager.GetSessionFromClient(dreamObject);
                     if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
                         session.AttachToEntity(_atomManager.GetAtomEntity(mob));
+                        mob.SpawnProc("Login");
                     } else {
                         session.DetachFromEntity();
                     }
 
                     break;
                 }
-                case "screen":
-                {
+                case "screen": {
                     /*if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= ScreenValueAssigned;
@@ -71,8 +69,7 @@ namespace Content.Server.Dream.MetaObjects {
                     _screenListToClient[screenList] = dreamObject;*/
                     break;
                 }
-                case "statpanel":
-                {
+                case "statpanel": {
                     //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
 
                     //connection.SelectedStatPanel = variableValue.GetValueAsString();
@@ -81,38 +78,28 @@ namespace Content.Server.Dream.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
-        {
-            switch (variableName)
-            {
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
+            switch (variableName) {
                 //TODO actually return the key
                 case "key":
                 case "ckey":
-                {
                     return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
-                }
                 case "address":
-                {
                     return new(_dreamManager.GetSessionFromClient(dreamObject).ConnectedClient.RemoteEndPoint.Address.ToString());
-                }
                 case "inactivity":
                     return new DreamValue(0);
-                case "timezone":
-                {
+                case "timezone": {
                     //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                     //return new DreamValue((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
                     return new(0);
                 }
-                case "statpanel":
-                {
+                case "statpanel": {
                     //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
                     //return new DreamValue(connection.SelectedStatPanel);
                     return DreamValue.Null;
                 }
                 case "connection":
-                {
                     return new DreamValue("seeker");
-                }
                 default:
                     return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

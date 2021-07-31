@@ -1245,10 +1245,7 @@ namespace Content.Server.DM {
         public static ProcStatus? DeleteObject(DMProcState state) {
             DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
 
-            if (dreamObject != null) {
-                dreamObject.Delete();
-            }
-
+            dreamObject?.Delete();
             return null;
         }
 

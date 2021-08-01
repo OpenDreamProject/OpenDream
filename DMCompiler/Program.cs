@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
@@ -14,13 +16,29 @@ using OpenDreamShared.Json;
 namespace DMCompiler {
     class Program {
         public static int _errorCount = 0;
+        public static string[] CompilerArgs;
+        public static List<string> CompiledFiles = new List<string>(1);
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
+            CompilerArgs = args;
 
             DateTime startTime = DateTime.Now;
 
-            DMPreprocessor preprocessor = Preprocess(args);
+            DMPreprocessor preprocessor = Preprocess(CompiledFiles);
+            if (HasArgument("--dump-preprocessor"))
+            {
+                StringBuilder result = new();
+                foreach (Token t in preprocessor.GetResult()) {
+                    result.Append(t.Text);
+                }
+
+                string output = Path.ChangeExtension(CompiledFiles[0], "txt") ?? Path.Join(System.AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.txt");
+                File.WriteAllText(output, result.ToString());
+                Console.WriteLine($"Preprocessor output dumped to {output}");
+            }
+
+
             if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(args[0], "json");
@@ -37,28 +55,39 @@ namespace DMCompiler {
         }
 
         private static bool VerifyArguments(string[] args) {
-            if (args.Length < 1) {
-                Console.WriteLine("At least one DME or DM file must be provided as an argument");
-
-                return false;
-            }
+            bool file_to_compile = false;
 
             foreach (string arg in args) {
-                string extension = Path.GetExtension(arg);
+                if (Path.HasExtension(arg))
+                {
+                    string extension = Path.GetExtension(arg);
+                    if(extension != ".dme" && extension != ".dm") {
+                        Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
 
-                if (extension != ".dme" && extension != ".dm") {
-                    Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
+                        return false;
+                    }
 
-                    return false;
+                    CompiledFiles.Add(arg);
+                    file_to_compile = true;
+                    Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                 }
+            }
 
-                Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
+            if (!file_to_compile)
+            {
+                Console.WriteLine("At least one DME or DM file must be provided as an argument");
+                return false;
             }
 
             return true;
         }
 
-        private static DMPreprocessor Preprocess(string[] files) {
+        private static bool HasArgument(string arg)
+        {
+            return CompilerArgs.Contains(arg);
+        }
+
+        private static DMPreprocessor Preprocess(List<string> files) {
             DMPreprocessor preprocessor = new DMPreprocessor(true);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

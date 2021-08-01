@@ -96,7 +96,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
             string path = replacing.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
             return new() {
-                new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.SourceFile, replacing.Line, replacing.Column, replacing.SourceFile)
+                new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.SourceFile, replacing.Line, replacing.Column, path)
             };
         }
     }

@@ -221,7 +221,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (Check(TokenType.DM_Identifier)) {
                 Token dereferenceToken = Current();
-                TokenType[] dereferenceTokenTypes = new TokenType[] {
+                TokenType[] dereferenceTokenTypes = {
                     TokenType.DM_Period,
                     TokenType.DM_QuestionPeriod,
                     TokenType.DM_Colon,
@@ -229,7 +229,7 @@ namespace OpenDreamShared.Compiler.DM {
                 };
 
                 if (Check(dereferenceTokenTypes)) {
-                    List<Dereference> dereferences = new List<Dereference>();
+                    List<Dereference> dereferences = new();
                     DMASTIdentifier identifier = Identifier();
 
                     if (identifier != null) {
@@ -1521,7 +1521,7 @@ namespace OpenDreamShared.Compiler.DM {
                         if (callParameters != null) {
                             Whitespace();
 
-                            if (identifier != null && identifier.Identifier == "input") {
+                            if (identifier?.Identifier == "input") {
                                 DMValueType types = AsTypes(defaultType: DMValueType.Text);
                                 Whitespace();
                                 DMASTExpression list = null;
@@ -1532,15 +1532,15 @@ namespace OpenDreamShared.Compiler.DM {
                                 }
 
                                 return new DMASTInput(callParameters, types, list);
-                            } else if (identifier != null && identifier.Identifier == "initial") {
+                            } else if (identifier?.Identifier == "initial") {
                                 if (callParameters.Length != 1) Error("initial() requires 1 argument");
 
                                 return new DMASTInitial(callParameters[0].Value);
-                            } else if (identifier != null && identifier.Identifier == "issaved") {
+                            } else if (identifier?.Identifier == "issaved") {
                                 if (callParameters.Length != 1) Error("issaved() requires 1 argument");
 
                                 return new DMASTIsSaved(callParameters[0].Value);
-                            } else if (identifier != null && identifier.Identifier == "istype") {
+                            } else if (identifier?.Identifier == "istype") {
                                 if (callParameters.Length == 1) {
                                     return new DMASTImplicitIsType(callParameters[0].Value);
                                 } else if (callParameters.Length == 2) {
@@ -1548,7 +1548,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 } else {
                                     Error("istype() requires 1 or 2 arguments");
                                 }
-                            } else if (identifier != null && identifier.Identifier == "text") {
+                            } else if (identifier?.Identifier == "text") {
                                 if (callParameters.Length == 0) Error("text() requires at least 1 argument");
 
                                 if (callParameters[0].Value is DMASTConstantString constantString) {
@@ -1576,7 +1576,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                                     return null;
                                 }
-                            } else if (identifier != null && identifier.Identifier == "locate") {
+                            } else if (identifier?.Identifier == "locate") {
                                 if (callParameters.Length > 3) Error("locate() was given too many arguments");
 
                                 if (callParameters.Length == 3) { //locate(X, Y, Z)
@@ -1753,7 +1753,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 } else if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { //Unimplemented escape sequence
                                     break;
                                 }
-                            } while (c != ' ');
+                            } while (c != ' ' && i < tokenValue.Length - 1);
 
                             if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
                                 Error("Invalid escape sequence \"\\" + escapeSequence + "\"");

@@ -451,55 +451,66 @@ namespace OpenDreamShared.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementVarDeclaration ProcVarDeclaration() {
+        public DMASTProcStatement ProcVarDeclaration(bool allowMultiple = true) {
             Token firstToken = Current();
             bool wasSlash = Check(TokenType.DM_Slash);
 
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
+
                 Whitespace();
-                DMASTPath path = Path();
-                if (path == null) Error("Expected a variable name");
+                DMASTPath varPath = Path();
+                if (varPath == null) Error("Expected a variable name");
 
-                DMASTExpression value = null;
-
-                if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
-                {
-                    //Type information
-                    if (path.Path.FindElement("list") != 0)
-                    {
-                        path = new DMASTPath(new DreamPath("list/" + path.Path.PathString));
-                    }
-
+                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+                while (true) {
+                    DMASTExpression value = null;
                     Whitespace();
 
-                    DMASTExpression size = Expression();
-                    Consume(TokenType.DM_RightBracket, "Expected ']'");
+                    //TODO: Multidimensional lists
+                    if (Check(TokenType.DM_LeftBracket)) {
+                        //Type information
+                        if (varPath.Path.FindElement("list") != 0) {
+                            varPath = new DMASTPath(DreamPath.List.Combine(varPath.Path));
+                        }
 
-                    if (size is not null)
-                    {
-                        value = new DMASTNewPath(new DMASTPath(DreamPath.List),
-                            new[] {new DMASTCallParameter(size)});
+                        Whitespace();
+                        DMASTExpression size = Expression();
+                        Consume(TokenType.DM_RightBracket, "Expected ']'");
+                        Whitespace();
+
+                        if (size is not null) {
+                            value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                                new[] { new DMASTCallParameter(size) });
+                        }
                     }
 
-                }
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Error("List doubly initialized");
 
-                Whitespace();
-
-                if (Check(TokenType.DM_Equals)) {
-                    if (value is not null)
-                    {
-                        Error("List doubly initialized");
-                    }
-                    else
-                    {
                         Whitespace();
                         value = Expression();
+                        if (value == null) Error("Expected an expression");
+                    }
+
+                    AsTypes();
+
+                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value ?? new DMASTConstantNull()));
+                    if (allowMultiple && Check(TokenType.DM_Comma)) {
+                        Whitespace();
+                        varPath = Path();
+                        if (varPath == null) Error("Expected a var declaration");
+                    } else {
+                        break;
                     }
                 }
 
-                return new DMASTProcStatementVarDeclaration(path, value);
+                if (varDeclarations.Count > 1) {
+                    return new DMASTProcStatementMultipleVarDeclarations(varDeclarations.ToArray());
+                } else {
+                    return varDeclarations[0];
+                }
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }
@@ -672,7 +683,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTProcStatement initializer = null;
                 DMASTIdentifier variable;
 
-                DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration();
+                DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration(allowMultiple: false) as DMASTProcStatementVarDeclaration;
                 if (variableDeclaration != null) {
                     initializer = variableDeclaration;
                     variable = new DMASTIdentifier(variableDeclaration.Name);

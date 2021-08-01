@@ -108,6 +108,12 @@ namespace DMCompiler.DM.Visitors {
             _proc.SetLocalVariable(varDeclaration.Name);
         }
 
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
+            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                varDeclaration.Visit(this);
+            }
+        }
+
         public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, statement.Value);

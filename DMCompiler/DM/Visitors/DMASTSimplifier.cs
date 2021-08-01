@@ -161,6 +161,12 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             SimplifyExpression(ref varDeclaration.Value);
         }
+
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
+            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                varDeclaration.Visit(this);
+            }
+        }
         #endregion Procs
 
         private void SimplifyExpression(ref DMASTExpression expression) {

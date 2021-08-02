@@ -161,7 +161,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             string pathElement = PathElement();
             if (pathElement != null) {
-                List<string> pathElements = new List<string>() { pathElement };
+                List<string> pathElements = new() { pathElement };
 
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
                     pathElement = PathElement();
@@ -1507,7 +1507,16 @@ namespace OpenDreamShared.Compiler.DM {
                 if (primary == null) {
                     DMASTPath path = Path(true);
 
-                    if (path != null) primary = new DMASTConstantPath(path);
+                    if (path != null) {
+                        primary = new DMASTConstantPath(path);
+
+                        while (Check(TokenType.DM_Period)) {
+                            DMASTPath search = Path();
+                            if (search == null) Error("Expected a path for an upward search");
+
+                            primary = new DMASTUpwardPathSearch((DMASTExpressionConstant)primary, search);
+                        }
+                    }
                 }
 
                 if (primary == null) {

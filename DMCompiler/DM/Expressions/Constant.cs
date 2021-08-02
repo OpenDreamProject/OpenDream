@@ -263,7 +263,7 @@ namespace DMCompiler.DM.Expressions {
 
     // /a/b/c
     class Path : Constant {
-        DreamPath Value { get; }
+        public DreamPath Value { get; }
 
         public Path(DreamPath value) {
             Value = value;

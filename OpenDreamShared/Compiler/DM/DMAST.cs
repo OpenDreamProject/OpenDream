@@ -42,6 +42,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
+        public void VisitUpwardPathSearch(DMASTUpwardPathSearch upwardPathSearch) { throw new NotImplementedException(); }
         public void VisitSwitchCaseRange(DMASTSwitchCaseRange switchCaseRange) { throw new NotImplementedException(); }
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
@@ -838,6 +839,24 @@ namespace OpenDreamShared.Compiler.DM {
         public void Visit(DMASTVisitor visitor) {
             try {
                 visitor.VisitConstantPath(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
+    public class DMASTUpwardPathSearch : DMASTExpressionConstant {
+        public DMASTExpressionConstant Path;
+        public DMASTPath Search;
+
+        public DMASTUpwardPathSearch(DMASTExpressionConstant path, DMASTPath search) {
+            Path = path;
+            Search = search;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitUpwardPathSearch(this);
             } catch (CompileErrorException exception) {
                 visitor.HandleCompileErrorException(exception);
             }

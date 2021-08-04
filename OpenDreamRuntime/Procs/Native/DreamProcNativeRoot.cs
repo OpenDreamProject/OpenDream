@@ -954,7 +954,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 values = arguments.GetAllArguments();
             }
 
-            return values[new Random().Next(0, values.Count)];
+            return values[CurrentRuntime.Random.Next(0, values.Count)];
         }
 
         [DreamProc("prob")]
@@ -962,7 +962,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_prob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             float probability = arguments.GetArgument(0, "P").GetValueAsFloat();
 
-            return new DreamValue((new Random().Next(0, 100) <= probability) ? 1 : 0);
+            return new DreamValue((CurrentRuntime.Random.Next(0, 100) <= probability) ? 1 : 0);
         }
 
         [DreamProc("rand")]
@@ -970,17 +970,26 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("H", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rand(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (arguments.ArgumentCount == 0) {
-                return new DreamValue((float)new Random().NextDouble());
+                return new DreamValue((float)CurrentRuntime.Random.NextDouble());
             } else if (arguments.ArgumentCount == 1) {
                 int high = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsFloat());
 
-                return new DreamValue(new Random().Next(high));
+                return new DreamValue(CurrentRuntime.Random.Next(high));
             } else {
                 int low = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsFloat());
                 int high = (int)Math.Floor(arguments.GetArgument(1, "H").GetValueAsFloat());
 
-                return new DreamValue(new Random().Next(Math.Min(low, high), Math.Max(low, high)));
+                return new DreamValue(CurrentRuntime.Random.Next(Math.Min(low, high), Math.Max(low, high)));
             }
+        }
+
+        [DreamProc("rand_seed")]
+        [DreamProcParameter("Seed", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_rand_seed(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var seed = arguments.GetArgument(0, "Seed").GetValueAsInteger();
+            CurrentRuntime.Random = new Random(seed);
+            return DreamValue.Null;
         }
 
         [DreamProc("replacetext")]
@@ -1082,9 +1091,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             }
             float total = modifier; // Adds the modifier to start with
-            Random random = new Random();
             for (int i = 0; i < dice; i++) {
-                total += random.Next(1, sides + 1);
+                total += CurrentRuntime.Random.Next(1, sides + 1);
             }
 
             return new DreamValue(total);

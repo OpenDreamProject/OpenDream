@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows;
+using OpenDreamShared.Net;
 
 namespace OpenDreamClient.Renderer {
     class DreamRenderer {
@@ -61,7 +62,9 @@ namespace OpenDreamClient.Renderer {
         public bool IsAtomVisible(ATOM atom, bool useScreenLocation) {
             Rectangle iconRect = GetIconRect(atom, useScreenLocation);
 
-            if (atom.Icon.Appearance.Invisibility > 0) return false; //0 is the default invisibility a mob can see
+
+            //101 is always invisible, otherwise it's invisible if mob see_invisible is less
+            if (atom.Icon.Appearance.Invisibility == 101 || Program.OpenDream.SeeInvisible < atom.Icon.Appearance.Invisibility) return false;
 
             return (iconRect.X >= -iconRect.Width && iconRect.X <= OpenGLViewControl.Width &&
                     iconRect.Y >= -iconRect.Height && iconRect.Y <= OpenGLViewControl.Height);
@@ -115,7 +118,7 @@ namespace OpenDreamClient.Renderer {
             if (Eye != null) {
                 Camera = (Eye.X, Eye.Y, Eye.Z);
 
-                if (Program.OpenDream.Perspective.HasFlag(ClientPerspective.Edge)) {
+                if ((Program.OpenDream.Perspective & ClientPerspective.Edge) == ClientPerspective.Edge) {
                     Map map = Program.OpenDream.Map;
 
                     Camera.X = Math.Min(Math.Max(Camera.X, _viewDistance), map.Width - _viewDistance);

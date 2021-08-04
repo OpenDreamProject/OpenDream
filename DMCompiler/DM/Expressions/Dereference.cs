@@ -142,7 +142,7 @@ namespace DMCompiler.DM.Expressions {
                     DreamPath type = _parent.Path.Value;
                     DMObject dmObject = DMObjectTree.GetDMObject(type, false);
 
-                    if (!dmObject.HasProc(deref.Property)) throw new CompileErrorException("Type + " + type + " does not have a proc named \"" + deref.Property + "\"");
+                    if (!dmObject.HasProc(deref.Property)) throw new CompileErrorException("Type " + type + " does not have a proc named \"" + deref.Property + "\"");
                     _conditional = deref.Conditional;
                     _field = deref.Property;
                     break;

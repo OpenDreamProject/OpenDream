@@ -1,6 +1,4 @@
-﻿using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
@@ -91,11 +89,17 @@ namespace DMCompiler.DM {
                 objectJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    objectJson.Variables.Add(variable.Key, variable.Value.GetJsonRepresentation());
+                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
+                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+
+                    objectJson.Variables.Add(variable.Key, value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    objectJson.Variables[variable.Key] = variable.Value.GetJsonRepresentation();
+                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
+                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+
+                    objectJson.Variables[variable.Key] = value.ToJsonRepresentation();
                 }
             }
 
@@ -103,7 +107,10 @@ namespace DMCompiler.DM {
                 objectJson.GlobalVariables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
-                    objectJson.GlobalVariables.Add(variable.Key, variable.Value.GetJsonRepresentation());
+                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
+                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+
+                    objectJson.GlobalVariables.Add(variable.Key, value.ToJsonRepresentation());
                 }
             }
 

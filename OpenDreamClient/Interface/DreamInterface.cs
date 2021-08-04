@@ -212,13 +212,13 @@ namespace OpenDreamClient.Interface {
 
         public void HandlePacketPrompt(PacketPrompt pPrompt) {
             PromptWindow prompt = null;
-            bool canCancel = pPrompt.Types.HasFlag(DMValueType.Null);
+            bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
 
-            if (pPrompt.Types.HasFlag(DMValueType.Text)) {
+            if ((pPrompt.Types & DMValueType.Text) == DMValueType.Text) {
                 prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
-            } else if (pPrompt.Types.HasFlag(DMValueType.Num)) {
+            } else if ((pPrompt.Types & DMValueType.Num) == DMValueType.Num) {
                 prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
-            } else if (pPrompt.Types.HasFlag(DMValueType.Message)) {
+            } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
                 prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
             }
 

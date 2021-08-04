@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Json {
     public enum JsonVariableType {
         Resource = 0,
-        Path = 1
+        Path = 1,
+        List = 2
     }
 
     public class DreamObjectJson {

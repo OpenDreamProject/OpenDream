@@ -10,9 +10,11 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitObjectDefinition(DMASTObjectDefinition statement) { throw new NotImplementedException(); }
         public void VisitPath(DMASTPath path) { throw new NotImplementedException(); }
         public void VisitObjectVarDefinition(DMASTObjectVarDefinition objectVarDefinition) { throw new NotImplementedException(); }
+        public void VisitMultipleObjectVarDefinitions(DMASTMultipleObjectVarDefinitions multipleObjectVarDefinitions) { throw new NotImplementedException(); }
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) { throw new NotImplementedException(); }
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) { throw new NotImplementedException(); }
         public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) { throw new NotImplementedException(); }
         public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) { throw new NotImplementedException(); }
@@ -40,6 +42,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
+        public void VisitUpwardPathSearch(DMASTUpwardPathSearch upwardPathSearch) { throw new NotImplementedException(); }
         public void VisitSwitchCaseRange(DMASTSwitchCaseRange switchCaseRange) { throw new NotImplementedException(); }
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
@@ -279,6 +282,22 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
+    public class DMASTMultipleObjectVarDefinitions : DMASTStatement {
+        public DMASTObjectVarDefinition[] VarDefinitions;
+
+        public DMASTMultipleObjectVarDefinitions(DMASTObjectVarDefinition[] varDefinitions) {
+            VarDefinitions = varDefinitions;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitMultipleObjectVarDefinitions(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
     public class DMASTObjectVarOverride : DMASTStatement {
         public DreamPath ObjectPath;
         public string VarName;
@@ -332,6 +351,22 @@ namespace OpenDreamShared.Compiler.DM {
         public void Visit(DMASTVisitor visitor) {
             try {
                 visitor.VisitProcStatementVarDeclaration(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
+    public class DMASTProcStatementMultipleVarDeclarations : DMASTProcStatement {
+        public DMASTProcStatementVarDeclaration[] VarDeclarations;
+
+        public DMASTProcStatementMultipleVarDeclarations(DMASTProcStatementVarDeclaration[] varDeclarations) {
+            VarDeclarations = varDeclarations;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitProcStatementMultipleVarDeclarations(this);
             } catch (CompileErrorException exception) {
                 visitor.HandleCompileErrorException(exception);
             }
@@ -804,6 +839,24 @@ namespace OpenDreamShared.Compiler.DM {
         public void Visit(DMASTVisitor visitor) {
             try {
                 visitor.VisitConstantPath(this);
+            } catch (CompileErrorException exception) {
+                visitor.HandleCompileErrorException(exception);
+            }
+        }
+    }
+
+    public class DMASTUpwardPathSearch : DMASTExpressionConstant {
+        public DMASTExpressionConstant Path;
+        public DMASTPath Search;
+
+        public DMASTUpwardPathSearch(DMASTExpressionConstant path, DMASTPath search) {
+            Path = path;
+            Search = search;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            try {
+                visitor.VisitUpwardPathSearch(this);
             } catch (CompileErrorException exception) {
                 visitor.HandleCompileErrorException(exception);
             }

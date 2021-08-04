@@ -49,7 +49,9 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         if (includedFileExtension == ".dm") {
                             IncludeFile(includePath, fullIncludePath);
                         } else if (includedFileExtension == ".dmm") {
-                            IncludedMaps.Add(fullIncludePath);
+                            string mapPath = Path.Combine(includePath, fullIncludePath);
+
+                            IncludedMaps.Add(mapPath);
                         } else if (includedFileExtension == ".dmf") {
                             if (IncludedInterface != null) {
                                 throw new Exception("Attempted to include a second interface file (" + fullIncludePath + ") while one was already included (" + IncludedInterface + ")");

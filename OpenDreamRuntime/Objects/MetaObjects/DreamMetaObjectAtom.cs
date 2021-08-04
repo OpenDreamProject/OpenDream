@@ -76,7 +76,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "invisibility") {
                 ServerIconAppearance newAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, dreamObject));
-
+                //TODO clamp this to 0-101
                 newAppearance.Invisibility = variableValue.GetValueAsInteger();
                 UpdateAppearance(Runtime, dreamObject, newAppearance);
             } else if (variableName == "mouse_opacity") {

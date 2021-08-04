@@ -30,6 +30,7 @@ namespace OpenDreamClient {
         public Map Map;
         public ATOM Eye;
         public ClientPerspective Perspective;
+        public byte SeeInvisible;
 
         public string[] AvailableVerbs { get; private set; } = null;
         public List<IconAppearance> IconAppearances { get; private set; } = new();

@@ -1,6 +1,8 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -220,8 +222,8 @@ namespace DMCompiler.DM.Expressions {
                     if (associatedAssign != null) {
                         DMExpression.Create(dmObject, proc, associatedAssign.Value).EmitPushValue(dmObject, proc);
 
-                        if (associatedAssign.Expression is DMASTIdentifier) {
-                            proc.PushString(value.Name);
+                        if (associatedAssign.Expression is DMASTIdentifier identifier) {
+                            proc.PushString(identifier.Identifier);
                             proc.ListAppendAssociated();
                         } else {
                             DMExpression.Create(dmObject, proc, associatedAssign.Expression).EmitPushValue(dmObject, proc);
@@ -239,6 +241,34 @@ namespace DMCompiler.DM.Expressions {
                     }
                 }
             }
+        }
+
+        public override object ToJsonRepresentation() {
+            List<object> list = new();
+            Dictionary<string, object> associatedValues = new();
+
+            foreach (DMASTCallParameter parameter in _astNode.Values) {
+                object value = DMExpression.Create(null, null, parameter.Value).ToJsonRepresentation();
+                DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
+
+                if (associatedAssign != null) {
+                    if (associatedAssign.Expression is DMASTIdentifier identifier) {
+                        associatedValues.Add(identifier.Identifier, value);
+                    } else {
+                        throw new System.Exception("Invalid associated value key");
+                    }
+                } else if (parameter.Name != null) {
+                    associatedValues.Add(parameter.Name, value);
+                } else {
+                    list.Add(value);
+                }
+            }
+
+            Dictionary<string, object> jsonRepresentation = new();
+            jsonRepresentation.Add("type", JsonVariableType.List);
+            if (list.Count > 0) jsonRepresentation.Add("values", list);
+            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
+            return jsonRepresentation;
         }
     }
 
@@ -259,6 +289,10 @@ namespace DMCompiler.DM.Expressions {
                 proc.CreateObject();
                 proc.ListAppend();
             }
+        }
+
+        public override object ToJsonRepresentation() {
+            return null; //TODO
         }
     }
 

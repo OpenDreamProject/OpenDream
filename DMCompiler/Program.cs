@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
+using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
@@ -12,21 +15,39 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler {
     class Program {
-        public static List<string> IncludedMaps = new();
-        public static string IncludedInterface = null;
-
-        //This is ugly
-        public static List<CompilerError> VisitorErrors = new();
+        public static int _errorCount = 0;
+        public static string[] CompilerArgs;
+        public static List<string> CompiledFiles = new List<string>(1);
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
+            CompilerArgs = args;
 
-            DMPreprocessor preprocessor = Preprocess(args);
+            DateTime startTime = DateTime.Now;
+
+            DMPreprocessor preprocessor = Preprocess(CompiledFiles);
+            if (HasArgument("--dump-preprocessor"))
+            {
+                StringBuilder result = new();
+                foreach (Token t in preprocessor.GetResult()) {
+                    result.Append(t.Text);
+                }
+
+                string output = Path.ChangeExtension(CompiledFiles[0], "dm") ?? Path.Join(System.AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
+                File.WriteAllText(output, result.ToString());
+                Console.WriteLine($"Preprocessor output dumped to {output}");
+            }
+
+
             if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(args[0], "json");
+                List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
-                SaveJson(preprocessor.IncludedMaps, preprocessor.IncludedInterface, outputFile);
+                SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                DateTime endTime = DateTime.Now;
+                TimeSpan duration = endTime - startTime;
+                Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
             } else {
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
@@ -34,26 +55,39 @@ namespace DMCompiler {
         }
 
         private static bool VerifyArguments(string[] args) {
-            if (args.Length < 1) {
-                Console.WriteLine("At least one DME or DM file must be provided as an argument");
-
-                return false;
-            }
+            bool file_to_compile = false;
 
             foreach (string arg in args) {
-                string extension = Path.GetExtension(arg);
+                if (Path.HasExtension(arg))
+                {
+                    string extension = Path.GetExtension(arg);
+                    if(extension != ".dme" && extension != ".dm") {
+                        Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
 
-                if (extension != ".dme" && extension != ".dm") {
-                    Console.WriteLine(arg + " is not a valid DME or DM file");
+                        return false;
+                    }
 
-                    return false;
+                    CompiledFiles.Add(arg);
+                    file_to_compile = true;
+                    Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                 }
+            }
+
+            if (!file_to_compile)
+            {
+                Console.WriteLine("At least one DME or DM file must be provided as an argument");
+                return false;
             }
 
             return true;
         }
 
-        private static DMPreprocessor Preprocess(string[] files) {
+        private static bool HasArgument(string arg)
+        {
+            return CompilerArgs.Contains(arg);
+        }
+
+        private static DMPreprocessor Preprocess(List<string> files) {
             DMPreprocessor preprocessor = new DMPreprocessor(true);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -95,18 +129,45 @@ namespace DMCompiler {
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
 
-            if (VisitorErrors.Count > 0) {
-                foreach (CompilerError error in VisitorErrors) {
-                    Console.WriteLine(error);
-                }
-
+            if (_errorCount > 0) {
                 return false;
             }
 
             return true;
         }
 
-        private static void SaveJson(List<string> maps, string interfaceFile, string outputFile) {
+        //This is ugly
+        public static void Error(CompilerError error) {
+            Console.WriteLine(error);
+            _errorCount++;
+        }
+
+        private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
+            List<DreamMapJson> maps = new();
+
+            foreach (string mapPath in mapPaths) {
+                DMPreprocessor preprocessor = new DMPreprocessor(false);
+                preprocessor.IncludeFile(String.Empty, mapPath);
+
+                DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
+                DMMParser parser = new DMMParser(lexer);
+                DreamMapJson map = parser.ParseMap();
+
+                if (parser.Errors.Count > 0) {
+                    foreach (CompilerError error in parser.Errors) {
+                        Console.WriteLine(error);
+                    }
+
+                    continue;
+                }
+
+                maps.Add(map);
+            }
+
+            return maps;
+        }
+
+        private static void SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;

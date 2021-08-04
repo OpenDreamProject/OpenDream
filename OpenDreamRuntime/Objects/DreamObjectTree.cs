@@ -120,6 +120,63 @@ namespace OpenDreamRuntime.Objects {
             LoadTreeEntryFromJson(RootObject, rootJsonObject);
         }
 
+        public DreamValue GetDreamValueFromJsonElement(object value) {
+            if (value == null) return DreamValue.Null;
+
+            JsonElement jsonElement = (JsonElement)value;
+            switch (jsonElement.ValueKind) {
+                case JsonValueKind.String:
+                    return new DreamValue(jsonElement.GetString());
+                case JsonValueKind.Number:
+                    return new DreamValue(jsonElement.GetSingle());
+                case JsonValueKind.Object: {
+                    JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
+
+                    switch (variableType) {
+                        case JsonVariableType.Resource: {
+                            JsonElement resourcePathElement = jsonElement.GetProperty("resourcePath");
+
+                            switch (resourcePathElement.ValueKind) {
+                                case JsonValueKind.String: {
+                                    DreamResource resource = Runtime.ResourceManager.LoadResource(resourcePathElement.GetString());
+
+                                    return new DreamValue(resource);
+                                }
+                                case JsonValueKind.Null:
+                                    return DreamValue.Null;
+                                default:
+                                    throw new Exception("Property 'resourcePath' must be a string or null");
+                            }
+                        }
+                        case JsonVariableType.Path:
+                            return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
+                        case JsonVariableType.List:
+                            DreamList list = DreamList.Create(Runtime);
+
+                            if (jsonElement.TryGetProperty("values", out JsonElement values)) {
+                                foreach (JsonElement listValue in values.EnumerateArray()) {
+                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                }
+                            }
+
+                            if (jsonElement.TryGetProperty("associatedValues", out JsonElement associatedValues)) {
+                                foreach (JsonProperty associatedValue in associatedValues.EnumerateObject()) {
+                                    DreamValue key = new DreamValue(associatedValue.Name);
+
+                                    list.SetValue(key, GetDreamValueFromJsonElement(associatedValue.Value));
+                                }
+                            }
+
+                            return new DreamValue(list);
+                        default:
+                            throw new Exception("Invalid variable type (" + variableType + ")");
+                    }
+                }
+                default:
+                    throw new Exception("Invalid value kind for dream value (" + jsonElement.ValueKind + ")");
+            }
+        }
+
         private void LoadTreeEntryFromJson(DreamObjectTreeEntry treeEntry, DreamObjectJson jsonObject) {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
 
@@ -151,45 +208,6 @@ namespace OpenDreamRuntime.Objects {
                     LoadTreeEntryFromJson(childObjectTreeEntry, childJsonObject);
                     treeEntry.Children.Add(childJsonObject.Name, childObjectTreeEntry);
                 }
-            }
-        }
-
-        private DreamValue GetDreamValueFromJsonElement(object value) {
-            if (value == null) return DreamValue.Null;
-
-            JsonElement jsonElement = (JsonElement)value;
-            switch (jsonElement.ValueKind) {
-                case JsonValueKind.String:
-                    return new DreamValue(jsonElement.GetString());
-                case JsonValueKind.Number:
-                    return new DreamValue(jsonElement.GetSingle());
-                case JsonValueKind.Object: {
-                    JsonVariableType variableType = (JsonVariableType)jsonElement.GetProperty("type").GetByte();
-
-                    switch (variableType) {
-                        case JsonVariableType.Resource: {
-                            JsonElement resourcePathElement = jsonElement.GetProperty("resourcePath");
-
-                            switch (resourcePathElement.ValueKind) {
-                                case JsonValueKind.String: {
-                                    DreamResource resource = Runtime.ResourceManager.LoadResource(resourcePathElement.GetString());
-
-                                    return new DreamValue(resource);
-                                }
-                                case JsonValueKind.Null:
-                                    return DreamValue.Null;
-                                default:
-                                    throw new Exception("Property 'resourcePath' must be a string or null");
-                            }
-                        }
-                        case JsonVariableType.Path:
-                            return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
-                        default:
-                            throw new Exception("Invalid variable type (" + variableType + ")");
-                    }
-                }
-                default:
-                    throw new Exception("Invalid value kind for dream value (" + jsonElement.ValueKind + ")");
             }
         }
 

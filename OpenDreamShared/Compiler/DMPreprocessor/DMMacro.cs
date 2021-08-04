@@ -93,8 +93,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         public DMMacroFile() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+            string path = replacing.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
+
             return new() {
-                new Token(TokenType.DM_Preproc_ConstantString, $"\"{replacing.SourceFile}\"", replacing.SourceFile, replacing.Line, replacing.Column, replacing.SourceFile)
+                new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.SourceFile, replacing.Line, replacing.Column, path)
             };
         }
     }

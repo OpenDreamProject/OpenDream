@@ -242,6 +242,7 @@ namespace OpenDreamRuntime {
         public bool IsTruthy() {
             switch (Type) {
                 case DreamValue.DreamValueType.DreamObject:
+                    return Value != null && ((DreamObject)Value).Deleted == false;
                 case DreamValue.DreamValueType.DreamProc:
                     return Value != null;
                 case DreamValue.DreamValueType.DreamResource:

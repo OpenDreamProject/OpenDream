@@ -992,6 +992,14 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("ref")]
+        [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
+            return new DreamValue(obj.CreateReferenceID());
+        }
+
         [DreamProc("replacetext")]
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
@@ -1359,6 +1367,14 @@ namespace OpenDreamRuntime.Procs.Native {
             string text = arguments.GetArgument(0, "T").GetValueAsString();
 
             return new DreamValue(text.ToUpper());
+        }
+
+        [DreamProc("url_decode")]
+        [DreamProcParameter("UrlText", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_url_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string urlText = arguments.GetArgument(0, "UrlText").GetValueAsString();
+
+            return new DreamValue(HttpUtility.UrlDecode(urlText));
         }
 
         [DreamProc("url_encode")]

@@ -27,6 +27,12 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref objectVarDefinition.Value);
         }
 
+        public void VisitMultipleObjectVarDefinitions(DMASTMultipleObjectVarDefinitions multipleObjectVarDefinitions) {
+            foreach (DMASTObjectVarDefinition varDefinition in multipleObjectVarDefinitions.VarDefinitions) {
+                varDefinition.Visit(this);
+            }
+        }
+
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) {
             SimplifyExpression(ref objectVarOverride.Value);
         }
@@ -154,6 +160,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             SimplifyExpression(ref varDeclaration.Value);
+        }
+
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
+            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                varDeclaration.Visit(this);
+            }
         }
         #endregion Procs
 
@@ -546,7 +558,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.VisitorErrors.Add(exception.Error);
+            Program.Error(exception.Error);
         }
     }
 }

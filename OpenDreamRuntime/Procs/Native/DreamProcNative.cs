@@ -85,6 +85,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_time2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_typesof);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_url_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_url_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_view);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_viewers);

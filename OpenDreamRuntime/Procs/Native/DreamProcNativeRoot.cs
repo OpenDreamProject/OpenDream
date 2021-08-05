@@ -1000,6 +1000,28 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(obj.CreateReferenceID());
         }
 
+        [DreamProc("regex")]
+        [DreamProcParameter("pattern", Type = DreamValueType.String | DreamValueType.DreamObject)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_regex(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var patternOrRegex = arguments.GetArgument(0, "pattern");
+            var flags = arguments.GetArgument(1, "flags");
+            if (flags.TryGetValueAsInteger(out var specialMode) && patternOrRegex.TryGetValueAsString(out var text))
+            {
+                switch(specialMode)
+                {
+                    case 1:
+                        return new DreamValue(Regex.Escape(text));
+                    case 2:
+                        return new DreamValue(text.Replace("$", "$$"));
+                };
+            }
+            var newRegex = CurrentRuntime.ObjectTree.CreateObject(DreamPath.Regex);
+            newRegex.InitSpawn(arguments);
+            return new DreamValue(newRegex);
+        }
+
         [DreamProc("replacetext")]
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needle", Type = DreamValueType.String)]

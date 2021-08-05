@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
-using DMCompiler.Compiler.DMM;
-using DMCompiler.DM;
-using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Compiler.DMPreprocessor;
+using Content.Compiler;
+using Content.Compiler.DM;
+using Content.Compiler.DM.Visitors;
+using Content.Compiler.DMM;
 using Content.Shared.Json;
 
-namespace DMCompiler {
+namespace DMCompiler
+{
     public static class Program {
         public static int _errorCount = 0;
 

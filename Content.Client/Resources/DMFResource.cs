@@ -1,5 +1,5 @@
-﻿using Content.Shared.Compiler;
-using Content.Shared.Compiler.DMF;
+﻿using Content.Compiler;
+using Content.Compiler.DMF;
 using Content.Shared.Interface;
 using Robust.Client.ResourceManagement;
 using Robust.Shared.Log;

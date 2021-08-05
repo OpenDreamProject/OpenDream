@@ -57,6 +57,7 @@ namespace OpenDreamRuntime
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom = new();
         public List<DreamObject> Mobs = new ();
         public DreamList WorldContentsList;
+        public Random Random = new();
 
         public DreamRuntime(DreamServer server, string executablePath) {
             MainThread = Thread.CurrentThread;
@@ -190,7 +191,7 @@ namespace OpenDreamRuntime
             DreamResource interfaceResource = ResourceManager.LoadResource(CompiledJson.Interface);
             connection.SendPacket(new PacketConnectionResult(true, null, interfaceResource.ReadAsString()));
             connection.SendPacket(new PacketFullGameState(StateManager.FullState, connection.CKey));
-            
+
             client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
         }
 

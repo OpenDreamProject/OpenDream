@@ -40,6 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_islist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismob);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismovable);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnull);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnum);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ispath);

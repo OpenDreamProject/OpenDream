@@ -496,6 +496,20 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(1);
         }
 
+        [DreamProc("ismovable")]
+        [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_ismovable(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            List<DreamValue> locs = arguments.GetAllArguments();
+
+            foreach (DreamValue loc in locs) {
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out _)) {
+                    return new DreamValue(0);
+                }
+            }
+
+            return new DreamValue(1);
+        }
+
         [DreamProc("isnull")]
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_isnull(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

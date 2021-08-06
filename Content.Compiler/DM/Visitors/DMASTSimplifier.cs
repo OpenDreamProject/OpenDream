@@ -162,7 +162,7 @@ namespace Content.Compiler.DM.Visitors
         }
         #endregion Procs
 
-        private void SimplifyExpression(ref DMASTExpression expression) {
+        public void SimplifyExpression(ref DMASTExpression expression) {
             if (expression == null || expression is DMASTExpressionConstant || expression is DMASTCallable) return;
 
             #region Comparators

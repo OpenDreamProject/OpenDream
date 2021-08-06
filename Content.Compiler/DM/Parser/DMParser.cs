@@ -1076,6 +1076,7 @@ namespace Content.Compiler.DM
         }
 
         public DMASTExpression Expression() {
+            Whitespace();
             return ExpressionAssign();
         }
 

@@ -12,11 +12,14 @@ namespace Content.Compiler.DM
         //Every include pushes a new lexer that gets popped once the included file is finished
         private Stack<DMPreprocessorLexer> _lexerStack =  new();
 
+
         Stack<Token> _unprocessedTokens = new();
         private List<Token> _result = new();
         private List<Token> _currentLine = new();
         private bool _isCurrentLineWhitespaceOnly = true;
         private bool _enableDirectives;
+        private bool collectingIfExpr = false;
+
         private Dictionary<string, DMMacro> _defines = new() {
             { "__LINE__", new DMMacroLine() },
             { "__FILE__", new DMMacroFile() }
@@ -33,6 +36,9 @@ namespace Content.Compiler.DM
             source += '\n';
 
             _lexerStack.Push(new DMPreprocessorLexer(file, source));
+
+            _defines["DM_VERSION"] = new DMMacro(new List<string>(),
+                new List<Token>{ new Token(TokenType.DM_Preproc_Number, "514", source, 0, 0, null) } );
 
             Token token = GetNextToken();
             while (token.Type != TokenType.EndOfFile) {
@@ -181,6 +187,12 @@ namespace Content.Compiler.DM
 
                         break;
                     }
+                    case TokenType.DM_Preproc_If:
+                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        // we turn this off once we hit a newline and evaluate the expression
+                        collectingIfExpr = true;
+                        break;
+
                     case TokenType.DM_Preproc_Else: { //If this is encountered outside of SkipIfBody, it needs skipped
                         if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
 
@@ -208,6 +220,21 @@ namespace Content.Compiler.DM
                         break;
                     }
                     case TokenType.Newline: {
+                        if (collectingIfExpr)
+                        {
+                            collectingIfExpr = false;
+                            DMLexer expressionLexer = new DMLexer(_currentLine[0].SourceFile, _currentLine);
+                            DMParser expressionParser = new DMParser(expressionLexer);
+                            var expression = expressionParser.Expression();
+                            foreach (var error in expressionParser.Errors)
+                            {
+                                Console.WriteLine(error.Message);
+                            }
+                            Visitors.DMASTSimplifier astSimplifier = new();
+                            Console.WriteLine("expr before: " + expression.ToString());
+                            astSimplifier.SimplifyExpression(ref expression);
+                            Console.WriteLine("expr result: " + expression.ToString() );
+                        }
                         if (!_isCurrentLineWhitespaceOnly) {
                             _result.AddRange(_currentLine);
                             _result.Add(token);

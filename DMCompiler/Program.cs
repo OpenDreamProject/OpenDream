@@ -41,7 +41,7 @@ namespace DMCompiler {
 
             if (Compile(preprocessor.GetResult())) {
                 //Output file is the first file with the extension changed to .json
-                string outputFile = Path.ChangeExtension(args[0], "json");
+                string outputFile = Path.ChangeExtension(CompiledFiles[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);

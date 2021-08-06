@@ -4,8 +4,8 @@ using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMLexer : Lexer<Token> {
-        public static List<string> ValidEscapeSequences = new List<string>() {
+    public class DMLexer : TokenLexer {
+        public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
             "\\", "\"", "'",
@@ -31,7 +31,7 @@ namespace OpenDreamShared.Compiler.DM {
             //TODO: ASCII/Unicode values
         };
 
-        public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
+        public static Dictionary<string, TokenType> Keywords = new() {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "continue", TokenType.DM_Continue },
@@ -60,11 +60,9 @@ namespace OpenDreamShared.Compiler.DM {
 
         private bool _checkingIndentation = true;
         private int bracketNesting = 0;
-        private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
+        private Stack<int> _indentationStack = new(new int[] { 0 });
 
-        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) {
-            Advance();
-        }
+        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
             Token token;
@@ -91,17 +89,17 @@ namespace OpenDreamShared.Compiler.DM {
                             _pendingTokenQueue.Enqueue(preprocToken);
                             token = CreateToken(TokenType.DM_Indent, '\t');
                         } else if (indentationLevel < currentIndentationLevel) {
-                            _pendingTokenQueue.Enqueue(preprocToken);
+                            if (_indentationStack.Contains(indentationLevel)) {
+                                token = preprocToken;
+                            } else {
+                                _pendingTokenQueue.Enqueue(preprocToken);
+                                token = CreateToken(TokenType.Error, null, "Invalid indentation");
+                            }
+                            
                             do {
                                 _indentationStack.Pop();
                                 _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
                             } while (indentationLevel < _indentationStack.Peek());
-
-                            if (indentationLevel == _indentationStack.Peek()) {
-                                token = _pendingTokenQueue.Dequeue();
-                            } else {
-                                token = CreateToken(TokenType.Error, null, "Invalid indentation");
-                            }
                         } else {
                             token = preprocToken;
                         }
@@ -482,20 +480,11 @@ namespace OpenDreamShared.Compiler.DM {
         protected override Token Advance() {
             Token current = base.Advance();
 
-            //Warnings and errors go straight to output, no processing
-            while (current.Type is TokenType.Warning or TokenType.Error) {
-                _pendingTokenQueue.Enqueue(current);
-                current = base.Advance();
-            }
-
             //Skip any newlines when inside brackets
             if (bracketNesting != 0) {
                 while (current.Type == TokenType.Newline) current = Advance();
             }
 
-            SourceName = current.SourceFile;
-            CurrentLine = current.Line;
-            CurrentColumn = current.Column;
             return current;
         }
 

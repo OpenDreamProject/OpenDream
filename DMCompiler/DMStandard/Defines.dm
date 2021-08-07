@@ -67,3 +67,7 @@
 #define MOB_PERSPECTIVE 0
 #define EYE_PERSPECTIVE 1
 #define EDGE_PERSPECTIVE 2
+
+//These are used for the world.byond_version, client.byond_version, etc. vars too
+#define DM_VERSION 513
+#define DM_BUILD 1561

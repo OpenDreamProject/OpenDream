@@ -64,6 +64,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand_seed);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ref);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_regex);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);

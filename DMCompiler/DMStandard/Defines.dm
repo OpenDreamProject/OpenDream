@@ -67,3 +67,7 @@
 #define MOB_PERSPECTIVE 0
 #define EYE_PERSPECTIVE 1
 #define EDGE_PERSPECTIVE 2
+
+//regex
+#define REGEX_QUOTE(a) regex((a), 1)
+#define REGEX_QUOTE_REPLACEMENT(a) regex((a), 2)

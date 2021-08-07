@@ -162,58 +162,37 @@ namespace Content.Compiler.DM.Visitors
         }
         #endregion Procs
 
-        public void SimplifyExpression(ref DMASTExpression expression) {
+
+        public DMASTConstantInteger Simplify(DMASTEqual op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value == b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTEqual op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value == b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTEqual op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value == b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTEqual op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value == b.Value ? 1 : 0); }
+
+        public DMASTConstantInteger Simplify(DMASTNotEqual op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value != b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTNotEqual op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value != b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTNotEqual op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value != b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTNotEqual op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value != b.Value ? 1 : 0); }
+
+        public DMASTConstantInteger Simplify(DMASTLessThan op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value < b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThan op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value < b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThan op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value < b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThan op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value < b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThanOrEqual op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value <= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThanOrEqual op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value <= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThanOrEqual op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value <= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTLessThanOrEqual op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value <= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThan op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value > b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThan op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value > b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThan op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value > b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThan op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value > b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThanOrEqual op, DMASTConstantFloat a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value >= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThanOrEqual op, DMASTConstantInteger a, DMASTConstantFloat b) { return new DMASTConstantInteger(a.Value >= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThanOrEqual op, DMASTConstantFloat a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value >= b.Value ? 1 : 0); }
+        public DMASTConstantInteger Simplify(DMASTGreaterThanOrEqual op, DMASTConstantInteger a, DMASTConstantInteger b) { return new DMASTConstantInteger(a.Value >= b.Value ? 1 : 0); }
+
+        public void SimplifyExpression(ref DMASTExpression expression)
+        {
             if (expression == null || expression is DMASTExpressionConstant || expression is DMASTCallable) return;
-
-            #region Comparators
-            DMASTEqual equal = expression as DMASTEqual;
-            if (equal != null) {
-                SimplifyExpression(ref equal.A);
-                SimplifyExpression(ref equal.B);
-
-                return;
-            }
-
-            DMASTNotEqual notEqual = expression as DMASTNotEqual;
-            if (notEqual != null) {
-                SimplifyExpression(ref notEqual.A);
-                SimplifyExpression(ref notEqual.B);
-
-                return;
-            }
-
-            DMASTLessThan lessThan = expression as DMASTLessThan;
-            if (lessThan != null) {
-                SimplifyExpression(ref lessThan.A);
-                SimplifyExpression(ref lessThan.B);
-
-                return;
-            }
-
-            DMASTLessThanOrEqual lessThanOrEqual = expression as DMASTLessThanOrEqual;
-            if (lessThanOrEqual != null) {
-                SimplifyExpression(ref lessThanOrEqual.A);
-                SimplifyExpression(ref lessThanOrEqual.B);
-
-                return;
-            }
-
-            DMASTGreaterThan greaterThan = expression as DMASTGreaterThan;
-            if (greaterThan != null) {
-                SimplifyExpression(ref greaterThan.A);
-                SimplifyExpression(ref greaterThan.B);
-
-                return;
-            }
-
-            DMASTGreaterThanOrEqual greaterThanOrEqual = expression as DMASTGreaterThanOrEqual;
-            if (greaterThanOrEqual != null) {
-                SimplifyExpression(ref greaterThanOrEqual.A);
-                SimplifyExpression(ref greaterThanOrEqual.B);
-
-                return;
-            }
-            #endregion Comparators
 
             #region Math
             DMASTNegate negate = expression as DMASTNegate;
@@ -433,13 +412,13 @@ namespace Content.Compiler.DM.Visitors
             }
 
             DMASTPower power = expression as DMASTPower;
-            if (modulus != null) {
-                SimplifyExpression(ref modulus.A);
-                SimplifyExpression(ref modulus.B);
-                if (modulus.A is not DMASTExpressionConstant || modulus.B is not DMASTExpressionConstant) return;
+            if (power != null) {
+                SimplifyExpression(ref power.A);
+                SimplifyExpression(ref power.B);
+                if (power.A is not DMASTExpressionConstant || power.B is not DMASTExpressionConstant) return;
 
-                DMASTConstantInteger aInteger = modulus.A as DMASTConstantInteger;
-                DMASTConstantInteger bInteger = modulus.B as DMASTConstantInteger;
+                DMASTConstantInteger aInteger = power.A as DMASTConstantInteger;
+                DMASTConstantInteger bInteger = power.B as DMASTConstantInteger;
 
                 if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger((int)Math.Pow(aInteger.Value, bInteger.Value));
 
@@ -547,6 +526,18 @@ namespace Content.Compiler.DM.Visitors
 
                 return;
             }
+
+            try
+            {
+                var Aexpr = expression.GetType().GetField("A").GetValue(expression) as DMASTExpression;
+                var Bexpr = expression.GetType().GetField("B").GetValue(expression) as DMASTExpression;
+                SimplifyExpression(ref Aexpr);
+                SimplifyExpression(ref Bexpr);
+                expression = Simplify((dynamic)expression, (dynamic)Aexpr, (dynamic)Bexpr);
+                return;
+            }
+            catch (Exception) { }
+
             #endregion Others
         }
 

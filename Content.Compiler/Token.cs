@@ -18,6 +18,7 @@
         DM_Preproc_Error,
         DM_Preproc_Identifier,
         DM_Preproc_If,
+        DM_Preproc_ElIf,
         DM_Preproc_Ifdef,
         DM_Preproc_Ifndef,
         DM_Preproc_Include,

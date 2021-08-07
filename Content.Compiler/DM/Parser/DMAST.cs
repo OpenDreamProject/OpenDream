@@ -111,7 +111,7 @@ namespace Content.Compiler.DM
     }
 
     public interface DMASTNode : ASTNode<DMASTVisitor> {
-
+        public virtual IEnumerable<DMASTNode> LeafNodes() { yield break;  }
     }
 
     public interface DMASTStatement : DMASTNode {
@@ -123,11 +123,11 @@ namespace Content.Compiler.DM
     }
 
     public interface DMASTExpression : DMASTNode {
+        public string StringRep { get { return ""; } }
 
     }
 
     public interface DMASTExpressionConstant : DMASTExpression {
-
     }
 
     public interface DMASTCallable : DMASTExpression {
@@ -1126,6 +1126,8 @@ namespace Content.Compiler.DM
     public class DMASTNot : DMASTExpression {
         public DMASTExpression Expression;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
+
         public DMASTNot(DMASTExpression expression) {
             Expression = expression;
         }
@@ -1142,6 +1144,8 @@ namespace Content.Compiler.DM
     public class DMASTNegate : DMASTExpression {
         public DMASTExpression Expression;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
+
         public DMASTNegate(DMASTExpression expression) {
             Expression = expression;
         }
@@ -1157,6 +1161,8 @@ namespace Content.Compiler.DM
 
     public class DMASTEqual : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTEqual(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1175,6 +1181,8 @@ namespace Content.Compiler.DM
     public class DMASTNotEqual : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTNotEqual(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1191,6 +1199,8 @@ namespace Content.Compiler.DM
 
     public class DMASTLessThan : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTLessThan(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1209,6 +1219,8 @@ namespace Content.Compiler.DM
     public class DMASTLessThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTLessThanOrEqual(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1225,6 +1237,9 @@ namespace Content.Compiler.DM
 
     public class DMASTGreaterThan : DMASTExpression {
         public DMASTExpression A, B;
+        public string StringRep = ">";
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTGreaterThan(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1243,6 +1258,8 @@ namespace Content.Compiler.DM
     public class DMASTGreaterThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTGreaterThanOrEqual(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1259,6 +1276,8 @@ namespace Content.Compiler.DM
 
     public class DMASTMultiply : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTMultiply(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1277,6 +1296,8 @@ namespace Content.Compiler.DM
     public class DMASTDivide : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTDivide(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1293,6 +1314,8 @@ namespace Content.Compiler.DM
 
     public class DMASTModulus : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTModulus(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1311,6 +1334,8 @@ namespace Content.Compiler.DM
     public class DMASTPower : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTPower(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1327,6 +1352,8 @@ namespace Content.Compiler.DM
 
     public class DMASTAdd : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
 
         public DMASTAdd(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1345,6 +1372,8 @@ namespace Content.Compiler.DM
     public class DMASTSubtract : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTSubtract(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1362,6 +1391,8 @@ namespace Content.Compiler.DM
     public class DMASTPreIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
+
         public DMASTPreIncrement(DMASTExpression expression) {
             Expression = expression;
         }
@@ -1377,6 +1408,8 @@ namespace Content.Compiler.DM
 
     public class DMASTPreDecrement : DMASTExpression {
         public DMASTExpression Expression;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
 
         public DMASTPreDecrement(DMASTExpression expression) {
             Expression = expression;
@@ -1394,6 +1427,8 @@ namespace Content.Compiler.DM
     public class DMASTPostIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
+
         public DMASTPostIncrement(DMASTExpression expression) {
             Expression = expression;
         }
@@ -1410,6 +1445,8 @@ namespace Content.Compiler.DM
     public class DMASTPostDecrement : DMASTExpression {
         public DMASTExpression Expression;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Expression; }
+
         public DMASTPostDecrement(DMASTExpression expression) {
             Expression = expression;
         }
@@ -1425,6 +1462,8 @@ namespace Content.Compiler.DM
 
     public class DMASTTernary : DMASTExpression {
         public DMASTExpression A, B, C;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; yield return C; }
 
         public DMASTTernary(DMASTExpression a, DMASTExpression b, DMASTExpression c) {
             A = a;
@@ -1614,6 +1653,8 @@ namespace Content.Compiler.DM
     public class DMASTOr : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
+
         public DMASTOr(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1630,6 +1671,8 @@ namespace Content.Compiler.DM
 
     public class DMASTAnd : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B;  }
 
         public DMASTAnd(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1648,6 +1691,7 @@ namespace Content.Compiler.DM
     public class DMASTBinaryAnd : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B;  }
         public DMASTBinaryAnd(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1665,6 +1709,7 @@ namespace Content.Compiler.DM
     public class DMASTBinaryXor : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B;  }
         public DMASTBinaryXor(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1681,6 +1726,8 @@ namespace Content.Compiler.DM
 
     public class DMASTBinaryOr : DMASTExpression {
         public DMASTExpression A, B;
+
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B;  }
 
         public DMASTBinaryOr(DMASTExpression a, DMASTExpression b) {
             A = a;
@@ -1699,6 +1746,8 @@ namespace Content.Compiler.DM
     public class DMASTBinaryNot : DMASTExpression {
         public DMASTExpression Value;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Value; }
+
         public DMASTBinaryNot(DMASTExpression value) {
             Value = value;
         }
@@ -1715,6 +1764,7 @@ namespace Content.Compiler.DM
     public class DMASTLeftShift : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
         public DMASTLeftShift(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1732,6 +1782,7 @@ namespace Content.Compiler.DM
     public class DMASTRightShift : DMASTExpression {
         public DMASTExpression A, B;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return A; yield return B; }
         public DMASTRightShift(DMASTExpression a, DMASTExpression b) {
             A = a;
             B = b;
@@ -1786,6 +1837,14 @@ namespace Content.Compiler.DM
         public DMASTCallable Callable;
         public DMASTCallParameter[] Parameters;
 
+        public IEnumerable<DMASTNode> LeafNodes() {
+            yield return Callable;
+            foreach (var n in Parameters)
+            {
+                yield return n;
+            }
+        }
+
         public DMASTProcCall(DMASTCallable callable, DMASTCallParameter[] parameters) {
             Callable = callable;
             Parameters = parameters;
@@ -1804,6 +1863,7 @@ namespace Content.Compiler.DM
         public DMASTExpression Value;
         public string Name;
 
+        public IEnumerable<DMASTNode> LeafNodes() { yield return Value; }
         public DMASTCallParameter(DMASTExpression value, string name = null) {
             Value = value;
             Name = name;

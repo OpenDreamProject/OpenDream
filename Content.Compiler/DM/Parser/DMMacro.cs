@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Content.Compiler.DM {
     class DMMacro {
-        private List<string> _parameters;
+        protected List<string> _parameters;
         private List<Token> _tokens;
         private string _overflowParameter = null;
         private int _overflowParameterIndex;
@@ -89,6 +89,26 @@ namespace Content.Compiler.DM {
         }
     }
 
+    class DMDefinedMacro : DMMacro
+    {
+        private Dictionary<string, DMMacro> _defines;
+        public DMDefinedMacro(Dictionary<string, DMMacro> defines) : base(null, null) {
+            _defines = defines;
+            _parameters = new List<String> { "" };
+        }
+        public override List<Token> Expand(Token replacing, List<List<Token>> parameters)
+        {
+            string result = "";
+            string defined_ident = parameters[0][0].Text;
+            if (_defines.ContainsKey(defined_ident)) {
+                result = "1";
+            } else
+            {
+                result = "0";
+            }
+            return new List<Token> { new Token(TokenType.DM_Preproc_Number, result, replacing.SourceFile, replacing.Line, replacing.Column, null) };
+        }
+    }
     class DMMacroFile : DMMacro {
         public DMMacroFile() : base(null, null) { }
 

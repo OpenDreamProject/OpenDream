@@ -37,8 +37,10 @@ namespace Content.Compiler.DM
 
             _lexerStack.Push(new DMPreprocessorLexer(file, source));
 
-            _defines["DM_VERSION"] = new DMMacro(new List<string>(),
+            _defines["DM_VERSION"] = new DMMacro(null,
                 new List<Token>{ new Token(TokenType.DM_Preproc_Number, "514", source, 0, 0, null) } );
+            _defines["DM_BUILD"] = new DMMacro(null,
+                new List<Token> { new Token(TokenType.DM_Preproc_Number, "1554", source, 0, 0, null) });
 
             Token token = GetNextToken();
             while (token.Type != TokenType.EndOfFile) {
@@ -131,6 +133,7 @@ namespace Content.Compiler.DM
                         break;
                     }
                     case TokenType.DM_Preproc_Identifier: {
+                        
                         if (_defines.TryGetValue(token.Text, out DMMacro macro)) {
                             List<List<Token>> parameters = null;
 
@@ -139,7 +142,6 @@ namespace Content.Compiler.DM
 
                                 if (parameters == null) {
                                     _currentLine.Add(token);
-
                                     break;
                                 }
                             }
@@ -191,6 +193,13 @@ namespace Content.Compiler.DM
                         if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
                         // we turn this off once we hit a newline and evaluate the expression
                         collectingIfExpr = true;
+                        _defines["defined"] = new DMDefinedMacro(_defines);
+                        break;
+                    case TokenType.DM_Preproc_ElIf:
+                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        // we turn this off once we hit a newline and evaluate the expression
+                        collectingIfExpr = true;
+                        _defines["defined"] = new DMDefinedMacro(_defines);
                         break;
 
                     case TokenType.DM_Preproc_Else: { //If this is encountered outside of SkipIfBody, it needs skipped
@@ -222,7 +231,6 @@ namespace Content.Compiler.DM
                     case TokenType.Newline: {
                         if (collectingIfExpr)
                         {
-                            collectingIfExpr = false;
                             DMLexer expressionLexer = new DMLexer(_currentLine[0].SourceFile, _currentLine);
                             DMParser expressionParser = new DMParser(expressionLexer);
                             var expression = expressionParser.Expression();
@@ -231,17 +239,27 @@ namespace Content.Compiler.DM
                                 Console.WriteLine(error.Message);
                             }
                             Visitors.DMASTSimplifier astSimplifier = new();
-                            Console.WriteLine("expr before: " + expression.ToString());
                             astSimplifier.SimplifyExpression(ref expression);
-                            Console.WriteLine("expr result: " + expression.ToString() );
+                            var intexpr = expression as DMASTConstantInteger;
+                            if (intexpr == null)
+                            {
+                                throw new Exception("Expected integer result in #if macro evaluation");
+                            }
+                            if (intexpr.Value == 0)
+                            {
+                                SkipIfBody();
+                            }
+                            collectingIfExpr = false;
+                            _defines.Remove("defined");
+                            break;
                         }
-                        if (!_isCurrentLineWhitespaceOnly) {
+                        if (!_isCurrentLineWhitespaceOnly)
+                        {
                             _result.AddRange(_currentLine);
                             _result.Add(token);
 
                             _isCurrentLineWhitespaceOnly = true;
                         }
-
                         _currentLine.Clear();
                         break;
                     }
@@ -286,12 +304,14 @@ namespace Content.Compiler.DM
             }
         }
 
+
         private void SkipIfBody() {
             int ifdefCount = 1;
 
             Token token;
             while ((token = GetNextToken()).Type != TokenType.EndOfFile) {
-                if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
+                if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef ||
+                    token.Type == TokenType.DM_Preproc_If || token.Type == TokenType.DM_Preproc_ElIf) {
                     ifdefCount++;
                 } else if (token.Type == TokenType.DM_Preproc_EndIf) {
                     ifdefCount--;

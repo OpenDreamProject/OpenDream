@@ -158,7 +158,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     {
                         //TODO Implement #if properly
                         SkipIfBody();
-                        _currentLine.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
+                        _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
                         break;
                     }
                     case TokenType.DM_Preproc_Ifdef: {

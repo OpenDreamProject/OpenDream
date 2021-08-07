@@ -835,6 +835,7 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 Newline();
+                Whitespace();
                 Consume(TokenType.DM_While, "Expected 'while'");
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");

@@ -69,13 +69,21 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CreateObject(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
             var val = state.PopDreamValue();
-            if (!val.TryGetValueAsPath(out var objectPath) && val.TryGetValueAsString(out var pathString))
+            if (!val.TryGetValueAsPath(out var objectPath))
             {
-                objectPath = new DreamPath(pathString);
-                if (!state.Runtime.ObjectTree.HasTreeEntry(objectPath))
+                if (val.TryGetValueAsString(out var pathString))
                 {
-                    throw new Exception($"Cannot create unknown object {val.Value}");
+                    objectPath = new DreamPath(pathString);
+                    if (!state.Runtime.ObjectTree.HasTreeEntry(objectPath))
+                    {
+                        throw new Exception($"Cannot create unknown object {val.Value}");
+                    }
                 }
+                else
+                {
+                    throw new Exception("Attempted to create an object that is neither a path nor a path string");
+                }
+
             }
 
             DreamObject newObject = state.Runtime.ObjectTree.CreateObject(objectPath);

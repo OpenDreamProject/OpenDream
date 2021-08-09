@@ -136,10 +136,13 @@ namespace DMCompiler {
             return true;
         }
 
-        //This is ugly
         public static void Error(CompilerError error) {
             Console.WriteLine(error);
             _errorCount++;
+        }
+
+        public static void Warning(CompilerWarning warning) {
+            Console.WriteLine(warning);
         }
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {

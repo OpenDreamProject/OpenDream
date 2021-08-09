@@ -496,9 +496,5 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException("invalid argument count for call()");
             }
         }
-
-        public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.Error(exception.Error);
-        }
     }
 }

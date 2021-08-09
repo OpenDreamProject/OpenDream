@@ -556,9 +556,5 @@ namespace DMCompiler.DM.Visitors {
             }
             #endregion Others
         }
-
-        public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.Error(exception.Error);
-        }
     }
 }

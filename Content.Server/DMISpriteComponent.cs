@@ -5,6 +5,7 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 using Robust.Shared.Players;
 using Robust.Shared.Utility;
+using Robust.Shared.ViewVariables;
 
 namespace Content.Server {
     [RegisterComponent]
@@ -18,6 +19,7 @@ namespace Content.Server {
         private Color _color = Color.White;
         private float _layer = 0.0f;
 
+        [ViewVariables]
         public ResourcePath Icon {
             get => _icon;
             set {
@@ -26,6 +28,7 @@ namespace Content.Server {
             }
         }
 
+        [ViewVariables(VVAccess.ReadWrite)]
         public string IconState {
             get => _iconState;
             set {
@@ -34,6 +37,7 @@ namespace Content.Server {
             }
         }
 
+        [ViewVariables]
         public AtomDirection Direction {
             get => _direction;
             set {
@@ -42,6 +46,7 @@ namespace Content.Server {
             }
         }
 
+        [ViewVariables(VVAccess.ReadWrite)]
         public Vector2i PixelOffset {
             get => _pixelOffset;
             set {
@@ -50,6 +55,7 @@ namespace Content.Server {
             }
         }
 
+        [ViewVariables(VVAccess.ReadWrite)]
         public Color Color {
             get => _color;
             set {
@@ -58,6 +64,7 @@ namespace Content.Server {
             }
         }
 
+        [ViewVariables(VVAccess.ReadWrite)]
         public float Layer {
             get => _layer;
             set {

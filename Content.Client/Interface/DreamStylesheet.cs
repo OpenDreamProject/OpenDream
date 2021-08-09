@@ -62,7 +62,7 @@ namespace Content.Client.Interface {
 
                 // Window background default color.
                 Element().Class(SS14Window.StyleClassWindowPanel)
-                    .Prop("panel", new StyleBoxFlat { BackgroundColor = Color.FromHex("#FFFFFF") }),
+                    .Prop("panel", new StyleBoxFlat { BackgroundColor = Color.FromHex("#4A4A4A") }),
 
                 // Window title properties
                 Element().Class(SS14Window.StyleClassWindowTitle)
@@ -74,7 +74,7 @@ namespace Content.Client.Interface {
                 // Window header color.
                 Element().Class(SS14Window.StyleClassWindowHeader)
                     .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
-                        BackgroundColor = Color.FromHex("#AAAAFF"), Padding = new Thickness(1, 1)
+                        BackgroundColor = Color.FromHex("#636396"), Padding = new Thickness(1, 1)
                     }),
 
                 // Window close button
@@ -116,17 +116,20 @@ namespace Content.Client.Interface {
                 Element<TextureRect>().Class(CheckBox.StyleClassCheckBox, CheckBox.StyleClassCheckBoxChecked)
                     .Prop(TextureRect.StylePropertyTexture, Texture.White), // TODO: Add actual texture instead of this.
 
-                // LineEdit background color
+                // LineEdit
                 Element<LineEdit>()
-                    .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat{ BackgroundColor = Color.DarkGray }),
+                    // background color
+                    .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat{ BackgroundColor = Color.White })
+                    // default font color
+                    .Prop("font-color", Color.Black),
 
                 // LineEdit non-editable text color
                 Element<LineEdit>().Class(LineEdit.StyleClassLineEditNotEditable)
-                    .Prop("font-color", Color.FromHex("#C0C0C0")),
+                    .Prop("font-color", Color.FromHex("#363636")),
 
                 // LineEdit placeholder text color
                 Element<LineEdit>().Pseudo(LineEdit.StylePseudoClassPlaceholder)
-                    .Prop("font-color", Color.Gray),
+                    .Prop("font-color", Color.FromHex("#7d7d7d")),
 
                 // TabContainer
                 Element<TabContainer>()

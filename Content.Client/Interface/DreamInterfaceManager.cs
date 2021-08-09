@@ -2,14 +2,16 @@
 using Content.Client.Resources;
 using Content.Shared.Interface;
 using Robust.Client.ResourceManagement;
+using Robust.Client.UserInterface;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Interface {
     class DreamInterfaceManager : IDreamInterfaceManager {
-        [Dependency] private IResourceCache _resourceCache = default!;
-        [Dependency] private IDreamMacroManager _macroManager = default!;
+        [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
+        [Dependency] private readonly IResourceCache _resourceCache = default!;
+        [Dependency] private readonly IDreamMacroManager _macroManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 

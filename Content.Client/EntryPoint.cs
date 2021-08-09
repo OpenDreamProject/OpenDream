@@ -1,10 +1,13 @@
+using System.Globalization;
 using Content.Client.Interface;
 using Content.Client.Rendering;
 using Robust.Client;
 using Robust.Client.Graphics;
+using Robust.Client.UserInterface;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Localization;
 using Robust.Shared.Utility;
 
 namespace Content.Client {
@@ -25,8 +28,11 @@ namespace Content.Client {
             IoCManager.BuildGraph();
             componentFactory.GenerateNetIds();
 
+            // Load localization. Needed for some engine texts, such as the ones in Robust ViewVariables.
+            IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
+
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
-            //IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
+            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
         }
 
         public override void PostInit() {

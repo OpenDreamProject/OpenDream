@@ -7,6 +7,10 @@ namespace Content.Server {
             IoCManager.Register<IDreamManager, DreamManager>();
             IoCManager.Register<IAtomManager, AtomManager>();
             IoCManager.Register<IDreamMapManager, DreamMapManager>();
+
+            #if DEBUG
+            IoCManager.Register<LocalHostConGroup>();
+            #endif
         }
     }
 }

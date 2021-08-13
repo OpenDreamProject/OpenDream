@@ -76,3 +76,4 @@
 #define REGEX_QUOTE(a) regex((a), 1)
 #define REGEX_QUOTE_REPLACEMENT(a) regex((a), 2)
 
+#define ASSERT(expr) ((expr) ? null : CRASH("Assertion Failed: " + #expr))

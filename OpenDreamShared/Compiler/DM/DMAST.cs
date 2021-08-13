@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -1507,11 +1508,10 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression Expression;
-        public Dereference[] Dereferences;
+        public List<Dereference> Dereferences = new();
 
-        public DMASTDereference(DMASTExpression expression, Dereference[] dereferences) {
+        public DMASTDereference(DMASTExpression expression) {
             Expression = expression;
-            Dereferences = dereferences;
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
@@ -1520,7 +1520,9 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     public class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
-        public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
+        public DMASTDereferenceProc(DMASTExpression expression, List<Dereference> dereferences) : base(expression) {
+            Dereferences = dereferences;
+        }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDereferenceProc(this);

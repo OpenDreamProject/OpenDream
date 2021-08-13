@@ -20,8 +20,8 @@ namespace DMCompiler.DM.Expressions {
             _expr = expr;
 
             var current_path = _expr.Path;
-            DMASTDereference.Dereference[] dereferences = astNode.Dereferences;
-            for (int i = 0; i < (includingLast ? dereferences.Length : dereferences.Length - 1); i++) {
+            List<DMASTDereference.Dereference> dereferences = astNode.Dereferences;
+            for (int i = 0; i < (includingLast ? dereferences.Count : dereferences.Count - 1); i++) {
                 DMASTDereference.Dereference deref = dereferences[i];
 
                 switch (deref.Type) {

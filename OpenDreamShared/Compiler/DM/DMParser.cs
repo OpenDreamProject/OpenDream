@@ -216,71 +216,6 @@ namespace OpenDreamShared.Compiler.DM {
             return null;
         }
 
-        public DMASTDereference Dereference() {
-            Token leftToken = Current();
-
-            if (Check(TokenType.DM_Identifier)) {
-                Token dereferenceToken = Current();
-                TokenType[] dereferenceTokenTypes = {
-                    TokenType.DM_Period,
-                    TokenType.DM_QuestionPeriod,
-                    TokenType.DM_Colon,
-                    TokenType.DM_QuestionColon,
-                };
-
-                if (Check(dereferenceTokenTypes)) {
-                    List<Dereference> dereferences = new();
-                    DMASTIdentifier identifier = Identifier();
-
-                    if (identifier != null) {
-                        do {
-                            DereferenceType type;
-                            bool conditional;
-                            switch (dereferenceToken.Type) {
-                                case TokenType.DM_Period:
-                                    type = DereferenceType.Direct;
-                                    conditional = false;
-                                    break;
-                                case TokenType.DM_QuestionPeriod:
-                                    type = DereferenceType.Direct;
-                                    conditional = true;
-                                    break;
-                                case TokenType.DM_Colon:
-                                    type = DereferenceType.Search;
-                                    conditional = false;
-                                    break;
-                                case TokenType.DM_QuestionColon:
-                                    type = DereferenceType.Search;
-                                    conditional = true;
-                                    break;
-                                default:
-                                    throw new InvalidOperationException();
-                            }
-
-                            dereferences.Add(new Dereference(type, conditional, identifier.Identifier));
-
-                            dereferenceToken = Current();
-                            if (Check(dereferenceTokenTypes)) {
-                                identifier = Identifier();
-                                if (identifier == null) Error("Expected an identifier");
-                            } else {
-                                identifier = null;
-                            }
-                        } while (identifier != null);
-
-                        return new DMASTDereference(new DMASTIdentifier(leftToken.Text), dereferences.ToArray());
-                    } else {
-                        ReuseToken(dereferenceToken);
-                        ReuseToken(leftToken);
-                    }
-                } else {
-                    ReuseToken(leftToken);
-                }
-            }
-
-            return null;
-        }
-
         public DMASTBlockInner Block() {
             Token beforeBlockToken = Current();
             bool hasNewline = Newline();
@@ -369,7 +304,7 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTProcStatement procStatement = ProcStatement();
 
             if (procStatement != null) {
-                List<DMASTProcStatement> procStatements = new List<DMASTProcStatement>() { procStatement };
+                List<DMASTProcStatement> procStatements = new() { procStatement };
 
                 while (procStatement is DMASTProcStatementLabel || Delimiter()) {
                     Whitespace();
@@ -983,7 +918,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTCallParameter[] CallParameters(bool includeEmpty) {
-            List<DMASTCallParameter> parameters = new List<DMASTCallParameter>();
+            List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
 
             while (parameter != null) {
@@ -1426,250 +1361,213 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (Check(new TokenType[] { TokenType.DM_Plus, TokenType.DM_Minus })) {
                 Whitespace();
-                DMASTExpression expression = ExpressionListIndex();
+                DMASTExpression expression = ExpressionNew();
 
                 if (expression == null) Error("Expected an expression");
                 if (token.Type == TokenType.DM_Minus) {
-                    if (expression is DMASTConstantInteger) {
-                        int value = ((DMASTConstantInteger)expression).Value;
-
-                        return new DMASTConstantInteger(-value);
-                    } else if (expression is DMASTConstantFloat) {
-                        float value = ((DMASTConstantFloat)expression).Value;
-
-                        return new DMASTConstantFloat(-value);
+                    switch (expression) {
+                        case DMASTConstantInteger integer: return new DMASTConstantInteger(-integer.Value);
+                        case DMASTConstantFloat single: return new DMASTConstantFloat(-single.Value);
+                        default: return new DMASTNegate(expression);
                     }
-
-                    return new DMASTNegate(expression);
                 } else {
                     return expression;
                 }
             } else {
-                return ExpressionListIndex();
+                return ExpressionNew();
             }
-        }
-
-        public DMASTExpression ExpressionListIndex() {
-            DMASTExpression expression = ExpressionNew();
-
-            while (Check(TokenType.DM_LeftBracket)) {
-                Whitespace();
-                DMASTExpression index = Expression();
-                Consume(TokenType.DM_RightBracket, "Expected ']'");
-                Whitespace();
-
-                expression = new DMASTListIndex(expression, index);
-            }
-
-            return expression;
         }
 
         public DMASTExpression ExpressionNew() {
             if (Check(TokenType.DM_New)) {
                 Whitespace();
-                DMASTDereference dereference = Dereference();
-                DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
-                DMASTPath path = (dereference == null && identifier == null ) ? Path(true) : null;
-                Whitespace();
-                DMASTCallParameter[] parameters = null;
+                DMASTExpression type = null;
+                DMASTCallParameter[] parameters = ProcCall();
 
-                if (Check(TokenType.DM_LeftParenthesis)) {
-                    Whitespace();
-                    parameters = CallParameters(true);
-                    Consume(TokenType.DM_RightParenthesis, "Expected ')'");
-                    Whitespace();
-                }
-
-                if (dereference != null) {
-                    return new DMASTNewDereference(dereference, parameters);
-                } else if (identifier != null) {
-                    return new DMASTNewIdentifier(identifier, parameters);
-                } else if (path != null) {
-                    return new DMASTNewPath(path, parameters);
+                if (parameters == null) { //Not an inferenced type
+                    type = ExpressionDereferenceOrProcCall(allowProcCalls: false);
+                    parameters = ProcCall();
                 } else {
-                    return new DMASTNewInferred(parameters);
+                    Whitespace();
                 }
-            } else {
-                return ExpressionPrimary();
+
+                switch (type) {
+                    case DMASTDereference dereference: return new DMASTNewDereference(dereference, parameters);
+                    case DMASTIdentifier identifier: return new DMASTNewIdentifier(identifier, parameters);
+                    case DMASTPath path: return new DMASTNewPath(path, parameters);
+                    case DMASTConstantPath constantPath: return new DMASTNewPath(constantPath.Value, parameters);
+                    case null: return new DMASTNewInferred(parameters);
+                    default: {
+                        Error("Expected a type");
+                        return null;
+                    }
+                }
             }
+
+            return ExpressionDereferenceOrProcCall();
+        }
+
+        public DMASTExpression ExpressionDereferenceOrProcCall(bool allowProcCalls = true) {
+            DMASTExpression expression = ExpressionPrimary();
+
+            if (expression != null) {
+                bool hadWhitespace = Whitespace();
+                Token token = Current();
+                TokenType[] types = {
+                    TokenType.DM_Period,
+                    TokenType.DM_Colon,
+                    TokenType.DM_QuestionPeriod,
+                    TokenType.DM_QuestionColon,
+                    TokenType.DM_LeftBracket,
+                    TokenType.DM_LeftParenthesis
+                };
+
+                bool earlyFinish = false;
+                while (!earlyFinish && Check(types)) {
+                    switch (token.Type) {
+                        case TokenType.DM_LeftBracket: { //List index
+                            Whitespace();
+                            DMASTExpression index = Expression();
+                            Consume(TokenType.DM_RightBracket, "Expected ']'");
+
+                            hadWhitespace = Whitespace();
+                            expression = new DMASTListIndex(expression, index);
+                            break;
+                        }
+                        case TokenType.DM_LeftParenthesis: { //Proc call
+                            ReuseToken(token); //For ProcCall() to use
+
+                            if (!allowProcCalls) {
+                                earlyFinish = true;
+                                break;
+                            }
+
+                            DMASTCallParameter[] parameters = ProcCall();
+                            hadWhitespace = Whitespace();
+                            expression = CreateProcCall(expression, parameters);
+                            break;
+                        }
+                        default: { //One of the dereference tokens
+                            if (hadWhitespace) { //Can't have any whitespace before a dereference
+                                ReuseToken(token);
+                                earlyFinish = true;
+                                break;
+                            }
+
+                            if (expression is not DMASTDereference) { //First dereference
+                                if (expression is not (DMASTIdentifier or DMASTProcCall or DMASTListIndex)) { //Not a dereferencable type
+                                    ReuseToken(token);
+                                    earlyFinish = true;
+                                    break;
+                                }
+
+                                expression = new DMASTDereference(expression);
+                            }
+
+                            DereferenceType type;
+                            bool conditional;
+                            switch (token.Type) {
+                                case TokenType.DM_Period:
+                                    type = DereferenceType.Direct;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionPeriod:
+                                    type = DereferenceType.Direct;
+                                    conditional = true;
+                                    break;
+                                case TokenType.DM_Colon:
+                                    type = DereferenceType.Search;
+                                    conditional = false;
+                                    break;
+                                case TokenType.DM_QuestionColon:
+                                    type = DereferenceType.Search;
+                                    conditional = true;
+                                    break;
+                                default:
+                                    throw new InvalidOperationException();
+                            }
+
+                            DMASTIdentifier identifier = Identifier();
+                            if (identifier == null) {
+                                Error("Expected an identifier to dereference");
+                                return null;
+                            }
+
+                            DMASTDereference deref = (DMASTDereference)expression;
+                            deref.Dereferences.Add(new Dereference(type, conditional, identifier.Identifier));
+                            hadWhitespace = Whitespace();
+                            break;
+                        }
+                    }
+
+                    token = Current();
+                }
+
+                Whitespace();
+            }
+
+            return expression;
         }
 
         public DMASTExpression ExpressionPrimary() {
-            if (Check(TokenType.DM_LeftParenthesis)) {
+            DMASTExpression primary = Constant();
+
+            if (primary == null && Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
-                DMASTExpression inner = Expression();
+                primary = Expression();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')");
-                Whitespace();
-
-                return inner;
-            } else {
-                DMASTExpression primary = Constant();
-
-                if (primary == null) {
-                    DMASTPath path = Path(true);
-
-                    if (path != null) {
-                        primary = new DMASTConstantPath(path);
-
-                        while (Check(TokenType.DM_Period)) {
-                            DMASTPath search = Path();
-                            if (search == null) Error("Expected a path for an upward search");
-
-                            primary = new DMASTUpwardPathSearch((DMASTExpressionConstant)primary, search);
-                        }
-                    }
-                }
-
-                if (primary == null) {
-                    DMASTDereference dereference = Dereference();
-                    DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
-
-                    if (dereference != null || identifier != null) {
-                        Whitespace();
-                        DMASTCallParameter[] callParameters = ProcCall();
-
-                        if (callParameters != null) {
-                            Whitespace();
-
-                            if (identifier?.Identifier == "input") {
-                                DMValueType types = AsTypes(defaultType: DMValueType.Text);
-                                Whitespace();
-                                DMASTExpression list = null;
-
-                                if (Check(TokenType.DM_In)) {
-                                    Whitespace();
-                                    list = Expression();
-                                }
-
-                                return new DMASTInput(callParameters, types, list);
-                            } else if (identifier?.Identifier == "initial") {
-                                if (callParameters.Length != 1) Error("initial() requires 1 argument");
-
-                                return new DMASTInitial(callParameters[0].Value);
-                            } else if (identifier?.Identifier == "issaved") {
-                                if (callParameters.Length != 1) Error("issaved() requires 1 argument");
-
-                                return new DMASTIsSaved(callParameters[0].Value);
-                            } else if (identifier?.Identifier == "istype") {
-                                if (callParameters.Length == 1) {
-                                    return new DMASTImplicitIsType(callParameters[0].Value);
-                                } else if (callParameters.Length == 2) {
-                                    return new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
-                                } else {
-                                    Error("istype() requires 1 or 2 arguments");
-                                }
-                            } else if (identifier?.Identifier == "text") {
-                                if (callParameters.Length == 0) Error("text() requires at least 1 argument");
-
-                                if (callParameters[0].Value is DMASTConstantString constantString) {
-                                    if (callParameters.Length > 1) Error("text() expected 1 argument");
-
-                                    return constantString;
-                                } else if (callParameters[0].Value is DMASTStringFormat formatText) {
-                                    if (formatText == null) Error("text()'s first argument must be a string format");
-
-                                    List<int> emptyValueIndices = new();
-                                    for (int i = 0; i < formatText.InterpolatedValues.Length; i++) {
-                                        if (formatText.InterpolatedValues[i] == null) emptyValueIndices.Add(i);
-                                    }
-
-                                    if (callParameters.Length != emptyValueIndices.Count + 1) Error("text() was given an invalid amount of arguments for the string");
-                                    for (int i = 0; i < emptyValueIndices.Count; i++) {
-                                        int emptyValueIndex = emptyValueIndices[i];
-
-                                        formatText.InterpolatedValues[emptyValueIndex] = callParameters[i + 1].Value;
-                                    }
-
-                                    return formatText;
-                                } else {
-                                    Error("text() expected a string as the first argument");
-
-                                    return null;
-                                }
-                            } else if (identifier?.Identifier == "locate") {
-                                if (callParameters.Length > 3) Error("locate() was given too many arguments");
-
-                                if (callParameters.Length == 3) { //locate(X, Y, Z)
-                                    return new DMASTLocateCoordinates(callParameters[0].Value, callParameters[1].Value, callParameters[2].Value);
-                                } else {
-                                    DMASTExpression container = null;
-                                    if (Check(TokenType.DM_In)) {
-                                        Whitespace();
-
-                                        container = Expression();
-                                        if (container == null) Error("Expected a container for locate()");
-                                    }
-
-                                    DMASTExpression type = null;
-                                    if (callParameters.Length == 2) {
-                                        type = callParameters[0].Value;
-                                        container = callParameters[1].Value;
-                                    } else if (callParameters.Length == 1) {
-                                        type = callParameters[0].Value;
-                                    }
-
-                                    return new DMASTLocate(type, container);
-                                }
-                            } else {
-                                DMASTCallable callable;
-
-                                if (dereference != null) {
-                                    callable = new DMASTDereferenceProc(dereference.Expression, dereference.Dereferences);
-                                } else {
-                                    callable = new DMASTCallableProcIdentifier(identifier.Identifier);
-                                }
-
-                                primary = new DMASTProcCall(callable, callParameters);
-                            }
-                        } else {
-                            primary = (dereference != null) ? dereference : identifier;
-                        }
-                    }
-                }
-
-                if (primary == null) {
-                    DMASTCallable callable = Callable();
-
-                    if (callable != null) {
-                        Whitespace();
-                        DMASTCallParameter[] callParameters = ProcCall();
-
-                        if (callParameters != null) {
-                            primary = new DMASTProcCall(callable, callParameters);
-                        } else {
-                            primary = callable;
-                        }
-                    }
-                }
-
-                if (primary == null && Check(TokenType.DM_Call)) {
-                    Whitespace();
-                    DMASTCallParameter[] callParameters = ProcCall();
-                    if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) Error("Call must have 2 parameters");
-                    Whitespace();
-                    DMASTCallParameter[] procParameters = ProcCall();
-                    if (procParameters == null) Error("Expected proc parameters");
-
-                    primary = new DMASTCall(callParameters, procParameters);
-                }
-
-                if (primary == null && Check(TokenType.DM_List)) {
-                    Whitespace();
-                    DMASTCallParameter[] values = ProcCall(false);
-
-                    primary = new DMASTList(values);
-                }
-
-                if (primary == null && Check(TokenType.DM_NewList)) {
-                    Whitespace();
-                    DMASTCallParameter[] values = ProcCall(false);
-
-                    primary = new DMASTNewList(values);
-                }
-
-                if (primary != null) Whitespace();
-                return primary;
             }
+
+            if (primary == null) {
+                DMASTPath path = Path(true);
+
+                if (path != null) {
+                    primary = new DMASTConstantPath(path);
+
+                    while (Check(TokenType.DM_Period)) {
+                        DMASTPath search = Path();
+                        if (search == null) Error("Expected a path for an upward search");
+
+                        primary = new DMASTUpwardPathSearch((DMASTExpressionConstant)primary, search);
+                    }
+                }
+            }
+
+            if (primary == null) {
+                primary = Identifier();
+            }
+
+            if (primary == null) {
+                primary = Callable();
+            }
+
+            if (primary == null && Check(TokenType.DM_Call)) {
+                Whitespace();
+                DMASTCallParameter[] callParameters = ProcCall();
+                if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) Error("Call must have 2 parameters");
+                Whitespace();
+                DMASTCallParameter[] procParameters = ProcCall();
+                if (procParameters == null) Error("Expected proc parameters");
+
+                primary = new DMASTCall(callParameters, procParameters);
+            }
+
+            if (primary == null && Check(TokenType.DM_List)) {
+                Whitespace();
+                DMASTCallParameter[] values = ProcCall(false);
+
+                primary = new DMASTList(values);
+            }
+
+            if (primary == null && Check(TokenType.DM_NewList)) {
+                Whitespace();
+                DMASTCallParameter[] values = ProcCall(false);
+
+                primary = new DMASTNewList(values);
+            }
+
+            //Dereference parsing will handle the whitespace after the expression
+            return primary;
         }
 
         public DMASTExpression Constant() {
@@ -1854,6 +1752,111 @@ namespace OpenDreamShared.Compiler.DM {
 
         private bool Delimiter() {
             return Check(TokenType.DM_Semicolon) || Newline();
+        }
+
+        private DMASTExpression CreateProcCall(DMASTExpression expression, DMASTCallParameter[] parameters) {
+            DMASTCallable callable = null;
+            if (expression is DMASTDereference exprDeref) {
+                callable = new DMASTDereferenceProc(exprDeref.Expression, exprDeref.Dereferences);
+            } else if (expression is DMASTIdentifier identifier) {
+                switch (identifier.Identifier) {
+                    case "input": {
+                        DMValueType types = AsTypes(defaultType: DMValueType.Text);
+                        Whitespace();
+                        DMASTExpression list = null;
+
+                        if (Check(TokenType.DM_In)) {
+                            Whitespace();
+                            list = Expression();
+                        }
+
+                        return new DMASTInput(parameters, types, list);
+                    }
+                    case "initial": {
+                        if (parameters.Length != 1) Error("initial() requires 1 argument");
+
+                        return new DMASTInitial(parameters[0].Value);
+                    }
+                    case "issaved": {
+                        if (parameters.Length != 1) Error("issaved() requires 1 argument");
+
+                        return new DMASTIsSaved(parameters[0].Value);
+                    }
+                    case "istype": {
+                        if (parameters.Length == 1) {
+                            return new DMASTImplicitIsType(parameters[0].Value);
+                        } else if (parameters.Length == 2) {
+                            return new DMASTIsType(parameters[0].Value, parameters[1].Value);
+                        }
+
+                        Error("istype() requires 1 or 2 arguments");
+                        return null;
+                    }
+                    case "text": {
+                        if (parameters.Length == 0) Error("text() requires at least 1 argument");
+
+                        if (parameters[0].Value is DMASTConstantString constantString) {
+                            if (parameters.Length > 1) Error("text() expected 1 argument");
+
+                            return constantString;
+                        } else if (parameters[0].Value is DMASTStringFormat formatText) {
+                            if (formatText == null) Error("text()'s first argument must be a string format");
+
+                            List<int> emptyValueIndices = new();
+                            for (int i = 0; i < formatText.InterpolatedValues.Length; i++) {
+                                if (formatText.InterpolatedValues[i] == null) emptyValueIndices.Add(i);
+                            }
+
+                            if (parameters.Length != emptyValueIndices.Count + 1) Error("text() was given an invalid amount of arguments for the string");
+                            for (int i = 0; i < emptyValueIndices.Count; i++) {
+                                int emptyValueIndex = emptyValueIndices[i];
+
+                                formatText.InterpolatedValues[emptyValueIndex] = parameters[i + 1].Value;
+                            }
+
+                            return formatText;
+                        }
+
+                        Error("text() expected a string as the first argument");
+                        return null;
+                    }
+                    case "locate": {
+                        if (parameters.Length > 3) Error("locate() was given too many arguments");
+
+                        if (parameters.Length == 3) { //locate(X, Y, Z)
+                            return new DMASTLocateCoordinates(parameters[0].Value, parameters[1].Value, parameters[2].Value);
+                        } else { //locate(type), locate(type) in list, locate(type, list)
+                            DMASTExpression container = null;
+                            if (Check(TokenType.DM_In)) {
+                                Whitespace();
+
+                                container = Expression();
+                                if (container == null) Error("Expected a container for locate()");
+                            }
+
+                            DMASTExpression type = null;
+                            if (parameters.Length == 2) {
+                                type = parameters[0].Value;
+                                container = parameters[1].Value;
+                            } else if (parameters.Length == 1) {
+                                type = parameters[0].Value;
+                            }
+
+                            return new DMASTLocate(type, container);
+                        }
+                    }
+                    default: {
+                        callable = new DMASTCallableProcIdentifier(identifier.Identifier);
+                        break;
+                    }
+                }
+            } else if (expression is DMASTCallable exprCallable) {
+                callable = exprCallable;
+            } else {
+                Error("Expression is not callable");
+            }
+
+            return new DMASTProcCall(callable, parameters);
         }
     }
 }

@@ -8,41 +8,80 @@ using System.Text;
 using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMParser : Parser<Token> {
+    public partial class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
-
+        private int innerLevel = 0;
+        private int topLevelErrors = 0;
+        private int topLevelDefines = 0;
         public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
+            _saveForToplevel = true;
             DMASTBlockInner blockInner = BlockInner();
             Newline();
             Consume(TokenType.EndOfFile, "Expected EOF");
+            Console.WriteLine("Errors: " + topLevelErrors + " / " + topLevelDefines + " ? " + blockInner.Statements.Length);
 
             return new DMASTFile(blockInner);
         }
 
         public DMASTBlockInner BlockInner() {
-            DMASTStatement statement = Statement();
+            int localInnerLevel = innerLevel;
+            innerLevel += 1;
+            List<DMASTStatement> statements = new();
+            do {
+                Whitespace();
+                if (localInnerLevel == 0) { SavePosition(); }
 
-            if (statement != null) {
-                List<DMASTStatement> statements = new() { statement };
-
-                while (Delimiter()) {
-                    Whitespace();
-                    statement = Statement();
-
-                    if (statement != null) {
-                        Whitespace();
-
-                        statements.Add(statement);
-                    }
+                DMASTStatement statement = Statement();
+                if (statement != null && Errors.Count == 0) {
+                    statements.Add(statement);
                 }
+                if (localInnerLevel == 0 && Errors.Count > 0) {
+                    RestorePosition();
+                    Advance();
+                    LocateNextToplevel();
+                    Console.WriteLine("----------------------");
+                    List<string> sources = new();
+                    List<int> lines = new();
+                    foreach (var error in Errors) {
+                        Console.WriteLine(error.ToString());
+                        sources.Add(error.Token.SourceFile);
+                        lines.Add(error.Token.Line);
+                    }
+                    Console.Write(">>> ");
+                    foreach (var token in _topLevelTokens) {
+                        var idx = sources.IndexOf(token.SourceFile);
+                        if (idx > -1) {
+                            if (Math.Abs(lines[idx] - token.Line) < 3) {
+                                Console.Write(token.Text);
+                                if (token.Type == TokenType.Newline) { Console.Write(">>> "); }
+                            }
+                        }
+                    }
+                    Console.WriteLine();
+                    _topLevelTokens.Clear();
+                    topLevelErrors += 1;
+                    Errors = new();
+                }
+                else if (localInnerLevel == 0) {
+                    _topLevelTokens.Clear();
+                    topLevelDefines += 1;
+                    AcceptPosition();
+                }
+                if (localInnerLevel == 0 && !PeekDelimiter()) {
+                    LocateNextToplevel();
+                }
+            } while (Delimiter());
 
-                return new DMASTBlockInner(statements.ToArray());
-            } else {
+            innerLevel -= 1;
+            if (statements.Count == 0) {
                 return null;
+            }
+            else {
+                return new DMASTBlockInner(statements.ToArray());
             }
         }
 
@@ -56,6 +95,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
 
                 _currentPath = _currentPath.Combine(path.Path);
+                //Console.WriteLine(_currentPath);
 
                 //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {

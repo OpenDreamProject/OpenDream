@@ -488,6 +488,10 @@ namespace OpenDreamShared.Compiler.DM {
             return current;
         }
 
+        public int CurrentIndentation() {
+            return _indentationStack.Peek();
+        }
+
         private int CheckIndentation() {
             int indentationLevel = 0;
 

@@ -83,14 +83,30 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
-                        do {
-                            c = Advance();
 
-                            textBuilder.Append(c);
-                        } while (c != delimiter && c != '\n');
-                        Advance();
+                            /*
+                            do {
+                                c = Advance();
 
-                        string text = textBuilder.ToString();
+                                textBuilder.Append(c);
+                            } while (c != delimiter && c != '\n');
+                            Advance();
+                            */
+
+                            var everybody_gets_one = false;
+                            do {
+                                c = Advance();
+
+                                if (c == '\n' && !everybody_gets_one) {
+                                    everybody_gets_one = true;
+                                    c = '\0';
+                                    continue;
+                                }
+                                textBuilder.Append(c);
+                            } while (c != delimiter && !AtEndOfSource);
+                            Advance();
+
+                            string text = textBuilder.ToString();
                         token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(2, text.Length - 3));
                         break;
                     }
@@ -196,10 +212,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     base.Advance();
 
                     current = Advance();
-                    while (current == ' ' || current == '\t' || current == '\n')
-                    {
-                        current = Advance();
-                    }
+//                    while (current == ' ' || current == '\t' || current == '\n')
+//                    {
+//                        current = Advance();
+//                    }
                 }
             }
 

@@ -15,6 +15,7 @@ namespace OpenDreamShared.Compiler.DM {
         private int innerLevel = 0;
         private int topLevelErrors = 0;
         private int topLevelDefines = 0;
+
         public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
@@ -22,7 +23,10 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTBlockInner blockInner = BlockInner();
             Newline();
             Consume(TokenType.EndOfFile, "Expected EOF");
-            Console.WriteLine("Errors: " + topLevelErrors + " / " + topLevelDefines + " ? " + blockInner.Statements.Length);
+            Console.WriteLine(new String('=', 80));
+            Console.WriteLine("Toplevel statements: " + blockInner.Statements.Length);
+            Console.WriteLine("Errors: " + topLevelErrors + " out of " + topLevelDefines + " toplevel attempts.");
+            Console.WriteLine(new String('=', 80));
 
             return new DMASTFile(blockInner);
         }
@@ -43,28 +47,7 @@ namespace OpenDreamShared.Compiler.DM {
                     RestorePosition();
                     Advance();
                     LocateNextToplevel();
-                    Console.WriteLine("----------------------");
-                    List<string> sources = new();
-                    List<int> lines = new();
-                    foreach (var error in Errors) {
-                        Console.WriteLine(error.ToString());
-                        sources.Add(error.Token.SourceFile);
-                        lines.Add(error.Token.Line);
-                    }
-                    Console.Write(">>> ");
-                    foreach (var token in _topLevelTokens) {
-                        var idx = sources.IndexOf(token.SourceFile);
-                        if (idx > -1) {
-                            if (Math.Abs(lines[idx] - token.Line) < 3) {
-                                Console.Write(token.Text);
-                                if (token.Type == TokenType.Newline) { Console.Write(">>> "); }
-                            }
-                        }
-                    }
-                    Console.WriteLine();
-                    _topLevelTokens.Clear();
-                    topLevelErrors += 1;
-                    Errors = new();
+                    HandleBlockInnerErrors(Errors);
                 }
                 else if (localInnerLevel == 0) {
                     _topLevelTokens.Clear();

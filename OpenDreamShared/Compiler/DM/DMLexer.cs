@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMLexer : TokenLexer {
+    public partial class DMLexer : TokenLexer {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",

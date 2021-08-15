@@ -23,7 +23,7 @@ namespace OpenDreamShared.Compiler {
             _sourceEnumerator = Source.GetEnumerator();
         }
 
-        public Token GetNextToken() {
+        public virtual Token GetNextToken() {
             if (_pendingTokenQueue.Count > 0)
                 return _pendingTokenQueue.Dequeue();
 

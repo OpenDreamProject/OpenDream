@@ -34,6 +34,10 @@ namespace OpenDreamShared.Compiler {
                 }
             }
 
+            if (_lookahead.Count > 0) {
+                _lookahead.Peek().Push(_currentToken);
+            }
+
             return Current();
         }
 

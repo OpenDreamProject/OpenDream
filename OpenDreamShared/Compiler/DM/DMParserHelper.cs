@@ -85,9 +85,6 @@ namespace OpenDreamShared.Compiler.DM {
                 Console.WriteLine(new String('-', 40));
                 Console.WriteLine(viewedTokens.ToLongString(errortokens));
             }
-            _topLevelTokens.Clear();
-            topLevelErrors += 1;
-            Errors = new();
         }
     }
 }

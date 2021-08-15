@@ -12,59 +12,98 @@ namespace OpenDreamShared.Compiler.DM {
         public static char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
-        private int innerLevel = 0;
         private int topLevelErrors = 0;
-        private int topLevelDefines = 0;
+        private int topLevelAttempts = 0;
 
         public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
             _saveForToplevel = true;
-            DMASTBlockInner blockInner = BlockInner();
+            DMASTBlockInner blockInner = TopLevel();
             Newline();
             Consume(TokenType.EndOfFile, "Expected EOF");
             Console.WriteLine(new String('=', 80));
             Console.WriteLine("Toplevel statements: " + blockInner.Statements.Length);
-            Console.WriteLine("Errors: " + topLevelErrors + " out of " + topLevelDefines + " toplevel attempts.");
+            Console.WriteLine("Errors: " + topLevelErrors + " out of " + topLevelAttempts + " toplevel attempts.");
             Console.WriteLine(new String('=', 80));
 
             return new DMASTFile(blockInner);
         }
 
-        public DMASTBlockInner BlockInner() {
-            int localInnerLevel = innerLevel;
-            innerLevel += 1;
+        public DMASTBlockInner TopLevel() {
             List<DMASTStatement> statements = new();
+            bool valid_state = true;
             do {
                 Whitespace();
-                if (localInnerLevel == 0) { SavePosition(); }
 
-                DMASTStatement statement = Statement();
+                _topLevelTokens.Clear();
+                Errors = new();
+
+                bool accepted = false;
+                DMASTStatement statement = null;
+                if (valid_state) {
+                    topLevelAttempts += 1;
+                }
+                try {
+                    statement = Statement();
+                }
+                catch (Exception e) {
+                    if (valid_state) {
+                        throw;
+                    }
+                }
                 if (statement != null && Errors.Count == 0) {
                     statements.Add(statement);
+                    accepted = true;
                 }
-                if (localInnerLevel == 0 && Errors.Count > 0) {
-                    RestorePosition();
-                    Advance();
+
+                if (!accepted) {
                     LocateNextToplevel();
-                    HandleBlockInnerErrors(Errors);
+                    if (valid_state) {
+                        HandleBlockInnerErrors(Errors);
+                        topLevelErrors += 1;
+                        valid_state = false;
+                    }
                 }
-                else if (localInnerLevel == 0) {
-                    _topLevelTokens.Clear();
-                    topLevelDefines += 1;
-                    AcceptPosition();
-                }
-                if (localInnerLevel == 0 && !PeekDelimiter()) {
-                    LocateNextToplevel();
+                else {
+                    if (!valid_state) {
+                        topLevelAttempts += 1;
+                    }
+                    if (!PeekDelimiter() && !valid_state) {
+                        LocateNextToplevel();
+                    }
+                    valid_state = true;
                 }
             } while (Delimiter());
-
-            innerLevel -= 1;
             if (statements.Count == 0) {
                 return null;
             }
             else {
                 return new DMASTBlockInner(statements.ToArray());
+            }
+        }
+
+        public DMASTBlockInner BlockInner() {
+            DMASTStatement statement = Statement();
+
+            if (statement != null) {
+                List<DMASTStatement> statements = new() { statement };
+
+                while (Delimiter()) {
+                    Whitespace();
+                    statement = Statement();
+
+                    if (statement != null) {
+                        Whitespace();
+
+                        statements.Add(statement);
+                    }
+                }
+
+                return new DMASTBlockInner(statements.ToArray());
+            }
+            else {
+                return null;
             }
         }
 

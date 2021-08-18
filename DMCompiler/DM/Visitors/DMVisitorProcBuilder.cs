@@ -26,7 +26,11 @@ namespace DMCompiler.DM.Visitors {
                         _proc.JumpIfFalse(afterDefaultValueCheck);
 
                         _proc.PushLocalVariable(parameterName);
-                        DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
+                        try {
+                            DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
+                        } catch (CompileErrorException e) {
+                            Program.Error(e.Error);
+                        }
                         _proc.Assign();
 
                         _proc.AddLabel(afterDefaultValueCheck);

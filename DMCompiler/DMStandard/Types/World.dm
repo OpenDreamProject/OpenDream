@@ -22,12 +22,15 @@
 	var/icon_size = 32
 	var/view = 5
 
+	var/byond_version = DM_VERSION
+	var/byond_build = DM_BUILD
+
 	var/address
 	var/port
 	var/url
 	var/status
 	var/list/params = null
-	
+
 	var/system_type
 
 	proc/New()
@@ -35,7 +38,7 @@
 
 	proc/Reboot()
 		CRASH("/world.Reboot() is not implemented")
-		
+
 	proc/Repop()
 		CRASH("/world.Repop() will not be implemented")
 

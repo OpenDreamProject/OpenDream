@@ -496,6 +496,20 @@ namespace Content.Server.Dream.NativeProcs {
             return new DreamValue(1);
         }
 
+        [DreamProc("ismovable")]
+        [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_ismovable(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            List<DreamValue> locs = arguments.GetAllArguments();
+
+            foreach (DreamValue loc in locs) {
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out _)) {
+                    return new DreamValue(0);
+                }
+            }
+
+            return new DreamValue(1);
+        }
+
         [DreamProc("isnull")]
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_isnull(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -954,7 +968,7 @@ namespace Content.Server.Dream.NativeProcs {
                 values = arguments.GetAllArguments();
             }
 
-            return values[new Random().Next(0, values.Count)];
+            return values[DreamManager.Random.Next(0, values.Count)];
         }
 
         [DreamProc("prob")]
@@ -962,7 +976,7 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_prob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             float probability = arguments.GetArgument(0, "P").GetValueAsFloat();
 
-            return new DreamValue((new Random().Next(0, 100) <= probability) ? 1 : 0);
+            return new DreamValue((DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0);
         }
 
         [DreamProc("rand")]
@@ -970,17 +984,57 @@ namespace Content.Server.Dream.NativeProcs {
         [DreamProcParameter("H", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rand(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (arguments.ArgumentCount == 0) {
-                return new DreamValue((float)new Random().NextDouble());
+                return new DreamValue((float)DreamManager.Random.NextDouble());
             } else if (arguments.ArgumentCount == 1) {
                 int high = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsFloat());
 
-                return new DreamValue(new Random().Next(high));
+                return new DreamValue(DreamManager.Random.Next(high));
             } else {
                 int low = (int)Math.Floor(arguments.GetArgument(0, "L").GetValueAsFloat());
                 int high = (int)Math.Floor(arguments.GetArgument(1, "H").GetValueAsFloat());
 
-                return new DreamValue(new Random().Next(Math.Min(low, high), Math.Max(low, high)));
+                return new DreamValue(DreamManager.Random.Next(Math.Min(low, high), Math.Max(low, high)));
             }
+        }
+
+        [DreamProc("rand_seed")]
+        [DreamProcParameter("Seed", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_rand_seed(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var seed = arguments.GetArgument(0, "Seed").GetValueAsInteger();
+            DreamManager.Random = new Random(seed);
+            return DreamValue.Null;
+        }
+
+        [DreamProc("ref")]
+        [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
+            //return new DreamValue(obj.CreateReferenceID());
+            throw new NotImplementedException("ref() is not implemented");
+        }
+
+        [DreamProc("regex")]
+        [DreamProcParameter("pattern", Type = DreamValueType.String | DreamValueType.DreamObject)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_regex(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            var patternOrRegex = arguments.GetArgument(0, "pattern");
+            var flags = arguments.GetArgument(1, "flags");
+            if (flags.TryGetValueAsInteger(out var specialMode) && patternOrRegex.TryGetValueAsString(out var text))
+            {
+                switch(specialMode)
+                {
+                    case 1:
+                        return new DreamValue(Regex.Escape(text));
+                    case 2:
+                        return new DreamValue(text.Replace("$", "$$"));
+                };
+            }
+            var newRegex = DreamManager.ObjectTree.CreateObject(DreamPath.Regex);
+            newRegex.InitSpawn(arguments);
+            return new DreamValue(newRegex);
         }
 
         [DreamProc("replacetext")]
@@ -1082,9 +1136,8 @@ namespace Content.Server.Dream.NativeProcs {
                 return new DreamValue(0);
             }
             float total = modifier; // Adds the modifier to start with
-            Random random = new Random();
             for (int i = 0; i < dice; i++) {
-                total += random.Next(1, sides + 1);
+                total += DreamManager.Random.Next(1, sides + 1);
             }
 
             return new DreamValue(total);
@@ -1351,6 +1404,14 @@ namespace Content.Server.Dream.NativeProcs {
             string text = arguments.GetArgument(0, "T").GetValueAsString();
 
             return new DreamValue(text.ToUpper());
+        }
+
+        [DreamProc("url_decode")]
+        [DreamProcParameter("UrlText", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_url_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string urlText = arguments.GetArgument(0, "UrlText").GetValueAsString();
+
+            return new DreamValue(HttpUtility.UrlDecode(urlText));
         }
 
         [DreamProc("url_encode")]

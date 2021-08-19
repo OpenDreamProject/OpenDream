@@ -41,7 +41,11 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcBlockInner(DMASTProcBlockInner block) {
             foreach (DMASTProcStatement statement in block.Statements) {
-                statement.Visit(this);
+                try {
+                    statement.Visit(this);
+                } catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                    Program.Error(e.Error);
+                }
             }
         }
 
@@ -106,6 +110,12 @@ namespace DMCompiler.DM.Visitors {
             }
 
             _proc.SetLocalVariable(varDeclaration.Name);
+        }
+
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
+            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                varDeclaration.Visit(this);
+            }
         }
 
         public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
@@ -338,10 +348,6 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
-        }
-
-        public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.Error(exception.Error);
         }
     }
 }

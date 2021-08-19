@@ -9,6 +9,7 @@ using Robust.Shared.Enums;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Network;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -26,6 +27,7 @@ namespace Content.Server.Dream {
         // Global state that may not really (really really) belong here
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
+        public Random Random { get; set; } = new();
 
         private Dictionary<DreamObject, NetUserId> _clientToUserId = new();
 

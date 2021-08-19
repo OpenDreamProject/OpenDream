@@ -25,7 +25,11 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitBlockInner(DMASTBlockInner blockInner) {
             foreach (DMASTStatement statement in blockInner.Statements) {
-                statement.Visit(this);
+                try {
+                    statement.Visit(this);
+                } catch (CompileErrorException e) {
+                    Program.Error(e.Error);
+                }
             }
         }
 
@@ -53,8 +57,12 @@ namespace DMCompiler.DM.Visitors {
                 _currentObject.Variables[variable.Name] = variable;
             }
 
-            DMExpression expression = DMExpression.Create(_currentObject, null, varDefinition.Value, varDefinition.Type);
-            SetVariableValue(variable, expression);
+            try {
+                DMExpression expression = DMExpression.Create(_currentObject, null, varDefinition.Value, varDefinition.Type);
+                SetVariableValue(variable, expression);
+            } catch (CompileErrorException e) {
+                Program.Error(e.Error);
+            }
 
             _currentObject = oldObject;
         }
@@ -70,19 +78,23 @@ namespace DMCompiler.DM.Visitors {
 
             _currentObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
-            if (varOverride.VarName == "parent_type") {
-                DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
+            try {
+                if (varOverride.VarName == "parent_type") {
+                    DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                if (parentType == null) throw new CompileErrorException("Expected a constant path");
-                _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
-            } else {
-                DMVariable variable = new DMVariable(null, varOverride.VarName, false);
-                DMExpression expression = DMExpression.Create(_currentObject, null, varOverride.Value, null);
+                    if (parentType == null) throw new CompileErrorException("Expected a constant path");
+                    _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
+                } else {
+                    DMVariable variable = new DMVariable(null, varOverride.VarName, false);
+                    DMExpression expression = DMExpression.Create(_currentObject, null, varOverride.Value, null);
 
-                SetVariableValue(variable, expression);
-                _currentObject.VariableOverrides[variable.Name] = variable;
+                    SetVariableValue(variable, expression);
+                    _currentObject.VariableOverrides[variable.Name] = variable;
+                }
+            } catch (CompileErrorException e) {
+                Program.Error(e.Error);
             }
-
+            
             _currentObject = oldObject;
         }
 
@@ -90,28 +102,28 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             DMObject dmObject = _currentObject;
 
-            if (procDefinition.ObjectPath.HasValue) {
-                dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
+            try {
+                if (procDefinition.ObjectPath.HasValue) {
+                    dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
+                }
+
+                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
+                    throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                }
+
+                DMProc proc = new DMProc(procDefinition);
+
+                dmObject.AddProc(procName, proc);
+                if (procDefinition.IsVerb) {
+                    Expressions.Field field = new Expressions.Field(DreamPath.List, "verbs");
+                    DreamPath procPath = new DreamPath(".proc/" + procName);
+                    Expressions.Append append = new Expressions.Append(field, new Expressions.Path(procPath));
+
+                    dmObject.InitializationProcExpressions.Add(append);
+                }
+            } catch (CompileErrorException e) {
+                Program.Error(e.Error);
             }
-
-            if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
-            }
-
-            DMProc proc = new DMProc(procDefinition);
-
-            dmObject.AddProc(procName, proc);
-            if (procDefinition.IsVerb) {
-                Expressions.Field field = new Expressions.Field(DreamPath.List, "verbs");
-                DreamPath procPath = new DreamPath(".proc/" + procName);
-                Expressions.Append append = new Expressions.Append(field, new Expressions.Path(procPath));
-
-                dmObject.InitializationProcExpressions.Add(append);
-            }
-        }
-
-        public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.Error(exception.Error);
         }
 
         private void SetVariableValue(DMVariable variable, DMExpression expression) {

@@ -33,4 +33,4 @@ loginlocal = true
 
 [opendream]
 # The path to DMCompiler's output
-json_path = ""
+json_path = "C:/Users/Simon/source/repos/RobustDream/TestGame/environment.json"

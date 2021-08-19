@@ -42,6 +42,7 @@ namespace Content.Server.Dream.NativeProcs {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_islist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismob);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ismovable);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnull);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_isnum);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_ispath);
@@ -63,6 +64,9 @@ namespace Content.Server.Dream.NativeProcs {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_pick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_prob);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_rand_seed);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_ref);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_regex);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);
@@ -87,6 +91,7 @@ namespace Content.Server.Dream.NativeProcs {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_time2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_typesof);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_url_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_url_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_view);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_viewers);

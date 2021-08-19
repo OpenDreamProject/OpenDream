@@ -14,6 +14,7 @@ namespace Content.Shared.Compiler.DM {
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) { throw new NotImplementedException(); }
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) { throw new NotImplementedException(); }
         public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) { throw new NotImplementedException(); }
         public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) { throw new NotImplementedException(); }
@@ -41,6 +42,7 @@ namespace Content.Shared.Compiler.DM {
         public void VisitConstantResource(DMASTConstantResource constant) { throw new NotImplementedException(); }
         public void VisitConstantNull(DMASTConstantNull constant) { throw new NotImplementedException(); }
         public void VisitConstantPath(DMASTConstantPath constant) { throw new NotImplementedException(); }
+        public void VisitUpwardPathSearch(DMASTUpwardPathSearch upwardPathSearch) { throw new NotImplementedException(); }
         public void VisitSwitchCaseRange(DMASTSwitchCaseRange switchCaseRange) { throw new NotImplementedException(); }
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
@@ -139,11 +141,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitFile(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitFile(this);
         }
     }
 
@@ -155,11 +153,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitBlockInner(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitBlockInner(this);
         }
     }
 
@@ -171,11 +165,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcBlockInner(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcBlockInner(this);
         }
     }
 
@@ -189,11 +179,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitObjectDefinition(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitObjectDefinition(this);
         }
     }
 
@@ -224,11 +210,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcDefinition(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcDefinition(this);
         }
     }
 
@@ -240,11 +222,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPath(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPath(this);
         }
     }
 
@@ -272,11 +250,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitObjectVarDefinition(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitObjectVarDefinition(this);
         }
     }
 
@@ -288,11 +262,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitMultipleObjectVarDefinitions(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitMultipleObjectVarDefinitions(this);
         }
     }
 
@@ -308,11 +278,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitObjectVarOverride(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitObjectVarOverride(this);
         }
     }
 
@@ -324,11 +290,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementExpression(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementExpression(this);
         }
     }
 
@@ -347,11 +309,19 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementVarDeclaration(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementVarDeclaration(this);
+        }
+    }
+
+    public class DMASTProcStatementMultipleVarDeclarations : DMASTProcStatement {
+        public DMASTProcStatementVarDeclaration[] VarDeclarations;
+
+        public DMASTProcStatementMultipleVarDeclarations(DMASTProcStatementVarDeclaration[] varDeclarations) {
+            VarDeclarations = varDeclarations;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementMultipleVarDeclarations(this);
         }
     }
 
@@ -363,31 +333,19 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementReturn(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementReturn(this);
         }
     }
 
     public class DMASTProcStatementBreak : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementBreak(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementBreak(this);
         }
     }
 
     public class DMASTProcStatementContinue : DMASTProcStatement {
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementContinue(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementContinue(this);
         }
     }
 
@@ -399,11 +357,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementGoto(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementGoto(this);
         }
     }
 
@@ -415,11 +369,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementLabel(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementLabel(this);
         }
     }
 
@@ -431,11 +381,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementDel(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementDel(this);
         }
     }
 
@@ -449,11 +395,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementSet(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementSet(this);
         }
     }
 
@@ -467,11 +409,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementSpawn(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementSpawn(this);
         }
     }
 
@@ -487,11 +425,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementIf(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementIf(this);
         }
     }
 
@@ -518,11 +452,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementForStandard(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementForStandard(this);
         }
     }
 
@@ -536,11 +466,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementForList(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementForList(this);
         }
     }
 
@@ -556,11 +482,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementForRange(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementForRange(this);
         }
     }
 
@@ -579,11 +501,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementForLoop(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementForLoop(this);
         }
     }
 
@@ -597,11 +515,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementWhile(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementWhile(this);
         }
     }
 
@@ -615,11 +529,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementDoWhile(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementDoWhile(this);
         }
     }
 
@@ -653,11 +563,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementSwitch(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementSwitch(this);
         }
     }
 
@@ -673,11 +579,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementBrowse(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementBrowse(this);
         }
     }
 
@@ -693,11 +595,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementBrowseResource(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementBrowseResource(this);
         }
     }
 
@@ -713,11 +611,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcStatementOutputControl(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcStatementOutputControl(this);
         }
     }
 
@@ -729,11 +623,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitIdentifier(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitIdentifier(this);
         }
     }
 
@@ -745,11 +635,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantInteger(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantInteger(this);
         }
     }
 
@@ -761,11 +647,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantFloat(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantFloat(this);
         }
     }
 
@@ -777,11 +659,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantString(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantString(this);
         }
     }
 
@@ -793,21 +671,13 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantResource(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantResource(this);
         }
     }
 
     public class DMASTConstantNull : DMASTExpressionConstant {
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantNull(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantNull(this);
         }
     }
 
@@ -819,11 +689,21 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitConstantPath(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitConstantPath(this);
+        }
+    }
+
+    public class DMASTUpwardPathSearch : DMASTExpressionConstant {
+        public DMASTExpressionConstant Path;
+        public DMASTPath Search;
+
+        public DMASTUpwardPathSearch(DMASTExpressionConstant path, DMASTPath search) {
+            Path = path;
+            Search = search;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitUpwardPathSearch(this);
         }
     }
 
@@ -836,11 +716,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitSwitchCaseRange(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitSwitchCaseRange(this);
         }
     }
 
@@ -854,11 +730,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitStringFormat(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitStringFormat(this);
         }
     }
 
@@ -870,11 +742,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitList(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitList(this);
         }
     }
 
@@ -886,11 +754,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNewList(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNewList(this);
         }
     }
 
@@ -906,11 +770,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitInput(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitInput(this);
         }
     }
 
@@ -922,11 +782,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitInitial(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitInitial(this);
         }
     }
 
@@ -938,11 +794,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitIsSaved(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitIsSaved(this);
         }
     }
 
@@ -956,11 +808,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitIsType(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitIsType(this);
         }
     }
 
@@ -972,11 +820,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitImplicitIsType(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitImplicitIsType(this);
         }
     }
 
@@ -990,11 +834,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLocateCoordinates(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLocateCoordinates(this);
         }
     }
 
@@ -1008,11 +848,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLocate(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLocate(this);
         }
     }
 
@@ -1025,11 +861,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCall(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCall(this);
         }
     }
 
@@ -1042,11 +874,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitAssign(this);
         }
     }
 
@@ -1060,11 +888,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNewPath(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNewPath(this);
         }
     }
 
@@ -1078,11 +902,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNewIdentifier(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNewIdentifier(this);
         }
     }
 
@@ -1096,11 +916,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNewDereference(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNewDereference(this);
         }
     }
 
@@ -1112,11 +928,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNewInferred(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNewInferred(this);
         }
     }
 
@@ -1128,11 +940,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNot(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNot(this);
         }
     }
 
@@ -1144,11 +952,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNegate(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNegate(this);
         }
     }
 
@@ -1161,11 +965,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitEqual(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitEqual(this);
         }
     }
 
@@ -1178,11 +978,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitNotEqual(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitNotEqual(this);
         }
     }
 
@@ -1195,11 +991,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLessThan(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLessThan(this);
         }
     }
 
@@ -1212,11 +1004,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLessThanOrEqual(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLessThanOrEqual(this);
         }
     }
 
@@ -1229,11 +1017,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitGreaterThan(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitGreaterThan(this);
         }
     }
 
@@ -1246,11 +1030,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitGreaterThanOrEqual(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitGreaterThanOrEqual(this);
         }
     }
 
@@ -1263,11 +1043,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitMultiply(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitMultiply(this);
         }
     }
 
@@ -1280,11 +1056,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitDivide(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitDivide(this);
         }
     }
 
@@ -1297,11 +1069,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitModulus(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitModulus(this);
         }
     }
 
@@ -1314,11 +1082,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPower(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPower(this);
         }
     }
 
@@ -1331,11 +1095,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitAdd(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitAdd(this);
         }
     }
 
@@ -1348,11 +1108,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitSubtract(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitSubtract(this);
         }
     }
 
@@ -1364,11 +1120,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPreIncrement(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPreIncrement(this);
         }
     }
 
@@ -1380,11 +1132,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPreDecrement(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPreDecrement(this);
         }
     }
 
@@ -1396,11 +1144,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPostIncrement(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPostIncrement(this);
         }
     }
 
@@ -1412,11 +1156,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitPostDecrement(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitPostDecrement(this);
         }
     }
 
@@ -1430,11 +1170,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitTernary(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitTernary(this);
         }
     }
 
@@ -1447,11 +1183,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitAppend(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitAppend(this);
         }
     }
 
@@ -1464,11 +1196,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitRemove(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitRemove(this);
         }
     }
 
@@ -1481,11 +1209,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCombine(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCombine(this);
         }
     }
 
@@ -1498,11 +1222,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitMask(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitMask(this);
         }
     }
 
@@ -1515,11 +1235,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitMultiplyAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitMultiplyAssign(this);
         }
     }
 
@@ -1532,11 +1248,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitDivideAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitDivideAssign(this);
         }
     }
 
@@ -1549,11 +1261,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLeftShiftAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLeftShiftAssign(this);
         }
     }
 
@@ -1566,11 +1274,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitRightShiftAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitRightShiftAssign(this);
         }
     }
 
@@ -1583,11 +1287,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitXorAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitXorAssign(this);
         }
     }
 
@@ -1600,11 +1300,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitModulusAssign(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitModulusAssign(this);
         }
     }
 
@@ -1617,11 +1313,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitOr(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitOr(this);
         }
     }
 
@@ -1634,11 +1326,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitAnd(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitAnd(this);
         }
     }
 
@@ -1651,11 +1339,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitBinaryAnd(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitBinaryAnd(this);
         }
     }
 
@@ -1668,11 +1352,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitBinaryXor(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitBinaryXor(this);
         }
     }
 
@@ -1685,11 +1365,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitBinaryOr(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitBinaryOr(this);
         }
     }
 
@@ -1701,11 +1377,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitBinaryNot(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitBinaryNot(this);
         }
     }
 
@@ -1718,11 +1390,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitLeftShift(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitLeftShift(this);
         }
     }
 
@@ -1735,11 +1403,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitRightShift(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitRightShift(this);
         }
     }
 
@@ -1753,11 +1417,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitIn(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitIn(this);
         }
     }
 
@@ -1771,11 +1431,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitListIndex(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitListIndex(this);
         }
     }
 
@@ -1789,11 +1445,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitProcCall(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitProcCall(this);
         }
     }
 
@@ -1807,11 +1459,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCallParameter(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCallParameter(this);
         }
     }
 
@@ -1836,11 +1484,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitDefinitionParameter(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitDefinitionParameter(this);
         }
     }
 
@@ -1871,11 +1515,7 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitDereference(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitDereference(this);
         }
     }
 
@@ -1883,11 +1523,7 @@ namespace Content.Shared.Compiler.DM {
         public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
 
         public override void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitDereferenceProc(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitDereferenceProc(this);
         }
     }
 
@@ -1899,31 +1535,19 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCallableProcIdentifier(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCallableProcIdentifier(this);
         }
     }
 
     public class DMASTCallableSuper : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCallableSuper(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCallableSuper(this);
         }
     }
 
     public class DMASTCallableSelf : DMASTCallable {
         public void Visit(DMASTVisitor visitor) {
-            try {
-                visitor.VisitCallableSelf(this);
-            } catch (CompileErrorException exception) {
-                visitor.HandleCompileErrorException(exception);
-            }
+            visitor.VisitCallableSelf(this);
         }
     }
 }

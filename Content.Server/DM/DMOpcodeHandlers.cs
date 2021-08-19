@@ -67,7 +67,23 @@ namespace Content.Server.DM {
 
         public static ProcStatus? CreateObject(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
-            DreamPath objectPath = state.PopDreamValue().GetValueAsPath();
+            var val = state.PopDreamValue();
+            if (!val.TryGetValueAsPath(out var objectPath))
+            {
+                if (val.TryGetValueAsString(out var pathString))
+                {
+                    objectPath = new DreamPath(pathString);
+                    if (!state.DreamManager.ObjectTree.HasTreeEntry(objectPath))
+                    {
+                        throw new Exception($"Cannot create unknown object {val.Value}");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Attempted to create an object that is neither a path nor a path string");
+                }
+
+            }
 
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));

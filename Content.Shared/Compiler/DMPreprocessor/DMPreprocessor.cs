@@ -37,7 +37,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
             while (token.Type != TokenType.EndOfFile) {
                 switch (token.Type) {
                     case TokenType.DM_Preproc_Include: {
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         Token includedFileToken = GetNextToken(true);
                         if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFileToken.Text + "\" is not a valid include path");
@@ -62,7 +62,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                         break;
                     }
                     case TokenType.DM_Preproc_Define: {
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         Token defineIdentifier = GetNextToken(true);
                         if (defineIdentifier.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Invalid define identifier");
@@ -89,10 +89,10 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                                     if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a third period");
 
                                     parameters.Add(parameterName + "...");
-                                    
+
                                     parameterToken = GetNextToken(true);
                                     if (unnamed) break;
-                                    
+
                                 } else {
                                     if (unnamed) throw new Exception("Expected a second period");
                                     parameters.Add(parameterName);
@@ -115,7 +115,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                         break;
                     }
                     case TokenType.DM_Preproc_Undefine: {
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         Token defineIdentifier = GetNextToken(true);
                         if (defineIdentifier.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Invalid define identifier");
@@ -156,8 +156,15 @@ namespace Content.Shared.Compiler.DMPreprocessor {
 
                         break;
                     }
+                    case TokenType.DM_Preproc_If:
+                    {
+                        //TODO Implement #if properly
+                        SkipIfBody();
+                        _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
+                        break;
+                    }
                     case TokenType.DM_Preproc_Ifdef: {
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         Token define = GetNextToken(true);
                         if (define.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a define identifier");
@@ -169,7 +176,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                         break;
                     }
                     case TokenType.DM_Preproc_Ifndef: {
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         Token define = GetNextToken(true);
                         if (define.Type != TokenType.DM_Preproc_Identifier) throw new Exception("Expected a define identifier");
@@ -181,7 +188,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                         break;
                     }
                     case TokenType.DM_Preproc_Else: { //If this is encountered outside of SkipIfBody, it needs skipped
-                        if (!_enableDirectives) throw new Exception("Cannot use preprocessor directives here");
+                        if (!VerifyDirectiveUsage(token)) break;
 
                         SkipIfBody();
                         break;
@@ -244,6 +251,21 @@ namespace Content.Shared.Compiler.DMPreprocessor {
             return _result;
         }
 
+        private bool VerifyDirectiveUsage(Token token) {
+            if (!_enableDirectives) {
+                _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, "Cannot use a preprocessor directive here"));
+                return false;
+            }
+                
+            if (!_isCurrentLineWhitespaceOnly) {
+                _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, "There can only be whitespace before a preprocessor directive"));
+                return false;
+            }
+
+            _currentLine.Clear(); //Throw out this whitespace-only line
+            return true;
+        }
+
         private Token GetNextToken(bool ignoreWhitespace = false) {
             if (_unprocessedTokens.Count > 0) {
                 Token nextToken = _unprocessedTokens.Pop();
@@ -263,7 +285,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
 
             Token token;
             while ((token = GetNextToken()).Type != TokenType.EndOfFile) {
-                if (token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
+                if (token.Type == TokenType.DM_Preproc_If || token.Type == TokenType.DM_Preproc_Ifdef || token.Type == TokenType.DM_Preproc_Ifndef) {
                     ifdefCount++;
                 } else if (token.Type == TokenType.DM_Preproc_EndIf) {
                     ifdefCount--;

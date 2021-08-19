@@ -121,4 +121,25 @@ namespace Content.Shared.Compiler {
             return IsNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
         }
     }
+
+    public class TokenLexer : Lexer<Token> {
+        public TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
+            Advance();
+        }
+
+        protected override Token Advance() {
+            Token current = base.Advance();
+
+            //Warnings and errors go straight to output, no processing
+            while (current.Type is TokenType.Warning or TokenType.Error) {
+                _pendingTokenQueue.Enqueue(current);
+                current = base.Advance();
+            }
+
+            SourceName = current.SourceFile;
+            CurrentLine = current.Line;
+            CurrentColumn = current.Column;
+            return current;
+        }
+    }
 }

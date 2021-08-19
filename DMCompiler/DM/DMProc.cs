@@ -33,6 +33,7 @@ namespace DMCompiler.DM {
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
+        public bool Unimplemented { get; set; } = false;
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;

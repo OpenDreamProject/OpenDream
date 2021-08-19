@@ -56,6 +56,22 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
+        public List<DMProc> GetProcs(string name) {
+            return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
+        }
+
+        public bool IsProcUnimplemented(string name) {
+            List<DMProc> procs = GetProcs(name);
+
+            if (procs != null) {
+                foreach (DMProc proc in procs) {
+                    if (proc.Unimplemented) return true;
+                }
+            }
+
+            return false;
+        }
+
         public DMVariable GetGlobalVariable(string name) {
             if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
                 return variable;

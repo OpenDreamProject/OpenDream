@@ -174,6 +174,15 @@ namespace DMCompiler.DM.Expressions {
                 return ProcPushResult.Unconditional;
             }
         }
+
+        public void UnimplementedCheck() {
+            if (_parent.Path == null) return;
+
+            DMObject dmObject = DMObjectTree.GetDMObject(_parent.Path.Value);
+            if (dmObject.IsProcUnimplemented(_field)) {
+                Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_field}() is not implemented"));
+            }
+        }
     }
 
     // x[y]

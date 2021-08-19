@@ -37,7 +37,9 @@
 	proc/Del()
 
 	proc/Reboot()
+		set opendream_unimplemented = TRUE
 		CRASH("/world.Reboot() is not implemented")
 
 	proc/Repop()
+		set opendream_unimplemented = TRUE
 		CRASH("/world.Repop() will not be implemented")

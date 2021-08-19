@@ -46,9 +46,12 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                         string includedFileExtension = Path.GetExtension(includedFile);
                         string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile);
 
-                        if (includedFileExtension == ".dm") {
-                            IncludeFile(includePath, fullIncludePath);
-                        } else if (includedFileExtension == ".dmm") {
+                        if (!File.Exists(Path.Combine(includePath, fullIncludePath))) {
+                            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, $"Could not find included file \"{fullIncludePath}\""));
+                            break;
+                        }
+
+                        if (includedFileExtension == ".dmm") {
                             string mapPath = Path.Combine(includePath, fullIncludePath);
 
                             IncludedMaps.Add(mapPath);
@@ -58,7 +61,10 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                             }
 
                             IncludedInterface = fullIncludePath;
+                        } else {
+                            IncludeFile(includePath, fullIncludePath);
                         }
+
                         break;
                     }
                     case TokenType.DM_Preproc_Define: {

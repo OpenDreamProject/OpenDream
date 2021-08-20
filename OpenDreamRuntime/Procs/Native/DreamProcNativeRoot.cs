@@ -955,22 +955,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(result);
         }
 
-        [DreamProc("pick")]
-        [DreamProcParameter("Val1")]
-        public static DreamValue NativeProc_pick(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> values;
-
-            if (arguments.ArgumentCount == 1) {
-                DreamList list = arguments.GetArgument(0, "Val1").GetValueAsDreamList();
-
-                values = list.GetValues();
-            } else {
-                values = arguments.GetAllArguments();
-            }
-
-            return values[CurrentRuntime.Random.Next(0, values.Count)];
-        }
-
         [DreamProc("prob")]
         [DreamProcParameter("P", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_prob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

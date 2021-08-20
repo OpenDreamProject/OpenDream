@@ -555,6 +555,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.LocateCoord);
         }
 
+        public void PickWeighted(int count) {
+            WriteOpcode(DreamProcOpcode.PickWeighted);
+            WriteInt(count);
+        }
+
+        public void PickUnweighted(int count) {
+            WriteOpcode(DreamProcOpcode.PickUnweighted);
+            WriteInt(count);
+        }
+
         public void Locate() {
             WriteOpcode(DreamProcOpcode.Locate);
         }

@@ -473,6 +473,19 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.In(expr, container);
         }
 
+        public void VisitPick(DMASTPick pick) {
+            Expressions.Pick.PickValue[] pickValues = new Expressions.Pick.PickValue[pick.Values.Length];
+            for (int i = 0; i < pickValues.Length; i++) {
+                DMASTPick.PickValue pickValue = pick.Values[i];
+                DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
+                DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                pickValues[i] = new Expressions.Pick.PickValue(weight, value);
+            }
+
+            Result = new Expressions.Pick(pickValues);
+        }
+
         public void VisitCall(DMASTCall call) {
             var procArgs = new ArgumentList(_dmObject, _proc, call.ProcParameters, _inferredPath);
 

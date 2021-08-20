@@ -174,7 +174,10 @@ namespace DMCompiler.DM.Visitors {
                     statementForStandard.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
-                    DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                    if (statementForStandard.Incrementor != null)
+                    {
+                        DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                    }
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();

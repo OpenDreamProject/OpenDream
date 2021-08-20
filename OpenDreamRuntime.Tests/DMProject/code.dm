@@ -124,7 +124,7 @@
 /world/proc/conditional_call_test()
 	var/datum/recursive/R = new()
 	return R?.inner?.get_inner(CRASH("this shouldn't be evaluated"))
- 
+
 /world/proc/conditional_call_test_error()
  	var/datum/recursive/R = new()
  	return R?.inner.get_inner()
@@ -161,3 +161,27 @@
 
 /world/proc/md5_test()
 	return md5("md5_test")
+
+/world/proc/for_loops_test()
+	. = list()
+	var/counter = 0
+	for(var/i in 1 to 3)
+		counter++
+	. += counter
+	counter = 0
+
+	for(var/i = 1 to 3)
+		counter++
+	. += counter
+	counter = 0
+
+	var/j = 1
+	for(,j <= 3,j++)
+		counter++
+	. += counter
+	counter = 0
+
+	j = 1
+	for(,j++ <= 3)
+		counter++
+	. += counter

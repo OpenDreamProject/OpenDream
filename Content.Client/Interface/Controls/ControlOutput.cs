@@ -1,0 +1,31 @@
+﻿using Content.Shared.Interface;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+
+namespace Content.Client.Interface.Controls {
+    class ControlOutput : InterfaceControl {
+        private OutputPanel _textBox;
+        //private Border _border;
+
+        public ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+
+        protected override Control CreateUIElement()
+        {
+            _textBox = new OutputPanel();
+
+            /*
+            _border = new Border() {
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(1),
+                Child = _textBox
+            };
+            */
+
+            return _textBox;
+        }
+
+        public override void Output(string value, string data) {
+            _textBox.AddText(value);
+        }
+    }
+}

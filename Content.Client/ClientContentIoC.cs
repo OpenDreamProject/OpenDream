@@ -6,6 +6,7 @@ namespace Content.Client {
     internal static class ClientContentIoC {
         public static void Register() {
             IoCManager.Register<IDreamInterfaceManager, DreamInterfaceManager>();
+            IoCManager.Register<DreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
         }
     }

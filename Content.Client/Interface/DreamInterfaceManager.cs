@@ -1,6 +1,9 @@
-﻿using Content.Client.Input;
+﻿using System.Collections.Generic;
+using Content.Client.Input;
+using Content.Client.Interface.Controls;
 using Content.Client.Resources;
 using Content.Shared.Interface;
+using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Shared.IoC;
@@ -15,6 +18,15 @@ namespace Content.Client.Interface {
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
+        public ControlWindow DefaultWindow;
+        public ControlOutput DefaultOutput;
+        public ControlInfo DefaultInfo;
+        public ControlMap DefaultMap;
+
+        private IClydeWindow _window;
+
+        public readonly Dictionary<string, ControlWindow> Windows = new();
+
         public void LoadDMF(ResourcePath dmfPath) {
             if (!_resourceCache.TryGetResource(dmfPath, out DMFResource dmf) || dmf.Interface == null) {
                 Logger.Error($"Error(s) while loading DMF '{dmfPath}'");
@@ -22,9 +34,40 @@ namespace Content.Client.Interface {
                 return;
             }
 
-            InterfaceDescriptor = dmf.Interface;
+            LoadInterface(dmf.Interface);
+        }
+
+        private void LoadInterface(InterfaceDescriptor descriptor)
+        {
+            InterfaceDescriptor = descriptor;
+
             _macroManager.LoadMacroSets(InterfaceDescriptor.MacroSetDescriptors);
             _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0]);
+
+            foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
+                ControlWindow window = new ControlWindow(windowDescriptor);
+
+                Windows.Add(windowDescriptor.Name, window);
+                if (window.IsDefault) {
+                    DefaultWindow = window;
+                }
+            }
+
+            foreach (ControlWindow window in Windows.Values) {
+                window.CreateChildControls(this);
+
+                foreach (InterfaceControl control in window.ChildControls) {
+                    if (control.IsDefault) {
+                        switch (control) {
+                            case ControlOutput controlOutput: DefaultOutput = controlOutput; break;
+                            case ControlInfo controlInfo: DefaultInfo = controlInfo; break;
+                            case ControlMap controlMap: DefaultMap = controlMap; break;
+                        }
+                    }
+                }
+            }
+
+            _userInterfaceManager.RootControl.AddChild(DefaultWindow.UIElement);
         }
     }
 

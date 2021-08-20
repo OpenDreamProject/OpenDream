@@ -1,4 +1,5 @@
 ﻿using Robust.Server.Player;
+using System;
 using System.Collections.Generic;
 
 namespace Content.Server.Dream {
@@ -9,6 +10,7 @@ namespace Content.Server.Dream {
 
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
+        public Random Random { get; set; }
 
         public void Initialize();
         public void Shutdown();

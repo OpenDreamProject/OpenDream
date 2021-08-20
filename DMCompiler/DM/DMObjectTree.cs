@@ -45,6 +45,44 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
+        public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
+            // I was unable to find any situation where searching for an absolute path worked
+            if (search.Type == DreamPath.PathType.Absolute) return null;
+
+            DreamPath searchObjectPath;
+
+            int procElement = search.FindElement("proc");
+            if (procElement == -1) procElement = search.FindElement("verb");
+            if (procElement != -1) {
+                searchObjectPath = search.FromElements(0, procElement);
+                searchObjectPath.Type = DreamPath.PathType.Relative; // FromElements makes an absolute path
+            } else {
+                searchObjectPath = search;
+            }
+
+            DMObject found;
+            DreamPath currentPath = path;
+            while (!AllObjects.TryGetValue(currentPath.Combine(searchObjectPath), out found)) {
+                if (currentPath == DreamPath.Root) break;
+
+                currentPath = currentPath.AddToPath("..");
+            }
+
+            //We're searching for a proc
+            if (procElement != -1) {
+                DreamPath procPath = search.FromElements(procElement + 1);
+                if (procPath.Elements.Length != 1) return null;
+
+                if (found.HasProc(procPath.LastElement)) {
+                    return new DreamPath(found.Path.PathString + "/proc" + procPath);
+                } else {
+                    return null;
+                }
+            } else { //We're searching for an object
+                return found?.Path;
+            }
+        }
+
         public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {
             _globalInitProcAssigns.Add(assign);
         }

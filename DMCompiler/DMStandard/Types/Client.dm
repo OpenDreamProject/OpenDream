@@ -15,6 +15,9 @@
 	var/pixel_z = 0
 	var/pixel_w = 0
 
+	var/byond_version = DM_VERSION
+	var/byond_build = DM_BUILD
+
 	var/address
 	var/inactivity = 0
 	var/key
@@ -56,7 +59,7 @@
 
 	proc/Northeast()
 		Move(get_step(mob, NORTHEAST), NORTHEAST)
-	
+
 	proc/Southeast()
 		Move(get_step(mob, SOUTHEAST), SOUTHEAST)
 

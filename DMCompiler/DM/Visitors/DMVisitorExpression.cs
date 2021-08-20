@@ -44,6 +44,20 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Path(constant.Value.Path);
         }
 
+        public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
+            var pathExpr = DMExpression.Constant(_dmObject, _proc, constant.Path);
+            if (pathExpr is not Expressions.Path) throw new CompileErrorException("Cannot do an upward path search on " + pathExpr);
+
+            DreamPath path = ((Expressions.Path)pathExpr).Value;
+            DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
+
+            if (foundPath == null) {
+                throw new CompileErrorException($"Invalid path {path}.{constant.Search.Path}");
+            }
+
+            Result = new Expressions.Path(foundPath.Value);
+        }
+
         public void VisitStringFormat(DMASTStringFormat stringFormat) {
             var expressions = new DMExpression[stringFormat.InterpolatedValues.Length];
 
@@ -481,10 +495,6 @@ namespace DMCompiler.DM.Visitors {
                 default:
                     throw new CompileErrorException("invalid argument count for call()");
             }
-        }
-
-        public void HandleCompileErrorException(CompileErrorException exception) {
-            Program.Error(exception.Error);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Content.Shared.Compiler {
             string location;
 
             if (Token != null) {
-                location = Token?.SourceFile + ":" + Token?.Line + ":" + Token?.Column;
+                location = Token.SourceFile + ":" + Token.Line + ":" + Token.Column;
             } else {
                 location = "(unknown location)";
             }
@@ -33,7 +33,15 @@ namespace Content.Shared.Compiler {
         }
 
         public override string ToString() {
-            return "Warning at " + Token.SourceFile + ":" + Token.Line + ":" + Token.Column + ": " + Message;
+            string location;
+
+            if (Token != null) {
+                location = Token.SourceFile + ":" + Token.Line + ":" + Token.Column;
+            } else {
+                location = "(unknown location)";
+            }
+
+            return "Warning at " + location + ": " + Message;
         }
     }
 

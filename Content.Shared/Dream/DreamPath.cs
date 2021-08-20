@@ -28,6 +28,8 @@ namespace Content.Shared.Dream {
         public enum PathType {
             Absolute,
             Relative,
+
+            //TODO: These really shouldn't be here
             DownwardSearch,
             UpwardSearch
         }
@@ -156,7 +158,7 @@ namespace Content.Shared.Dream {
                 });
             }
 
-            if (!rawPath.StartsWith("/")) rawPath = "/" + rawPath;
+            rawPath = "/" + rawPath;
             return new DreamPath(rawPath);
         }
 

@@ -416,5 +416,19 @@ namespace OpenDreamRuntime.Tests
                 Assert.AreEqual(3, value.GetValueAsInteger());
             }
         }
+
+        [Test]
+        public void MatrixOperationsTest()
+        {
+            var runtime = CreateRuntime();
+            DreamThread.Run(runtime, async state =>
+            {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("matrix_operations_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.Zero(runtime.ExceptionCount);
+        }
     }
 }

@@ -24,7 +24,61 @@
 			src.d = d
 			src.e = e
 			src.f = f
-	
+
+	proc/Add(matrix/Matrix2)
+		if(!istype(Matrix2))
+			CRASH("Invalid matrix")
+		a += Matrix2.a
+		b += Matrix2.b
+		c += Matrix2.c
+		d += Matrix2.d
+		e += Matrix2.e
+		f += Matrix2.f
+		return src
+
+	proc/Multiply(m)
+		if(!istype(m, /matrix))
+			return Scale(m)
+		var/matrix/n = m
+		var/old_a = a
+		var/old_b = b
+		var/old_c = c
+		var/old_d = d
+		var/old_e = e
+		var/old_f = f
+
+		a = old_a*n.a + old_d*n.b
+		b = old_b*n.a + old_e*n.b
+		c = old_c*n.a + old_f*n.b + n.c
+		d = old_a*n.d + old_d*n.e
+		e = old_b*n.d + old_e*n.e
+		f = old_c*n.d + old_f*n.e + n.f
+		return src
+
+	proc/Scale(x, y)
+		if(!isnum(x))
+			x = 0
+		if(!isnum(y))
+			y = x
+		a = a * x
+		b = b * x
+		c = c * x
+		d = d * y
+		e = e * y
+		f = f * y
+		return src
+
+	proc/Subtract(matrix/Matrix2)
+		if(!istype(Matrix2))
+			CRASH("Invalid matrix")
+		a -= Matrix2.a
+		b -= Matrix2.b
+		c -= Matrix2.c
+		d -= Matrix2.d
+		e -= Matrix2.e
+		f -= Matrix2.f
+		return src
+
 	proc/Translate(x, y = x)
 		c += x
 		f += y

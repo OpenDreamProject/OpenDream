@@ -6,6 +6,7 @@ using Content.Shared.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Utility;
@@ -67,7 +68,12 @@ namespace Content.Client.Interface {
                 }
             }
 
-            _userInterfaceManager.RootControl.AddChild(DefaultWindow.UIElement);
+            DefaultWindow.UIElement.Name = "MainWindow";
+
+            LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
+            LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
+
+            _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
         }
     }
 

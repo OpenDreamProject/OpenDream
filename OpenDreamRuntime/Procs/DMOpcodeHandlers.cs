@@ -544,6 +544,38 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? Increment(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue + 1));
+            } else {
+                //If it's not a number, it turns into 1
+                identifier.Assign(new DreamValue(1));
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Decrement(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue - 1));
+            } else {
+                //If it's not a number, it turns into -1
+                identifier.Assign(new DreamValue(-1));
+            }
+
+            return null;
+        }
+
         public static ProcStatus? BitAnd(DMProcState state) {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();

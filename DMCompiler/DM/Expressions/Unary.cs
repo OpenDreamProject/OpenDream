@@ -78,12 +78,8 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
             Expr.EmitPushValue(dmObject, proc);
-            Expr.EmitPushValue(dmObject, proc);
-            proc.PushFloat(1);
-            proc.Append();
-            proc.Pop();
+            proc.Increment();
         }
     }
 
@@ -107,12 +103,8 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            // TODO: THIS IS WRONG! We have to just keep the value on the stack instead of running our LHS twice
             Expr.EmitPushValue(dmObject, proc);
-            Expr.EmitPushValue(dmObject, proc);
-            proc.PushFloat(1);
-            proc.Remove();
-            proc.Pop();
+            proc.Decrement();
         }
     }
 }

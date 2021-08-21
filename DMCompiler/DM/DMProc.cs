@@ -425,6 +425,14 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Append);
         }
 
+        public void Increment() {
+            WriteOpcode(DreamProcOpcode.Increment);
+        }
+
+        public void Decrement() {
+            WriteOpcode(DreamProcOpcode.Decrement);
+        }
+
         public void Remove() {
             WriteOpcode(DreamProcOpcode.Remove);
         }

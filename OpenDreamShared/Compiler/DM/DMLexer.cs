@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMLexer : TokenLexer {
+    public partial class DMLexer : TokenLexer {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
@@ -474,6 +474,21 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return token;
+        }
+
+        protected override Token Advance() {
+            Token current = base.Advance();
+
+            //Skip any newlines when inside brackets
+            if (bracketNesting != 0) {
+                while (current.Type == TokenType.Newline) current = Advance();
+            }
+
+            return current;
+        }
+
+        public int CurrentIndentation() {
+            return _indentationStack.Peek();
         }
 
         private int CheckIndentation() {

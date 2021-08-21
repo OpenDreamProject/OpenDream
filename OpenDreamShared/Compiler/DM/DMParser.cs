@@ -8,19 +8,78 @@ using System.Text;
 using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMParser : Parser<Token> {
+    public partial class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
+        private bool PrintDebugPath = false;
+        private int topLevelErrors = 0;
+        private int topLevelAttempts = 0;
 
         public DMParser(DMLexer lexer) : base(lexer) { }
 
         public DMASTFile File() {
-            DMASTBlockInner blockInner = BlockInner();
+            _saveForToplevel = true;
+            DMASTBlockInner blockInner = TopLevel();
             Newline();
             Consume(TokenType.EndOfFile, "Expected EOF");
+            Console.WriteLine(new String('=', 80));
+            Console.WriteLine("Toplevel statements: " + blockInner.Statements.Length);
+            Console.WriteLine("Errors: " + topLevelErrors + " out of " + topLevelAttempts + " toplevel attempts.");
+            Console.WriteLine(new String('=', 80));
 
             return new DMASTFile(blockInner);
+        }
+
+        public DMASTBlockInner TopLevel() {
+            List<DMASTStatement> statements = new();
+            bool valid_state = true;
+            do {
+                Whitespace();
+                _topLevelTokens.Clear();
+                Errors = new();
+
+                DMASTStatement statement = null;
+                if (valid_state) {
+                    topLevelAttempts += 1;
+                }
+                try {
+                    statement = Statement();
+                }
+                catch (Exception) {
+                    if (valid_state) {
+                        throw;
+                    }
+                }
+                if (statement != null) {
+                    Whitespace();
+                    statements.Add(statement);
+                }
+
+                if (Errors.Count != 0) {
+                    LocateNextToplevel();
+                    if (valid_state) {
+                        HandleBlockInnerErrors(Errors);
+                        topLevelErrors += 1;
+                        valid_state = false;
+                    }
+                }
+                else {
+                    if (!valid_state) {
+                        topLevelAttempts += 1;
+                    }
+                    if (!PeekDelimiter() && !valid_state) {
+                        LocateNextToplevel();
+                    }
+                    valid_state = true;
+                }
+            } while (Delimiter());
+            if (statements.Count == 0) {
+                return null;
+            }
+            else {
+                return new DMASTBlockInner(statements.ToArray());
+            }
         }
 
         public DMASTBlockInner BlockInner() {
@@ -41,7 +100,8 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 return new DMASTBlockInner(statements.ToArray());
-            } else {
+            }
+            else {
                 return null;
             }
         }
@@ -56,6 +116,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
 
                 _currentPath = _currentPath.Combine(path.Path);
+                if (PrintDebugPath) {
+                    Console.WriteLine(_currentPath);
+                }
 
                 //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {

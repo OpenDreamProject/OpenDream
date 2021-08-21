@@ -164,7 +164,7 @@
         DMF_Window
     }
 
-    public class Token {
+    public partial class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;

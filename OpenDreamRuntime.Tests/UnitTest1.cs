@@ -410,7 +410,7 @@ namespace OpenDreamRuntime.Tests
             });
 
             Assert.Zero(runtime.ExceptionCount);
-            var resultList = (DreamList)result.GetValueAsDreamObjectOfType(DreamPath.List);
+            var resultList = result.GetValueAsDreamList();
             foreach(var value in resultList.GetValues())
             {
                 Assert.AreEqual(3, value.GetValueAsInteger());

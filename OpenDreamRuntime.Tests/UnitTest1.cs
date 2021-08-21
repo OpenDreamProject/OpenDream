@@ -4,8 +4,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using System.Threading;
-using System;
+using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Tests
 {
@@ -397,6 +396,25 @@ namespace OpenDreamRuntime.Tests
 
             Assert.Zero(runtime.ExceptionCount);
             Assert.AreEqual(new DreamValue("c74318b61a3024520c466f828c043c79"), result);
+        }
+
+        [Test]
+        public void ForLoopsTest()
+        {
+            var runtime = CreateRuntime();
+            var result = DreamThread.Run(runtime, async state =>
+            {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("for_loops_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.Zero(runtime.ExceptionCount);
+            var resultList = result.GetValueAsDreamList();
+            foreach(var value in resultList.GetValues())
+            {
+                Assert.AreEqual(3, value.GetValueAsInteger());
+            }
         }
     }
 }

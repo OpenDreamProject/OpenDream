@@ -689,15 +689,15 @@ namespace OpenDreamShared.Compiler.DM {
                     variable = new DMASTIdentifier(variableDeclaration.Name);
                 } else {
                     variable = Identifier();
-                    if (variable == null) Error("Expected an identifier");
-
-                    Whitespace();
-                    if (Check(TokenType.DM_Equals)) {
+                    if (variable != null) {
                         Whitespace();
-                        DMASTExpression value = Expression();
-                        if (value == null) Error("Expected an expression");
+                        if (Check(TokenType.DM_Equals)) {
+                            Whitespace();
+                            DMASTExpression value = Expression();
+                            if (value == null) Error("Expected an expression");
 
-                        initializer = new DMASTProcStatementExpression(new DMASTAssign(variable, value));
+                            initializer = new DMASTProcStatementExpression(new DMASTAssign(variable, value));
+                        }
                     }
                 }
 
@@ -745,9 +745,13 @@ namespace OpenDreamShared.Compiler.DM {
                 } else if (Check(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
                     Whitespace();
                     DMASTExpression comparator = Expression();
-                    Consume(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon }, "Expected ','");
+                    DMASTExpression incrementor = null;
+                    if (Check(new[] {TokenType.DM_Comma, TokenType.DM_Semicolon}))
+                    {
+                        Whitespace();
+                        incrementor = Expression();
+                    }
                     Whitespace();
-                    DMASTExpression incrementor = Expression();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                     Newline();

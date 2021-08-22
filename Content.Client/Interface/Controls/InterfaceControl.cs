@@ -36,6 +36,8 @@ namespace Content.Client.Interface.Controls
 
         public override void UpdateElementDescriptor()
         {
+            UIElement.Name = _controlDescriptor.Name;
+
             var pos = _controlDescriptor.Pos.GetValueOrDefault();
             LayoutContainer.SetMarginLeft(UIElement, pos.X);
             LayoutContainer.SetMarginTop(UIElement, pos.Y);

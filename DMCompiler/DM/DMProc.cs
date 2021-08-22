@@ -71,7 +71,16 @@ namespace DMCompiler.DM {
 
         public void ValidateReturnType()
         {
-            if (!ReturnTypes.HasFlag(ActualReturnType) && !ReturnTypes.Equals(DMValueType.Anything))
+            if (ReturnTypes.Equals(DMValueType.Anything))
+            {
+                return;
+            }
+
+            if (ActualReturnType.Equals(DMValueType.Anything))
+            {
+                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}"));
+            }
+            else if (!ReturnTypes.HasFlag(ActualReturnType))
             {
                 Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {ActualReturnType}, expected {ReturnTypes}"));
             }

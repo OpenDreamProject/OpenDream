@@ -210,10 +210,6 @@ namespace OpenDreamShared.Compiler.DM {
             Parameters = parameters;
             Body = body;
             ReturnTypes = returnType;
-            /*if (returnType.Equals(DMValueType.Text))
-            {
-                Console.WriteLine("here");
-            }*/
         }
 
         public void Visit(DMASTVisitor visitor) {

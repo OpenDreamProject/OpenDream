@@ -24,8 +24,39 @@ namespace Content.Client.Interface.Controls
             _windowDescriptor = windowDescriptor;
         }
 
+        public override void UpdateElementDescriptor()
+        {
+            // Don't call base.UpdateElementDescriptor();
+        }
+
         public void UpdateAnchors()
         {
+            foreach (InterfaceControl control in ChildControls) {
+                var element = control.UIElement;
+
+                if (control.Anchor1.HasValue) {
+                    var elementPos = control.Pos.GetValueOrDefault();
+                    var windowSize = Size.GetValueOrDefault();
+
+                    var offset1X = elementPos.X - (windowSize.Width * control.Anchor1.Value.X / 100f);
+                    var offset1Y = elementPos.Y - (windowSize.Height * control.Anchor1.Value.Y / 100f);
+                    var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
+                    var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
+                    LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
+                    LayoutContainer.SetMarginTop(element, Math.Max(top, 0));
+
+                    if (control.Anchor2.HasValue) {
+                        var elementSize = control.Size.GetValueOrDefault();
+
+                        var offset2X = (elementPos.X + elementSize.Width) - (windowSize.Width * control.Anchor2.Value.X / 100);
+                        var offset2Y = (elementPos.Y + elementSize.Height) - (windowSize.Height * control.Anchor2.Value.Y / 100);
+                        var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
+                        var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
+                        element.SetWidth = Math.Max(width, 0);
+                        element.SetHeight = Math.Max(height, 0);
+                    }
+                }
+            }
         }
 
         public void CreateChildControls(DreamInterfaceManager manager) {
@@ -54,6 +85,7 @@ namespace Content.Client.Interface.Controls
         protected override Control CreateUIElement() {
             var container = new BoxContainer
             {
+                RectClipContent = true,
                 Orientation = BoxContainer.LayoutOrientation.Vertical,
                 Children =
                 {
@@ -65,8 +97,14 @@ namespace Content.Client.Interface.Controls
                 }
             };
 
+            _canvas.OnResized += CanvasOnResized;
+
             return container;
         }
 
+        private void CanvasOnResized()
+        {
+            UpdateAnchors();
+        }
     }
 }

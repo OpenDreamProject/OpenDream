@@ -238,7 +238,7 @@
 	M.Turn(90)
 
 	if(!M.Equals(matrix(4, 5, 6, -1, -2, -3)))
-		CRASH("Unexpected matrix/Turn result [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+		CRASH("Unexpected matrix/Turn result")
 
 /world/proc/matrix_operations_test()
 	test_matrix_add()
@@ -246,4 +246,4 @@
 	test_matrix_scale()
 	test_matrix_subtract()
 	test_matrix_translate()
-	//test_matrix_turn() TODO: Bugged?
+	test_matrix_turn()

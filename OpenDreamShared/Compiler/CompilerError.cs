@@ -54,6 +54,7 @@ namespace OpenDreamShared.Compiler {
 
         public CompileErrorException(string message) : base(message) {
             Error = new CompilerError(null, message);
+            //throw new Exception(message);
         }
     }
 }

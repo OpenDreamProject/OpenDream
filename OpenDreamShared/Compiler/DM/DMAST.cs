@@ -191,8 +191,9 @@ namespace OpenDreamShared.Compiler.DM {
         public bool IsVerb = false;
         public DMASTDefinitionParameter[] Parameters;
         public DMASTProcBlockInner Body;
+        public DMValueType ReturnTypes;
 
-        public DMASTProcDefinition(DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) {
+        public DMASTProcDefinition(DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body, DMValueType returnType) {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -208,6 +209,11 @@ namespace OpenDreamShared.Compiler.DM {
             Name = path.LastElement;
             Parameters = parameters;
             Body = body;
+            ReturnTypes = returnType;
+            /*if (returnType.Equals(DMValueType.Text))
+            {
+                Console.WriteLine("here");
+            }*/
         }
 
         public void Visit(DMASTVisitor visitor) {

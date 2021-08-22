@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     public class Parser<SourceType> {
@@ -80,7 +81,8 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected void Error(string message) {
-            Errors.Add(new CompilerError(_currentToken, message));
+            //rrors.Add(new CompilerError(_currentToken, message));
+            throw new Exception(message);
         }
 
         protected void Warning(string message) {

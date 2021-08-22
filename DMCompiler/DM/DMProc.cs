@@ -33,6 +33,10 @@ namespace DMCompiler.DM {
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
+
+        public string Name;
+        public DMValueType ReturnTypes;
+        public DMValueType ActualReturnType;
         public bool Unimplemented { get; set; } = false;
 
         private DMASTProcDefinition _astDefinition = null;
@@ -45,8 +49,10 @@ namespace DMCompiler.DM {
         private bool _waitFor = true;
         private int _labelIdCounter = 0;
 
-        public DMProc(DMASTProcDefinition astDefinition) {
+        public DMProc(DMASTProcDefinition astDefinition)
+        {
             _astDefinition = astDefinition;
+            Name = _astDefinition?.Name ?? "Unknown";
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
         }
@@ -242,7 +248,7 @@ namespace DMCompiler.DM {
         public void ContinueIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_continue");
         }
-        
+
         public void Goto(string label) {
             Jump(label + "_codelabel");
         }

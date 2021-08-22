@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="64"
+   height="64"
+   viewBox="0 0 16.933333 16.933334"
+   version="1.1"
+   id="svg888"
+   inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="icon.svg">
+  <defs
+     id="defs882" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.959798"
+     inkscape:cx="37.827002"
+     inkscape:cy="18.936044"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1583"
+     inkscape:window-height="1045"
+     inkscape:window-x="2467"
+     inkscape:window-y="161"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata885">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-119.78879,-195.52748)">
+    <g
+       id="g1481"
+       transform="matrix(1.1580043,0,0,1.1580043,-17.850571,-30.894177)">
+      <g
+         id="g10"
+         transform="matrix(0.26458333,0,0,0.26458333,94.423186,167.43071)">
+        <path
+           d="m 120.52,161.46 c -0.34,0 -0.68,0 -1.03,0 -1.25,-0.73 -2.5,-1.47 -3.76,-2.19 -6.48,-3.73 -12.96,-7.45 -19.45,-11.17 -0.28,-0.16 -0.41,-0.36 -0.41,-0.69 0.01,-8.99 0.01,-17.97 0,-26.96 0,-0.31 0.09,-0.51 0.37,-0.67 7.75,-4.47 15.5,-8.95 23.25,-13.43 0.36,-0.21 0.64,-0.21 1,0 7.74,4.49 15.5,8.96 23.25,13.44 0.26,0.15 0.37,0.34 0.37,0.64 0,9.01 -0.01,18.02 0,27.03 0,0.34 -0.16,0.52 -0.44,0.68 m -23.48,13.11"
+           id="path2" />
+        <path
+           fill="#f67280"
+           d="m 97.97,120.45 c 0.97,-0.56 1.9,-1.1 2.82,-1.63 6.28,-3.63 12.56,-7.26 18.84,-10.89 0.27,-0.15 0.46,-0.16 0.73,-0.01 7.11,4.12 14.23,8.23 21.35,12.35 0.1,0.06 0.19,0.12 0.32,0.2 -1.04,0.6 -2.04,1.18 -3.04,1.76 -6.23,3.6 -12.46,7.2 -18.69,10.81 -0.23,0.13 -0.38,0.13 -0.61,0 -7.12,-4.13 -14.25,-8.25 -21.37,-12.38 -0.1,-0.06 -0.2,-0.12 -0.35,-0.21 z"
+           id="path4" />
+        <path
+           fill="#6c5b7b"
+           d="m 120.72,135.02 c 0,-0.31 0.11,-0.51 0.37,-0.66 7.12,-4.11 14.24,-8.22 21.35,-12.33 0.08,-0.05 0.17,-0.09 0.32,-0.16 0,0.18 0,0.3 0,0.41 0,8.23 0,16.46 0,24.69 0,0.24 -0.05,0.38 -0.28,0.51 -7.1,4.07 -14.2,8.15 -21.29,12.23 -0.14,0.08 -0.27,0.15 -0.45,0.25"
+           id="path6" />
+        <path
+           fill="#c06c84"
+           d="m 97.26,121.87 c 0.15,0.08 0.26,0.14 0.37,0.2 7.13,4.12 14.25,8.25 21.38,12.36 0.2,0.11 0.29,0.23 0.29,0.47 -0.01,8.25 -0.01,16.51 -0.01,24.76 0,0.08 0,0.16 0,0.3 -0.13,-0.07 -0.23,-0.11 -0.32,-0.16 -7.16,-4.11 -14.31,-8.23 -21.47,-12.34 -0.18,-0.1 -0.25,-0.21 -0.25,-0.42"
+           id="path8" />
+      </g>
+      <path
+         fill="#aaaaaa"
+         d="m 129.29527,206.71869 c -0.37306,0.21431 -0.56091,-0.10319 -0.56356,-0.95779 l -0.005,-1.41023 c -0.003,-0.88371 0.18256,-1.43404 0.55562,-1.64836 0.37042,-0.21431 0.55827,0.12171 0.56092,1.00277 l 0.005,1.41023 c 0.003,0.85461 -0.18256,1.38907 -0.55298,1.60338 m -0.0132,-5.08529 c -1.11654,0.64558 -1.67216,1.76477 -1.66687,3.36021 l 0.005,1.41022 c 0.005,1.56634 0.56356,2.02936 1.6801,1.38378 1.1139,-0.64294 1.67217,-1.75155 1.66688,-3.31788 l -0.005,-1.41023 c -0.005,-1.59544 -0.56621,-2.07169 -1.68011,-1.4261"
+         id="path32"
+         style="stroke-width:0.264583" />
+    </g>
+  </g>
+</svg>

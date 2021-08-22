@@ -16,9 +16,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition)
         {
-            var return_type = procDefinition.ReturnTypes;
             _proc.ReturnTypes = procDefinition.ReturnTypes;
-            //if(procDefinition.ReturnTypes.Equals())
+
             if (procDefinition.Body != null) {
                 foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                     string parameterName = parameter.Name;
@@ -46,10 +45,6 @@ namespace DMCompiler.DM.Visitors {
                 procDefinition.Body.Visit(this);
 
                 _proc.ResolveLabels();
-                if (return_type == DMValueType.Text)
-                {
-                    return;
-                }
             }
         }
 
@@ -152,31 +147,32 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
+            if (_proc.Name == "fizz")
+            {
+                Console.WriteLine("buzz");
+            }
+
             if (statement.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, statement.Value);
-                if (true)
+                switch (statement.Value)
                 {
-                    switch (statement.Value)
-                    {
-                        case DMASTConstantString:
-                            _proc.ActualReturnType |= DMValueType.Text;
-                            //throw new CompileErrorException($"Invalid return type text, expected {_proc.ReturnTypes.ToString()}");
-                            break;
-                        case DMASTConstantInteger:
-                            _proc.ActualReturnType |= DMValueType.Num;
-                            //throw new CompileErrorException($"Invalid return type num, expected {_proc.ReturnTypes.ToString()}");
-                            break;
-                        default:
-                            _proc.ActualReturnType |= DMValueType.Anything;
-                            break;
+                    case DMASTConstantString:
+                        _proc.ActualReturnType |= DMValueType.Text;
+                        break;
+                    case DMASTConstantFloat:
+                    case DMASTConstantInteger:
 
-                    }
-                    if (!_proc.ReturnTypes.HasFlag(_proc.ActualReturnType) && !_proc.ReturnTypes.Equals(DMValueType.Anything))
-                    {
-                        throw new CompileErrorException($"{_dmObject.Path}.{_proc.Name}(): Invalid return type {_proc.ActualReturnType}, expected {_proc.ReturnTypes}");
-                    }
+                        _proc.ActualReturnType |= DMValueType.Num;
+                        break;
+                    case DMASTConstantNull:
+                        _proc.ActualReturnType |= DMValueType.Null;
+                        break;
+                    default:
+                        _proc.ActualReturnType |= DMValueType.Anything;
+                        break;
                 }
-            } else {
+            } else
+            {
                 _proc.PushSelf(); //Default return value
             }
 

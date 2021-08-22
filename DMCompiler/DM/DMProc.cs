@@ -6,6 +6,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
@@ -35,6 +36,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
 
         public string Name;
+        public string Path;
         public DMValueType ReturnTypes;
         public DMValueType ActualReturnType;
         public bool Unimplemented { get; set; } = false;
@@ -52,7 +54,8 @@ namespace DMCompiler.DM {
         public DMProc(DMASTProcDefinition astDefinition)
         {
             _astDefinition = astDefinition;
-            Name = _astDefinition?.Name ?? "Unknown";
+            Name = _astDefinition?.Name ?? "Unknown Name";
+            Path = _astDefinition?.ObjectPath.ToString() ?? "Unknown Path";
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
         }
@@ -63,6 +66,15 @@ namespace DMCompiler.DM {
             }
 
             _astDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
+            ValidateReturnType();
+        }
+
+        public void ValidateReturnType()
+        {
+            if (!ReturnTypes.HasFlag(ActualReturnType) && !ReturnTypes.Equals(DMValueType.Anything))
+            {
+                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {ActualReturnType}, expected {ReturnTypes}"));
+            }
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {

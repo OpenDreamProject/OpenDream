@@ -35,6 +35,8 @@ namespace Content.Client.Interface.Controls {
 
             if (!String.IsNullOrEmpty(controlDescriptor.Left)) {
                 _leftElement = _dreamInterface.Windows[controlDescriptor.Left];
+                _leftElement.UIElement.HorizontalExpand = true;
+                _leftElement.UIElement.VerticalExpand = true;
                 _grid.Children.Add(_leftElement.UIElement);
             } else {
                 _leftElement = null;
@@ -42,6 +44,8 @@ namespace Content.Client.Interface.Controls {
 
             if (!String.IsNullOrEmpty(controlDescriptor.Right)) {
                 _rightElement = _dreamInterface.Windows[controlDescriptor.Right];
+                _rightElement.UIElement.HorizontalExpand = true;
+                _rightElement.UIElement.VerticalExpand = true;
                 _grid.Children.Add(_rightElement.UIElement);
             } else {
                 _rightElement = null;

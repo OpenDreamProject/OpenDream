@@ -57,8 +57,8 @@ namespace Content.Client.Interface.Controls {
 
         private void UpdateGrid(bool isVert) {
             _grid.Orientation = isVert
-                ? SplitContainer.SplitOrientation.Vertical
-                : SplitContainer.SplitOrientation.Horizontal;
+                ? SplitContainer.SplitOrientation.Horizontal
+                : SplitContainer.SplitOrientation.Vertical;
         }
     }
 }

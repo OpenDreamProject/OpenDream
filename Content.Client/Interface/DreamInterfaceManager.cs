@@ -9,6 +9,7 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Interface {
@@ -16,6 +17,7 @@ namespace Content.Client.Interface {
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IResourceCache _resourceCache = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
+        [Dependency] private readonly IEyeManager _eyeManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -24,7 +26,7 @@ namespace Content.Client.Interface {
         public ControlInfo DefaultInfo;
         public ControlMap DefaultMap;
 
-        private IClydeWindow _window;
+        // private IClydeWindow _window;
 
         public readonly Dictionary<string, ControlWindow> Windows = new();
 
@@ -36,6 +38,16 @@ namespace Content.Client.Interface {
             }
 
             LoadInterface(dmf.Interface);
+        }
+
+        public void Initialize()
+        {
+            _userInterfaceManager.MainViewport.Visible = false;
+        }
+
+        public void FrameUpdate(FrameEventArgs frameEventArgs)
+        {
+            DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
 
         private void LoadInterface(InterfaceDescriptor descriptor)
@@ -81,5 +93,7 @@ namespace Content.Client.Interface {
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
         public void LoadDMF(ResourcePath dmfPath);
+        void Initialize();
+        void FrameUpdate(FrameEventArgs frameEventArgs);
     }
 }

@@ -1,17 +1,21 @@
 ﻿using Content.Shared.Interface;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
-using Robust.Client.UserInterface.CustomControls;
 
-namespace Content.Client.Interface.Controls {
+namespace Content.Client.Interface.Controls
+{
     class ControlMap : InterfaceControl
     {
-        private ViewportContainer _viewport;
+        public ScalingViewport Viewport { get; private set; }
 
-        public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+        public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
+        {
+        }
 
-        protected override Control CreateUIElement() {
-            return new Control();
+        protected override Control CreateUIElement()
+        {
+            Viewport = new ScalingViewport { ViewportSize = (32 * 15, 32 * 15) };
+            return Viewport;
         }
 
         /*
@@ -56,7 +60,8 @@ namespace Content.Client.Interface.Controls {
         }
         */
 
-        private void OnLeftMouseDown(object sender, MouseEventArgs e) {
+        private void OnLeftMouseDown(object sender, MouseEventArgs e)
+        {
             // TODO: probably rewrite this to use Robust
             /*Point mousePosition = e.GetPosition(_dreamRenderer.OpenGLViewControl);
             if (mousePosition.X < 0 || mousePosition.X > _dreamRenderer.OpenGLViewControl.Width ||

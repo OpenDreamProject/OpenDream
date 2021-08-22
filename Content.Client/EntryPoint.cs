@@ -8,10 +8,15 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Localization;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Client {
-    public class EntryPoint : GameClient {
+    public class EntryPoint : GameClient
+    {
+        [Dependency]
+        private readonly IDreamInterfaceManager _dreamInterface = default!;
+
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
@@ -26,6 +31,8 @@ namespace Content.Client {
             }
 
             IoCManager.BuildGraph();
+            IoCManager.InjectDependencies(this);
+
             componentFactory.GenerateNetIds();
 
             // Load localization. Needed for some engine texts, such as the ones in Robust ViewVariables.
@@ -39,7 +46,16 @@ namespace Content.Client {
             IoCManager.Resolve<ILightManager>().Enabled = false;
 
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
-            IoCManager.Resolve<IDreamInterfaceManager>().LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
+            _dreamInterface.Initialize();
+            _dreamInterface.LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
+        }
+
+        public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
+        {
+            if (level == ModUpdateLevel.FramePostEngine)
+            {
+                _dreamInterface.FrameUpdate(frameEventArgs);
+            }
         }
     }
 }

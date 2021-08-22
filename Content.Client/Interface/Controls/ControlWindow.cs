@@ -92,6 +92,7 @@ namespace Content.Client.Interface.Controls
                     (_menu = new MenuBar()),
                     (_canvas = new LayoutContainer
                     {
+                        InheritChildMeasure = false,
                         VerticalExpand = true
                     })
                 }

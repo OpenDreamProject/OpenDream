@@ -198,6 +198,19 @@
 	if(!M.Equals(matrix(8, 10, 12, 14, 16, 18)))
 		CRASH("Unexpected matrix/Add result")
 
+/world/proc/test_matrix_invert()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+
+	M.Invert()
+
+	if(!M.Equals(matrix(-1.66667, 0.666667, 1, 1.33333, -0.333333, -2)))
+		CRASH("Unexpected matrix/Invert result [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+
+	M.Invert()
+
+	if(!M.Equals(matrix(1, 2, 3, 4, 5, 6)))
+		CRASH("Unexpected matrix/Invert result2 [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+
 /world/proc/test_matrix_multiply()
 	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
 	var/matrix/N = matrix(7, 8, 9, 10, 11, 12)
@@ -242,6 +255,7 @@
 
 /world/proc/matrix_operations_test()
 	test_matrix_add()
+	test_matrix_invert()
 	test_matrix_multiply()
 	test_matrix_scale()
 	test_matrix_subtract()

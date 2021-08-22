@@ -56,7 +56,7 @@ namespace OpenDreamClient.Renderer {
         }
 
         public void SetTransform(float[] transform) {
-            _gl.UniformMatrix3(TransformUniform, 1, false, new float[] {
+            _gl.UniformMatrix3(TransformUniform, 1, true, new float[] {
                 transform[0], transform[1], 0,
                 transform[2], transform[3], 0,
                 transform[4], transform[5], 1

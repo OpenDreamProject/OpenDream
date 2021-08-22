@@ -13,10 +13,10 @@ uniform int repeatX, repeatY;
 out vec2 fragmentTextureCoord;
 
 void main() {
-    vec2 position = (vec3(vertexPosition, 1.0) * transform).xy;
-
-    position *= vec2(repeatX, repeatY);
+    vec2 position = vertexPosition * vec2(repeatX, repeatY);
     fragmentTextureCoord = abs(position / iconSize * 2) * textureCoord;
+
+    position = (vec3(position, 1.0) * transform).xy;
     position += vec2(iconSize * (repeatX - 1) / 2, iconSize * (repeatY - 1) / 2);
 
     position += translation;

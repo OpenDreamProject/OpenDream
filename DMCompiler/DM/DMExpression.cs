@@ -25,15 +25,18 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
+        public DMValueType Type = DMValueType.Anything;
+
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
             return instance.Result;
         }
 
-        public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        public static DMExpression Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
             expr.EmitPushValue(dmObject, proc);
+            return expr;
         }
 
         public static Expressions.Constant Constant(DMObject dmObject, DMProc proc, DMASTExpression expression) {

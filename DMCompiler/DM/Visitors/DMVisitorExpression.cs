@@ -1,6 +1,7 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {
@@ -22,22 +23,27 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantNull(DMASTConstantNull constant) {
             Result = new Expressions.Null();
+            Result.Type = DMValueType.Null;
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             Result = new Expressions.Number(constant.Value);
+            Result.Type = DMValueType.Num;
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {
             Result = new Expressions.Number(constant.Value);
+            Result.Type = DMValueType.Num;
         }
 
         public void VisitConstantString(DMASTConstantString constant) {
             Result = new Expressions.String(constant.Value);
+            Result.Type = DMValueType.Text;
         }
 
         public void VisitConstantResource(DMASTConstantResource constant) {
             Result = new Expressions.Resource(constant.Path);
+            Result.Type = DMValueType.File;
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
@@ -70,10 +76,13 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);
+            Result.Type = DMValueType.Text;
         }
 
 
         public void VisitIdentifier(DMASTIdentifier identifier) {
+            //TODO Set result type
+
             var name = identifier.Identifier;
 
             if (name == "src") {

@@ -38,7 +38,6 @@ namespace DMCompiler.DM {
         public string Name;
         public string Path;
         public DMValueType ReturnTypes;
-        public DMValueType ActualReturnType;
         public bool Unimplemented { get; set; } = false;
 
         private DMASTProcDefinition _astDefinition = null;
@@ -66,23 +65,22 @@ namespace DMCompiler.DM {
             }
 
             _astDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
-            ValidateReturnType();
         }
 
-        public void ValidateReturnType()
+        public void ValidateReturnType(DMValueType type)
         {
             if (ReturnTypes.Equals(DMValueType.Anything))
             {
                 return;
             }
 
-            if (ActualReturnType.Equals(DMValueType.Anything))
+            if (type.Equals(DMValueType.Anything))
             {
                 Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}"));
             }
-            else if (!ReturnTypes.HasFlag(ActualReturnType))
+            else if (!ReturnTypes.HasFlag(type))
             {
-                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {ActualReturnType}, expected {ReturnTypes}"));
+                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
             }
         }
 

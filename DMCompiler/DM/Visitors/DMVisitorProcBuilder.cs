@@ -153,24 +153,8 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (statement.Value != null) {
-                DMExpression.Emit(_dmObject, _proc, statement.Value);
-                switch (statement.Value)
-                {
-                    case DMASTConstantString:
-                        _proc.ActualReturnType |= DMValueType.Text;
-                        break;
-                    case DMASTConstantFloat:
-                    case DMASTConstantInteger:
-
-                        _proc.ActualReturnType |= DMValueType.Num;
-                        break;
-                    case DMASTConstantNull:
-                        _proc.ActualReturnType |= DMValueType.Null;
-                        break;
-                    default:
-                        _proc.ActualReturnType |= DMValueType.Anything;
-                        break;
-                }
+                var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
+                _proc.ValidateReturnType(expr.Type);
             } else
             {
                 _proc.PushSelf(); //Default return value

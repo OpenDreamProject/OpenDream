@@ -43,11 +43,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantResource(DMASTConstantResource constant) {
             Result = new Expressions.Resource(constant.Path);
-            Result.Type = DMValueType.File;
+            //TODO result type
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
             Result = new Expressions.Path(constant.Value.Path);
+            //TODO result type?
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {

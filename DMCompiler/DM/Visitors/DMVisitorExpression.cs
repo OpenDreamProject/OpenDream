@@ -81,14 +81,14 @@ namespace DMCompiler.DM.Visitors {
 
 
         public void VisitIdentifier(DMASTIdentifier identifier) {
-            //TODO Set result type
-
             var name = identifier.Identifier;
 
             if (name == "src") {
                 Result = new Expressions.Src(_dmObject.Path);
+                Result.Type = GetATOMType(_dmObject.Path);
             } else if (name == "usr") {
                 Result = new Expressions.Usr();
+                Result.Type = DMValueType.Mob; //According to the docs, Usr is a mob
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
@@ -96,6 +96,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(localVar.Type, name);
+                    Result.Type = GetATOMType(localVar.Type);
                     return;
                 }
 
@@ -110,6 +111,35 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 Result = new Expressions.Field(field.Type, name);
+                Result.Type = GetATOMType(field.Type);
+            }
+
+            DMValueType GetATOMType(DreamPath? type)
+            {
+                if (type is null)
+                {
+                    return DMValueType.Anything;
+                }
+                var typeString = type.ToString();
+                var strippedType = typeString.StartsWith('/') ? typeString.Substring(1) : typeString;
+                if (strippedType.StartsWith("mob"))
+                {
+                    return DMValueType.Mob;
+                }
+                if (strippedType.StartsWith("obj"))
+                {
+                    return DMValueType.Obj;
+                }
+                if (strippedType.StartsWith("turf"))
+                {
+                    return DMValueType.Turf;
+                }
+                if (strippedType.StartsWith("area"))
+                {
+                    return DMValueType.Area;
+                }
+
+                return DMValueType.Anything;
             }
         }
 

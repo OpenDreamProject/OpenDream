@@ -21,7 +21,7 @@ namespace Content.Shared.Network.Messages
                 var countLines = buffer.ReadVariableInt32();
                 var lines = new List<string>(countLines);
 
-                for (var l = 0; l < countTabs; l++)
+                for (var l = 0; l < countLines; l++)
                 {
                     lines.Add(buffer.ReadString());
                 }

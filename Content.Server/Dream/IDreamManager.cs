@@ -15,6 +15,10 @@ namespace Content.Server.Dream {
         public void Initialize();
         public void Shutdown();
         public IPlayerSession GetSessionFromClient(DreamObject client);
+        DreamConnection GetConnectionFromClient(DreamObject client);
         public DreamObject GetClientFromMob(DreamObject mob);
+        DreamConnection GetConnectionFromMob(DreamObject mob);
+        DreamConnection GetConnectionBySession(IPlayerSession session);
+        void Update();
     }
 }

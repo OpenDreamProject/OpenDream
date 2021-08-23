@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Content.Shared.Interface;
+using Content.Shared.Network.Messages;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
@@ -110,8 +111,7 @@ namespace Content.Client.Interface.Controls {
                 _tabControl.CurrentTab = panel.GetPositionInParent();
         }
 
-        /*
-        public void UpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
+        public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels) {
             //Remove any panels the packet doesn't contain
             foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels) {
                 if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key)) {
@@ -133,7 +133,6 @@ namespace Content.Client.Interface.Controls {
                 panel.UpdateLines(updatingPanel.Value);
             }
         }
-        */
 
         private void OnSelectionChanged(int tabIndex) {
             InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);

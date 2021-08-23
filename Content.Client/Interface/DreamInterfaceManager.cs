@@ -3,12 +3,14 @@ using Content.Client.Input;
 using Content.Client.Interface.Controls;
 using Content.Client.Resources;
 using Content.Shared.Interface;
+using Content.Shared.Network.Messages;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
+using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
@@ -18,6 +20,7 @@ namespace Content.Client.Interface {
         [Dependency] private readonly IResourceCache _resourceCache = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
+        [Dependency] private readonly IClientNetManager _netManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -43,7 +46,28 @@ namespace Content.Client.Interface {
         public void Initialize()
         {
             _userInterfaceManager.MainViewport.Visible = false;
+
+            _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
+            _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
+            //_netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
         }
+
+        private void RxUpdateStatPanels(MsgUpdateStatPanels message)
+        {
+            DefaultInfo?.UpdateStatPanels(message);
+        }
+
+        private void RxSelectStatPanel(MsgSelectStatPanel message)
+        {
+            DefaultInfo?.SelectStatPanel(message.StatPanel);
+        }
+
+        /*
+        private void RxUpdateAvailableVerbs(MsgUpdateAvailableVerbs message)
+        {
+            DefaultInfo?.UpdateStatPanels(message);
+        }
+        */
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)
         {

@@ -3,9 +3,13 @@ using Content.Shared.Input;
 using Robust.Server.Player;
 using Robust.Shared.GameObjects;
 using System.Collections.Generic;
+using Robust.Shared.IoC;
 
 namespace Content.Server.Input {
-    class DreamCommandSystem : SharedDreamCommandSystem {
+    class DreamCommandSystem : SharedDreamCommandSystem
+    {
+        [Dependency] private readonly IDreamManager _dreamManager;
+
         private List<(string Command, IPlayerSession session)> _repeatingCommands = new();
 
         public override void Initialize() {
@@ -37,8 +41,7 @@ namespace Content.Server.Input {
         }
 
         private void RunCommand(string command, IPlayerSession session) {
-            PlayerSessionData sessionData = (PlayerSessionData)session.Data.ContentDataUncast;
-            DreamObject client = sessionData.Client;
+            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?

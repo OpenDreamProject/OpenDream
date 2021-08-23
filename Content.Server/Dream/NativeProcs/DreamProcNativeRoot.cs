@@ -1231,13 +1231,13 @@ namespace Content.Server.Dream.NativeProcs {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        /*private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
+        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
             if (name != DreamValue.Null) {
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
             } else {
                 connection.AddStatPanelLine(value.Stringify());
             }
-        }*/
+        }
 
         [DreamProc("stat")]
         [DreamProcParameter("Name")]
@@ -1245,9 +1245,9 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_stat(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue name = arguments.GetArgument(0, "Name");
             DreamValue value = arguments.GetArgument(1, "Value");
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(usr);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            //OutputToStatPanel(connection, name, value);
+            OutputToStatPanel(connection, name, value);
             return DreamValue.Null;
         }
 
@@ -1259,14 +1259,14 @@ namespace Content.Server.Dream.NativeProcs {
             string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
             DreamValue name = arguments.GetArgument(1, "Name");
             DreamValue value = arguments.GetArgument(2, "Value");
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(usr);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            //connection.SetOutputStatPanel(panel);
+            connection.SetOutputStatPanel(panel);
             if (name != DreamValue.Null || value != DreamValue.Null) {
-                //OutputToStatPanel(connection, name, value);
+                OutputToStatPanel(connection, name, value);
             }
 
-            return DreamValue.Null;//return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
+            return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
         }
 
         [DreamProc("tan")]

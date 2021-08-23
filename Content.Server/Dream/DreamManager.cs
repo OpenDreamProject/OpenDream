@@ -5,17 +5,15 @@ using Content.Shared.Dream;
 using Content.Shared.Json;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
-using Robust.Shared.Enums;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
-using Robust.Shared.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
 namespace Content.Server.Dream {
-    class DreamManager : IDreamManager {
+    partial class DreamManager : IDreamManager {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -29,9 +27,9 @@ namespace Content.Server.Dream {
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Random Random { get; set; } = new();
 
-        private Dictionary<DreamObject, NetUserId> _clientToUserId = new();
-
         public void Initialize() {
+            InitializeConnectionManager();
+
             DreamCompiledJson json = LoadJson();
             if (json == null)
                 return;
@@ -52,25 +50,15 @@ namespace Content.Server.Dream {
 
             _dreamMapManager.LoadMaps(json.Maps);
             WorldInstance.SpawnProc("New");
-
-            _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
         }
 
         public void Shutdown() {
 
         }
 
-        public IPlayerSession GetSessionFromClient(DreamObject client) {
-            return _playerManager.GetSessionByUserId(_clientToUserId[client]);
-        }
-
-        public DreamObject GetClientFromMob(DreamObject mob) {
-            foreach (DreamObject client in _clientToUserId.Keys) {
-                if (client.GetVariable("mob").GetValueAsDreamObject() == mob)
-                    return client;
-            }
-
-            return null;
+        public void Update()
+        {
+            UpdateStat();
         }
 
         private DreamCompiledJson LoadJson() {
@@ -97,25 +85,6 @@ namespace Content.Server.Dream {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-        }
-
-        private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e) {
-            IPlayerSession session = e.Session;
-
-            switch (e.NewStatus) {
-                case SessionStatus.Connected:
-                    e.Session.JoinGame();
-                    break;
-                case SessionStatus.InGame: {
-                    DreamObject client = ObjectTree.CreateObject(DreamPath.Client);
-
-                    _clientToUserId[client] = session.UserId;
-                    session.Data.ContentDataUncast = new PlayerSessionData(client);
-                    client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
-
-                    break;
-                }
-            }
         }
     }
 }

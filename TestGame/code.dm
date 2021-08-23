@@ -38,6 +38,7 @@
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
+	stat("time", world.time)
 
 /client/Click(var/atom/A)
 	..()

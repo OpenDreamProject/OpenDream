@@ -102,9 +102,9 @@ namespace Content.Server.Dream.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            //DreamConnection connection = Runtime.Server.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
 
-            //connection.OutputDreamValue(b);
+            connection.OutputDreamValue(b);
             return new DreamValue(0);
         }
 

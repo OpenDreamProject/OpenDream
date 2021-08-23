@@ -56,10 +56,10 @@ namespace Content.Server.Dream.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            //DreamObject client = a.GetValueAsDreamObjectOfType(DreamPath.Mob).GetVariable("client").GetValueAsDreamObjectOfType(DreamPath.Client);
-            //DreamConnection connection = Runtime.Server.GetConnectionFromClient(client);
+            DreamObject client = a.GetValueAsDreamObjectOfType(DreamPath.Mob).GetVariable("client").GetValueAsDreamObjectOfType(DreamPath.Client);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
 
-            //connection.OutputDreamValue(b);
+            connection.OutputDreamValue(b);
             return new DreamValue(0);
         }
     }

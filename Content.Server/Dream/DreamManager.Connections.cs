@@ -17,6 +17,7 @@ namespace Content.Server.Dream
         private readonly Dictionary<DreamObject, DreamConnection> _clientToConnection = new();
 
         public DreamConnection GetConnectionBySession(IPlayerSession session) => _connections[session];
+        public IEnumerable<DreamConnection> Connections => _connections.Values;
 
         private void InitializeConnectionManager()
         {
@@ -25,6 +26,7 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>();
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>();
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
+            _netManager.RegisterNetMessage<MsgOutput>();
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)

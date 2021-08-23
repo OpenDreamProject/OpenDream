@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Content.Server.DM;
 using Content.Shared.Dream;
+using Content.Shared.Dream.Procs;
 using Content.Shared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
@@ -77,7 +80,6 @@ namespace Content.Server.Dream
 
         public void UpdateAvailableVerbs()
         {
-            /*
             _availableVerbs.Clear();
 
             if (MobDreamObject != null)
@@ -95,7 +97,6 @@ namespace Content.Server.Dream
             var msg = _netManager.CreateNetMessage<MsgUpdateAvailableVerbs>();
             msg.AvailableVerbs = _availableVerbs.Keys.ToArray();
             Session.ConnectedClient.SendMessage(msg);
-            */
         }
 
         public void UpdateStat()
@@ -144,6 +145,80 @@ namespace Content.Server.Dream
         public void HandlePacketSelectStatPanel(MsgSelectStatPanel message)
         {
             _selectedStatPanel = message.StatPanel;
+        }
+
+        public void OutputDreamValue(DreamValue value) {
+            if (value.Type == DreamValue.DreamValueType.DreamObject) {
+                DreamObject outputObject = value.GetValueAsDreamObject();
+
+                if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
+                    UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
+                    DreamValue file = outputObject.GetVariable("file");
+                    UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
+
+                    /*
+                    if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
+                        SendPacket(new PacketSound(channel, (string)file.Value, volume));
+                    } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
+                        SendPacket(new PacketSound(channel, resource.ResourcePath, volume));
+                    } else {
+                        throw new ArgumentException("Cannot output " + value, nameof(value));
+                    }
+                    */
+
+                    return;
+                }
+            }
+
+            OutputControl(value.Stringify(), null);
+        }
+
+        public void OutputControl(string message, string control) {
+            var msg = _netManager.CreateNetMessage<MsgOutput>();
+            msg.Value = message;
+            msg.Control = control;
+            Session.ConnectedClient.SendMessage(msg);
+        }
+
+        public void HandleCommand(string command)
+        {
+            switch (command) {
+                //TODO: Maybe move these verbs to DM code?
+                case ".north": ClientDreamObject.SpawnProc("North"); break;
+                case ".east": ClientDreamObject.SpawnProc("East"); break;
+                case ".south": ClientDreamObject.SpawnProc("South"); break;
+                case ".west": ClientDreamObject.SpawnProc("West"); break;
+                case ".northeast": ClientDreamObject.SpawnProc("Northeast"); break;
+                case ".southeast": ClientDreamObject.SpawnProc("Southeast"); break;
+                case ".southwest": ClientDreamObject.SpawnProc("Southwest"); break;
+                case ".northwest": ClientDreamObject.SpawnProc("Northwest"); break;
+                case ".center": ClientDreamObject.SpawnProc("Center"); break;
+
+                default: {
+                    if (_availableVerbs.TryGetValue(command, out DreamProc verb)) {
+                        DreamThread.Run(async (state) => {
+                            Dictionary<String, DreamValue> arguments = new();
+
+                            // TODO: this should probably be done on the client, shouldn't it?
+                            /*
+                            for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                                String argumentName = verb.ArgumentNames[i];
+                                DMValueType argumentType = verb.ArgumentTypes[i];
+                                DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
+                                    argumentName, defaultValue: String.Empty); // No default value for verbs
+
+                                arguments.Add(argumentName, value);
+                            }
+                            */
+
+                            await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
+                            return DreamValue.Null;
+                        });
+                    }
+
+                    break;
+                }
+            }
         }
     }
 }

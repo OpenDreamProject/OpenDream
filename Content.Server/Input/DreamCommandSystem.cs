@@ -40,27 +40,10 @@ namespace Content.Server.Input {
             _repeatingCommands.Remove(tuple);
         }
 
-        private void RunCommand(string command, IPlayerSession session) {
-            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
-
-            switch (command) {
-                //TODO: Maybe move these verbs to DM code?
-                case ".north": client.SpawnProc("North"); break;
-                case ".east": client.SpawnProc("East"); break;
-                case ".south": client.SpawnProc("South"); break;
-                case ".west": client.SpawnProc("West"); break;
-                case ".northeast": client.SpawnProc("Northeast"); break;
-                case ".southeast": client.SpawnProc("Southeast"); break;
-                case ".southwest": client.SpawnProc("Southwest"); break;
-                case ".northwest": client.SpawnProc("Northwest"); break;
-                case ".center": client.SpawnProc("Center"); break;
-
-                default: {
-                    //TODO: verbs
-
-                    break;
-                }
-            }
+        private void RunCommand(string command, IPlayerSession session)
+        {
+            var connection = _dreamManager.GetConnectionBySession(session);
+            connection.HandleCommand(command);
         }
     }
 }

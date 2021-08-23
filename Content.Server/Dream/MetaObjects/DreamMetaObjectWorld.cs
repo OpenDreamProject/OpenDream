@@ -94,9 +94,9 @@ namespace Content.Server.Dream.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            //foreach (DreamConnection connection in Runtime.Server.Connections) {
-            //    connection.OutputDreamValue(b);
-            //}
+            foreach (DreamConnection connection in _dreamManager.Connections) {
+                connection.OutputDreamValue(b);
+            }
 
             return new DreamValue(0);
         }

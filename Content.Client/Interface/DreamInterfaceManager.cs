@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Content.Client.Input;
 using Content.Client.Interface.Controls;
 using Content.Client.Resources;
@@ -29,6 +30,8 @@ namespace Content.Client.Interface {
         public ControlInfo DefaultInfo;
         public ControlMap DefaultMap;
 
+        public string[] AvailableVerbs { get; private set; } = Array.Empty<string>();
+
         // private IClydeWindow _window;
 
         public readonly Dictionary<string, ControlWindow> Windows = new();
@@ -49,7 +52,8 @@ namespace Content.Client.Interface {
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
-            //_netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
+            _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
+            _netManager.RegisterNetMessage<MsgOutput>(RxOutput);
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)
@@ -62,16 +66,66 @@ namespace Content.Client.Interface {
             DefaultInfo?.SelectStatPanel(message.StatPanel);
         }
 
-        /*
         private void RxUpdateAvailableVerbs(MsgUpdateAvailableVerbs message)
         {
-            DefaultInfo?.UpdateStatPanels(message);
+            AvailableVerbs = message.AvailableVerbs;
+            DefaultInfo?.RefreshVerbs();
         }
-        */
+
+        public void RxOutput(MsgOutput pOutput) {
+            InterfaceControl interfaceElement;
+            string data = null;
+
+            if (pOutput.Control != null) {
+                string[] split = pOutput.Control.Split(":");
+
+                interfaceElement = (InterfaceControl)FindElementWithName(split[0]);
+                if (split.Length > 1) data = split[1];
+            } else {
+                interfaceElement = DefaultOutput;
+            }
+
+            if (interfaceElement != null) interfaceElement.Output(pOutput.Value, data);
+        }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)
         {
             DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
+        }
+
+
+        public InterfaceElement FindElementWithName(string name) {
+            string[] split = name.Split(".");
+
+            if (split.Length == 2) {
+                string windowName = split[0];
+                string elementName = split[1];
+                ControlWindow window = null;
+
+                if (Windows.ContainsKey(windowName)) {
+                    window = Windows[windowName];
+                } /*else if (PopupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
+                    window = popup.WindowElement;
+                }*/
+
+                if (window != null) {
+                    foreach (InterfaceControl element in window.ChildControls) {
+                        if (element.Name == elementName) return element;
+                    }
+                }
+            } else {
+                string elementName = split[0];
+
+                foreach (ControlWindow window in Windows.Values) {
+                    foreach (InterfaceControl element in window.ChildControls) {
+                        if (element.Name == elementName) return element;
+                    }
+                }
+
+                if (Windows.TryGetValue(elementName, out ControlWindow windowElement)) return windowElement;
+            }
+
+            return null;
         }
 
         private void LoadInterface(InterfaceDescriptor descriptor)
@@ -113,11 +167,14 @@ namespace Content.Client.Interface {
         }
     }
 
-    interface IDreamInterfaceManager {
+    interface IDreamInterfaceManager
+    {
+        string[] AvailableVerbs { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
         public void LoadDMF(ResourcePath dmfPath);
         void Initialize();
         void FrameUpdate(FrameEventArgs frameEventArgs);
+        InterfaceElement FindElementWithName(string name);
     }
 }

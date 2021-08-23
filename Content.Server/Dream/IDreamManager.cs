@@ -20,5 +20,7 @@ namespace Content.Server.Dream {
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);
         void Update();
+
+        IEnumerable<DreamConnection> Connections { get; }
     }
 }

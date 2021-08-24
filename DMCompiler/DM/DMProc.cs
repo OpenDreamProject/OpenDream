@@ -1,4 +1,4 @@
-﻿using DMCompiler.DM.Visitors;
+using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -77,7 +77,7 @@ namespace DMCompiler.DM {
 
             if (type.Equals(DMValueType.Anything))
             {
-                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}"));
+                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));
             }
             else if (!ReturnTypes.HasFlag(type))
             {

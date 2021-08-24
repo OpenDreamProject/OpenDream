@@ -1,3 +1,6 @@
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
+
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
         protected DMExpression LHS { get; }
@@ -377,7 +380,16 @@ namespace DMCompiler.DM.Expressions {
 
             public abstract void EmitOp(DMObject dmObject, DMProc proc);
 
-            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            public override void EmitPushValue(DMObject dmObject, DMProc proc)
+            {
+                LHS.ValType = RHS.ValType;
+                if (LHS is ProcSelf self)
+                {
+                    if (!proc.ReturnTypes.Equals(DMValueType.Anything) && !proc.ReturnTypes.HasFlag(self.ValType))
+                    {
+                        throw new CompileErrorException($"{proc.Path}.{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
+                    }
+                }
                 switch (LHS.EmitIdentifier(dmObject, proc)) {
                     case IdentifierPushResult.Unconditional:
                         RHS.EmitPushValue(dmObject, proc);

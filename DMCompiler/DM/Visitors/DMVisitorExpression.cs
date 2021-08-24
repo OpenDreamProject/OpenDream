@@ -87,7 +87,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (name == "src") {
                 Result = new Expressions.Src(_dmObject.Path);
-                Result.ValType = GetATOMType(_dmObject.Path);
+                Result.ValType = Result.ValType == DMValueType.Anything ? GetATOMType(_dmObject.Path) : Result.ValType;
             } else if (name == "usr") {
                 Result = new Expressions.Usr();
                 Result.ValType = DMValueType.Mob; //According to the docs, Usr is a mob
@@ -114,7 +114,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 Result = new Expressions.Field(field.Type, name);
-                Result.ValType = GetATOMType(field.Type);
+                Result.ValType = field.Value.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.Value.ValType;
             }
 
             DMValueType GetATOMType(DreamPath? type)
@@ -148,7 +148,9 @@ namespace DMCompiler.DM.Visitors {
 
 
         public void VisitCallableSelf(DMASTCallableSelf self) {
-            Result = new Expressions.ProcSelf();
+            var expr = new Expressions.ProcSelf();
+            Result = expr;
+            Result.ValType = expr.ValType;
         }
 
         public void VisitCallableSuper(DMASTCallableSuper super) {

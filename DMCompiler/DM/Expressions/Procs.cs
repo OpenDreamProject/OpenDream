@@ -38,10 +38,12 @@ namespace DMCompiler.DM.Expressions {
 
     // .
     // This is an LValue _and_ a proc
-    class ProcSelf : LValue {
-        public ProcSelf()
-            : base(null)
-        {}
+    class ProcSelf : LValue
+    {
+        public ProcSelf() : base(null)
+        {
+            ValType = DMValueType.Null;
+        }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushSelf();

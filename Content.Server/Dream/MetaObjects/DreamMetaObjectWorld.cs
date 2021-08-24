@@ -3,12 +3,15 @@ using Content.Shared.Dream;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 using System;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 
 namespace Content.Server.Dream.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
         [Dependency] private IDreamMapManager _dreamMapManager = null;
         [Dependency] private IGameTiming _gameTiming = null;
+        [Dependency] private IConfigurationManager _cfg = null;
 
         private ViewRange _viewRange;
 
@@ -25,7 +28,7 @@ namespace Content.Server.Dream.MetaObjects {
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
             if (fps.Value != null) {
-                _gameTiming.TickRate = (byte)fps.GetValueAsInteger();
+                _cfg.SetCVar(CVars.NetTickrate, fps.GetValueAsInteger());
             }
 
             DreamValue view = dreamObject.ObjectDefinition.Variables["view"];
@@ -41,7 +44,7 @@ namespace Content.Server.Dream.MetaObjects {
 
             switch (variableName) {
                 case "fps":
-                    _gameTiming.TickRate = (byte)variableValue.GetValueAsInteger(); break;
+                    _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
                 case "maxz":
                     _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
             }

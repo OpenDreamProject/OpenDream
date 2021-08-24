@@ -1307,16 +1307,16 @@ namespace Content.Server.DM {
                 state.PopDreamValue(); //Fourth argument, should be null
             }
 
-            /*DreamObject clientObject;
+            DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(clientObject);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(clientObject);
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
                 // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
                 var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async (state) => await promptTask);
                 state.Thread.PushProcState(waiter);
                 return ProcStatus.Called;
-            }*/
+            }
 
             return null;
         }
@@ -1325,7 +1325,7 @@ namespace Content.Server.DM {
             int z = state.PopDreamValue().GetValueAsInteger();
             int y = state.PopDreamValue().GetValueAsInteger();
             int x = state.PopDreamValue().GetValueAsInteger();
-            
+
             state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }

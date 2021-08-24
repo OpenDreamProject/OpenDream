@@ -4,6 +4,7 @@ using Content.Client.Input;
 using Content.Client.Interface.Controls;
 using Content.Client.Interface.Prompts;
 using Content.Client.Resources;
+using Content.Shared.Dream.Procs;
 using Content.Shared.Interface;
 using Content.Shared.Network.Messages;
 using Robust.Client.Graphics;
@@ -57,6 +58,7 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
             _netManager.RegisterNetMessage<MsgOutput>(RxOutput);
             _netManager.RegisterNetMessage<MsgAlert>(RxAlert);
+            _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
             _netManager.RegisterNetMessage<MsgPromptResponse>();
         }
 
@@ -101,6 +103,7 @@ namespace Content.Client.Interface {
                 message.Button1, message.Button2, message.Button3);
         }
 
+
         public void OpenAlert(int promptId, string title, string message, string button1, string button2="", string button3="")
         {
             var alert = new AlertWindow(
@@ -111,6 +114,24 @@ namespace Content.Client.Interface {
 
             alert.Owner = _clyde.MainWindow;
             alert.Show();
+        }
+
+        public void RxPrompt(MsgPrompt pPrompt) {
+            PromptWindow prompt = null;
+            bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
+
+            if ((pPrompt.Types & DMValueType.Text) == DMValueType.Text) {
+                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if ((pPrompt.Types & DMValueType.Num) == DMValueType.Num) {
+                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
+                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+            }
+
+            if (prompt != null) {
+                prompt.Owner = _clyde.MainWindow;
+                prompt.Show();
+            }
         }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)

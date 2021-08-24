@@ -35,7 +35,7 @@ namespace Content.Shared.Network.Messages
             switch (Type) {
                 case DMValueType.Null: break;
                 case DMValueType.Text or DMValueType.Message: buffer.Write((string)Value); break;
-                case DMValueType.Num: buffer.Write((int)Value); break;
+                case DMValueType.Num: buffer.Write((float)Value); break;
                 default: throw new Exception("Invalid prompt response type '" + Type + "'");
             }
         }

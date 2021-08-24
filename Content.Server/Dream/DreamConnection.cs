@@ -162,7 +162,7 @@ namespace Content.Server.Dream
             DreamValue value = message.Type switch {
                 DMValueType.Null => DreamValue.Null,
                 DMValueType.Text or DMValueType.Message => new DreamValue((string)message.Value),
-                DMValueType.Num => new DreamValue((int)message.Value),
+                DMValueType.Num => new DreamValue((float)message.Value),
                 _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
             };
 
@@ -223,7 +223,6 @@ namespace Content.Server.Dream
                             Dictionary<String, DreamValue> arguments = new();
 
                             // TODO: this should probably be done on the client, shouldn't it?
-                            /*
                             for (int i = 0; i < verb.ArgumentNames.Count; i++) {
                                 String argumentName = verb.ArgumentNames[i];
                                 DMValueType argumentType = verb.ArgumentTypes[i];
@@ -232,7 +231,6 @@ namespace Content.Server.Dream
 
                                 arguments.Add(argumentName, value);
                             }
-                            */
 
                             await state.Call(verb, MobDreamObject, MobDreamObject, new DreamProcArguments(new(), arguments));
                             return DreamValue.Null;
@@ -244,13 +242,24 @@ namespace Content.Server.Dream
             }
         }
 
-        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
-            TaskCompletionSource<DreamValue> tcs = new();
-            int promptId = _nextPromptEvent++;
+        public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {
+            var task = MakePromptTask(out var promptId);
 
-            _promptEvents.Add(promptId, response => {
-                tcs.TrySetResult(response);
-            });
+            var msg = _netManager.CreateNetMessage<MsgPrompt>();
+            msg.PromptId = promptId;
+            msg.Title = title;
+            msg.Message = message;
+            msg.Types = types;
+            msg.DefaultValue = default;
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
+
+
+        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3)
+        {
+            var task = MakePromptTask(out var promptId);
 
             var msg = _netManager.CreateNetMessage<MsgAlert>();
             msg.PromptId = promptId;
@@ -260,6 +269,18 @@ namespace Content.Server.Dream
             msg.Button2 = button2;
             msg.Button3 = button3;
             Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
+
+        private Task<DreamValue> MakePromptTask(out int promptId)
+        {
+            TaskCompletionSource<DreamValue> tcs = new();
+            promptId = _nextPromptEvent++;
+
+            _promptEvents.Add(promptId, response => {
+                tcs.TrySetResult(response);
+            });
 
             return tcs.Task;
         }

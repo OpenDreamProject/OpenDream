@@ -42,7 +42,7 @@
 
 	verb/input_num()
 		var/v = input("A") as num
-		world.log << v
+		usr << "you entered [v]"
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")

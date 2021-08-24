@@ -28,6 +28,7 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgOutput>();
             _netManager.RegisterNetMessage<MsgAlert>();
+            _netManager.RegisterNetMessage<MsgPrompt>();
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
         }
 

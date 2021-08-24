@@ -1430,7 +1430,7 @@ namespace Content.Server.DM {
                 values[i] = (value, totalWeight);
             }
 
-            double pick = state.Runtime.Random.NextDouble() * totalWeight;
+            double pick = state.DreamManager.Random.NextDouble() * totalWeight;
             for (int i = 0; i < values.Length; i++) {
                 if (pick < values[i].CumulativeWeight) {
                     state.Push(values[i].Value);
@@ -1454,7 +1454,7 @@ namespace Content.Server.DM {
                 }
             }
 
-            state.Push(values[state.Runtime.Random.Next(0, values.Length)]);
+            state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
             return null;
         }
 

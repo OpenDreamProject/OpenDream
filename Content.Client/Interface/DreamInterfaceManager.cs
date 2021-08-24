@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Drawing;
 using System.Web;
 using Content.Client.Input;
 using Content.Client.Interface.Controls;
@@ -21,6 +20,8 @@ using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using SixLabors.ImageSharp;
+using Size = System.Drawing.Size;
 
 namespace Content.Client.Interface {
     class DreamInterfaceManager : IDreamInterfaceManager {
@@ -31,6 +32,7 @@ namespace Content.Client.Interface {
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -254,6 +256,22 @@ namespace Content.Client.Interface {
             return null;
         }
 
+        public void SaveScreenshot(bool openDialog)
+        {
+            // ReSharper disable once AsyncVoidLambda
+            DefaultMap?.Viewport.Screenshot(async img =>
+            {
+                //TODO: Support automatically choosing a location if openDialog == false
+                var filters = new FileDialogFilters(new FileDialogFilters.Group("png"));
+                var tuple = await _fileDialogManager.SaveFile(filters);
+                if (tuple == null)
+                    return;
+
+                await using var file = tuple.Value.fileStream;
+                await img.SaveAsPngAsync(file);
+            });
+        }
+
         private void LoadInterface(InterfaceDescriptor descriptor)
         {
             InterfaceDescriptor = descriptor;
@@ -303,5 +321,6 @@ namespace Content.Client.Interface {
         void Initialize();
         void FrameUpdate(FrameEventArgs frameEventArgs);
         InterfaceElement FindElementWithName(string name);
+        void SaveScreenshot(bool openDialog);
     }
 }

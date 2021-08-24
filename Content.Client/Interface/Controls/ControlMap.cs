@@ -18,20 +18,6 @@ namespace Content.Client.Interface.Controls
             return Viewport;
         }
 
-        /*
-        public BitmapSource CreateScreenshot() {
-            SharpGLControl control = _dreamRenderer.OpenGLViewControl;
-            DpiScale dpi = VisualTreeHelper.GetDpi(control);
-            double dpiX = dpi.PixelsPerInchX;
-            double dpiY = dpi.PixelsPerInchY;
-
-            RenderTargetBitmap renderTarget = new RenderTargetBitmap((int)control.Width, (int)control.Height, dpiX, dpiY, PixelFormats.Pbgra32);
-            renderTarget.Render(control);
-
-            return renderTarget;
-        }
-        */
-
         private (int X, int Y) ControlToScreenCoordinates(double x, double y)
         {
             return default;

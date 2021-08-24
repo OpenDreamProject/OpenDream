@@ -1,4 +1,5 @@
-﻿using Content.Shared.Input;
+﻿using Content.Client.Interface;
+using Content.Shared.Input;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Network;
@@ -14,7 +15,9 @@ namespace Content.Client.Input {
                     IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
                     break;
 
-                // case ".screenshot": Interface.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
+                case ".screenshot":
+                    var interfaceMgr = IoCManager.Resolve<IDreamInterfaceManager>();
+                    interfaceMgr.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
                 default: {
                     if (split.Length > 1)
                     {

@@ -124,7 +124,7 @@
 /world/proc/conditional_call_test()
 	var/datum/recursive/R = new()
 	return R?.inner?.get_inner(CRASH("this shouldn't be evaluated"))
- 
+
 /world/proc/conditional_call_test_error()
  	var/datum/recursive/R = new()
  	return R?.inner.get_inner()
@@ -161,3 +161,89 @@
 
 /world/proc/md5_test()
 	return md5("md5_test")
+
+/world/proc/for_loops_test()
+	. = list()
+	var/counter = 0
+	for(var/i in 1 to 3)
+		counter++
+	. += counter
+	counter = 0
+
+	for(var/i = 1 to 3)
+		counter++
+	. += counter
+	counter = 0
+
+	var/j = 1
+	for(,j <= 3,j++)
+		counter++
+	. += counter
+	counter = 0
+
+	j = 1
+	for(,j++ <= 3)
+		counter++
+	. += counter
+
+/matrix/proc/Equals(matrix/mat)
+	return src.a == mat.a && src.b == mat.b && src.c == mat.c && src.d == mat.d && src.e == mat.e && src.f == mat.f
+
+/world/proc/test_matrix_add()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+	var/matrix/N = matrix(7, 8, 9, 10, 11, 12)
+
+	M.Add(N)
+
+	if(!M.Equals(matrix(8, 10, 12, 14, 16, 18)))
+		CRASH("Unexpected matrix/Add result")
+
+/world/proc/test_matrix_multiply()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+	var/matrix/N = matrix(7, 8, 9, 10, 11, 12)
+
+	M.Multiply(N)
+
+	if(!M.Equals(matrix(39, 54, 78, 54, 75, 108)))
+		CRASH("Unexpected matrix/Multiply result")
+
+/world/proc/test_matrix_scale()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+
+	M.Scale(2)
+
+	if(!M.Equals(matrix(2, 4, 6, 8, 10, 12)))
+		CRASH("Unexpected matrix/Scale result")
+
+/world/proc/test_matrix_subtract()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+	var/matrix/N = matrix(7, 8, 9, 10, 11, 12)
+
+	M.Subtract(N)
+
+	if(!M.Equals(matrix(-6, -6, -6, -6, -6, -6)))
+		CRASH("Unexpected matrix/Subtract result")
+
+/world/proc/test_matrix_translate()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+
+	M.Translate(2)
+
+	if(!M.Equals(matrix(1, 2, 5, 4, 5, 8)))
+		CRASH("Unexpected matrix/Translate result")
+
+/world/proc/test_matrix_turn()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+
+	M.Turn(90)
+
+	if(!M.Equals(matrix(4, 5, 6, -1, -2, -3)))
+		CRASH("Unexpected matrix/Turn result")
+
+/world/proc/matrix_operations_test()
+	test_matrix_add()
+	test_matrix_multiply()
+	test_matrix_scale()
+	test_matrix_subtract()
+	test_matrix_translate()
+	test_matrix_turn()

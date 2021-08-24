@@ -84,7 +84,11 @@ namespace Content.Shared.Dream.Procs {
         JumpIfNullIdentifier = 0x50,
         Pop = 0x51,
         PushCopy = 0x52,
-        IsSaved = 0x53
+        IsSaved = 0x53,
+        PickUnweighted = 0x54,
+        PickWeighted = 0x55,
+        Increment = 0x56,
+        Decrement = 0x57
     }
 
     public enum DreamProcOpcodeParameterType {

@@ -21,6 +21,12 @@ namespace DMCompiler.DM.Expressions {
             proc.GetProc(_identifier);
             return ProcPushResult.Unconditional;
         }
+
+        public void UnimplementedCheck(DMObject dmObject) {
+            if (dmObject.IsProcUnimplemented(_identifier)) {
+                Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
+            }
+        }
     }
 
     // .
@@ -63,6 +69,10 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            switch (_target) {
+                case Proc procTarget: procTarget.UnimplementedCheck(dmObject); break;
+                case DereferenceProc derefTarget: derefTarget.UnimplementedCheck(); break;
+            }
 
             var _procResult = _target.EmitPushProc(dmObject, proc);
 

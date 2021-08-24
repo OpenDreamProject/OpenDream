@@ -689,15 +689,15 @@ namespace Content.Shared.Compiler.DM {
                     variable = new DMASTIdentifier(variableDeclaration.Name);
                 } else {
                     variable = Identifier();
-                    if (variable == null) Error("Expected an identifier");
-
-                    Whitespace();
-                    if (Check(TokenType.DM_Equals)) {
+                    if (variable != null) {
                         Whitespace();
-                        DMASTExpression value = Expression();
-                        if (value == null) Error("Expected an expression");
+                        if (Check(TokenType.DM_Equals)) {
+                            Whitespace();
+                            DMASTExpression value = Expression();
+                            if (value == null) Error("Expected an expression");
 
-                        initializer = new DMASTProcStatementExpression(new DMASTAssign(variable, value));
+                            initializer = new DMASTProcStatementExpression(new DMASTAssign(variable, value));
+                        }
                     }
                 }
 
@@ -745,9 +745,13 @@ namespace Content.Shared.Compiler.DM {
                 } else if (Check(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
                     Whitespace();
                     DMASTExpression comparator = Expression();
-                    Consume(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon }, "Expected ','");
+                    DMASTExpression incrementor = null;
+                    if (Check(new[] {TokenType.DM_Comma, TokenType.DM_Semicolon}))
+                    {
+                        Whitespace();
+                        incrementor = Expression();
+                    }
                     Whitespace();
-                    DMASTExpression incrementor = Expression();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
                     Newline();
@@ -977,6 +981,51 @@ namespace Content.Shared.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 
                 return callParameters;
+            }
+
+            return null;
+        }
+
+        public DMASTPick.PickValue[] PickArguments() {
+            if (Check(TokenType.DM_LeftParenthesis)) {
+                Whitespace();
+                DMASTPick.PickValue? arg = PickArgument();
+                if (arg == null) Error("Expected a pick argument");
+                List<DMASTPick.PickValue> args = new() { arg.Value };
+
+                while (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    arg = PickArgument();
+
+                    if (arg != null) {
+                        args.Add(arg.Value);
+                    } else {
+                        //A comma at the end is allowed, but the call must immediately be closed
+                        if (Current().Type != TokenType.DM_RightParenthesis) {
+                            Error("Expected a pick argument");
+                            break;
+                        }
+                    }
+                }
+
+                Consume(TokenType.DM_RightParenthesis, "Expected ')'");
+                return args.ToArray();
+            }
+
+            return null;
+        }
+
+        public DMASTPick.PickValue? PickArgument() {
+            DMASTExpression expression = Expression();
+
+            if (Check(TokenType.DM_Semicolon)) {
+                Whitespace();
+                DMASTExpression value = Expression();
+                if (value == null) Error("Expected an expression");
+
+                return new DMASTPick.PickValue(expression, value);
+            } else if (expression != null) {
+                return new DMASTPick.PickValue(null, expression);
             }
 
             return null;
@@ -1522,107 +1571,140 @@ namespace Content.Shared.Compiler.DM {
 
                 if (primary == null) {
                     DMASTDereference dereference = Dereference();
-                    DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
 
-                    if (dereference != null || identifier != null) {
+                    if (dereference != null) {
                         Whitespace();
                         DMASTCallParameter[] callParameters = ProcCall();
 
                         if (callParameters != null) {
-                            Whitespace();
+                            DMASTCallable callable = new DMASTDereferenceProc(dereference.Expression, dereference.Dereferences);
 
-                            if (identifier?.Identifier == "input") {
-                                DMValueType types = AsTypes(defaultType: DMValueType.Text);
-                                Whitespace();
-                                DMASTExpression list = null;
+                            primary = new DMASTProcCall(callable, callParameters);
+                        } else {
+                            primary = dereference;
+                        }
+                    }
+                }
 
-                                if (Check(TokenType.DM_In)) {
-                                    Whitespace();
-                                    list = Expression();
-                                }
+                if (primary == null) {
+                    DMASTIdentifier identifier = Identifier();
 
-                                return new DMASTInput(callParameters, types, list);
-                            } else if (identifier?.Identifier == "initial") {
-                                if (callParameters.Length != 1) Error("initial() requires 1 argument");
+                    if (identifier != null) {
+                        primary = identifier;
+                        Whitespace();
 
-                                return new DMASTInitial(callParameters[0].Value);
-                            } else if (identifier?.Identifier == "issaved") {
-                                if (callParameters.Length != 1) Error("issaved() requires 1 argument");
+                        if (identifier.Identifier == "pick") {
+                            DMASTPick.PickValue[] pickValues = PickArguments();
 
-                                return new DMASTIsSaved(callParameters[0].Value);
-                            } else if (identifier?.Identifier == "istype") {
-                                if (callParameters.Length == 1) {
-                                    return new DMASTImplicitIsType(callParameters[0].Value);
-                                } else if (callParameters.Length == 2) {
-                                    return new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
-                                } else {
-                                    Error("istype() requires 1 or 2 arguments");
-                                }
-                            } else if (identifier?.Identifier == "text") {
-                                if (callParameters.Length == 0) Error("text() requires at least 1 argument");
-
-                                if (callParameters[0].Value is DMASTConstantString constantString) {
-                                    if (callParameters.Length > 1) Error("text() expected 1 argument");
-
-                                    return constantString;
-                                } else if (callParameters[0].Value is DMASTStringFormat formatText) {
-                                    if (formatText == null) Error("text()'s first argument must be a string format");
-
-                                    List<int> emptyValueIndices = new();
-                                    for (int i = 0; i < formatText.InterpolatedValues.Length; i++) {
-                                        if (formatText.InterpolatedValues[i] == null) emptyValueIndices.Add(i);
-                                    }
-
-                                    if (callParameters.Length != emptyValueIndices.Count + 1) Error("text() was given an invalid amount of arguments for the string");
-                                    for (int i = 0; i < emptyValueIndices.Count; i++) {
-                                        int emptyValueIndex = emptyValueIndices[i];
-
-                                        formatText.InterpolatedValues[emptyValueIndex] = callParameters[i + 1].Value;
-                                    }
-
-                                    return formatText;
-                                } else {
-                                    Error("text() expected a string as the first argument");
-
-                                    return null;
-                                }
-                            } else if (identifier?.Identifier == "locate") {
-                                if (callParameters.Length > 3) Error("locate() was given too many arguments");
-
-                                if (callParameters.Length == 3) { //locate(X, Y, Z)
-                                    return new DMASTLocateCoordinates(callParameters[0].Value, callParameters[1].Value, callParameters[2].Value);
-                                } else {
-                                    DMASTExpression container = null;
-                                    if (Check(TokenType.DM_In)) {
-                                        Whitespace();
-
-                                        container = Expression();
-                                        if (container == null) Error("Expected a container for locate()");
-                                    }
-
-                                    DMASTExpression type = null;
-                                    if (callParameters.Length == 2) {
-                                        type = callParameters[0].Value;
-                                        container = callParameters[1].Value;
-                                    } else if (callParameters.Length == 1) {
-                                        type = callParameters[0].Value;
-                                    }
-
-                                    return new DMASTLocate(type, container);
-                                }
-                            } else {
-                                DMASTCallable callable;
-
-                                if (dereference != null) {
-                                    callable = new DMASTDereferenceProc(dereference.Expression, dereference.Dereferences);
-                                } else {
-                                    callable = new DMASTCallableProcIdentifier(identifier.Identifier);
-                                }
-
-                                primary = new DMASTProcCall(callable, callParameters);
+                            if (pickValues != null) {
+                                primary = new DMASTPick(pickValues);
                             }
                         } else {
-                            primary = (dereference != null) ? dereference : identifier;
+                            DMASTCallParameter[] callParameters = ProcCall();
+
+                            if (callParameters != null) {
+                                switch (identifier.Identifier) {
+                                    case "input": {
+                                        Whitespace();
+                                        DMValueType types = AsTypes(defaultType: DMValueType.Text);
+                                        Whitespace();
+                                        DMASTExpression list = null;
+
+                                        if (Check(TokenType.DM_In)) {
+                                            Whitespace();
+                                            list = Expression();
+                                        }
+
+                                        primary = new DMASTInput(callParameters, types, list);
+                                        break;
+                                    }
+                                    case "initial": {
+                                        if (callParameters.Length != 1) Error("initial() requires 1 argument");
+
+                                        primary = new DMASTInitial(callParameters[0].Value);
+                                        break;
+                                    }
+                                    case "issaved": {
+                                        if (callParameters.Length != 1) Error("issaved() requires 1 argument");
+
+                                        primary = new DMASTIsSaved(callParameters[0].Value);
+                                        break;
+                                    }
+                                    case "istype": {
+                                        if (callParameters.Length == 1) {
+                                            primary = new DMASTImplicitIsType(callParameters[0].Value);
+                                        } else if (callParameters.Length == 2) {
+                                            primary = new DMASTIsType(callParameters[0].Value, callParameters[1].Value);
+                                        } else {
+                                            Error("istype() requires 1 or 2 arguments");
+                                        }
+
+                                        break;
+                                    }
+                                    case "text": {
+                                        if (callParameters.Length == 0) Error("text() requires at least 1 argument");
+
+                                        if (callParameters[0].Value is DMASTConstantString constantString) {
+                                            if (callParameters.Length > 1) Error("text() expected 1 argument");
+
+                                            primary = constantString;
+                                        } else if (callParameters[0].Value is DMASTStringFormat formatText) {
+                                            if (formatText == null) Error("text()'s first argument must be a string format");
+
+                                            List<int> emptyValueIndices = new();
+                                            for (int i = 0; i < formatText.InterpolatedValues.Length; i++) {
+                                                if (formatText.InterpolatedValues[i] == null) emptyValueIndices.Add(i);
+                                            }
+
+                                            if (callParameters.Length != emptyValueIndices.Count + 1) Error("text() was given an invalid amount of arguments for the string");
+                                            for (int i = 0; i < emptyValueIndices.Count; i++) {
+                                                int emptyValueIndex = emptyValueIndices[i];
+
+                                                formatText.InterpolatedValues[emptyValueIndex] = callParameters[i + 1].Value;
+                                            }
+
+                                            primary = formatText;
+                                        } else {
+                                            Error("text() expected a string as the first argument");
+                                        }
+
+                                        break;
+                                    }
+                                    case "locate": {
+                                        if (callParameters.Length > 3) Error("locate() was given too many arguments");
+
+                                        if (callParameters.Length == 3) { //locate(X, Y, Z)
+                                            primary = new DMASTLocateCoordinates(callParameters[0].Value, callParameters[1].Value, callParameters[2].Value);
+                                        } else {
+                                            Whitespace();
+
+                                            DMASTExpression container = null;
+                                            if (Check(TokenType.DM_In)) {
+                                                Whitespace();
+
+                                                container = Expression();
+                                                if (container == null) Error("Expected a container for locate()");
+                                            }
+
+                                            DMASTExpression type = null;
+                                            if (callParameters.Length == 2) {
+                                                type = callParameters[0].Value;
+                                                container = callParameters[1].Value;
+                                            } else if (callParameters.Length == 1) {
+                                                type = callParameters[0].Value;
+                                            }
+
+                                            primary = new DMASTLocate(type, container);
+                                        }
+
+                                        break;
+                                    }
+                                    default: {
+                                        primary = new DMASTProcCall(new DMASTCallableProcIdentifier(identifier.Identifier), callParameters);
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }

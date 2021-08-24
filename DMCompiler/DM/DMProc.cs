@@ -33,6 +33,7 @@ namespace DMCompiler.DM {
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
+        public bool Unimplemented { get; set; } = false;
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
@@ -424,6 +425,14 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Append);
         }
 
+        public void Increment() {
+            WriteOpcode(DreamProcOpcode.Increment);
+        }
+
+        public void Decrement() {
+            WriteOpcode(DreamProcOpcode.Decrement);
+        }
+
         public void Remove() {
             WriteOpcode(DreamProcOpcode.Remove);
         }
@@ -552,6 +561,16 @@ namespace DMCompiler.DM {
 
         public void LocateCoordinates() {
             WriteOpcode(DreamProcOpcode.LocateCoord);
+        }
+
+        public void PickWeighted(int count) {
+            WriteOpcode(DreamProcOpcode.PickWeighted);
+            WriteInt(count);
+        }
+
+        public void PickUnweighted(int count) {
+            WriteOpcode(DreamProcOpcode.PickUnweighted);
+            WriteInt(count);
         }
 
         public void Locate() {

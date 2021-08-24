@@ -54,6 +54,7 @@ namespace Content.Shared.Compiler.DM {
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) { throw new NotImplementedException(); }
         public void VisitLocate(DMASTLocate locate) { throw new NotImplementedException(); }
+        public void VisitPick(DMASTPick pick) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
@@ -849,6 +850,28 @@ namespace Content.Shared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitLocate(this);
+        }
+    }
+
+    public class DMASTPick : DMASTExpression {
+        public struct PickValue {
+            public DMASTExpression Weight;
+            public DMASTExpression Value;
+
+            public PickValue(DMASTExpression weight, DMASTExpression value) {
+                Weight = weight;
+                Value = value;
+            }
+        }
+
+        public PickValue[] Values;
+
+        public DMASTPick(PickValue[] values) {
+            Values = values;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitPick(this);
         }
     }
 

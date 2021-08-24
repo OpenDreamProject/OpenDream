@@ -544,6 +544,38 @@ namespace Content.Server.DM {
             return null;
         }
 
+        public static ProcStatus? Increment(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue + 1));
+            } else {
+                //If it's not a number, it turns into 1
+                identifier.Assign(new DreamValue(1));
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Decrement(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue - 1));
+            } else {
+                //If it's not a number, it turns into -1
+                identifier.Assign(new DreamValue(-1));
+            }
+
+            return null;
+        }
+
         public static ProcStatus? BitAnd(DMProcState state) {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
@@ -1382,6 +1414,47 @@ namespace Content.Server.DM {
                 state.Push(DreamValue.Null);
             }
 
+            return null;
+        }
+
+        public static ProcStatus? PickWeighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            (DreamValue Value, float CumulativeWeight)[] values = new (DreamValue, float)[count];
+            float totalWeight = 0;
+            for (int i = 0; i < count; i++) {
+                DreamValue value = state.PopDreamValue();
+                float weight = state.PopDreamValue().GetValueAsFloat();
+
+                totalWeight += weight;
+                values[i] = (value, totalWeight);
+            }
+
+            double pick = state.Runtime.Random.NextDouble() * totalWeight;
+            for (int i = 0; i < values.Length; i++) {
+                if (pick < values[i].CumulativeWeight) {
+                    state.Push(values[i].Value);
+                    break;
+                }
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? PickUnweighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            DreamValue[] values;
+            if (count == 1) {
+                values = state.PopDreamValue().GetValueAsDreamList().GetValues().ToArray();
+            } else {
+                values = new DreamValue[count];
+                for (int i = 0; i < count; i++) {
+                    values[i] = state.PopDreamValue();
+                }
+            }
+
+            state.Push(values[state.Runtime.Random.Next(0, values.Length)]);
             return null;
         }
 

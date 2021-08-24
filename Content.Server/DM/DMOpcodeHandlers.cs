@@ -184,7 +184,7 @@ namespace Content.Server.DM {
                         case StringFormatTypes.Ref: {
                             DreamObject refObject = state.PopDreamValue().GetValueAsDreamObject();
 
-                            //formattedString.Append(refObject.CreateReferenceID());
+                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
                         }
                         default: throw new Exception("Invalid special character");
@@ -1262,7 +1262,7 @@ namespace Content.Server.DM {
         public static ProcStatus? DeleteObject(DMProcState state) {
             DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
 
-            dreamObject?.Delete();
+            dreamObject?.Delete(state.DreamManager);
             return null;
         }
 

@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 
 namespace Content.Server.Dream {
-    interface IDreamManager {
+    public interface IDreamManager {
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
         public int DMExceptionCount { get; set; }
 
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
+        public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public Random Random { get; set; }
 
         public void Initialize();

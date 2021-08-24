@@ -32,18 +32,30 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
             _netManager.RegisterNetMessage<MsgBrowseResource>();
             _netManager.RegisterNetMessage<MsgBrowse>();
+            _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)
         {
-            var connection = _connections[_playerManager.GetSessionByChannel(message.MsgChannel)];
+            var connection = ConnectionForChannel(message.MsgChannel);
             connection.HandleMsgSelectStatPanel(message);
         }
 
         private void RxPromptResponse(MsgPromptResponse message)
         {
-            var connection = _connections[_playerManager.GetSessionByChannel(message.MsgChannel)];
+            var connection = ConnectionForChannel(message.MsgChannel);
             connection.HandleMsgPromptResponse(message);
+        }
+
+        private void RxTopic(MsgTopic message)
+        {
+            var connection = ConnectionForChannel(message.MsgChannel);
+            connection.HandleMsgTopic(message);
+        }
+
+        private DreamConnection ConnectionForChannel(INetChannel channel)
+        {
+            return _connections[_playerManager.GetSessionByChannel(channel)];
         }
 
         private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e)

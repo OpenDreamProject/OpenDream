@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Content.Server.DM;
+using Content.Server.Dream.NativeProcs;
 using Content.Shared.Dream;
 using Content.Shared.Dream.Procs;
 using Content.Shared.Network.Messages;
@@ -170,6 +172,27 @@ namespace Content.Server.Dream
             promptEvent.Invoke(value);
             _promptEvents.Remove(message.PromptId);
         }
+
+        public void HandleMsgTopic(MsgTopic pTopic) {
+            DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
+            DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
+            DreamObject src = null;
+
+            if (srcRefValue.Value != null) {
+                int srcRef = int.Parse(srcRefValue.GetValueAsString());
+
+                src = DreamObject.GetFromReferenceID(_dreamManager, srcRef);
+            }
+
+            DreamProcArguments topicArguments = new DreamProcArguments(new() {
+                new DreamValue(pTopic.Query),
+                new DreamValue(hrefList),
+                new DreamValue(src)
+            });
+
+            ClientDreamObject?.SpawnProc("Topic", topicArguments, MobDreamObject);
+        }
+
 
         public void OutputDreamValue(DreamValue value) {
             if (value.Type == DreamValue.DreamValueType.DreamObject) {

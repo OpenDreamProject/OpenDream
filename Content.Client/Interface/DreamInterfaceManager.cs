@@ -64,6 +64,7 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
             _netManager.RegisterNetMessage<MsgPromptResponse>();
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
+            _netManager.RegisterNetMessage<MsgTopic>();
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)

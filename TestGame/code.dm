@@ -61,6 +61,7 @@
 </head>
 <body>
 	<marquee>Honk</marquee>
+	<a href="?honk=1">click me</a>
 </body>
 </html>"},"window=honk")
 
@@ -75,3 +76,9 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+
+/client/Topic(href,href_list,hsrc)
+	usr << href
+	usr << json_encode(href_list)
+
+	..()

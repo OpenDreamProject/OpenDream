@@ -4,11 +4,14 @@ using System.IO;
 using System.Net;
 using System.Web;
 using Content.Shared.Interface;
+using Content.Shared.Network.Messages;
 using Robust.Client.CEF;
 using Robust.Client.UserInterface;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
+using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Interface.Controls
@@ -30,6 +33,10 @@ namespace Content.Client.Interface.Controls
         };
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
+        [Dependency] private readonly IClientNetManager _netManager = default!;
+
+        private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
+
         private BrowserControl _webView;
 
         public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
@@ -42,6 +49,7 @@ namespace Content.Client.Interface.Controls
             _webView = new BrowserControl();
 
             _webView.AddResourceRequestHandler(RequestHandler);
+            _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
 
             return _webView;
         }
@@ -59,10 +67,26 @@ namespace Content.Client.Interface.Controls
             _webView.Url = (userData ? "usr://" : "res://") + filepath;
         }
 
-        private void RequestHandler(RequestHandlerContext obj)
+        private void BeforeBrowseHandler(BeforeBrowseContext context)
         {
+            if (string.IsNullOrEmpty(_webView.Url))
+                return;
+
             Uri oldUri = new Uri(_webView.Url);
-            Uri newUri = new Uri(obj.Url);
+            Uri newUri = new Uri(context.Url);
+
+            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
+                context.DoCancel();
+
+                var msg = _netManager.CreateNetMessage<MsgTopic>();
+                msg.Query = newUri.Query;
+                _netManager.ClientSendMessage(msg);
+            }
+        }
+
+        private void RequestHandler(RequestHandlerContext context)
+        {
+            Uri newUri = new Uri(context.Url);
 
             if (newUri.Scheme == "usr")
             {
@@ -79,19 +103,18 @@ namespace Content.Client.Interface.Controls
                     stream = Stream.Null;
                     status = HttpStatusCode.NotFound;
                 }
+                catch (Exception e)
+                {
+                    _sawmill.Error($"Exception while loading file from usr://:\n{e}");
+                    stream = Stream.Null;
+                    status = HttpStatusCode.InternalServerError;
+                }
 
                 if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
                     mimeType = "application/octet-stream";
 
-                obj.DoRespondStream(stream, mimeType, status);
+                context.DoRespondStream(stream, mimeType, status);
                 return;
-            }
-
-            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
-                obj.DoCancel();
-
-                // todo:
-                // _openDream.Connection.SendPacket(new PacketTopic(newUri.Query));
             }
         }
     }

@@ -284,5 +284,13 @@ namespace Content.Server.Dream
 
             return tcs.Task;
         }
+
+        public void BrowseResource(DreamResource resource, string filename)
+        {
+            var msg = _netManager.CreateNetMessage<MsgBrowseResource>();
+            msg.Filename = filename;
+            msg.Data = resource.ResourceData;
+            Session.ConnectedClient.SendMessage(msg);
+        }
     }
 }

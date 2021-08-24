@@ -6,6 +6,7 @@ using Robust.Shared.IoC;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -1237,10 +1238,10 @@ namespace Content.Server.DM {
 
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.PopDreamValue();
-            state.PopDreamValue(); //DreamResource file = state.PopDreamValue().GetValueAsDreamResource();
+            DreamResource file = state.PopDreamValue().GetValueAsDreamResource();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1250,10 +1251,10 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 connection.BrowseResource(file, (filename.Value != null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
-            }*/
+            }
 
             return null;
         }

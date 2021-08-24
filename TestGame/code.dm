@@ -44,6 +44,10 @@
 		var/v = input("A") as num
 		usr << "you entered [v]"
 
+	verb/test_browsersc()
+		usr << browse_rsc('icons/mob.dmi')
+
+
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
 	stat("time", world.time)

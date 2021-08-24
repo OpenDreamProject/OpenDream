@@ -8,6 +8,7 @@ namespace Content.Client {
             IoCManager.Register<IDreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<DreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
+            IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
         }
     }
 }

@@ -16,6 +16,8 @@ namespace Content.Client {
     {
         [Dependency]
         private readonly IDreamInterfaceManager _dreamInterface = default!;
+        [Dependency]
+        private readonly IDreamResourceManager _dreamResource = default!;
 
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
@@ -35,6 +37,8 @@ namespace Content.Client {
 
             componentFactory.GenerateNetIds();
 
+            _dreamResource.Initialize();
+
             // Load localization. Needed for some engine texts, such as the ones in Robust ViewVariables.
             IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
@@ -48,6 +52,11 @@ namespace Content.Client {
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
             _dreamInterface.Initialize();
             _dreamInterface.LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _dreamResource.Shutdown();
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)

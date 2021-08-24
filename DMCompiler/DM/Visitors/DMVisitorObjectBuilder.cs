@@ -113,15 +113,19 @@ namespace DMCompiler.DM.Visitors {
                 {
                     if (dmObject is not null)
                     {
-                        var parent = dmObject.GetProcs(procName)[dmObject.GetProcs(procName).Count - 1];
-                        if (procDefinition.ReturnTypes.Equals(DMValueType.Anything))
+                        var parentProcs = dmObject.GetProcs(procName);
+                        if (parentProcs is not null && parentProcs.Count >= 1)
                         {
-                            procDefinition.ReturnTypes = parent.ReturnTypes;
-                        }
-                        if (!parent.ReturnTypes.Equals(procDefinition.ReturnTypes))
-                        {
-                            throw new CompileErrorException($"{procDefinition.ObjectPath}.{procName} cannot override return type {parent.ReturnTypes} of parent proc {parent.Path}.{parent.Name}");
-                        }
+                            var parent = parentProcs[dmObject.GetProcs(procName).Count - 1];
+                            if (procDefinition.ReturnTypes.Equals(DMValueType.Anything))
+                            {
+                                procDefinition.ReturnTypes = parent.ReturnTypes;
+                            }
+                            if (!parent.ReturnTypes.Equals(procDefinition.ReturnTypes))
+                            {
+                                throw new CompileErrorException($"{procDefinition.ObjectPath}.{procName} cannot override return type {parent.ReturnTypes} of parent proc {parent.Path}.{parent.Name}");
+                            }
+                        };
                     }
 
                 } else if(dmObject.HasProc(procName)) {

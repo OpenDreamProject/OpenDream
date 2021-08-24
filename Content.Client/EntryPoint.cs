@@ -1,6 +1,7 @@
 using System.Globalization;
 using Content.Client.Interface;
 using Content.Client.Rendering;
+using Content.Client.Resources;
 using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -57,7 +58,6 @@ namespace Content.Client {
 
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
             _dreamInterface.Initialize();
-            _dreamInterface.LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
         }
 
         protected override void Dispose(bool disposing)

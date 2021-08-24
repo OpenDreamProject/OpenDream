@@ -3,6 +3,7 @@ using Content.Shared.Dream;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 using System;
+using Content.Server.Dream.Resources;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 

@@ -6,6 +6,7 @@ using Robust.Shared.Input.Binding;
 using Robust.Shared.IoC;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.Log;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace Content.Client.Input {
@@ -27,6 +28,9 @@ namespace Content.Client.Input {
                 foreach (MacroDescriptor macro in macroSet.Macros) {
                     BoundKeyFunction function = new BoundKeyFunction(macro.Id);
                     KeyBindingRegistration binding = CreateMacroBinding(function, macro.Name);
+
+                    if (binding == null)
+                        continue;
 
                     context.AddFunction(function);
                     _inputManager.RegisterBinding(in binding);
@@ -50,7 +54,7 @@ namespace Content.Client.Input {
                     commandSystem.RunCommand(macro.Command);
                 }
             }
-            
+
         }
 
         private void OnMacroRelease(MacroDescriptor macro) {
@@ -74,8 +78,14 @@ namespace Content.Client.Input {
             macroName = macroName.Replace("+REP", String.Empty);
 
             //TODO: modifiers
+            var key = KeyNameToKey(macroName);
+            if (key == Key.Unknown)
+            {
+                Logger.Warning($"Unknown key: {macroName}");
+                return null;
+            }
             return new KeyBindingRegistration() {
-                BaseKey = KeyNameToKey(macroName),
+                BaseKey = key,
                 Function = function
             };
         }
@@ -157,7 +167,7 @@ namespace Content.Client.Input {
                 "SHIFT" => Key.Shift,
                 "CTRL" => Key.Control,
                 "ALT" => Key.Alt,
-                _ => throw new Exception("Invalid key name \"" + keyName + "\"")
+                _ => Key.Unknown
             };
         }
     }

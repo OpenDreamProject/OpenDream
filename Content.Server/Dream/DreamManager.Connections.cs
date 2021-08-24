@@ -34,6 +34,8 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgBrowse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
             _netManager.RegisterNetMessage<MsgWinSet>();
+            _netManager.RegisterNetMessage<MsgLoadInterface>();
+            _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)
@@ -54,6 +56,13 @@ namespace Content.Server.Dream
             connection.HandleMsgTopic(message);
         }
 
+        private void RxAckLoadInterface(MsgAckLoadInterface message)
+        {
+            // Once the client loaded the interface, move them to in-game.
+            var player = _playerManager.GetSessionByChannel(message.MsgChannel);
+            player.JoinGame();
+        }
+
         private DreamConnection ConnectionForChannel(INetChannel channel)
         {
             return _connections[_playerManager.GetSessionByChannel(channel)];
@@ -64,7 +73,10 @@ namespace Content.Server.Dream
             switch (e.NewStatus)
             {
                 case SessionStatus.Connected:
-                    e.Session.JoinGame();
+                    var msgLoadInterface = _netManager.CreateNetMessage<MsgLoadInterface>();
+                    var interfaceResource = _dreamResourceManager.LoadResource(_compiledJson.Interface);
+                    msgLoadInterface.InterfaceText = interfaceResource.ReadAsString();
+                    e.Session.ConnectedClient.SendMessage(msgLoadInterface);
                     break;
                 case SessionStatus.InGame:
                 {

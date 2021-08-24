@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Content.Server.DM;
 using Content.Server.Dream.NativeProcs;
+using Content.Server.Dream.Resources;
 using Content.Shared.Dream;
 using Content.Shared.Dream.Procs;
 using Content.Shared.Network.Messages;

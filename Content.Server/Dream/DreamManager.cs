@@ -11,12 +11,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Content.Server.Dream.Resources;
 
 namespace Content.Server.Dream {
     partial class DreamManager : IDreamManager {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+
+        private DreamCompiledJson _compiledJson;
 
         public DreamObjectTree ObjectTree { get; private set; }
         public DreamObject WorldInstance { get; private set; }
@@ -35,6 +39,10 @@ namespace Content.Server.Dream {
             DreamCompiledJson json = LoadJson();
             if (json == null)
                 return;
+
+            _compiledJson = json;
+
+            _dreamResourceManager.Initialize();
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();

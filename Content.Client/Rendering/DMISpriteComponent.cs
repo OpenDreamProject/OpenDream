@@ -1,4 +1,5 @@
 ﻿using Content.Client.Resources;
+using Content.Client.Resources.ResourceTypes;
 using Content.Shared;
 using Content.Shared.Dream;
 using Robust.Client.ResourceManagement;
@@ -17,8 +18,9 @@ namespace OpenDreamClient.Rendering {
             get => _icon;
             set {
                 _icon = value;
-                if (_icon != null && _resourceCache.TryGetResource(_icon, out DMIResource dmi)) {
-                    DMI = dmi;
+                if (_icon != null)
+                {
+                    _resourceManager.LoadResourceAsync<DMIResource>(_icon.ToString(), resource => DMI = resource);
                 }
             }
         }
@@ -30,7 +32,8 @@ namespace OpenDreamClient.Rendering {
         public Color Color { get; set; }
         public float Layer { get; set; }
 
-        private IResourceCache _resourceCache = IoCManager.Resolve<IResourceCache>();
+        [Dependency]
+        private IDreamResourceManager _resourceManager = default!;
 
         public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
             if (curState == null)

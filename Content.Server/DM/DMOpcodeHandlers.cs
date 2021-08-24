@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Content.Server.Dream.Resources;
 
 namespace Content.Server.DM {
     static class DMOpcodeHandlers {
@@ -432,7 +433,7 @@ namespace Content.Server.DM {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            state.Push(new DreamValue(new DreamResource(resourcePath)));
+            state.Push(new DreamValue(IoCManager.Resolve<DreamResourceManager>().LoadResource(resourcePath)));
             return null;
         }
 

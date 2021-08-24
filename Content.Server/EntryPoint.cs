@@ -1,4 +1,5 @@
 ﻿using Content.Server.Dream;
+using Content.Server.Dream.Resources;
 using Content.Server.Input;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;

@@ -6,6 +6,8 @@ using System.Text.Json;
 using Content.Shared.Dream.Procs;
 using Content.Server.DM;
 using Content.Server.Dream.MetaObjects;
+using Content.Server.Dream.Resources;
+using Robust.Shared.IoC;
 using GlobalVariable = Content.Server.Dream.DreamObjectDefinition.GlobalVariable;
 
 namespace Content.Server.Dream {
@@ -136,7 +138,8 @@ namespace Content.Server.Dream {
 
                             switch (resourcePathElement.ValueKind) {
                                 case JsonValueKind.String: {
-                                    DreamResource resource = new DreamResource(resourcePathElement.GetString());
+                                    var resM = IoCManager.Resolve<DreamResourceManager>();
+                                    DreamResource resource = resM.LoadResource(resourcePathElement.GetString());
 
                                     return new DreamValue(resource);
                                 }

@@ -12,14 +12,11 @@ using Content.Shared.Dream.Procs;
 using Content.Shared.Interface;
 using Content.Shared.Network.Messages;
 using Robust.Client.Graphics;
-using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
-using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using Size = System.Drawing.Size;
 
@@ -27,7 +24,6 @@ namespace Content.Client.Interface {
     class DreamInterfaceManager : IDreamInterfaceManager {
         [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-        [Dependency] private readonly IResourceCache _resourceCache = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
@@ -48,14 +44,26 @@ namespace Content.Client.Interface {
         public readonly Dictionary<string, ControlWindow> Windows = new();
         public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
 
-        public void LoadDMF(ResourcePath dmfPath) {
-            if (!_resourceCache.TryGetResource(dmfPath, out DMFResource dmf) || dmf.Interface == null) {
-                Logger.Error($"Error(s) while loading DMF '{dmfPath}'");
+        public void LoadInterfaceFromSource(string source) {
+            DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
+            DMFParser dmfParser = new DMFParser(dmfLexer);
+            InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
 
-                return;
+            if (dmfParser.Warnings.Count > 0) {
+                foreach (CompilerWarning warning in dmfParser.Warnings) {
+                    Console.WriteLine(warning);
+                }
             }
 
-            LoadInterface(dmf.Interface);
+            if (dmfParser.Errors.Count > 0) {
+                foreach (CompilerError error in dmfParser.Errors) {
+                    Console.WriteLine(error);
+                }
+
+                throw new Exception("Errors while parsing interface data");
+            }
+
+            LoadInterface(interfaceDescriptor);
         }
 
         public void Initialize()
@@ -72,6 +80,8 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
+            _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
+            _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)
@@ -216,10 +226,17 @@ namespace Content.Client.Interface {
             }
         }
 
+        private void RxLoadInterface(MsgLoadInterface message)
+        {
+            LoadInterfaceFromSource(message.InterfaceText);
+
+            _netManager.ClientSendMessage(_netManager.CreateNetMessage<MsgAckLoadInterface>());
+        }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)
         {
-            DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
+            if (DefaultMap != null)
+                DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
 
 
@@ -318,10 +335,10 @@ namespace Content.Client.Interface {
         string[] AvailableVerbs { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
-        public void LoadDMF(ResourcePath dmfPath);
         void Initialize();
         void FrameUpdate(FrameEventArgs frameEventArgs);
         InterfaceElement FindElementWithName(string name);
         void SaveScreenshot(bool openDialog);
+        void LoadInterfaceFromSource(string source);
     }
 }

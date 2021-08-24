@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using Content.Server.Dream.Resources;
 using Robust.Shared.IoC;
 using DreamValueType = Content.Server.DreamValue.DreamValueType;
 
@@ -225,7 +226,8 @@ namespace Content.Server.Dream.NativeProcs {
             string src = arguments.GetArgument(0, "Src").GetValueAsString();
             string dst = arguments.GetArgument(1, "Dst").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.CopyFile(src, dst) ? 1 : 0);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.CopyFile(src, dst) ? 1 : 0);
         }
 
         [DreamProc("fcopy_rsc")]
@@ -233,7 +235,8 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_fcopy_rsc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.LoadResource(filePath));
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.LoadResource(filePath));
         }
 
         [DreamProc("fdel")]
@@ -241,29 +244,29 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_fdel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
-            //bool successful;
-            //if (filePath.EndsWith("/")) {
-            //    successful = DreamManager.ResourceManager.DeleteDirectory(filePath);
-            //} else {
-            //    successful = DreamManager.ResourceManager.DeleteFile(filePath);
-            //}
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            bool successful;
+            if (filePath.EndsWith("/")) {
+                successful = resourceManager.DeleteDirectory(filePath);
+            } else {
+                successful = resourceManager.DeleteFile(filePath);
+            }
 
-            return DreamValue.Null;//return new DreamValue(successful ? 1 : 0);
+            return new DreamValue(successful ? 1 : 0);
         }
 
         [DreamProc("fexists")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_fexists(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue file = arguments.GetArgument(0, "File");
+            string filePath;
 
-            DreamResource resource;
-            if (file.TryGetValueAsString(out string filePath)) {
-                resource = new DreamResource(filePath);
-            } else {
-                resource = file.GetValueAsDreamResource();
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            if (!file.TryGetValueAsString(out filePath)) {
+                filePath = file.GetValueAsDreamResource().ResourcePath;
             }
 
-            return new DreamValue(resource.Exists() ? 1 : 0);
+            return new DreamValue(resourceManager.DoesFileExist(filePath) ? 1 : 0);
         }
 
         [DreamProc("file")]
@@ -271,8 +274,9 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_file(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue path = arguments.GetArgument(0, "Path");
 
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             if (path.Type == DreamValueType.String) {
-                DreamResource resource = new DreamResource(path.GetValueAsString());
+                DreamResource resource = resourceManager.LoadResource(path.GetValueAsString());
 
                 return new DreamValue(resource);
             } else if (path.Type == DreamValueType.DreamResource) {
@@ -288,8 +292,9 @@ namespace Content.Server.Dream.NativeProcs {
             DreamValue file = arguments.GetArgument(0, "File");
             DreamResource resource;
 
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             if (file.Type == DreamValueType.String) {
-                resource = new DreamResource(file.GetValueAsString());
+                resource = resourceManager.LoadResource(file.GetValueAsString());
             } else {
                 resource = file.GetValueAsDreamResource();
             }
@@ -377,9 +382,10 @@ namespace Content.Server.Dream.NativeProcs {
         [DreamProcParameter("Path", Type = DreamValueType.String)]
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string path = arguments.GetArgument(0, "Path").GetValueAsString();
-            //var listing = DreamManager.ResourceManager.GetListing(path);
-            //DreamList list = DreamList.Create(DreamManager, listing);
-            return DreamValue.Null;//return new DreamValue(list);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            var listing = resourceManager.GetListing(path);
+            DreamList list = DreamList.Create(listing);
+            return new DreamValue(list);
         }
 
         [DreamProc("hascall")]
@@ -1288,7 +1294,8 @@ namespace Content.Server.Dream.NativeProcs {
             string text = arguments.GetArgument(0, "Text").GetValueAsString();
             string file = arguments.GetArgument(1, "File").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.SaveTextToFile(file, text) ? 1 : 0);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.SaveTextToFile(file, text) ? 1 : 0);
         }
 
         [DreamProc("text2num")]

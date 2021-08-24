@@ -1,5 +1,6 @@
 ﻿using Content.Client.Input;
 using Content.Client.Interface;
+using Content.Client.Resources;
 using Robust.Shared.IoC;
 
 namespace Content.Client {

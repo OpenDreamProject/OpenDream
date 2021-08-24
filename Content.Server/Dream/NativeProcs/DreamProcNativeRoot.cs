@@ -55,8 +55,8 @@ namespace Content.Server.Dream.NativeProcs {
 
             if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(mob);
-            return DreamValue.Null;//return await connection.Alert(title, message, button1, button2, button3);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(mob);
+            return await connection.Alert(title, message, button1, button2, button3);
         }
 
         [DreamProc("animate")]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Content.Server.DM;
 using Content.Shared.Dream;
 using Content.Shared.Dream.Procs;
@@ -8,6 +9,7 @@ using Content.Shared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.ViewVariables;
 
@@ -30,6 +32,8 @@ namespace Content.Server.Dream
 
         [ViewVariables] private string _outputStatPanel;
         [ViewVariables] private string _selectedStatPanel;
+        [ViewVariables] private Dictionary<int, Action<DreamValue>> _promptEvents = new();
+        [ViewVariables] private int _nextPromptEvent = 1;
 
         public string SelectedStatPanel {
             get => _selectedStatPanel;
@@ -142,9 +146,28 @@ namespace Content.Server.Dream
             _statPanels[_outputStatPanel].Add(text);
         }
 
-        public void HandlePacketSelectStatPanel(MsgSelectStatPanel message)
+        public void HandleMsgSelectStatPanel(MsgSelectStatPanel message)
         {
             _selectedStatPanel = message.StatPanel;
+        }
+
+        public void HandleMsgPromptResponse(MsgPromptResponse message)
+        {
+            if (!_promptEvents.TryGetValue(message.PromptId, out Action<DreamValue> promptEvent))
+            {
+                Logger.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
+                return;
+            }
+
+            DreamValue value = message.Type switch {
+                DMValueType.Null => DreamValue.Null,
+                DMValueType.Text or DMValueType.Message => new DreamValue((string)message.Value),
+                DMValueType.Num => new DreamValue((int)message.Value),
+                _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
+            };
+
+            promptEvent.Invoke(value);
+            _promptEvents.Remove(message.PromptId);
         }
 
         public void OutputDreamValue(DreamValue value) {
@@ -219,6 +242,26 @@ namespace Content.Server.Dream
                     break;
                 }
             }
+        }
+
+        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
+            TaskCompletionSource<DreamValue> tcs = new();
+            int promptId = _nextPromptEvent++;
+
+            _promptEvents.Add(promptId, response => {
+                tcs.TrySetResult(response);
+            });
+
+            var msg = _netManager.CreateNetMessage<MsgAlert>();
+            msg.PromptId = promptId;
+            msg.Title = title;
+            msg.Message = message;
+            msg.Button1 = button1;
+            msg.Button2 = button2;
+            msg.Button3 = button3;
+            Session.ConnectedClient.SendMessage(msg);
+
+            return tcs.Task;
         }
     }
 }

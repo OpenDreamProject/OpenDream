@@ -27,12 +27,20 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>();
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgOutput>();
+            _netManager.RegisterNetMessage<MsgAlert>();
+            _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)
         {
             var connection = _connections[_playerManager.GetSessionByChannel(message.MsgChannel)];
-            connection.HandlePacketSelectStatPanel(message);
+            connection.HandleMsgSelectStatPanel(message);
+        }
+
+        private void RxPromptResponse(MsgPromptResponse message)
+        {
+            var connection = _connections[_playerManager.GetSessionByChannel(message.MsgChannel)];
+            connection.HandleMsgPromptResponse(message);
         }
 
         private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e)

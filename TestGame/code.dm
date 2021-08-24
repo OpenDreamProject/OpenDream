@@ -36,6 +36,14 @@
 		var/result = roll(dice)
 		usr << "The total shown on the dice is: [result]"
 
+	verb/test_alert()
+		alert(usr, "Prepare to die.")
+		usr << "prompt done"
+
+	verb/input_num()
+		var/v = input("A") as num
+		world.log << v
+
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
 	stat("time", world.time)

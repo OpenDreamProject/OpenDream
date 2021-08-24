@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Content.Client.Input;
 using Content.Client.Interface.Controls;
+using Content.Client.Interface.Prompts;
 using Content.Client.Resources;
 using Content.Shared.Interface;
 using Content.Shared.Network.Messages;
@@ -17,6 +18,7 @@ using Robust.Shared.Utility;
 
 namespace Content.Client.Interface {
     class DreamInterfaceManager : IDreamInterfaceManager {
+        [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IResourceCache _resourceCache = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
@@ -54,6 +56,8 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
             _netManager.RegisterNetMessage<MsgOutput>(RxOutput);
+            _netManager.RegisterNetMessage<MsgAlert>(RxAlert);
+            _netManager.RegisterNetMessage<MsgPromptResponse>();
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)
@@ -86,6 +90,27 @@ namespace Content.Client.Interface {
             }
 
             if (interfaceElement != null) interfaceElement.Output(pOutput.Value, data);
+        }
+
+        private void RxAlert(MsgAlert message)
+        {
+            OpenAlert(
+                message.PromptId,
+                message.Title,
+                message.Message,
+                message.Button1, message.Button2, message.Button3);
+        }
+
+        public void OpenAlert(int promptId, string title, string message, string button1, string button2="", string button3="")
+        {
+            var alert = new AlertWindow(
+                promptId,
+                title,
+                message,
+                button1, button2, button3);
+
+            alert.Owner = _clyde.MainWindow;
+            alert.Show();
         }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)

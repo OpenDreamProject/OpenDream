@@ -155,13 +155,13 @@ namespace Content.Client.Interface {
             } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
                 string htmlFileName;
                 ControlBrowser outputBrowser;
+                BrowsePopup popup = null;
 
                 if (pBrowse.Window != null) {
                     htmlFileName = pBrowse.Window;
                     outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
-                        BrowsePopup popup;
 
                         if (!PopupWindows.TryGetValue(pBrowse.Window, out popup))
                         {
@@ -175,7 +175,6 @@ namespace Content.Client.Interface {
                         }
 
                         outputBrowser = popup.Browser;
-                        popup.Open();
                     }
                 } else {
                     //TODO: Find embedded browser panel
@@ -185,6 +184,8 @@ namespace Content.Client.Interface {
 
                 var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
                 outputBrowser?.SetFileSource(cacheFile, true);
+
+                popup?.Open();
             }
         }
 

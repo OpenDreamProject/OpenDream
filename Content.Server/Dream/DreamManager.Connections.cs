@@ -33,6 +33,7 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgBrowseResource>();
             _netManager.RegisterNetMessage<MsgBrowse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
+            _netManager.RegisterNetMessage<MsgWinSet>();
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)

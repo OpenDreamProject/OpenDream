@@ -1549,17 +1549,17 @@ namespace Content.Server.Dream.NativeProcs {
             DreamValue controlId = arguments.GetArgument(1, "control_id");
             string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
             string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
-            //DreamConnection connection;
+            DreamConnection connection;
 
-            //if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
-            //    connection = DreamManager.Server.GetConnectionFromMob(mob);
-            //} else {
-            //    DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
-            //
-            //    connection = DreamManager.Server.GetConnectionFromClient(client);
-            //}
+            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else {
+                DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
 
-            //connection.WinSet(winsetControlId, winsetParams);
+                connection = DreamManager.GetConnectionFromClient(client);
+            }
+
+            connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
         }
     }

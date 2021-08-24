@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Drawing;
+using System.Web;
 using Content.Client.Input;
 using Content.Client.Interface.Controls;
 using Content.Client.Interface.Prompts;
 using Content.Client.Resources;
+using Content.Shared.Compiler;
+using Content.Shared.Compiler.DMF;
 using Content.Shared.Dream.Procs;
 using Content.Shared.Interface;
 using Content.Shared.Network.Messages;
@@ -65,6 +69,7 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgPromptResponse>();
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
+            _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)
@@ -179,8 +184,35 @@ namespace Content.Client.Interface {
                 var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
                 outputBrowser?.SetFileSource(cacheFile, true);
             }
-
         }
+
+        private void RxWinSet(MsgWinSet message)
+        {
+            if (String.IsNullOrEmpty(message.ControlId)) throw new NotImplementedException("ControlId is null or empty");
+
+            InterfaceElement element = FindElementWithName(message.ControlId);
+            if (element == null) throw new Exception("Invalid element \"" + message.ControlId + "\"");
+
+            //params2list
+            string winsetParams = message.Params.Replace(";", "&");
+            NameValueCollection query = HttpUtility.ParseQueryString(winsetParams);
+
+            foreach (string attribute in query.AllKeys) {
+                if (DMFLexer.ValidAttributes.Contains(attribute)) {
+                    string value = query.GetValues(attribute)[^1];
+
+                    Token attributeValue = new DMFLexer(null, value).GetNextToken();
+                    if (DMFParser.ValidAttributeValueTypes.Contains(attributeValue.Type)) {
+                        element.SetAttribute(attribute, attributeValue.Value);
+                    } else {
+                        throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");
+                    }
+                } else {
+                    throw new Exception("Invalid attribute \"" + attribute + "\"");
+                }
+            }
+        }
+
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)
         {
@@ -198,9 +230,9 @@ namespace Content.Client.Interface {
 
                 if (Windows.ContainsKey(windowName)) {
                     window = Windows[windowName];
-                } /*else if (PopupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
+                } else if (PopupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
                     window = popup.WindowElement;
-                }*/
+                }
 
                 if (window != null) {
                     foreach (InterfaceControl element in window.ChildControls) {

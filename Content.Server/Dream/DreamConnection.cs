@@ -345,5 +345,13 @@ namespace Content.Server.Dream
             msg.HtmlSource = body;
             Session.ConnectedClient.SendMessage(msg);
         }
+
+        public void WinSet(string controlId, string @params)
+        {
+            var msg = _netManager.CreateNetMessage<MsgWinSet>();
+            msg.ControlId = controlId;
+            msg.Params = @params;
+            Session.ConnectedClient.SendMessage(msg);
+        }
     }
 }

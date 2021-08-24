@@ -1270,7 +1270,7 @@ namespace Content.Server.DM {
             DreamValue message = state.PopDreamValue();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1280,11 +1280,11 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
                 connection.OutputControl((string)message.Value, control);
-            }*/
+            }
 
             return null;
         }

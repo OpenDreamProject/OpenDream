@@ -39,8 +39,11 @@ namespace Content.Server {
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
-            _commandSystem.RunRepeatingCommands();
-            _dreamManager.Update();
+            if (level == ModUpdateLevel.PreEngine)
+            {
+                _commandSystem.RunRepeatingCommands();
+                _dreamManager.Update();
+            }
         }
     }
 }

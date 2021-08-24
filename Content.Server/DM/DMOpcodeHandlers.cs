@@ -1211,7 +1211,7 @@ namespace Content.Server.DM {
             DreamValue body = state.PopDreamValue();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1221,7 +1221,7 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 string browseValue;
                 if (body.Type == DreamValue.DreamValueType.DreamResource) {
@@ -1231,7 +1231,7 @@ namespace Content.Server.DM {
                 }
 
                 connection.Browse(browseValue, options);
-            }*/
+            }
 
             return null;
         }

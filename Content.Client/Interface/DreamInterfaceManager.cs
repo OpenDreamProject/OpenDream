@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using Content.Client.Input;
 using Content.Client.Interface.Controls;
 using Content.Client.Interface.Prompts;
@@ -25,6 +26,7 @@ namespace Content.Client.Interface {
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -38,6 +40,7 @@ namespace Content.Client.Interface {
         // private IClydeWindow _window;
 
         public readonly Dictionary<string, ControlWindow> Windows = new();
+        public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
 
         public void LoadDMF(ResourcePath dmfPath) {
             if (!_resourceCache.TryGetResource(dmfPath, out DMFResource dmf) || dmf.Interface == null) {
@@ -60,6 +63,7 @@ namespace Content.Client.Interface {
             _netManager.RegisterNetMessage<MsgAlert>(RxAlert);
             _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
             _netManager.RegisterNetMessage<MsgPromptResponse>();
+            _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
         }
 
         private void RxUpdateStatPanels(MsgUpdateStatPanels message)
@@ -134,6 +138,49 @@ namespace Content.Client.Interface {
             }
         }
 
+        private void RxBrowse(MsgBrowse pBrowse)
+        {
+            if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
+                if (PopupWindows.TryGetValue(pBrowse.Window, out BrowsePopup popup)) {
+                    popup.Close();
+                }
+            } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
+                string htmlFileName;
+                ControlBrowser outputBrowser;
+
+                if (pBrowse.Window != null) {
+                    htmlFileName = pBrowse.Window;
+                    outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
+
+                    if (outputBrowser == null) {
+                        BrowsePopup popup;
+
+                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup))
+                        {
+                            var size = new Size(pBrowse.Size.X, pBrowse.Size.Y);
+                            popup = new BrowsePopup(this, pBrowse.Window, size, _clyde.MainWindow);
+                            popup.Closed += () => {
+                                PopupWindows.Remove(pBrowse.Window);
+                            };
+
+                            PopupWindows.Add(pBrowse.Window, popup);
+                        }
+
+                        outputBrowser = popup.Browser;
+                        popup.Open();
+                    }
+                } else {
+                    //TODO: Find embedded browser panel
+                    htmlFileName = null;
+                    outputBrowser = null;
+                }
+
+                var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
+                outputBrowser?.SetFileSource(cacheFile, true);
+            }
+
+        }
+
         public void FrameUpdate(FrameEventArgs frameEventArgs)
         {
             DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
@@ -204,6 +251,7 @@ namespace Content.Client.Interface {
                 }
             }
 
+            DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
             DefaultWindow.UIElement.Name = "MainWindow";
 
             LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);

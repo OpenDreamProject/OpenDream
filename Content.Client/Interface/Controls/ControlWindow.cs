@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Content.Shared.Interface;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -12,6 +13,8 @@ namespace Content.Client.Interface.Controls
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
         // windows can be embedded into other windows as a way to do nesting.
+
+        public readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
 
         public List<InterfaceControl> ChildControls = new();
 
@@ -27,6 +30,28 @@ namespace Content.Client.Interface.Controls
         public override void UpdateElementDescriptor()
         {
             // Don't call base.UpdateElementDescriptor();
+        }
+
+        public OSWindow CreateWindow() {
+            OSWindow window = new();
+
+            window.Children.Add(UIElement);
+            window.SetWidth = _controlDescriptor.Size?.Width ?? 640;
+            window.SetHeight = _controlDescriptor.Size?.Height ?? 440;
+            window.Closing += _ => {
+                _openWindows.Remove((window, null));
+            };
+
+            _openWindows.Add((window, null));
+            UpdateWindowAttributes((window, null), (ControlDescriptorMain)_elementDescriptor);
+            return window;
+        }
+
+        public void RegisterOnClydeWindow(IClydeWindow window)
+        {
+            // todo: listen for closed.
+            _openWindows.Add((null, window));
+            UpdateWindowAttributes((null, window), (ControlDescriptorMain)_elementDescriptor);
         }
 
         public void UpdateAnchors()
@@ -57,6 +82,18 @@ namespace Content.Client.Interface.Controls
                     }
                 }
             }
+        }
+
+        private void UpdateWindowAttributes(
+            (OSWindow osWindow, IClydeWindow clydeWindow) windowRoot,
+            ControlDescriptorMain descriptor)
+        {
+            // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
+            var (osWindow, clydeWindow) = windowRoot;
+
+            var title = descriptor.Title ?? "OpenDream World";
+            if (osWindow != null) osWindow.Title = title;
+            else if (clydeWindow != null) clydeWindow.Title = title;
         }
 
         public void CreateChildControls(DreamInterfaceManager manager) {

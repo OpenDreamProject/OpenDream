@@ -47,6 +47,17 @@
 	verb/test_browsersc()
 		usr << browse_rsc('icons/mob.dmi')
 
+	verb/test_browse()
+		usr << browse({"
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Foo</title>
+</head>
+<body>
+	<marquee>Honk</marquee>
+</body>
+</html>"},"window=honk")
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")

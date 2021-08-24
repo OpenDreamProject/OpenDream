@@ -10,6 +10,7 @@ using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
+using Robust.Shared.Maths;
 using Robust.Shared.Network;
 using Robust.Shared.ViewVariables;
 
@@ -17,9 +18,9 @@ namespace Content.Server.Dream
 {
     public class DreamConnection
     {
-        [Dependency] private readonly IServerNetManager _netManager;
-        [Dependency] private readonly IDreamManager _dreamManager;
-        [Dependency] private readonly IAtomManager _atomManager;
+        [Dependency] private readonly IServerNetManager _netManager = default!;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
 
         [ViewVariables] private Dictionary<string, DreamProc> _availableVerbs = new();
         [ViewVariables] private Dictionary<string, List<string>> _statPanels = new();
@@ -290,6 +291,35 @@ namespace Content.Server.Dream
             var msg = _netManager.CreateNetMessage<MsgBrowseResource>();
             msg.Filename = filename;
             msg.Data = resource.ResourceData;
+            Session.ConnectedClient.SendMessage(msg);
+        }
+
+        public void Browse(string body, string options) {
+            string window = null;
+            Vector2i size = (480, 480);
+
+            string[] separated = options.Split(',', ';', '&');
+            foreach (string option in separated) {
+                string optionTrimmed = option.Trim();
+
+                if (optionTrimmed != String.Empty) {
+                    string[] optionSeparated = optionTrimmed.Split("=");
+                    string key = optionSeparated[0];
+                    string value = optionSeparated[1];
+
+                    if (key == "window") window = value;
+                    if (key == "size") {
+                        string[] sizeSeparated = value.Split("x");
+
+                        size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                    }
+                }
+            }
+
+            var msg = _netManager.CreateNetMessage<MsgBrowse>();
+            msg.Size = size;
+            msg.Window = window;
+            msg.HtmlSource = body;
             Session.ConnectedClient.SendMessage(msg);
         }
     }

@@ -12,6 +12,8 @@ namespace Content.Client
     {
         void Initialize();
         void Shutdown();
+        ResourcePath CreateCacheFile(string filename, string data);
+        ResourcePath CreateCacheFile(string filename, byte[] data);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager
@@ -50,6 +52,20 @@ namespace Content.Client
         private void RxBrowseResource(MsgBrowseResource message)
         {
             _resourceManager.UserData.WriteAllBytes(_cacheDirectory / message.Filename, message.Data);
+        }
+
+        public ResourcePath CreateCacheFile(string filename, string data)
+        {
+            var path = _cacheDirectory / filename;
+            _resourceManager.UserData.WriteAllText(path, data);
+            return path;
+        }
+
+        public ResourcePath CreateCacheFile(string filename, byte[] data)
+        {
+            var path = _cacheDirectory / filename;
+            _resourceManager.UserData.WriteAllBytes(path, data);
+            return path;
         }
     }
 }

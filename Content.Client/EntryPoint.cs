@@ -1,7 +1,7 @@
 using System.Globalization;
 using Content.Client.Interface;
 using Content.Client.Rendering;
-using Robust.Client;
+using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Shared.ContentPack;
@@ -18,6 +18,8 @@ namespace Content.Client {
         private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency]
         private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency]
+        private readonly CefManager _cef = default!;
 
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
@@ -32,8 +34,12 @@ namespace Content.Client {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
+            IoCManager.Register<CefManager>();
+
             IoCManager.BuildGraph();
             IoCManager.InjectDependencies(this);
+
+            _cef.Initialize();
 
             componentFactory.GenerateNetIds();
 
@@ -57,6 +63,7 @@ namespace Content.Client {
         protected override void Dispose(bool disposing)
         {
             _dreamResource.Shutdown();
+            _cef.Shutdown();
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
@@ -64,6 +71,8 @@ namespace Content.Client {
             if (level == ModUpdateLevel.FramePostEngine)
             {
                 _dreamInterface.FrameUpdate(frameEventArgs);
+
+                _cef.Update();
             }
         }
     }

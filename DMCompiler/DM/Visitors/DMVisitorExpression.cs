@@ -155,6 +155,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
             Result = new Expressions.ProcSuper();
+            Result.ValType = _proc.ReturnTypes;
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {

@@ -78,6 +78,9 @@ namespace DMCompiler.DM.Expressions {
             if (_target is DereferenceProc derefTarget)
             {
                 ValType = derefTarget.GetReturnType();
+            } else if (_target is ProcCall || _target is ProcSuper)
+            {
+                ValType = _target.ValType;
             }
         }
 

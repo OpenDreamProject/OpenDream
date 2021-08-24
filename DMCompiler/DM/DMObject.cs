@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMObject {
@@ -70,6 +71,12 @@ namespace DMCompiler.DM {
             }
 
             return false;
+        }
+
+        public DMValueType GetReturnType(string name)
+        {
+            List<DMProc> procs = GetProcs(name);
+            return procs == null ? DMValueType.Anything : procs[procs.Count - 1].ReturnTypes;
         }
 
         public DMVariable GetGlobalVariable(string name) {

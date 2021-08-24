@@ -1,3 +1,4 @@
+using System;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -23,22 +24,22 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantNull(DMASTConstantNull constant) {
             Result = new Expressions.Null();
-            Result.Type = DMValueType.Null;
+            Result.ValType = DMValueType.Null;
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             Result = new Expressions.Number(constant.Value);
-            Result.Type = DMValueType.Num;
+            Result.ValType = DMValueType.Num;
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {
             Result = new Expressions.Number(constant.Value);
-            Result.Type = DMValueType.Num;
+            Result.ValType = DMValueType.Num;
         }
 
         public void VisitConstantString(DMASTConstantString constant) {
             Result = new Expressions.String(constant.Value);
-            Result.Type = DMValueType.Text;
+            Result.ValType = DMValueType.Text;
         }
 
         public void VisitConstantResource(DMASTConstantResource constant) {
@@ -77,7 +78,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);
-            Result.Type = DMValueType.Text;
+            Result.ValType = DMValueType.Text;
         }
 
 
@@ -86,10 +87,10 @@ namespace DMCompiler.DM.Visitors {
 
             if (name == "src") {
                 Result = new Expressions.Src(_dmObject.Path);
-                Result.Type = GetATOMType(_dmObject.Path);
+                Result.ValType = GetATOMType(_dmObject.Path);
             } else if (name == "usr") {
                 Result = new Expressions.Usr();
-                Result.Type = DMValueType.Mob; //According to the docs, Usr is a mob
+                Result.ValType = DMValueType.Mob; //According to the docs, Usr is a mob
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
@@ -97,7 +98,8 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(localVar.Type, name);
-                    Result.Type = GetATOMType(localVar.Type);
+                    Result.ValType = GetATOMType(localVar.Type);
+
                     return;
                 }
 
@@ -112,7 +114,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 Result = new Expressions.Field(field.Type, name);
-                Result.Type = GetATOMType(field.Type);
+                Result.ValType = GetATOMType(field.Type);
             }
 
             DMValueType GetATOMType(DreamPath? type)
@@ -171,7 +173,9 @@ namespace DMCompiler.DM.Visitors {
 
             var target = DMExpression.Create(_dmObject, _proc, procCall.Callable, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, procCall.Parameters);
-            Result = new Expressions.ProcCall(target, args);
+            var call = new Expressions.ProcCall(target, args);
+            Result = call;
+            Result.ValType = call.ValType;
         }
 
         public void VisitAssign(DMASTAssign assign) {

@@ -16,8 +16,6 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcDefinition(DMASTProcDefinition procDefinition)
         {
-            _proc.ReturnTypes = procDefinition.ReturnTypes;
-
             if (procDefinition.Body != null) {
                 foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                     string parameterName = parameter.Name;
@@ -154,7 +152,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (statement.Value != null) {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
-                _proc.ValidateReturnType(expr.Type);
+                _proc.ValidateReturnType(expr.ValType);
             } else
             {
                 _proc.PushSelf(); //Default return value

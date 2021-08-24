@@ -1,4 +1,6 @@
+using System;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -26,6 +28,11 @@ namespace DMCompiler.DM.Expressions {
             if (dmObject.IsProcUnimplemented(_identifier)) {
                 Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
             }
+        }
+
+        public DMValueType GetReturnType(DMObject dmObject)
+        {
+            return dmObject.GetReturnType(_identifier);
         }
     }
 
@@ -66,12 +73,22 @@ namespace DMCompiler.DM.Expressions {
         public ProcCall(DMExpression target, ArgumentList arguments) {
             _target = target;
             _arguments = arguments;
+            if (_target is DereferenceProc derefTarget)
+            {
+                ValType = derefTarget.GetReturnType();
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             switch (_target) {
-                case Proc procTarget: procTarget.UnimplementedCheck(dmObject); break;
-                case DereferenceProc derefTarget: derefTarget.UnimplementedCheck(); break;
+                case Proc procTarget:
+                    procTarget.UnimplementedCheck(dmObject);
+                    ValType = procTarget.GetReturnType(dmObject);
+                    break;
+                case DereferenceProc derefTarget:
+                    derefTarget.UnimplementedCheck();
+                    ValType = derefTarget.GetReturnType();
+                    break;
             }
 
             var _procResult = _target.EmitPushProc(dmObject, proc);

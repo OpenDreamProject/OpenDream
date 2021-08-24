@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -182,6 +183,18 @@ namespace DMCompiler.DM.Expressions {
             if (dmObject.IsProcUnimplemented(_field)) {
                 Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_field}() is not implemented"));
             }
+        }
+
+        public DMValueType GetReturnType()
+        {
+            if (_parent.Path == null)
+            {
+                return DMValueType.Anything;
+            }
+            DMObject dmObject = DMObjectTree.GetDMObject(_parent.Path.Value);
+
+            var T = dmObject.GetReturnType(_field);
+            return T;
         }
     }
 

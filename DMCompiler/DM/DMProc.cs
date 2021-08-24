@@ -55,6 +55,7 @@ namespace DMCompiler.DM {
             _astDefinition = astDefinition;
             Name = _astDefinition?.Name ?? "Unknown Name";
             Path = _astDefinition?.ObjectPath.ToString() ?? "Unknown Path";
+            ReturnTypes |= _astDefinition?.ReturnTypes ?? DMValueType.Anything;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
         }

@@ -998,8 +998,7 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
             var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
-            //return new DreamValue(obj.CreateReferenceID());
-            throw new NotImplementedException("ref() is not implemented");
+            return new DreamValue(obj.CreateReferenceID(DreamManager));
         }
 
         [DreamProc("regex")]

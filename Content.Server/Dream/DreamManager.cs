@@ -26,6 +26,7 @@ namespace Content.Server.Dream {
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
+        public List<DreamObject> Mobs { get; set; } = new();
         public Random Random { get; set; } = new();
 
         public void Initialize() {

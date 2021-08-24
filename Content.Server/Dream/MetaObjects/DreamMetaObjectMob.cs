@@ -10,12 +10,12 @@ namespace Content.Server.Dream.MetaObjects {
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-            //Runtime.Mobs.Add(dreamObject);
+            _dreamManager.Mobs.Add(dreamObject);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
-            //Runtime.Mobs.Remove(dreamObject);
+            _dreamManager.Mobs.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

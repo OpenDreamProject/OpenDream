@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using Robust.Shared.IoC;
 using DreamValueType = Content.Server.DreamValue.DreamValueType;
 
 namespace Content.Server.Dream.NativeProcs {
@@ -860,18 +861,20 @@ namespace Content.Server.Dream.NativeProcs {
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
 
-            //for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, DreamManager.Map.Width); x++) {
-            //    for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, DreamManager.Map.Width); y++) {
-            //        if (x == centerX && y == centerY) continue;
-            //
-            //        DreamObject turf = DreamManager.Map.GetTurfAt(x, y, centerZ);
-            //
-            //        view.AddValue(new DreamValue(turf));
-            //        foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-            //            view.AddValue(content);
-            //        }
-            //    }
-            //}
+            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
+
+            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
+                    if (x == centerX && y == centerY) continue;
+
+                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+
+                    view.AddValue(new DreamValue(turf));
+                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+                        view.AddValue(content);
+                    }
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -907,16 +910,16 @@ namespace Content.Server.Dream.NativeProcs {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            //foreach (DreamObject mob in DreamManager.Mobs) {
-            //    int mobX = mob.GetVariable("x").GetValueAsInteger();
-            //    int mobY = mob.GetVariable("y").GetValueAsInteger();
-            //
-            //    if (mobX == centerX && mobY == centerY) continue;
-            //
-            //    if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
-            //        view.AddValue(new DreamValue(mob));
-            //    }
-            //}
+            foreach (DreamObject mob in DreamManager.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (mobX == centerX && mobY == centerY) continue;
+
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    view.AddValue(new DreamValue(mob));
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -1455,16 +1458,18 @@ namespace Content.Server.Dream.NativeProcs {
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
 
-            //for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, DreamManager.Map.Width); x++) {
-            //    for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, DreamManager.Map.Width); y++) {
-            //        DreamObject turf = DreamManager.Map.GetTurfAt(x, y, centerZ);
-            //
-            //        view.AddValue(new DreamValue(turf));
-            //        foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-            //            view.AddValue(content);
-            //        }
-            //    }
-            //}
+            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
+
+            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
+                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+
+                    view.AddValue(new DreamValue(turf));
+                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+                        view.AddValue(content);
+                    }
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -1500,14 +1505,14 @@ namespace Content.Server.Dream.NativeProcs {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            //foreach (DreamObject mob in DreamManager.Mobs) {
-            //    int mobX = mob.GetVariable("x").GetValueAsInteger();
-            //    int mobY = mob.GetVariable("y").GetValueAsInteger();
-            //
-            //    if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
-            //        view.AddValue(new DreamValue(mob));
-            //    }
-            //}
+            foreach (DreamObject mob in DreamManager.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    view.AddValue(new DreamValue(mob));
+                }
+            }
 
             return new DreamValue(view);
         }

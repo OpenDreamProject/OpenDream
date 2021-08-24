@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Web;
 using Content.Shared.Interface;
-using JetBrains.Annotations;
 using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -14,11 +14,25 @@ using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 
-namespace Content.Client.Interface.Controls {
+namespace Content.Client.Interface.Controls
+{
     class ControlBrowser : InterfaceControl
     {
-        [Dependency]
-        private readonly IResourceManager _resourceManager = default!;
+        private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
+        {
+            { "html", "text/html" },
+            { "htm", "text/html" },
+            { "png", "image/png" },
+            { "svg", "image/svg+xml" },
+            { "jpeg", "image/jpeg" },
+            { "jpg", "image/jpeg" },
+            { "js", "application/javascript" },
+            { "json", "application/json" },
+            { "ttf", "font/ttf" },
+            { "txt", "text/plain" }
+        };
+
+        [Dependency] private readonly IResourceManager _resourceManager = default!;
         private BrowserControl _webView;
         private Control _wrap;
         private Label _loadingLabel;
@@ -82,11 +96,8 @@ namespace Content.Client.Interface.Controls {
                     status = HttpStatusCode.NotFound;
                 }
 
-                var mimeType = path.Extension switch
-                {
-                    "html" => "text/html",
-                    _ => "text/plain"
-                };
+                if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
+                    mimeType = "application/octet-stream";
 
                 obj.DoRespondStream(stream, mimeType, status);
                 return;

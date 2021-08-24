@@ -53,6 +53,11 @@
 <html>
 <head>
 	<title>Foo</title>
+	<style>
+	body {
+		background: red;
+	}
+	</style>
 </head>
 <body>
 	<marquee>Honk</marquee>

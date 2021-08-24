@@ -59,8 +59,7 @@ namespace Content.Client.Interface.Controls
 
             value = HttpUtility.UrlDecode(value);
             value = value.Replace("\"", "\\\"");
-            // todo:
-            //_webView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
+            _webView.ExecuteJavaScript(jsFunction + "(\"" + value + "\")");
         }
 
         public void SetFileSource(ResourcePath filepath, bool userData) {

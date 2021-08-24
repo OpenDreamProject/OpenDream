@@ -58,12 +58,20 @@
 		background: red;
 	}
 	</style>
+	<script>
+	function foo(v) {
+		document.getElementById("mark").innerHTML = v;
+	}
+	</script>
 </head>
 <body>
-	<marquee>Honk</marquee>
+	<marquee id="mark">Honk</marquee>
 	<a href="?honk=1">click me</a>
 </body>
 </html>"},"window=honk")
+
+	verb/test_output()
+		usr << output("help sec griffing me", "honk.browser:foo")
 
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")

@@ -1,6 +1,8 @@
 ﻿using Content.Server.Dream;
 using Content.Server.Dream.Resources;
 using Content.Server.Input;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -28,6 +30,10 @@ namespace Content.Server {
             IoCManager.BuildGraph();
             IoCManager.InjectDependencies(this);
             componentFactory.GenerateNetIds();
+
+            // Disable since disabling prediction causes timing errors otherwise.
+            var cfg = IoCManager.Resolve<IConfigurationManager>();
+            cfg.SetCVar(CVars.NetLogLateMsg, false);
         }
 
         public override void PostInit() {

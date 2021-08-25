@@ -5,6 +5,8 @@ using Content.Client.Resources;
 using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -51,6 +53,10 @@ namespace Content.Client {
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
+
+            // Game logic runs all single threaded, disable prediction to reduce CPU load and lag.
+            var cfg = IoCManager.Resolve<IConfigurationManager>();
+            cfg.SetCVar(CVars.NetPredict, false);
         }
 
         public override void PostInit() {

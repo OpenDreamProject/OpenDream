@@ -44,7 +44,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                         string includedFile = (string)includedFileToken.Value;
                         string includedFileExtension = Path.GetExtension(includedFile);
-                        string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile);
+                        string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile).Replace('\\', Path.DirectorySeparatorChar);
 
                         if (!File.Exists(Path.Combine(includePath, fullIncludePath))) {
                             _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, $"Could not find included file \"{fullIncludePath}\""));

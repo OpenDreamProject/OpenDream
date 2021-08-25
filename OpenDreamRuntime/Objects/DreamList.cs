@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Objects {
         internal event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
         private List<DreamValue> _values = new();
-        private Dictionary<DreamValue, DreamValue> _associativeValues = new();
+        private Dictionary<DreamValue, DreamValue> _associativeValues = null;
 
         protected DreamList(DreamRuntime runtime)
             : base(runtime, runtime.ListDefinition)
@@ -39,7 +39,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsAssociative() {
-            return _associativeValues.Count > 0;
+            return _associativeValues != null && _associativeValues.Count > 0;
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Objects {
                 DreamValue value = _values[i - 1];
 
                 copy._values.Add(value);
-                if (_associativeValues.ContainsKey(value)) {
+                if (_associativeValues is not null && _associativeValues.ContainsKey(value)) {
                     copy._associativeValues.Add(value, _associativeValues[value]);
                 }
             }
@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Objects {
                 return _values[keyInteger - 1]; //1-indexed
             }
 
-            return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
+            return _associativeValues == null ? DreamValue.Null : (_associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null);
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
@@ -83,6 +83,10 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 if (!ContainsValue(key)) _values.Add(key);
 
+                if (_associativeValues is null)
+                {
+                    _associativeValues = new Dictionary<DreamValue, DreamValue>(1);
+                }
                 _associativeValues[key] = value;
             }
         }
@@ -160,9 +164,18 @@ namespace OpenDreamRuntime.Objects {
         public DreamList Union(DreamList other) {
             DreamList newList = new DreamList(Runtime);
             newList._values = _values.Union(other.GetValues()).ToList();
-            foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
-                newList._associativeValues[key] = value;
+            var otherVals = other.GetAssociativeValues();
+            if (newList._associativeValues is null)
+            {
+                newList._associativeValues = new Dictionary<DreamValue, DreamValue>(otherVals?.Count ?? 0);
             }
+
+            if (otherVals != null)
+                foreach ((DreamValue key, DreamValue value) in otherVals)
+                {
+                    newList._associativeValues[key] = value;
+                }
+
             return newList;
         }
     }

@@ -354,18 +354,21 @@ namespace OpenDreamRuntime.Procs {
                 Dictionary<DreamValue, DreamValue> argListNamedValues = argList.GetAssociativeValues();
 
                 foreach (DreamValue value in argListValues) {
-                    if (!argListNamedValues.ContainsKey(value)) {
+                    if (argListNamedValues != null && !argListNamedValues.ContainsKey(value)) {
                         arguments.OrderedArguments.Add(value);
                     }
                 }
 
-                foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
-                    string name = namedValue.Key.Value as string;
+                if (argListNamedValues != null)
+                {
+                    foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
+                        string name = namedValue.Key.Value as string;
 
-                    if (name != null) {
-                        arguments.NamedArguments.Add(name, namedValue.Value);
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        if (name != null) {
+                            arguments.NamedArguments.Add(name, namedValue.Value);
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
                     }
                 }
             }

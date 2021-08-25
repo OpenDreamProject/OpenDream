@@ -612,7 +612,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     Dictionary<DreamValue, DreamValue> assocValues = list.GetAssociativeValues();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        if (assocValues.ContainsKey(listValue)) {
+                        if (assocValues is not null && assocValues.ContainsKey(listValue)) {
                             jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(assocValues[listValue]));
                         } else {
                             jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
@@ -688,7 +688,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> values = list.GetValues();
             Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
             foreach (DreamValue entry in values) {
-                if (associativeValues.ContainsKey(entry))
+                if (associativeValues is not null && associativeValues.ContainsKey(entry))
                 {
                     paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(associativeValues[entry].Value.ToString())}");
                     paramBuilder.Append('&');

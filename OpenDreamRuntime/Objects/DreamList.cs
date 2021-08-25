@@ -162,10 +162,7 @@ namespace OpenDreamRuntime.Objects {
             DreamList newList = new DreamList(Runtime);
             newList._values = _values.Union(other.GetValues()).ToList();
             var otherVals = other.GetAssociativeValues();
-            if (newList._associativeValues is null)
-            {
-                newList._associativeValues = new Dictionary<DreamValue, DreamValue>(otherVals?.Count ?? 0);
-            }
+            newList._associativeValues ??= new Dictionary<DreamValue, DreamValue>(otherVals?.Count ?? 0);
 
             if (otherVals != null)
                 foreach ((DreamValue key, DreamValue value) in otherVals)

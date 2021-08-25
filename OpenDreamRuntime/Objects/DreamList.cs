@@ -83,10 +83,7 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 if (!ContainsValue(key)) _values.Add(key);
 
-                if (_associativeValues is null)
-                {
-                    _associativeValues = new Dictionary<DreamValue, DreamValue>(1);
-                }
+                _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
                 _associativeValues[key] = value;
             }
         }

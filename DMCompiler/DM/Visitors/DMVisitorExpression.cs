@@ -98,7 +98,8 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(localVar.Type, name);
-                    Result.ValType = GetATOMType(localVar.Type);
+                    if(name == "wumbo") Console.WriteLine("wew");
+                    Result.ValType = localVar.ValType == DMValueType.Anything ? GetATOMType(localVar.Type) : localVar.ValType;
 
                     return;
                 }
@@ -155,6 +156,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
             Result = new Expressions.ProcSuper();
+            if(_proc.Name == "fizz") Console.WriteLine("eew");
             Result.ValType = _proc.ReturnTypes;
         }
 

@@ -60,7 +60,10 @@ namespace OpenDreamShared.Compiler.DM {
                 //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
+                    Delimiter();
+                    Whitespace();
                     DMASTDefinitionParameter[] parameters = DefinitionParameters();
+                    Delimiter();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
@@ -922,8 +925,12 @@ namespace OpenDreamShared.Compiler.DM {
 
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
+
                 do {
                     Whitespace();
+                    Delimiter();
+                    Whitespace();
+
                     DMASTExpression expression = Expression();
                     if (expression == null) Error("Expected an expression");
 
@@ -936,7 +943,10 @@ namespace OpenDreamShared.Compiler.DM {
                     } else {
                         expressions.Add(expression);
                     }
+
+                    Delimiter();
                 } while (Check(TokenType.DM_Comma));
+                Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 Whitespace();
                 DMASTProcBlockInner body = ProcBlock();
@@ -975,8 +985,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
+                Delimiter();
+                Whitespace();
+
                 DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
+                Delimiter();
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 
@@ -989,11 +1003,16 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTPick.PickValue[] PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
+                Delimiter();
+                Whitespace();
+
                 DMASTPick.PickValue? arg = PickArgument();
                 if (arg == null) Error("Expected a pick argument");
                 List<DMASTPick.PickValue> args = new() { arg.Value };
 
                 while (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
                     arg = PickArgument();
 
@@ -1008,6 +1027,8 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
+                Delimiter();
+                Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 return args.ToArray();
             }
@@ -1032,13 +1053,15 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTCallParameter[] CallParameters(bool includeEmpty) {
-            List<DMASTCallParameter> parameters = new List<DMASTCallParameter>();
+            List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
 
             while (parameter != null) {
                 parameters.Add(parameter);
 
                 if (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
                     parameter = CallParameter();
 
@@ -1086,6 +1109,8 @@ namespace OpenDreamShared.Compiler.DM {
                 if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
 
                     parameter = DefinitionParameter();
@@ -1935,7 +1960,12 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         private bool Delimiter() {
-            return Check(TokenType.DM_Semicolon) || Newline();
+            bool hasDelimiter = false;
+            while (Check(TokenType.DM_Semicolon) || Newline()) {
+                hasDelimiter = true;
+            }
+
+            return hasDelimiter;
         }
     }
 }

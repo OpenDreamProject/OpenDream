@@ -49,6 +49,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_length_char);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_list2params);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_log);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_lowertext);

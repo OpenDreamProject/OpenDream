@@ -481,7 +481,9 @@ namespace OpenDreamShared.Compiler.DM {
 
             //Skip any newlines when inside brackets
             if (bracketNesting != 0) {
-                while (current.Type == TokenType.Newline) current = Advance();
+                while (current.Type == TokenType.Newline && !AtEndOfSource) {
+                    current = base.Advance();
+                }
             }
 
             return current;

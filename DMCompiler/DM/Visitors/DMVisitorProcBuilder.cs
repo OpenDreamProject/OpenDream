@@ -102,12 +102,6 @@ namespace DMCompiler.DM.Visitors {
                     _proc.Unimplemented = constant.IsTruthy();
                     break;
                 }
-                /*case "return_type":
-                {
-                    var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
-                    Console.WriteLine(constant);
-                    break;
-                }*/
             }
         }
 

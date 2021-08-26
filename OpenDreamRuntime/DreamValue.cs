@@ -138,7 +138,7 @@ namespace OpenDreamRuntime {
 
                     break;
 
-                case DreamValueType.DreamResource: //TODO handle icons/sound?
+                case DreamValueType.DreamResource: //TODO handle icons/sound
                 case DreamValueType.DreamProc: //TODO?
                 default:
                     type = DMValueType.Anything;

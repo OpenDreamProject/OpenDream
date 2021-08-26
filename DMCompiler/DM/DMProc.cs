@@ -75,6 +75,11 @@ namespace DMCompiler.DM {
                 return;
             }
 
+            if (ReturnTypes.HasFlag(DMValueType.Color) || ReturnTypes.HasFlag(DMValueType.File) || ReturnTypes.HasFlag(DMValueType.Message))
+            {
+                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Color, Message, and File return types are currently unsupported."));
+            }
+
             if (type.Equals(DMValueType.Anything))
             {
                 Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));

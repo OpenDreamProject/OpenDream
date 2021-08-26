@@ -96,6 +96,12 @@ namespace DMCompiler.DM {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
             procDefinition.WaitFor = _waitFor;
 
+            //Safe returns are handled at compiletime and don't need to be saved
+            if (ReturnTypes.HasFlag(DMValueType.Unsafe))
+            {
+                procDefinition.ReturnTypes = ReturnTypes;
+            }
+
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
             if (Parameters.Count > 0) {
                 procDefinition.Arguments = new List<ProcArgumentJson>();

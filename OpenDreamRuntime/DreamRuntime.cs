@@ -16,6 +16,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime
 {
@@ -112,7 +113,7 @@ namespace OpenDreamRuntime
             RegisterPacketCallbacks();
 
             if (CompiledJson.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode, true);
+                var globalInitProc = new DMProc("(global init)", this, null, null, null, CompiledJson.GlobalInitProc.Bytecode, true, DMValueType.Anything);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 

@@ -181,7 +181,7 @@ namespace OpenDreamRuntime.Objects {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
 
             if (jsonObject.InitProc != null) {
-                var initProc = new DMProc($"{treeEntry.ObjectDefinition.Type}/(init)", Runtime, null, null, null, jsonObject.InitProc.Bytecode, true);
+                var initProc = new DMProc($"{treeEntry.ObjectDefinition.Type}/(init)", Runtime, null, null, null, jsonObject.InitProc.Bytecode, true, DMValueType.Anything);
 
                 initProc.SuperProc = treeEntry.ObjectDefinition.InitializionProc;
                 treeEntry.ObjectDefinition.InitializionProc = initProc;
@@ -246,7 +246,7 @@ namespace OpenDreamRuntime.Objects {
                         }
                     }
 
-                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", Runtime, null, argumentNames, argumentTypes, bytecode, procDefinition.WaitFor);
+                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", Runtime, null, argumentNames, argumentTypes, bytecode, procDefinition.WaitFor, procDefinition.ReturnTypes);
                     objectDefinition.SetProcDefinition(jsonProc.Key, proc);
                 }
             }

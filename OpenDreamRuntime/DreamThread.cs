@@ -17,6 +17,8 @@ namespace OpenDreamRuntime {
     public abstract class DreamProc {
         public string Name { get; }
 
+        public DMValueType ReturnTypes { get; set; }
+
         public DreamRuntime Runtime { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
@@ -28,11 +30,12 @@ namespace OpenDreamRuntime {
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected DreamProc(string name, DreamRuntime runtime, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamRuntime runtime, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes, DMValueType returnTypes) {
             Name = name;
             Runtime = runtime;
             SuperProc = superProc;
             WaitFor = waitFor;
+            ReturnTypes = returnTypes;
             ArgumentNames = argumentNames ?? new();
             ArgumentTypes = argumentTypes ?? new();
         }
@@ -144,7 +147,14 @@ namespace OpenDreamRuntime {
 
                     // Our top-most proc just returned a value
                     case ProcStatus.Returned:
+                        var returnTypes = _current?.Proc?.ReturnTypes ?? DMValueType.Anything;
                         var returned = _current.Result;
+                        if (returnTypes.HasFlag(DMValueType.Unsafe) && !returnTypes.HasFlag(returned.GetDMValueType(out DMValueType type)))
+                        {
+                            throw new PropagatingRuntime(
+                                $"{_current?.Proc?.Name ?? "Unknown"}(): Invalid unsafe return type {type}, expected {returnTypes}");
+                        }
+
                         PopProcState();
 
                         // If our stack is empty, the context has finished execution

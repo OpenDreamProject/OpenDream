@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -96,6 +97,55 @@ namespace OpenDreamRuntime {
             }
 
             throw new Exception("Value " + this + " was not the expected type of " + type + "");
+        }
+
+        public DMValueType GetDMValueType(out DMValueType type)
+        {
+            if (Value is null)
+            {
+                type = DMValueType.Null;
+                return type;
+            }
+            switch(Type)
+            {
+                case DreamValueType.String:
+                    type = DMValueType.Text;
+                    break;
+                case DreamValueType.Float:
+                    type = DMValueType.Num;
+                    break;
+                case DreamValueType.DreamObject:
+                    if(TryGetValueAsDreamObjectOfType(new DreamPath("/mob"), out _))
+                    {
+                        type = DMValueType.Mob;
+                    }
+                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/obj"), out _))
+                    {
+                        type = DMValueType.Obj;
+                    }
+                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/turf"), out _))
+                    {
+                        type = DMValueType.Turf;
+                    }
+                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/area"), out _))
+                    {
+                        type = DMValueType.Area;
+                    }
+                    else
+                    {
+                        type = DMValueType.Anything;
+                    }
+
+                    break;
+
+                case DreamValueType.DreamResource: //TODO handle icons/sound?
+                case DreamValueType.DreamProc: //TODO?
+                default:
+                    type = DMValueType.Anything;
+                    break;
+            }
+
+            return type;
         }
 
         public string GetValueAsString() {

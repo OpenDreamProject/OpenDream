@@ -203,7 +203,7 @@
 
 	M.Invert()
 
-	if(!M.Equals(matrix(-1.66667, 0.666667, 1, 1.33333, -0.333333, -2)))
+	if(!M.Equals(matrix(-1.6666667, 0.6666667, 1, 1.3333334, -0.33333334, -2)))
 		CRASH("Unexpected matrix/Invert result [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
 
 	M.Invert()

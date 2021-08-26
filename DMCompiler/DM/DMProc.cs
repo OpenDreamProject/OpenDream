@@ -81,7 +81,14 @@ namespace DMCompiler.DM {
             }
             else if (!ReturnTypes.HasFlag(type))
             {
-                Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
+                if (type.Equals(DMValueType.Unsafe))
+                {
+                    Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type of a local var, add 'unsafe' to the proc return types"));
+                }
+                else
+                {
+                    Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
+                }
             }
         }
 

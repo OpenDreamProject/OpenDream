@@ -98,7 +98,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(localVar.Type, name);
-                    Result.ValType = GetATOMType(localVar.Type);
+                    Result.ValType = DMValueType.Unsafe;
 
                     return;
                 }

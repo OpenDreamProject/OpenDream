@@ -1,4 +1,4 @@
-﻿using DMCompiler.DM.Visitors;
+using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -13,7 +13,6 @@ namespace DMCompiler.DM {
         public class DMLocalVariable {
             public int Id;
             public DreamPath? Type;
-            public DMValueType ValType;
 
             public DMLocalVariable(int id, DreamPath? type) {
                 Id = id;
@@ -137,7 +136,7 @@ namespace DMCompiler.DM {
 
         public void AddLocalVariable(string name, DreamPath? type) {
             int localVarId = _localVariableIdCounter++;
-            if(name == "wumbo") Console.WriteLine("wew");
+
             _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type));
         }
 
@@ -145,11 +144,7 @@ namespace DMCompiler.DM {
             DMProcScope scope = _scopes.Peek();
 
             while (scope != null) {
-                if (scope.LocalVariables.TryGetValue(name, out DMLocalVariable localVariable))
-                {
-                    //if(localVariable. == "wumbo") Console.WriteLine("wew");
-                    return localVariable;
-                }
+                if (scope.LocalVariables.TryGetValue(name, out DMLocalVariable localVariable)) return localVariable;
 
                 scope = scope.ParentScope;
             }

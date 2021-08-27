@@ -32,11 +32,14 @@ namespace OpenDreamShared.Compiler.DM {
             DMLexer lexer = _lexer as DMLexer;
             var found_top_level = false;
             while (!found_top_level) {
+                while (!PeekDelimiter() || lexer.CurrentIndentation() != 0) {
+                    if (lexer.AtEndOfSource) {
+                        break;
+                    }
+                    Advance();
+                }
                 if (lexer.AtEndOfSource) {
                     break;
-                }
-                while (!PeekDelimiter() || lexer.CurrentIndentation() != 0) {
-                    Advance();
                 }
                 Whitespace();
                 if (Current().Type != TokenType.DM_Slash) {

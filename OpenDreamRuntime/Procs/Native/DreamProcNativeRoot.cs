@@ -460,8 +460,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Icon")]
         public static DreamValue NativeProc_isicon(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue icon = arguments.GetArgument(0, "Icon");
-            if (icon.TryGetValueAsDreamObject(out DreamObject IconObject))
-                return new DreamValue(IconObject.IsSubtypeOf(DreamPath.Icon) ? 1 : 0);
+            if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out _))
+                return new DreamValue(1);
             else if (icon.TryGetValueAsDreamResource(out DreamResource resource)) {
                 string[] DMIendings = {".dmi", ".bmp", ".png", ".jpg", ".gif"};
                 return new DreamValue(DMIendings.Any(x => resource.ResourcePath.EndsWith(x)) ? 1 : 0);

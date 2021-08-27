@@ -52,7 +52,7 @@ namespace OpenDreamRuntime {
             get => _mobDreamObject;
             set {
                 if (_mobDreamObject != value) {
-                    if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout");
+                    if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout", new(null), value);
 
                     if (value != null && value.IsSubtypeOf(DreamPath.Mob)) {
                         DreamConnection oldMobConnection = Runtime.Server.GetConnectionFromMob(value);
@@ -60,7 +60,7 @@ namespace OpenDreamRuntime {
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login");
+                        _mobDreamObject.SpawnProc("Login", new(null), _mobDreamObject);
                     } else {
                         _mobDreamObject = null;
                     }

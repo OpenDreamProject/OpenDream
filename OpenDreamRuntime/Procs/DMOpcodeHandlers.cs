@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -1131,6 +1132,47 @@ namespace OpenDreamRuntime.Procs {
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
                 }
+                case DreamValue.DreamValueType.String:
+                    unsafe
+                    {
+                        var dllName = source.GetValueAsString();
+                        var procName = state.PopDreamValue().GetValueAsString();
+                        // DLL Invoke
+                        var entryPoint = DllHelper.ResolveDllTarget(state.Runtime, dllName, procName);
+
+                        Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
+                        argV.Fill(0);
+                        try
+                        {
+                            for (var i = 0; i < arguments.ArgumentCount; i++)
+                            {
+                                var arg = arguments.OrderedArguments[i].Stringify();
+                                argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
+                            }
+
+                            fixed (nint* ptr = &argV[0])
+                            {
+                                var ret = entryPoint(arguments.ArgumentCount, (byte**) ptr);
+                                if (ret == null)
+                                {
+                                    state.Push(DreamValue.Null);
+                                    return null;
+                                }
+
+                                var retString = Marshal.PtrToStringUTF8((nint) ret);
+                                state.Push(new DreamValue(retString));
+                                return null;
+                            }
+                        }
+                        finally
+                        {
+                            foreach (var arg in argV)
+                            {
+                                if (arg != 0)
+                                    Marshal.ZeroFreeCoTaskMemUTF8(arg);
+                            }
+                        }
+                    }
                 default:
                     throw new Exception("Call statement has an invalid source (" + source + ")");
             }

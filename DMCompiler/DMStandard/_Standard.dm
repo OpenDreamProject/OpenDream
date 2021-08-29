@@ -23,6 +23,7 @@ proc/file2text(File)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
+proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0)
 proc/flick(Icon, Object)
 proc/flist(Path)
 proc/hascall(Object, ProcName)
@@ -269,8 +270,26 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 
 	return List.Join(Glue, Start, End)
 
+proc/copytext_char(T,Start=1,End=0)
+	return copytext(T, Start, End)
+
+proc/length_char(E)
+	return length(E)
+
 proc/lentext(T)
 	return length(T)
+
+proc/text2ascii_char(T,pos=1)
+	return text2ascii(T,pos)
+
+proc/findtext_char(Haystack,Needle,Start=1,End=0)
+	return findtext(Haystack,Needle,Start,End)
+
+proc/findlasttext_char(Haystack,Needle,Start=0,End=1)
+	return findlasttext(Haystack,Needle,Start,End)
+
+proc/findlasttextEx_char(Haystack,Needle,Start=0,End=1)
+	return findlasttextEx(Haystack,Needle,Start,End)
 
 proc/isobj(Loc1)
 	for(var/arg in args)

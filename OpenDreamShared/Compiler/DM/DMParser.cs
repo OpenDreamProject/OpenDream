@@ -661,17 +661,19 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementSpawn Spawn() {
             if (Check(TokenType.DM_Spawn)) {
                 Whitespace();
+                Consume(TokenType.DM_LeftParenthesis, "Expected '('");
+                Whitespace();
 
-                DMASTExpression delay = null;
-                if (Check(TokenType.DM_LeftParenthesis)) {
-                    Whitespace();
+                DMASTExpression delay;
+                if (Check(TokenType.DM_RightParenthesis)) {
+                    //No parameters, default to zero
+                    delay = new DMASTConstantInteger(0);
+                } else {
                     delay = Expression();
-                    Whitespace(); //In case there was no expression
+
+                    if (delay == null) Error("Expected an expression");
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 }
-
-                //No delay, default to zero
-                if (delay == null) delay = new DMASTConstantInteger(0);
 
                 Whitespace();
                 Newline();

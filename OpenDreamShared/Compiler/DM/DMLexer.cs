@@ -476,19 +476,6 @@ namespace OpenDreamShared.Compiler.DM {
             return token;
         }
 
-        protected override Token Advance() {
-            Token current = base.Advance();
-
-            //Skip any newlines when inside brackets
-            if (bracketNesting != 0) {
-                while (current.Type == TokenType.Newline && !AtEndOfSource) {
-                    current = base.Advance();
-                }
-            }
-
-            return current;
-        }
-
         public int CurrentIndentation() {
             return _indentationStack.Peek();
         }

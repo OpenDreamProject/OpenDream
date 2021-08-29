@@ -333,7 +333,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            int needleIndex = text.IndexOf(needle, start - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {

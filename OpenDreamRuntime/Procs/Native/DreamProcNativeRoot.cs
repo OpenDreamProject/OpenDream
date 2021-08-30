@@ -609,11 +609,10 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative()) {
                     Dictionary<Object, Object> jsonObject = new(list.GetLength());
-                    Dictionary<DreamValue, DreamValue> assocValues = list.GetAssociativeValues();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        if (assocValues is not null && assocValues.ContainsKey(listValue)) {
-                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(assocValues[listValue]));
+                        if (list.ContainsKey(listValue)) {
+                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(list.GetValue(listValue)));
                         } else {
                             jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
                         }
@@ -686,11 +685,10 @@ namespace OpenDreamRuntime.Procs.Native {
             StringBuilder paramBuilder = new StringBuilder();
 
             List<DreamValue> values = list.GetValues();
-            Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
             foreach (DreamValue entry in values) {
-                if (associativeValues is not null && associativeValues.ContainsKey(entry))
+                if (list.ContainsKey(entry))
                 {
-                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(associativeValues[entry].Value.ToString())}");
+                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(list.GetValue(entry).Value.ToString())}");
                     paramBuilder.Append('&');
                 } else {
                     paramBuilder.Append(HttpUtility.UrlEncode(entry.Value.ToString()));

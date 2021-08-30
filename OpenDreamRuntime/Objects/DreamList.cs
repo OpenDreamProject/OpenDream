@@ -51,8 +51,8 @@ namespace OpenDreamRuntime.Objects {
                 DreamValue value = _values[i - 1];
 
                 copy._values.Add(value);
-                if (_associativeValues is not null && _associativeValues.ContainsKey(value)) {
-                    copy._associativeValues.Add(value, _associativeValues[value]);
+                if (ContainsKey(value)) {
+                    copy.SetValue(value, _associativeValues[value]);
                 }
             }
 
@@ -64,7 +64,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
-            return _associativeValues;
+            return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
         }
 
         public virtual DreamValue GetValue(DreamValue key) {
@@ -107,6 +107,11 @@ namespace OpenDreamRuntime.Objects {
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
             return _values.Contains(value);
+        }
+
+        public bool ContainsKey(DreamValue value)
+        {
+            return _associativeValues != null && _associativeValues.ContainsKey(value);
         }
 
         public int FindValue(DreamValue value, int start = 1, int end = 0) {
@@ -161,14 +166,9 @@ namespace OpenDreamRuntime.Objects {
         public DreamList Union(DreamList other) {
             DreamList newList = new DreamList(Runtime);
             newList._values = _values.Union(other.GetValues()).ToList();
-            var otherVals = other.GetAssociativeValues();
-            newList._associativeValues ??= new Dictionary<DreamValue, DreamValue>(otherVals?.Count ?? 0);
-
-            if (otherVals != null)
-                foreach ((DreamValue key, DreamValue value) in otherVals)
-                {
-                    newList._associativeValues[key] = value;
-                }
+            foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
+                newList.SetValue(key, value);
+            }
 
             return newList;
         }

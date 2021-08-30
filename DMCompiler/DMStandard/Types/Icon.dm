@@ -28,8 +28,7 @@
 		CRASH("/icon.Height() is not implemented")
 
 	proc/IconStates(mode = 0)
-		set opendream_unimplemented = TRUE
-		CRASH("/icon.IconStates() is not implemented")
+		return icon_states(src, mode)
 
 	proc/Insert(new_icon, icon_state, dir, frame, moving, delay)
 		set opendream_unimplemented = TRUE

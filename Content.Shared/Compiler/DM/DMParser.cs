@@ -60,7 +60,10 @@ namespace Content.Shared.Compiler.DM {
                 //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
+                    Delimiter();
+                    Whitespace();
                     DMASTDefinitionParameter[] parameters = DefinitionParameters();
+                    Delimiter();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
@@ -595,19 +598,17 @@ namespace Content.Shared.Compiler.DM {
         public DMASTProcStatementSpawn Spawn() {
             if (Check(TokenType.DM_Spawn)) {
                 Whitespace();
-                Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                Whitespace();
 
-                DMASTExpression delay;
-                if (Check(TokenType.DM_RightParenthesis)) {
-                    //No parameters, default to zero
-                    delay = new DMASTConstantInteger(0);
-                } else {
+                DMASTExpression delay = null;
+                if (Check(TokenType.DM_LeftParenthesis)) {
+                    Whitespace();
                     delay = Expression();
-
-                    if (delay == null) Error("Expected an expression");
+                    Whitespace(); //In case there was no expression
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 }
+
+                //No delay, default to zero
+                if (delay == null) delay = new DMASTConstantInteger(0);
 
                 Whitespace();
                 Newline();
@@ -922,8 +923,12 @@ namespace Content.Shared.Compiler.DM {
 
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
+
                 do {
                     Whitespace();
+                    Delimiter();
+                    Whitespace();
+
                     DMASTExpression expression = Expression();
                     if (expression == null) Error("Expected an expression");
 
@@ -936,7 +941,10 @@ namespace Content.Shared.Compiler.DM {
                     } else {
                         expressions.Add(expression);
                     }
+
+                    Delimiter();
                 } while (Check(TokenType.DM_Comma));
+                Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 Whitespace();
                 DMASTProcBlockInner body = ProcBlock();
@@ -975,8 +983,12 @@ namespace Content.Shared.Compiler.DM {
         public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
+                Delimiter();
+                Whitespace();
+
                 DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
+                Delimiter();
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 
@@ -989,11 +1001,16 @@ namespace Content.Shared.Compiler.DM {
         public DMASTPick.PickValue[] PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
+                Delimiter();
+                Whitespace();
+
                 DMASTPick.PickValue? arg = PickArgument();
                 if (arg == null) Error("Expected a pick argument");
                 List<DMASTPick.PickValue> args = new() { arg.Value };
 
                 while (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
                     arg = PickArgument();
 
@@ -1008,6 +1025,8 @@ namespace Content.Shared.Compiler.DM {
                     }
                 }
 
+                Delimiter();
+                Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 return args.ToArray();
             }
@@ -1032,13 +1051,15 @@ namespace Content.Shared.Compiler.DM {
         }
 
         public DMASTCallParameter[] CallParameters(bool includeEmpty) {
-            List<DMASTCallParameter> parameters = new List<DMASTCallParameter>();
+            List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
 
             while (parameter != null) {
                 parameters.Add(parameter);
 
                 if (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
                     parameter = CallParameter();
 
@@ -1086,6 +1107,8 @@ namespace Content.Shared.Compiler.DM {
                 if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    Delimiter();
                     Whitespace();
 
                     parameter = DefinitionParameter();
@@ -1935,7 +1958,12 @@ namespace Content.Shared.Compiler.DM {
         }
 
         private bool Delimiter() {
-            return Check(TokenType.DM_Semicolon) || Newline();
+            bool hasDelimiter = false;
+            while (Check(TokenType.DM_Semicolon) || Newline()) {
+                hasDelimiter = true;
+            }
+
+            return hasDelimiter;
         }
     }
 }

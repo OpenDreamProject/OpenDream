@@ -147,6 +147,9 @@ namespace Content.Server.Dream
 
         public void AddStatPanelLine(string text)
         {
+            if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
+                SetOutputStatPanel("Stats");
+
             _statPanels[_outputStatPanel].Add(text);
         }
 

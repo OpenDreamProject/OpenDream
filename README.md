@@ -8,6 +8,8 @@ The compiler and server should work fine for Linux-based machines, but we curren
 
 For more information or if you'd like to contribute, join our [Discord server](https://discord.gg/qreryhZxxs).
 
+A detailed description of differences with BYOND can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Differences-Between-OpenDream-and-BYOND).
+
 ## Building
 
 OpenDream requires .NET 5. To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.

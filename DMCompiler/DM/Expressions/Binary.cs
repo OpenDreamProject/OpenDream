@@ -385,7 +385,7 @@ namespace DMCompiler.DM.Expressions {
                 LHS.ValType = RHS.ValType;
                 if (LHS is ProcSelf self)
                 {
-                    if (!proc.ReturnTypes.Equals(DMValueType.Anything) && !proc.ReturnTypes.HasFlag(self.ValType))
+                    if (!proc.ReturnTypes.Equals(DMValueType.Anything) && (proc.ReturnTypes & self.ValType) == 0)
                     {
                         throw new CompileErrorException($"{proc.Path}.{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
                     }

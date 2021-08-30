@@ -75,16 +75,17 @@ namespace DMCompiler.DM {
                 return;
             }
 
-            if (ReturnTypes.HasFlag(DMValueType.Color) || ReturnTypes.HasFlag(DMValueType.File) || ReturnTypes.HasFlag(DMValueType.Message))
+            if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
             {
                 Program.Error(new CompilerError(null, $"{Path}.{Name}(): Color, Message, and File return types are currently unsupported."));
+                return;
             }
 
             if (type.Equals(DMValueType.Anything))
             {
                 Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));
             }
-            else if (!ReturnTypes.HasFlag(type))
+            else if ((ReturnTypes & type) == 0)
             {
                 if (type.Equals(DMValueType.Unsafe))
                 {
@@ -102,7 +103,7 @@ namespace DMCompiler.DM {
             procDefinition.WaitFor = _waitFor;
 
             //Safe returns are handled at compiletime and don't need to be saved
-            if (ReturnTypes.HasFlag(DMValueType.Unsafe))
+            if ((ReturnTypes & DMValueType.Unsafe) != 0)
             {
                 procDefinition.ReturnTypes = ReturnTypes;
             }

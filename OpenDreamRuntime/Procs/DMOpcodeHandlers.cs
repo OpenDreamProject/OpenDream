@@ -347,16 +347,19 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? PushArgumentList(DMProcState state) {
             DreamProcArguments arguments = new DreamProcArguments(new(), new());
             DreamList argList = state.PopDreamValue().GetValueAsDreamList();
-
-            foreach (DreamValue value in argList.GetValues()) {
-                if (argList.ContainsKey(value)) { //Named argument
-                    if (value.TryGetValueAsString(out string name)) {
-                        arguments.NamedArguments.Add(name, argList.GetValue(value));
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+            
+            if (argList != null)
+            {
+                foreach (DreamValue value in argList.GetValues()) {
+                    if (argList.ContainsKey(value)) { //Named argument
+                        if (value.TryGetValueAsString(out string name)) {
+                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
+                    } else { //Ordered argument
+                        arguments.OrderedArguments.Add(value);
                     }
-                } else { //Ordered argument
-                    arguments.OrderedArguments.Add(value);
                 }
             }
 

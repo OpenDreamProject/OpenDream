@@ -1,6 +1,8 @@
 ﻿using Content.Shared.Interface;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Maths;
+using Robust.Shared.Utility;
 
 namespace Content.Client.Interface.Controls {
     class ControlOutput : InterfaceControl {
@@ -24,8 +26,12 @@ namespace Content.Client.Interface.Controls {
             return _textBox;
         }
 
-        public override void Output(string value, string data) {
-            _textBox.AddText(value);
+        public override void Output(string value, string data)
+        {
+            var msg = new FormattedMessage(2);
+            msg.PushColor(Color.Black);
+            msg.AddText(value);
+            _textBox.AddMessage(msg);
         }
     }
 }

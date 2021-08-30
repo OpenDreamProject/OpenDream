@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using Content.Shared.Interface;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
@@ -47,23 +48,17 @@ namespace Content.Client.Interface.Controls
 
             _window?.UpdateAnchors();
 
-            // todo: implement background colors.
-            /*
-            if (Descriptor.BackgroundColor is { } bgColor)
+            if (_controlDescriptor.BackgroundColor is { } bgColor)
             {
                 var styleBox = new StyleBoxFlat { BackgroundColor = bgColor };
 
-                switch (UIControl)
+                switch (UIElement)
                 {
-                    case Panel panel:
-                        panel.Background = brush;
-                        break;
-                    case Control control:
-                        control.Background = brush;
+                    case PanelContainer panel:
+                        panel.PanelOverride = styleBox;
                         break;
                 }
             }
-            */
 
             UIElement.Visible = _controlDescriptor.IsVisible;
             // TODO: enablement

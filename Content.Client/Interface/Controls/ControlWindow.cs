@@ -4,12 +4,15 @@ using Content.Shared.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.IoC;
 
 
 namespace Content.Client.Interface.Controls
 {
     sealed class ControlWindow : InterfaceControl
     {
+        [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
         // windows can be embedded into other windows as a way to do nesting.
@@ -24,6 +27,8 @@ namespace Content.Client.Interface.Controls
 
         public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor.MainControlDescriptor, null)
         {
+            IoCManager.InjectDependencies(this);
+
             _windowDescriptor = windowDescriptor;
         }
 
@@ -94,6 +99,17 @@ namespace Content.Client.Interface.Controls
             var title = descriptor.Title ?? "OpenDream World";
             if (osWindow != null) osWindow.Title = title;
             else if (clydeWindow != null) clydeWindow.Title = title;
+
+            WindowRoot root = null;
+            if (osWindow?.Window != null)
+                root = _uiMgr.GetWindowRoot(osWindow.Window);
+            else if (clydeWindow != null)
+                root = _uiMgr.GetWindowRoot(clydeWindow);
+
+            if (root != null)
+            {
+                root.BackgroundColor = descriptor.BackgroundColor;
+            }
         }
 
         public void CreateChildControls(DreamInterfaceManager manager) {

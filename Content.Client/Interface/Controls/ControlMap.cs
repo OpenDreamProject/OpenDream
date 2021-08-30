@@ -1,6 +1,7 @@
 ﻿using Content.Shared.Interface;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 
 namespace Content.Client.Interface.Controls
 {
@@ -15,7 +16,11 @@ namespace Content.Client.Interface.Controls
         protected override Control CreateUIElement()
         {
             Viewport = new ScalingViewport { ViewportSize = (32 * 15, 32 * 15) };
-            return Viewport;
+            return new PanelContainer
+            {
+                StyleClasses = { "MapBackground" },
+                Children = { Viewport }
+            };
         }
 
         private (int X, int Y) ControlToScreenCoordinates(double x, double y)

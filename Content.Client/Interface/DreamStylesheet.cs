@@ -33,8 +33,16 @@ namespace Content.Client.Interface {
             };
 
             return new Stylesheet(new StyleRule[] {
+                Element<WindowRoot>()
+                    .Prop("background", Color.White),
+
+                Element<PanelContainer>().Class("MapBackground")
+                    .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
+
                 // Default font.
-                Element().Prop("font", notoSansFont12),
+                Element()
+                    .Prop("font", notoSansFont12)
+                    .Prop("font-color", Color.Black),
 
                 // VScrollBar grabber normal
                 Element<VScrollBar>()
@@ -94,19 +102,19 @@ namespace Content.Client.Interface {
 
                 // Button style normal
                 Element<ContainerButton>().Class(ContainerButton.StyleClassButton).Pseudo(ContainerButton.StylePseudoClassNormal)
-                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#C0C0C0") }),
+                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#C0C0C0"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070")}),
 
                 // Button style hovered
                 Element<ContainerButton>().Class(ContainerButton.StyleClassButton).Pseudo(ContainerButton.StylePseudoClassHover)
-                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#D0D0D0")}),
+                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#D0D0D0"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070")}),
 
                 // Button style pressed
                 Element<ContainerButton>().Class(ContainerButton.StyleClassButton).Pseudo(ContainerButton.StylePseudoClassPressed)
-                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#E0E0E0") }),
+                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#E0E0E0"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070") }),
 
                 // Button style disabled
                 Element<ContainerButton>().Class(ContainerButton.StyleClassButton).Pseudo(ContainerButton.StylePseudoClassDisabled)
-                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#FAFAFA")}),
+                    .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#FAFAFA"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070")}),
 
                 // CheckBox unchecked
                 Element<TextureRect>().Class(CheckBox.StyleClassCheckBox)
@@ -119,9 +127,10 @@ namespace Content.Client.Interface {
                 // LineEdit
                 Element<LineEdit>()
                     // background color
-                    .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat{ BackgroundColor = Color.White })
+                    .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat{ BackgroundColor = Color.FromHex("#D3B5B5"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#abadb3")})
                     // default font color
-                    .Prop("font-color", Color.Black),
+                    .Prop("font-color", Color.Black)
+                    .Prop("cursor-color", Color.Black),
 
                 // LineEdit non-editable text color
                 Element<LineEdit>().Class(LineEdit.StyleClassLineEditNotEditable)
@@ -134,7 +143,7 @@ namespace Content.Client.Interface {
                 // TabContainer
                 Element<TabContainer>()
                     // Panel style
-                    .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxFlat { BackgroundColor = Color.Gray })
+                    .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
                     // Active tab style
                     .Prop(TabContainer.StylePropertyTabStyleBox, new StyleBoxFlat {
                         BackgroundColor = Color.FromHex("#707070"), PaddingLeft = 1, PaddingRight = 1

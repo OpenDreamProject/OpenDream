@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using Content.Client.Input;
 using Content.Shared.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
 
 namespace Content.Client.Interface.Controls
@@ -12,6 +15,7 @@ namespace Content.Client.Interface.Controls
     sealed class ControlWindow : InterfaceControl
     {
         [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
 
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
@@ -35,17 +39,38 @@ namespace Content.Client.Interface.Controls
         public override void UpdateElementDescriptor()
         {
             // Don't call base.UpdateElementDescriptor();
+
+            var controlDescriptor = (ControlDescriptorMain)_elementDescriptor;
+
+            if (controlDescriptor.Menu != null)
+            {
+                _menu.Visible = true;
+
+                InterfaceDescriptor interfaceDescriptor = _dreamInterface.InterfaceDescriptor;
+
+                interfaceDescriptor.MenuDescriptors.TryGetValue(controlDescriptor.Menu,
+                    out MenuDescriptor menuDescriptor);
+                CreateMenu(menuDescriptor);
+            }
+            else
+            {
+                _menu.Visible = false;
+            }
+
+            foreach (var window in _openWindows)
+            {
+                UpdateWindowAttributes(window, controlDescriptor);
+            }
         }
 
-        public OSWindow CreateWindow() {
+        public OSWindow CreateWindow()
+        {
             OSWindow window = new();
 
             window.Children.Add(UIElement);
             window.SetWidth = _controlDescriptor.Size?.Width ?? 640;
             window.SetHeight = _controlDescriptor.Size?.Height ?? 440;
-            window.Closing += _ => {
-                _openWindows.Remove((window, null));
-            };
+            window.Closing += _ => { _openWindows.Remove((window, null)); };
 
             _openWindows.Add((window, null));
             UpdateWindowAttributes((window, null), (ControlDescriptorMain)_elementDescriptor);
@@ -61,10 +86,12 @@ namespace Content.Client.Interface.Controls
 
         public void UpdateAnchors()
         {
-            foreach (InterfaceControl control in ChildControls) {
+            foreach (InterfaceControl control in ChildControls)
+            {
                 var element = control.UIElement;
 
-                if (control.Anchor1.HasValue) {
+                if (control.Anchor1.HasValue)
+                {
                     var elementPos = control.Pos.GetValueOrDefault();
                     var windowSize = Size.GetValueOrDefault();
 
@@ -75,11 +102,14 @@ namespace Content.Client.Interface.Controls
                     LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
                     LayoutContainer.SetMarginTop(element, Math.Max(top, 0));
 
-                    if (control.Anchor2.HasValue) {
+                    if (control.Anchor2.HasValue)
+                    {
                         var elementSize = control.Size.GetValueOrDefault();
 
-                        var offset2X = (elementPos.X + elementSize.Width) - (windowSize.Width * control.Anchor2.Value.X / 100);
-                        var offset2Y = (elementPos.Y + elementSize.Height) - (windowSize.Height * control.Anchor2.Value.Y / 100);
+                        var offset2X = (elementPos.X + elementSize.Width) -
+                                       (windowSize.Width * control.Anchor2.Value.X / 100);
+                        var offset2Y = (elementPos.Y + elementSize.Height) -
+                                       (windowSize.Height * control.Anchor2.Value.Y / 100);
                         var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
                         var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
                         element.SetWidth = Math.Max(width, 0);
@@ -112,11 +142,14 @@ namespace Content.Client.Interface.Controls
             }
         }
 
-        public void CreateChildControls(DreamInterfaceManager manager) {
-            foreach (ControlDescriptor controlDescriptor in _windowDescriptor.ControlDescriptors) {
+        public void CreateChildControls(DreamInterfaceManager manager)
+        {
+            foreach (ControlDescriptor controlDescriptor in _windowDescriptor.ControlDescriptors)
+            {
                 if (controlDescriptor == _windowDescriptor.MainControlDescriptor) continue;
 
-                InterfaceControl control = controlDescriptor switch {
+                InterfaceControl control = controlDescriptor switch
+                {
                     ControlDescriptorChild => new ControlChild(controlDescriptor, this),
                     ControlDescriptorInput => new ControlInput(controlDescriptor, this),
                     ControlDescriptorButton => new ControlButton(controlDescriptor, this),
@@ -135,14 +168,15 @@ namespace Content.Client.Interface.Controls
 
         // Because of how windows are not always real windows,
         // UIControl contains the *contents* of the window, not the actual OS window itself.
-        protected override Control CreateUIElement() {
+        protected override Control CreateUIElement()
+        {
             var container = new BoxContainer
             {
                 RectClipContent = true,
                 Orientation = BoxContainer.LayoutOrientation.Vertical,
                 Children =
                 {
-                    (_menu = new MenuBar()),
+                    (_menu = new MenuBar { Margin = new Thickness(4, 0)}),
                     (_canvas = new LayoutContainer
                     {
                         InheritChildMeasure = false,
@@ -159,6 +193,70 @@ namespace Content.Client.Interface.Controls
         private void CanvasOnResized()
         {
             UpdateAnchors();
+        }
+
+        private void CreateMenu(MenuDescriptor menuDescriptor)
+        {
+            _menu.Menus.Clear();
+            if (menuDescriptor == null) return;
+
+            Dictionary<string, List<MenuElementDescriptor>> categories = new();
+
+            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements)
+            {
+                if (elementDescriptor.Category == null)
+                {
+                    categories.Add(elementDescriptor.Name, new());
+                }
+                else
+                {
+                    if (!categories.ContainsKey(elementDescriptor.Category))
+                        categories.Add(elementDescriptor.Category, new());
+
+                    categories[elementDescriptor.Category].Add(elementDescriptor);
+                }
+            }
+
+            foreach (KeyValuePair<string, List<MenuElementDescriptor>> categoryPair in categories)
+            {
+                var menu = new MenuBar.Menu();
+                menu.Title = categoryPair.Key;
+
+                _menu.Menus.Add(menu);
+                foreach (MenuElementDescriptor elementDescriptor in categoryPair.Value)
+                {
+                    if (String.IsNullOrEmpty(elementDescriptor.Name))
+                    {
+                        menu.Entries.Add(new MenuBar.MenuSeparator());
+                    }
+                    else
+                    {
+                        var item = CreateMenuItem(elementDescriptor.Name, elementDescriptor.Command,
+                            elementDescriptor.CanCheck);
+
+                        menu.Entries.Add(item);
+                    }
+                }
+            }
+        }
+
+        private MenuBar.MenuEntry CreateMenuItem(string name, string command, bool isCheckable)
+        {
+            if (name.StartsWith("&"))
+                name = name.Substring(1); //TODO: First character in name becomes a selection shortcut
+
+            MenuBar.MenuButton item = new MenuBar.MenuButton()
+            {
+                Text = name,
+                //IsCheckable = isCheckable
+            };
+
+            if (!String.IsNullOrEmpty(command))
+            {
+                item.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(command); };
+            }
+
+            return item;
         }
     }
 }

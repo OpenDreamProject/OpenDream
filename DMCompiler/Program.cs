@@ -117,11 +117,12 @@ namespace DMCompiler {
 
             if (dmParser.Errors.Count > 0) {
                 foreach (CompilerError error in dmParser.Errors) {
+                    _errorCount++;
                     Console.WriteLine(error);
                 }
-
-                return false;
             }
+
+            if (astFile == null) return false;
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);

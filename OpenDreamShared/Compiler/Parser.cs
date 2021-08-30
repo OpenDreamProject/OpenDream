@@ -84,7 +84,10 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected void Error(string message) {
-            Errors.Add(new CompilerError(_currentToken, message));
+            CompilerError error = new CompilerError(_currentToken, message);
+
+            Errors.Add(error);
+            throw new CompileErrorException(error);
         }
 
         protected void Warning(string message) {

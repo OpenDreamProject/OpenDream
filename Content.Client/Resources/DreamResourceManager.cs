@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Content.Client.Resources.ResourceTypes;
+using Content.Shared;
 using Content.Shared.Network.Messages;
+using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Network;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Resources
@@ -29,6 +31,7 @@ namespace Content.Client.Resources
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
+        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
         private ResourcePath _cacheDirectory;
 
@@ -97,10 +100,13 @@ namespace Content.Client.Resources
                     var msg = _netManager.CreateNetMessage<MsgRequestResource>();
                     msg.ResourcePath = resourcePath;
                     _netManager.ClientSendMessage(msg);
-                    // todo: this is awful and probably thread-unsafe.
-                    Task.Delay(5000).ContinueWith(r => {
-                        if (_loadingResources.ContainsKey(resourcePath)) {
-                            _sawmill.Warning($"Resource '{resourcePath}' was requested, but is still not recieved 5 seconds later.");
+                    var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
+                    Timer.Spawn(TimeSpan.FromSeconds(timeout), () =>
+                    {
+                        if (_loadingResources.ContainsKey(resourcePath))
+                        {
+                            _sawmill.Warning(
+                                $"Resource '{resourcePath}' was requested, but is still not received {timeout} seconds later.");
                         }
                     });
                 }

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Content.Server.Dream.Resources;
+using Content.Shared;
 
 namespace Content.Server.Dream {
     partial class DreamManager : IDreamManager {

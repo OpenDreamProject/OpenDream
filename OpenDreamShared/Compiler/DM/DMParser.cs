@@ -156,11 +156,9 @@ namespace OpenDreamShared.Compiler.DM {
                         Error("Expected end of statement");
                     }
 
-                    _currentPath = oldPath;
                     return statement;
-                } catch (CompileErrorException) {
+                } finally {
                     _currentPath = oldPath;
-                    throw; //Pass onto BlockInner()
                 }
             }
 

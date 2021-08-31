@@ -228,11 +228,10 @@ namespace DMCompiler.DM.Visitors {
                 SimplifyExpression(ref negate.Expression);
                 if (negate.Expression is not DMASTExpressionConstant) return;
 
-                DMASTConstantInteger exprInteger = negate.Expression as DMASTConstantInteger;
-                DMASTConstantFloat exprFloat = negate.Expression as DMASTConstantFloat;
-
-                if (exprInteger != null) expression = new DMASTConstantInteger(-exprInteger.Value);
-                else if (exprFloat != null) expression = new DMASTConstantFloat(-exprFloat.Value);
+                switch (negate.Expression) {
+                    case DMASTConstantInteger exprInteger: expression = new DMASTConstantInteger(-exprInteger.Value); break;
+                    case DMASTConstantFloat exprFloat: expression = new DMASTConstantFloat(-exprFloat.Value); break;
+                } 
 
                 return;
             }

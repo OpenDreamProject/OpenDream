@@ -77,3 +77,11 @@
 #define REGEX_QUOTE_REPLACEMENT(a) regex((a), 2)
 
 #define ASSERT(expr) ((expr) ? null : CRASH("Assertion Failed: " + #expr))
+
+//atom.blend_mode
+#define BLEND_DEFAULT 0
+#define BLEND_OVERLAY 1
+#define BLEND_ADD 2
+#define BLEND_SUBTRACT 3
+#define BLEND_MULTIPLY 4
+#define BLEND_INSET_OVERLAY 5

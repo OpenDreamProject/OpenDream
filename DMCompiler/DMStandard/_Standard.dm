@@ -206,11 +206,11 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 
 /proc/get_step_to(Ref, Trg, Min=0)
 	set opendream_unimplemented = TRUE
-    CRASH("/get_step_to() is not implemented")
+	CRASH("/get_step_to() is not implemented")
 
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE
-    CRASH("/walk_away() is not implemented")
+	CRASH("/walk_away() is not implemented")
 
 /proc/turn(Dir, Angle)
 	var/dirAngle = 0

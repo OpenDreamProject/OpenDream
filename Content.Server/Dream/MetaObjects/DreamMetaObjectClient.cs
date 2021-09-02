@@ -37,18 +37,9 @@ namespace Content.Server.Dream.MetaObjects {
                     break;
                 }
                 case "mob": {
-                    if (oldVariableValue.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject oldMob)) {
-                        oldMob.SpawnProc("Logout");
-                    }
+                    DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
 
-                    IPlayerSession session = _dreamManager.GetSessionFromClient(dreamObject);
-                    if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
-                        session.AttachToEntity(_atomManager.GetAtomEntity(mob));
-                        mob.SpawnProc("Login");
-                    } else {
-                        session.DetachFromEntity();
-                    }
-
+                    connection.MobDreamObject = variableValue.GetValueAsDreamObject();
                     break;
                 }
                 case "screen": {
@@ -98,6 +89,11 @@ namespace Content.Server.Dream.MetaObjects {
                     //return new DreamValue(connection.SelectedStatPanel);
                     return DreamValue.Null;
                 }
+                case "mob":
+                {
+                    var connection = _dreamManager.GetConnectionFromClient(dreamObject);
+                    return new DreamValue(connection.MobDreamObject);
+                }
                 case "connection":
                     return new DreamValue("seeker");
                 default:
@@ -106,9 +102,9 @@ namespace Content.Server.Dream.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            //DreamConnection connection = Runtime.Server.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
 
-            //connection.OutputDreamValue(b);
+            connection.OutputDreamValue(b);
             return new DreamValue(0);
         }
 

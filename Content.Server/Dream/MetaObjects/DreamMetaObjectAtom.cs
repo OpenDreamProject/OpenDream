@@ -1,4 +1,5 @@
 ﻿using Content.Server.DM;
+using Content.Server.Dream.Resources;
 using Content.Shared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;

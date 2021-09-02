@@ -1,5 +1,8 @@
 ﻿using Content.Server.Dream;
+using Content.Server.Dream.Resources;
 using Content.Server.Input;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -7,6 +10,7 @@ using Robust.Shared.Timing;
 
 namespace Content.Server {
     public class EntryPoint : GameServer {
+        [Dependency]
         private IDreamManager _dreamManager;
         private DreamCommandSystem _commandSystem;
 
@@ -24,12 +28,16 @@ namespace Content.Server {
             }
 
             IoCManager.BuildGraph();
+            IoCManager.InjectDependencies(this);
             componentFactory.GenerateNetIds();
+
+            // Disable since disabling prediction causes timing errors otherwise.
+            var cfg = IoCManager.Resolve<IConfigurationManager>();
+            cfg.SetCVar(CVars.NetLogLateMsg, false);
         }
 
         public override void PostInit() {
-            _dreamManager = IoCManager.Resolve<IDreamManager>();
-            _commandSystem = IoCManager.Resolve<IEntitySystemManager>().GetEntitySystem<DreamCommandSystem>();
+            _commandSystem = EntitySystem.Get<DreamCommandSystem>();
             _dreamManager.Initialize();
         }
 
@@ -38,7 +46,11 @@ namespace Content.Server {
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
-            _commandSystem.RunRepeatingCommands();
+            if (level == ModUpdateLevel.PreEngine)
+            {
+                _commandSystem.RunRepeatingCommands();
+                _dreamManager.Update();
+            }
         }
     }
 }

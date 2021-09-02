@@ -76,14 +76,27 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
             //TODO: Proc attributes
-            if (statementSet.Attribute.ToLower() == "waitfor") {
-                var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
+            switch (statementSet.Attribute.ToLower()) {
+                case "waitfor": {
+                    var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
-                if (constant is not Expressions.Number) {
-                    throw new CompileErrorException($"waitfor attribute should be a number (got {constant})");
+                    if (constant is not Expressions.Number) {
+                        throw new CompileErrorException($"waitfor attribute should be a number (got {constant})");
+                    }
+
+                    _proc.WaitFor(constant.IsTruthy());
+                    break;
                 }
+                case "opendream_unimplemented": {
+                    var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
-                _proc.WaitFor(constant.IsTruthy());
+                    if (constant is not Expressions.Number) {
+                        throw new CompileErrorException($"opendream_unimplemented attribute should be a number (got {constant})");
+                    }
+
+                    _proc.Unimplemented = constant.IsTruthy();
+                    break;
+                }
             }
         }
 
@@ -174,7 +187,10 @@ namespace DMCompiler.DM.Visitors {
                     statementForStandard.Body.Visit(this);
 
                     _proc.LoopContinue(loopLabel);
-                    DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                    if (statementForStandard.Incrementor != null)
+                    {
+                        DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                    }
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();

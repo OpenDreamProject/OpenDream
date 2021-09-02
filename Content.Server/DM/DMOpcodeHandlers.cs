@@ -6,9 +6,12 @@ using Robust.Shared.IoC;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Content.Server.Dream.Resources;
 
 namespace Content.Server.DM {
     static class DMOpcodeHandlers {
@@ -183,7 +186,7 @@ namespace Content.Server.DM {
                         case StringFormatTypes.Ref: {
                             DreamObject refObject = state.PopDreamValue().GetValueAsDreamObject();
 
-                            //formattedString.Append(refObject.CreateReferenceID());
+                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
                         }
                         default: throw new Exception("Invalid special character");
@@ -344,27 +347,20 @@ namespace Content.Server.DM {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
-            DreamValue argListValue = state.PopDreamValue();
+            DreamProcArguments arguments = new DreamProcArguments(new(), new());
+            DreamList argList = state.PopDreamValue().GetValueAsDreamList();
 
-            if (argListValue.Value != null) {
-                DreamList argList = argListValue.GetValueAsDreamList();
-                List<DreamValue> argListValues = argList.GetValues();
-                Dictionary<DreamValue, DreamValue> argListNamedValues = argList.GetAssociativeValues();
-
-                foreach (DreamValue value in argListValues) {
-                    if (!argListNamedValues.ContainsKey(value)) {
+            if (argList != null)
+            {
+                foreach (DreamValue value in argList.GetValues()) {
+                    if (argList.ContainsKey(value)) { //Named argument
+                        if (value.TryGetValueAsString(out string name)) {
+                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
+                    } else { //Ordered argument
                         arguments.OrderedArguments.Add(value);
-                    }
-                }
-
-                foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
-                    string name = namedValue.Key.Value as string;
-
-                    if (name != null) {
-                        arguments.NamedArguments.Add(name, namedValue.Value);
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
                     }
                 }
             }
@@ -431,7 +427,7 @@ namespace Content.Server.DM {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            state.Push(new DreamValue(new DreamResource(resourcePath)));
+            state.Push(new DreamValue(IoCManager.Resolve<DreamResourceManager>().LoadResource(resourcePath)));
             return null;
         }
 
@@ -538,6 +534,38 @@ namespace Content.Server.DM {
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
                 }
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Increment(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue + 1));
+            } else {
+                //If it's not a number, it turns into 1
+                identifier.Assign(new DreamValue(1));
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Decrement(DMProcState state) {
+            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DreamValue value = identifier.GetValue();
+
+            state.Push(value);
+
+            if (value.TryGetValueAsInteger(out int intValue)) {
+                identifier.Assign(new DreamValue(intValue - 1));
+            } else {
+                //If it's not a number, it turns into -1
+                identifier.Assign(new DreamValue(-1));
             }
 
             return null;
@@ -1098,6 +1126,47 @@ namespace Content.Server.DM {
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
                 }
+                case DreamValue.DreamValueType.String:
+                    unsafe
+                    {
+                        var dllName = source.GetValueAsString();
+                        var procName = state.PopDreamValue().GetValueAsString();
+                        // DLL Invoke
+                        var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
+
+                        Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
+                        argV.Fill(0);
+                        try
+                        {
+                            for (var i = 0; i < arguments.ArgumentCount; i++)
+                            {
+                                var arg = arguments.OrderedArguments[i].Stringify();
+                                argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
+                            }
+
+                            fixed (nint* ptr = &argV[0])
+                            {
+                                var ret = entryPoint(arguments.ArgumentCount, (byte**) ptr);
+                                if (ret == null)
+                                {
+                                    state.Push(DreamValue.Null);
+                                    return null;
+                                }
+
+                                var retString = Marshal.PtrToStringUTF8((nint) ret);
+                                state.Push(new DreamValue(retString));
+                                return null;
+                            }
+                        }
+                        finally
+                        {
+                            foreach (var arg in argV)
+                            {
+                                if (arg != 0)
+                                    Marshal.ZeroFreeCoTaskMemUTF8(arg);
+                            }
+                        }
+                    }
                 default:
                     throw new Exception("Call statement has an invalid source (" + source + ")");
             }
@@ -1210,7 +1279,7 @@ namespace Content.Server.DM {
             DreamValue body = state.PopDreamValue();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1220,7 +1289,7 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 string browseValue;
                 if (body.Type == DreamValue.DreamValueType.DreamResource) {
@@ -1230,17 +1299,17 @@ namespace Content.Server.DM {
                 }
 
                 connection.Browse(browseValue, options);
-            }*/
+            }
 
             return null;
         }
 
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.PopDreamValue();
-            state.PopDreamValue(); //DreamResource file = state.PopDreamValue().GetValueAsDreamResource();
+            DreamResource file = state.PopDreamValue().GetValueAsDreamResource();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1250,10 +1319,10 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 connection.BrowseResource(file, (filename.Value != null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
-            }*/
+            }
 
             return null;
         }
@@ -1261,7 +1330,7 @@ namespace Content.Server.DM {
         public static ProcStatus? DeleteObject(DMProcState state) {
             DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
 
-            dreamObject?.Delete();
+            dreamObject?.Delete(state.DreamManager);
             return null;
         }
 
@@ -1270,7 +1339,7 @@ namespace Content.Server.DM {
             DreamValue message = state.PopDreamValue();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
-            /*DreamObject client;
+            DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
@@ -1280,11 +1349,11 @@ namespace Content.Server.DM {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
                 connection.OutputControl((string)message.Value, control);
-            }*/
+            }
 
             return null;
         }
@@ -1307,16 +1376,16 @@ namespace Content.Server.DM {
                 state.PopDreamValue(); //Fourth argument, should be null
             }
 
-            /*DreamObject clientObject;
+            DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(clientObject);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(clientObject);
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
                 // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
                 var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async (state) => await promptTask);
                 state.Thread.PushProcState(waiter);
                 return ProcStatus.Called;
-            }*/
+            }
 
             return null;
         }
@@ -1325,7 +1394,7 @@ namespace Content.Server.DM {
             int z = state.PopDreamValue().GetValueAsInteger();
             int y = state.PopDreamValue().GetValueAsInteger();
             int x = state.PopDreamValue().GetValueAsInteger();
-            
+
             state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }
@@ -1381,6 +1450,47 @@ namespace Content.Server.DM {
                 state.Push(DreamValue.Null);
             }
 
+            return null;
+        }
+
+        public static ProcStatus? PickWeighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            (DreamValue Value, float CumulativeWeight)[] values = new (DreamValue, float)[count];
+            float totalWeight = 0;
+            for (int i = 0; i < count; i++) {
+                DreamValue value = state.PopDreamValue();
+                float weight = state.PopDreamValue().GetValueAsFloat();
+
+                totalWeight += weight;
+                values[i] = (value, totalWeight);
+            }
+
+            double pick = state.DreamManager.Random.NextDouble() * totalWeight;
+            for (int i = 0; i < values.Length; i++) {
+                if (pick < values[i].CumulativeWeight) {
+                    state.Push(values[i].Value);
+                    break;
+                }
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? PickUnweighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            DreamValue[] values;
+            if (count == 1) {
+                values = state.PopDreamValue().GetValueAsDreamList().GetValues().ToArray();
+            } else {
+                values = new DreamValue[count];
+                for (int i = 0; i < count; i++) {
+                    values[i] = state.PopDreamValue();
+                }
+            }
+
+            state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
             return null;
         }
 

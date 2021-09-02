@@ -12,6 +12,7 @@ namespace Content.Server.Input {
     class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private IAtomManager _atomManager = default!;
         [Dependency] private IEntityManager _entityManager = default!;
+        [Dependency] private IDreamManager _dreamManager;
 
         public override void Initialize() {
             base.Initialize();
@@ -26,9 +27,9 @@ namespace Content.Server.Input {
                 return;
 
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
-            PlayerSessionData sessionData = (PlayerSessionData)session.Data.ContentDataUncast;
+            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
 
-            sessionData.Client.SpawnProc("Click", ConstructClickArguments(atom));
+            client.SpawnProc("Click", ConstructClickArguments(atom));
         }
 
         private DreamProcArguments ConstructClickArguments(DreamObject atom) {

@@ -12,7 +12,7 @@ namespace Content.Server.Dream {
         internal event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
 
         private List<DreamValue> _values = new();
-        private Dictionary<DreamValue, DreamValue> _associativeValues = new();
+        private Dictionary<DreamValue, DreamValue> _associativeValues = null;
 
         protected DreamList() : base(null) {
             ObjectDefinition = IoCManager.Resolve<IDreamManager>().ObjectTree.List.ObjectDefinition;
@@ -40,7 +40,7 @@ namespace Content.Server.Dream {
         }
 
         public bool IsAssociative() {
-            return _associativeValues.Count > 0;
+            return _associativeValues != null && _associativeValues.Count > 0;
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -52,8 +52,8 @@ namespace Content.Server.Dream {
                 DreamValue value = _values[i - 1];
 
                 copy._values.Add(value);
-                if (_associativeValues.ContainsKey(value)) {
-                    copy._associativeValues.Add(value, _associativeValues[value]);
+                if (ContainsKey(value)) {
+                    copy.SetValue(value, _associativeValues[value]);
                 }
             }
 
@@ -65,7 +65,7 @@ namespace Content.Server.Dream {
         }
 
         public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
-            return _associativeValues;
+            return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
         }
 
         public virtual DreamValue GetValue(DreamValue key) {
@@ -73,7 +73,7 @@ namespace Content.Server.Dream {
                 return _values[keyInteger - 1]; //1-indexed
             }
 
-            return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
+            return _associativeValues == null ? DreamValue.Null : (_associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null);
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value) {
@@ -84,6 +84,7 @@ namespace Content.Server.Dream {
             } else {
                 if (!ContainsValue(key)) _values.Add(key);
 
+                _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
                 _associativeValues[key] = value;
             }
         }
@@ -107,6 +108,11 @@ namespace Content.Server.Dream {
         //Does not include associations
         public bool ContainsValue(DreamValue value) {
             return _values.Contains(value);
+        }
+
+        public bool ContainsKey(DreamValue value)
+        {
+            return _associativeValues != null && _associativeValues.ContainsKey(value);
         }
 
         public int FindValue(DreamValue value, int start = 1, int end = 0) {
@@ -162,8 +168,9 @@ namespace Content.Server.Dream {
             DreamList newList = new DreamList();
             newList._values = _values.Union(other.GetValues()).ToList();
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
-                newList._associativeValues[key] = value;
+                newList.SetValue(key, value);
             }
+
             return newList;
         }
     }

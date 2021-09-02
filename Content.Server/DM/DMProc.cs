@@ -115,7 +115,11 @@ namespace Content.Server.DM {
             DMOpcodeHandlers.JumpIfNullIdentifier,
             DMOpcodeHandlers.Pop,
             DMOpcodeHandlers.PushCopy,
-            DMOpcodeHandlers.IsSaved
+            DMOpcodeHandlers.IsSaved,
+            DMOpcodeHandlers.PickUnweighted,
+            DMOpcodeHandlers.PickWeighted,
+            DMOpcodeHandlers.Increment,
+            DMOpcodeHandlers.Decrement
         };
         #endregion
 

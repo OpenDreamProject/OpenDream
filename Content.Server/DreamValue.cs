@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Content.Server.DM;
 using Content.Server.Dream;
+using Content.Server.Dream.Resources;
 using Content.Shared.Dream;
 
 namespace Content.Server {

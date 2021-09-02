@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Content.Client;
 using Content.Server;
+using Content.Shared;
 using NUnit.Framework;
 using Robust.Client;
 using Robust.Server;

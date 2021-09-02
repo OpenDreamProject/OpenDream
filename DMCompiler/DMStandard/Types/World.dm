@@ -37,10 +37,28 @@
 	proc/Del()
 
 	proc/Reboot()
+		set opendream_unimplemented = TRUE
 		CRASH("/world.Reboot() is not implemented")
 
 	proc/Repop()
+		set opendream_unimplemented = TRUE
 		CRASH("/world.Repop() will not be implemented")
 
 	proc/Export(Addr, File, Persist, Clients)
-		
+
+	proc/SetScores()
+		set opendream_unimplemented = TRUE
+
+	proc/GetScores()
+		set opendream_unimplemented = TRUE
+
+	proc/GetMedal()
+		set opendream_unimplemented = TRUE
+
+	proc/SetMedal()
+		set opendream_unimplemented = TRUE
+
+	proc/ClearMedal()
+		set opendream_unimplemented = TRUE
+
+

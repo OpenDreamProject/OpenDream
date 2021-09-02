@@ -58,7 +58,6 @@ namespace Content.Shared.Compiler.DM {
             { "step", TokenType.DM_Step }
         };
 
-        private bool _checkingIndentation = true;
         private int bracketNesting = 0;
         private Stack<int> _indentationStack = new(new int[] { 0 });
 
@@ -78,9 +77,9 @@ namespace Content.Shared.Compiler.DM {
                 Token preprocToken = GetCurrent();
 
                 if (preprocToken.Type == TokenType.Newline) {
-                    if (_checkingIndentation) {
-                        Advance();
+                    Advance();
 
+                    if (bracketNesting == 0) { //Don't parse indentation when inside brackets/parentheses
                         int currentIndentationLevel = _indentationStack.Peek();
                         int indentationLevel = CheckIndentation();
                         if (indentationLevel > currentIndentationLevel) {
@@ -475,17 +474,6 @@ namespace Content.Shared.Compiler.DM {
             }
 
             return token;
-        }
-
-        protected override Token Advance() {
-            Token current = base.Advance();
-
-            //Skip any newlines when inside brackets
-            if (bracketNesting != 0) {
-                while (current.Type == TokenType.Newline) current = Advance();
-            }
-
-            return current;
         }
 
         private int CheckIndentation() {

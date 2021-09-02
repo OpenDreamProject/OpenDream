@@ -1,17 +1,29 @@
 using System.Globalization;
 using Content.Client.Interface;
 using Content.Client.Rendering;
-using Robust.Client;
+using Content.Client.Resources;
+using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Localization;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Client {
-    public class EntryPoint : GameClient {
+    public class EntryPoint : GameClient
+    {
+        [Dependency]
+        private readonly IDreamInterfaceManager _dreamInterface = default!;
+        [Dependency]
+        private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency]
+        private readonly CefManager _cef = default!;
+
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
@@ -25,21 +37,49 @@ namespace Content.Client {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
+            IoCManager.Register<CefManager>();
+
             IoCManager.BuildGraph();
+            IoCManager.InjectDependencies(this);
+
+            _cef.Initialize();
+
             componentFactory.GenerateNetIds();
+
+            _dreamResource.Initialize();
 
             // Load localization. Needed for some engine texts, such as the ones in Robust ViewVariables.
             IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
+
+            // Game logic runs all single threaded, disable prediction to reduce CPU load and lag.
+            var cfg = IoCManager.Resolve<IConfigurationManager>();
+            cfg.SetCVar(CVars.NetPredict, false);
         }
 
         public override void PostInit() {
             IoCManager.Resolve<ILightManager>().Enabled = false;
 
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
-            IoCManager.Resolve<IDreamInterfaceManager>().LoadDMF(new ResourcePath("/Game/interface.dmf")); //TODO: Don't hardcode interface.dmf
+            _dreamInterface.Initialize();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _dreamResource.Shutdown();
+            _cef.Shutdown();
+        }
+
+        public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
+        {
+            if (level == ModUpdateLevel.FramePostEngine)
+            {
+                _dreamInterface.FrameUpdate(frameEventArgs);
+
+                _cef.Update();
+            }
         }
     }
 }

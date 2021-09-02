@@ -140,6 +140,57 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // pick(50;x, 200;y)
+    // pick(x, y)
+    class Pick : DMExpression {
+        public struct PickValue {
+            public DMExpression Weight;
+            public DMExpression Value;
+
+            public PickValue(DMExpression weight, DMExpression value) {
+                Weight = weight;
+                Value = value;
+            }
+        }
+
+        PickValue[] _values;
+
+        public Pick(PickValue[] values) {
+            _values = values;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            bool weighted = false;
+            foreach (PickValue pickValue in _values) {
+                if (pickValue.Weight != null) {
+                    weighted = true;
+                    break;
+                }
+            }
+
+            if (weighted) {
+                if (_values.Length == 1) {
+                    Program.Warning(new CompilerWarning(null, "Weighted pick() with one argument"));
+                }
+
+                foreach (PickValue pickValue in _values) {
+                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(100)); //Default of 100
+
+                    weight.EmitPushValue(dmObject, proc);
+                    pickValue.Value.EmitPushValue(dmObject, proc);
+                }
+
+                proc.PickWeighted(_values.Length);
+            } else {
+                foreach (PickValue pickValue in _values) {
+                    pickValue.Value.EmitPushValue(dmObject, proc);
+                }
+
+                proc.PickUnweighted(_values.Length);
+            }
+        }
+    }
+
     // issaved(x)
     class IsSaved : DMExpression {
         DMExpression _expr;

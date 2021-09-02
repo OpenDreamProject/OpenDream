@@ -1,0 +1,22 @@
+﻿using Lidgren.Network;
+using Robust.Shared.Network;
+
+namespace Content.Shared.Network.Messages
+{
+    public class MsgRequestResource : NetMessage
+    {
+        public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
+
+        public string ResourcePath;
+
+        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        {
+            ResourcePath = buffer.ReadString();
+        }
+
+        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        {
+            buffer.Write(ResourcePath);
+        }
+    }
+}

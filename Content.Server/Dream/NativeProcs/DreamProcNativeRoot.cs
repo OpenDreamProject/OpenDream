@@ -4,6 +4,7 @@ using Content.Shared.Resources;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,6 +12,8 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using Content.Server.Dream.Resources;
+using Robust.Shared.IoC;
 using DreamValueType = Content.Server.DreamValue.DreamValueType;
 
 namespace Content.Server.Dream.NativeProcs {
@@ -55,8 +58,8 @@ namespace Content.Server.Dream.NativeProcs {
 
             if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(mob);
-            return DreamValue.Null;//return await connection.Alert(title, message, button1, button2, button3);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(mob);
+            return await connection.Alert(title, message, button1, button2, button3);
         }
 
         [DreamProc("animate")]
@@ -224,7 +227,8 @@ namespace Content.Server.Dream.NativeProcs {
             string src = arguments.GetArgument(0, "Src").GetValueAsString();
             string dst = arguments.GetArgument(1, "Dst").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.CopyFile(src, dst) ? 1 : 0);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.CopyFile(src, dst) ? 1 : 0);
         }
 
         [DreamProc("fcopy_rsc")]
@@ -232,7 +236,8 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_fcopy_rsc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.LoadResource(filePath));
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.LoadResource(filePath));
         }
 
         [DreamProc("fdel")]
@@ -240,29 +245,29 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_fdel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string filePath = arguments.GetArgument(0, "File").GetValueAsString();
 
-            //bool successful;
-            //if (filePath.EndsWith("/")) {
-            //    successful = DreamManager.ResourceManager.DeleteDirectory(filePath);
-            //} else {
-            //    successful = DreamManager.ResourceManager.DeleteFile(filePath);
-            //}
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            bool successful;
+            if (filePath.EndsWith("/")) {
+                successful = resourceManager.DeleteDirectory(filePath);
+            } else {
+                successful = resourceManager.DeleteFile(filePath);
+            }
 
-            return DreamValue.Null;//return new DreamValue(successful ? 1 : 0);
+            return new DreamValue(successful ? 1 : 0);
         }
 
         [DreamProc("fexists")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_fexists(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue file = arguments.GetArgument(0, "File");
+            string filePath;
 
-            DreamResource resource;
-            if (file.TryGetValueAsString(out string filePath)) {
-                resource = new DreamResource(filePath);
-            } else {
-                resource = file.GetValueAsDreamResource();
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            if (!file.TryGetValueAsString(out filePath)) {
+                filePath = file.GetValueAsDreamResource().ResourcePath;
             }
 
-            return new DreamValue(resource.Exists() ? 1 : 0);
+            return new DreamValue(resourceManager.DoesFileExist(filePath) ? 1 : 0);
         }
 
         [DreamProc("file")]
@@ -270,8 +275,9 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_file(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue path = arguments.GetArgument(0, "Path");
 
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             if (path.Type == DreamValueType.String) {
-                DreamResource resource = new DreamResource(path.GetValueAsString());
+                DreamResource resource = resourceManager.LoadResource(path.GetValueAsString());
 
                 return new DreamValue(resource);
             } else if (path.Type == DreamValueType.DreamResource) {
@@ -287,8 +293,9 @@ namespace Content.Server.Dream.NativeProcs {
             DreamValue file = arguments.GetArgument(0, "File");
             DreamResource resource;
 
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             if (file.Type == DreamValueType.String) {
-                resource = new DreamResource(file.GetValueAsString());
+                resource = resourceManager.LoadResource(file.GetValueAsString());
             } else {
                 resource = file.GetValueAsDreamResource();
             }
@@ -376,9 +383,10 @@ namespace Content.Server.Dream.NativeProcs {
         [DreamProcParameter("Path", Type = DreamValueType.String)]
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string path = arguments.GetArgument(0, "Path").GetValueAsString();
-            //var listing = DreamManager.ResourceManager.GetListing(path);
-            //DreamList list = DreamList.Create(DreamManager, listing);
-            return DreamValue.Null;//return new DreamValue(list);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            var listing = resourceManager.GetListing(path);
+            DreamList list = DreamList.Create(listing);
+            return new DreamValue(list);
         }
 
         [DreamProc("hascall")]
@@ -453,6 +461,20 @@ namespace Content.Server.Dream.NativeProcs {
             DreamValue file = arguments.GetArgument(0, "File");
 
             return new DreamValue((file.Type == DreamValueType.DreamResource) ? 1 : 0);
+        }
+
+        [DreamProc("isicon")]
+        [DreamProcParameter("Icon")]
+        public static DreamValue NativeProc_isicon(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue icon = arguments.GetArgument(0, "Icon");
+            if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out _))
+                return new DreamValue(1);
+            else if (icon.TryGetValueAsDreamResource(out DreamResource resource)) {
+                string[] DMIendings = {".dmi", ".bmp", ".png", ".jpg", ".gif"};
+                return new DreamValue(DMIendings.Any(x => resource.ResourcePath.EndsWith(x)) ? 1 : 0);
+            } else {
+                return new DreamValue(0);
+            }
         }
 
         [DreamProc("islist")]
@@ -609,11 +631,10 @@ namespace Content.Server.Dream.NativeProcs {
             } else if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative()) {
                     Dictionary<Object, Object> jsonObject = new(list.GetLength());
-                    Dictionary<DreamValue, DreamValue> assocValues = list.GetAssociativeValues();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        if (assocValues.ContainsKey(listValue)) {
-                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(assocValues[listValue]));
+                        if (list.ContainsKey(listValue)) {
+                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(list.GetValue(listValue)));
                         } else {
                             jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
                         }
@@ -686,11 +707,10 @@ namespace Content.Server.Dream.NativeProcs {
             StringBuilder paramBuilder = new StringBuilder();
 
             List<DreamValue> values = list.GetValues();
-            Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
             foreach (DreamValue entry in values) {
-                if (associativeValues.ContainsKey(entry))
+                if (list.ContainsKey(entry))
                 {
-                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(associativeValues[entry].Value.ToString())}");
+                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(list.GetValue(entry).Value.ToString())}");
                     paramBuilder.Append('&');
                 } else {
                     paramBuilder.Append(HttpUtility.UrlEncode(entry.Value.ToString()));
@@ -860,18 +880,20 @@ namespace Content.Server.Dream.NativeProcs {
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
 
-            //for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, DreamManager.Map.Width); x++) {
-            //    for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, DreamManager.Map.Width); y++) {
-            //        if (x == centerX && y == centerY) continue;
-            //
-            //        DreamObject turf = DreamManager.Map.GetTurfAt(x, y, centerZ);
-            //
-            //        view.AddValue(new DreamValue(turf));
-            //        foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-            //            view.AddValue(content);
-            //        }
-            //    }
-            //}
+            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
+
+            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
+                    if (x == centerX && y == centerY) continue;
+
+                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+
+                    view.AddValue(new DreamValue(turf));
+                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+                        view.AddValue(content);
+                    }
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -907,16 +929,16 @@ namespace Content.Server.Dream.NativeProcs {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            //foreach (DreamObject mob in DreamManager.Mobs) {
-            //    int mobX = mob.GetVariable("x").GetValueAsInteger();
-            //    int mobY = mob.GetVariable("y").GetValueAsInteger();
-            //
-            //    if (mobX == centerX && mobY == centerY) continue;
-            //
-            //    if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
-            //        view.AddValue(new DreamValue(mob));
-            //    }
-            //}
+            foreach (DreamObject mob in DreamManager.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (mobX == centerX && mobY == centerY) continue;
+
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    view.AddValue(new DreamValue(mob));
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -953,22 +975,6 @@ namespace Content.Server.Dream.NativeProcs {
             }
 
             return new DreamValue(result);
-        }
-
-        [DreamProc("pick")]
-        [DreamProcParameter("Val1")]
-        public static DreamValue NativeProc_pick(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> values;
-
-            if (arguments.ArgumentCount == 1) {
-                DreamList list = arguments.GetArgument(0, "Val1").GetValueAsDreamList();
-
-                values = list.GetValues();
-            } else {
-                values = arguments.GetAllArguments();
-            }
-
-            return values[DreamManager.Random.Next(0, values.Count)];
         }
 
         [DreamProc("prob")]
@@ -1011,8 +1017,7 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
             var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
-            //return new DreamValue(obj.CreateReferenceID());
-            throw new NotImplementedException("ref() is not implemented");
+            return new DreamValue(obj.CreateReferenceID(DreamManager));
         }
 
         [DreamProc("regex")]
@@ -1231,13 +1236,13 @@ namespace Content.Server.Dream.NativeProcs {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        /*private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
+        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
             if (name != DreamValue.Null) {
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
             } else {
                 connection.AddStatPanelLine(value.Stringify());
             }
-        }*/
+        }
 
         [DreamProc("stat")]
         [DreamProcParameter("Name")]
@@ -1245,9 +1250,9 @@ namespace Content.Server.Dream.NativeProcs {
         public static DreamValue NativeProc_stat(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue name = arguments.GetArgument(0, "Name");
             DreamValue value = arguments.GetArgument(1, "Value");
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(usr);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            //OutputToStatPanel(connection, name, value);
+            OutputToStatPanel(connection, name, value);
             return DreamValue.Null;
         }
 
@@ -1259,14 +1264,14 @@ namespace Content.Server.Dream.NativeProcs {
             string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
             DreamValue name = arguments.GetArgument(1, "Name");
             DreamValue value = arguments.GetArgument(2, "Value");
-            //DreamConnection connection = DreamManager.Server.GetConnectionFromMob(usr);
+            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            //connection.SetOutputStatPanel(panel);
+            connection.SetOutputStatPanel(panel);
             if (name != DreamValue.Null || value != DreamValue.Null) {
-                //OutputToStatPanel(connection, name, value);
+                OutputToStatPanel(connection, name, value);
             }
 
-            return DreamValue.Null;//return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
+            return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
         }
 
         [DreamProc("tan")]
@@ -1302,7 +1307,8 @@ namespace Content.Server.Dream.NativeProcs {
             string text = arguments.GetArgument(0, "Text").GetValueAsString();
             string file = arguments.GetArgument(1, "File").GetValueAsString();
 
-            return DreamValue.Null;//return new DreamValue(DreamManager.ResourceManager.SaveTextToFile(file, text) ? 1 : 0);
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            return new DreamValue(resourceManager.SaveTextToFile(file, text) ? 1 : 0);
         }
 
         [DreamProc("text2num")]
@@ -1455,16 +1461,18 @@ namespace Content.Server.Dream.NativeProcs {
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
 
-            //for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, DreamManager.Map.Width); x++) {
-            //    for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, DreamManager.Map.Width); y++) {
-            //        DreamObject turf = DreamManager.Map.GetTurfAt(x, y, centerZ);
-            //
-            //        view.AddValue(new DreamValue(turf));
-            //        foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
-            //            view.AddValue(content);
-            //        }
-            //    }
-            //}
+            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
+
+            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
+                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
+                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+
+                    view.AddValue(new DreamValue(turf));
+                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+                        view.AddValue(content);
+                    }
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -1500,14 +1508,14 @@ namespace Content.Server.Dream.NativeProcs {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            //foreach (DreamObject mob in DreamManager.Mobs) {
-            //    int mobX = mob.GetVariable("x").GetValueAsInteger();
-            //    int mobY = mob.GetVariable("y").GetValueAsInteger();
-            //
-            //    if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
-            //        view.AddValue(new DreamValue(mob));
-            //    }
-            //}
+            foreach (DreamObject mob in DreamManager.Mobs) {
+                int mobX = mob.GetVariable("x").GetValueAsInteger();
+                int mobY = mob.GetVariable("y").GetValueAsInteger();
+
+                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                    view.AddValue(new DreamValue(mob));
+                }
+            }
 
             return new DreamValue(view);
         }
@@ -1544,17 +1552,17 @@ namespace Content.Server.Dream.NativeProcs {
             DreamValue controlId = arguments.GetArgument(1, "control_id");
             string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
             string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
-            //DreamConnection connection;
+            DreamConnection connection;
 
-            //if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
-            //    connection = DreamManager.Server.GetConnectionFromMob(mob);
-            //} else {
-            //    DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
-            //
-            //    connection = DreamManager.Server.GetConnectionFromClient(client);
-            //}
+            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else {
+                DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
 
-            //connection.WinSet(winsetControlId, winsetParams);
+                connection = DreamManager.GetConnectionFromClient(client);
+            }
+
+            connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using Content.Server.Dream;
+using Content.Server.Dream.Resources;
 using Content.Shared;
 using Content.Shared.Dream;
 using Robust.Shared.GameObjects;
@@ -10,8 +11,6 @@ using Robust.Shared.ViewVariables;
 namespace Content.Server {
     [RegisterComponent]
     class DMISpriteComponent : SharedDMISpriteComponent {
-        private static readonly ResourcePath GamePath = new ResourcePath("/Game");
-
         private ResourcePath _icon = null;
         private string _iconState = null;
         private AtomDirection _direction = AtomDirection.South;
@@ -23,7 +22,7 @@ namespace Content.Server {
         public ResourcePath Icon {
             get => _icon;
             set {
-                _icon = GamePath / value;
+                _icon = value;
                 Dirty();
             }
         }

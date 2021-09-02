@@ -176,7 +176,7 @@ namespace DMCompiler {
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
-            if (DMObjectTree.GlobalInitProc != null) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+            if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true

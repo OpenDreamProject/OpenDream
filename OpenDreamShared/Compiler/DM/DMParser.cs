@@ -59,12 +59,9 @@ namespace OpenDreamShared.Compiler.DM {
 
                 //Proc definition
                 if (Check(TokenType.DM_LeftParenthesis)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     DMASTDefinitionParameter[] parameters = DefinitionParameters();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                     Whitespace();
 
@@ -444,8 +441,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
 
-                if (procStatement != null)
-                {
+                if (procStatement != null) {
                     Whitespace();
                 }
 
@@ -461,7 +457,6 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
-
                 Whitespace();
                 DMASTPath varPath = Path();
                 if (varPath == null) Error("Expected a variable name");
@@ -475,7 +470,7 @@ namespace OpenDreamShared.Compiler.DM {
                     if (Check(TokenType.DM_LeftBracket)) {
                         //Type information
                         if (varPath.Path.FindElement("list") != 0) {
-                            varPath = new DMASTPath(DreamPath.List.Combine(varPath.Path));
+                            varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
                         }
 
                         Whitespace();
@@ -631,9 +626,10 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_If)) {
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                Whitespace();
+                BracketWhitespace();
                 DMASTExpression condition = Expression();
                 if (condition == null) Error("Expected a condition");
+                BracketWhitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 Whitespace();
                 Check(TokenType.DM_Colon);
@@ -747,8 +743,7 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     DMASTExpression comparator = Expression();
                     DMASTExpression incrementor = null;
-                    if (Check(new[] {TokenType.DM_Comma, TokenType.DM_Semicolon}))
-                    {
+                    if (Check(new[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
                         Whitespace();
                         incrementor = Expression();
                     }
@@ -925,9 +920,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
                 do {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
 
                     DMASTExpression expression = Expression();
                     if (expression == null) Error("Expected an expression");
@@ -982,14 +975,11 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
 
                 DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 
                 return callParameters;
@@ -1000,18 +990,14 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTPick.PickValue[] PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
 
                 DMASTPick.PickValue? arg = PickArgument();
                 if (arg == null) Error("Expected a pick argument");
                 List<DMASTPick.PickValue> args = new() { arg.Value };
 
                 while (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     arg = PickArgument();
 
                     if (arg != null) {
@@ -1025,8 +1011,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 return args.ToArray();
             }
@@ -1058,9 +1043,7 @@ namespace OpenDreamShared.Compiler.DM {
                 parameters.Add(parameter);
 
                 if (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     parameter = CallParameter();
 
                     if (parameter == null) {
@@ -1107,9 +1090,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
 
                     parameter = DefinitionParameter();
                     if (parameter != null) {
@@ -1541,7 +1522,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 DMASTDereference dereference = Dereference();
                 DMASTIdentifier identifier = (dereference == null) ? Identifier() : null;
-                DMASTPath path = (dereference == null && identifier == null ) ? Path(true) : null;
+                DMASTPath path = (dereference == null && identifier == null) ? Path(true) : null;
                 Whitespace();
                 DMASTCallParameter[] parameters = null;
 
@@ -1910,6 +1891,13 @@ namespace OpenDreamShared.Compiler.DM {
             }
         }
 
+        //Inside brackets/parentheses, whitespace can include delimiters in select areas
+        private void BracketWhitespace() {
+            Whitespace();
+            Delimiter();
+            Whitespace();
+        }
+
         private DMValueType AsTypes(DMValueType defaultType = DMValueType.Anything) {
             DMValueType type = DMValueType.Anything;
 
@@ -1922,8 +1910,7 @@ namespace OpenDreamShared.Compiler.DM {
                 do {
                     Token typeToken = Current();
 
-                    if (parenthetical)
-                    {
+                    if (parenthetical) {
                         closed = Check(TokenType.DM_RightParenthesis);
                         if (closed) break;
                     }
@@ -1949,8 +1936,7 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
                 }
-            }
-            else {
+            } else {
                 return defaultType;
             }
 

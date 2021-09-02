@@ -188,6 +188,9 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	//TODO: Speed = step_size if Speed is 0
 	Ref.Move(get_step(Ref, Dir), Dir)
 
+/proc/step_away(atom/movable/Ref, /atom/Trg, Max=5, Speed=0)
+    Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))
+
 /proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0)
 	//TODO: Consider obstacles
 

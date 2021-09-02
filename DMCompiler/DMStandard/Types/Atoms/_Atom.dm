@@ -30,6 +30,7 @@
 	var/luminosity = 0
 	var/opacity = 0
 	var/matrix/transform
+	var/blend_mode = 0
 
 	var/gender = "neuter"
 	var/density = FALSE

@@ -12,6 +12,10 @@
 	var/color = "#FFFFFF"
 	var/alpha = 255
 
+	var/blend_mode = 0
+	var/matrix/transform
+	var/override = 1 //TODO
+
 	New(icon, loc, icon_state, layer, dir)
 		src.icon = icon
 		if (!istext(loc))

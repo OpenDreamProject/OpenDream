@@ -35,6 +35,8 @@
 	var/gender = "neuter"
 	var/density = FALSE
 
+	var/maptext //TODO
+
 	proc/Click(location, control, params)
 
 	proc/Entered(atom/movable/Obj, atom/OldLoc)

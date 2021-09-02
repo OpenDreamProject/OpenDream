@@ -85,3 +85,9 @@
 #define BLEND_SUBTRACT 3
 #define BLEND_MULTIPLY 4
 #define BLEND_INSET_OVERLAY 5
+
+//sound.status
+SOUND_MUTE (1<<0)      // do not play the sound
+SOUND_PAUSED (1<<1)    // pause sound
+SOUND_STREAM (1<<2)    // create as a stream
+SOUND_UPDATE (1<<3)    // update a playing sound

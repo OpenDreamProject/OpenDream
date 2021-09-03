@@ -1,0 +1,17 @@
+name: PR Labeler
+
+on:
+  push:
+  pull_request_target:
+
+jobs:
+  Label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for conflicting PRs
+        uses: zewaka/auto-label-merge-conflicts@master
+        with:
+          CONFLICT_LABEL_NAME: "Merge Conflict"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAX_RETRIES: 12
+          WAIT_MS: 8008

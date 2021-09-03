@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for conflicting PRs
-        uses: eps1lon/actions-label-merge-conflict@releases/2.x
+        uses: zewaka/auto-label-merge-conflicts@master
         with:
-          dirtyLabel: "Merge Conflict"
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          CONFLICT_LABEL_NAME: "Merge Conflict"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAX_RETRIES: 12
+          WAIT_MS: 8008

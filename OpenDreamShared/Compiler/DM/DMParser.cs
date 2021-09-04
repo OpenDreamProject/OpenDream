@@ -20,7 +20,9 @@ namespace OpenDreamShared.Compiler.DM {
 
             while (Current().Type != TokenType.EndOfFile) {
                 try {
-                    statements.AddRange(BlockInner());
+                    List<DMASTStatement> blockInner = BlockInner();
+
+                    if (blockInner != null) statements.AddRange(blockInner);
                 } catch (CompileErrorException) { }
 
                 if (Current().Type != TokenType.EndOfFile) {
@@ -38,6 +40,8 @@ namespace OpenDreamShared.Compiler.DM {
             List<DMASTStatement> statements = new();
 
             do {
+                Whitespace();
+
                 try {
                     DMASTStatement statement = Statement();
 
@@ -51,11 +55,12 @@ namespace OpenDreamShared.Compiler.DM {
                     LocateNextStatement();
                 }
             } while (Delimiter());
+            Whitespace();
 
             return statements;
         }
 
-        public DMASTStatement Statement() {
+        public DMASTStatement Statement(bool requireDelimiter = true) {
             DMASTPath path = Path();
 
             if (path != null) {
@@ -148,7 +153,7 @@ namespace OpenDreamShared.Compiler.DM {
                         statement = new DMASTObjectDefinition(_currentPath, null);
                     }
 
-                    if (!PeekDelimiter() && Current().Type != TokenType.DM_Dedent) {
+                    if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent) {
                         Error("Expected end of statement");
                     }
 
@@ -389,6 +394,8 @@ namespace OpenDreamShared.Compiler.DM {
 
             DMASTProcStatement statement = null;
             do {
+                Whitespace();
+
                 try {
                     statement = ProcStatement();
                     if (statement != null) {
@@ -401,6 +408,7 @@ namespace OpenDreamShared.Compiler.DM {
                     LocateNextStatement();
                 }
             } while (Delimiter() || statement is DMASTProcStatementLabel);
+            Whitespace();
 
             return new DMASTProcBlockInner(procStatements.ToArray());
         }

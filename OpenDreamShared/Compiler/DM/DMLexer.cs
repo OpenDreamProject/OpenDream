@@ -118,7 +118,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case TokenType.DM_Preproc_Punctuator_LeftParenthesis: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_RightParenthesis: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_LeftBracket: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_RightBracket: Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightBracket: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Colon: Advance(); token = CreateToken(TokenType.DM_Colon, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Question:

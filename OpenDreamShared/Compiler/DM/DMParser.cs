@@ -1578,7 +1578,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Whitespace();
                 DMASTExpression inner = Expression();
-                Consume(TokenType.DM_RightParenthesis, "Expected ')");
+                ConsumeRightParenthesis();
                 Whitespace();
 
                 return inner;
@@ -1961,7 +1961,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (parenthetical && !closed) {
                     Whitespace();
-                    Consume(TokenType.DM_RightParenthesis, "Expected closing parenthesis");
+                    ConsumeRightParenthesis();
                 }
             } else {
                 return defaultType;

@@ -49,6 +49,7 @@ namespace DMCompiler {
                 TimeSpan duration = endTime - startTime;
                 Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
             } else {
+                Console.WriteLine($"Compilation failed with {_errorCount} errors");
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
             }
@@ -120,6 +121,8 @@ namespace DMCompiler {
                     _errorCount++;
                     Console.WriteLine(error);
                 }
+
+                return false;
             }
 
             if (astFile == null) return false;

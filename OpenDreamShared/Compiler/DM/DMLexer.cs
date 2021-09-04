@@ -169,215 +169,41 @@ namespace OpenDreamShared.Compiler.DM {
 
                                     break;
                                 }
-                                case "/": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_SlashEquals, "/=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Slash, c);
-                                    }
-
-                                    break;
-                                }
-                                case "=": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_EqualsEquals, "==");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Equals, c);
-                                    }
-
-                                    break;
-                                }
-                                case "!": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_ExclamationEquals, "!=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Exclamation, c);
-                                    }
-
-                                    break;
-                                }
-                                case "^": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_XorEquals, "^=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Xor, c);
-                                    }
-
-                                    break;
-                                }
-                                case "%": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_ModulusEquals, "%=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Modulus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "~": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_TildeEquals, "~=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Tilde, c);
-                                    }
-
-                                    break;
-                                }
-                                case "&": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "&") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_AndAnd, "&&");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_AndEquals, "&=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_And, c);
-                                    }
-
-                                    break;
-                                }
-                                case "+": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "+") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_PlusPlus, "++");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_PlusEquals, "+=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Plus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "-": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "-") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_MinusMinus, "--");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_MinusEquals, "-=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Minus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "*": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "*") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_StarStar, "**");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_StarEquals, "*=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Star, c);
-                                    }
-
-                                    break;
-                                }
-                                case "|": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "|") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_BarBar, "||");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_BarEquals, "|=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Bar, c);
-                                    }
-
-                                    break;
-                                }
-                                case "<": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "<") {
-                                        current = Advance();
-
-                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                            Advance();
-
-                                            token = CreateToken(TokenType.DM_LeftShiftEquals, "<<=");
-                                        } else {
-                                            token = CreateToken(TokenType.DM_LeftShift, "<<");
-                                        }
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_LessThanEquals, "<=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_LessThan, c);
-                                    }
-
-                                    break;
-                                }
-                                case ">": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == ">") {
-                                        current = Advance();
-
-                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                            Advance();
-
-                                            token = CreateToken(TokenType.DM_RightShiftEquals, ">>=");
-                                        } else {
-                                            token = CreateToken(TokenType.DM_RightShift, ">>");
-                                        }
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_GreaterThanEquals, ">=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_GreaterThan, c);
-                                    }
-
-                                    break;
-                                }
+                                case "/": token = CreateToken(TokenType.DM_Slash, c); break;
+                                case "/=": token = CreateToken(TokenType.DM_SlashEquals, c); break;
+                                case "=": token = CreateToken(TokenType.DM_Equals, c); break;
+                                case "==": token = CreateToken(TokenType.DM_EqualsEquals, c); break;
+                                case "!": token = CreateToken(TokenType.DM_Exclamation, c); break;
+                                case "!=": token = CreateToken(TokenType.DM_ExclamationEquals, c); break;
+                                case "^": token = CreateToken(TokenType.DM_Xor, c); break;
+                                case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;
+                                case "%": token = CreateToken(TokenType.DM_Modulus, c); break;
+                                case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
+                                case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
+                                case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
+                                case "&": token = CreateToken(TokenType.DM_And, c); break;
+                                case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
+                                case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;
+                                case "+": token = CreateToken(TokenType.DM_Plus, c); break;
+                                case "++": token = CreateToken(TokenType.DM_PlusPlus, c); break;
+                                case "+=": token = CreateToken(TokenType.DM_PlusEquals, c); break;
+                                case "-": token = CreateToken(TokenType.DM_Minus, c); break;
+                                case "--": token = CreateToken(TokenType.DM_MinusMinus, c); break;
+                                case "-=": token = CreateToken(TokenType.DM_MinusEquals, c); break;
+                                case "*": token = CreateToken(TokenType.DM_Star, c); break;
+                                case "**": token = CreateToken(TokenType.DM_StarStar, c); break;
+                                case "*=": token = CreateToken(TokenType.DM_StarEquals, c); break;
+                                case "|": token = CreateToken(TokenType.DM_Bar, c); break;
+                                case "||": token = CreateToken(TokenType.DM_BarBar, c); break;
+                                case "|=": token = CreateToken(TokenType.DM_BarEquals, c); break;
+                                case "<": token = CreateToken(TokenType.DM_LessThan, c); break;
+                                case "<<": token = CreateToken(TokenType.DM_LeftShift, c); break;
+                                case "<=": token = CreateToken(TokenType.DM_LessThanEquals, c); break;
+                                case "<<=": token = CreateToken(TokenType.DM_LeftShiftEquals, c); break;
+                                case ">": token = CreateToken(TokenType.DM_GreaterThan, c); break;
+                                case ">>": token = CreateToken(TokenType.DM_RightShift, c); break;
+                                case ">=": token = CreateToken(TokenType.DM_GreaterThanEquals, c); break;
+                                case ">>=": token = CreateToken(TokenType.DM_RightShiftEquals, c); break;
                                 default: throw new Exception("Invalid punctuator token '" + c + "'");
                             }
 

@@ -10,6 +10,9 @@
 	var/y
 	var/z
 
+	var/priority = 0 //TODO
+	var/status = 0 //TODO
+
 	proc/New(file, repeat=0, wait, channel, volume)
 		if (istype(file, /sound))
 			var/sound/copy_from = file

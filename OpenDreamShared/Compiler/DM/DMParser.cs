@@ -68,12 +68,9 @@ namespace OpenDreamShared.Compiler.DM {
 
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
-                        Whitespace();
-                        Delimiter();
-                        Whitespace();
+                        BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
-                        Delimiter();
-                        Whitespace();
+                        BracketWhitespace();
                         ConsumeRightParenthesis();
                         Whitespace();
 
@@ -138,7 +135,6 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     //Var override
-
                     if (statement == null && Check(TokenType.DM_Equals)) {
                         Whitespace();
                         DMASTExpression value = Expression();
@@ -478,7 +474,6 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
-
                 Whitespace();
                 DMASTPath varPath = Path();
                 if (varPath == null) Error("Expected a variable name");
@@ -492,7 +487,7 @@ namespace OpenDreamShared.Compiler.DM {
                     if (Check(TokenType.DM_LeftBracket)) {
                         //Type information
                         if (varPath.Path.FindElement("list") != 0) {
-                            varPath = new DMASTPath(DreamPath.List.Combine(varPath.Path));
+                            varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
                         }
 
                         Whitespace();
@@ -650,9 +645,10 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_If)) {
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                Whitespace();
+                BracketWhitespace();
                 DMASTExpression condition = Expression();
                 if (condition == null) Error("Expected a condition");
+                BracketWhitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
                 Check(TokenType.DM_Colon);
@@ -943,9 +939,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
                 do {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
 
                     DMASTExpression expression = Expression();
                     if (expression == null) Error("Expected an expression");
@@ -1000,14 +994,11 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
 
                 DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
                 ConsumeRightParenthesis();
 
                 return callParameters;
@@ -1018,18 +1009,14 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTPick.PickValue[] PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
 
                 DMASTPick.PickValue? arg = PickArgument();
                 if (arg == null) Error("Expected a pick argument");
                 List<DMASTPick.PickValue> args = new() { arg.Value };
 
                 while (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     arg = PickArgument();
 
                     if (arg != null) {
@@ -1043,8 +1030,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
-                Delimiter();
-                Whitespace();
+                BracketWhitespace();
                 ConsumeRightParenthesis();
                 return args.ToArray();
             }
@@ -1076,9 +1062,7 @@ namespace OpenDreamShared.Compiler.DM {
                 parameters.Add(parameter);
 
                 if (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
                     parameter = CallParameter();
 
                     if (parameter == null) {
@@ -1125,9 +1109,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
-                    Whitespace();
-                    Delimiter();
-                    Whitespace();
+                    BracketWhitespace();
 
                     parameter = DefinitionParameter();
                     if (parameter != null) {
@@ -1516,7 +1498,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (Check(new TokenType[] { TokenType.DM_Plus, TokenType.DM_Minus })) {
                 Whitespace();
-                DMASTExpression expression = ExpressionListIndex();
+                DMASTExpression expression = ExpressionSign();
 
                 if (expression == null) Error("Expected an expression");
                 if (token.Type == TokenType.DM_Minus) {
@@ -1926,6 +1908,13 @@ namespace OpenDreamShared.Compiler.DM {
             } else {
                 return Check(TokenType.DM_Whitespace);
             }
+        }
+
+        //Inside brackets/parentheses, whitespace can include delimiters in select areas
+        private void BracketWhitespace() {
+            Whitespace();
+            Delimiter();
+            Whitespace();
         }
 
         private DMValueType AsTypes(DMValueType defaultType = DMValueType.Anything) {

@@ -346,27 +346,20 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
-            DreamValue argListValue = state.PopDreamValue();
-
-            if (argListValue.Value != null) {
-                DreamList argList = argListValue.GetValueAsDreamList();
-                List<DreamValue> argListValues = argList.GetValues();
-                Dictionary<DreamValue, DreamValue> argListNamedValues = argList.GetAssociativeValues();
-
-                foreach (DreamValue value in argListValues) {
-                    if (!argListNamedValues.ContainsKey(value)) {
+            DreamProcArguments arguments = new DreamProcArguments(new(), new());
+            DreamList argList = state.PopDreamValue().GetValueAsDreamList();
+            
+            if (argList != null)
+            {
+                foreach (DreamValue value in argList.GetValues()) {
+                    if (argList.ContainsKey(value)) { //Named argument
+                        if (value.TryGetValueAsString(out string name)) {
+                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
+                    } else { //Ordered argument
                         arguments.OrderedArguments.Add(value);
-                    }
-                }
-
-                foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
-                    string name = namedValue.Key.Value as string;
-
-                    if (name != null) {
-                        arguments.NamedArguments.Add(name, namedValue.Value);
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
                     }
                 }
             }

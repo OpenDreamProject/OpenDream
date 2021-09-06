@@ -36,6 +36,7 @@ namespace Content.Server.Dream
             _netManager.RegisterNetMessage<MsgWinSet>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
+            _netManager.RegisterNetMessage<MsgSound>();
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message)

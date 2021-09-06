@@ -219,8 +219,6 @@ namespace Content.Server.Dream
                         throw new ArgumentException("Cannot output " + value, nameof(value));
                     }
 
-                    Logger.Debug($"Sending CH: {msg.Channel} FL: {msg.File} || channel: {channel} file: {file}");
-
                     Session.ConnectedClient.SendMessage(msg);
 
                     return;

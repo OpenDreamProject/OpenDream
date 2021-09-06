@@ -2,9 +2,7 @@ using Content.Client.Resources;
 using Content.Client.Resources.ResourceTypes;
 using Content.Shared.Network.Messages;
 using Robust.Shared.Audio;
-using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 
 namespace Content.Client.Audio {
@@ -24,8 +22,6 @@ namespace Content.Client.Audio {
 
         public void PlaySound(int channel, ResourceSound sound, float volume)
         {
-            Logger.Debug($"PLAYING SOUND! {sound.ResourcePath}");
-
             if (channel == 0)
             {
                 //First available channel
@@ -66,8 +62,6 @@ namespace Content.Client.Audio {
         }
 
         private void RxSound(MsgSound msg) {
-            Logger.Debug($"Receiving CH: {msg.Channel} FL: {msg.File}");
-
             if (!string.IsNullOrEmpty(msg.File)) {
                 _resourceManager.LoadResourceAsync<ResourceSound>(msg.File, sound => {
                     PlaySound(msg.Channel, sound, msg.Volume / 100.0f);

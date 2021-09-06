@@ -15,6 +15,7 @@ using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
@@ -51,13 +52,13 @@ namespace Content.Client.Interface {
 
             if (dmfParser.Warnings.Count > 0) {
                 foreach (CompilerWarning warning in dmfParser.Warnings) {
-                    Console.WriteLine(warning);
+                    Logger.Warning(warning.ToString());
                 }
             }
 
             if (dmfParser.Errors.Count > 0) {
                 foreach (CompilerError error in dmfParser.Errors) {
-                    Console.WriteLine(error);
+                    Logger.Error(error.ToString());
                 }
 
                 throw new Exception("Errors while parsing interface data");

@@ -10,11 +10,12 @@ namespace Content.Client.Resources.ResourceTypes {
         private readonly AudioStream _stream;
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {
-            if (!resourcePath.EndsWith(".ogg")) {
-                throw new Exception("Only *.ogg audio files are supported");
-            }
-
-            _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
+            if (resourcePath.EndsWith(".ogg"))
+                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
+            else if (resourcePath.EndsWith(".wav"))
+                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(data), resourcePath);
+            else
+                throw new Exception("Only *.ogg and *.wav audio files are supported.");
         }
 
         public IClydeAudioSource Play(AudioParams audioParams)

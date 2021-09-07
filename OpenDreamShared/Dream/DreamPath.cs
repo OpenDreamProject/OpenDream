@@ -92,17 +92,23 @@ namespace OpenDreamShared.Dream {
         public void SetFromString(string rawPath) {
             char pathTypeChar = rawPath[0];
 
-            if (pathTypeChar == '/') {
-                Type = PathType.Absolute;
-                rawPath = rawPath.Substring(1);
-            } else if (pathTypeChar == ':') {
-                Type = PathType.DownwardSearch;
-                rawPath = rawPath.Substring(1);
-            } else if (pathTypeChar == '.') {
-                Type = PathType.UpwardSearch;
-                rawPath = rawPath.Substring(1);
-            } else {
-                Type = PathType.Relative;
+            switch (pathTypeChar)
+            {
+                case '/':
+                    Type = PathType.Absolute;
+                    rawPath = rawPath[1..];
+                    break;
+                case ':':
+                    Type = PathType.DownwardSearch;
+                    rawPath = rawPath[1..];
+                    break;
+                case '.':
+                    Type = PathType.UpwardSearch;
+                    rawPath = rawPath[1..];
+                    break;
+                default:
+                    Type = PathType.Relative;
+                    break;
             }
 
             Elements = rawPath.Split("/");
@@ -203,18 +209,25 @@ namespace OpenDreamShared.Dream {
 
         public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
-        private void Normalize() {
-            Stack<string> elements = new Stack<string>(Elements.Length);
-
-            foreach (string element in Elements) {
-                if (element == "..") {
-                    elements.Pop();
-                } else if (element != "") {
-                    elements.Push(element);
+        private void Normalize()
+        {
+            var writeIdx = 0;
+            for (var i = 0; i < _elements.Length; i++)
+            {
+                var elem = _elements[i];
+                if (elem == "..")
+                {
+                    writeIdx -= 1;
                 }
+                else if (elem != "")
+                {
+                    _elements[writeIdx] = elem;
+                    writeIdx += 1;
+                }
+
             }
 
-            Elements = elements.Reverse().ToArray();
+            Elements = Elements[..writeIdx];
         }
     }
 }

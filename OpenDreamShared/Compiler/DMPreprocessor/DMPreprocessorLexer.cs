@@ -196,6 +196,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
+
                         do {
                             c = Advance();
 

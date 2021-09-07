@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMLexer : TokenLexer {
+    public partial class DMLexer : TokenLexer {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
@@ -58,7 +58,8 @@ namespace OpenDreamShared.Compiler.DM {
             { "step", TokenType.DM_Step }
         };
 
-        private int bracketNesting = 0;
+        public int BracketNesting = 0;
+
         private Stack<int> _indentationStack = new(new int[] { 0 });
 
         public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) { }
@@ -79,7 +80,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (preprocToken.Type == TokenType.Newline) {
                     Advance();
 
-                    if (bracketNesting == 0) { //Don't parse indentation when inside brackets/parentheses
+                    if (BracketNesting == 0) { //Don't parse indentation when inside brackets/parentheses
                         int currentIndentationLevel = _indentationStack.Peek();
                         int indentationLevel = CheckIndentation();
                         if (indentationLevel > currentIndentationLevel) {
@@ -114,10 +115,10 @@ namespace OpenDreamShared.Compiler.DM {
                             token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
                             break;
                         }
-                        case TokenType.DM_Preproc_Punctuator_LeftParenthesis: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_RightParenthesis: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_LeftBracket: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_RightBracket: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_LeftParenthesis: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightParenthesis: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_LeftBracket: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightBracket: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Colon: Advance(); token = CreateToken(TokenType.DM_Colon, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Question:
@@ -300,6 +301,10 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return token;
+        }
+
+        public int CurrentIndentation() {
+            return _indentationStack.Peek();
         }
 
         private int CheckIndentation() {

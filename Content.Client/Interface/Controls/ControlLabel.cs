@@ -11,8 +11,8 @@ namespace Content.Client.Interface.Controls
 
         protected override Control CreateUIElement() {
             _label = new Label() {
-                HorizontalAlignment = Control.HAlignment.Stretch,
-                VerticalAlignment = Control.VAlignment.Stretch,
+                HorizontalAlignment = Control.HAlignment.Center,
+                VerticalAlignment = Control.VAlignment.Center,
             };
 
             return _label;

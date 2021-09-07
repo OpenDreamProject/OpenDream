@@ -81,7 +81,7 @@ namespace Content.Client.Resources
                     try {
                         callback.Invoke(resource);
                     } catch (Exception e) {
-                        Console.WriteLine("Exception while calling resource load callback: " + e.Message);
+                        Logger.Fatal("Exception while calling resource load callback: " + e.Message);
                     }
                 }
 

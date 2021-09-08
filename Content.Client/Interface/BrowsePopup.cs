@@ -4,6 +4,7 @@ using Content.Shared.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
 namespace Content.Client.Interface
 {
@@ -18,7 +19,7 @@ namespace Content.Client.Interface
         public BrowsePopup(
             DreamInterfaceManager manager,
             string name,
-            System.Drawing.Size size,
+            Vector2i size,
             IClydeWindow ownerWindow) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name, new() {
                 new ControlDescriptorMain("main") {
@@ -26,8 +27,8 @@ namespace Content.Client.Interface
                 },
                 new ControlDescriptorBrowser("browser") {
                     Size = size,
-                    Anchor1 = new System.Drawing.Point(0, 0),
-                    Anchor2 = new System.Drawing.Point(100, 100)
+                    Anchor1 = new Vector2i(0, 0),
+                    Anchor2 = new Vector2i(100, 100)
                 }
             });
 

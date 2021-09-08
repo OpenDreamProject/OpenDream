@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Robust.Shared.Maths;
+using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace Content.Shared.Dream {
     public class ScreenLocation {
@@ -43,8 +43,8 @@ namespace Content.Shared.Dream {
             PixelOffsetY = y.PixelOffset;
         }
 
-        public Point GetScreenCoordinates(int iconSize) {
-            return new Point(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        public Vector2i GetScreenCoordinates(int iconSize) {
+            return new Vector2i(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
         }
 
         public override string ToString() {

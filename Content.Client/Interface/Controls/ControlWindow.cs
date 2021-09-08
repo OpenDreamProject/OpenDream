@@ -68,8 +68,8 @@ namespace Content.Client.Interface.Controls
             OSWindow window = new();
 
             window.Children.Add(UIElement);
-            window.SetWidth = _controlDescriptor.Size?.Width ?? 640;
-            window.SetHeight = _controlDescriptor.Size?.Height ?? 440;
+            window.SetWidth = _controlDescriptor.Size?.X ?? 640;
+            window.SetHeight = _controlDescriptor.Size?.Y ?? 440;
             window.Closing += _ => { _openWindows.Remove((window, null)); };
 
             _openWindows.Add((window, null));
@@ -95,8 +95,8 @@ namespace Content.Client.Interface.Controls
                     var elementPos = control.Pos.GetValueOrDefault();
                     var windowSize = Size.GetValueOrDefault();
 
-                    var offset1X = elementPos.X - (windowSize.Width * control.Anchor1.Value.X / 100f);
-                    var offset1Y = elementPos.Y - (windowSize.Height * control.Anchor1.Value.Y / 100f);
+                    var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
+                    var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
                     var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
                     var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
                     LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
@@ -106,10 +106,10 @@ namespace Content.Client.Interface.Controls
                     {
                         var elementSize = control.Size.GetValueOrDefault();
 
-                        var offset2X = (elementPos.X + elementSize.Width) -
-                                       (windowSize.Width * control.Anchor2.Value.X / 100);
-                        var offset2Y = (elementPos.Y + elementSize.Height) -
-                                       (windowSize.Height * control.Anchor2.Value.Y / 100);
+                        var offset2X = (elementPos.X + elementSize.X) -
+                                       (windowSize.X * control.Anchor2.Value.X / 100);
+                        var offset2Y = (elementPos.Y + elementSize.Y) -
+                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
                         var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
                         var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
                         element.SetWidth = Math.Max(width, 0);

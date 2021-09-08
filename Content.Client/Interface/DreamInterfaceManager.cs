@@ -19,7 +19,6 @@ using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
-using Size = System.Drawing.Size;
 
 namespace Content.Client.Interface {
     class DreamInterfaceManager : IDreamInterfaceManager {
@@ -176,8 +175,7 @@ namespace Content.Client.Interface {
 
                         if (!PopupWindows.TryGetValue(pBrowse.Window, out popup))
                         {
-                            var size = new Size(pBrowse.Size.X, pBrowse.Size.Y);
-                            popup = new BrowsePopup(this, pBrowse.Window, size, _clyde.MainWindow);
+                            popup = new BrowsePopup(this, pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
                             popup.Closed += () => {
                                 PopupWindows.Remove(pBrowse.Window);
                             };

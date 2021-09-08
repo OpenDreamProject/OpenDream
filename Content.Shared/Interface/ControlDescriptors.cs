@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
+﻿using Robust.Shared.Maths;
+using System.Collections.Generic;
 
 namespace Content.Shared.Interface {
     public class WindowDescriptor {
@@ -21,13 +21,13 @@ namespace Content.Shared.Interface {
 
     public class ControlDescriptor : ElementDescriptor {
         [InterfaceAttribute("pos")]
-        public Point? Pos = null;
+        public Vector2i? Pos = null;
         [InterfaceAttribute("size")]
-        public Size? Size = null;
+        public Vector2i? Size = null;
         [InterfaceAttribute("anchor1")]
-        public Point? Anchor1 = null;
+        public Vector2i? Anchor1 = null;
         [InterfaceAttribute("anchor2")]
-        public Point? Anchor2 = null;
+        public Vector2i? Anchor2 = null;
         [InterfaceAttribute("background-color")]
         public Color? BackgroundColor = null;
         [InterfaceAttribute("is-visible")]

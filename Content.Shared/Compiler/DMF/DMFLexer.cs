@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Robust.Shared.Maths;
+using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Text;
 
 namespace Content.Shared.Compiler.DMF {
@@ -198,7 +198,7 @@ namespace Content.Shared.Compiler.DMF {
                         }
 
                         Advance();
-                        token = CreateToken(TokenType.DMF_Color, text, Color.FromArgb(Convert.ToInt32(text.Substring(1), 16)));
+                        token = CreateToken(TokenType.DMF_Color, text, Color.FromHex(text, Color.White));
                         break;
                     }
                     default: {
@@ -229,13 +229,13 @@ namespace Content.Shared.Compiler.DMF {
 
                                 string number2 = Number();
                                 if (number2 == null) token = CreateToken(TokenType.Error, "Expected another number");
-                                else token = CreateToken(TokenType.DMF_Dimension, number + "x" + number2, new Size(int.Parse(number), int.Parse(number2)));
+                                else token = CreateToken(TokenType.DMF_Dimension, number + "x" + number2, new Vector2i(int.Parse(number), int.Parse(number2)));
                             } else if (GetCurrent() == ',') {
                                 Advance();
 
                                 string number2 = Number();
                                 if (number2 == null) token = CreateToken(TokenType.Error, "Expected another number");
-                                else token = CreateToken(TokenType.DMF_Position, number + "," + number2, new Point(int.Parse(number), int.Parse(number2)));
+                                else token = CreateToken(TokenType.DMF_Position, number + "," + number2, new Vector2i(int.Parse(number), int.Parse(number2)));
                             } else {
                                 token = CreateToken(TokenType.DMF_Integer, number, int.Parse(number));
                             }

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using Content.Shared.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -13,10 +12,10 @@ namespace Content.Client.Interface.Controls
     {
         public Control UIElement { get; private set; }
         public bool IsDefault { get => _controlDescriptor.IsDefault; }
-        public Size? Size { get => _controlDescriptor.Size; }
-        public Point? Pos { get => _controlDescriptor.Pos; }
-        public Point? Anchor1 { get => _controlDescriptor.Anchor1; }
-        public Point? Anchor2 { get => _controlDescriptor.Anchor2; }
+        public Vector2i? Size { get => _controlDescriptor.Size; }
+        public Vector2i? Pos { get => _controlDescriptor.Pos; }
+        public Vector2i? Anchor1 { get => _controlDescriptor.Anchor1; }
+        public Vector2i? Anchor2 { get => _controlDescriptor.Anchor2; }
 
         protected ControlDescriptor _controlDescriptor { get => _elementDescriptor as ControlDescriptor; }
         protected ControlWindow _window;
@@ -44,7 +43,7 @@ namespace Content.Client.Interface.Controls
             LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
             if (_controlDescriptor.Size is { } size)
-                UIElement.SetSize = (size.Width, size.Height);
+                UIElement.SetSize = size;
 
             _window?.UpdateAnchors();
 

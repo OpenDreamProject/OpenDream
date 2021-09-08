@@ -27,6 +27,7 @@ namespace OpenDreamShared.Compiler.DM {
             "ref",
             "improper", "proper",
             "red", "blue", "green", "black",
+            "b", "bold", "italic",
             "..."
             //TODO: ASCII/Unicode values
         };
@@ -95,7 +96,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 _pendingTokenQueue.Enqueue(preprocToken);
                                 token = CreateToken(TokenType.Error, null, "Invalid indentation");
                             }
-                            
+
                             do {
                                 _indentationStack.Pop();
                                 _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));

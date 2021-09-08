@@ -205,7 +205,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             if (c == '\t') continue;
 
                             textBuilder.Append(c);
-                        } while (c != delimiter);
+                        } while (c != delimiter || (delimiter != '}' && c != '\n'));
                         Advance();
 
                         string text = textBuilder.ToString();

@@ -202,14 +202,27 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         do {
                             c = Advance();
 
-                            if (c == '\t') continue;
-
                             textBuilder.Append(c);
                         } while (c != delimiter || (delimiter != '}' && c != '\n'));
                         Advance();
 
+                        var startIdx = 2;
+                        var stopLength = 3;
+                        if (delimiter == '}')
+                        {
+                            if (textBuilder[2] == '"')
+                            {
+                                startIdx++;
+                            }
+
+                            if (textBuilder[textBuilder.Length-2] == '"')
+                            {
+                                stopLength++;
+                            }
+                        }
+
                         string text = textBuilder.ToString();
-                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(2, text.Length - 3));
+                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(startIdx, text.Length - stopLength));
                         break;
                     }
                     case '\'':

@@ -182,6 +182,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
                                 case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
                                 case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
+                                case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
                                 case "&": token = CreateToken(TokenType.DM_And, c); break;
                                 case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
                                 case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;

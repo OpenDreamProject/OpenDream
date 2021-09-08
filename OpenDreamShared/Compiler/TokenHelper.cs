@@ -21,14 +21,14 @@ namespace OpenDreamShared.Compiler {
                         tokentext = "\n";
                     }
                     tokentext += "%%% " + token.ToShortString() + " %%%";
-                    i = tokensperline - 1; 
+                    i = tokensperline - 1;
                 }
                 else {
                     tokentext = token.ToShortString();
                 }
                 sb.Append(string.Format("{0,-20}", tokentext));
                 if (tokentext.Length > 20) {
-                    i = tokensperline - 1; 
+                    i = tokensperline - 1;
                 }
                 if (eol) { eol = false; }
                 i += 1;
@@ -101,6 +101,7 @@ namespace OpenDreamShared.Compiler {
             DM_StarStar,
             DM_Tilde,
             DM_TildeEquals,
+            DM_TildeExclamation,
             DM_To,
             DM_Xor,
             DM_XorEquals

@@ -1343,6 +1343,25 @@ namespace OpenDreamShared.Compiler.DM {
             return expression;
         }
 
+        public DMASTExpression ExpressionEquivalence()
+        {
+            DMASTExpression a = ExpressionUnary();
+
+            var token = Current();
+
+            if (a != null && Check(TokenType.DM_TildeEquals) || Check(TokenType.DM_TildeExclamation)) {
+                Whitespace();
+                DMASTExpression b = ExpressionEquivalence();
+                switch (token.Type)
+                {
+                    case TokenType.DM_TildeEquals: return new DMASTEquivalent(a, b);
+                    case TokenType.DM_TildeExclamation: return new DMASTNotEquivalent(a, b);
+                }
+            }
+
+            return a;
+        }
+
         public DMASTExpression ExpressionBitShift() {
             DMASTExpression a = ExpressionComparisonLtGt();
 
@@ -1465,7 +1484,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionUnary();
+            DMASTExpression value = ExpressionEquivalence();
 
             if (value != null && Check(TokenType.DM_In)) {
                 Whitespace();

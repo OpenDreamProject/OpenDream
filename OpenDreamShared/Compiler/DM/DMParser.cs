@@ -887,11 +887,7 @@ namespace OpenDreamShared.Compiler.DM {
                 ConsumeRightParenthesis();
                 Whitespace();
 
-                var braced = Check(TokenType.DM_LeftCurlyBracket);
-
-                DMASTProcStatementSwitch.SwitchCase[] switchCases = SwitchCases(braced);
-
-                if(braced) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                DMASTProcStatementSwitch.SwitchCase[] switchCases = SwitchCases();
 
                 if (switchCases == null) Error("Expected switch cases");
                 return new DMASTProcStatementSwitch(value, switchCases);
@@ -900,19 +896,14 @@ namespace OpenDreamShared.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSwitch.SwitchCase[] SwitchCases(bool braced = false) {
+        public DMASTProcStatementSwitch.SwitchCase[] SwitchCases() {
             Token beforeSwitchBlock = Current();
             bool hasNewline = Newline();
 
-            DMASTProcStatementSwitch.SwitchCase[] switchCases = null;
-            if (braced)
-            {
-                switchCases = BracedSwitchInner();
-            }
-            else
-            {
-                switchCases = IndentedSwitchInner();
-            }
+            DMASTProcStatementSwitch.SwitchCase[] switchCases = BracedSwitchInner();
+
+            if(switchCases == null) switchCases = IndentedSwitchInner();
+
 
             if (switchCases == null && hasNewline) {
                 ReuseToken(beforeSwitchBlock);
@@ -922,7 +913,18 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] BracedSwitchInner() {
-            return SwitchInner();
+            if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
+                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+
+                return switchInner;
+            }
+
+            return null;
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] IndentedSwitchInner() {

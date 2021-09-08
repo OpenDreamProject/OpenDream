@@ -886,6 +886,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTExpression value = Expression();
                 ConsumeRightParenthesis();
                 Whitespace();
+
                 DMASTProcStatementSwitch.SwitchCase[] switchCases = SwitchCases();
 
                 if (switchCases == null) Error("Expected switch cases");
@@ -900,7 +901,9 @@ namespace OpenDreamShared.Compiler.DM {
             bool hasNewline = Newline();
 
             DMASTProcStatementSwitch.SwitchCase[] switchCases = BracedSwitchInner();
-            if (switchCases == null) switchCases = IndentedSwitchInner();
+
+            if(switchCases == null) switchCases = IndentedSwitchInner();
+
 
             if (switchCases == null && hasNewline) {
                 ReuseToken(beforeSwitchBlock);
@@ -910,7 +913,18 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] BracedSwitchInner() {
-            return null; //TODO: Braced switch blocks
+            if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
+                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+
+                return switchInner;
+            }
+
+            return null;
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] IndentedSwitchInner() {

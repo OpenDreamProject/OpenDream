@@ -325,7 +325,8 @@ namespace OpenDreamShared.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 List<DMASTStatement> blockInner = BlockInner();
-                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return new DMASTBlockInner(blockInner.ToArray());
@@ -369,7 +370,8 @@ namespace OpenDreamShared.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 DMASTProcBlockInner procBlock = ProcBlockInner();
-                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return procBlock;
@@ -918,7 +920,8 @@ namespace OpenDreamShared.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
-                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return switchInner;
@@ -946,6 +949,7 @@ namespace OpenDreamShared.Compiler.DM {
                 do {
                     switchCases.Add(switchCase);
                     Newline();
+                    Whitespace();
                     switchCase = SwitchCase();
                 } while (switchCase != null);
             }

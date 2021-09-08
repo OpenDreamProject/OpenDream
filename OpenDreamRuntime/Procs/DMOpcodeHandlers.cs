@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -345,27 +346,20 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
-            DreamValue argListValue = state.PopDreamValue();
-
-            if (argListValue.Value != null) {
-                DreamList argList = argListValue.GetValueAsDreamList();
-                List<DreamValue> argListValues = argList.GetValues();
-                Dictionary<DreamValue, DreamValue> argListNamedValues = argList.GetAssociativeValues();
-
-                foreach (DreamValue value in argListValues) {
-                    if (!argListNamedValues.ContainsKey(value)) {
+            DreamProcArguments arguments = new DreamProcArguments(new(), new());
+            DreamList argList = state.PopDreamValue().GetValueAsDreamList();
+            
+            if (argList != null)
+            {
+                foreach (DreamValue value in argList.GetValues()) {
+                    if (argList.ContainsKey(value)) { //Named argument
+                        if (value.TryGetValueAsString(out string name)) {
+                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
+                    } else { //Ordered argument
                         arguments.OrderedArguments.Add(value);
-                    }
-                }
-
-                foreach (KeyValuePair<DreamValue, DreamValue> namedValue in argListNamedValues) {
-                    string name = namedValue.Key.Value as string;
-
-                    if (name != null) {
-                        arguments.NamedArguments.Add(name, namedValue.Value);
-                    } else {
-                        throw new Exception("List contains a non-string key, and cannot be used as an arglist");
                     }
                 }
             }
@@ -1131,6 +1125,47 @@ namespace OpenDreamRuntime.Procs {
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
                 }
+                case DreamValue.DreamValueType.String:
+                    unsafe
+                    {
+                        var dllName = source.GetValueAsString();
+                        var procName = state.PopDreamValue().GetValueAsString();
+                        // DLL Invoke
+                        var entryPoint = DllHelper.ResolveDllTarget(state.Runtime, dllName, procName);
+
+                        Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
+                        argV.Fill(0);
+                        try
+                        {
+                            for (var i = 0; i < arguments.ArgumentCount; i++)
+                            {
+                                var arg = arguments.OrderedArguments[i].Stringify();
+                                argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
+                            }
+
+                            fixed (nint* ptr = &argV[0])
+                            {
+                                var ret = entryPoint(arguments.ArgumentCount, (byte**) ptr);
+                                if (ret == null)
+                                {
+                                    state.Push(DreamValue.Null);
+                                    return null;
+                                }
+
+                                var retString = Marshal.PtrToStringUTF8((nint) ret);
+                                state.Push(new DreamValue(retString));
+                                return null;
+                            }
+                        }
+                        finally
+                        {
+                            foreach (var arg in argV)
+                            {
+                                if (arg != 0)
+                                    Marshal.ZeroFreeCoTaskMemUTF8(arg);
+                            }
+                        }
+                    }
                 default:
                     throw new Exception("Call statement has an invalid source (" + source + ")");
             }

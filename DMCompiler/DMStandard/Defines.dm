@@ -77,3 +77,17 @@
 #define REGEX_QUOTE_REPLACEMENT(a) regex((a), 2)
 
 #define ASSERT(expr) ((expr) ? null : CRASH("Assertion Failed: " + #expr))
+
+//atom.blend_mode
+#define BLEND_DEFAULT 0
+#define BLEND_OVERLAY 1
+#define BLEND_ADD 2
+#define BLEND_SUBTRACT 3
+#define BLEND_MULTIPLY 4
+#define BLEND_INSET_OVERLAY 5
+
+//sound.status
+#define SOUND_MUTE (1<<0)      // do not play the sound
+#define SOUND_PAUSED (1<<1)    // pause sound
+#define SOUND_STREAM (1<<2)    // create as a stream
+#define SOUND_UPDATE (1<<3)    // update a playing sound

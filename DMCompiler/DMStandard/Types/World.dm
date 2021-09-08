@@ -27,9 +27,12 @@
 
 	var/address
 	var/port
+	var/internet_address = "127.0.0.1" //TODO
 	var/url
 	var/status
 	var/list/params = null
+
+	var/sleep_offline = 0 //TODO
 
 	var/system_type
 

@@ -2,10 +2,12 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 
 namespace OpenDreamServer {
     class Program {
         static void Main(string[] args) {
+            Console.OutputEncoding = Encoding.UTF8;
             if (args.Length < 1 || Path.GetExtension(args[0]) != ".json") {
                 Console.WriteLine("You must compile your game using DMCompiler, and supply its output as an argument");
 

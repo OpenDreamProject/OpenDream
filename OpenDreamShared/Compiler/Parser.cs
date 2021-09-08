@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
-    public class Parser<SourceType> {
+    public partial class Parser<SourceType> {
         public List<CompilerError> Errors = new();
         public List<CompilerWarning> Warnings = new();
 
-        private Lexer<SourceType> _lexer;
+        protected Lexer<SourceType> _lexer;
         private Token _currentToken;
         private Stack<Token> _tokenStack = new();
 
@@ -33,6 +33,10 @@ namespace OpenDreamShared.Compiler {
                     Warning((string)_currentToken.Value);
                     Advance();
                 }
+            }
+
+            if (_lookahead.Count > 0) {
+                _lookahead.Peek().Push(_currentToken);
             }
 
             return Current();
@@ -81,7 +85,10 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected void Error(string message) {
-            Errors.Add(new CompilerError(_currentToken, message));
+            CompilerError error = new CompilerError(_currentToken, message);
+
+            Errors.Add(error);
+            throw new CompileErrorException(error);
         }
 
         protected void Warning(string message) {

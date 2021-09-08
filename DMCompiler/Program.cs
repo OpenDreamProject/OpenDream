@@ -49,6 +49,7 @@ namespace DMCompiler {
                 TimeSpan duration = endTime - startTime;
                 Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
             } else {
+                Console.WriteLine($"Compilation failed with {_errorCount} errors");
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
             }
@@ -117,11 +118,14 @@ namespace DMCompiler {
 
             if (dmParser.Errors.Count > 0) {
                 foreach (CompilerError error in dmParser.Errors) {
+                    _errorCount++;
                     Console.WriteLine(error);
                 }
 
                 return false;
             }
+
+            if (astFile == null) return false;
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);
@@ -176,7 +180,7 @@ namespace DMCompiler {
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
-            if (DMObjectTree.GlobalInitProc != null) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+            if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true

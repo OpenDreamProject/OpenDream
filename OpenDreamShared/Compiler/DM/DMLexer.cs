@@ -27,7 +27,7 @@ namespace OpenDreamShared.Compiler.DM {
             "ref",
             "improper", "proper",
             "red", "blue", "green", "black",
-            "b", "bold",
+            "b", "bold", "italic",
             "..."
             //TODO: ASCII/Unicode values
         };

@@ -203,7 +203,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             c = Advance();
 
                             textBuilder.Append(c);
-                        } while (c != delimiter || (delimiter != '}' && c != '\n'));
+                        } while (c != delimiter && !(delimiter != '}' && c == '\n'));
                         Advance();
 
                         var startIdx = 2;
@@ -213,11 +213,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             if (textBuilder[2] == '"')
                             {
                                 startIdx++;
+                                stopLength = startIdx + 1;
                             }
 
                             if (textBuilder[textBuilder.Length-2] == '"')
                             {
-                                stopLength++;
+                                stopLength = startIdx + 2;
                             }
                         }
 

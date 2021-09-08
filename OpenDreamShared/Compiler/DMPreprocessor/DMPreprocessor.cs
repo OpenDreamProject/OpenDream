@@ -134,10 +134,16 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             List<List<Token>> parameters = null;
 
                             if (macro.HasParameters()) {
-                                parameters = GetMacroParameters();
+                                try {
+                                    parameters = GetMacroParameters();
 
-                                if (parameters == null) {
-                                    _currentLine.Add(token);
+                                    if (parameters == null) {
+                                        _currentLine.Add(token);
+
+                                        break;
+                                    }
+                                } catch (CompileErrorException e) {
+                                    EmitErrorToken(token, e.Message);
 
                                     break;
                                 }
@@ -330,12 +336,16 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 }
 
                 parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new Exception("Missing ')' in macro call");
+                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException("Missing ')' in macro call");
 
                 return parameters;
             }
 
             return null;
+        }
+
+        private void EmitErrorToken(Token token, string errorMessage) {
+            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, errorMessage));
         }
     }
 }

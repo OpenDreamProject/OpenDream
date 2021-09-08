@@ -38,18 +38,22 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {output}");
             }
 
-
-            if (Compile(preprocessor.GetResult())) {
+            bool successfulCompile = Compile(preprocessor.GetResult());
+            
+            if (successfulCompile) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(CompiledFiles[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);
-                DateTime endTime = DateTime.Now;
-                TimeSpan duration = endTime - startTime;
-                Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
-            } else {
+            }
+
+            TimeSpan duration = DateTime.Now - startTime;
+            Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
+
+            if (!successfulCompile) {
                 Console.WriteLine($"Compilation failed with {_errorCount} errors");
+
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
             }
@@ -112,14 +116,13 @@ namespace DMCompiler {
 
             if (dmParser.Warnings.Count > 0) {
                 foreach (CompilerWarning warning in dmParser.Warnings) {
-                    Console.WriteLine(warning);
+                    Warning(warning);
                 }
             }
 
             if (dmParser.Errors.Count > 0) {
                 foreach (CompilerError error in dmParser.Errors) {
-                    _errorCount++;
-                    Console.WriteLine(error);
+                    Error(error);
                 }
 
                 return false;
@@ -162,7 +165,7 @@ namespace DMCompiler {
 
                 if (parser.Errors.Count > 0) {
                     foreach (CompilerError error in parser.Errors) {
-                        Console.WriteLine(error);
+                        Error(error);
                     }
 
                     continue;

@@ -15,15 +15,16 @@
         }
 
         protected void LocateNextTopLevel() {
-            while (((DMLexer)_lexer).CurrentIndentation() != 0) {
-                Advance();
+            do {
+                LocateNextStatement();
+
+                Delimiter();
+                while (Current().Type == TokenType.DM_Dedent) {
+                    Advance();
+                }
 
                 if (Current().Type == TokenType.EndOfFile) break;
-            }
-
-            while (Current().Type == TokenType.DM_Dedent) {
-                Advance();
-            }
+            } while (((DMLexer)_lexer).CurrentIndentation() != 0);
 
             Delimiter();
         }

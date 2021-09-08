@@ -197,11 +197,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
 
+                        if (delimiter == '{') delimiter = '}';
+
                         do {
                             c = Advance();
 
+                            if (c == '\t') continue;
+
                             textBuilder.Append(c);
-                        } while (c != delimiter && c != '\n');
+                        } while (c != delimiter);
                         Advance();
 
                         string text = textBuilder.ToString();

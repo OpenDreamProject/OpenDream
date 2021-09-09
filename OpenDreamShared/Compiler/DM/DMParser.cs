@@ -1973,6 +1973,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case "area": type |= DMValueType.Area; break;
                         case "color": type |= DMValueType.Color; break;
                         case "file": type |= DMValueType.File; break;
+                        case "command_text": type |= DMValueType.CommandText; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
                 } while (Check(TokenType.DM_Bar));

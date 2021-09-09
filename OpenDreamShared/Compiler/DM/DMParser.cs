@@ -1328,7 +1328,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (expression != null) {
                 Token token = Current();
-                if (Check(new TokenType[] { TokenType.DM_EqualsEquals, TokenType.DM_ExclamationEquals })) {
+                if (Check(new TokenType[] { TokenType.DM_EqualsEquals, TokenType.DM_ExclamationEquals, TokenType.DM_TildeEquals, TokenType.DM_TildeExclamation })) {
                     Whitespace();
                     DMASTExpression b = ExpressionComparison();
 
@@ -1336,30 +1336,13 @@ namespace OpenDreamShared.Compiler.DM {
                     switch (token.Type) {
                         case TokenType.DM_EqualsEquals: return new DMASTEqual(expression, b);
                         case TokenType.DM_ExclamationEquals: return new DMASTNotEqual(expression, b);
+                        case TokenType.DM_TildeEquals: return new DMASTEquivalent(expression, b);
+                        case TokenType.DM_TildeExclamation: return new DMASTNotEquivalent(expression, b);
                     }
                 }
             }
 
             return expression;
-        }
-
-        public DMASTExpression ExpressionEquivalence()
-        {
-            DMASTExpression a = ExpressionUnary();
-
-            var token = Current();
-
-            if (a != null && Check(TokenType.DM_TildeEquals) || Check(TokenType.DM_TildeExclamation)) {
-                Whitespace();
-                DMASTExpression b = ExpressionEquivalence();
-                switch (token.Type)
-                {
-                    case TokenType.DM_TildeEquals: return new DMASTEquivalent(a, b);
-                    case TokenType.DM_TildeExclamation: return new DMASTNotEquivalent(a, b);
-                }
-            }
-
-            return a;
         }
 
         public DMASTExpression ExpressionBitShift() {
@@ -1484,7 +1467,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionEquivalence();
+            DMASTExpression value = ExpressionUnary();
 
             if (value != null && Check(TokenType.DM_In)) {
                 Whitespace();

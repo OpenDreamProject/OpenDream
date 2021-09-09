@@ -109,7 +109,29 @@ namespace OpenDreamShared.Compiler.DM {
                             Whitespace();
 
                             DMASTExpression value;
-                            if (Check(TokenType.DM_Equals)) {
+                            if (Check(TokenType.DM_LeftBracket))
+                            {
+                                //Type information
+                                if (varPath.FindElement("list") != 0)
+                                {
+                                    var idx = varPath.PathString.IndexOf("var/", StringComparison.Ordinal) + 4;
+                                    varPath.PathString = varPath.PathString.Insert(idx, "list/");
+                                }
+
+                                DMASTExpression size = Expression();
+                                Consume(TokenType.DM_RightBracket, "Expected ']'");
+
+                                if (size is not null)
+                                {
+                                    value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                                        new[] {new DMASTCallParameter(size)});
+                                }
+                                else
+                                {
+                                    value = new DMASTConstantNull();
+                                }
+                            }
+                            else if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");

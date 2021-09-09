@@ -109,7 +109,7 @@ namespace OpenDreamShared.Compiler.DM {
                             Whitespace();
 
                             DMASTExpression value;
-                            if (Check(TokenType.DM_LeftBracket))
+                            if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
                             {
                                 //Type information
                                 if (varPath.FindElement("list") != 0)

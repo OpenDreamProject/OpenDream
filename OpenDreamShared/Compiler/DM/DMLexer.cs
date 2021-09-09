@@ -8,7 +8,7 @@ namespace OpenDreamShared.Compiler.DM {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
-            "\\", "\\ ", "\"", "'",
+            "\\", " ", "\"", "'",
             "<", ">",
 
             "icon",

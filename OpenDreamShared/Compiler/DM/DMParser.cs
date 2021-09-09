@@ -781,50 +781,60 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Newline();
 
-                    DMASTProcBlockInner body = ProcBlock();
-                    if (body == null) {
-                        DMASTProcStatement statement = ProcStatement();
-
-                        if (statement == null) Error("Expected body or statement");
-                        body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
-                    }
-
-                    return new DMASTProcStatementForStandard(initializer, comparator, incrementor, body);
+                    return new DMASTProcStatementForStandard(initializer, comparator, incrementor, GetForBody());
                 } else if (variableDeclaration != null) {
                     DMASTExpression rangeBegin = variableDeclaration.Value;
                     Whitespace();
-                    Consume(TokenType.DM_To, "Expected 'to'");
+                    if (rangeBegin is not DMASTConstantNull)
+                    {
+                        Consume(TokenType.DM_To, "Expected 'to'");
+                    }
+
                     Whitespace();
                     DMASTExpression rangeEnd = Expression();
-                    if (rangeEnd == null) Error("Expected an expression");
+                    if (rangeBegin is not DMASTConstantNull && rangeEnd == null) Error("Expected an expression");
                     DMASTExpression step = new DMASTConstantInteger(1);
+
+                    var defaultStep = true;
 
                     if (Check(TokenType.DM_Step)) {
                         Whitespace();
 
                         step = Expression();
                         if (step == null) Error("Expected a step value");
+                        defaultStep = false;
                     }
 
                     ConsumeRightParenthesis();
                     Whitespace();
                     Newline();
 
-                    DMASTProcBlockInner body = ProcBlock();
-                    if (body == null) {
-                        DMASTProcStatement statement = ProcStatement();
-
-                        if (statement == null) Error("Expected body or statement");
-                        body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                    //Implicit "in world"
+                    if (rangeBegin is DMASTConstantNull && rangeEnd is null && defaultStep)
+                    {
+                        return new DMASTProcStatementForList(initializer, variable, new DMASTIdentifier("world"), GetForBody());
                     }
 
-                    return new DMASTProcStatementForRange(initializer, variable, rangeBegin, rangeEnd, step, body);
+                    return new DMASTProcStatementForRange(initializer, variable, rangeBegin, rangeEnd, step, GetForBody());
                 } else {
                     Error("Expected 'in'");
                 }
             }
 
             return null;
+
+            DMASTProcBlockInner GetForBody()
+            {
+                DMASTProcBlockInner body = ProcBlock();
+                if (body == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    if (statement == null) Error("Expected body or statement");
+                    body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                return body;
+            }
         }
 
         public DMASTProcStatementWhile While() {

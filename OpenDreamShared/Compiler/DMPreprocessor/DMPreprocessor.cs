@@ -153,6 +153,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                                     if (parameters == null) {
                                         _currentLine.Add(token);
+                                        _isCurrentLineWhitespaceOnly = false;
 
                                         break;
                                     }
@@ -355,6 +356,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 return parameters;
             }
 
+            _unprocessedTokens.Push(leftParenToken);
             return null;
         }
 

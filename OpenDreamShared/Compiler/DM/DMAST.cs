@@ -241,7 +241,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
             int varElementIndex = path.FindElement("var");
-            if (varElementIndex == -1) throw new Exception("Var definition's path (" + path + ") did not contain a var element");
+            if (varElementIndex == -1) throw new Exception($"Var definition's path ({path}) did not contain a var element");
 
             DreamPath varPath = path.FromElements(varElementIndex + 1, -1);
 

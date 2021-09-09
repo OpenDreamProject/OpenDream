@@ -361,11 +361,11 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         }
 
         private void EmitErrorToken(Token token, string errorMessage) {
-            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, errorMessage));
+            _result.Add(new Token(TokenType.Error, String.Empty, token.SourceFile, token.Line, token.Column, errorMessage));
         }
 
         private void EmitWarningToken(Token token, string warningMessage) {
-            _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, warningMessage));
+            _result.Add(new Token(TokenType.Warning, String.Empty, token.SourceFile, token.Line, token.Column, warningMessage));
         }
     }
 }

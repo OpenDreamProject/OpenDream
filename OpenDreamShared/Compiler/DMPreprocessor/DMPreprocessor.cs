@@ -50,7 +50,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         string filePath = Path.Combine(includePath, fullIncludePath);
 
                         if (!File.Exists(filePath)) {
-                            EmitWarningToken(token, $"Could not find included file \"{fullIncludePath}\"");
+                            EmitErrorToken(token, $"Could not find included file \"{fullIncludePath}\"");
                             break;
                         }
 

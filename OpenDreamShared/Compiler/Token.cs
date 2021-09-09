@@ -116,6 +116,7 @@
         DM_Switch,
         DM_Tilde,
         DM_TildeEquals,
+        DM_TildeExclamation,
         DM_To,
         DM_Var,
         DM_While,

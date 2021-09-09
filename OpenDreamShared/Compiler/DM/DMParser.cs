@@ -1328,7 +1328,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (expression != null) {
                 Token token = Current();
-                if (Check(new TokenType[] { TokenType.DM_EqualsEquals, TokenType.DM_ExclamationEquals })) {
+                if (Check(new TokenType[] { TokenType.DM_EqualsEquals, TokenType.DM_ExclamationEquals, TokenType.DM_TildeEquals, TokenType.DM_TildeExclamation })) {
                     Whitespace();
                     DMASTExpression b = ExpressionComparison();
 
@@ -1336,6 +1336,8 @@ namespace OpenDreamShared.Compiler.DM {
                     switch (token.Type) {
                         case TokenType.DM_EqualsEquals: return new DMASTEqual(expression, b);
                         case TokenType.DM_ExclamationEquals: return new DMASTNotEqual(expression, b);
+                        case TokenType.DM_TildeEquals: return new DMASTEquivalent(expression, b);
+                        case TokenType.DM_TildeExclamation: return new DMASTNotEquivalent(expression, b);
                     }
                 }
             }

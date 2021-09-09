@@ -114,6 +114,7 @@ namespace OpenDreamShared.Dream.Procs {
         Area = 0x80,
         Color = 0x100,
         File = 0x200,
-        Unsafe = 0x400
+        Unsafe = 0x400,
+        CommandText = 0x800
     }
 }

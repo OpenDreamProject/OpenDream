@@ -11,7 +11,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         //Every include pushes a new lexer that gets popped once the included file is finished
         private Stack<DMPreprocessorLexer> _lexerStack =  new();
 
-        Stack<Token> _unprocessedTokens = new();
+        private List<string> _includedFiles = new();
+        private Stack<Token> _unprocessedTokens = new();
         private List<Token> _result = new();
         private List<Token> _currentLine = new();
         private bool _isCurrentLineWhitespaceOnly = true;
@@ -27,10 +28,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
         public void IncludeFile(string includePath, string file) {
             file = file.Replace('\\', Path.DirectorySeparatorChar);
-            string source = File.ReadAllText(Path.Combine(includePath, file));
+            string path = Path.Combine(includePath, file);
+            string source = File.ReadAllText(path);
             source = source.Replace("\r\n", "\n");
             source += '\n';
 
+            _includedFiles.Add(path);
             _lexerStack.Push(new DMPreprocessorLexer(file, source));
 
             Token token = GetNextToken();
@@ -43,26 +46,37 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) throw new Exception("\"" + includedFileToken.Text + "\" is not a valid include path");
 
                         string includedFile = (string)includedFileToken.Value;
-                        string includedFileExtension = Path.GetExtension(includedFile);
                         string fullIncludePath = Path.Combine(Path.GetDirectoryName(file), includedFile).Replace('\\', Path.DirectorySeparatorChar);
+                        string filePath = Path.Combine(includePath, fullIncludePath);
 
-                        if (!File.Exists(Path.Combine(includePath, fullIncludePath))) {
-                            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, $"Could not find included file \"{fullIncludePath}\""));
+                        if (!File.Exists(filePath)) {
+                            EmitWarningToken(token, $"Could not find included file \"{fullIncludePath}\"");
                             break;
                         }
 
-                        if (includedFileExtension == ".dmm") {
-                            string mapPath = Path.Combine(includePath, fullIncludePath);
+                        if (_includedFiles.Contains(filePath)) {
+                            EmitWarningToken(token, $"File \"{fullIncludePath}\" was already included");
+                            break;
+                        }
 
-                            IncludedMaps.Add(mapPath);
-                        } else if (includedFileExtension == ".dmf") {
-                            if (IncludedInterface != null) {
-                                throw new Exception("Attempted to include a second interface file (" + fullIncludePath + ") while one was already included (" + IncludedInterface + ")");
+                        switch (Path.GetExtension(filePath)) {
+                            case ".dmm": {
+                                IncludedMaps.Add(filePath);
+                                break;
                             }
+                            case ".dmf": {
+                                if (IncludedInterface != null) {
+                                    EmitErrorToken(token, $"Attempted to include a second interface file ({fullIncludePath}) while one was already included ({IncludedInterface})");
+                                    break;
+                                }
 
-                            IncludedInterface = fullIncludePath;
-                        } else {
-                            IncludeFile(includePath, fullIncludePath);
+                                IncludedInterface = fullIncludePath;
+                                break;
+                            }
+                            default: {
+                                IncludeFile(includePath, fullIncludePath);
+                                break;
+                            }
                         }
 
                         break;
@@ -134,10 +148,16 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             List<List<Token>> parameters = null;
 
                             if (macro.HasParameters()) {
-                                parameters = GetMacroParameters();
+                                try {
+                                    parameters = GetMacroParameters();
 
-                                if (parameters == null) {
-                                    _currentLine.Add(token);
+                                    if (parameters == null) {
+                                        _currentLine.Add(token);
+
+                                        break;
+                                    }
+                                } catch (CompileErrorException e) {
+                                    EmitErrorToken(token, e.Message);
 
                                     break;
                                 }
@@ -166,7 +186,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     {
                         //TODO Implement #if properly
                         SkipIfBody();
-                        _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, "#if is not implemented"));
+                        EmitWarningToken(token, "#if is not implemented");
                         break;
                     }
                     case TokenType.DM_Preproc_Ifdef: {
@@ -259,12 +279,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
         private bool VerifyDirectiveUsage(Token token) {
             if (!_enableDirectives) {
-                _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, "Cannot use a preprocessor directive here"));
+                EmitErrorToken(token, "Cannot use a preprocessor directive here");
                 return false;
             }
                 
             if (!_isCurrentLineWhitespaceOnly) {
-                _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, "There can only be whitespace before a preprocessor directive"));
+                EmitErrorToken(token, "There can only be whitespace before a preprocessor directive");
                 return false;
             }
 
@@ -330,12 +350,20 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 }
 
                 parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new Exception("Missing ')' in macro call");
+                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException("Missing ')' in macro call");
 
                 return parameters;
             }
 
             return null;
+        }
+
+        private void EmitErrorToken(Token token, string errorMessage) {
+            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, errorMessage));
+        }
+
+        private void EmitWarningToken(Token token, string warningMessage) {
+            _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, warningMessage));
         }
     }
 }

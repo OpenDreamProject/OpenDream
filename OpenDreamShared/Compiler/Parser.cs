@@ -27,7 +27,7 @@ namespace OpenDreamShared.Compiler {
                 _currentToken = _lexer.GetNextToken();
 
                 if (_currentToken.Type == TokenType.Error) {
-                    Error((string)_currentToken.Value);
+                    Error((string)_currentToken.Value, throwException: false);
                     Advance();
                 } else if (_currentToken.Type == TokenType.Warning) {
                     Warning((string)_currentToken.Value);
@@ -84,11 +84,11 @@ namespace OpenDreamShared.Compiler {
             Error(errorMessage);
         }
 
-        protected void Error(string message) {
+        protected void Error(string message, bool throwException = true) {
             CompilerError error = new CompilerError(_currentToken, message);
 
             Errors.Add(error);
-            throw new CompileErrorException(error);
+            if (throwException) throw new CompileErrorException(error);
         }
 
         protected void Warning(string message) {

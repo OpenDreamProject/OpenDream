@@ -328,7 +328,8 @@ namespace OpenDreamShared.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 List<DMASTStatement> blockInner = BlockInner();
-                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return new DMASTBlockInner(blockInner.ToArray());
@@ -372,7 +373,8 @@ namespace OpenDreamShared.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 DMASTProcBlockInner procBlock = ProcBlockInner();
-                if (isIndented) Consume(TokenType.DM_Dedent, "Expected dedent");
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return procBlock;
@@ -889,6 +891,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTExpression value = Expression();
                 ConsumeRightParenthesis();
                 Whitespace();
+
                 DMASTProcStatementSwitch.SwitchCase[] switchCases = SwitchCases();
 
                 if (switchCases == null) Error("Expected switch cases");
@@ -903,7 +906,9 @@ namespace OpenDreamShared.Compiler.DM {
             bool hasNewline = Newline();
 
             DMASTProcStatementSwitch.SwitchCase[] switchCases = BracedSwitchInner();
-            if (switchCases == null) switchCases = IndentedSwitchInner();
+
+            if(switchCases == null) switchCases = IndentedSwitchInner();
+
 
             if (switchCases == null && hasNewline) {
                 ReuseToken(beforeSwitchBlock);
@@ -913,7 +918,19 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] BracedSwitchInner() {
-            return null; //TODO: Braced switch blocks
+            if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
+                if (isIndented) Check(TokenType.DM_Dedent);
+                Newline();
+                Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+
+                return switchInner;
+            }
+
+            return null;
         }
 
         public DMASTProcStatementSwitch.SwitchCase[] IndentedSwitchInner() {
@@ -935,6 +952,7 @@ namespace OpenDreamShared.Compiler.DM {
                 do {
                     switchCases.Add(switchCase);
                     Newline();
+                    Whitespace();
                     switchCase = SwitchCase();
                 } while (switchCase != null);
             }
@@ -1959,6 +1977,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case "color": type |= DMValueType.Color; break;
                         case "file": type |= DMValueType.File; break;
                         case "unsafe": type |= DMValueType.Unsafe; break;
+                        case "command_text": type |= DMValueType.CommandText; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
                 } while (Check(TokenType.DM_Bar));

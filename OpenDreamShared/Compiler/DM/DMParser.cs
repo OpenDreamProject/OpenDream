@@ -759,7 +759,8 @@ namespace OpenDreamShared.Compiler.DM {
                     if (body == null) {
                         DMASTProcStatement statement = ProcStatement();
 
-                        if (statement == null) Error("Expected body or statement");
+                        //Loops without a body are valid DM
+                        if (statement == null) statement = new DMASTProcStatementContinue();
                         body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                     }
 
@@ -840,7 +841,9 @@ namespace OpenDreamShared.Compiler.DM {
 
                 if (body == null) {
                     DMASTProcStatement statement = ProcStatement();
-                    if (statement == null) Error("Expected statement");
+
+                    //Loops without a body are valid DM
+                    if (statement == null) statement = new DMASTProcStatementContinue();
 
                     body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }

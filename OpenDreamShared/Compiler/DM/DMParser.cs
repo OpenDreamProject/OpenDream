@@ -968,7 +968,17 @@ namespace OpenDreamShared.Compiler.DM {
                     BracketWhitespace();
 
                     DMASTExpression expression = Expression();
-                    if (expression == null) Error("Expected an expression");
+                    if (expression == null)
+                    {
+                        if (expressions.Count == 0)
+                        {
+                            Error("Expected an expression");
+                        }
+                        else //Eat a trailing comma if there's at least 1 expression
+                        {
+                            break;
+                        }
+                    }
 
                     if (Check(TokenType.DM_To)) {
                         Whitespace();

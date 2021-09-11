@@ -154,7 +154,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent) {
-                        Error("Expected end of statement");
+                        Error("Expected end of object statement");
                     }
 
                     return statement;
@@ -366,15 +366,33 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcBlockInner BracedProcBlock() {
             if (Check(TokenType.DM_LeftCurlyBracket)) {
+                DMASTProcBlockInner block;
+
                 Whitespace();
                 Newline();
-                bool isIndented = Check(TokenType.DM_Indent);
-                DMASTProcBlockInner procBlock = ProcBlockInner();
-                if (isIndented) Check(TokenType.DM_Dedent);
-                Newline();
-                Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                if (Current().Type == TokenType.DM_Indent) {
+                    block = IndentedProcBlock();
+                    Newline();
+                } else {
+                    List<DMASTProcStatement> statements = new();
 
-                return procBlock;
+                    do {
+                        List<DMASTProcStatement> blockInner = ProcBlockInner();
+                        if (blockInner != null) statements.AddRange(blockInner);
+
+                        if (!Check(TokenType.DM_RightCurlyBracket)) {
+                            Error("Expected end of proc statement", throwException: false);
+                            LocateNextStatement();
+                            Delimiter();
+                        } else {
+                            break;
+                        }
+                    } while (true);
+
+                    block = new DMASTProcBlockInner(statements.ToArray());
+                }
+
+                return block;
             }
 
             return null;
@@ -382,16 +400,28 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcBlockInner IndentedProcBlock() {
             if (Check(TokenType.DM_Indent)) {
-                DMASTProcBlockInner procBlock = ProcBlockInner();
-                Consume(TokenType.DM_Dedent, "Expected dedent");
+                List<DMASTProcStatement> statements = new();
 
-                return procBlock;
+                do {
+                    List<DMASTProcStatement> blockInner = ProcBlockInner();
+                    if (blockInner != null) statements.AddRange(blockInner);
+
+                    if (!Check(TokenType.DM_Dedent)) {
+                        Error("Expected end of proc statement", throwException: false);
+                        LocateNextStatement();
+                        Delimiter();
+                    } else {
+                        break;
+                    }
+                } while (true);
+
+                return new DMASTProcBlockInner(statements.ToArray());
             }
 
             return null;
         }
 
-        public DMASTProcBlockInner ProcBlockInner() {
+        public List<DMASTProcStatement> ProcBlockInner() {
             List<DMASTProcStatement> procStatements = new();
 
             DMASTProcStatement statement = null;
@@ -412,7 +442,7 @@ namespace OpenDreamShared.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
-            return new DMASTProcBlockInner(procStatements.ToArray());
+            return procStatements;
         }
 
         public DMASTProcStatement ProcStatement() {

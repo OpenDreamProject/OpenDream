@@ -1,7 +1,7 @@
 ﻿using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
-using Content.Shared.Json;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 

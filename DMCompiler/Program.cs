@@ -8,10 +8,10 @@ using System.Text.Json;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Compiler.DMPreprocessor;
-using Content.Shared.Json;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Compiler.DMPreprocessor;
+using OpenDreamShared.Json;
 
 namespace DMCompiler {
     public static class Program {
@@ -39,7 +39,7 @@ namespace DMCompiler {
             }
 
             bool successfulCompile = Compile(preprocessor.GetResult());
-            
+
             if (successfulCompile) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(CompiledFiles[0], "json");

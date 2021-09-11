@@ -1,8 +1,8 @@
 ﻿using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
-using Content.Shared.Dream.Procs;
-using Content.Shared.Json;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -242,7 +242,7 @@ namespace DMCompiler.DM {
         public void ContinueIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_continue");
         }
-        
+
         public void Goto(string label) {
             Jump(label + "_codelabel");
         }
@@ -475,6 +475,14 @@ namespace DMCompiler.DM {
 
         public void NotEqual() {
             WriteOpcode(DreamProcOpcode.CompareNotEquals);
+        }
+
+        public void Equivalent() {
+            WriteOpcode(DreamProcOpcode.CompareEquivalent);
+        }
+
+        public void NotEquivalent() {
+            WriteOpcode(DreamProcOpcode.CompareNotEquivalent);
         }
 
         public void GreaterThan() {

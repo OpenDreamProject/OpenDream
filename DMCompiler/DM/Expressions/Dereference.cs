@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z

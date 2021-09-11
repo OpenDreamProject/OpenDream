@@ -58,8 +58,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             try {
-                DMExpression expression = DMExpression.Create(_currentObject, null, varDefinition.Value, varDefinition.Type);
-                SetVariableValue(variable, expression);
+                SetVariableValue(variable, varDefinition.Value, varDefinition.Type);
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
@@ -86,9 +85,8 @@ namespace DMCompiler.DM.Visitors {
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
-                    DMExpression expression = DMExpression.Create(_currentObject, null, varOverride.Value, null);
 
-                    SetVariableValue(variable, expression);
+                    SetVariableValue(variable, varOverride.Value, null);
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
@@ -126,7 +124,9 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void SetVariableValue(DMVariable variable, DMExpression expression) {
+        private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
+            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
+
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewPath:
@@ -137,6 +137,7 @@ namespace DMCompiler.DM.Visitors {
                 case Expressions.ProcCall:
                     if (!variable.IsGlobal) throw new CompileErrorException($"Invalid initial value for \"{variable.Name}\"");
 
+                    variable.Value = new Expressions.Null();
                     EmitInitializationAssign(variable, expression);
                     break;
                 default:

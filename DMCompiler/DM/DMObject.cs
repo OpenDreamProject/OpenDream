@@ -108,14 +108,14 @@ namespace DMCompiler.DM {
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.Variables.Add(variable.Key, value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.Variables[variable.Key] = value.ToJsonRepresentation();
                 }
@@ -126,7 +126,7 @@ namespace DMCompiler.DM {
 
                 foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.GlobalVariables.Add(variable.Key, value.ToJsonRepresentation());
                 }

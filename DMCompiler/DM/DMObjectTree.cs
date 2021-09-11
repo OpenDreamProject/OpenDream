@@ -10,7 +10,7 @@ namespace DMCompiler.DM {
         public static Dictionary<DreamPath, DMObject> AllObjects = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
-        public static DMProc GlobalInitProc = null;
+        public static DMProc GlobalInitProc = new DMProc(null);
 
         private static List<Expressions.Assignment> _globalInitProcAssigns = new();
 
@@ -89,8 +89,6 @@ namespace DMCompiler.DM {
 
         public static void CreateGlobalInitProc() {
             if (_globalInitProcAssigns.Count == 0) return;
-
-            GlobalInitProc = new DMProc(null);
 
             DMObject root = GetDMObject(DreamPath.Root);
             foreach (Expressions.Assignment assign in _globalInitProcAssigns) {

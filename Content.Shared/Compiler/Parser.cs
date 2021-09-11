@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 
 namespace Content.Shared.Compiler {
-    public class Parser<SourceType> {
+    public partial class Parser<SourceType> {
         public List<CompilerError> Errors = new();
         public List<CompilerWarning> Warnings = new();
 
-        private Lexer<SourceType> _lexer;
+        protected Lexer<SourceType> _lexer;
         private Token _currentToken;
         private Stack<Token> _tokenStack = new();
 
@@ -26,12 +26,16 @@ namespace Content.Shared.Compiler {
                 _currentToken = _lexer.GetNextToken();
 
                 if (_currentToken.Type == TokenType.Error) {
-                    Error((string)_currentToken.Value);
+                    Error((string)_currentToken.Value, throwException: false);
                     Advance();
                 } else if (_currentToken.Type == TokenType.Warning) {
                     Warning((string)_currentToken.Value);
                     Advance();
                 }
+            }
+
+            if (_lookahead.Count > 0) {
+                _lookahead.Peek().Push(_currentToken);
             }
 
             return Current();
@@ -79,8 +83,11 @@ namespace Content.Shared.Compiler {
             Error(errorMessage);
         }
 
-        protected void Error(string message) {
-            Errors.Add(new CompilerError(_currentToken, message));
+        protected void Error(string message, bool throwException = true) {
+            CompilerError error = new CompilerError(_currentToken, message);
+
+            Errors.Add(error);
+            if (throwException) throw new CompileErrorException(error);
         }
 
         protected void Warning(string message) {

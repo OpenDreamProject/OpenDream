@@ -992,6 +992,14 @@ namespace Content.Server.DM {
             return null;
         }
 
+        public static ProcStatus? CompareEquivalent(DMProcState state) {
+            DreamValue second = state.PopDreamValue();
+            DreamValue first = state.PopDreamValue();
+
+            state.Push(new DreamValue(IsEquivalent(first, second) ? 1 : 0));
+            return null;
+        }
+
         public static ProcStatus? CompareGreaterThan(DMProcState state) {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
@@ -1039,6 +1047,14 @@ namespace Content.Server.DM {
             DreamValue first = state.PopDreamValue();
 
             state.Push(new DreamValue(IsEqual(first, second) ? 0 : 1));
+            return null;
+        }
+
+        public static ProcStatus? CompareNotEquivalent(DMProcState state) {
+            DreamValue second = state.PopDreamValue();
+            DreamValue first = state.PopDreamValue();
+
+            state.Push(new DreamValue(IsEquivalent(first, second) ? 0 : 1));
             return null;
         }
 
@@ -1581,6 +1597,24 @@ namespace Content.Server.DM {
             }
 
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
+        }
+
+        private static bool IsEquivalent(DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsDreamList(out var firstList) && second.TryGetValueAsDreamList(out var secondList))
+            {
+                if (firstList.GetLength() != secondList.GetLength()) return false;
+                var firstValues = firstList.GetValues();
+                var secondValues = secondList.GetValues();
+                for(var i = 0; i < firstValues.Count; i++)
+                {
+                    if (!firstValues[i].Equals(secondValues[i])) return false;
+                }
+
+                return true;
+            }
+
+
+            throw new NotImplementedException("Equivalence comparison for " + first + " and " + second + " is not implemented");
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

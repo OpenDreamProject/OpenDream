@@ -116,6 +116,7 @@
         DM_Switch,
         DM_Tilde,
         DM_TildeEquals,
+        DM_TildeExclamation,
         DM_To,
         DM_Var,
         DM_While,
@@ -164,7 +165,7 @@
         DMF_Window
     }
 
-    public class Token {
+    public partial class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;

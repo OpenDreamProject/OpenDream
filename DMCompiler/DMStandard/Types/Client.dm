@@ -14,6 +14,7 @@
 	var/pixel_y = 0
 	var/pixel_z = 0
 	var/pixel_w = 0
+	var/show_popup_menus = 1 //TODO
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
@@ -23,6 +24,7 @@
 	var/key
 	var/ckey
 	var/connection
+	var/computer_id = 0 //TODO
 
 	var/timezone
 
@@ -71,3 +73,7 @@
 
 	proc/Center()
 		//TODO: walk(usr, 0)
+	
+	proc/IsByondMember()
+		set opendream_unimplemented = TRUE
+		return FALSE

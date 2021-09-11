@@ -24,19 +24,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                     case '\t': token = CreateToken(TokenType.DM_Preproc_Whitespace, c); Advance(); break;
                     case '\\':
                     case '}':
-                    case '!':
-                    case '&':
-                    case '|':
-                    case '%':
-                    case '>':
-                    case '<':
-                    case '^':
-                    case ';':
-                    case '+':
-                    case '-':
-                    case '*':
-                    case '~':
-                    case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
@@ -45,34 +33,160 @@ namespace Content.Shared.Compiler.DMPreprocessor {
                     case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
-                    case '/': {
-                        if (Advance() == '/') {
-                            while (Advance() != '\n' && !AtEndOfSource) {
-                            }
-
-                            token = CreateToken(TokenType.Skip, "//");
-                        } else if (GetCurrent() == '*') {
-                            //Skip everything up to the "*/"
-                            Advance();
-                            while (true) {
-                                bool isStar = GetCurrent() == '*';
-
-                                if (isStar && Advance() == '/')
-                                {
+                    case '>': {
+                        switch (Advance()) {
+                            case '>': {
+                                if (Advance() == '=') {
                                     Advance();
-                                    while (GetCurrent() == ' ' || GetCurrent() == '\t')
-                                    {
-                                        Advance();
-                                    }
-                                    break;
-                                }
-                                else if (AtEndOfSource) return CreateToken(TokenType.Error, null, "Expected \"*/\" to end multiline comment");
-                                else if (!isStar) Advance();
-                            }
 
-                            token = CreateToken(TokenType.Skip, "/* */");
-                        } else {
-                            token = CreateToken(TokenType.DM_Preproc_Punctuator, c);
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, ">>=");
+                                } else {
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, ">>");
+                                }
+
+                                break;
+                            }
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, ">="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '>'); break;
+                        }
+
+                        break;
+                    }
+                    case '<': {
+                        switch (Advance()) {
+                            case '<': {
+                                if (Advance() == '=') {
+                                    Advance();
+
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, "<<=");
+                                } else {
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, "<<");
+                                }
+
+                                break;
+                            }
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "<="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '<'); break;
+                        }
+
+                        break;
+                    }
+                    case '|': {
+                        switch (Advance()) {
+                            case '|': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "||"); break;
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "|="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '|'); break;
+                        }
+
+                        break;
+                    }
+                    case '*': {
+                        switch (Advance()) {
+                            case '*': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "**"); break;
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "*="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '*'); break;
+                        }
+
+                        break;
+                    }
+                    case '+': {
+                        switch (Advance()) {
+                            case '+': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "++"); break;
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "+="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '+'); break;
+                        }
+
+                        break;
+                    }
+                    case '&': {
+                        switch (Advance()) {
+                            case '&': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&"); break;
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '&'); break;
+                        }
+
+                        break;
+                    }
+                    case '~': {
+                        switch (Advance()) {
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "~="); break;
+                            case '!': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "~!"); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '~'); break;
+                        }
+
+                        break;
+                    }
+                    case '%': {
+                        switch (Advance()) {
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "%="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '%'); break;
+                        }
+
+                        break;
+                    }
+                    case '^': {
+                        switch (Advance()) {
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "^="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '^'); break;
+                        }
+
+                        break;
+                    }
+                    case '!': {
+                        switch (Advance()) {
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "!="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '!'); break;
+                        }
+
+                        break;
+                    }
+                    case '=': {
+                        switch (Advance()) {
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "=="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '='); break;
+                        }
+
+                        break;
+                    }
+                    case '-': {
+                        switch (Advance()) {
+                            case '-': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "--"); break;
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "-="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '-'); break;
+                        }
+
+                        break;
+                    }
+                    case '/': {
+                        switch (Advance()) {
+                            case '/': {
+                                while (Advance() != '\n' && !AtEndOfSource) {
+                                }
+
+                                token = CreateToken(TokenType.Skip, "//");
+                                break;
+                            }
+                            case '*': {
+                                //Skip everything up to the "*/"
+                                Advance();
+                                while (true) {
+                                    bool isStar = GetCurrent() == '*';
+
+                                    if (isStar && Advance() == '/') {
+                                        Advance();
+                                        while (GetCurrent() == ' ' || GetCurrent() == '\t') {
+                                            Advance();
+                                        }
+                                        break;
+                                    } else if (AtEndOfSource) return CreateToken(TokenType.Error, null, "Expected \"*/\" to end multiline comment");
+                                    else if (!isStar) Advance();
+                                }
+
+                                token = CreateToken(TokenType.Skip, "/* */");
+                                break;
+                            }
+                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "/="); break;
+                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                         }
 
                         break;
@@ -83,6 +197,7 @@ namespace Content.Shared.Compiler.DMPreprocessor {
 
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
+
                         do {
                             c = Advance();
 

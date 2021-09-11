@@ -73,6 +73,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 IncludedInterface = fullIncludePath;
                                 break;
                             }
+                            case ".dms": {
+                                // Webclient interface file. Probably never gonna be supported so just ignore them.
+                                break;
+                            }
                             default: {
                                 IncludeFile(includePath, fullIncludePath);
                                 break;
@@ -283,7 +287,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 EmitErrorToken(token, "Cannot use a preprocessor directive here");
                 return false;
             }
-                
+
             if (!_isCurrentLineWhitespaceOnly) {
                 EmitErrorToken(token, "There can only be whitespace before a preprocessor directive");
                 return false;

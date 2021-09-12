@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -228,6 +229,11 @@ namespace OpenDreamShared.Dream {
             }
 
             Elements = Elements[..writeIdx];
+        }
+
+        public bool IsList()
+        {
+            return PathString.Contains("list/", StringComparison.Ordinal);
         }
     }
 }

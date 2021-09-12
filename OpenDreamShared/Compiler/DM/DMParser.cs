@@ -108,11 +108,11 @@ namespace OpenDreamShared.Compiler.DM {
                         while (true) {
                             Whitespace();
 
-                            DMASTExpression value;
+                            DMASTExpression value = null;
                             if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
                             {
                                 //Type information
-                                if (varPath.FindElement("list") != 0)
+                                if (!varPath.IsList())
                                 {
                                     var idx = varPath.PathString.IndexOf("var/", StringComparison.Ordinal) + 4;
                                     varPath.PathString = varPath.PathString.Insert(idx, "list/");
@@ -126,18 +126,14 @@ namespace OpenDreamShared.Compiler.DM {
                                     value = new DMASTNewPath(new DMASTPath(DreamPath.List),
                                         new[] {new DMASTCallParameter(size)});
                                 }
-                                else
-                                {
-                                    value = new DMASTConstantNull();
-                                }
                             }
-                            else if (Check(TokenType.DM_Equals)) {
+                            if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
-                            } else {
-                                value = new DMASTConstantNull();
                             }
+
+                            if (value == null) value = new DMASTConstantNull();
 
                             AsTypes();
 
@@ -518,7 +514,7 @@ namespace OpenDreamShared.Compiler.DM {
                     //TODO: Multidimensional lists
                     if (Check(TokenType.DM_LeftBracket)) {
                         //Type information
-                        if (varPath.Path.FindElement("list") != 0) {
+                        if (varPath is not null && !varPath.Path.IsList()) {
                             varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
                         }
 

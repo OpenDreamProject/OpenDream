@@ -50,7 +50,7 @@ proc/filter(...)
 		"angular_blur" = list("x", "y", "size"),
 		"bloom" = list("threshold", "size", "offset", "alpha"),
 		"color" = list("space"),
-		"displace = list("x", "y", "size", "icon", "render_source"),
+		"displace" = list("x", "y", "size", "icon", "render_source"),
 		"layer" = list("x", "y", "render_source", "flags", "color", "transform", "blend_mode"),
 		"motion_blur" = list("x", "y"),
 		"outline" = list("size", "color", "flags"),

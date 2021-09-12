@@ -215,7 +215,6 @@ namespace DMCompiler.DM.Visitors {
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null)
                     {
-
                         //This is terrible but temporary
                         //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
                         var obj = DMObjectTree.GetDMObject(new DreamPath(varDeclaration.Type.ToString()));

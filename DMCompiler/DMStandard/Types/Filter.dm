@@ -1,45 +1,100 @@
 /__filter
 	var/type
 
+	New(type, ...)
+		CRASH("This filter type [type] is not implemented yet.")
+
+/__filter/blur
 	var/size
 
+/__filter/outline
+	var/size
+	var/color
+	var/flag
+
+/__filter/drop_shadow
+	var/x
+	var/y
+	var/size
+	var/offset
 	var/color
 
+/__filter/alpha
+	var/x
+	var/y
+	var/size
+	var/offset
+	var/color
+
+/__filter/angular_blur
+	var/x
+	var/y
+	var/size
+
+/__filter/bloom
+	var/threshold
+	var/size
+	var/offset
+	var/color
+
+/__filter/color
+	var/space
+
+/__filter/displace
+	var/x
+	var/y
+	var/size
+	var/icon/icon
+	var/render_source
+
+/__filter/layer
+	var/x
+	var/y
+	var/render_source
+	var/flags
+	var/color
+	var/transform
+	var/blend_mode
+
+/__filter/motion_blur
 	var/x
 	var/y
 
-	var/offset
-
+/__filter/outline
+	var/size
+	var/color
 	var/flags
 
-	var/border
+/__filter/radial_blur
+	var/x
+	var/y
+	var/size
 
-	var/render_source
-
-	var/icon
-
-	var/space
-
-	var/transform
-
-	var/blend_mode
-
+/__filter/rays
+	var/x
+	var/y
+	var/size
+	var/color
+	var/offset
 	var/density
-
 	var/threshold
-
 	var/factor
+	var/flags
 
+/__filter/ripple
+	var/x
+	var/y
 	var/repeat
-
 	var/radius
-
 	var/falloff
+	var/flags
 
-	var/alpha
-
-	New(type, ...)
-		CRASH("This filter type [type] is not implemented yet.")
+/__filter/wave
+	var/x
+	var/y
+	var/size
+	var/offset
+	var/flags
 
 proc/filter(...)
 	var/list/accepted_filter_types = list(
@@ -55,7 +110,7 @@ proc/filter(...)
 		"motion_blur" = list("x", "y"),
 		"outline" = list("size", "color", "flags"),
 		"radial_blur" = list("x", "y", "size"),
-		"rays" = list("x", "y", "size", "color", "offset", "density", "theshold", "factor", "flags"),
+		"rays" = list("x", "y", "size", "color", "offset", "density", "threshold", "factor", "flags"),
 		"ripple" = list("x", "y", "repeat", "radius", "falloff", "flags"),
 		"wave" = list("x", "y", "size", "offset", "flags"),
 	)

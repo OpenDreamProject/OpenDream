@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -228,16 +229,6 @@ namespace OpenDreamShared.Dream {
             }
 
             Elements = Elements[..writeIdx];
-        }
-
-        public bool IsAtom()
-        {
-            if (IsDescendantOf(new DreamPath("/mob")) || IsDescendantOf(new DreamPath("/obj")) || IsDescendantOf(new DreamPath("/turf")) || IsDescendantOf(new DreamPath("/area")))
-            {
-                return true;
-            }
-
-            return false;
         }
     }
 }

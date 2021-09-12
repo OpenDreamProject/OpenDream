@@ -1553,11 +1553,5 @@ namespace OpenDreamRuntime.Procs.Native {
             connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
         }
-
-        [DreamProc("filter")]
-        [DreamProcParameter("type", Type = DreamValueType.String)]
-        [DreamProcParameter("size", Type = DreamValueType.String)]
-        [DreamProcParameter("color", Type = DreamValueType.String)]
-        [DreamProcParameter("color", Type = DreamValueType.String)]
     }
 }

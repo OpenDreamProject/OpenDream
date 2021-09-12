@@ -16,6 +16,8 @@
 	var/matrix/transform
 	var/override = 1 //TODO
 
+	var/list/filters = list()
+
 	New(icon, loc, icon_state, layer, dir)
 		src.icon = icon
 		if (!istext(loc))

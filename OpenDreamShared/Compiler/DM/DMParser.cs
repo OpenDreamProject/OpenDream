@@ -812,6 +812,12 @@ namespace OpenDreamShared.Compiler.DM {
                     //Implicit "in world"
                     if (rangeBegin is DMASTConstantNull && rangeEnd is null && defaultStep)
                     {
+                        var path = new DreamPath(variableDeclaration.Type.ToString());
+                        if (!path.IsAtom())
+                        {
+                            //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
+                            Warning("Implicit 'in world' loops currently only support ATOM types.");
+                        }
                         return new DMASTProcStatementForList(initializer, variable, new DMASTIdentifier("world"), GetForBody());
                     }
 

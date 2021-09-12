@@ -8,7 +8,7 @@ namespace OpenDreamShared.Compiler.DM {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
-            "\\", "\"", "'",
+            "\\", " ", "\"", "'",
             "<", ">",
 
             "icon",
@@ -53,7 +53,6 @@ namespace OpenDreamShared.Compiler.DM {
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
             { "spawn", TokenType.DM_Spawn },
-            { "list", TokenType.DM_List },
             { "newlist", TokenType.DM_NewList },
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step }
@@ -182,6 +181,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
                                 case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
                                 case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
+                                case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
                                 case "&": token = CreateToken(TokenType.DM_And, c); break;
                                 case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
                                 case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;

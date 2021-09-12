@@ -50,7 +50,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         string filePath = Path.Combine(includePath, fullIncludePath);
 
                         if (!File.Exists(filePath)) {
-                            EmitWarningToken(token, $"Could not find included file \"{fullIncludePath}\"");
+                            EmitErrorToken(token, $"Could not find included file \"{fullIncludePath}\"");
                             break;
                         }
 
@@ -71,6 +71,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 }
 
                                 IncludedInterface = fullIncludePath;
+                                break;
+                            }
+                            case ".dms": {
+                                // Webclient interface file. Probably never gonna be supported so just ignore them.
                                 break;
                             }
                             default: {
@@ -153,6 +157,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                                     if (parameters == null) {
                                         _currentLine.Add(token);
+                                        _isCurrentLineWhitespaceOnly = false;
 
                                         break;
                                     }
@@ -282,7 +287,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 EmitErrorToken(token, "Cannot use a preprocessor directive here");
                 return false;
             }
-                
+
             if (!_isCurrentLineWhitespaceOnly) {
                 EmitErrorToken(token, "There can only be whitespace before a preprocessor directive");
                 return false;
@@ -355,15 +360,16 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 return parameters;
             }
 
+            _unprocessedTokens.Push(leftParenToken);
             return null;
         }
 
         private void EmitErrorToken(Token token, string errorMessage) {
-            _result.Add(new Token(TokenType.Error, token.Text, token.SourceFile, token.Line, token.Column, errorMessage));
+            _result.Add(new Token(TokenType.Error, String.Empty, token.SourceFile, token.Line, token.Column, errorMessage));
         }
 
         private void EmitWarningToken(Token token, string warningMessage) {
-            _result.Add(new Token(TokenType.Warning, token.Text, token.SourceFile, token.Line, token.Column, warningMessage));
+            _result.Add(new Token(TokenType.Warning, String.Empty, token.SourceFile, token.Line, token.Column, warningMessage));
         }
     }
 }

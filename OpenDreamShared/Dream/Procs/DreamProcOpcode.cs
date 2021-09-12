@@ -88,7 +88,9 @@ namespace OpenDreamShared.Dream.Procs {
         PickUnweighted = 0x54,
         PickWeighted = 0x55,
         Increment = 0x56,
-        Decrement = 0x57
+        Decrement = 0x57,
+        CompareEquivalent = 0x58,
+        CompareNotEquivalent = 0x59
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -114,7 +116,9 @@ namespace OpenDreamShared.Dream.Procs {
         Area = 0x80,
         Color = 0x100,
         File = 0x200,
-        Unsafe = 0x400,
-        CommandText = 0x800
+        CommandText = 0x400,
+        Sound = 0x800,
+        Icon = 0x1000,
+        Unsafe = 0x2000
     }
 }

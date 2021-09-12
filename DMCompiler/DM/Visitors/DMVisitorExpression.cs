@@ -340,6 +340,18 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NotEqual(lhs, rhs);
         }
 
+        public void VisitEquivalent(DMASTEquivalent equivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, equivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, equivalent.B, _inferredPath);
+            Result = new Expressions.Equivalent(lhs, rhs);
+        }
+
+        public void VisitNotEquivalent(DMASTNotEquivalent notEquivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, notEquivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, notEquivalent.B, _inferredPath);
+            Result = new Expressions.NotEquivalent(lhs, rhs);
+        }
+
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
             var lhs = DMExpression.Create(_dmObject, _proc, greaterThan.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, greaterThan.B, _inferredPath);

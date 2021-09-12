@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -65,6 +65,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
         public void VisitEqual(DMASTEqual equal) { throw new NotImplementedException(); }
         public void VisitNotEqual(DMASTNotEqual notEqual) { throw new NotImplementedException(); }
+        public void VisitEquivalent(DMASTEquivalent equivalent) { throw new NotImplementedException(); }
+        public void VisitNotEquivalent(DMASTNotEquivalent notEquivalent) { throw new NotImplementedException(); }
         public void VisitLessThan(DMASTLessThan lessThan) { throw new NotImplementedException(); }
         public void VisitLessThanOrEqual(DMASTLessThanOrEqual lessThanOrEqual) { throw new NotImplementedException(); }
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) { throw new NotImplementedException(); }
@@ -241,7 +243,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
             int varElementIndex = path.FindElement("var");
-            if (varElementIndex == -1) throw new Exception("Var definition's path (" + path + ") did not contain a var element");
+            if (varElementIndex == -1) throw new Exception($"Var definition's path ({path}) did not contain a var element");
 
             DreamPath varPath = path.FromElements(varElementIndex + 1, -1);
 
@@ -1004,6 +1006,32 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitNotEqual(this);
+        }
+    }
+
+    public class DMASTEquivalent : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTEquivalent(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitEquivalent(this);
+        }
+    }
+
+    public class DMASTNotEquivalent : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTNotEquivalent(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitNotEquivalent(this);
         }
     }
 

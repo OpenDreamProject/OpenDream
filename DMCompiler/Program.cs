@@ -33,7 +33,7 @@ namespace DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string output = Path.ChangeExtension(CompiledFiles[0], "dm") ?? Path.Join(System.AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
+                string output = Path.Join(Path.GetDirectoryName(CompiledFiles?[0]) ?? AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
                 File.WriteAllText(output, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {output}");
             }

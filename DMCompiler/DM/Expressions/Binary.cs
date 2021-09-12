@@ -259,6 +259,32 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // x ~= y
+    class Equivalent : BinaryOp {
+        public Equivalent(DMExpression lhs, DMExpression rhs)
+            : base(lhs, rhs)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            LHS.EmitPushValue(dmObject, proc);
+            RHS.EmitPushValue(dmObject, proc);
+            proc.Equivalent();
+        }
+    }
+
+    // x ~! y
+    class NotEquivalent : BinaryOp {
+        public NotEquivalent(DMExpression lhs, DMExpression rhs)
+            : base(lhs, rhs)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            LHS.EmitPushValue(dmObject, proc);
+            RHS.EmitPushValue(dmObject, proc);
+            proc.NotEquivalent();
+        }
+    }
+
     // x > y
     class GreaterThan : BinaryOp {
         public GreaterThan(DMExpression lhs, DMExpression rhs)

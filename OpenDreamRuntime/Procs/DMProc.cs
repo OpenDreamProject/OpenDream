@@ -119,7 +119,9 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.PickUnweighted,
             DMOpcodeHandlers.PickWeighted,
             DMOpcodeHandlers.Increment,
-            DMOpcodeHandlers.Decrement
+            DMOpcodeHandlers.Decrement,
+            DMOpcodeHandlers.CompareEquivalent,
+            DMOpcodeHandlers.CompareNotEquivalent
         };
         #endregion
 

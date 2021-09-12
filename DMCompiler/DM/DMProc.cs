@@ -522,6 +522,14 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CompareNotEquals);
         }
 
+        public void Equivalent() {
+            WriteOpcode(DreamProcOpcode.CompareEquivalent);
+        }
+
+        public void NotEquivalent() {
+            WriteOpcode(DreamProcOpcode.CompareNotEquivalent);
+        }
+
         public void GreaterThan() {
             WriteOpcode(DreamProcOpcode.CompareGreaterThan);
         }

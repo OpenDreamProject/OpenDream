@@ -79,7 +79,6 @@
         DM_LeftShiftEquals,
         DM_LessThan,
         DM_LessThanEquals,
-        DM_List,
         DM_Minus,
         DM_MinusEquals,
         DM_MinusMinus,

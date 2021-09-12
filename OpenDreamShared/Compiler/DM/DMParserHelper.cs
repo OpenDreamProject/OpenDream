@@ -37,5 +37,13 @@
                 Error("Expected ')'");
             }
         }
+
+        private void ConsumeRightBracket() {
+            //Similar to ConsumeRightParenthesis()
+            if (!Check(TokenType.DM_RightBracket)) {
+                ((DMLexer)_lexer).BracketNesting--;
+                Error("Expected ']'");
+            }
+        }
     }
 }

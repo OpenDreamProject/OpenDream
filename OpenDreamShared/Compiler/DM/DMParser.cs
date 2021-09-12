@@ -210,7 +210,6 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Identifier,
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
-                TokenType.DM_List,
                 TokenType.DM_NewList,
                 TokenType.DM_Step
             };
@@ -532,7 +531,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                         Whitespace();
                         DMASTExpression size = Expression();
-                        Consume(TokenType.DM_RightBracket, "Expected ']'");
+                        ConsumeRightBracket();
                         Whitespace();
 
                         if (size is not null) {
@@ -1199,7 +1198,7 @@ namespace OpenDreamShared.Compiler.DM {
                     DMASTExpression expression = Expression();
                     if (expression != null && expression is not DMASTExpressionConstant) Error("Expected a constant expression");
                     Whitespace();
-                    Consume(TokenType.DM_RightBracket, "Expected ']'");
+                    ConsumeRightBracket();
                 }
 
                 DMASTExpression value = null;
@@ -1595,7 +1594,7 @@ namespace OpenDreamShared.Compiler.DM {
             while (Check(TokenType.DM_LeftBracket)) {
                 Whitespace();
                 DMASTExpression index = Expression();
-                Consume(TokenType.DM_RightBracket, "Expected ']'");
+                ConsumeRightBracket();
                 Whitespace();
 
                 expression = new DMASTListIndex(expression, index);
@@ -1695,6 +1694,10 @@ namespace OpenDreamShared.Compiler.DM {
 
                             if (callParameters != null) {
                                 switch (identifier.Identifier) {
+                                    case "list": {
+                                        primary = new DMASTList(callParameters);
+                                        break;
+                                    }
                                     case "input": {
                                         Whitespace();
                                         DMValueType types = AsTypes(defaultType: DMValueType.Text);
@@ -1824,13 +1827,6 @@ namespace OpenDreamShared.Compiler.DM {
                     if (procParameters == null) Error("Expected proc parameters");
 
                     primary = new DMASTCall(callParameters, procParameters);
-                }
-
-                if (primary == null && Check(TokenType.DM_List)) {
-                    Whitespace();
-                    DMASTCallParameter[] values = ProcCall(false);
-
-                    primary = new DMASTList(values);
                 }
 
                 if (primary == null && Check(TokenType.DM_NewList)) {

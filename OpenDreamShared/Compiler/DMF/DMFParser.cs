@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFParser : Parser<char> {
-        public static readonly List<TokenType> ValidAttributeValueTypes = new() {
+        public static readonly TokenType[] ValidAttributeValueTypes = {
             TokenType.DMF_None,
             TokenType.DMF_String,
             TokenType.DMF_Integer,

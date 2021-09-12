@@ -82,7 +82,7 @@ namespace OpenDreamShared.Compiler {
             switch (c) {
                 case '\n': token = CreateToken(TokenType.Newline, c); Advance(); break;
                 case '\0': token = CreateToken(TokenType.EndOfFile, c); Advance(); break;
-                default: token = CreateToken(TokenType.Unknown, c); break;
+                default: token = null; break;
             }
 
             return token;

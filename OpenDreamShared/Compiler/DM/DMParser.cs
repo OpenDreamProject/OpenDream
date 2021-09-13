@@ -454,7 +454,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 return new DMASTProcStatementExpression(expression);
             } else {
-                DMASTProcStatement procStatement = ProcVarDeclaration(out _);
+                DMASTProcStatement procStatement = ProcVarDeclaration();
                 if (procStatement == null) procStatement = Return();
                 if (procStatement == null) procStatement = Break();
                 if (procStatement == null) procStatement = Continue();
@@ -477,11 +477,9 @@ namespace OpenDreamShared.Compiler.DM {
             }
         }
 
-        public DMASTProcStatement ProcVarDeclaration(out bool explicitValue, bool allowMultiple = true) {
+        public DMASTProcStatement ProcVarDeclaration(bool allowMultiple = true) {
             Token firstToken = Current();
             bool wasSlash = Check(TokenType.DM_Slash);
-
-            explicitValue = false;
 
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
@@ -518,13 +516,13 @@ namespace OpenDreamShared.Compiler.DM {
 
                         Whitespace();
                         value = Expression();
-                        explicitValue = true;
+
                         if (value == null) Error("Expected an expression");
                     }
 
                     AsTypes();
 
-                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value ?? new DMASTConstantNull()));
+                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
                     if (allowMultiple && Check(TokenType.DM_Comma)) {
                         Whitespace();
                         varPath = Path();
@@ -712,7 +710,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTProcStatement initializer = null;
                 DMASTIdentifier variable;
 
-                DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration(out bool explicitValue, allowMultiple: false) as DMASTProcStatementVarDeclaration;
+                DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration(allowMultiple: false) as DMASTProcStatementVarDeclaration;
                 if (variableDeclaration != null) {
                     initializer = variableDeclaration;
                     variable = new DMASTIdentifier(variableDeclaration.Name);
@@ -734,11 +732,8 @@ namespace OpenDreamShared.Compiler.DM {
                 AsTypes(); //TODO: Correctly handle
                 Whitespace();
 
-                var implicitLoop = true;
-
                 if (Check(TokenType.DM_In))
                 {
-                    implicitLoop = false;
                     Whitespace();
                     DMASTExpression enumerateValue = Expression();
                     DMASTExpression toValue = null;
@@ -792,14 +787,14 @@ namespace OpenDreamShared.Compiler.DM {
                 } else if (variableDeclaration != null) {
                     DMASTExpression rangeBegin = variableDeclaration.Value;
                     Whitespace();
-                    if (explicitValue)
+                    if (variableDeclaration.Value is not null)
                     {
                         Consume(TokenType.DM_To, "Expected 'to'");
                     }
 
                     Whitespace();
                     DMASTExpression rangeEnd = Expression();
-                    if (explicitValue && rangeEnd == null) Error("Expected an expression");
+                    if (variableDeclaration.Value is not null && rangeEnd == null) Error("Expected an expression");
                     DMASTExpression step = new DMASTConstantInteger(1);
 
                     var defaultStep = true;
@@ -817,7 +812,7 @@ namespace OpenDreamShared.Compiler.DM {
                     Newline();
 
                     //Implicit "in world"
-                    if (!explicitValue && rangeEnd is null && defaultStep)
+                    if (variableDeclaration.Value is null && rangeEnd is null && defaultStep)
                     {
                         return new DMASTProcStatementForList(initializer, variable, new DMASTIdentifier("world"), GetForBody());
                     }

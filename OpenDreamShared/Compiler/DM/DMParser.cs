@@ -108,14 +108,31 @@ namespace OpenDreamShared.Compiler.DM {
                         while (true) {
                             Whitespace();
 
-                            DMASTExpression value;
+                            DMASTExpression value = null;
+                            if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
+                            {
+                                //Type information
+                                if (!varPath.IsDescendantOf(DreamPath.List))
+                                {
+                                    varPath = DreamPath.List.AddToPath(varPath.PathString);
+                                }
+
+                                DMASTExpression size = Expression();
+                                Consume(TokenType.DM_RightBracket, "Expected ']'");
+
+                                if (size is not null)
+                                {
+                                    value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                                        new[] {new DMASTCallParameter(size)});
+                                }
+                            }
                             if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
-                            } else {
-                                value = new DMASTConstantNull();
                             }
+
+                            if (value == null) value = new DMASTConstantNull();
 
                             AsTypes();
 
@@ -525,7 +542,7 @@ namespace OpenDreamShared.Compiler.DM {
                     //TODO: Multidimensional lists
                     if (Check(TokenType.DM_LeftBracket)) {
                         //Type information
-                        if (varPath.Path.FindElement("list") != 0) {
+                        if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
                             varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
                         }
 

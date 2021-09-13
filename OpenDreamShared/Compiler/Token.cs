@@ -123,6 +123,8 @@
         DM_Whitespace,
         DM_Xor,
         DM_XorEquals,
+        DM_Try,
+        DM_Catch,
 
         //DMF
         DMF_Attribute,

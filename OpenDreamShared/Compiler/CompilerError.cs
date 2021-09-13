@@ -13,6 +13,7 @@ namespace OpenDreamShared.Compiler {
             Token = token;
             Message = message;
             StackTrace = new StackTrace(true);
+            throw new Exception(message);
         }
 
         public override string ToString() {

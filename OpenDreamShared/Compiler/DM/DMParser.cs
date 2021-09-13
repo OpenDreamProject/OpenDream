@@ -513,6 +513,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (procStatement == null) procStatement = While();
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
+                if (procStatement == null) procStatement = TryCatch();
 
                 if (procStatement != null) {
                     Whitespace();
@@ -1081,6 +1082,45 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 return new DMASTProcStatementSwitch.SwitchCaseDefault(body);
+            }
+
+            return null;
+        }
+
+        public DMASTProcStatementTryCatch TryCatch() {
+            if (Check(TokenType.DM_Try)) {
+                DMASTProcBlockInner tryBody = ProcBlock();
+                if (tryBody == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    if (statement == null) Error("Expected body or statement");
+                    tryBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                Newline();
+                Consume(TokenType.DM_Catch, "Expected catch");
+
+                // catch(var/exception/E)
+                // TODO: handle correctly
+                DMASTDefinitionParameter[] parameters = null;
+                if (Check(TokenType.DM_LeftParenthesis))
+                {
+                    BracketWhitespace();
+                    parameters = DefinitionParameters();
+                    BracketWhitespace();
+                    ConsumeRightParenthesis();
+                    Whitespace();
+                }
+
+                DMASTProcBlockInner catchBody = ProcBlock();
+                if (catchBody == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    //if (statement == null) Error("Expected body or statement");
+                    catchBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                return new DMASTProcStatementTryCatch(tryBody, catchBody, parameters);
             }
 
             return null;

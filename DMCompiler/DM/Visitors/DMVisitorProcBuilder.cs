@@ -379,5 +379,52 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
         }
+
+        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+            string catchLabel = _proc.NewLabelName();
+            string endLabel = _proc.NewLabelName();
+
+            //_proc.JumpIfFalse(elseLabel);
+
+            _proc.StartScope();
+            tryCatch.TryBody.Visit(this);
+            _proc.EndScope();
+            _proc.Jump(endLabel);
+
+            if (tryCatch.CatchParameters != null)
+            {
+                foreach (DMASTDefinitionParameter parameter in tryCatch.CatchParameters) {
+                    string parameterName = parameter.Name;
+
+                    _proc.AddLocalVariable(parameterName, parameter.ObjectType);
+                    if (parameter.Value != null) {
+                        string afterDefaultValueCheck = _proc.NewLabelName();
+
+                        _proc.PushLocalVariable(parameterName);
+                        _proc.IsNull();
+                        _proc.JumpIfFalse(afterDefaultValueCheck);
+
+                        _proc.PushLocalVariable(parameterName);
+                        try {
+                            DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
+                        } catch (CompileErrorException e) {
+                            Program.Error(e.Error);
+                        }
+                        _proc.Assign();
+
+                        _proc.AddLabel(afterDefaultValueCheck);
+                    }
+                }
+            }
+
+            _proc.AddLabel(catchLabel);
+            _proc.StartScope();
+            tryCatch.CatchBody.Visit(this);
+            _proc.EndScope();
+            _proc.AddLabel(endLabel);
+
+            //_proc.ResolveLabels();
+
+        }
     }
 }

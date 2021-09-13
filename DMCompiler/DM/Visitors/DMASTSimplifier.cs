@@ -166,6 +166,18 @@ namespace DMCompiler.DM.Visitors {
                 varDeclaration.Visit(this);
             }
         }
+
+        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+            if (tryCatch.CatchParameters is not null)
+            {
+                foreach (DMASTDefinitionParameter parameter in tryCatch.CatchParameters) {
+                    SimplifyExpression(ref parameter.Value);
+                }
+            }
+
+            tryCatch.TryBody.Visit(this);
+            tryCatch.CatchBody.Visit(this);
+        }
         #endregion Procs
 
         private void SimplifyExpression(ref DMASTExpression expression) {
@@ -230,7 +242,7 @@ namespace DMCompiler.DM.Visitors {
                 switch (negate.Expression) {
                     case DMASTConstantInteger exprInteger: expression = new DMASTConstantInteger(-exprInteger.Value); break;
                     case DMASTConstantFloat exprFloat: expression = new DMASTConstantFloat(-exprFloat.Value); break;
-                } 
+                }
 
                 return;
             }

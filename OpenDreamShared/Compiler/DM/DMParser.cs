@@ -1233,7 +1233,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (expression != null) {
                 Token token = Current();
-                TokenType[] assignTypes = new TokenType[] {
+                ReadOnlySpan<TokenType> assignTypes = new TokenType[] {
                     TokenType.DM_Equals,
                     TokenType.DM_PlusEquals,
                     TokenType.DM_MinusEquals,
@@ -1411,7 +1411,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new TokenType[] {
                     TokenType.DM_LessThan,
                     TokenType.DM_LessThanEquals,
                     TokenType.DM_GreaterThan,
@@ -1440,7 +1440,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new TokenType[] {
                     TokenType.DM_Plus,
                     TokenType.DM_Minus,
                 };
@@ -1467,7 +1467,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new[] {
                     TokenType.DM_Star,
                     TokenType.DM_Slash,
                     TokenType.DM_Modulus

@@ -112,7 +112,7 @@ namespace OpenDreamShared.Compiler.DM {
                             if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
                             {
                                 //Type information
-                                if (!varPath.IsList())
+                                if (!varPath.IsDescendantOf(DreamPath.List))
                                 {
                                     var idx = varPath.PathString.IndexOf("var/", StringComparison.Ordinal) + 4;
                                     varPath.PathString = varPath.PathString.Insert(idx, "list/");

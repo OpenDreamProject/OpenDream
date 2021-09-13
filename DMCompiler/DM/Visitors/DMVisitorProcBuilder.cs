@@ -218,8 +218,7 @@ namespace DMCompiler.DM.Visitors {
                         //This is terrible but temporary
                         //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
                         var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
-                        var list = statementForList.List as DMASTIdentifier;
-                        if (list is not null && list.Identifier == "world" && !obj.IsSubtypeOf(new DreamPath("atom/")))
+                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
                         {
                             var warn = new CompilerWarning(null, "Cannot currently loop 'in world' for non-ATOM types");
                             Program.Warning(warn);

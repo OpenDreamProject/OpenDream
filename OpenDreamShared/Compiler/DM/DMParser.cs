@@ -114,8 +114,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 //Type information
                                 if (!varPath.IsDescendantOf(DreamPath.List))
                                 {
-                                    var idx = varPath.PathString.IndexOf("var/", StringComparison.Ordinal) + 4;
-                                    varPath.PathString = varPath.PathString.Insert(idx, "list/");
+                                    varPath = DreamPath.List.AddToPath(varPath.PathString);
                                 }
 
                                 DMASTExpression size = Expression();

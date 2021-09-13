@@ -217,7 +217,7 @@ namespace DMCompiler.DM.Visitors {
                     {
                         //This is terrible but temporary
                         //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
-                        var obj = DMObjectTree.GetDMObject(new DreamPath(varDeclaration.Type.ToString()));
+                        var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
                         var list = statementForList.List as DMASTIdentifier;
                         if (list is not null && list.Identifier == "world" && !obj.IsSubtypeOf(new DreamPath("atom/")))
                         {

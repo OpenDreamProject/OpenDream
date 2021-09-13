@@ -817,7 +817,7 @@ namespace OpenDreamShared.Compiler.DM {
                     Newline();
 
                     //Implicit "in world"
-                    if (rangeBegin is DMASTConstantNull && rangeEnd is null && defaultStep)
+                    if (!explicitValue && rangeEnd is null && defaultStep)
                     {
                         return new DMASTProcStatementForList(initializer, variable, new DMASTIdentifier("world"), GetForBody());
                     }

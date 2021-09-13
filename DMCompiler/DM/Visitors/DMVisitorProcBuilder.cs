@@ -1,6 +1,7 @@
 ﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using System.Collections.Generic;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorProcBuilder : DMASTVisitor {
@@ -212,7 +213,16 @@ namespace DMCompiler.DM.Visitors {
                     _proc.BreakIfFalse();
 
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
-                    if (varDeclaration != null && varDeclaration.Type != null) {
+                    if (varDeclaration != null && varDeclaration.Type != null)
+                    {
+                        //This is terrible but temporary
+                        //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
+                        var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
+                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
+                        {
+                            var warn = new CompilerWarning(null, "Cannot currently loop 'in world' for non-ATOM types");
+                            Program.Warning(warn);
+                        }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
                         _proc.PushPath(varDeclaration.Type.Value);
                         _proc.IsType();

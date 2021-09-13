@@ -230,10 +230,5 @@ namespace OpenDreamShared.Dream {
 
             Elements = Elements[..writeIdx];
         }
-
-        public bool IsList()
-        {
-            return PathString.Contains("list/", StringComparison.Ordinal);
-        }
     }
 }

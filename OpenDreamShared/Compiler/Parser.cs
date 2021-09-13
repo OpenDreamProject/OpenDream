@@ -57,7 +57,7 @@ namespace OpenDreamShared.Compiler {
             return false;
         }
 
-        protected bool Check(IEnumerable<TokenType> types) {
+        protected bool Check(ReadOnlySpan<TokenType> types) {
             TokenType currentType = Current().Type;
             foreach (TokenType type in types) {
                 if (currentType == type) {

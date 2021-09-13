@@ -258,7 +258,7 @@ namespace OpenDreamClient.Interface {
                     string value = query.GetValues(attribute)[^1];
 
                     Token attributeValue = new DMFLexer(null, value).GetNextToken();
-                    if (DMFParser.ValidAttributeValueTypes.Contains(attributeValue.Type)) {
+                    if (Array.IndexOf(DMFParser.ValidAttributeValueTypes, attributeValue.Type) >= 0) {
                         element.SetAttribute(attribute, attributeValue.Value);
                     } else {
                         throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");

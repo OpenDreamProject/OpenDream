@@ -548,12 +548,13 @@ namespace OpenDreamShared.Compiler.DM {
 
                         Whitespace();
                         value = Expression();
+
                         if (value == null) Error("Expected an expression");
                     }
 
                     AsTypes();
 
-                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value ?? new DMASTConstantNull()));
+                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
                     if (allowMultiple && Check(TokenType.DM_Comma)) {
                         Whitespace();
                         varPath = Path();
@@ -763,7 +764,8 @@ namespace OpenDreamShared.Compiler.DM {
                 AsTypes(); //TODO: Correctly handle
                 Whitespace();
 
-                if (Check(TokenType.DM_In)) {
+                if (Check(TokenType.DM_In))
+                {
                     Whitespace();
                     DMASTExpression enumerateValue = Expression();
                     DMASTExpression toValue = null;
@@ -813,50 +815,60 @@ namespace OpenDreamShared.Compiler.DM {
                     Whitespace();
                     Newline();
 
-                    DMASTProcBlockInner body = ProcBlock();
-                    if (body == null) {
-                        DMASTProcStatement statement = ProcStatement();
-
-                        if (statement == null) Error("Expected body or statement");
-                        body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
-                    }
-
-                    return new DMASTProcStatementForStandard(initializer, comparator, incrementor, body);
+                    return new DMASTProcStatementForStandard(initializer, comparator, incrementor, GetForBody());
                 } else if (variableDeclaration != null) {
                     DMASTExpression rangeBegin = variableDeclaration.Value;
                     Whitespace();
-                    Consume(TokenType.DM_To, "Expected 'to'");
+                    if (variableDeclaration.Value is not null)
+                    {
+                        Consume(TokenType.DM_To, "Expected 'to'");
+                    }
+
                     Whitespace();
                     DMASTExpression rangeEnd = Expression();
-                    if (rangeEnd == null) Error("Expected an expression");
+                    if (variableDeclaration.Value is not null && rangeEnd == null) Error("Expected an expression");
                     DMASTExpression step = new DMASTConstantInteger(1);
+
+                    var defaultStep = true;
 
                     if (Check(TokenType.DM_Step)) {
                         Whitespace();
 
                         step = Expression();
                         if (step == null) Error("Expected a step value");
+                        defaultStep = false;
                     }
 
                     ConsumeRightParenthesis();
                     Whitespace();
                     Newline();
 
-                    DMASTProcBlockInner body = ProcBlock();
-                    if (body == null) {
-                        DMASTProcStatement statement = ProcStatement();
-
-                        if (statement == null) Error("Expected body or statement");
-                        body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                    //Implicit "in world"
+                    if (variableDeclaration.Value is null && rangeEnd is null && defaultStep)
+                    {
+                        return new DMASTProcStatementForList(initializer, variable, new DMASTIdentifier("world"), GetForBody());
                     }
 
-                    return new DMASTProcStatementForRange(initializer, variable, rangeBegin, rangeEnd, step, body);
+                    return new DMASTProcStatementForRange(initializer, variable, rangeBegin, rangeEnd, step, GetForBody());
                 } else {
                     Error("Expected 'in'");
                 }
             }
 
             return null;
+
+            DMASTProcBlockInner GetForBody()
+            {
+                DMASTProcBlockInner body = ProcBlock();
+                if (body == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    if (statement == null) Error("Expected body or statement");
+                    body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                return body;
+            }
         }
 
         public DMASTProcStatementWhile While() {
@@ -1236,7 +1248,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (expression != null) {
                 Token token = Current();
-                TokenType[] assignTypes = new TokenType[] {
+                ReadOnlySpan<TokenType> assignTypes = new TokenType[] {
                     TokenType.DM_Equals,
                     TokenType.DM_PlusEquals,
                     TokenType.DM_MinusEquals,
@@ -1414,7 +1426,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new TokenType[] {
                     TokenType.DM_LessThan,
                     TokenType.DM_LessThanEquals,
                     TokenType.DM_GreaterThan,
@@ -1443,7 +1455,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new TokenType[] {
                     TokenType.DM_Plus,
                     TokenType.DM_Minus,
                 };
@@ -1470,7 +1482,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (a != null) {
                 Token token = Current();
-                TokenType[] types = new TokenType[] {
+                ReadOnlySpan<TokenType> types = new[] {
                     TokenType.DM_Star,
                     TokenType.DM_Slash,
                     TokenType.DM_Modulus

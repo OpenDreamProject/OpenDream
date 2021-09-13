@@ -1553,5 +1553,53 @@ namespace OpenDreamRuntime.Procs.Native {
             connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
         }
+
+        // This may be ideally a compile-time proc to create a filter object.
+        [DreamProc("filter")]
+        [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
+        [DreamProcParameter("size", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("color", Type = DreamValueType.String, DefaultValue = "#FFFFF")] // Must be a valid color
+        [DreamProcParameter("flags", Type = DreamValueType.Float, DefaultValue = 0)] // No requirement to be a sane value, but will be rounded down to nearest integer*
+        [DreamProcParameter("x", Type = DreamValueType.Float)]
+        [DreamProcParameter("y", Type = DreamValueType.Float)]
+        [DreamProcParameter("offset", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)] // Color string.
+        [DreamProcParameter("alpha", Type = DreamValueType.Float, DefaultValue = 2255)]
+        [DreamProcParameter("space", Type = DreamValueType.Float)] // Color spaces for filters are integers. Default value is RGB
+        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)] // transformation matrix
+        [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("factor", Type = DreamValueType.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueType.Float)]
+        [DreamProcParameter("radius", Type = DreamValueType.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            // Check type
+            Dictionary<String,String[]> acceptableTypesAndArgs = new Dictionary<String,String[]>(){
+	            "blur", {"size"},
+                "outline", {"color", "flags"} ,
+	            "drop_shadow",{"x", "y", "size", "offset", "color"},
+                "alpha", {"x", "y", "icon", "render_source", "flags"},
+		        "angular_blur", {"x", "y", "size"},
+		        "bloom", {"threshold", "size", "offset", "alpha"},
+		        "color", {"space"},
+		        "displace", {"x", "y", "size", "icon", "render_source"},
+		        "layer", {"x", "y", "render_source", "flags", "color", "transform", "blend_mode"},
+		        "motion_blur", {"x", "y"},
+		        "outline", {"size", "color", "flags"},
+		        "radial_blur", {"x", "y", "size"},
+		        "rays", {"x", "y", "size", "color", "offset", "density", "threshold", "factor", "flags"},
+		        "ripple", {"x", "y", "repeat", "radius", "falloff", "flags"},
+		        "wave", {"x", "y", "size", "offset", "flags"}
+            };
+
+            DreamValue filterType = arguments.GetArgument(0, "type");
+            string filterTypeString = (filterType != DreamValue.Null) ? filterType.GetValueAsString() : null;
+            if (!filterTypeString || !(filterTypeString in acceptableTypesAndArgs.Keys()))
+                return DreamValue.Null; // Byond behaviour in this case
+            arguments.NamedArguments.Remove("type") // We checked if it's null before
+            foreach (var argument in arguments.NamedArguments) {
+	            if (!(argument in acceptableTypesAndArgs[argument]))
+                    throw new Exception("filter argument {arg} not found")
+        	}
     }
 }

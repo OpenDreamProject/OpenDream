@@ -91,3 +91,9 @@
 #define SOUND_PAUSED (1<<1)    // pause sound
 #define SOUND_STREAM (1<<2)    // create as a stream
 #define SOUND_UPDATE (1<<3)    // update a playing sound
+
+// filter color spaces are integers.
+#define FILTER_COLORSPACE_RGB 0
+#define FILTER_COLORSPACE_HSV 1
+#define FILTER_COLORSPACE_HSL 2
+#define FILTER_COLORSPACE_HCY 3

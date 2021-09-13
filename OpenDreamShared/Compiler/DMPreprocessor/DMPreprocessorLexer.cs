@@ -197,13 +197,31 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
 
-                        if (delimiter == '{') delimiter = '}';
+                        if (delimiter == '{')
+                        {
+                            delimiter = '}';
+                            char prev;
+                            do
+                            {
+                                prev = c;
+                                c = Advance();
 
-                        do {
-                            c = Advance();
+                                textBuilder.Append(c);
+                                if (c == '}' && prev == '\"')
+                                {
+                                    break;
+                                }
+                            } while (!AtEndOfSource);
+                        }
+                        else
+                        {
+                            do
+                            {
+                                c = Advance();
+                                textBuilder.Append(c);
+                            } while (c != delimiter);
+                        }
 
-                            textBuilder.Append(c);
-                        } while (c != delimiter && !(delimiter != '}' && c == '\n'));
                         Advance();
 
                         var startIdx = 2;

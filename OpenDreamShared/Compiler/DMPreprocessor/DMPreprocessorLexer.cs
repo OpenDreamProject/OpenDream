@@ -212,6 +212,11 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                     break;
                                 }
                             } while (!AtEndOfSource);
+
+                            if (AtEndOfSource)
+                            {
+                                token = CreateToken(TokenType.Error, "Unterminated raw string");
+                            }
                         }
                         else
                         {

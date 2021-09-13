@@ -513,7 +513,7 @@ namespace OpenDreamShared.Compiler.DM {
                     //TODO: Multidimensional lists
                     if (Check(TokenType.DM_LeftBracket)) {
                         //Type information
-                        if (varPath is not null && !varPath.Path.IsList()) {
+                        if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
                             varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
                         }
 

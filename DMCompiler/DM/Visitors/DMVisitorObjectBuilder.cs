@@ -114,7 +114,7 @@ namespace DMCompiler.DM.Visitors {
                         var parentProcs = dmObject.GetProcs(procName);
                         if (parentProcs is not null && parentProcs.Count >= 1)
                         {
-                            var parent = parentProcs[dmObject.GetProcs(procName).Count - 1];
+                            var parent = parentProcs[^1];
                             if (procDefinition.ReturnTypes.Equals(DMValueType.Anything))
                             {
                                 procDefinition.ReturnTypes = parent.ReturnTypes;

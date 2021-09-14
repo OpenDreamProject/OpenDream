@@ -123,21 +123,20 @@ namespace DMCompiler.DM.Visitors {
                 {
                     return DMValueType.Anything;
                 }
-                var typeString = type.ToString();
-                var strippedType = typeString.StartsWith('/') ? typeString.Substring(1) : typeString;
-                if (strippedType.StartsWith("mob"))
+                var dmType = DMObjectTree.GetDMObject(type.Value, false);
+                if (dmType.IsSubtypeOf(DreamPath.Mob))
                 {
                     return DMValueType.Mob;
                 }
-                if (strippedType.StartsWith("obj"))
+                if (dmType.IsSubtypeOf(DreamPath.Obj))
                 {
                     return DMValueType.Obj;
                 }
-                if (strippedType.StartsWith("turf"))
+                if (dmType.IsSubtypeOf(DreamPath.Turf))
                 {
                     return DMValueType.Turf;
                 }
-                if (strippedType.StartsWith("area"))
+                if (dmType.IsSubtypeOf(DreamPath.Area))
                 {
                     return DMValueType.Area;
                 }

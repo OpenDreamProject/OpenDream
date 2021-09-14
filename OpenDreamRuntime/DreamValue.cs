@@ -115,19 +115,21 @@ namespace OpenDreamRuntime {
                     type = DMValueType.Num;
                     break;
                 case DreamValueType.DreamObject:
-                    if(TryGetValueAsDreamObjectOfType(new DreamPath("/mob"), out _))
+                    DreamObject dreamObject = GetValueAsDreamObject();
+
+                    if(dreamObject.IsSubtypeOf(DreamPath.Mob))
                     {
                         type = DMValueType.Mob;
                     }
-                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/obj"), out _))
+                    else if(dreamObject.IsSubtypeOf(DreamPath.Obj))
                     {
                         type = DMValueType.Obj;
                     }
-                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/turf"), out _))
+                    else if(dreamObject.IsSubtypeOf(DreamPath.Turf))
                     {
                         type = DMValueType.Turf;
                     }
-                    else if(TryGetValueAsDreamObjectOfType(new DreamPath("/area"), out _))
+                    else if(dreamObject.IsSubtypeOf(DreamPath.Area))
                     {
                         type = DMValueType.Area;
                     }

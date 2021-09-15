@@ -91,3 +91,5 @@
 #define SOUND_PAUSED (1<<1)    // pause sound
 #define SOUND_STREAM (1<<2)    // create as a stream
 #define SOUND_UPDATE (1<<3)    // update a playing sound
+
+#define EXCEPTION(value) new/exception(value, __FILE__, __LINE__)

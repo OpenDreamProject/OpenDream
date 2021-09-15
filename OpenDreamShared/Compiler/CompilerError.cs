@@ -19,12 +19,12 @@ namespace OpenDreamShared.Compiler {
             string location;
 
             if (Token != null) {
-                location = Token.SourceFile + ":" + Token.Line + ":" + Token.Column;
+                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
             } else {
                 location = "(unknown location)";
             }
 
-            return "Error at " + location + ": " + Message;
+            return $"Error at {location}: {Message}";
         }
     }
 
@@ -41,12 +41,12 @@ namespace OpenDreamShared.Compiler {
             string location;
 
             if (Token != null) {
-                location = Token.SourceFile + ":" + Token.Line + ":" + Token.Column;
+                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
             } else {
                 location = "(unknown location)";
             }
 
-            return "Warning at " + location + ": " + Message;
+            return $"Warning at {location}: {Message}";
         }
     }
 

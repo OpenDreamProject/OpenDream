@@ -172,6 +172,10 @@
         public int Line, Column;
         public object Value;
 
+        public string PrintableText {
+            get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        }
+
         public Token(TokenType type, string text, string sourceFile, int line, int column, object value) {
             Type = type;
             Text = text;
@@ -182,7 +186,7 @@
         }
 
         public override string ToString() {
-            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + Text + ")";
+            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + PrintableText + ")";
         }
     }
 }

@@ -454,6 +454,10 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
+
+                    //LocateNextStatement() may have landed us on another indented/braced block
+                    DMASTProcBlockInner blockInner = ProcBlock();
+                    if (blockInner != null) procStatements.AddRange(blockInner.Statements);
                 }
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();

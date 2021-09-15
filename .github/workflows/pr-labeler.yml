@@ -2,8 +2,6 @@ name: Merge Conflict Labeler
 
 on:
   push:
-    branches:
-      - master
   pull_request_target:
 
 jobs:

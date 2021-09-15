@@ -1,7 +1,9 @@
-name: PR Labeler
+name: Merge Conflict Labeler
 
 on:
   push:
+    branches:
+      - master
   pull_request_target:
 
 jobs:
@@ -9,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for conflicting PRs
-        uses: zewaka/auto-label-merge-conflicts@master
+        uses: eps1lon/actions-label-merge-conflict@513a24fc7dca40990863be2935e059e650728400
         with:
-          CONFLICT_LABEL_NAME: "Merge Conflict"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MAX_RETRIES: 12
-          WAIT_MS: 8008
+          dirtyLabel: "Merge Conflict"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          commentOnDirty: "This pull request has conflicts, please resolve those before we can evaluate the pull request."

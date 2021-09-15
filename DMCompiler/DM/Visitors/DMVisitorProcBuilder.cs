@@ -384,13 +384,12 @@ namespace DMCompiler.DM.Visitors {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
 
-            //_proc.JumpIfFalse(elseLabel);
-
             _proc.StartScope();
             tryCatch.TryBody.Visit(this);
             _proc.EndScope();
             _proc.Jump(endLabel);
 
+            //TODO handle these properly instead of being copypasted from DMASTProcDefinition
             if (tryCatch.CatchParameters != null)
             {
                 foreach (DMASTDefinitionParameter parameter in tryCatch.CatchParameters) {
@@ -422,8 +421,6 @@ namespace DMCompiler.DM.Visitors {
             tryCatch.CatchBody.Visit(this);
             _proc.EndScope();
             _proc.AddLabel(endLabel);
-
-            //_proc.ResolveLabels();
 
         }
     }

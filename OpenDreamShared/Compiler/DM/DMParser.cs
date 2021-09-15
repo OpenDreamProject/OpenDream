@@ -1097,6 +1097,8 @@ namespace OpenDreamShared.Compiler.DM {
                     tryBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
+                Warning("Exceptions in 'try/catch' blocks are currently not caught");
+
                 Newline();
                 Consume(TokenType.DM_Catch, "Expected catch");
 

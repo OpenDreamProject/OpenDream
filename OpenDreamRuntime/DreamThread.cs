@@ -149,10 +149,11 @@ namespace OpenDreamRuntime {
                     case ProcStatus.Returned:
                         var returnTypes = _current?.Proc?.ReturnTypes ?? DMValueType.Anything;
                         var returned = _current.Result;
-                        if ((returnTypes & DMValueType.Unsafe) != 0 && (returnTypes & returned.GetDMValueType(out DMValueType type)) == 0)
+                        var returnType = returned.GetDMValueType();
+                        if ((returnTypes & DMValueType.Unsafe) != 0 && (returnTypes & returnType) == 0)
                         {
                             throw new PropagatingRuntime(
-                                $"{_current?.Proc?.Name ?? "Unknown"}(): Invalid unsafe return type {type}, expected {returnTypes}");
+                                $"{_current?.Proc?.Name ?? "Unknown"}(): Invalid unsafe return type {returnType}, expected {returnTypes}");
                         }
 
                         PopProcState();

@@ -1,4 +1,5 @@
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {
@@ -31,7 +32,9 @@ namespace DMCompiler.DM.Expressions {
     class Usr : LValue {
         public Usr()
             : base(DreamPath.Mob)
-        {}
+        {
+            ValType = DMValueType.Mob; //According to the docs, Usr is a mob
+        }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushUsr();
@@ -56,6 +59,7 @@ namespace DMCompiler.DM.Expressions {
         public Local(DreamPath? path, string name)
             : base(path) {
             Name = name;
+            ValType = DMValueType.Unsafe;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

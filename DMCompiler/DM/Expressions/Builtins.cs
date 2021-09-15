@@ -3,6 +3,7 @@ using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -13,6 +14,7 @@ namespace DMCompiler.DM.Expressions {
         public StringFormat(string value, DMExpression[] expressions) {
             Value = value;
             Expressions = expressions;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

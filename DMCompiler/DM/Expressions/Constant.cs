@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -85,6 +86,10 @@ namespace DMCompiler.DM.Expressions {
 
     // null
     class Null : Constant {
+        public Null()
+        {
+            ValType = DMValueType.Null;
+        }
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
         }
@@ -100,6 +105,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Number(int value) {
             Value = value;
+            ValType = DMValueType.Num;
         }
 
         public Number(float value) {
@@ -220,6 +226,7 @@ namespace DMCompiler.DM.Expressions {
 
         public String(string value) {
             Value = value;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

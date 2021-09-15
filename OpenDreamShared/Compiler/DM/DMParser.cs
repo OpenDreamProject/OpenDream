@@ -79,9 +79,15 @@ namespace OpenDreamShared.Compiler.DM {
                         ConsumeRightParenthesis();
                         Whitespace();
 
-                        var types = AsTypes();
+                        var types = DMValueType.Anything;
+                        var setsType = false;
+                        if (Current().Type == TokenType.DM_As)
+                        {
+                            types = AsTypes();
+                            setsType = true;
+                        }
                         Whitespace();
-                      
+
                         DMASTProcBlockInner procBlock = ProcBlock();
                         if (procBlock == null) {
                             DMASTProcStatement procStatement = ProcStatement();
@@ -92,6 +98,10 @@ namespace OpenDreamShared.Compiler.DM {
                         }
 
                         statement = new DMASTProcDefinition(_currentPath, parameters, procBlock, types);
+                        if (setsType && statement is DMASTProcDefinition proc && proc.IsOverride)
+                        {
+                            Error("Cannot set return type on a proc override");
+                        }
                     }
 
                     //Object definition

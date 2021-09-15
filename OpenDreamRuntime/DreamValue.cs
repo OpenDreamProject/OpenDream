@@ -99,8 +99,9 @@ namespace OpenDreamRuntime {
             throw new Exception("Value " + this + " was not the expected type of " + type + "");
         }
 
-        public DMValueType GetDMValueType(out DMValueType type)
+        public DMValueType GetDMValueType()
         {
+            DMValueType type;
             if (Value is null)
             {
                 type = DMValueType.Null;

@@ -24,22 +24,18 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantNull(DMASTConstantNull constant) {
             Result = new Expressions.Null();
-            Result.ValType = DMValueType.Null;
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             Result = new Expressions.Number(constant.Value);
-            Result.ValType = DMValueType.Num;
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {
             Result = new Expressions.Number(constant.Value);
-            Result.ValType = DMValueType.Num;
         }
 
         public void VisitConstantString(DMASTConstantString constant) {
             Result = new Expressions.String(constant.Value);
-            Result.ValType = DMValueType.Text;
         }
 
         public void VisitConstantResource(DMASTConstantResource constant) {
@@ -78,7 +74,6 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.StringFormat(stringFormat.Value, expressions);
-            Result.ValType = DMValueType.Text;
         }
 
 
@@ -90,7 +85,6 @@ namespace DMCompiler.DM.Visitors {
                 Result.ValType = Result.ValType == DMValueType.Anything ? GetATOMType(_dmObject.Path) : Result.ValType;
             } else if (name == "usr") {
                 Result = new Expressions.Usr();
-                Result.ValType = DMValueType.Mob; //According to the docs, Usr is a mob
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
@@ -98,8 +92,6 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(localVar.Type, name);
-                    Result.ValType = DMValueType.Unsafe;
-
                     return;
                 }
 
@@ -147,9 +139,7 @@ namespace DMCompiler.DM.Visitors {
 
 
         public void VisitCallableSelf(DMASTCallableSelf self) {
-            var expr = new Expressions.ProcSelf();
-            Result = expr;
-            Result.ValType = expr.ValType;
+            Result = new Expressions.ProcSelf();
         }
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
@@ -175,9 +165,7 @@ namespace DMCompiler.DM.Visitors {
 
             var target = DMExpression.Create(_dmObject, _proc, procCall.Callable, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, procCall.Parameters);
-            var call = new Expressions.ProcCall(target, args);
-            Result = call;
-            Result.ValType = call.ValType;
+            Result = new Expressions.ProcCall(target, args);
         }
 
         public void VisitAssign(DMASTAssign assign) {

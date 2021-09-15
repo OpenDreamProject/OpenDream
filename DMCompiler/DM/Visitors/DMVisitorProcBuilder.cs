@@ -145,7 +145,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (statement.Value != null) {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
-                if (!_proc.ReturnTypes.Equals(DMValueType.Anything) && expr.Path == new DreamPath("/list"))
+                if (!_proc.ReturnTypes.Equals(DMValueType.Anything) && expr.Path == DreamPath.List)
                 {
                     Program.Error(new CompilerError(null,
                         $"{_proc.Path}.{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}"));

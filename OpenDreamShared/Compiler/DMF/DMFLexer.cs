@@ -151,7 +151,7 @@ namespace OpenDreamShared.Compiler.DMF {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token.Type == TokenType.Unknown) {
+            if (token == null) {
                 char c = GetCurrent();
 
                 switch (c) {
@@ -243,6 +243,7 @@ namespace OpenDreamShared.Compiler.DMF {
                             break;
                         }
 
+                        token = CreateToken(TokenType.Error, $"Unknown character: {c.ToString()}");
                         Advance();
                         break;
                     }

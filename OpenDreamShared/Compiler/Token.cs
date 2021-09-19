@@ -1,5 +1,6 @@
 ﻿namespace OpenDreamShared.Compiler {
-    public enum TokenType {
+    // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
+    public enum TokenType : byte {
         //Base lexer
         Error,
         Warning,
@@ -79,7 +80,6 @@
         DM_LeftShiftEquals,
         DM_LessThan,
         DM_LessThanEquals,
-        DM_List,
         DM_Minus,
         DM_MinusEquals,
         DM_MinusMinus,
@@ -172,6 +172,10 @@
         public int Line, Column;
         public object Value;
 
+        public string PrintableText {
+            get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        }
+
         public Token(TokenType type, string text, string sourceFile, int line, int column, object value) {
             Type = type;
             Text = text;
@@ -182,7 +186,7 @@
         }
 
         public override string ToString() {
-            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + Text + ")";
+            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + PrintableText + ")";
         }
     }
 }

@@ -133,7 +133,7 @@ namespace DMCompiler {
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);
 
-            DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
+            DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
 
             if (_errorCount > 0) {

@@ -16,7 +16,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token.Type == TokenType.Unknown) {
+            if (token == null) {
                 char c = GetCurrent();
 
                 switch (c) {
@@ -294,6 +294,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             else token = CreateToken(TokenType.Error, null, "Invalid number");
                         } else {
                             Advance();
+                            token = CreateToken(TokenType.Error, null, $"Unknown character: {c.ToString()}");
                         }
 
                         break;

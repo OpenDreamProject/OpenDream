@@ -154,5 +154,11 @@ namespace DMCompiler.DM {
 
             return objectJson;
         }
+
+        public bool IsSubtypeOf(DreamPath path) {
+            if (Path.IsDescendantOf(path)) return true;
+            if (Parent != null) return Parent.IsSubtypeOf(path);
+            return false;
+        }
     }
 }

@@ -53,7 +53,6 @@ namespace OpenDreamShared.Compiler.DM {
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
             { "spawn", TokenType.DM_Spawn },
-            { "list", TokenType.DM_List },
             { "newlist", TokenType.DM_NewList },
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step }

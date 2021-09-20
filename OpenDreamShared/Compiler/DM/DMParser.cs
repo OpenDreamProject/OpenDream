@@ -1803,8 +1803,12 @@ namespace OpenDreamShared.Compiler.DM {
         protected bool Whitespace(bool includeIndentation = false) {
             if (includeIndentation) {
                 bool hadWhitespace = false;
+                ReadOnlySpan<TokenType> types = new TokenType[] {
+                    TokenType.DM_Whitespace,
+                    TokenType.DM_Indent,
+                    TokenType.DM_Dedent };
 
-                while (Check(new TokenType[] { TokenType.DM_Whitespace, TokenType.DM_Indent, TokenType.DM_Dedent })) hadWhitespace = true;
+                while (Check(types)) hadWhitespace = true;
                 return hadWhitespace;
             } else {
                 return Check(TokenType.DM_Whitespace);

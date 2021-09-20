@@ -78,6 +78,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
+                case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
                     foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
                         ProcessStatementVarDeclaration(varDeclaration);
@@ -415,12 +416,12 @@ namespace DMCompiler.DM.Visitors {
             _proc.OutputControl();
         }
 
-        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+        public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
 
             _proc.StartScope();
-            tryCatch.TryBody.Visit(this);
+            ProcessBlockInner(tryCatch.TryBody);
             _proc.EndScope();
             _proc.Jump(endLabel);
 
@@ -453,7 +454,7 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.AddLabel(catchLabel);
             _proc.StartScope();
-            tryCatch.CatchBody.Visit(this);
+            ProcessBlockInner(tryCatch.CatchBody);
             _proc.EndScope();
             _proc.AddLabel(endLabel);
 

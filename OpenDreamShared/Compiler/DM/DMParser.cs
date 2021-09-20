@@ -117,6 +117,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                                 DMASTExpression size = Expression();
                                 Consume(TokenType.DM_RightBracket, "Expected ']'");
+                                Whitespace();
 
                                 if (size is not null) {
                                     value = new DMASTNewPath(new DMASTPath(DreamPath.List),

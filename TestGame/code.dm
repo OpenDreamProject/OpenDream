@@ -15,10 +15,6 @@
 
 	verb/tell_location()
 		usr << "You are at ([x], [y], [z])"
-		try
-			usr << "oooooooooh he's trying"
-		catch
-			usr << "shit"
 
 	verb/say(message as text)
 		var/list/viewers = viewers()

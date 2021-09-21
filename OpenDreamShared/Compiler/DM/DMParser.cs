@@ -1031,6 +1031,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 Newline();
                 Consume(TokenType.DM_Catch, "Expected catch");
+                Whitespace();
 
                 // catch(var/exception/E)
                 // TODO: handle correctly

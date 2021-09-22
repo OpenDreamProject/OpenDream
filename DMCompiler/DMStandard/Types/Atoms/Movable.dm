@@ -9,7 +9,7 @@
 		if (isnull(NewLoc)) return
 
 		if (Dir != 0)
-				dir = Dir
+			dir = Dir
 
 		if (loc == NewLoc || !loc.Exit(src, NewLoc)) return FALSE
 		if (NewLoc.Enter(src, loc))

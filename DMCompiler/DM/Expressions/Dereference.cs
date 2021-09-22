@@ -20,10 +20,7 @@ namespace DMCompiler.DM.Expressions {
         {
             _expr = expr;
             _conditional = astNode.Conditional;
-
-            DMASTIdentifier propertyIdentifier = astNode.Property as DMASTIdentifier;
-            if (propertyIdentifier == null) throw new CompileErrorException("Invalid dereference");
-            _propertyName = propertyIdentifier.Identifier;
+            _propertyName = astNode.Property;
 
             if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
                 if (expr.Path == null) {
@@ -87,10 +84,7 @@ namespace DMCompiler.DM.Expressions {
         public DereferenceProc(DMExpression expr, DMASTDereferenceProc astNode) {
             _expr = expr;
             _conditional = astNode.Conditional;
-
-            DMASTIdentifier fieldIdentifier = astNode.Property as DMASTIdentifier;
-            if (fieldIdentifier == null) throw new CompileErrorException("Invalid dereference");
-            _field = fieldIdentifier.Identifier;
+            _field = astNode.Property;
 
             if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
                 if (_expr.Path == null) {

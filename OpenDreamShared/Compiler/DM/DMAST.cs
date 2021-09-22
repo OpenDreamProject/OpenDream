@@ -1546,11 +1546,11 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression Expression;
-        public DMASTExpression Property;
+        public string Property;
         public DereferenceType Type;
         public bool Conditional;
 
-        public DMASTDereference(DMASTExpression expression, DMASTExpression property, DereferenceType type, bool conditional) {
+        public DMASTDereference(DMASTExpression expression, string property, DereferenceType type, bool conditional) {
             Expression = expression;
             Property = property;
             Type = type;
@@ -1563,7 +1563,7 @@ namespace OpenDreamShared.Compiler.DM {
     }
 
     public class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
-        public DMASTDereferenceProc(DMASTExpression expression, DMASTExpression property, DereferenceType type, bool conditional) : base(expression, property, type, conditional) { }
+        public DMASTDereferenceProc(DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(expression, property, type, conditional) { }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDereferenceProc(this);

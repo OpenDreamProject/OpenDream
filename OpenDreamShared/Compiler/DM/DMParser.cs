@@ -1267,9 +1267,9 @@ namespace OpenDreamShared.Compiler.DM {
                         bool conditional = default;
                         do {
                             if (c == null) {
-                                c = deref.Property;
+                                c = new DMASTIdentifier(deref.Property);
                             } else {
-                                c = new DMASTDereference(deref.Property, c, type, conditional);
+                                c = new DMASTDereference(new DMASTIdentifier(deref.Property), ((DMASTIdentifier)c).Identifier, type, conditional);
                             }
 
                             expr = deref.Expression;
@@ -1835,7 +1835,7 @@ namespace OpenDreamShared.Compiler.DM {
                     Token token = Current();
 
                     if (Check(dereferenceTokenTypes)) {
-                        DMASTExpression property = ExpressionPrimary();
+                        DMASTIdentifier property = Identifier();
                         if (property == null) {
                             if (token.Type == TokenType.DM_Colon) {
                                 //Not a valid dereference, but could still be a part of a ternary, so abort
@@ -1854,7 +1854,7 @@ namespace OpenDreamShared.Compiler.DM {
                             _ => throw new InvalidOperationException($"Invalid dereference token {token}")
                         };
 
-                        expression = new DMASTDereference(expression, property, type, conditional);
+                        expression = new DMASTDereference(expression, property.Identifier, type, conditional);
                     } else {
                         break;
                     }

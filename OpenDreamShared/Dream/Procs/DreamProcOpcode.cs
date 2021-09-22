@@ -105,19 +105,21 @@ namespace OpenDreamShared.Dream.Procs {
 
     [Flags]
     public enum DMValueType {
-        Anything = 0x0,
-        Null = 0x1,
-        Text = 0x2,
-        Obj = 0x4,
-        Mob = 0x8,
-        Turf = 0x10,
-        Num = 0x20,
-        Message = 0x40,
-        Area = 0x80,
-        Color = 0x100,
-        File = 0x200,
-        CommandText = 0x400,
-        Sound = 0x800,
-        Icon = 0x1000
+        // These bitflag values are directly exposed by the as(x) operator and also match SDMM's.
+        Mob = 1 << 0,
+        Obj = 1 << 1,
+        Text = 1 << 2,
+        Num = 1 << 3,
+        Turf = 1 << 5,
+        File = 1 << 4,
+        Null = 1 << 7,
+        Area = 1 << 8,
+        Icon = 1 << 9,
+        Sound = 1 << 10,
+        Message = 1 << 11,
+        Anything = 1 << 12,
+        Password = 1 << 15,
+        CommandText = 1 << 16,
+        Color = 1 << 17,
     }
 }

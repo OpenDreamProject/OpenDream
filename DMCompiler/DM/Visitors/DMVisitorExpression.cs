@@ -359,7 +359,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitDereference(DMASTDereference dereference) {
             var expr = DMExpression.Create(_dmObject, _proc, dereference.Expression, _inferredPath);
-            Result = new Expressions.Dereference(expr, dereference, true);
+            Result = new Expressions.Dereference(expr, dereference);
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {

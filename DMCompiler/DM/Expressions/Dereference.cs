@@ -9,81 +9,54 @@ namespace DMCompiler.DM.Expressions {
     class Dereference : LValue {
         // Kind of a lazy port
         DMExpression _expr;
-        List<(bool conditional, string field)> _fields = new();
+        string _propertyName;
+        bool _conditional;
 
         public override DreamPath? Path => _path;
         DreamPath? _path;
 
-        public Dereference(DMExpression expr, DMASTDereference astNode, bool includingLast)
+        public Dereference(DMExpression expr, DMASTDereference astNode)
             : base(null) // This gets filled in later
         {
             _expr = expr;
+            _conditional = astNode.Conditional;
+            _propertyName = astNode.Property;
 
-            var current_path = _expr.Path;
-            DMASTDereference.Dereference[] dereferences = astNode.Dereferences;
-            for (int i = 0; i < (includingLast ? dereferences.Length : dereferences.Length - 1); i++) {
-                DMASTDereference.Dereference deref = dereferences[i];
-
-                switch (deref.Type) {
-                    case DMASTDereference.DereferenceType.Direct: {
-                        if (current_path == null) {
-                            throw new CompileErrorException("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
-                        }
-
-                        if (!DMObjectTree.TryGetDMObject(current_path.Value, out var dmObject))
-                            throw new CompileErrorException($"Type {current_path.Value} does not exist");
-
-                        var current = dmObject.GetVariable(deref.Property);
-                        if (current == null) current = dmObject.GetGlobalVariable(deref.Property);
-                        if (current == null) throw new CompileErrorException("Invalid property \"" + deref.Property + "\" on type " + dmObject.Path);
-
-                        current_path = current.Type;
-                        _fields.Add((deref.Conditional, deref.Property));
-                        break;
-                    }
-
-                    case DMASTDereference.DereferenceType.Search: {
-                        var current = new DMVariable(null, deref.Property, false);
-                        current_path = current.Type;
-                        _fields.Add((deref.Conditional, deref.Property));
-                        break;
-                    }
-
-                    default:
-                        throw new InvalidOperationException();
+            if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
+                if (expr.Path == null) {
+                    throw new CompileErrorException($"Cannot dereference property \"{_propertyName}\" because a type specifier is missing");
                 }
-            }
 
-            _path = current_path;
+                DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
+
+                var current = dmObject.GetVariable(_propertyName);
+                if (current == null) current = dmObject.GetGlobalVariable(_propertyName);
+                if (current == null) throw new CompileErrorException($"Invalid property \"{_propertyName}\" on type {dmObject.Path}");
+
+                _path = current.Type;
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
 
-            foreach (var (conditional, field) in _fields) {
-                if (conditional) {
-                    proc.DereferenceConditional(field);
-                } else {
-                    proc.Dereference(field);
-                }
+            if (_conditional) {
+                proc.DereferenceConditional(_propertyName);
+            } else {
+                proc.Dereference(_propertyName);
             }
         }
 
         public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
 
-            bool lastConditional = false;
-            foreach (var (conditional, field) in _fields) {
-                if (conditional) {
-                    proc.DereferenceConditional(field);
-                } else {
-                    proc.Dereference(field);
-                }
-
-                lastConditional = conditional;
+            if (_conditional) {
+                proc.DereferenceConditional(_propertyName);
+            } else {
+                proc.Dereference(_propertyName);
             }
 
-            if (lastConditional) {
+            if (_conditional) {
                 return IdentifierPushResult.Conditional;
             } else {
                 return IdentifierPushResult.Unconditional;
@@ -92,71 +65,34 @@ namespace DMCompiler.DM.Expressions {
 
         public void EmitPushInitial(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-
-            for (int idx = 0; idx < _fields.Count - 1; idx++)
-            {
-                if (_fields[idx].conditional) {
-                    proc.DereferenceConditional(_fields[idx].field);
-                } else {
-                    proc.Dereference(_fields[idx].field);
-                }
-            }
-
-            // TODO: Handle conditional
-            proc.Initial(_fields[^1].field);
+            proc.Initial(_propertyName);
         }
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-
-            for (int idx = 0; idx < _fields.Count - 1; idx++)
-            {
-                if (_fields[idx].conditional) {
-                    proc.DereferenceConditional(_fields[idx].field);
-                } else {
-                    proc.Dereference(_fields[idx].field);
-                }
-            }
-
-            // TODO: Handle conditional
-            proc.IsSaved(_fields[^1].field);
+            proc.IsSaved(_propertyName);
         }
     }
 
     // x.y.z()
     class DereferenceProc : DMExpression {
         // Kind of a lazy port
-        Dereference _parent;
+        DMExpression _expr;
         bool _conditional;
         string _field;
 
         public DereferenceProc(DMExpression expr, DMASTDereferenceProc astNode) {
-            _parent = new Dereference(expr, astNode, false);
+            _expr = expr;
+            _conditional = astNode.Conditional;
+            _field = astNode.Property;
 
-            DMASTDereference.Dereference deref = astNode.Dereferences[^1];
-            switch (deref.Type) {
-                case DMASTDereference.DereferenceType.Direct: {
-                    if (_parent.Path == null) {
-                        throw new CompileErrorException("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
-                    }
-
-                    DreamPath type = _parent.Path.Value;
-                    DMObject dmObject = DMObjectTree.GetDMObject(type, false);
-
-                    if (!dmObject.HasProc(deref.Property)) throw new CompileErrorException("Type " + type + " does not have a proc named \"" + deref.Property + "\"");
-                    _conditional = deref.Conditional;
-                    _field = deref.Property;
-                    break;
+            if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
+                if (_expr.Path == null) {
+                    throw new CompileErrorException($"Cannot dereference property \"{_field}\" because a type specifier is missing");
                 }
 
-                case DMASTDereference.DereferenceType.Search: {
-                    _conditional = deref.Conditional;
-                    _field = deref.Property;
-                    break;
-                }
-
-                default:
-                    throw new InvalidOperationException();
+                DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
+                if (!dmObject.HasProc(_field)) throw new CompileErrorException($"Type {_expr.Path.Value} does not have a proc named \"{_field}\"");
             }
         }
 
@@ -165,7 +101,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            _parent.EmitPushValue(dmObject, proc);
+            _expr.EmitPushValue(dmObject, proc);
 
             if (_conditional) {
                 proc.DereferenceProcConditional(_field);
@@ -177,9 +113,9 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public void UnimplementedCheck() {
-            if (_parent.Path == null) return;
+            if (_expr.Path == null) return;
 
-            DMObject dmObject = DMObjectTree.GetDMObject(_parent.Path.Value);
+            DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
             if (dmObject.IsProcUnimplemented(_field)) {
                 Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_field}() is not implemented"));
             }

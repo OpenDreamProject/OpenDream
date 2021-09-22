@@ -57,7 +57,7 @@ namespace DMCompiler.DM {
                 AddParameter(parameter.Name, parameter.Type);
             }
 
-            AstDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
+            new DMProcBuilder(dmObject, this).ProcessProcDefinition(AstDefinition);
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {

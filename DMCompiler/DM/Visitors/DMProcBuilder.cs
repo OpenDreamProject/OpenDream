@@ -2,80 +2,115 @@
 using OpenDreamShared.Compiler.DM;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
+using System;
 
 namespace DMCompiler.DM.Visitors {
-    class DMVisitorProcBuilder : DMASTVisitor {
+    class DMProcBuilder {
         private DMObject _dmObject;
         private DMProc _proc;
 
-        public DMVisitorProcBuilder(DMObject dmObject, DMProc proc) {
+        public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
         }
 
-        public void VisitProcDefinition(DMASTProcDefinition procDefinition) {
-            if (procDefinition.Body != null) {
-                foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
-                    string parameterName = parameter.Name;
+        public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
+            if (procDefinition.Body == null) return;
 
-                    _proc.AddLocalVariable(parameterName, parameter.ObjectType);
-                    if (parameter.Value != null) {
-                        string afterDefaultValueCheck = _proc.NewLabelName();
+            foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
+                string parameterName = parameter.Name;
 
-                        _proc.PushLocalVariable(parameterName);
-                        _proc.IsNull();
-                        _proc.JumpIfFalse(afterDefaultValueCheck);
+                _proc.AddLocalVariable(parameterName, parameter.ObjectType);
+                if (parameter.Value != null) { //Parameter has a default value
+                    string afterDefaultValueCheck = _proc.NewLabelName();
 
-                        _proc.PushLocalVariable(parameterName);
-                        try {
-                            DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
-                        } catch (CompileErrorException e) {
-                            Program.Error(e.Error);
-                        }
-                        _proc.Assign();
+                    //Don't set parameter to default if not null
+                    _proc.PushLocalVariable(parameterName);
+                    _proc.IsNull();
+                    _proc.JumpIfFalse(afterDefaultValueCheck);
 
-                        _proc.AddLabel(afterDefaultValueCheck);
+                    //Set default
+                    _proc.PushLocalVariable(parameterName);
+                    try {
+                        DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
+                    } catch (CompileErrorException e) {
+                        Program.Error(e.Error);
                     }
+                    _proc.Assign();
+
+                    _proc.AddLabel(afterDefaultValueCheck);
                 }
-
-                procDefinition.Body.Visit(this);
-
-                _proc.ResolveLabels();
             }
+
+            ProcessBlockInner(procDefinition.Body);
+            _proc.ResolveLabels();
         }
 
-        public void VisitProcBlockInner(DMASTProcBlockInner block) {
+        public void ProcessBlockInner(DMASTProcBlockInner block) {
             foreach (DMASTProcStatement statement in block.Statements) {
                 try {
-                    statement.Visit(this);
+                    ProcessStatement(statement);
                 } catch (CompileErrorException e) { //Retreat from the statement when there's an error
                     Program.Error(e.Error);
                 }
             }
         }
 
-        public void VisitProcStatementExpression(DMASTProcStatementExpression statement) {
+        public void ProcessStatement(DMASTProcStatement statement) {
+            switch (statement) {
+                case DMASTProcStatementExpression statementExpression: ProcessStatementExpression(statementExpression); break;
+                case DMASTProcStatementContinue statementContinue: ProcessStatementContinue(statementContinue); break;
+                case DMASTProcStatementGoto statementGoto: ProcessStatementGoto(statementGoto); break;
+                case DMASTProcStatementLabel statementLabel: ProcessStatementLabel(statementLabel); break;
+                case DMASTProcStatementBreak statementBreak: ProcessStatementBreak(statementBreak); break;
+                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
+                case DMASTProcStatementDel statementDel: ProcessStatementDel(statementDel); break;
+                case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
+                case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
+                case DMASTProcStatementIf statementIf: ProcessStatementIf(statementIf); break;
+                case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
+                case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
+                case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
+                case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
+                case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
+                case DMASTProcStatementSwitch statementSwitch: ProcessStatementSwitch(statementSwitch); break;
+                case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
+                case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
+                case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
+                case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
+                    foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                        ProcessStatementVarDeclaration(varDeclaration);
+                    }
+
+                    break;
+                }
+                default: throw new ArgumentException("Invalid proc statement");
+            }
+        }
+
+        public void ProcessStatementExpression(DMASTProcStatementExpression statement) {
             DMExpression.Emit(_dmObject, _proc, statement.Expression);
             // TODO: does this need pop?
         }
 
-        public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) {
+        public void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {
             _proc.Continue();
         }
 
-        public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) {
+        public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
             _proc.Goto(statementGoto.Label.Identifier);
         }
 
-        public void VisitProcStatementLabel(DMASTProcStatementLabel statementLabel) {
+        public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
             _proc.AddLabel(statementLabel.Name + "_codelabel");
         }
 
-        public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) {
+        public void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
             _proc.Break();
         }
 
-        public void VisitProcStatementSet(DMASTProcStatementSet statementSet) {
+        public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             //TODO: Proc attributes
             switch (statementSet.Attribute.ToLower()) {
                 case "waitfor": {
@@ -101,24 +136,24 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void VisitProcStatementDel(DMASTProcStatementDel statementDel) {
+        public void ProcessStatementDel(DMASTProcStatementDel statementDel) {
             DMExpression.Emit(_dmObject, _proc, statementDel.Value);
             _proc.DeleteObject();
         }
 
-        public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
+        public void ProcessStatementSpawn(DMASTProcStatementSpawn statementSpawn) {
             DMExpression.Emit(_dmObject, _proc, statementSpawn.Delay);
 
             string afterSpawnLabel = _proc.NewLabelName();
             _proc.Spawn(afterSpawnLabel);
 
-            statementSpawn.Body.Visit(this);
+            ProcessBlockInner(statementSpawn.Body);
             _proc.Return(); //Prevent the new thread from executing outside its own code
 
             _proc.AddLabel(afterSpawnLabel);
         }
 
-        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
+        public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
 
             if (varDeclaration.Value != null) {
@@ -130,13 +165,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.SetLocalVariable(varDeclaration.Name);
         }
 
-        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
-            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                varDeclaration.Visit(this);
-            }
-        }
-
-        public void VisitProcStatementReturn(DMASTProcStatementReturn statement) {
+        public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, statement.Value);
             } else {
@@ -146,7 +175,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.Return();
         }
 
-        public void VisitProcStatementIf(DMASTProcStatementIf statement) {
+        public void ProcessStatementIf(DMASTProcStatementIf statement) {
             DMExpression.Emit(_dmObject, _proc, statement.Condition);
 
             if (statement.ElseBody == null) {
@@ -154,7 +183,7 @@ namespace DMCompiler.DM.Visitors {
 
                 _proc.JumpIfFalse(endLabel);
                 _proc.StartScope();
-                statement.Body.Visit(this);
+                ProcessBlockInner(statement.Body);
                 _proc.EndScope();
                 _proc.AddLabel(endLabel);
             } else {
@@ -164,20 +193,22 @@ namespace DMCompiler.DM.Visitors {
                 _proc.JumpIfFalse(elseLabel);
 
                 _proc.StartScope();
-                statement.Body.Visit(this);
+                ProcessBlockInner(statement.Body);
                 _proc.EndScope();
                 _proc.Jump(endLabel);
 
                 _proc.AddLabel(elseLabel);
-                statement.ElseBody.Visit(this);
+                ProcessBlockInner(statement.ElseBody);
                 _proc.AddLabel(endLabel);
             }
         }
 
-        public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
+        public void ProcessStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             _proc.StartScope();
             {
-                statementForStandard.Initializer?.Visit(this);
+                if (statementForStandard.Initializer != null) {
+                    ProcessStatement(statementForStandard.Initializer);
+                }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -185,7 +216,7 @@ namespace DMCompiler.DM.Visitors {
                     DMExpression.Emit(_dmObject, _proc, statementForStandard.Comparator);
                     _proc.BreakIfFalse();
 
-                    statementForStandard.Body.Visit(this);
+                    ProcessBlockInner(statementForStandard.Body);
 
                     _proc.LoopContinue(loopLabel);
                     if (statementForStandard.Incrementor != null)
@@ -199,7 +230,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
-        public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
+        public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
             if (statementForList.List == null)
                 throw new CompileErrorException("For without list not supported");
 
@@ -207,7 +238,9 @@ namespace DMCompiler.DM.Visitors {
             _proc.CreateListEnumerator();
             _proc.StartScope();
             {
-                statementForList.Initializer?.Visit(this);
+                if (statementForList.Initializer != null) {
+                    ProcessStatement(statementForList.Initializer);
+                }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -233,7 +266,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.ContinueIfFalse();
                     }
 
-                    statementForList.Body.Visit(this);
+                    ProcessBlockInner(statementForList.Body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -244,14 +277,16 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
+        public void ProcessStatementForRange(DMASTProcStatementForRange statementForRange) {
             DMExpression.Emit(_dmObject, _proc, statementForRange.RangeStart);
             DMExpression.Emit(_dmObject, _proc, statementForRange.RangeEnd);
             DMExpression.Emit(_dmObject, _proc, statementForRange.Step);
             _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
-                statementForRange.Initializer?.Visit(this);
+                if (statementForRange.Initializer != null) {
+                    ProcessStatement(statementForRange.Initializer);
+                }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
@@ -259,7 +294,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.Enumerate(statementForRange.Variable.Identifier);
                     _proc.BreakIfFalse();
 
-                    statementForRange.Body.Visit(this);
+                    ProcessBlockInner(statementForRange.Body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -270,7 +305,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {
+        public void ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {
             string loopLabel = _proc.NewLabelName();
 
             _proc.LoopStart(loopLabel);
@@ -280,7 +315,7 @@ namespace DMCompiler.DM.Visitors {
 
                 _proc.StartScope();
                 {
-                    statementWhile.Body.Visit(this);
+                    ProcessBlockInner(statementWhile.Body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -290,13 +325,13 @@ namespace DMCompiler.DM.Visitors {
             _proc.LoopEnd();
         }
 
-        public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
+        public void ProcessStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
             string loopLabel = _proc.NewLabelName();
             string loopEndLabel = _proc.NewLabelName();
 
             _proc.LoopStart(loopLabel);
             {
-                statementDoWhile.Body.Visit(this);
+                ProcessBlockInner(statementDoWhile.Body);
 
                 _proc.LoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
@@ -309,7 +344,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.LoopEnd();
         }
 
-        public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
+        public void ProcessStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             string endLabel = _proc.NewLabelName();
             List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new();
             DMASTProcBlockInner defaultCaseBody = null;
@@ -343,7 +378,7 @@ namespace DMCompiler.DM.Visitors {
             if (defaultCaseBody != null) {
                 _proc.StartScope();
                 {
-                    defaultCaseBody.Visit(this);
+                    ProcessBlockInner(defaultCaseBody);
                 }
                 _proc.EndScope();
             }
@@ -353,7 +388,7 @@ namespace DMCompiler.DM.Visitors {
                 _proc.AddLabel(valueCase.CaseLabel);
                 _proc.StartScope();
                 {
-                    valueCase.CaseBody.Visit(this);
+                    ProcessBlockInner(valueCase.CaseBody);
                 }
                 _proc.EndScope();
                 _proc.Jump(endLabel);
@@ -362,21 +397,21 @@ namespace DMCompiler.DM.Visitors {
             _proc.AddLabel(endLabel);
         }
 
-        public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) {
+        public void ProcessStatementBrowse(DMASTProcStatementBrowse statementBrowse) {
             DMExpression.Emit(_dmObject, _proc, statementBrowse.Receiver);
             DMExpression.Emit(_dmObject, _proc, statementBrowse.Body);
             DMExpression.Emit(_dmObject, _proc, statementBrowse.Options);
             _proc.Browse();
         }
 
-        public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) {
+        public void ProcessStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) {
             DMExpression.Emit(_dmObject, _proc, statementBrowseResource.Receiver);
             DMExpression.Emit(_dmObject, _proc, statementBrowseResource.File);
             DMExpression.Emit(_dmObject, _proc, statementBrowseResource.Filename);
             _proc.BrowseResource();
         }
 
-        public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) {
+        public void ProcessStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Receiver);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);

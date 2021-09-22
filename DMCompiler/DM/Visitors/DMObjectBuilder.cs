@@ -1,45 +1,59 @@
 ﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using System;
 
 namespace DMCompiler.DM.Visitors {
-    class DMVisitorObjectBuilder : DMASTVisitor {
+    class DMObjectBuilder {
         private DMObject _currentObject = null;
 
         public void BuildObjectTree(DMASTFile astFile) {
             DMObjectTree.Reset();
-            astFile.Visit(this);
+            ProcessFile(astFile);
         }
 
-        public void VisitFile(DMASTFile file) {
+        public void ProcessFile(DMASTFile file) {
             _currentObject = DMObjectTree.GetDMObject(DreamPath.Root);
 
-            file.BlockInner.Visit(this);
+            ProcessBlockInner(file.BlockInner);
         }
 
-        public void VisitBlockInner(DMASTBlockInner blockInner) {
+        public void ProcessBlockInner(DMASTBlockInner blockInner) {
             foreach (DMASTStatement statement in blockInner.Statements) {
                 try {
-                    statement.Visit(this);
+                    ProcessStatement(statement);
                 } catch (CompileErrorException e) {
                     Program.Error(e.Error);
                 }
             }
         }
 
-        public void VisitCallParameter(DMASTCallParameter callParameter) {
-            callParameter.Value.Visit(this);
+        public void ProcessStatement(DMASTStatement statement) {
+            switch (statement) {
+                case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition); break;
+                case DMASTObjectVarDefinition varDefinition: ProcessVarDefinition(varDefinition); break;
+                case DMASTObjectVarOverride varOverride: ProcessVarOverride(varOverride); break;
+                case DMASTProcDefinition procDefinition: ProcessProcDefinition(procDefinition); break;
+                case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
+                    foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
+                        ProcessVarDefinition(varDefinition);
+                    }
+
+                    break;
+                }
+                default: throw new ArgumentException("Invalid object statement");
+            }
         }
 
-        public void VisitObjectDefinition(DMASTObjectDefinition objectDefinition) {
+        public void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
             DMObject oldObject = _currentObject;
 
             _currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
-            objectDefinition.InnerBlock?.Visit(this);
+            if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock);
             _currentObject = oldObject;
         }
 
-        public void VisitObjectVarDefinition(DMASTObjectVarDefinition varDefinition) {
+        public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
             DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
 
@@ -60,13 +74,7 @@ namespace DMCompiler.DM.Visitors {
             _currentObject = oldObject;
         }
 
-        public void VisitMultipleObjectVarDefinitions(DMASTMultipleObjectVarDefinitions multipleObjectVarDefinitions) {
-            foreach (DMASTObjectVarDefinition varDefinition in multipleObjectVarDefinitions.VarDefinitions) {
-                varDefinition.Visit(this);
-            }
-        }
-
-        public void VisitObjectVarOverride(DMASTObjectVarOverride varOverride) {
+        public void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
             DMObject oldObject = _currentObject;
 
             _currentObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
@@ -90,7 +98,7 @@ namespace DMCompiler.DM.Visitors {
             _currentObject = oldObject;
         }
 
-        public void VisitProcDefinition(DMASTProcDefinition procDefinition) {
+        public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             string procName = procDefinition.Name;
             DMObject dmObject = _currentObject;
 

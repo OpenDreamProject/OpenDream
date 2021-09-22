@@ -6,6 +6,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
@@ -35,7 +36,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
 
-        private DMASTProcDefinition _astDefinition = null;
+        public readonly DMASTProcDefinition AstDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
@@ -46,17 +47,17 @@ namespace DMCompiler.DM {
         private int _labelIdCounter = 0;
 
         public DMProc(DMASTProcDefinition astDefinition) {
-            _astDefinition = astDefinition;
+            AstDefinition = astDefinition;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
         }
 
         public void Compile(DMObject dmObject) {
-            foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
+            foreach (DMASTDefinitionParameter parameter in AstDefinition.Parameters) {
                 AddParameter(parameter.Name, parameter.Type);
             }
 
-            _astDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
+            AstDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
@@ -155,7 +156,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
-        public void Enumerate(string outputVariableName) {
+        public void Enumerate(string outputVariableName)
+        {
+            if (outputVariableName == ".")
+                throw new CompileErrorException("'.' as loop variable not currently supported");
             WriteOpcode(DreamProcOpcode.Enumerate);
             WriteByte((byte)GetLocalVariable(outputVariableName).Id);
         }

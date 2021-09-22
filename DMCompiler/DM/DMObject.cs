@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMObject {
@@ -32,7 +33,14 @@ namespace DMCompiler.DM {
 
             foreach (List<DMProc> procs in Procs.Values) {
                 foreach (DMProc proc in procs) {
-                    proc.Compile(this);
+                    try
+                    {
+                        proc.Compile(this);
+                    }
+                    catch (Exception e)
+                    {
+                        Program.Error(new CompilerError(null, $"Exception while compiling {Path}/{proc.AstDefinition.Name}():\n{e}"));
+                    }
                 }
             }
         }

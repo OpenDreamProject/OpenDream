@@ -30,7 +30,8 @@ namespace DMCompiler.DM.Expressions {
                             throw new CompileErrorException("Cannot dereference property \"" + deref.Property + "\" because a type specifier is missing");
                         }
 
-                        DMObject dmObject = DMObjectTree.GetDMObject(current_path.Value, false);
+                        if (!DMObjectTree.TryGetDMObject(current_path.Value, out var dmObject))
+                            throw new CompileErrorException($"Type {current_path.Value} does not exist");
 
                         var current = dmObject.GetVariable(deref.Property);
                         if (current == null) current = dmObject.GetGlobalVariable(deref.Property);

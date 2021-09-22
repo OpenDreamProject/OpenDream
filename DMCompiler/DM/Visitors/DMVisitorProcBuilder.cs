@@ -200,6 +200,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
+            if (statementForList.List == null)
+                throw new CompileErrorException("For without list not supported");
+
             DMExpression.Emit(_dmObject, _proc, statementForList.List);
             _proc.CreateListEnumerator();
             _proc.StartScope();

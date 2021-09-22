@@ -83,6 +83,9 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
+                if (_proc == null)
+                    throw new CompileErrorException($"Cannot resolve identifier in const context: {name}");
+
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                 if (localVar != null) {

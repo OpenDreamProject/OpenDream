@@ -2,6 +2,8 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
@@ -24,11 +26,8 @@ namespace DMCompiler.DM {
         }
 
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
-            if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
-
-            DMObject dmObject;
-
-            if (!AllObjects.TryGetValue(path, out dmObject)) {
+            if (!TryGetDMObject(path, out var dmObject))
+            {
                 if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
 
                 DMObject parent = null;
@@ -41,6 +40,14 @@ namespace DMCompiler.DM {
             }
 
             return dmObject;
+        }
+
+        public static bool TryGetDMObject(DreamPath path, [NotNullWhen(true)] out DMObject dmObject)
+        {
+            if (path.IsDescendantOf(DreamPath.List))
+                path = DreamPath.List;
+
+            return AllObjects.TryGetValue(path, out dmObject);
         }
 
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
@@ -90,7 +97,14 @@ namespace DMCompiler.DM {
 
             DMObject root = GetDMObject(DreamPath.Root);
             foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
-                assign.EmitPushValue(root, GlobalInitProc);
+                try
+                {
+                    assign.EmitPushValue(root, GlobalInitProc);
+                }
+                catch (Exception e)
+                {
+                    Program.Error(new CompilerError(null, $"Exception while emitting global init:\n{e}"));
+                }
             }
         }
 

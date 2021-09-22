@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
+using DMCompiler.SpacemanDmm;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Compiler.DMPreprocessor;
@@ -16,100 +17,171 @@ using OpenDreamShared.Json;
 namespace DMCompiler {
     class Program {
         public static int _errorCount = 0;
-        public static string[] CompilerArgs;
-        public static List<string> CompiledFiles = new List<string>(1);
 
-        static void Main(string[] args) {
-            if (!VerifyArguments(args)) return;
-            CompilerArgs = args;
+        static int Main(string[] args)
+        {
+            if (ParseCommandLineArgs(args, out var parsedArgs) is { } exitCode)
+                return exitCode;
 
-            DateTime startTime = DateTime.Now;
-
-            DMPreprocessor preprocessor = Preprocess(CompiledFiles);
-            if (HasArgument("--dump-preprocessor"))
+            var file = parsedArgs.CompileFile;
+            var sw = Stopwatch.StartNew();
+            string interfaceFile;
+            List<string> mapFiles = new();
+            if (parsedArgs.OldParser)
             {
-                StringBuilder result = new();
-                foreach (Token t in preprocessor.GetResult()) {
-                    result.Append(t.Text);
+                DMPreprocessor preprocessor = Preprocess(file);
+                if (parsedArgs.DumpPreprocesor)
+                {
+                    StringBuilder result = new();
+                    foreach (Token t in preprocessor.GetResult()) {
+                        result.Append(t.Text);
+                    }
+
+                    string output = Path.Join(
+                        Path.GetDirectoryName(file) ?? AppDomain.CurrentDomain.BaseDirectory,
+                        "preprocessor_dump.dm");
+
+                    File.WriteAllText(output, result.ToString());
+                    Console.WriteLine($"Preprocessor output dumped to {output}");
                 }
 
-                string output = Path.Join(Path.GetDirectoryName(CompiledFiles?[0]) ?? AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
-                File.WriteAllText(output, result.ToString());
-                Console.WriteLine($"Preprocessor output dumped to {output}");
+                Compile(preprocessor.GetResult());
+
+                interfaceFile = preprocessor.IncludedInterface;
+                mapFiles.AddRange(preprocessor.IncludedMaps);
+            }
+            else
+            {
+                var result = ParseResult.Parse(GetFileList(file));
+
+                var files = result.GetFileList();
+                var diagnostics = result.GetDiagnostics();
+                foreach (var diag in diagnostics)
+                {
+                    var loc = $"{files[diag.Location.File-1]}:{diag.Location.Line}:{diag.Location.Column}";
+                    Console.WriteLine($"{diag.Severity}: {diag.Description}");
+                    Console.WriteLine($"   @ {loc}");
+                }
+
+                AstConverter.ConvertTypesToObjectTree(result);
+
+                var specialFiles = result.GetSpecialFiles();
+                interfaceFile = specialFiles.Skins[0];
+                mapFiles.AddRange(specialFiles.Maps);
             }
 
-            bool successfulCompile = Compile(preprocessor.GetResult());
-            
+            // Parser-independent compile tasks.
+            foreach (var dmObject in DMObjectTree.AllObjects.Values) {
+                dmObject.CompileProcs();
+            }
+
+            DMObjectTree.CreateGlobalInitProc();
+
+            var successfulCompile = _errorCount == 0;
             if (successfulCompile) {
                 //Output file is the first file with the extension changed to .json
-                string outputFile = Path.ChangeExtension(CompiledFiles[0], "json");
-                List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
+                var outputFile = Path.ChangeExtension(file, "json");
+                var maps = ConvertMaps(mapFiles);
 
-                SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                SaveJson(maps, interfaceFile, outputFile);
             }
 
-            TimeSpan duration = DateTime.Now - startTime;
-            Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
+            var duration = sw.Elapsed;
+            Console.WriteLine($"Total time: {duration:mm\\:ss}");
 
             if (!successfulCompile) {
                 Console.WriteLine($"Compilation failed with {_errorCount} errors");
 
                 //Compile errors, exit with an error code
-                Environment.Exit(1);
+                return 1;
             }
+
+            return 0;
         }
 
-        private static bool VerifyArguments(string[] args) {
-            bool file_to_compile = false;
+        /// <returns>Null -> success, value -> return code to exit with</returns>
+        private static int? ParseCommandLineArgs(IEnumerable<string> args, out CommandLineArgs parsed)
+        {
+            parsed = null;
+            var oldParser = false;
+            var dumpPreprocesor = false;
+            string compileFile = null;
 
-            foreach (string arg in args) {
-                if (Path.HasExtension(arg))
+            // ReSharper disable once GenericEnumeratorNotDisposed
+            var enumerator = args.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                var cur = enumerator.Current;
+                if (cur == "--help")
                 {
-                    string extension = Path.GetExtension(arg);
-                    if(extension != ".dme" && extension != ".dm") {
-                        Console.WriteLine(arg + " is not a valid DME or DM file, aborting");
-
-                        return false;
+                    PrintHelp();
+                }
+                else if (cur == "--old-parser")
+                {
+                    oldParser = true;
+                }
+                else if (cur == "--dump-preprocessor")
+                {
+                    dumpPreprocesor = true;
+                }
+                else
+                {
+                    if (compileFile != null)
+                    {
+                        Console.WriteLine($"Cannot specify multiple files to be compiled.");
+                        return 1;
                     }
 
-                    CompiledFiles.Add(arg);
-                    file_to_compile = true;
-                    Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
+                    // File to compile.
+                    var extension = Path.GetExtension(cur);
+                    if (extension is not (".dm" or ".dme"))
+                    {
+                        Console.WriteLine($"'{cur}' is not a valid DME or DM file, aborting");
+                        return 1;
+                    }
+
+                    compileFile = cur;
                 }
             }
 
-            if (!file_to_compile)
-            {
-                Console.WriteLine("At least one DME or DM file must be provided as an argument");
-                return false;
-            }
-
-            return true;
+            parsed = new CommandLineArgs(compileFile, oldParser, dumpPreprocesor);
+            return null;
         }
 
-        private static bool HasArgument(string arg)
+        private static void PrintHelp()
         {
-            return CompilerArgs.Contains(arg);
+            Console.WriteLine(@"usage: DMCompiler [options] <source to compile>
+Arguments:
+    source to compile       The .dme environment or .dm source file to compile.
+
+Options:
+    --old-parser            Use old parser instead of SpacemanDMM.
+");
         }
 
-        private static DMPreprocessor Preprocess(List<string> files) {
+        private static string[] GetFileList(string environmentFile)
+        {
+            var compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+            return new[] { Path.Combine(dmStandardDirectory, "_Standard.dm"), environmentFile };
+        }
+
+        private static DMPreprocessor Preprocess(string file) {
             DMPreprocessor preprocessor = new DMPreprocessor(true);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
             preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
 
-            foreach (string file in files) {
-                string directoryPath = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
+            string directoryPath = Path.GetDirectoryName(file);
+            string fileName = Path.GetFileName(file);
 
-                preprocessor.IncludeFile(directoryPath, fileName);
-            }
+            preprocessor.IncludeFile(directoryPath, fileName);
 
             return preprocessor;
         }
 
-        private static bool Compile(List<Token> preprocessedTokens) {
+        private static void Compile(List<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
             DMParser dmParser = new DMParser(dmLexer);
             DMASTFile astFile = dmParser.File();
@@ -125,22 +197,14 @@ namespace DMCompiler {
                     Error(error);
                 }
 
-                return false;
+                return;
             }
-
-            if (astFile == null) return false;
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             astSimplifier.SimplifyAST(astFile);
 
             DMVisitorObjectBuilder dmObjectBuilder = new DMVisitorObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
-
-            if (_errorCount > 0) {
-                return false;
-            }
-
-            return true;
         }
 
         public static void Error(CompilerError error) {
@@ -192,5 +256,10 @@ namespace DMCompiler {
             File.WriteAllText(outputFile, json);
             Console.WriteLine("Saved to " + outputFile);
         }
+
+        private sealed record CommandLineArgs(
+            string CompileFile,
+            bool OldParser,
+            bool DumpPreprocesor);
     }
 }

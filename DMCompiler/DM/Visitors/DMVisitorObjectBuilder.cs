@@ -9,12 +9,6 @@ namespace DMCompiler.DM.Visitors {
         public void BuildObjectTree(DMASTFile astFile) {
             DMObjectTree.Reset();
             astFile.Visit(this);
-
-            foreach (DMObject dmObject in DMObjectTree.AllObjects.Values) {
-                dmObject.CompileProcs();
-            }
-
-            DMObjectTree.CreateGlobalInitProc();
         }
 
         public void VisitFile(DMASTFile file) {
@@ -92,7 +86,7 @@ namespace DMCompiler.DM.Visitors {
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
-            
+
             _currentObject = oldObject;
         }
 

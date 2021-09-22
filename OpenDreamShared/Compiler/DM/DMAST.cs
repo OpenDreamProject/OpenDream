@@ -212,6 +212,22 @@ namespace OpenDreamShared.Compiler.DM {
             Body = body;
         }
 
+        public DMASTProcDefinition(
+            DreamPath objectPath,
+            string name,
+            bool isVerb,
+            bool isOverride,
+            DMASTDefinitionParameter[] parameters,
+            DMASTProcBlockInner body)
+        {
+            IsOverride = isOverride;
+            IsVerb = isVerb;
+            Name = name;
+            ObjectPath = objectPath;
+            Parameters = parameters;
+            Body = body;
+        }
+
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcDefinition(this);
         }
@@ -308,6 +324,13 @@ namespace OpenDreamShared.Compiler.DM {
 
             Type = (typePath.Elements.Length > 0) ? typePath : null;
             Name = path.Path.LastElement;
+            Value = value;
+        }
+
+        public DMASTProcStatementVarDeclaration(string name, DreamPath? type, DMASTExpression value)
+        {
+            Name = name;
+            Type = type is { Elements: { Length: >= 1} } ? type : null;
             Value = value;
         }
 
@@ -1529,6 +1552,20 @@ namespace OpenDreamShared.Compiler.DM {
 
             ObjectType = (path.Elements.Length > 1) ? path.FromElements(0, -2) : null;
             Name = path.LastElement;
+            Value = value;
+            Type = type;
+            PossibleValues = possibleValues;
+        }
+
+        public DMASTDefinitionParameter(
+            string name,
+            DreamPath objectType,
+            DMASTExpression value,
+            DMValueType type,
+            DMASTExpression possibleValues)
+        {
+            Name = name;
+            ObjectType = objectType;
             Value = value;
             Type = type;
             PossibleValues = possibleValues;

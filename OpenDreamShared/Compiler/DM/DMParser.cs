@@ -116,7 +116,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 }
 
                                 DMASTExpression size = Expression();
-                                Consume(TokenType.DM_RightBracket, "Expected ']'");
+                                ConsumeRightBracket();
                                 Whitespace();
 
                                 if (size is not null) {
@@ -1607,13 +1607,17 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTCallParameter[] parameters = ProcCall();
 
                 //TODO: These don't need to be separate types
-                switch (type) {
-                    case DMASTDereference deref: return new DMASTNewDereference(deref, parameters);
-                    case DMASTIdentifier identifier: return new DMASTNewIdentifier(identifier, parameters);
-                    case DMASTConstantPath path: return new DMASTNewPath(path.Value, parameters);
-                    case null: return new DMASTNewInferred(parameters);
-                    default: Error("Invalid type"); break;
-                }
+                DMASTExpression newExpression = type switch {
+                    DMASTDereference deref => new DMASTNewDereference(deref, parameters),
+                    DMASTIdentifier identifier => new DMASTNewIdentifier(identifier, parameters),
+                    DMASTConstantPath path => new DMASTNewPath(path.Value, parameters),
+                    null => new DMASTNewInferred(parameters),
+                    _ => null
+                };
+
+                if (newExpression == null) Error("Invalid type");
+                newExpression = ParseDereference(newExpression);
+                return newExpression;
             }
 
             return ParseDereference(ExpressionPrimary());
@@ -1873,7 +1877,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_LeftBracket)) {
                     Whitespace();
                     DMASTExpression index = Expression();
-                    Consume(TokenType.DM_RightBracket, "Expected ']'");
+                    ConsumeRightBracket();
 
                     expression = new DMASTListIndex(expression, index);
                     expression = ParseDereference(expression);

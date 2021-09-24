@@ -78,7 +78,7 @@ namespace OpenDreamShared.Resources {
                         if (imageSize == null) throw new Exception("The PNG did not contain an IHDR chunk");
 
                         long chunkDataPosition = stream.Position;
-                        string keyword = Convert.ToString(reader.ReadChar());
+                        string keyword = char.ToString(reader.ReadChar());
 
                         while (reader.PeekChar() != 0 && keyword.Length < 79) {
                             keyword += reader.ReadChar();

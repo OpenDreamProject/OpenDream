@@ -15,6 +15,56 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMParser(DMLexer lexer) : base(lexer) { }
 
+        private static readonly TokenType[] AssignTypes =
+        {
+            TokenType.DM_Equals,
+            TokenType.DM_PlusEquals,
+            TokenType.DM_MinusEquals,
+            TokenType.DM_BarEquals,
+            TokenType.DM_AndEquals,
+            TokenType.DM_StarEquals,
+            TokenType.DM_SlashEquals,
+            TokenType.DM_LeftShiftEquals,
+            TokenType.DM_RightShiftEquals,
+            TokenType.DM_XorEquals,
+            TokenType.DM_ModulusEquals
+        };
+
+        private static readonly TokenType[] ComparisonTypes =
+        {
+            TokenType.DM_EqualsEquals,
+            TokenType.DM_ExclamationEquals,
+            TokenType.DM_TildeEquals,
+            TokenType.DM_TildeExclamation
+        };
+
+        private static readonly TokenType[] LtGtComparisonTypes =
+        {
+            TokenType.DM_LessThan,
+            TokenType.DM_LessThanEquals,
+            TokenType.DM_GreaterThan,
+            TokenType.DM_GreaterThanEquals
+        };
+
+        private static readonly TokenType[] ShiftTypes =
+        {
+            TokenType.DM_LeftShift,
+            TokenType.DM_RightShift
+        };
+
+        private static readonly TokenType[] PlusMinusTypes =
+        {
+            TokenType.DM_Plus,
+            TokenType.DM_Minus,
+        };
+
+        private static readonly TokenType[] MulDivModTypes =
+        {
+            TokenType.DM_Star,
+            TokenType.DM_Slash,
+            TokenType.DM_Modulus
+        };
+
         public DMASTFile File() {
             List<DMASTStatement> statements = new();
 
@@ -1269,21 +1319,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (expression != null) {
                 Token token = Current();
-                ReadOnlySpan<TokenType> assignTypes = new TokenType[] {
-                    TokenType.DM_Equals,
-                    TokenType.DM_PlusEquals,
-                    TokenType.DM_MinusEquals,
-                    TokenType.DM_BarEquals,
-                    TokenType.DM_AndEquals,
-                    TokenType.DM_StarEquals,
-                    TokenType.DM_SlashEquals,
-                    TokenType.DM_LeftShiftEquals,
-                    TokenType.DM_RightShiftEquals,
-                    TokenType.DM_XorEquals,
-                    TokenType.DM_ModulusEquals
-                };
-
-                if (Check(assignTypes)) {
+                if (Check(AssignTypes)) {
                     Whitespace();
                     DMASTExpression value = ExpressionAssign();
 
@@ -1398,14 +1434,8 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionBitShift();
 
             if (a != null) {
-                ReadOnlySpan<TokenType> types = new TokenType[] {
-                    TokenType.DM_EqualsEquals,
-                    TokenType.DM_ExclamationEquals,
-                    TokenType.DM_TildeEquals,
-                    TokenType.DM_TildeExclamation };
-
                 Token token = Current();
-                while (Check(types)) {
+                while (Check(ComparisonTypes)) {
                     Whitespace();
                     DMASTExpression b = ExpressionBitShift();
                     if (b == null) Error("Expected an expression to compare to");
@@ -1426,13 +1456,8 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionComparisonLtGt();
 
             if (a != null) {
-                ReadOnlySpan<TokenType> types = new TokenType[] {
-                    TokenType.DM_LeftShift,
-                    TokenType.DM_RightShift
-                };
-
                 Token token = Current();
-                while (Check(types)) {
+                while (Check(ShiftTypes)) {
                     Whitespace();
                     DMASTExpression b = ExpressionComparisonLtGt();
                     if (b == null) Error("Expected an expression");
@@ -1452,15 +1477,8 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionAdditionSubtraction();
 
             if (a != null) {
-                ReadOnlySpan<TokenType> types = new TokenType[] {
-                    TokenType.DM_LessThan,
-                    TokenType.DM_LessThanEquals,
-                    TokenType.DM_GreaterThan,
-                    TokenType.DM_GreaterThanEquals
-                };
-
                 Token token = Current();
-                while (Check(types)) {
+                while (Check(LtGtComparisonTypes)) {
                     Whitespace();
                     DMASTExpression b = ExpressionAdditionSubtraction();
                     if (b == null) Error("Expected an expression");
@@ -1482,13 +1500,8 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionMultiplicationDivisionModulus();
 
             if (a != null) {
-                ReadOnlySpan<TokenType> types = new TokenType[] {
-                    TokenType.DM_Plus,
-                    TokenType.DM_Minus,
-                };
-
                 Token token = Current();
-                while (Check(types)) {
+                while (Check(PlusMinusTypes)) {
                     Whitespace();
                     DMASTExpression b = ExpressionMultiplicationDivisionModulus();
                     if (b == null) Error("Expected an expression");
@@ -1509,14 +1522,8 @@ namespace OpenDreamShared.Compiler.DM {
             DMASTExpression a = ExpressionPower();
 
             if (a != null) {
-                ReadOnlySpan<TokenType> types = new[] {
-                    TokenType.DM_Star,
-                    TokenType.DM_Slash,
-                    TokenType.DM_Modulus
-                };
-
                 Token token = Current();
-                while (Check(types)) {
+                while (Check(MulDivModTypes)) {
                     Whitespace();
                     DMASTExpression b = ExpressionPower();
                     if (b == null) Error("Expected an expression");

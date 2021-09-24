@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Robust.Shared.Log;
 
 namespace OpenDreamShared.Compiler {
     public partial class Parser<SourceType> {
@@ -25,7 +26,8 @@ namespace OpenDreamShared.Compiler {
         }
         protected void Fatal(string error) {
             foreach (var err in Errors) {
-                System.Console.WriteLine(err);
+                Logger.Fatal(err.ToString());
+
             }
             throw new System.Exception(error);
         }

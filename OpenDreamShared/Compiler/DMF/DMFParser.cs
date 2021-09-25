@@ -242,6 +242,10 @@ namespace OpenDreamShared.Compiler.DMF {
 
             while (TryGetAttribute(out var key, out var value))
             {
+                if (value[0] == '"')
+                {
+                    value = value.Substring(1, value.Length - 2);
+                }
                 node.Add(key, value);
             }
 

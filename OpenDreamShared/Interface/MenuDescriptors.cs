@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
     public class MenuDescriptor {
@@ -12,13 +13,11 @@ namespace OpenDreamShared.Interface {
     }
 
     public class MenuElementDescriptor : ElementDescriptor {
-        [InterfaceAttribute("command")]
+        [DataField("command")]
         public string Command;
-        [InterfaceAttribute("category")]
+        [DataField("category")]
         public string Category;
-        [InterfaceAttribute("can-check")]
+        [DataField("can-check")]
         public bool CanCheck;
-
-        public MenuElementDescriptor(string name) : base(name) { }
     }
 }

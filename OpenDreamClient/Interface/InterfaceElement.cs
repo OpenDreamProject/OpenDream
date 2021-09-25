@@ -12,7 +12,7 @@ namespace OpenDreamClient.Interface
         }
 
         public void SetAttribute(string name, object value) {
-            _elementDescriptor.SetAttribute(name, value);
+            //_elementDescriptor.SetAttribute(name, value);
             UpdateElementDescriptor();
         }
 

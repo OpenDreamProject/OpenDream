@@ -22,10 +22,12 @@ namespace OpenDreamClient.Interface
             Vector2i size,
             IClydeWindow ownerWindow) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name, new() {
-                new ControlDescriptorMain("main") {
+                new ControlDescriptorMain() {
+                    Name = "main",
                     Size = size
                 },
-                new ControlDescriptorBrowser("browser") {
+                new ControlDescriptorBrowser() {
+                    Name = "browser",
                     Size = size,
                     Anchor1 = new Vector2i(0, 0),
                     Anchor2 = new Vector2i(100, 100)

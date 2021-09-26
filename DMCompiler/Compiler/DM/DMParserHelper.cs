@@ -1,4 +1,6 @@
-﻿namespace OpenDreamShared.Compiler.DM {
+﻿using OpenDreamShared.Compiler;
+
+namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
         protected bool PeekDelimiter() {
             return Current().Type == TokenType.Newline || Current().Type == TokenType.DM_Semicolon;

@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenDreamShared.Compiler;
 
-namespace OpenDreamShared.Compiler.DMPreprocessor {
+namespace DMCompiler.Compiler.DMPreprocessor {
     class DMPreprocessorLexer : TextLexer {
         public DMPreprocessorLexer(string sourceName, string source) : base(sourceName, source) { }
 

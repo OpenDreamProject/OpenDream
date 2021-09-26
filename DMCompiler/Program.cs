@@ -5,12 +5,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Compiler.DMPreprocessor;
+using DMCompiler.Compiler.DM;
 using OpenDreamShared.Json;
 
 namespace DMCompiler {

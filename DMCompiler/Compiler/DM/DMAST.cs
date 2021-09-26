@@ -1,8 +1,9 @@
 using System;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.Compiler.DM {
     public interface DMASTVisitor : ASTVisitor {
         public void VisitFile(DMASTFile file) { throw new NotImplementedException(); }
         public void VisitBlockInner(DMASTBlockInner block) { throw new NotImplementedException(); }

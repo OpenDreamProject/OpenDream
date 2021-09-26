@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
-using Dereference = OpenDreamShared.Compiler.DM.DMASTDereference.Dereference;
 using System.Text;
-using OpenDreamShared.Compiler.DMPreprocessor;
+using DMCompiler.Compiler.DMPreprocessor;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
         public static char StringFormatCharacter = (char)0xFF;
 

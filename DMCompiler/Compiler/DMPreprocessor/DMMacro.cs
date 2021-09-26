@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenDreamShared.Compiler;
 
-namespace OpenDreamShared.Compiler.DMPreprocessor {
+namespace DMCompiler.Compiler.DMPreprocessor {
     class DMMacro {
         private List<string> _parameters;
         private List<Token> _tokens;

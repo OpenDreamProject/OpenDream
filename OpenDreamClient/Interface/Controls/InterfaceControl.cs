@@ -17,7 +17,7 @@ namespace OpenDreamClient.Interface.Controls
         public Vector2i? Anchor1 { get => _controlDescriptor.Anchor1; }
         public Vector2i? Anchor2 { get => _controlDescriptor.Anchor2; }
 
-        protected ControlDescriptor _controlDescriptor { get => _elementDescriptor as ControlDescriptor; }
+        protected ControlDescriptor _controlDescriptor { get => ElementDescriptor as ControlDescriptor; }
         protected ControlWindow _window;
 
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]

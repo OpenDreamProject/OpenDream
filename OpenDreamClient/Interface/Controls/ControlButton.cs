@@ -22,12 +22,12 @@ namespace OpenDreamClient.Interface.Controls {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)_elementDescriptor;
+            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
             _button.Text = controlDescriptor.Text;
         }
 
         private void OnButtonClick(BaseButton.ButtonEventArgs args) {
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)_elementDescriptor;
+            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
             if (controlDescriptor.Command != null) {
                 EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.Command);

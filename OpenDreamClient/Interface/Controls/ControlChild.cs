@@ -28,7 +28,7 @@ namespace OpenDreamClient.Interface.Controls {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)_elementDescriptor;
+            ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)ElementDescriptor;
 
             _grid.Children.Remove(_leftElement?.UIElement);
             _grid.Children.Remove(_rightElement?.UIElement);

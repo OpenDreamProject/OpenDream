@@ -17,6 +17,8 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
 
@@ -29,6 +31,7 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
+        [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -209,13 +212,15 @@ namespace OpenDreamClient.Interface {
             string winsetParams = message.Params.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(winsetParams);
 
+            var node = new MappingDataNode();
             foreach (string attribute in query.AllKeys) {
-                if (DMFLexer.ValidAttributes.Contains(attribute)) {
+                if (attribute != null && DMFLexer.ValidAttributes.Contains(attribute)) {
                     string value = query.GetValues(attribute)[^1];
 
                     Token attributeValue = new DMFLexer(null, value).GetNextToken();
-                    if (Array.IndexOf(DMFParser.ValidAttributeValueTypes, attributeValue.Type) >= 0) {
-                        element.SetAttribute(attribute, attributeValue.Value);
+                    if (Array.IndexOf(DMFParser.ValidAttributeValueTypes, attributeValue.Type) >= 0)
+                    {
+                        node.Add(attribute, attributeValue.Text);
                     } else {
                         throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");
                     }
@@ -223,6 +228,8 @@ namespace OpenDreamClient.Interface {
                     throw new Exception("Invalid attribute \"" + attribute + "\"");
                 }
             }
+
+            element.PopulateElementDescriptor(node, _serializationManager);
         }
 
         private void RxLoadInterface(MsgLoadInterface message)

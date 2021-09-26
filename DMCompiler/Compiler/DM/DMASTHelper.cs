@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.Compiler.DM {
 

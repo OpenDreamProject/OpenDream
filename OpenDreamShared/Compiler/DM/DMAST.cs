@@ -622,12 +622,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementTryCatch : DMASTProcStatement {
         public DMASTProcBlockInner TryBody;
         public DMASTProcBlockInner CatchBody;
-        public DMASTDefinitionParameter[] CatchParameters;
-        public DMASTProcStatementTryCatch(DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTDefinitionParameter[] catchParameters)
+        public DMASTProcStatement CatchParameter;
+        public DMASTProcStatementTryCatch(DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTProcStatement catchParameter)
         {
             TryBody = tryBody;
             CatchBody = catchBody;
-            CatchParameters = catchParameters;
+            CatchParameter = catchParameter;
         }
 
         public void Visit(DMASTVisitor visitor) {

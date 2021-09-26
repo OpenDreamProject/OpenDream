@@ -168,13 +168,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
-            if (tryCatch.CatchParameters is not null)
-            {
-                foreach (DMASTDefinitionParameter parameter in tryCatch.CatchParameters) {
-                    SimplifyExpression(ref parameter.Value);
-                }
-            }
-
             tryCatch.TryBody.Visit(this);
             tryCatch.CatchBody.Visit(this);
         }

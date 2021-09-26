@@ -1034,12 +1034,11 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
 
                 // catch(var/exception/E)
-                // TODO: handle correctly
-                DMASTDefinitionParameter[] parameters = null;
+                DMASTProcStatement parameter = null;
                 if (Check(TokenType.DM_LeftParenthesis))
                 {
                     BracketWhitespace();
-                    parameters = DefinitionParameters();
+                    parameter = ProcVarDeclaration(allowMultiple: false);
                     BracketWhitespace();
                     ConsumeRightParenthesis();
                     Whitespace();
@@ -1049,11 +1048,10 @@ namespace OpenDreamShared.Compiler.DM {
                 if (catchBody == null) {
                     DMASTProcStatement statement = ProcStatement();
 
-                    //if (statement == null) Error("Expected body or statement");
                     catchBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                return new DMASTProcStatementTryCatch(tryBody, catchBody, parameters);
+                return new DMASTProcStatementTryCatch(tryBody, catchBody, parameter);
             }
 
             return null;
@@ -1292,7 +1290,7 @@ namespace OpenDreamShared.Compiler.DM {
                  * What DM does here is parse `foo():pixel_x` as a dereference, and attempts to split it into a correct ternary
                  * Everything past the last proc call followed by a dereference becomes "c"
                  * This last dereference must also be a search, otherwise it's a "Expected ':'" error
-                 * 
+                 *
                  * None of this happens if there is a whitespace followed by a colon after the "b" expression:
                  *      a ? foo():pixel_x : 2
                  */

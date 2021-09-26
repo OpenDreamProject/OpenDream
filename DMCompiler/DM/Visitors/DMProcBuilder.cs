@@ -425,33 +425,14 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
             _proc.Jump(endLabel);
 
-            //TODO handle these properly instead of being copypasted from DMASTProcDefinition
-            if (tryCatch.CatchParameters != null)
+            if (tryCatch.CatchParameter != null)
             {
-                foreach (DMASTDefinitionParameter parameter in tryCatch.CatchParameters) {
-                    string parameterName = parameter.Name;
-
-                    _proc.AddLocalVariable(parameterName, parameter.ObjectType);
-                    if (parameter.Value != null) {
-                        string afterDefaultValueCheck = _proc.NewLabelName();
-
-                        _proc.PushLocalVariable(parameterName);
-                        _proc.IsNull();
-                        _proc.JumpIfFalse(afterDefaultValueCheck);
-
-                        _proc.PushLocalVariable(parameterName);
-                        try {
-                            DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
-                        } catch (CompileErrorException e) {
-                            Program.Error(e.Error);
-                        }
-                        _proc.Assign();
-
-                        _proc.AddLabel(afterDefaultValueCheck);
-                    }
-                }
+                //TODO set the value to what is thrown in try
+                var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
+                _proc.AddLocalVariable(param.Name, param.Type);
             }
 
+            //TODO make catching actually work
             _proc.AddLabel(catchLabel);
             _proc.StartScope();
             ProcessBlockInner(tryCatch.CatchBody);

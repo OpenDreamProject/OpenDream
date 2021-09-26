@@ -4,8 +4,9 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using OpenDreamShared.Dream;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.Compiler.DM {
 
 
     public static partial class DMAST {

@@ -144,7 +144,8 @@ namespace OpenDreamShared.Dream {
                     color += "ff";
                 }
 
-                Color = Convert.ToUInt32(color, 16);
+                Color = uint.Parse(color, System.Globalization.NumberStyles.HexNumber);
+
             } else if (!Colors.TryGetValue(color.ToLower(), out Color)) {
                 throw new ArgumentException("Invalid color '" + color + "'");
             }

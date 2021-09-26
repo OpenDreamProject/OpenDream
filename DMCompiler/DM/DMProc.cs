@@ -1,5 +1,5 @@
 ﻿using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler.DM;
+using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;

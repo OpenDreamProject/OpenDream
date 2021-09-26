@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenDreamShared.Compiler;
 
-namespace OpenDreamShared.Compiler.DMPreprocessor {
+namespace DMCompiler.Compiler.DMPreprocessor {
     class DMPreprocessorLexer : TextLexer {
         public DMPreprocessorLexer(string sourceName, string source) : base(sourceName, source) { }
 
@@ -225,7 +226,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         break;
                     }
                     case '#': {
-                        StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
+                        StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                         while ((IsAlphabetic(Advance()) ||GetCurrent() == '_' || GetCurrent() == '#') && !AtEndOfSource) {
                             textBuilder.Append(GetCurrent());
                         }
@@ -258,12 +259,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     }
                     default: {
                         if (IsAlphabetic(c) || c == '_') {
-                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
+                            StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                             while ((IsAlphanumeric(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
 
                             token = CreateToken(TokenType.DM_Preproc_Identifier, textBuilder.ToString());
                         } else if (IsNumeric(c)) {
-                            StringBuilder textBuilder = new StringBuilder(Convert.ToString(c));
+                            StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                             bool error = false;
 
                             while (!AtEndOfSource) {
@@ -329,7 +330,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         //If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
         private Token LexString(bool isLong) {
             char terminator = GetCurrent();
-            StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : Convert.ToString(terminator));
+            StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : char.ToString(terminator));
             Queue<Token> stringTokens = new();
 
             Advance();

@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using OpenDreamShared.Compiler;
 
-namespace OpenDreamShared.Compiler.DMPreprocessor {
+namespace DMCompiler.Compiler.DMPreprocessor {
     public class DMPreprocessor {
         public List<string> IncludedMaps = new();
         public string IncludedInterface;

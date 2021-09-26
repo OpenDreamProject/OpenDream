@@ -7,19 +7,17 @@ namespace OpenDreamShared.Compiler {
     public struct CompilerError {
         public Token Token;
         public string Message;
-        public StackTrace StackTrace;
 
         public CompilerError(Token token, string message) {
             Token = token;
             Message = message;
-            StackTrace = new StackTrace(true);
         }
 
         public override string ToString() {
             string location;
 
             if (Token != null) {
-                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
+                location = $"{Token.SourceFile}:{Token.Line.ToString()}:{Token.Column.ToString()} at '{Token.PrintableText}'";
             } else {
                 location = "(unknown location)";
             }

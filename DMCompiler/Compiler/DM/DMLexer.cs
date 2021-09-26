@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using OpenDreamShared.Compiler;
 
-namespace OpenDreamShared.Compiler.DM {
+namespace DMCompiler.Compiler.DM {
     public partial class DMLexer : TokenLexer {
         public static List<string> ValidEscapeSequences = new() {
             "t", "n",

@@ -3,6 +3,7 @@ using OpenDreamShared.Compiler.DM;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
@@ -167,8 +168,18 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
-                DMExpression.Emit(_dmObject, _proc, statement.Value);
-            } else {
+                var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
+                if (!_proc.ReturnTypes.Equals(DMValueType.Anything) && expr.Path == DreamPath.List)
+                {
+                    Program.Error(new CompilerError(null,
+                        $"{_proc.Path}.{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}"));
+                }
+                else
+                {
+                    _proc.ValidateReturnType(expr.ValType);
+                }
+            } else
+            {
                 _proc.PushSelf(); //Default return value
             }
 

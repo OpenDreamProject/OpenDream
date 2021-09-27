@@ -2,6 +2,7 @@
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMObjectBuilder {
@@ -100,7 +101,7 @@ namespace DMCompiler.DM.Visitors {
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
-            
+
             _currentObject = oldObject;
         }
 
@@ -113,7 +114,26 @@ namespace DMCompiler.DM.Visitors {
                     dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
                 }
 
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
+                if (procDefinition.IsOverride)
+                {
+                    if (dmObject is not null)
+                    {
+                        var parentProcs = dmObject.GetProcs(procName);
+                        if (parentProcs is not null && parentProcs.Count >= 1)
+                        {
+                            var parent = parentProcs[^1];
+                            if (procDefinition.ReturnTypes.Equals(DMValueType.Anything))
+                            {
+                                procDefinition.ReturnTypes = parent.ReturnTypes;
+                            }
+                            if (!parent.ReturnTypes.Equals(procDefinition.ReturnTypes))
+                            {
+                                throw new CompileErrorException($"{procDefinition.ObjectPath}.{procName} cannot override return type {parent.ReturnTypes} of parent proc {parent.Path}.{parent.Name}");
+                            }
+                        };
+                    }
+
+                } else if(dmObject.HasProc(procName)) {
                     throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
                 }
 

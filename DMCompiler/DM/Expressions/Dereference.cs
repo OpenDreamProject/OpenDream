@@ -124,11 +124,11 @@ namespace DMCompiler.DM.Expressions {
 
         public DMValueType GetReturnType()
         {
-            if (_parent.Path == null)
+            if (_expr.Path == null)
             {
                 return DMValueType.Anything;
             }
-            DMObject dmObject = DMObjectTree.GetDMObject(_parent.Path.Value);
+            DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
 
             var T = dmObject.GetReturnType(_field);
             return T;

@@ -78,6 +78,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
+                case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
                     foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
                         ProcessStatementVarDeclaration(varDeclaration);
@@ -413,6 +414,31 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+            string catchLabel = _proc.NewLabelName();
+            string endLabel = _proc.NewLabelName();
+
+            _proc.StartScope();
+            ProcessBlockInner(tryCatch.TryBody);
+            _proc.EndScope();
+            _proc.Jump(endLabel);
+
+            if (tryCatch.CatchParameter != null)
+            {
+                //TODO set the value to what is thrown in try
+                var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
+                _proc.AddLocalVariable(param.Name, param.Type);
+            }
+
+            //TODO make catching actually work
+            _proc.AddLabel(catchLabel);
+            _proc.StartScope();
+            ProcessBlockInner(tryCatch.CatchBody);
+            _proc.EndScope();
+            _proc.AddLabel(endLabel);
+
         }
     }
 }

@@ -448,6 +448,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (procStatement == null) procStatement = While();
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
+                if (procStatement == null) procStatement = TryCatch();
 
                 if (procStatement != null) {
                     Whitespace();
@@ -1016,6 +1017,46 @@ namespace OpenDreamShared.Compiler.DM {
             return null;
         }
 
+        public DMASTProcStatementTryCatch TryCatch() {
+            if (Check(TokenType.DM_Try)) {
+                DMASTProcBlockInner tryBody = ProcBlock();
+                if (tryBody == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    if (statement == null) Error("Expected body or statement");
+                    tryBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                Warning("Exceptions in 'try/catch' blocks are currently not caught");
+
+                Newline();
+                Consume(TokenType.DM_Catch, "Expected catch");
+                Whitespace();
+
+                // catch(var/exception/E)
+                DMASTProcStatement parameter = null;
+                if (Check(TokenType.DM_LeftParenthesis))
+                {
+                    BracketWhitespace();
+                    parameter = ProcVarDeclaration(allowMultiple: false);
+                    BracketWhitespace();
+                    ConsumeRightParenthesis();
+                    Whitespace();
+                }
+
+                DMASTProcBlockInner catchBody = ProcBlock();
+                if (catchBody == null) {
+                    DMASTProcStatement statement = ProcStatement();
+
+                    catchBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                }
+
+                return new DMASTProcStatementTryCatch(tryBody, catchBody, parameter);
+            }
+
+            return null;
+        }
+
         public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
@@ -1249,7 +1290,7 @@ namespace OpenDreamShared.Compiler.DM {
                  * What DM does here is parse `foo():pixel_x` as a dereference, and attempts to split it into a correct ternary
                  * Everything past the last proc call followed by a dereference becomes "c"
                  * This last dereference must also be a search, otherwise it's a "Expected ':'" error
-                 * 
+                 *
                  * None of this happens if there is a whitespace followed by a colon after the "b" expression:
                  *      a ? foo():pixel_x : 2
                  */

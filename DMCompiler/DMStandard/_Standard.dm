@@ -94,6 +94,7 @@ proc/winset(player, control_id, params)
 #include "Defines.dm"
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
+#include "Types\Exception.dm"
 #include "Types\Icon.dm"
 #include "Types\Image.dm"
 #include "Types\List.dm"

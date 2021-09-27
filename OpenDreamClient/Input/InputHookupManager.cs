@@ -64,7 +64,6 @@ namespace OpenDreamClient.Input {
             var foundSprites = new List<DMISpriteComponent>();
             foreach (IEntity entity in entities) {
                 if (entity.TryGetComponent<DMISpriteComponent>(out var sprite)
-                    && entity.Transform.IsMapTransform
                     && sprite.IsMouseOver(coords.Position)) {
                     foundSprites.Add(sprite);
                 }

@@ -65,7 +65,7 @@ namespace DMCompiler.DM {
                 AddParameter(parameter.Name, parameter.Type);
             }
 
-            _astDefinition.Visit(new DMVisitorProcBuilder(dmObject, this));
+            new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
         }
 
         public void ValidateReturnType(DMValueType type)

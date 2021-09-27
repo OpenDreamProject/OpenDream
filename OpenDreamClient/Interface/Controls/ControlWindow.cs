@@ -40,7 +40,7 @@ namespace OpenDreamClient.Interface.Controls
         {
             // Don't call base.UpdateElementDescriptor();
 
-            var controlDescriptor = (ControlDescriptorMain)_elementDescriptor;
+            var controlDescriptor = (ControlDescriptorMain)ElementDescriptor;
 
             if (controlDescriptor.Menu != null)
             {
@@ -73,7 +73,7 @@ namespace OpenDreamClient.Interface.Controls
             window.Closing += _ => { _openWindows.Remove((window, null)); };
 
             _openWindows.Add((window, null));
-            UpdateWindowAttributes((window, null), (ControlDescriptorMain)_elementDescriptor);
+            UpdateWindowAttributes((window, null), (ControlDescriptorMain)ElementDescriptor);
             return window;
         }
 
@@ -81,7 +81,7 @@ namespace OpenDreamClient.Interface.Controls
         {
             // todo: listen for closed.
             _openWindows.Add((null, window));
-            UpdateWindowAttributes((null, window), (ControlDescriptorMain)_elementDescriptor);
+            UpdateWindowAttributes((null, window), (ControlDescriptorMain)ElementDescriptor);
         }
 
         public void UpdateAnchors()

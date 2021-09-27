@@ -1,5 +1,6 @@
 ﻿using Robust.Shared.Maths;
 using System.Collections.Generic;
+using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
     public class WindowDescriptor {
@@ -20,83 +21,68 @@ namespace OpenDreamShared.Interface {
     }
 
     public class ControlDescriptor : ElementDescriptor {
-        [InterfaceAttribute("pos")]
+        [DataField("pos")]
         public Vector2i? Pos = null;
-        [InterfaceAttribute("size")]
+        [DataField("size")]
         public Vector2i? Size = null;
-        [InterfaceAttribute("anchor1")]
+        [DataField("anchor1")]
         public Vector2i? Anchor1 = null;
-        [InterfaceAttribute("anchor2")]
+        [DataField("anchor2")]
         public Vector2i? Anchor2 = null;
-        [InterfaceAttribute("background-color")]
+        [DataField("background-color")]
         public Color? BackgroundColor = null;
-        [InterfaceAttribute("is-visible")]
+        [DataField("is-visible")]
         public bool IsVisible = true;
-        [InterfaceAttribute("is-default")]
+        [DataField("is-default")]
         public bool IsDefault = false;
-        [InterfaceAttribute("is-disabled")]
+        [DataField("is-disabled")]
         public bool IsDisabled = false;
-
-        public ControlDescriptor(string name) : base(name) { }
     }
 
     public class ControlDescriptorMain : ControlDescriptor {
-        [InterfaceAttribute("is-pane")]
+        [DataField("is-pane")]
         public bool IsPane = false;
-        [InterfaceAttribute("icon")]
+        [DataField("icon")]
         public string Icon = null;
-        [InterfaceAttribute("menu")]
+        [DataField("menu")]
         public string Menu = null;
-        [InterfaceAttribute("title")]
+        [DataField("title")]
         public string Title = null;
-
-        public ControlDescriptorMain(string name) : base(name) { }
     }
 
     public class ControlDescriptorChild : ControlDescriptor {
-        [InterfaceAttribute("left")]
+        [DataField("left")]
         public string Left = null;
-        [InterfaceAttribute("right")]
+        [DataField("right")]
         public string Right = null;
-        [InterfaceAttribute("is-vert")]
+        [DataField("is-vert")]
         public bool IsVert = false;
-
-        public ControlDescriptorChild(string name) : base(name) { }
     }
 
     public class ControlDescriptorInput : ControlDescriptor {
-        public ControlDescriptorInput(string name) : base(name) { }
     }
 
     public class ControlDescriptorButton : ControlDescriptor {
-        [InterfaceAttribute("text")]
+        [DataField("text")]
         public string Text = null;
-        [InterfaceAttribute("command")]
+        [DataField("command")]
         public string Command = null;
-
-        public ControlDescriptorButton(string name) : base(name) { }
     }
 
     public class ControlDescriptorOutput : ControlDescriptor {
-        public ControlDescriptorOutput(string name) : base(name) { }
     }
 
     public class ControlDescriptorInfo : ControlDescriptor {
-        public ControlDescriptorInfo(string name) : base(name) { }
     }
 
     public class ControlDescriptorMap : ControlDescriptor {
-        public ControlDescriptorMap(string name) : base(name) { }
     }
 
     public class ControlDescriptorBrowser : ControlDescriptor {
-        public ControlDescriptorBrowser(string name) : base(name) { }
     }
 
     public class ControlDescriptorLabel : ControlDescriptor {
-        [InterfaceAttribute("text")]
+        [DataField("text")]
         public string Text = null;
-
-        public ControlDescriptorLabel(string name) : base(name) { }
     }
 }

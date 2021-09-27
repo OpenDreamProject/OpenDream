@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
     public class InterfaceDescriptor {
@@ -15,34 +16,9 @@ namespace OpenDreamShared.Interface {
         }
     }
 
+    [ImplicitDataDefinitionForInheritors]
     public class ElementDescriptor {
-        [InterfaceAttribute("name")]
+        [DataField("name")]
         public string Name;
-
-        private Dictionary<string, FieldInfo> _attributeNameToField = new();
-
-        public ElementDescriptor(string name) {
-            Name = name;
-
-            foreach (FieldInfo field in GetType().GetFields()) {
-                InterfaceAttributeAttribute attribute = field.GetCustomAttribute<InterfaceAttributeAttribute>();
-
-                if (attribute != null) _attributeNameToField.Add(attribute.Name, field);
-            }
-        }
-
-        public bool HasAttribute(string name) {
-            return _attributeNameToField.ContainsKey(name);
-        }
-
-        public void SetAttribute(string name, object value) {
-            FieldInfo field = _attributeNameToField[name];
-
-            try {
-                field.SetValue(this, value);
-            } catch (ArgumentException) {
-                throw new Exception("Cannot set attribute '" + name + "' to " + value);
-            }
-        }
     }
 }

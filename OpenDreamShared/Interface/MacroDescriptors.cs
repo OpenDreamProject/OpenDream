@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
     public class MacroSetDescriptor {
@@ -16,13 +17,11 @@ namespace OpenDreamShared.Interface {
             get => _id ?? Command;
             set => _id = value;
         }
+
+        [DataField("id")]
         private string _id;
 
-        [InterfaceAttribute("command")]
+        [DataField("command")]
         public string Command;
-
-        public MacroDescriptor(string id) : base(null) {
-            Id = id;
-        }
     }
 }

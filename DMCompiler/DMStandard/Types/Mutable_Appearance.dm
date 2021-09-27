@@ -9,6 +9,8 @@
 	var/layer = 0.0
 	var/pixel_x = 0
 	var/pixel_y = 0
+	var/list/overlays = list()
+	var/list/underlays = list()
 
 	New(var/datum/copy_from)
 		if (istype(copy_from, /mutable_appearance))

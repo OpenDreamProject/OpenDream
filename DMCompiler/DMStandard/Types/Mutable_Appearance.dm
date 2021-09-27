@@ -11,6 +11,17 @@
 	var/pixel_y = 0
 	var/list/overlays = list()
 	var/list/underlays = list()
+	
+	var/maptext
+	var/maptext_x = 0
+	var/maptext_y = 0
+	var/maptext_height = 32
+	var/maptext_width = 32
+	
+	var/blend_mode = 0
+	var/appearance_flags = 0
+	
+	var/mouse_opacity = 1
 
 	New(var/datum/copy_from)
 		if (istype(copy_from, /mutable_appearance))

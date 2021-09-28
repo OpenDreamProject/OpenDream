@@ -1,44 +1,209 @@
 ﻿
 using System;
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Compiler.DM;
 
 namespace OpenDreamShared.Compiler.DM {
 
-
     public static partial class DMAST {
-        private static List<Type> printable_field_types = new() { typeof(string), typeof(Dream.DreamPath), typeof(int), typeof(float) };
-        internal static StringBuilder PrintNode(DMASTNode n, int depth, int max_depth = -1) {
-            StringBuilder sb = new();
-            if (max_depth == 0) {
-                return sb;
+
+        public class TopLevelTraveler {
+            public Action<DMASTNode> VisitDefine;
+
+            public void Travel(DMASTFile root) {
+                Travel(root.BlockInner);
             }
-            var pad = new String(' ', 2 * depth);
-            if (n == null) {
-                sb.Append("null");
-                return sb;
-            }
-            sb.Append(pad + n.GetType().Name + ": ");
-            var new_max_depth = max_depth - 1;
-            foreach (var field in n.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance)) {
-                if (printable_field_types.Contains(field.FieldType)) {
-                    sb.Append(field.Name + "=" + field.GetValue(n) + " ");
+            public void Travel(DMASTBlockInner block) {
+                if (block == null) { return; }
+                if (block.Statements != null) {
+                    foreach (var stmt in block.Statements) {
+                        Travel((dynamic)stmt);
+                    }
                 }
             }
-            sb.Append('\n');
-            foreach (var leaf in n.LeafNodes()) {
-                sb.Append(PrintNode(leaf, depth + 1, new_max_depth));
+
+            public void Travel(DMASTObjectDefinition objdef) {
+                Travel(objdef.InnerBlock);
+                VisitDefine(objdef);
             }
-            return sb;
+
+            public void Travel(DMASTObjectVarDefinition vardef) {
+                VisitDefine(vardef);
+            }
+            public void Travel(DMASTObjectVarOverride vardef) {
+                VisitDefine(vardef);
+            }
+
+            public void Travel(DMASTProcDefinition procdef) {
+                VisitDefine(procdef);
+            }
         }
-        public static string PrintNodes(this DMASTNode n, int depth = 0, int max_depth = -1) {
-            return PrintNode(n, depth, max_depth).ToString();
+        public class ASTHasher {
+            public string Hash(DMASTObjectDefinition objdef) {
+                return $"OD-{objdef.Path}";
+            }
+
+            public string Hash(DMASTObjectVarDefinition vardef) {
+                return $"OVD-{vardef.ObjectPath}-{vardef.Name}";
+            }
+            public string Hash(DMASTObjectVarOverride vardef) {
+                return $"OVO-{vardef.ObjectPath}-{vardef.VarName}";
+            }
+
+            public string Hash(DMASTProcDefinition procdef) {
+                return $"PD-{procdef.ObjectPath}-{procdef.IsOverride}-{procdef.Name}";
+            }
+
+            public Dictionary<string, List<DMASTNode>> nodes = new();
+
+            public List<DMASTNode> GetNode(DMASTNode node) {
+                return nodes[Hash((dynamic)node)];
+            }
+            public void HashFile(DMASTFile node) {
+                var traveler = new TopLevelTraveler();
+                traveler.VisitDefine = HashDefine;
+                traveler.Travel(node);
+            }
+
+            public DMASTProcDefinition GetProcByPath(string path) {
+                var h = Hash(new DMASTProcDefinition(new OpenDreamShared.Dream.DreamPath(path), new DMASTDefinitionParameter[0], null));
+                return nodes[h][0] as DMASTProcDefinition;
+            }
+            public void HashDefine(DMASTNode node) {
+                var h = Hash((dynamic)node);
+                if (nodes.ContainsKey(h)) {
+                    nodes[h].Add(node);
+                }
+                else {
+                    nodes.Add(h, new List<DMASTNode> { node });
+                }
+            }
+        }
+        public class ObjectPrinter {
+
+            public List<Type> equality_field_types = new() {
+                typeof(string),
+                typeof(int),
+                typeof(float),
+                typeof(bool)
+            };
+            public List<Type> tostring_types = new() {
+                typeof(string),
+                typeof(int),
+                typeof(float),
+                typeof(bool),
+                typeof(char)
+            };
+            public List<Type> recurse_types = new() { };
+
+            public Dictionary<object, int> node_labels = new();
+            public int current_label = 0;
+
+            public class ObjectTraveler {
+            }
+
+            public void Print(object node, System.IO.TextWriter print, int depth = 0, int max_depth = 9999, bool label = false) {
+                if (label == true) {
+                    if (!node_labels.ContainsKey(node)) {
+                        node_labels[node] = current_label;
+                    }
+                    current_label += 1;
+                }
+                if (depth > max_depth) {
+                    return;
+                }
+                string pad = new string(' ', 4 + 2 * depth);
+                string line = "";
+                if (node == null) {
+                    print.WriteLine(pad + "null");
+                    return;
+                }
+                else {
+                    line += node.GetType().Name + " ";
+                }
+                List<(string, object)> recurse = new();
+
+                if (node is string s) {
+                    print.Write(Regex.Escape(node.ToString()));
+                    return;
+                }
+                if (node.GetType().IsArray) {
+                    var a = (Array)node;
+                    var i = 0;
+                    foreach (var e in a) {
+                        recurse.Add((i.ToString(), e));
+                        i += 1;
+                    }
+                }
+                foreach (var field in node.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic)) {
+                    Type ty = Nullable.GetUnderlyingType(field.FieldType);
+                    if (ty == null) {
+                        ty = field.FieldType;
+                    }
+
+                    var v = field.GetValue(node);
+                    bool is_recurse = false;
+                    foreach (var rt in recurse_types) {
+                        if (ty.IsAssignableTo(rt)) {
+                            recurse.Add((field.Name, v));
+                            is_recurse = true;
+                            break;
+                        }
+                    }
+                    if (is_recurse) {
+                        continue;
+                    }
+                    if (ty.IsArray) {
+                        recurse.Add((field.Name, v));
+                    }
+                    else if (v == null) {
+                        line += field.Name + "=" + "null" + " ";
+                    }
+                    else if (tostring_types.Contains(ty)) {
+                        line += field.Name + "=" + v.ToString() + " ";
+                    }
+                    else {
+                        throw new Exception("unknown field type " + ty.ToString());
+                    }
+                }
+                if (node_labels.ContainsKey(node)) {
+                    print.WriteLine(node_labels[node].ToString().PadRight(4 + 2 * depth) + line);
+                }
+                else {
+                    print.WriteLine("".PadRight(4 + 2 * depth) + line);
+                }
+                foreach (var r in recurse) {
+                    if (r.Item2 != null) {
+                        print.WriteLine(pad + "->" + r.Item1);
+                        Print(r.Item2, print, depth + 1, max_depth, label);
+                    }
+                    else {
+                        print.WriteLine(pad + "->" + r.Item1 + "=null");
+                    }
+                }
+            }
+        }
+
+        // Example usage:
+        // var hasher = new DMAST.ASTHasher();
+        // hasher.HashFile(astFile);
+        //    var proc = hasher.GetProcByPath("/datum/browser/proc/get_header");
+        // new DMAST.DMASTNodePrinter().Print(proc, Console.Out);
+        public class DMASTNodePrinter : ObjectPrinter {
+            public DMASTNodePrinter() {
+                equality_field_types.Add(typeof(DMValueType));
+                tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath) } );
+                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode) } );
+            }
         }
 
         public delegate void CompareResult(DMASTNode n_l, DMASTNode n_r, string s);
-
         public static bool Compare(DMASTNode node_l, DMASTNode node_r, CompareResult cr) {
             if (node_l == null || node_r == null) {
                 if (node_r == node_l) { return true; }

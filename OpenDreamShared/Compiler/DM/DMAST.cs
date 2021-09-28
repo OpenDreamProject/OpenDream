@@ -102,6 +102,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitLeftShift(DMASTLeftShift leftShift) { throw new NotImplementedException(); }
         public void VisitRightShift(DMASTRightShift rightShift) { throw new NotImplementedException(); }
         public void VisitIn(DMASTExpressionIn expressionIn) { throw new NotImplementedException(); }
+
+        public void VisitInRange(DMASTExpressionInRange expressionInRange) { throw new NotImplementedException(); }
         public void VisitListIndex(DMASTListIndex listIndex) { throw new NotImplementedException(); }
         public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }
         public void VisitCallParameter(DMASTCallParameter callParameter) { throw new NotImplementedException(); }
@@ -1486,6 +1488,22 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitIn(this);
+        }
+    }
+
+    public class DMASTExpressionInRange : DMASTExpression {
+        public DMASTExpression Value;
+        public DMASTExpression StartRange;
+        public DMASTExpression EndRange;
+
+        public DMASTExpressionInRange(DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange) {
+            Value = value;
+            StartRange = startRange;
+            EndRange = endRange;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitInRange(this);
         }
     }
 

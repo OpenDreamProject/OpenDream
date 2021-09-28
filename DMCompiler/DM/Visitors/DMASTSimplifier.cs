@@ -224,6 +224,15 @@ namespace DMCompiler.DM.Visitors {
 
                 return;
             }
+
+            DMASTExpressionInRange inRange = expression as DMASTExpressionInRange;
+            if (inRange != null) {
+                SimplifyExpression(ref inRange.Value);
+                SimplifyExpression(ref inRange.StartRange);
+                SimplifyExpression(ref inRange.EndRange);
+
+                return;
+            }
             #endregion Comparators
 
             #region Math

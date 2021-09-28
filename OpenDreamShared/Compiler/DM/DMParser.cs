@@ -1562,7 +1562,18 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (value != null && Check(TokenType.DM_In)) {
                 Whitespace();
-                DMASTExpression list = ExpressionIn();
+                DMASTExpression list = Expression();
+
+                Whitespace();
+                if (Check(TokenType.DM_To))
+                {
+                    Whitespace();
+                    DMASTExpression endRange = Expression();
+                    if (endRange is not null)
+                    {
+                        return new DMASTExpressionInRange(value, list, endRange);
+                    }
+                }
 
                 return new DMASTExpressionIn(value, list);
             }

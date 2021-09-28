@@ -1,3 +1,4 @@
+using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -483,6 +484,15 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);
             Result = new Expressions.In(expr, container);
+        }
+
+        public void VisitInRange(DMASTExpressionInRange expressionInRange) {
+            var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath) as Number ?? new Number(0);
+            var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath) as Number ?? new Number(0);
+            var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath) as Number ?? new Number(0);
+            var greaterThan = new Expressions.GreaterThanOrEqual(value, startRange);
+            var lessThan = new Expressions.LessThanOrEqual(value, endRange);
+            Result = new Expressions.BinaryAnd(greaterThan, lessThan);
         }
 
         public void VisitPick(DMASTPick pick) {

@@ -1,6 +1,6 @@
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
+using OpenDreamShared.Compiler;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {
@@ -291,6 +291,18 @@ namespace DMCompiler.DM.Visitors {
             var lhs = DMExpression.Create(_dmObject, _proc, notEqual.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, notEqual.B, _inferredPath);
             Result = new Expressions.NotEqual(lhs, rhs);
+        }
+
+        public void VisitEquivalent(DMASTEquivalent equivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, equivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, equivalent.B, _inferredPath);
+            Result = new Expressions.Equivalent(lhs, rhs);
+        }
+
+        public void VisitNotEquivalent(DMASTNotEquivalent notEquivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, notEquivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, notEquivalent.B, _inferredPath);
+            Result = new Expressions.NotEquivalent(lhs, rhs);
         }
 
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) {

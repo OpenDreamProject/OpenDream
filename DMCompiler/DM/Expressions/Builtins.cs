@@ -1,7 +1,7 @@
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
-using Content.Shared.Json;
+using OpenDreamShared.Compiler;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {

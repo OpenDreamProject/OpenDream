@@ -1,8 +1,8 @@
 using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
-using Content.Shared.Dream.Procs;
+using OpenDreamShared.Compiler;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM {

@@ -1,6 +1,6 @@
-using Content.Shared.Compiler;
-using Content.Shared.Dream;
-using Content.Shared.Json;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 

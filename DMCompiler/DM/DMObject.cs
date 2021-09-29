@@ -1,7 +1,7 @@
 ﻿using DMCompiler.DM.Visitors;
-using Content.Shared.Compiler.DM;
-using Content.Shared.Dream;
-using Content.Shared.Json;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 
@@ -108,14 +108,14 @@ namespace DMCompiler.DM {
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.Variables.Add(variable.Key, value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.Variables[variable.Key] = value.ToJsonRepresentation();
                 }
@@ -126,7 +126,7 @@ namespace DMCompiler.DM {
 
                 foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
                     Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of ${variable.Value.Name} must be a constant");
+                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
 
                     objectJson.GlobalVariables.Add(variable.Key, value.ToJsonRepresentation());
                 }
@@ -153,6 +153,12 @@ namespace DMCompiler.DM {
             }
 
             return objectJson;
+        }
+
+        public bool IsSubtypeOf(DreamPath path) {
+            if (Path.IsDescendantOf(path)) return true;
+            if (Parent != null) return Parent.IsSubtypeOf(path);
+            return false;
         }
     }
 }

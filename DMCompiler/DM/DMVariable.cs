@@ -1,5 +1,5 @@
-﻿using Content.Shared.Dream;
-using Content.Shared.Json;
+﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 

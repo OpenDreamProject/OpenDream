@@ -1,9 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Content.Client;
-using Content.Server;
-using Content.Shared;
+using OpenDreamClient;
+using OpenDreamServer;
+using OpenDreamShared;
 using NUnit.Framework;
+using OpenDreamRuntime;
 using Robust.Client;
 using Robust.Server;
 using Robust.Shared.ContentPack;
@@ -27,8 +28,8 @@ namespace Content.IntegrationTests {
             options.ContentStart = true;
 
             options.ContentAssemblies = new[] {
-                typeof(Shared.EntryPoint).Assembly,
-                typeof(Client.EntryPoint).Assembly,
+                typeof(OpenDreamShared.EntryPoint).Assembly,
+                typeof(OpenDreamRuntime.EntryPoint).Assembly,
                 typeof(ContentIntegrationTest).Assembly
             };
 
@@ -61,8 +62,8 @@ namespace Content.IntegrationTests {
             options.ContentStart = true;
 
             options.ContentAssemblies = new[] {
-                typeof(Shared.EntryPoint).Assembly,
-                typeof(Server.EntryPoint).Assembly,
+                typeof(OpenDreamShared.EntryPoint).Assembly,
+                typeof(OpenDreamRuntime.EntryPoint).Assembly,
                 typeof(ContentIntegrationTest).Assembly
             };
 

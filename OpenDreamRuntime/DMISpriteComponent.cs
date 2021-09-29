@@ -11,103 +11,57 @@ using Robust.Shared.ViewVariables;
 namespace OpenDreamRuntime {
     [RegisterComponent]
     class DMISpriteComponent : SharedDMISpriteComponent {
-        private ResourcePath _icon = null;
-        private string _iconState = null;
-        private AtomDirection _direction = AtomDirection.South;
-        private Vector2i _pixelOffset = Vector2i.Zero;
-        private Color _color = Color.White;
-        private float _layer = 0.0f;
+        private IconAppearance? _appearance;
 
         [ViewVariables]
-        public ResourcePath Icon {
-            get => _icon;
+        public IconAppearance? Appearance {
+            get => _appearance;
             set {
-                _icon = value;
-                Dirty();
-            }
-        }
-
-        [ViewVariables(VVAccess.ReadWrite)]
-        public string IconState {
-            get => _iconState;
-            set {
-                _iconState = value;
-                Dirty();
-            }
-        }
-
-        [ViewVariables]
-        public AtomDirection Direction {
-            get => _direction;
-            set {
-                _direction = value;
-                Dirty();
-            }
-        }
-
-        [ViewVariables(VVAccess.ReadWrite)]
-        public Vector2i PixelOffset {
-            get => _pixelOffset;
-            set {
-                _pixelOffset = value;
-                Dirty();
-            }
-        }
-
-        [ViewVariables(VVAccess.ReadWrite)]
-        public Color Color {
-            get => _color;
-            set {
-                _color = value;
-                Dirty();
-            }
-        }
-
-        [ViewVariables(VVAccess.ReadWrite)]
-        public float Layer {
-            get => _layer;
-            set {
-                _layer = value;
+                _appearance = value;
                 Dirty();
             }
         }
 
         public override ComponentState GetComponentState(ICommonSession player) {
-            return new DMISpriteComponentState(Icon, IconState, Direction, PixelOffset, Color, Layer);
+            return new DMISpriteComponentState(Appearance?.Id);
         }
 
         public void SetAppearanceFromAtom(DreamObject atom) {
+            IconAppearance appearance = new IconAppearance();
+
             if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
-                Icon = new ResourcePath(icon.ResourcePath);
+                appearance.Icon = new ResourcePath(icon.ResourcePath);
             }
 
             if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
-                IconState = iconState;
+                appearance.IconState = iconState;
             }
 
             if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
-                Color = DreamColors.GetColor(color);
+                appearance.SetColor(color);
             }
 
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                Direction = (AtomDirection)dir;
+                appearance.Direction = (AtomDirection)dir;
             }
 
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                //TODO
+                appearance.Invisibility = invisibility;
             }
 
             if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                //TODO
+                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }
 
             atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
             atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            PixelOffset = new Vector2i(pixelX, pixelY);
+            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
 
             if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
-                Layer = layer;
+                appearance.Layer = layer;
             }
+
+            EntitySystem.Get<AppearanceSystem>().AddAppearance(appearance);
         }
     }
 }

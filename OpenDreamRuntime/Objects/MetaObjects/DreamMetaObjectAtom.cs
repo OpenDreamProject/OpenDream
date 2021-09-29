@@ -3,13 +3,14 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Maths;
 using Robust.Shared.Utility;
+using System;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+        private AppearanceSystem _appearanceSystem = EntitySystem.Get<AppearanceSystem>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _atomManager.CreateAtomEntity(dreamObject);
@@ -39,44 +40,47 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "icon") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
-                    sprite.Icon = new ResourcePath(resource.ResourcePath);
-                } else {
-                    sprite.Icon = null;
-                }
+                UpdateAppearance(dreamObject, appearance => {
+                    if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
+                        appearance.Icon = new ResourcePath(resource.ResourcePath);
+                    } else {
+                        appearance.Icon = null;
+                    }
+                });
             } else if (variableName == "icon_state") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                variableValue.TryGetValueAsString(out string iconState);
-                sprite.IconState = iconState;
+                UpdateAppearance(dreamObject, appearance => {
+                    variableValue.TryGetValueAsString(out appearance.IconState);
+                });
             } else if (variableName == "pixel_x") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.PixelOffset = new Vector2i(variableValue.GetValueAsInteger(), sprite.PixelOffset.Y);
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.PixelOffset.X = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "pixel_y") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.PixelOffset = new Vector2i(sprite.PixelOffset.X, variableValue.GetValueAsInteger());
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.PixelOffset.Y = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "layer") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Layer = variableValue.GetValueAsFloat();
+                });
             } else if (variableName == "invisibility") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Invisibility = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "mouse_opacity") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "color") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                if (variableValue.TryGetValueAsString(out string color)) {
-                    sprite.Color = DreamColors.GetColor(color);
-                } else {
-                    sprite.Color = DreamColors.GetColor("white");
-                }
+                UpdateAppearance(dreamObject, appearance => {
+                    variableValue.TryGetValueAsString(out string color);
+                    color ??= "white";
+                    appearance.SetColor(color);
+                });
             } else if (variableName == "dir") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "transform") {
                 //TODO
             } else if (variableName == "overlays") {
@@ -149,6 +153,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 default:
                     return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
+        }
+
+        private void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
+            DMISpriteComponent sprite = _atomManager.GetAtomEntity(atom).GetComponent<DMISpriteComponent>();
+            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+
+            update(appearance);
+            _appearanceSystem.AddAppearance(appearance);
+            sprite.Appearance = appearance;
         }
 
         /*private ServerIconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {

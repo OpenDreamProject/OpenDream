@@ -1,4 +1,6 @@
 ﻿using OpenDreamClient.Rendering;
+using OpenDreamClient.Resources;
+using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -12,6 +14,7 @@ namespace OpenDreamClient.Rendering {
     class DreamMapOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
+        private IDreamResourceManager _resourceManager = IoCManager.Resolve<IDreamResourceManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
@@ -32,13 +35,7 @@ namespace OpenDreamClient.Rendering {
             foreach (DMISpriteComponent sprite in sprites) {
                 ITransformComponent transform = sprite.Owner.Transform;
 
-                if (sprite.DMI != null && sprite.IconState != null && sprite.DMI.States.TryGetValue(sprite.IconState, out var dmiState)) {
-                    AtlasTexture[] frames = dmiState.GetFrames(sprite.Direction);
-                    Vector2 position = transform.WorldPosition;
-                    position += sprite.PixelOffset / new Vector2(32, 32); //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
-
-                    handle.DrawTexture(frames[0], position, sprite.Color);
-                }
+                //TODO
             }
         }
     }

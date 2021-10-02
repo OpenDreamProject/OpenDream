@@ -660,7 +660,7 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             return value.Type switch
             {
-                DreamValueType.String when countBytes => new DreamValue(Encoding.UTF8.GetByteCount(value.GetValueAsString())),
+                DreamValueType.String when countBytes => new DreamValue(value.GetValueAsString().Length),
                 DreamValueType.String => new DreamValue(value.GetValueAsString().EnumerateRunes().Count()),
                 DreamValueType.Float => new DreamValue(0),
                 DreamValueType.DreamObject when value.TryGetValueAsDreamObjectOfType(DreamPath.List,

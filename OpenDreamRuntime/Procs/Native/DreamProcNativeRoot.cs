@@ -356,7 +356,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
-            int needleIndex = text.LastIndexOf(needle, end - 1, end - start);
+            int needleIndex = text.LastIndexOf(needle, end - 1, end - start, StringComparison.OrdinalIgnoreCase);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {

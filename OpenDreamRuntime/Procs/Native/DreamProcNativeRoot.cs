@@ -356,6 +356,29 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
+            int needleIndex = text.LastIndexOf(needle, end - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
+        [DreamProc("findlasttextEx")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findlasttextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+
+            if (end == 0) {
+                end = text.Length + 1;
+            }
+
             int needleIndex = text.LastIndexOf(needle, end - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed

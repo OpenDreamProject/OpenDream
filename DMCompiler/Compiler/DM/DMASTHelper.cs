@@ -10,7 +10,7 @@ namespace DMCompiler.Compiler.DM {
 
 
     public static partial class DMAST {
-        private static List<Type> printable_field_types = new() { typeof(string), typeof(Dream.DreamPath), typeof(int), typeof(float) };
+        private static List<Type> printable_field_types = new() { typeof(string), typeof(DreamPath), typeof(int), typeof(float) };
         internal static StringBuilder PrintNode(DMASTNode n, int depth, int max_depth = -1) {
             StringBuilder sb = new();
             if (max_depth == 0) {

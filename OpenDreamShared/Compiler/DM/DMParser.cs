@@ -398,8 +398,16 @@ namespace OpenDreamShared.Compiler.DM {
             return procStatements;
         }
 
-        public DMASTProcStatement ProcStatement() {
+        public DMASTProcStatement ProcStatement()
+        {
+            var leadingColon = Check(TokenType.DM_Colon);
+
             DMASTExpression expression = Expression();
+
+            if (leadingColon && expression is not DMASTIdentifier)
+            {
+                Error("Expected a label identifier");
+            }
 
             if (expression != null) {
                 if (expression is DMASTIdentifier) {

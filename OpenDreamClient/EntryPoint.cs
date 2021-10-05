@@ -2,6 +2,7 @@ using System.Globalization;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
+using OpenDreamClient.States;
 using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -43,6 +44,7 @@ namespace OpenDreamClient {
             IoCManager.InjectDependencies(this);
 
             _cef.Initialize();
+            IoCManager.Resolve<DreamUserInterfaceStateManager>().Initialize();
 
             componentFactory.GenerateNetIds();
 

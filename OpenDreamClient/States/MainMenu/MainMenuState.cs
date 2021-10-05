@@ -25,7 +25,6 @@ namespace OpenDreamClient.States.MainMenu
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IResourceCache _resourceCache = default!;
         [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-        [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IGameController _controllerProxy = default!;
 
         private MainMenuControl _mainMenuControl = default!;

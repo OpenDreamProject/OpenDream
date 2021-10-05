@@ -27,10 +27,9 @@ namespace OpenDreamClient.States.MainMenu
 
             LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 
-            LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.TopRight);
-            LayoutContainer.SetMarginRight(VBox, -25);
-            LayoutContainer.SetMarginTop(VBox, 30);
-            LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Begin);
+            LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
+            LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
+            LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
 
             var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
             Logo.Texture = logoTexture;

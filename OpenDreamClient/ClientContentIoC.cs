@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Resources;
+using OpenDreamClient.States;
 using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
@@ -10,6 +11,7 @@ namespace OpenDreamClient {
             IoCManager.Register<DreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
             IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
+            IoCManager.Register<DreamUserInterfaceStateManager>();
         }
     }
 }

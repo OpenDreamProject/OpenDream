@@ -10,7 +10,6 @@ using System.Linq;
 
 namespace OpenDreamClient.Rendering {
     class DreamMapOverlay : Overlay {
-        private IComponentManager _componentManager = IoCManager.Resolve<IComponentManager>();
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();

@@ -1,4 +1,6 @@
 ﻿/sound
+	parent_type = /datum
+
 	var/file = null
 	var/repeat = 0
 	var/wait = 0
@@ -13,7 +15,7 @@
 	var/priority = 0 //TODO
 	var/status = 0 //TODO
 
-	proc/New(file, repeat=0, wait, channel, volume)
+	New(file, repeat=0, wait, channel, volume)
 		if (istype(file, /sound))
 			var/sound/copy_from = file
 

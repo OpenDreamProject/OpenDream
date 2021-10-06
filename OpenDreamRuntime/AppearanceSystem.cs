@@ -26,7 +26,7 @@ namespace OpenDreamRuntime {
         private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
             if (e.NewStatus == SessionStatus.InGame) {
                 Robust.Shared.Log.Logger.Debug($"Sending all");
-                RaiseNetworkEvent(new AllAppearancesEvent(), e.Session.ConnectedClient);
+                RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.ConnectedClient);
             }
         }
 
@@ -36,7 +36,7 @@ namespace OpenDreamRuntime {
                 _appearanceToId.Add(appearance, appearanceId);
                 _idToAppearance.Add(appearanceId, appearance);
                 Robust.Shared.Log.Logger.Debug($"Sending {appearanceId}");
-                RaiseNetworkEvent(new NewAppearanceEvent());
+                RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, appearance));
             }
 
             return appearanceId;

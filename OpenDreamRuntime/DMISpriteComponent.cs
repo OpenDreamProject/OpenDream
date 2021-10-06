@@ -27,41 +27,41 @@ namespace OpenDreamRuntime {
         }
 
         public void SetAppearanceFromAtom(DreamObject atom) {
-            IconAppearance appearance = new IconAppearance();
+            Appearance = new IconAppearance();
 
             if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = new ResourcePath(icon.ResourcePath);
+                Appearance.Icon = new ResourcePath(icon.ResourcePath);
             }
 
             if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
-                appearance.IconState = iconState;
+                Appearance.IconState = iconState;
             }
 
             if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
-                appearance.SetColor(color);
+                Appearance.SetColor(color);
             }
 
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
+                Appearance.Direction = (AtomDirection)dir;
             }
 
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
+                Appearance.Invisibility = invisibility;
             }
 
             if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
+                Appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }
 
             atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
             atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
+            Appearance.PixelOffset = new Vector2i(pixelX, pixelY);
 
             if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
-                appearance.Layer = layer;
+                Appearance.Layer = layer;
             }
 
-            EntitySystem.Get<AppearanceSystem>().AddAppearance(appearance);
+            EntitySystem.Get<AppearanceSystem>().AddAppearance(Appearance);
         }
     }
 }

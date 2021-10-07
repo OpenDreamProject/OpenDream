@@ -4,8 +4,10 @@ using OpenDreamClient;
 using OpenDreamServer;
 using OpenDreamShared;
 using NUnit.Framework;
+using OpenDreamClient.Interface;
 using OpenDreamRuntime;
 using Robust.Client;
+using Robust.Client.CEF;
 using Robust.Server;
 using Robust.Shared.ContentPack;
 using Robust.Shared.IoC;
@@ -29,13 +31,15 @@ namespace Content.IntegrationTests {
 
             options.ContentAssemblies = new[] {
                 typeof(OpenDreamShared.EntryPoint).Assembly,
-                typeof(OpenDreamRuntime.EntryPoint).Assembly,
+                typeof(OpenDreamClient.EntryPoint).Assembly,
                 typeof(ContentIntegrationTest).Assembly
             };
 
             options.BeforeStart += () => {
                 IoCManager.Resolve<IModLoader>().SetModuleBaseCallbacks(new ClientModuleTestingCallbacks {
                     ClientBeforeIoC = () => {
+                        IoCManager.Register<ICefManager, DummyCefManager>(true);
+                        //IoCManager.Register<IDreamInterfaceManager, DummyDreamInterfaceManager>(true);
                         if (options is ClientContentIntegrationOption contentOptions) {
                             contentOptions.ContentBeforeIoC?.Invoke();
                         }

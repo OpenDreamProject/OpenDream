@@ -23,7 +23,7 @@ namespace OpenDreamClient {
         [Dependency]
         private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency]
-        private readonly CefManager _cef = default!;
+        private readonly ICefManager _cef = default!;
 
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
@@ -37,8 +37,6 @@ namespace OpenDreamClient {
                 var cast = (ClientModuleTestingCallbacks) callback;
                 cast.ClientBeforeIoC?.Invoke();
             }
-
-            IoCManager.Register<CefManager>();
 
             IoCManager.BuildGraph();
             IoCManager.InjectDependencies(this);

@@ -336,7 +336,7 @@ namespace OpenDreamClient.Interface {
         }
     }
 
-    interface IDreamInterfaceManager
+    public interface IDreamInterfaceManager
     {
         string[] AvailableVerbs { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }

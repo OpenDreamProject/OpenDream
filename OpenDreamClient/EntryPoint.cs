@@ -55,9 +55,7 @@ namespace OpenDreamClient {
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
 
-            // Game logic runs all single threaded, disable prediction to reduce CPU load and lag.
-            var cfg = IoCManager.Resolve<IConfigurationManager>();
-            cfg.SetCVar(CVars.NetPredict, false);
+            //TODO: Disable prediction once bugs in RobustToolbox are fixed
         }
 
         public override void PostInit() {

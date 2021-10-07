@@ -27,7 +27,6 @@ namespace OpenDreamClient.Resources
         private readonly Dictionary<string, LoadingResourceEntry> _loadingResources = new();
         private readonly Dictionary<string, DreamResource> _resourceCache = new();
 
-
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
@@ -101,10 +100,8 @@ namespace OpenDreamClient.Resources
                     msg.ResourcePath = resourcePath;
                     _netManager.ClientSendMessage(msg);
                     var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
-                    Timer.Spawn(TimeSpan.FromSeconds(timeout), () =>
-                    {
-                        if (_loadingResources.ContainsKey(resourcePath))
-                        {
+                    Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
+                        if (_loadingResources.ContainsKey(resourcePath)) {
                             _sawmill.Warning(
                                 $"Resource '{resourcePath}' was requested, but is still not received {timeout} seconds later.");
                         }
@@ -118,7 +115,6 @@ namespace OpenDreamClient.Resources
                 onLoadCallback.Invoke((T)resource);
             }
         }
-
 
         public ResourcePath CreateCacheFile(string filename, string data)
         {
@@ -151,6 +147,5 @@ namespace OpenDreamClient.Resources
                 LoadCallbacks = new List<Action<DreamResource>>();
             }
         }
-
     }
 }

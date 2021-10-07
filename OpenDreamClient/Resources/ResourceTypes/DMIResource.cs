@@ -13,6 +13,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         public Texture Texture;
         public Vector2i IconSize;
+        public DMIParser.ParsedDMIDescription Description;
         public Dictionary<string, State> States;
 
         public DMIResource(string resourcePath, byte[] data) : base(resourcePath, data)
@@ -26,6 +27,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
             Texture = IoCManager.Resolve<IClyde>().LoadTextureFromPNGStream(dmiStream);
             IconSize = new Vector2i(description.Width, description.Height);
+            Description = description;
             States = new Dictionary<string, State>();
             foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
                 States.Add(parsedState.Name, new State(Texture, parsedState, description.Width, description.Height));

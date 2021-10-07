@@ -10,7 +10,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
-        private AppearanceSystem _appearanceSystem = EntitySystem.Get<AppearanceSystem>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _atomManager.CreateAtomEntity(dreamObject);
@@ -160,7 +159,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance(sprite.Appearance);
 
             update(appearance);
-            _appearanceSystem.AddAppearance(appearance);
             sprite.Appearance = appearance;
         }
 

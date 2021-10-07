@@ -1,37 +1,36 @@
-﻿using OpenDreamClient.Resources;
-using OpenDreamShared;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared;
 using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Maths;
+using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
     [ComponentReference(typeof(ILookupWorldBox2Component))]
     class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
-        public uint? AppearanceId { get; set; }
-
-        [Dependency]
-        private IDreamResourceManager _resourceManager = default!;
+        [ViewVariables]
+        public DreamIcon Icon { get; set; } = new DreamIcon();
 
         public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
             if (curState == null)
                 return;
 
             DMISpriteComponentState state = (DMISpriteComponentState)curState;
-            AppearanceId = state.AppearanceId;
 
-            //TODO: Load appearance
+            if (state.AppearanceId == null) {
+                Icon = null;
+                return;
+            }
+
+            Icon.SetAppearance(state.AppearanceId.Value);
         }
 
         public Box2 GetWorldAABB(Vector2? worldPos = null, Angle? worldRot = null) {
-            //Vector2 position = (worldPos ?? Vector2.Zero) + (0.5f, 0.5f);
-            ////TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
-            //Vector2 size = (DMI?.IconSize ?? Vector2.Zero) / (32, 32) / 2;
+            Vector2 position = (worldPos ?? Vector2.Zero) + (0.5f, 0.5f);
+            //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
+            Vector2 size = (Icon?.DMI?.IconSize ?? Vector2.Zero) / (32, 32) / 2;
 
-            //return new Box2(position, position + size);
-            return new Box2(0, 0, 0, 0); //TODO
+            return new Box2(position, position + size);
         }
 
         public bool IsMouseOver(Vector2 position) {

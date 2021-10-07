@@ -30,7 +30,6 @@ namespace OpenDreamShared.Dream {
             { "cyan", new Color(0, 255, 255) }
         };
 
-        public uint Id;
         public ResourcePath Icon;
         public string IconState;
         public AtomDirection Direction;

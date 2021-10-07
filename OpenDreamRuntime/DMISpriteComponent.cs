@@ -11,57 +11,63 @@ using Robust.Shared.ViewVariables;
 namespace OpenDreamRuntime {
     [RegisterComponent]
     class DMISpriteComponent : SharedDMISpriteComponent {
-        private IconAppearance? _appearance;
+        private uint? _appearanceId;
 
         [ViewVariables]
-        public IconAppearance? Appearance {
-            get => _appearance;
+        public uint? AppearanceId {
+            get => _appearanceId;
             set {
-                _appearance = value;
+                _appearanceId = value;
                 Dirty();
             }
         }
 
+        [ViewVariables]
+        public IconAppearance? Appearance {
+            get => (AppearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().GetAppearance(AppearanceId.Value) : null;
+            set => AppearanceId = (value != null) ? EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(value) : null;
+        }
+
         public override ComponentState GetComponentState(ICommonSession player) {
-            return new DMISpriteComponentState(Appearance?.Id);
+            return new DMISpriteComponentState(AppearanceId);
         }
 
         public void SetAppearanceFromAtom(DreamObject atom) {
-            Appearance = new IconAppearance();
+            IconAppearance appearance = new IconAppearance();
 
             if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
-                Appearance.Icon = new ResourcePath(icon.ResourcePath);
+                appearance.Icon = new ResourcePath(icon.ResourcePath);
             }
 
             if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
-                Appearance.IconState = iconState;
+                appearance.IconState = iconState;
             }
 
             if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
-                Appearance.SetColor(color);
+                appearance.SetColor(color);
             }
 
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                Appearance.Direction = (AtomDirection)dir;
+                appearance.Direction = (AtomDirection)dir;
             }
 
             if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                Appearance.Invisibility = invisibility;
+                appearance.Invisibility = invisibility;
             }
 
             if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                Appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
+                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }
 
             atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
             atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            Appearance.PixelOffset = new Vector2i(pixelX, pixelY);
+            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
 
             if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
-                Appearance.Layer = layer;
+                appearance.Layer = layer;
             }
 
-            EntitySystem.Get<AppearanceSystem>().AddAppearance(Appearance);
+            Appearance = appearance;
         }
     }
 }

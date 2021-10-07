@@ -39,7 +39,7 @@ namespace Content.IntegrationTests {
                 IoCManager.Resolve<IModLoader>().SetModuleBaseCallbacks(new ClientModuleTestingCallbacks {
                     ClientBeforeIoC = () => {
                         IoCManager.Register<ICefManager, DummyCefManager>(true);
-                        //IoCManager.Register<IDreamInterfaceManager, DummyDreamInterfaceManager>(true);
+                        IoCManager.Register<IDreamInterfaceManager, DummyDreamInterfaceManager>(true);
                         if (options is ClientContentIntegrationOption contentOptions) {
                             contentOptions.ContentBeforeIoC?.Invoke();
                         }

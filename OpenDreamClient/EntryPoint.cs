@@ -38,8 +38,6 @@ namespace OpenDreamClient {
                 cast.ClientBeforeIoC?.Invoke();
             }
 
-            IoCManager.Register<CefManager>();
-
             IoCManager.BuildGraph();
             IoCManager.InjectDependencies(this);
 

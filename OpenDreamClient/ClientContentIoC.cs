@@ -3,6 +3,7 @@ using OpenDreamClient.Input;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
+using Robust.Client.CEF;
 using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
@@ -14,6 +15,7 @@ namespace OpenDreamClient {
             IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();
             IoCManager.Register<IDreamSoundEngine, DreamSoundEngine>();
+            IoCManager.Register<CefManager>();
         }
     }
 }

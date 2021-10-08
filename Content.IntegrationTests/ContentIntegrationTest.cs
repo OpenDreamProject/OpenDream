@@ -29,7 +29,7 @@ namespace Content.IntegrationTests {
 
             options.ContentAssemblies = new[] {
                 typeof(OpenDreamShared.EntryPoint).Assembly,
-                typeof(OpenDreamRuntime.EntryPoint).Assembly,
+                typeof(OpenDreamClient.EntryPoint).Assembly,
                 typeof(ContentIntegrationTest).Assembly
             };
 

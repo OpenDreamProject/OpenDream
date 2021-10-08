@@ -28,7 +28,7 @@ namespace OpenDreamClient.Audio
             if (channel == 0)
             {
                 //First available channel
-                for (int i = 0; i < _channels.Length; i++)
+                for (int i = 1; i <= _channels.Length; i++)
                 {
                     if (_channels[i] == null || !_channels[i].Source.IsPlaying)
                     {

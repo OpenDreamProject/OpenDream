@@ -25,7 +25,8 @@
 			src.channel = copy_from.channel
 			src.volume = copy_from.volume
 		else
-			src.file = file
+			if(file != null)
+				src.file = file
 			src.repeat = repeat
 			if (wait != null) src.wait = wait
 			if (channel != null) src.channel = channel

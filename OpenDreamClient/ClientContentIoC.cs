@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Input;
+﻿using OpenDreamClient.Audio;
+using OpenDreamClient.Input;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
@@ -13,6 +14,7 @@ namespace OpenDreamClient {
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
             IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();
+            IoCManager.Register<IDreamSoundEngine, DreamSoundEngine>();
             IoCManager.Register<CefManager>();
         }
     }

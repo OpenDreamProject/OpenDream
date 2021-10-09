@@ -1,4 +1,5 @@
 using System.Globalization;
+using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
@@ -64,6 +65,7 @@ namespace OpenDreamClient {
 
             IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
             _dreamInterface.Initialize();
+            IoCManager.Resolve<IDreamSoundEngine>().Initialize();
         }
 
         protected override void Dispose(bool disposing)

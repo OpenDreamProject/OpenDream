@@ -205,18 +205,23 @@ namespace OpenDreamRuntime
 
                 if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
-                    DreamValue file = outputObject.GetVariable("file");
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
+                    DreamValue file = outputObject.GetVariable("file");
 
-                    /*
+                    var msg = _netManager.CreateNetMessage<MsgSound>();
+                    msg.Channel = channel;
+                    msg.Volume = volume;
+
+
                     if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
-                        SendPacket(new PacketSound(channel, (string)file.Value, volume));
+                        msg.File = (string)file.Value;
                     } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
-                        SendPacket(new PacketSound(channel, resource.ResourcePath, volume));
+                        msg.File = resource.ResourcePath;
                     } else {
                         throw new ArgumentException("Cannot output " + value, nameof(value));
                     }
-                    */
+
+                    Session.ConnectedClient.SendMessage(msg);
 
                     return;
                 }

@@ -33,7 +33,7 @@ namespace OpenDreamClient.Audio
                     if (_channels[i] == null || !_channels[i].Source.IsPlaying)
                     {
                         _channels[i]?.Dispose();
-                        channel = i;
+                        channel = i + 1;
                         break;
                     }
                 }

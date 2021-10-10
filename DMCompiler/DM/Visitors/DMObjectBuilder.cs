@@ -135,6 +135,16 @@ namespace DMCompiler.DM.Visitors {
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
 
+            try {
+                variable.Value = expression.ToConstant();
+            }
+            catch (DMExpression.ConstantConversionError) {
+                variable.Value = new Expressions.Null();
+                EmitInitializationAssign(variable, expression);
+            }
+            return;
+
+            /*
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewPath:
@@ -152,6 +162,7 @@ namespace DMCompiler.DM.Visitors {
                     variable.Value = expression.ToConstant();
                     break;
             }
+            */
         }
 
         private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {

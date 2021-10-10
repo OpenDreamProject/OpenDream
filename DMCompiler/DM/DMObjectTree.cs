@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,9 @@ namespace DMCompiler.DM {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
+        public static bool ThrowOnError = false;
+        public static bool PrintOnError = true;
+        public static bool PrintUnimplementedWarnings = false;
 
         private static List<Expressions.Assignment> _globalInitProcAssigns = new();
 
@@ -29,7 +33,7 @@ namespace DMCompiler.DM {
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new CompileErrorException("Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
@@ -90,7 +94,18 @@ namespace DMCompiler.DM {
 
             DMObject root = GetDMObject(DreamPath.Root);
             foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
-                assign.EmitPushValue(root, GlobalInitProc);
+                try {
+                    assign.EmitPushValue(root, GlobalInitProc);
+                }
+                catch (CompileErrorException e) {
+                    Program.Error(e.Error);
+                    if (PrintOnError) {
+                        Console.WriteLine(assign.Path);
+                    }
+                    if (ThrowOnError) {
+                        throw;
+                    }
+                }
             }
         }
 
@@ -119,7 +134,7 @@ namespace DMCompiler.DM {
                         unparentedObject.Item2.Parent = null; //Parent type can be assumed
                     }
                 } else {
-                    throw new Exception("Invalid object path \"" + unparentedObject.Item1.Path + "\"");
+                    throw new CompileErrorException("Invalid object path \"" + unparentedObject.Item1.Path + "\"");
                 }
             }
 

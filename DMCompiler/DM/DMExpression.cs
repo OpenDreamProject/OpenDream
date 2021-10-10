@@ -7,6 +7,11 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
+
+        public class ConstantConversionError : CompileErrorException {
+            public ConstantConversionError(string msg) : base(msg) { }
+        }
+
         public enum ProcPushResult {
             // The emitted code has pushed the proc onto the stack
             Unconditional,
@@ -27,6 +32,9 @@ namespace DMCompiler.DM {
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
+            if (expression == null) {
+                throw new CompileErrorException($"null expression {expression}");
+            }
             expression.Visit(instance);
             return instance.Result;
         }
@@ -43,7 +51,7 @@ namespace DMCompiler.DM {
 
         // Attempt to convert this expression into a Constant expression
         public virtual Expressions.Constant ToConstant() {
-            throw new CompileErrorException($"expression {this} can not be const-evaluated");
+            throw new ConstantConversionError($"expression {this} can not be converted to const");
         }
 
         // Attempt to create a json-serializable version of this expression

@@ -1,13 +1,14 @@
 ﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
-using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
         private DMObject _dmObject;
         private DMProc _proc;
+        private DMASTProcDefinition _procDef;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
@@ -15,6 +16,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
+            _procDef = procDefinition;
             if (procDefinition.Body == null) return;
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
@@ -31,11 +33,7 @@ namespace DMCompiler.DM.Visitors {
 
                     //Set default
                     _proc.PushLocalVariable(parameterName);
-                    try {
-                        DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
-                    } catch (CompileErrorException e) {
-                        Program.Error(e.Error);
-                    }
+                    DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     _proc.Assign();
 
                     _proc.AddLabel(afterDefaultValueCheck);
@@ -44,6 +42,7 @@ namespace DMCompiler.DM.Visitors {
 
             ProcessBlockInner(procDefinition.Body);
             _proc.ResolveLabels();
+            _procDef = null;
         }
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
@@ -52,6 +51,12 @@ namespace DMCompiler.DM.Visitors {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) { //Retreat from the statement when there's an error
                     Program.Error(e.Error);
+                    if (DMObjectTree.PrintOnError) {
+                        Console.WriteLine(_procDef.ObjectPath + " " + _procDef.Name);
+                    }
+                    if (DMObjectTree.ThrowOnError) {
+                        throw;
+                    }
                 }
             }
         }
@@ -87,7 +92,7 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 }
-                default: throw new ArgumentException("Invalid proc statement");
+                default: throw new CompileErrorException("Invalid proc statement " + statement.GetType());
             }
         }
 
@@ -430,7 +435,9 @@ namespace DMCompiler.DM.Visitors {
             {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
-                _proc.AddLocalVariable(param.Name, param.Type);
+                if (param != null) {
+                    _proc.AddLocalVariable(param.Name, param.Type);
+                }
             }
 
             //TODO make catching actually work

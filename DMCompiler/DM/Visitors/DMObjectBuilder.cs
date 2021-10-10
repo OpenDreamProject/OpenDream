@@ -30,6 +30,12 @@ namespace DMCompiler.DM.Visitors {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) {
                     Program.Error(e.Error);
+                    if (DMObjectTree.PrintOnError) {
+                        Console.WriteLine(_currentObject.Path);
+                    }
+                    if (DMObjectTree.ThrowOnError) {
+                        throw;
+                    }
                 }
             }
         }
@@ -75,6 +81,12 @@ namespace DMCompiler.DM.Visitors {
                 SetVariableValue(variable, varDefinition.Value, varDefinition.Type);
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
+                if (DMObjectTree.PrintOnError) {
+                    Console.WriteLine(varDefinition.ObjectPath + " " + varDefinition.Name);
+                }
+                if (DMObjectTree.ThrowOnError) {
+                    throw;
+                }
             }
 
             _currentObject = oldObject;
@@ -99,8 +111,14 @@ namespace DMCompiler.DM.Visitors {
                 }
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
+                if (DMObjectTree.PrintOnError) {
+                    Console.WriteLine(varOverride.ObjectPath + " " + varOverride.VarName);
+                }
+                if (DMObjectTree.ThrowOnError) {
+                    throw;
+                }
             }
-            
+
             _currentObject = oldObject;
         }
 
@@ -114,7 +132,8 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                    Program.Warning(new CompilerWarning(null, "Type " + dmObject.Path + " already has a proc named \"" + procName + "\""));
+                    procDefinition.IsOverride = true;
                 }
 
                 DMProc proc = new DMProc(procDefinition);
@@ -129,6 +148,12 @@ namespace DMCompiler.DM.Visitors {
                 }
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
+                if (DMObjectTree.PrintOnError) {
+                    Console.WriteLine(procDefinition.ObjectPath + " " + procDefinition.Name);
+                }
+                if (DMObjectTree.ThrowOnError) {
+                    throw;
+                }
             }
         }
 

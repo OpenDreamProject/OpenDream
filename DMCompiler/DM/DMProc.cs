@@ -1,4 +1,5 @@
 ﻿using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -56,7 +57,18 @@ namespace DMCompiler.DM {
                 AddParameter(parameter.Name, parameter.Type);
             }
 
-            new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
+            try {
+                new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
+            catch (CompileErrorException e) {
+                Program.Error(e.Error);
+                if (DMObjectTree.PrintOnError) {
+                    Console.WriteLine(_astDefinition.ObjectPath + " " + _astDefinition.Name);
+                }
+                if (DMObjectTree.ThrowOnError) {
+                    throw;
+                }
+            }
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
@@ -96,7 +108,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    throw new Exception("Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                    throw new CompileErrorException("Invalid label \"" + unresolvedLabel.LabelName + "\"");
                 }
             }
 
@@ -111,6 +123,9 @@ namespace DMCompiler.DM {
         public void AddLocalVariable(string name, DreamPath? type) {
             int localVarId = _localVariableIdCounter++;
 
+            if (_scopes.Peek().LocalVariables.ContainsKey(name)) {
+                throw new CompileErrorException($"attempt to redefine variable {name}");
+            }
             _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type));
         }
 
@@ -157,7 +172,11 @@ namespace DMCompiler.DM {
 
         public void Enumerate(string outputVariableName) {
             WriteOpcode(DreamProcOpcode.Enumerate);
-            WriteByte((byte)GetLocalVariable(outputVariableName).Id);
+            var outVar = GetLocalVariable(outputVariableName);
+            if (outVar == null) {
+                throw new CompileErrorException($"cannot enumerate {outputVariableName}");
+            }
+            WriteByte((byte)outVar.Id);
         }
 
         public void DestroyEnumerator() {

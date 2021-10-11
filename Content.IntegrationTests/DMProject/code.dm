@@ -126,8 +126,8 @@
 	return R?.inner?.get_inner(CRASH("this shouldn't be evaluated"))
 
 /world/proc/conditional_call_test_error()
- 	var/datum/recursive/R = new()
- 	return R?.inner.get_inner()
+	var/datum/recursive/R = new()
+	return R?.inner.get_inner()
 
 /world/proc/conditional_mutate()
 	var/datum/recursive/R = null
@@ -198,6 +198,19 @@
 	if(!M.Equals(matrix(8, 10, 12, 14, 16, 18)))
 		CRASH("Unexpected matrix/Add result")
 
+/world/proc/test_matrix_invert()
+	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
+
+	M.Invert()
+
+	if(!M.Equals(matrix(-1.6666667, 0.6666667, 1, 1.3333334, -0.33333334, -2)))
+		CRASH("Unexpected matrix/Invert result [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+
+	M.Invert()
+
+	if(!M.Equals(matrix(1, 2, 3, 4, 5, 6)))
+		CRASH("Unexpected matrix/Invert result2 [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+
 /world/proc/test_matrix_multiply()
 	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
 	var/matrix/N = matrix(7, 8, 9, 10, 11, 12)
@@ -242,8 +255,20 @@
 
 /world/proc/matrix_operations_test()
 	test_matrix_add()
+	// Invert currently fails because OpenDream doesn't handle floats the way BYOND does.
+	// Uncomment when that's changed.
+	// test_matrix_invert()
 	test_matrix_multiply()
 	test_matrix_scale()
 	test_matrix_subtract()
 	test_matrix_translate()
 	test_matrix_turn()
+
+/world/proc/unicode_procs_test()
+	ASSERT(length("😀") == 2)
+	ASSERT(length_char("😀") == 1)
+
+	// This is the combination of the Man, Woman, Girl and Boy emojis.
+	// It's 1 character per emoji, plus 3 zero-width joiner characters between them.
+	ASSERT(length("👨‍👩‍👧‍👦") == 11)
+	ASSERT(length_char("👨‍👩‍👧‍👦") == 7)

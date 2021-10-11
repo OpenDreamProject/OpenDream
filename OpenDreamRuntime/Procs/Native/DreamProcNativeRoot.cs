@@ -362,6 +362,29 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
+            int needleIndex = text.LastIndexOf(needle, end - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
+        [DreamProc("findlasttextEx")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findlasttextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needle = arguments.GetArgument(1, "Needle").GetValueAsString();
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+
+            if (end == 0) {
+                end = text.Length + 1;
+            }
+
             int needleIndex = text.LastIndexOf(needle, end - 1, end - start);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
@@ -676,26 +699,35 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(result);
         }
 
+        private static DreamValue _length(DreamValue value, bool countBytes)
+        {
+            return value.Type switch
+            {
+                DreamValueType.String when countBytes => new DreamValue(value.GetValueAsString().Length),
+                DreamValueType.String => new DreamValue(value.GetValueAsString().EnumerateRunes().Count()),
+                DreamValueType.Float => new DreamValue(0),
+                DreamValueType.DreamObject when value.TryGetValueAsDreamObjectOfType(DreamPath.List,
+                    out DreamObject listObject) => listObject.GetVariable("len"),
+                DreamValueType.DreamObject => new DreamValue(0),
+                DreamValueType.DreamPath => new DreamValue(0),
+                _ => throw new Exception("Cannot check length of " + value + "")
+            };
+        }
+
         [DreamProc("length")]
         [DreamProcParameter("E")]
-        public static DreamValue NativeProc_length(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_length(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
             DreamValue value = arguments.GetArgument(0, "E");
+            return _length(value, true);
+        }
 
-            if (value.Type == DreamValueType.String) {
-                return new DreamValue(value.GetValueAsString().Length);
-            } else if (value.Type == DreamValueType.Float) {
-                return new DreamValue(0);
-            } else if (value.Type == DreamValueType.DreamObject) {
-                if (value.TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
-                    return listObject.GetVariable("len");
-                } else {
-                    return new DreamValue(0);
-                }
-            } else if (value.Type == DreamValueType.DreamPath) {
-                return new DreamValue(0);
-            }
-
-            throw new Exception("Cannot check length of " + value + "");
+        [DreamProc("length_char")]
+        [DreamProcParameter("E")]
+        public static DreamValue NativeProc_length_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            DreamValue value = arguments.GetArgument(0, "E");
+            return _length(value, false);
         }
 
         [DreamProc("list2params")]

@@ -167,6 +167,11 @@ namespace DMCompiler.DM.Visitors {
                 varDeclaration.Visit(this);
             }
         }
+
+        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+            tryCatch.TryBody.Visit(this);
+            tryCatch.CatchBody.Visit(this);
+        }
         #endregion Procs
 
         private void SimplifyExpression(ref DMASTExpression expression) {

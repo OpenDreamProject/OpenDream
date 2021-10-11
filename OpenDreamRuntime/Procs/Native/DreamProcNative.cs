@@ -31,6 +31,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_findlasttextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_flick);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_flist);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_hascall);
@@ -53,6 +54,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_length);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_length_char);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_list2params);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_log);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_lowertext);

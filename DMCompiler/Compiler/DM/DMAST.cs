@@ -35,6 +35,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
+        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -616,6 +617,22 @@ namespace DMCompiler.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementOutputControl(this);
+        }
+    }
+
+    public class DMASTProcStatementTryCatch : DMASTProcStatement {
+        public DMASTProcBlockInner TryBody;
+        public DMASTProcBlockInner CatchBody;
+        public DMASTProcStatement CatchParameter;
+        public DMASTProcStatementTryCatch(DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTProcStatement catchParameter)
+        {
+            TryBody = tryBody;
+            CatchBody = catchBody;
+            CatchParameter = catchParameter;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementTryCatch(this);
         }
     }
 
@@ -1540,30 +1557,22 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTDereference : DMASTCallable {
+    public class DMASTDereference : DMASTExpression {
         public enum DereferenceType {
             Direct,
             Search,
         }
 
-        public struct Dereference {
-            public DereferenceType Type;
-            public bool Conditional;
-            public string Property;
-
-            public Dereference(DereferenceType type, bool conditional, string property) {
-                Type = type;
-                Conditional = conditional;
-                Property = property;
-            }
-        }
-
         public DMASTExpression Expression;
-        public Dereference[] Dereferences;
+        public string Property;
+        public DereferenceType Type;
+        public bool Conditional;
 
-        public DMASTDereference(DMASTExpression expression, Dereference[] dereferences) {
+        public DMASTDereference(DMASTExpression expression, string property, DereferenceType type, bool conditional) {
             Expression = expression;
-            Dereferences = dereferences;
+            Property = property;
+            Type = type;
+            Conditional = conditional;
         }
 
         public virtual void Visit(DMASTVisitor visitor) {
@@ -1572,7 +1581,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
-        public DMASTDereferenceProc(DMASTExpression expression, Dereference[] dereferences) : base(expression, dereferences) { }
+        public DMASTDereferenceProc(DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(expression, property, type, conditional) { }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDereferenceProc(this);

@@ -14,7 +14,8 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         public Texture Texture;
         public Vector2i IconSize;
         public DMIParser.ParsedDMIDescription Description;
-        public Dictionary<string, State> States;
+
+        private Dictionary<string, State> _states;
 
         public DMIResource(string resourcePath, byte[] data) : base(resourcePath, data)
         {
@@ -28,10 +29,17 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             Texture = IoCManager.Resolve<IClyde>().LoadTextureFromPNGStream(dmiStream);
             IconSize = new Vector2i(description.Width, description.Height);
             Description = description;
-            States = new Dictionary<string, State>();
+
+            _states = new Dictionary<string, State>();
             foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
-                States.Add(parsedState.Name, new State(Texture, parsedState, description.Width, description.Height));
+                _states.Add(parsedState.Name, new State(Texture, parsedState, description.Width, description.Height));
             }
+        }
+
+        public State? GetState(string stateName) {
+            if (!_states.ContainsKey(stateName)) return null;
+
+            return _states[stateName];
         }
 
         private bool IsValidPNG() {

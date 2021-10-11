@@ -31,7 +31,7 @@ namespace OpenDreamClient.Rendering {
         }
 
         public AtlasTexture CurrentFrame {
-            get => DMI?.States[Appearance.IconState].GetFrames(Appearance.Direction)[AnimationFrame];
+            get => DMI?.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
         }
 
         private IconAppearance _appearance;

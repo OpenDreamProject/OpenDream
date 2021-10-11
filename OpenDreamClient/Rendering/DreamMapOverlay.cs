@@ -17,7 +17,7 @@ namespace OpenDreamClient.Rendering {
         protected override void Draw(in OverlayDrawArgs args) {
             DrawingHandleWorld handle = args.WorldHandle;
             IEntity eye = _playerManager.LocalPlayer.Session.AttachedEntity;
-            List<DMISpriteComponent> sprites = new(); ;
+            List<DMISpriteComponent> sprites = new();
 
             foreach (IEntity entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
                 if (!entity.TryGetComponent(out DMISpriteComponent sprite))

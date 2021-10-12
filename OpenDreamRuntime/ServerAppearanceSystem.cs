@@ -40,6 +40,12 @@ namespace OpenDreamRuntime {
             return appearanceId;
         }
 
+        public uint? GetAppearanceId(IconAppearance appearance) {
+            if (_appearanceToId.TryGetValue(appearance, out uint id)) return id;
+
+            return null;
+        }
+
         public IconAppearance GetAppearance(uint appearanceId) {
             return _idToAppearance[appearanceId];
         }

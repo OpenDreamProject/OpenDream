@@ -1,6 +1,5 @@
 ﻿using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
-using Robust.Shared.Utility;
 using System;
 using System.Collections.Generic;
 
@@ -30,7 +29,7 @@ namespace OpenDreamShared.Dream {
             { "cyan", new Color(0, 255, 255) }
         };
 
-        public ResourcePath Icon;
+        public string Icon;
         public string IconState;
         public AtomDirection Direction;
         public Vector2i PixelOffset;
@@ -38,8 +37,8 @@ namespace OpenDreamShared.Dream {
         public float Layer;
         public int Invisibility;
         public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-        public List<int> Overlays = new();
-        public List<int> Underlays = new();
+        public List<uint> Overlays = new();
+        public List<uint> Underlays = new();
         public float[] Transform = new float[6] {   1, 0,
                                                     0, 1,
                                                     0, 0 };
@@ -55,8 +54,8 @@ namespace OpenDreamShared.Dream {
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
             MouseOpacity = appearance.MouseOpacity;
-            Overlays = new List<int>(appearance.Overlays);
-            Underlays = new List<int>(appearance.Underlays);
+            Overlays = new List<uint>(appearance.Overlays);
+            Underlays = new List<uint>(appearance.Underlays);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];

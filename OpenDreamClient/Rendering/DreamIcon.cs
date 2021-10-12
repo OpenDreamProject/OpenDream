@@ -40,14 +40,20 @@ namespace OpenDreamClient.Rendering {
 
         public DreamIcon() { }
 
-        public DreamIcon(uint appearanceId) {
-            SetAppearance(appearanceId);
+        public DreamIcon(uint appearanceId, AtomDirection? parentDir = null) {
+            SetAppearance(appearanceId, parentDir);
         }
 
-        public void SetAppearance(uint appearanceId) {
+        public void SetAppearance(uint appearanceId, AtomDirection? parentDir = null) {
             ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
 
             appearanceSystem.LoadAppearance(appearanceId, appearance => {
+                if (appearance.Direction == AtomDirection.None && parentDir != null) {
+                    appearance = new IconAppearance(appearance) {
+                        Direction = parentDir.Value
+                    };
+                }
+
                 Appearance = appearance;
             });
         }
@@ -121,8 +127,8 @@ namespace OpenDreamClient.Rendering {
                 return;
             }
 
-            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.ToString(), dmi => {
-                if (dmi.ResourcePath != Appearance.Icon.ToString()) return; //Icon changed while resource was loading
+            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon, dmi => {
+                if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
                 _animationFrame = 0;
@@ -131,14 +137,12 @@ namespace OpenDreamClient.Rendering {
 
             Overlays.Clear();
             foreach (uint overlayId in Appearance.Overlays) {
-                //TODO: Some overlays assume the direction of their owning icon
-                Overlays.Add(new DreamIcon(overlayId));
+                Overlays.Add(new DreamIcon(overlayId, Appearance.Direction));
             }
 
             Underlays.Clear();
             foreach (uint underlayId in Appearance.Underlays) {
-                //TODO: Some underlays assume the direction of their owning icon
-                Underlays.Add(new DreamIcon(underlayId));
+                Underlays.Add(new DreamIcon(underlayId, Appearance.Direction));
             }
 
             Overlays.Sort(new Comparison<DreamIcon>(LayerSort));

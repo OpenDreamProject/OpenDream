@@ -28,8 +28,9 @@ namespace OpenDreamRuntime.Input {
 
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
             var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
+            var usr = client.GetVariable("mob").GetValueAsDreamObject();
 
-            client.SpawnProc("Click", ConstructClickArguments(atom));
+            client.SpawnProc("Click", ConstructClickArguments(atom), usr: usr);
         }
 
         private DreamProcArguments ConstructClickArguments(DreamObject atom) {

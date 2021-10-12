@@ -3,6 +3,7 @@ using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using System.Collections.Generic;
 
@@ -10,6 +11,7 @@ namespace OpenDreamClient.Rendering {
     class DreamMapOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
+        private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
@@ -21,6 +23,12 @@ namespace OpenDreamClient.Rendering {
 
             foreach (IEntity entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
                 if (!entity.TryGetComponent(out DMISpriteComponent sprite))
+                    continue;
+
+                //Only render turfs (children of map entity) and their contents (secondary child of map entity)
+                ITransformComponent transform = entity.Transform;
+                EntityUid mapEntity = _mapManager.GetMapEntityId(transform.MapID);
+                if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
                     continue;
 
                 sprites.Add(sprite);

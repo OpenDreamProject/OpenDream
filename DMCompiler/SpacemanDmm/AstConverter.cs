@@ -655,12 +655,15 @@ namespace DMCompiler.SpacemanDmm
                         case NewType.Implicit:
                             return new DMASTNewInferred(argsConverted);
                         case NewType.MiniExpr miniExpr:
-                            var dereferences = miniExpr.Fields.Select(f =>
-                            {
-                                var (conditional, type) = ConvertPropertyAccessKind(f.Kind);
-                                return new DMASTDereference.Dereference(type, conditional, f.Ident);
-                            }).ToArray();
-                            return new DMASTDereference(new DMASTIdentifier(miniExpr.Ident), dereferences);
+                            DMASTExpression expr = new DMASTIdentifier(miniExpr.Ident);
+                            if (miniExpr.Fields.Length == 0) {
+                                return new DMASTNewIdentifier(expr as DMASTIdentifier, argsConverted);
+                            }
+                            for (int i = 0; i < miniExpr.Fields.Length; i++) {
+                                var (conditional, type) = ConvertPropertyAccessKind(miniExpr.Fields[i].Kind);
+                                expr = new DMASTDereference(expr, miniExpr.Fields[i].Ident, type, conditional);
+                            }
+                            return new DMASTNewDereference(expr as DMASTDereference, argsConverted);
                         case NewType.Prefab(var prefab):
                             var prefabPath = ConvertPrefab(prefab);
                             if (prefabPath is not DMASTConstantPath { Value: var pathValue })
@@ -774,10 +777,8 @@ namespace DMCompiler.SpacemanDmm
         private static DMASTExpression ConvertFollowCall(Follow.Call call, DMASTExpression from)
         {
             var (conditional, type) = ConvertPropertyAccessKind(call.Kind);
-            var dereference = new[] { new DMASTDereference.Dereference(type, conditional, call.Ident) };
-
             return new DMASTProcCall(
-                new DMASTDereferenceProc(from, dereference),
+                new DMASTDereferenceProc(from, call.Ident, type, conditional),
                 ConvertCallArgs(call.Args)
             );
         }
@@ -785,9 +786,7 @@ namespace DMCompiler.SpacemanDmm
         private static DMASTExpression ConvertFollowField(Follow.Field field, DMASTExpression from)
         {
             var (conditional, type) = ConvertPropertyAccessKind(field.Kind);
-            var dereferences = new[] { new DMASTDereference.Dereference(type, conditional, field.Ident) };
-
-            return new DMASTDereference(from, dereferences);
+            return new DMASTDereference(from, field.Ident, type, conditional);
         }
 
         private static DMASTExpression ConvertFollowIndex(Follow.Index index, DMASTExpression from)

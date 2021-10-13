@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;

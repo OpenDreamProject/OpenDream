@@ -1,14 +1,12 @@
-﻿using OpenDreamShared;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Players;
 using Robust.Shared.ViewVariables;
 
-namespace OpenDreamRuntime {
+namespace OpenDreamRuntime.Rendering {
     [RegisterComponent]
     class DMISpriteComponent : SharedDMISpriteComponent {
-        private uint? _appearanceId;
-
         [ViewVariables]
         public uint? AppearanceId {
             get => _appearanceId;
@@ -17,6 +15,17 @@ namespace OpenDreamRuntime {
                 Dirty();
             }
         }
+        private uint? _appearanceId;
+
+        [ViewVariables]
+        public ScreenLocation? ScreenLocation {
+            get => _screenLocation;
+            set {
+                _screenLocation = value;
+                Dirty();
+            }
+        }
+        private ScreenLocation? _screenLocation;
 
         [ViewVariables]
         public IconAppearance? Appearance {
@@ -25,7 +34,7 @@ namespace OpenDreamRuntime {
         }
 
         public override ComponentState GetComponentState(ICommonSession player) {
-            return new DMISpriteComponentState(AppearanceId);
+            return new DMISpriteComponentState(AppearanceId, ScreenLocation);
         }
     }
 }

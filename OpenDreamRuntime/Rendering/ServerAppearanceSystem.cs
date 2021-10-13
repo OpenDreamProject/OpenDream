@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using OpenDreamShared;
+using OpenDreamShared.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.IoC;
 
-namespace OpenDreamRuntime {
+namespace OpenDreamRuntime.Rendering {
     class ServerAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<IconAppearance, uint> _appearanceToId = new();
         private Dictionary<uint, IconAppearance> _idToAppearance = new();

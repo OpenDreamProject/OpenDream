@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using OpenDreamShared;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
 using Robust.Shared.GameObjects;
 
 namespace OpenDreamClient {

@@ -4,7 +4,7 @@ using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared {
+namespace OpenDreamShared.Rendering {
     public abstract class SharedAppearanceSystem : EntitySystem {
         [Serializable, NetSerializable]
         public class AllAppearancesEvent : EntityEventArgs {

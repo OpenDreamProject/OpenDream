@@ -1,4 +1,5 @@
-﻿using OpenDreamShared;
+﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 using Robust.Shared.ViewVariables;
@@ -8,8 +9,8 @@ namespace OpenDreamClient.Rendering {
     [ComponentReference(typeof(SharedDMISpriteComponent))]
     [ComponentReference(typeof(ILookupWorldBox2Component))]
     class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
-        [ViewVariables]
-        public DreamIcon Icon { get; set; } = new DreamIcon();
+        [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
+        [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
         public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
             if (curState == null)
@@ -17,12 +18,12 @@ namespace OpenDreamClient.Rendering {
 
             DMISpriteComponentState state = (DMISpriteComponentState)curState;
 
-            if (state.AppearanceId == null) {
+            ScreenLocation = state.ScreenLocation;
+            if (state.AppearanceId != null) {
+                Icon.SetAppearance(state.AppearanceId.Value);
+            } else {
                 Icon = null;
-                return;
             }
-
-            Icon.SetAppearance(state.AppearanceId.Value);
         }
 
         public Box2 GetWorldAABB(Vector2? worldPos = null, Angle? worldRot = null) {

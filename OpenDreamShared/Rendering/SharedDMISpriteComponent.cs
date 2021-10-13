@@ -2,8 +2,9 @@
 using Robust.Shared.Serialization;
 using System;
 using Robust.Shared.GameStates;
+using OpenDreamShared.Dream;
 
-namespace OpenDreamShared {
+namespace OpenDreamShared.Rendering {
     [NetworkedComponent]
     public class SharedDMISpriteComponent : Component {
         public override string Name => "DMISprite";
@@ -11,9 +12,11 @@ namespace OpenDreamShared {
         [Serializable, NetSerializable]
         protected class DMISpriteComponentState : ComponentState {
             public readonly uint? AppearanceId;
+            public readonly ScreenLocation ScreenLocation;
 
-            public DMISpriteComponentState(uint? appearanceId) {
+            public DMISpriteComponentState(uint? appearanceId, ScreenLocation screenLocation) {
                 AppearanceId = appearanceId;
+                ScreenLocation = screenLocation;
             }
         }
     }

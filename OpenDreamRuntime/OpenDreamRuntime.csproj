@@ -4,10 +4,10 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets"/>
+  <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj"/>
-    <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj"/>
+    <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
+    <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />
   </ItemGroup>
-  <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets"/>
+  <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets" />
 </Project>

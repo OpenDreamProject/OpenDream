@@ -1,10 +1,15 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectClient : DreamMetaObjectRoot {
         public override bool ShouldCallNew => true;
+
+        private Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
@@ -42,7 +47,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "screen": {
-                    /*if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= ScreenValueAssigned;
                         oldList.BeforeValueRemoved -= ScreenBeforeValueRemoved;
@@ -51,12 +56,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList screenList;
                     if (!variableValue.TryGetValueAsDreamList(out screenList)) {
-                        screenList = DreamList.Create(Runtime);
+                        screenList = DreamList.Create();
                     }
 
                     screenList.ValueAssigned += ScreenValueAssigned;
                     screenList.BeforeValueRemoved += ScreenBeforeValueRemoved;
-                    _screenListToClient[screenList] = dreamObject;*/
+                    _screenListToClient[screenList] = dreamObject;
                     break;
                 }
                 case "statpanel": {
@@ -107,18 +112,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return new DreamValue(0);
         }
 
-        //private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-        //    if (screenValue == DreamValue.Null) return;
+        private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
+            if (screenValue == DreamValue.Null) return;
 
-        //    DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
-        //    Runtime.StateManager.AddClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);
-        //}
+            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, atom);
+        }
 
-        //private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-        //    if (screenValue == DreamValue.Null) return;
+        private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
+            if (screenValue == DreamValue.Null) return;
 
-        //    DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
-        //    Runtime.StateManager.RemoveClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);
-        //}
+            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, atom);
+        }
     }
 }

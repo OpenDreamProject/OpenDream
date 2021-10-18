@@ -439,11 +439,17 @@ namespace OpenDreamRuntime.Procs.Native {
             var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
             if (mode != 0)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("Only mode 0 is implemented");
             }
+
             var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
-            var description = DMIParser.ReadDMIDescription(resource.ResourceData);
-            var states = DMIParser.GetIconStatesFromDescription(description);
+            List<string> states;
+            if (DMIParser.TryReadDMIDescription(resource.ResourceData, out string description)) {
+                states = DMIParser.GetIconStatesFromDescription(description);
+            } else {
+                states = new() { "" };
+            }
+
             return new DreamValue(DreamList.Create(CurrentRuntime, states));
         }
 

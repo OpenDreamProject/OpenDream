@@ -5,11 +5,10 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
+        private static readonly AtomDirection[] DMIFrameDirections = {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -24,19 +23,30 @@ namespace OpenDreamShared.Resources {
             public string Source;
             public float Version;
             public int Width, Height;
-            public string DefaultStateName;
             public Dictionary<string, ParsedDMIState> States;
 
-            public bool HasState(string stateName = null) {
-                if (stateName == null) stateName = DefaultStateName;
+            public static ParsedDMIDescription CreateEmpty(int width, int height) {
+                ParsedDMIFrame[] frames = { new() };
+                ParsedDMIState state = new();
+                state.Directions.Add(AtomDirection.South, frames);
 
-                return States.ContainsKey(stateName);
+                return new ParsedDMIDescription() {
+                    Source = null,
+                    Version = 4f,
+                    Width = width,
+                    Height = height,
+                    States = new() {
+                        { "", state }
+                    }
+                };
+            }
+
+            public bool HasState(string stateName = null) {
+                return States.ContainsKey(stateName ?? "");
             }
 
             public ParsedDMIState GetState(string stateName = null) {
-                if (!States.ContainsKey(stateName)) stateName = DefaultStateName;
-
-                return States[stateName];
+                return States[stateName ?? ""];
             }
         }
 
@@ -73,7 +83,7 @@ namespace OpenDreamShared.Resources {
             return (chunkLength, chunkType);
         }
 
-        public static string ReadDMIDescription(byte[] bytes) {
+        public static bool TryReadDMIDescription(byte[] bytes, out string description) {
             MemoryStream stream = new MemoryStream(bytes);
             BinaryReader reader = new BinaryReader(stream);
 
@@ -105,14 +115,16 @@ namespace OpenDreamShared.Resources {
                         uncompressedDataStream.Seek(0, SeekOrigin.Begin);
                         uncompressedDataStream.Read(uncompressedData);
 
-                        return Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
+                        description = Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
+                        return true;
                     } else {
                         stream.Position = chunkDataPosition + chunkLength + 4;
                     }
                 }
             }
 
-            throw new ArgumentException("Did not find a DMI description");
+            description = null;
+            return false;
         }
 
         public static List<string> GetIconStatesFromDescription(string dmiDescription)
@@ -214,8 +226,6 @@ namespace OpenDreamShared.Resources {
                                         }
                                     }
                                 }
-                            } else {
-                                description.DefaultStateName = stateName;
                             }
 
                             currentStateFrameCount = 1;

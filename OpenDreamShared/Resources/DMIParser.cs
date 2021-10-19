@@ -46,7 +46,9 @@ namespace OpenDreamShared.Resources {
             }
 
             public ParsedDMIState GetState(string stateName = null) {
-                return States[stateName ?? ""];
+                States.TryGetValue(stateName ?? "", out var state);
+
+                return state;
             }
         }
 

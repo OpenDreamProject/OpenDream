@@ -32,6 +32,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         public Rectangle GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
             DMIParser.ParsedDMIState state = Description.GetState(stateName);
+            if (state == null) return Rectangle.Empty;
             DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
 
             return new Rectangle(frame.X, frame.Y, Description.Width, Description.Height);

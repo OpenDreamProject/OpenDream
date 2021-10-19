@@ -1065,11 +1065,11 @@ namespace OpenDreamShared.Compiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
+        public DMASTCallParameter[] ProcCall() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
 
-                DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
+                DMASTCallParameter[] callParameters = CallParameters();
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
                 BracketWhitespace();
                 ConsumeRightParenthesis();
@@ -1127,24 +1127,18 @@ namespace OpenDreamShared.Compiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] CallParameters(bool includeEmpty) {
+        public DMASTCallParameter[] CallParameters() {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
 
-            while (parameter != null) {
+            while (Check(TokenType.DM_Comma)) {
+                BracketWhitespace();
+                parameters.Add(parameter ?? new DMASTCallParameter(new DMASTConstantNull()));
+                parameter = CallParameter();
+            }
+
+            if (parameter != null) {
                 parameters.Add(parameter);
-
-                if (Check(TokenType.DM_Comma)) {
-                    BracketWhitespace();
-                    parameter = CallParameter();
-
-                    if (parameter == null) {
-                        if (includeEmpty) parameter = new DMASTCallParameter(new DMASTConstantNull());
-                        else while (Check(TokenType.DM_Comma)) Whitespace();
-                    }
-                } else {
-                    parameter = null;
-                }
             }
 
             if (parameters.Count > 0) {
@@ -1723,7 +1717,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (primary == null && Check(TokenType.DM_NewList)) {
                 Whitespace();
-                DMASTCallParameter[] values = ProcCall(false);
+                DMASTCallParameter[] values = ProcCall();
 
                 primary = new DMASTNewList(values);
             }

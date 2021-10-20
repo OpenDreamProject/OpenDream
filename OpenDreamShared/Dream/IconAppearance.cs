@@ -118,13 +118,11 @@ namespace OpenDreamShared.Dream {
 
         public void SetColor(string color) {
             if (color.StartsWith("#")) {
-                color = color.Substring(1);
+                if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
+                    string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : "ff";
 
-                if (color.Length == 3 || color.Length == 4) { //4-bit color; repeat each digit
-                    string alphaComponent = (color.Length == 4) ? new string(color[3], 2) : "ff";
-
-                    color = new string(color[0], 2) + new string(color[1], 2) + new string(color[2], 2) + alphaComponent;
-                } else if (color.Length == 6) { //Missing alpha
+                    color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
+                } else if (color.Length == 7) { //Missing alpha
                     color += "ff";
                 }
 

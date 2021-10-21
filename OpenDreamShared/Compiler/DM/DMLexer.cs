@@ -57,7 +57,8 @@ namespace OpenDreamShared.Compiler.DM {
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step },
             { "try", TokenType.DM_Try },
-            { "catch", TokenType.DM_Catch }
+            { "catch", TokenType.DM_Catch },
+            { "throw", TokenType.DM_Throw }
         };
 
         public int BracketNesting = 0;

@@ -1236,6 +1236,10 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Returned;
         }
 
+        public static ProcStatus? Throw(DMProcState state) {
+            throw new CancellingRuntime("'throw' thrown");
+        }
+
         public static ProcStatus? SwitchCase(DMProcState state) {
             int casePosition = state.ReadInt();
             DreamValue testValue = state.PopDreamValue();

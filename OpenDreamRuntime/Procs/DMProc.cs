@@ -121,7 +121,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Increment,
             DMOpcodeHandlers.Decrement,
             DMOpcodeHandlers.CompareEquivalent,
-            DMOpcodeHandlers.CompareNotEquivalent
+            DMOpcodeHandlers.CompareNotEquivalent,
+            DMOpcodeHandlers.Throw
         };
         #endregion
 

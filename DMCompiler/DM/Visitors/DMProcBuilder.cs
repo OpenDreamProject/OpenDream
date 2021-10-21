@@ -79,6 +79,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
+                case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
                 case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
                     foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
                         ProcessStatementVarDeclaration(varDeclaration);
@@ -439,6 +440,12 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
             _proc.AddLabel(endLabel);
 
+        }
+
+        public void ProcessStatementThrow(DMASTProcStatementThrow statement) {
+            //TODO proper value handling and catching
+
+            _proc.Throw();
         }
     }
 }

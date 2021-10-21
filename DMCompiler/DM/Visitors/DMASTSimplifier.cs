@@ -227,7 +227,6 @@ namespace DMCompiler.DM.Visitors {
 
             DMASTExpressionInRange inRange = expression as DMASTExpressionInRange;
             if (inRange != null) {
-                SimplifyExpression(ref inRange.Value);
                 SimplifyExpression(ref inRange.StartRange);
                 SimplifyExpression(ref inRange.EndRange);
 

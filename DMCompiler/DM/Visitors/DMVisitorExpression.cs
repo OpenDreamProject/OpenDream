@@ -487,12 +487,10 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitInRange(DMASTExpressionInRange expressionInRange) {
-            var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath) as Number ?? new Number(0);
-            var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath) as Number ?? new Number(0);
-            var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath) as Number ?? new Number(0);
-            var greaterThan = new Expressions.GreaterThanOrEqual(value, startRange);
-            var lessThan = new Expressions.LessThanOrEqual(value, endRange);
-            Result = new Expressions.BinaryAnd(greaterThan, lessThan);
+            var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath);
+            var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath);
+            var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath);
+            Result = new Expressions.InRange(value, startRange, endRange);
         }
 
         public void VisitPick(DMASTPick pick) {

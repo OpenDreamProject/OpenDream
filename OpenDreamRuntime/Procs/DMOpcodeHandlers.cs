@@ -1057,6 +1057,19 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? IsInRange(DMProcState state)
+        {
+            DreamValue end = state.PopDreamValue();
+            DreamValue start = state.PopDreamValue();
+            DreamValue var = state.PopDreamValue();
+            if (var.Type != DreamValue.DreamValueType.Float) var = new DreamValue(0f);
+            if (start.Type != DreamValue.DreamValueType.Float) start = new DreamValue(0f);
+            if (end.Type != DreamValue.DreamValueType.Float) end = new DreamValue(0f);
+            bool inRange = (IsEqual(start, var) || IsLessThan(start, var)) && (IsEqual(var, end) || IsLessThan(var, end));
+            state.Push(new DreamValue(inRange ? 1 : 0));
+            return null;
+        }
+
         public static ProcStatus? IsType(DMProcState state) {
             DreamValue typeValue = state.PopDreamValue();
             DreamValue value = state.PopDreamValue();

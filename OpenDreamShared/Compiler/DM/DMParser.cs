@@ -226,7 +226,8 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
                 TokenType.DM_NewList,
-                TokenType.DM_Step
+                TokenType.DM_Step,
+                TokenType.DM_Throw
             };
 
             Token elementToken = Current();
@@ -457,6 +458,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
                 if (procStatement == null) procStatement = TryCatch();
+                if (procStatement == null) procStatement = Throw();
 
                 if (procStatement != null) {
                     Whitespace();
@@ -1063,6 +1065,19 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return null;
+        }
+
+        public DMASTProcStatementThrow Throw()
+        {
+            if (Check(TokenType.DM_Throw)) {
+                Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                Whitespace();
+                DMASTExpression value = Expression();
+
+                return new DMASTProcStatementThrow(value);
+            } else {
+                return null;
+            }
         }
 
         public DMASTCallParameter[] ProcCall() {

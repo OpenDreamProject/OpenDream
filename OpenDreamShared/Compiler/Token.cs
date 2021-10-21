@@ -115,6 +115,7 @@
         DM_String,
         DM_SuperProc,
         DM_Switch,
+        DM_Throw,
         DM_Tilde,
         DM_TildeEquals,
         DM_TildeExclamation,

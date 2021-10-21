@@ -35,6 +35,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
+        public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -632,6 +633,18 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementTryCatch(this);
+        }
+    }
+
+    public class DMASTProcStatementThrow : DMASTProcStatement {
+        public DMASTExpression Value;
+
+        public DMASTProcStatementThrow(DMASTExpression value) {
+            Value = value;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementThrow(this);
         }
     }
 

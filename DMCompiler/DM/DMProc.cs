@@ -351,6 +351,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Return);
         }
 
+        public void Throw() {
+            WriteOpcode(DreamProcOpcode.Throw);
+        }
+
         public void Assign() {
             WriteOpcode(DreamProcOpcode.Assign);
         }

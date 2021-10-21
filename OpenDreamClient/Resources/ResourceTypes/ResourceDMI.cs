@@ -17,7 +17,13 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
             ImageBitmap = (Bitmap)Image.FromStream(new MemoryStream(data));
-            Description = ParseDMI();
+
+            if (DMIParser.TryReadDMIDescription(Data, out string description)) {
+                Description = DMIParser.ParseDMIDescription(description, ImageBitmap.Width);
+            } else {
+                //No DMI metadata, default to a single unnamed icon_state
+                Description = DMIParser.ParsedDMIDescription.CreateEmpty(ImageBitmap.Width, ImageBitmap.Height);
+            }
         }
 
         ~ResourceDMI() {
@@ -26,6 +32,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         public Rectangle GetTextureRect(string stateName, AtomDirection direction = AtomDirection.South, int animationFrame = 0) {
             DMIParser.ParsedDMIState state = Description.GetState(stateName);
+            if (state == null) return Rectangle.Empty;
             DMIParser.ParsedDMIFrame frame = state.GetFrames(direction)[animationFrame];
 
             return new Rectangle(frame.X, frame.Y, Description.Width, Description.Height);
@@ -52,19 +59,6 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             }
 
             return true;
-        }
-
-        private DMIParser.ParsedDMIDescription ParseDMI()
-        {
-            var dmiDescription = DMIParser.ReadDMIDescription(Data);
-
-            try {
-                return DMIParser.ParseDMIDescription(dmiDescription, ImageBitmap.Width);
-            } catch (Exception e) {
-                Console.WriteLine("Error while parsing dmi '" + ResourcePath + "': " + e.Message);
-            }
-
-            return null;
         }
     }
 }

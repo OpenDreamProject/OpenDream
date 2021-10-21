@@ -103,7 +103,6 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitLeftShift(DMASTLeftShift leftShift) { throw new NotImplementedException(); }
         public void VisitRightShift(DMASTRightShift rightShift) { throw new NotImplementedException(); }
         public void VisitIn(DMASTExpressionIn expressionIn) { throw new NotImplementedException(); }
-
         public void VisitInRange(DMASTExpressionInRange expressionInRange) { throw new NotImplementedException(); }
         public void VisitListIndex(DMASTListIndex listIndex) { throw new NotImplementedException(); }
         public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }

@@ -226,7 +226,8 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
                 TokenType.DM_NewList,
-                TokenType.DM_Step
+                TokenType.DM_Step,
+                TokenType.DM_Throw
             };
 
             Token elementToken = Current();

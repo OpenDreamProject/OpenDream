@@ -519,6 +519,74 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
+        // x &&= y
+        class LogicalAndAssign : BinaryOp {
+            public LogicalAndAssign(DMExpression lhs, DMExpression rhs) : base(lhs, rhs) { }
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                var skipRHSLabel = proc.NewLabelName();
+                switch (LHS.EmitIdentifier(dmObject, proc)) {
+                    case IdentifierPushResult.Unconditional: {
+                            proc.PushCopy();
+                            proc.JumpIfFalse(skipRHSLabel);
+                            RHS.EmitPushValue(dmObject, proc);
+                            proc.Assign();
+                            proc.AddLabel(skipRHSLabel);
+                            break;
+                        }
+                    case IdentifierPushResult.Conditional: {
+                            var skipLabel = proc.NewLabelName();
+                            var endLabel = proc.NewLabelName();
+                            proc.JumpIfNullIdentifier(skipLabel);
+                            proc.PushCopy();
+                            proc.JumpIfFalse(skipRHSLabel);
+                            RHS.EmitPushValue(dmObject, proc);
+                            proc.Assign();
+                            proc.Jump(endLabel);
+                            proc.AddLabel(skipLabel);
+                            proc.Pop();
+                            proc.PushNull();
+                            proc.AddLabel(endLabel);
+                            proc.AddLabel(skipRHSLabel);
+                            break;
+                        }
+                }
+            }
+        }
+
+        // x ||= y
+        class LogicalOrAssign : BinaryOp {
+            public LogicalOrAssign(DMExpression lhs, DMExpression rhs) : base(lhs, rhs) { }
+            public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+                var skipRHSLabel = proc.NewLabelName();
+                switch (LHS.EmitIdentifier(dmObject, proc)) {
+                    case IdentifierPushResult.Unconditional: {
+                            proc.PushCopy();
+                            proc.JumpIfTrue(skipRHSLabel);
+                            RHS.EmitPushValue(dmObject, proc);
+                            proc.Assign();
+                            proc.AddLabel(skipRHSLabel);
+                            break;
+                        }
+                    case IdentifierPushResult.Conditional: {
+                            var skipLabel = proc.NewLabelName();
+                            var endLabel = proc.NewLabelName();
+                            proc.JumpIfNullIdentifier(skipLabel);
+                            proc.PushCopy();
+                            proc.JumpIfTrue(skipRHSLabel);
+                            RHS.EmitPushValue(dmObject, proc);
+                            proc.Assign();
+                            proc.Jump(endLabel);
+                            proc.AddLabel(skipLabel);
+                            proc.Pop();
+                            proc.PushNull();
+                            proc.AddLabel(endLabel);
+                            proc.AddLabel(skipRHSLabel);
+                            break;
+                    }
+                }
+            }
+        }
+
         // x *= y
         class MultiplyAssign : DoubleAssignmentBinaryOp {
             public MultiplyAssign(DMExpression lhs, DMExpression rhs)

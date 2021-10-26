@@ -73,7 +73,12 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     }
                     case '|': {
                         switch (Advance()) {
-                            case '|': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "||"); break;
+                            case '|': {
+                                        switch (Advance()) {
+                                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "||="); break;
+                                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, "||"); break;
+                                        } break;
+                                    }
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "|="); break;
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '|'); break;
                         }
@@ -100,7 +105,13 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     }
                     case '&': {
                         switch (Advance()) {
-                            case '&': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&"); break;
+                            case '&': {
+                                        switch (Advance()) {
+                                            case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&="); break;
+                                            default: token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&"); break;
+                                        }
+                                        break;
+                                    }
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&="); break;
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '&'); break;
                         }

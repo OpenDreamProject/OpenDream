@@ -1255,7 +1255,9 @@ namespace OpenDreamShared.Compiler.DM {
                     TokenType.DM_PlusEquals,
                     TokenType.DM_MinusEquals,
                     TokenType.DM_BarEquals,
+                    TokenType.DM_BarBarEquals,
                     TokenType.DM_AndEquals,
+                    TokenType.DM_AndAndEquals,
                     TokenType.DM_StarEquals,
                     TokenType.DM_SlashEquals,
                     TokenType.DM_LeftShiftEquals,
@@ -1274,7 +1276,9 @@ namespace OpenDreamShared.Compiler.DM {
                             case TokenType.DM_PlusEquals: return new DMASTAppend(expression, value);
                             case TokenType.DM_MinusEquals: return new DMASTRemove(expression, value);
                             case TokenType.DM_BarEquals: return new DMASTCombine(expression, value);
+                            case TokenType.DM_BarBarEquals: return new DMASTLogicalOrAssign(expression, value);
                             case TokenType.DM_AndEquals: return new DMASTMask(expression, value);
+                            case TokenType.DM_AndAndEquals: return new DMASTLogicalAndAssign(expression, value);
                             case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(expression, value);
                             case TokenType.DM_SlashEquals: return new DMASTDivideAssign(expression, value);
                             case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(expression, value);

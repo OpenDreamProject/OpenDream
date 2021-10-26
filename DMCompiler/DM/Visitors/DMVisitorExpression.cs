@@ -90,17 +90,18 @@ namespace DMCompiler.DM.Visitors {
                     return;
                 }
 
-                var field = _dmObject.GetVariable(name);
-
-                if (field == null) {
-                    field = _dmObject.GetGlobalVariable(name);
+                var field = _proc.GetGlobalVariable(name);
+                if (field != null) {
+                    field = DMObjectTree.GetDMObject(DreamPath.Root).GetGlobalVariable(field.InternalName);
+                    Result = new Expressions.Field(field.Type, field.InternalName);
+                    return;
                 }
-
+                field =  field ?? _dmObject.GetVariable(name);
+                field = field ?? _dmObject.GetGlobalVariable(name);
                 if (field == null) {
                     throw new CompileErrorException($"unknown identifier {name}");
                 }
-
-                Result = new Expressions.Field(field.Type, name);
+                Result = new Expressions.Field(field.Type, field.InternalName);
             }
         }
 

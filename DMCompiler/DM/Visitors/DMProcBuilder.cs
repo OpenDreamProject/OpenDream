@@ -156,6 +156,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
+            if (varDeclaration.IsGlobal) { return; }
+
             _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
 
             if (varDeclaration.Value != null) {

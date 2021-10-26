@@ -44,6 +44,7 @@ namespace DMCompiler.DM {
         private int _localVariableIdCounter = 0;
         private bool _waitFor = true;
         private int _labelIdCounter = 0;
+        private Dictionary<string, DMVariable> GlobalVariables = new();
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
@@ -85,6 +86,19 @@ namespace DMCompiler.DM {
             _waitFor = waitFor;
         }
 
+        public void AddGlobalVariable(string name, DMVariable var) {
+            // TODO There cannot be a variable name in both local and static definitions
+            if (GlobalVariables.TryGetValue(name, out var value)) {
+                throw new Exception($"attempt to redefine static variable {name}");
+            }
+            GlobalVariables[name] = var;
+        }
+        public DMVariable GetGlobalVariable(string name) {
+            if (GlobalVariables.TryGetValue(name, out var value)) {
+                return value;
+            }
+            return null;
+        }
         public void AddParameter(string name, DMValueType type) {
             Parameters.Add(name);
             ParameterTypes.Add(type);

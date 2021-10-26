@@ -199,7 +199,8 @@ namespace OpenDreamShared.Compiler.DM {
             public DMASTNodePrinter() {
                 equality_field_types.Add(typeof(DMValueType));
                 tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath) } );
-                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode) } );
+                recurse_types.AddRange(new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode),
+                    typeof(ProcVarDeclInfo), typeof(ObjVarDeclInfo) });
             }
         }
 

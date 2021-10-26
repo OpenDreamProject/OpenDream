@@ -30,7 +30,14 @@ namespace DMCompiler.DM.Expressions {
                 DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
 
                 var current = dmObject.GetVariable(_propertyName);
-                if (current == null) current = dmObject.GetGlobalVariable(_propertyName);
+                if (current == null) {
+                    current = dmObject.GetGlobalVariable(_propertyName);
+                    if (current != null) {
+                        _path = current.Type;
+                        _propertyName = current.InternalName;
+                        return;
+                    }
+                }
                 if (current == null) throw new CompileErrorException($"Invalid property \"{_propertyName}\" on type {dmObject.Path}");
 
                 _path = current.Type;

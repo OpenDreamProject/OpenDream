@@ -2,6 +2,7 @@
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMObjectBuilder {
@@ -61,13 +62,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
-            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
+            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsToplevel || varDefinition.IsGlobal);
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
-            if (variable.IsGlobal) {
+            if (variable.IsGlobal && !varDefinition.IsToplevel) {
+                variable.InternalName = "$$$$" + _currentObject.Path + "." + varDefinition.Name;
+                DMObjectTree.GetDMObject(DreamPath.Root).GlobalVariables[variable.InternalName] = variable;
                 _currentObject.GlobalVariables[variable.Name] = variable;
-            } else {
+            }
+            else if (variable.IsGlobal) {
+                _currentObject.GlobalVariables[variable.Name] = variable;
+            }
+            else {
                 _currentObject.Variables[variable.Name] = variable;
             }
 
@@ -120,6 +127,28 @@ namespace DMCompiler.DM.Visitors {
                 DMProc proc = new DMProc(procDefinition);
 
                 dmObject.AddProc(procName, proc);
+
+                if (procDefinition.Body != null) {
+                    foreach (var stmt in GetStatements(procDefinition.Body)) {
+                        // TODO multiple var definitions.
+                        if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
+                            DMVariable variable = new DMVariable(varDeclaration.Type, varDeclaration.Name, true);
+                            variable.InternalName = "PROC$$$$" + _currentObject.Path + "$" + procName + "$" + varDeclaration.Name;
+                            variable.Value = new Expressions.Null();
+                            variable.Type = varDeclaration.Type;
+
+                            DMObjectTree.GetDMObject(DreamPath.Root).GlobalVariables[variable.InternalName] = variable;
+                            Expressions.Field field = new Expressions.Field(variable.Type, variable.InternalName);
+                            if (varDeclaration.Value != null) {
+                                DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
+                                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+                                DMObjectTree.AddGlobalInitProcAssign(assign);
+                            }
+                            proc.AddGlobalVariable(varDeclaration.Name, variable);
+                        }
+                    }
+                }
+
                 if (procDefinition.IsVerb) {
                     Expressions.Field field = new Expressions.Field(DreamPath.List, "verbs");
                     DreamPath procPath = new DreamPath(".proc/" + procName);
@@ -132,9 +161,46 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        // TODO Move this to an appropriate location
+        static public IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
+            foreach (var stmt in block.Statements) {
+                yield return stmt;
+                List<DMASTProcBlockInner> recurse;
+                switch (stmt) {
+                    case DMASTProcStatementSpawn ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementIf ps: recurse = new() { ps.Body, ps.ElseBody }; break;
+                    case DMASTProcStatementFor ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementForLoop ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementWhile ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementDoWhile ps: recurse = new() { ps.Body }; break;
+                    // TODO Good luck if you declare a static var inside a switch
+                    case DMASTProcStatementSwitch ps: {
+                            recurse = new();
+                            foreach (var swcase in ps.Cases) {
+                                recurse.Add(swcase.Body);
+                            }
+                            break;
+                        }
+                    case DMASTProcStatementTryCatch ps: recurse = new() { ps.TryBody, ps.CatchBody }; break;
+                    default: recurse = new(); break;
+                }
+                foreach (var subblock in recurse) {
+                    if (subblock == null) { continue; }
+                    foreach (var substmt in GetStatements(subblock)) {
+                        yield return substmt;
+                    }
+                }
+            }
+        }
+
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
 
+            if (variable.IsGlobal && variable.Name != "world") {
+                variable.Value = new Expressions.Null();
+                EmitInitializationAssign(variable, expression);
+                return;
+            }
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewPath:
@@ -155,7 +221,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {
-            Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
+            Expressions.Field field = new Expressions.Field(variable.Type, variable.InternalName);
             Expressions.Assignment assign = new Expressions.Assignment(field, expression);
 
             if (variable.IsGlobal) {

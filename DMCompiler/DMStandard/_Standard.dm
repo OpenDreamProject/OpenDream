@@ -111,6 +111,7 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Movable.dm"
 #include "Types\Atoms\Obj.dm"
 #include "Types\Atoms\Turf.dm"
+#include "Additions.dm"
 
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()

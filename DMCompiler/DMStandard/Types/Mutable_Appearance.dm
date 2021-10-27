@@ -1,5 +1,5 @@
 ﻿/mutable_appearance
-	parent_type = /datum
+	parent_type = /image
 
 	var/icon = null
 	var/icon_state = ""

@@ -568,20 +568,20 @@ namespace DMCompiler.DM.Expressions {
                         break;
                     }
                     case IdentifierPushResult.Conditional: {
-                            var skipLabel = proc.NewLabelName();
-                            var endLabel = proc.NewLabelName();
-                            proc.JumpIfNullIdentifier(skipLabel);
-                            proc.PushCopy();
-                            proc.JumpIfTrue(skipRHSLabel);
-                            RHS.EmitPushValue(dmObject, proc);
-                            proc.Assign();
-                            proc.Jump(endLabel);
-                            proc.AddLabel(skipLabel);
-                            proc.Pop();
-                            proc.PushNull();
-                            proc.AddLabel(endLabel);
-                            proc.AddLabel(skipRHSLabel);
-                            break;
+                        var skipLabel = proc.NewLabelName();
+                        var endLabel = proc.NewLabelName();
+                        proc.JumpIfNullIdentifier(skipLabel);
+                        proc.PushCopy();
+                        proc.JumpIfTrue(skipRHSLabel);
+                        RHS.EmitPushValue(dmObject, proc);
+                        proc.Assign();
+                        proc.Jump(endLabel);
+                        proc.AddLabel(skipLabel);
+                        proc.Pop();
+                        proc.PushNull();
+                        proc.AddLabel(endLabel);
+                        proc.AddLabel(skipRHSLabel);
+                        break;
                     }
                 }
             }

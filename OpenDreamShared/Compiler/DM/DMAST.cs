@@ -88,6 +88,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitRemove(DMASTRemove remove) { throw new NotImplementedException(); }
         public void VisitCombine(DMASTCombine combine) { throw new NotImplementedException(); }
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign landAssign) { throw new NotImplementedException(); }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lorAssign) { throw new NotImplementedException(); }
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) { throw new NotImplementedException(); }
         public void VisitDivideAssign(DMASTDivideAssign divideAssign) { throw new NotImplementedException(); }
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) { throw new NotImplementedException(); }
@@ -1304,6 +1306,32 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitMask(this);
+        }
+    }
+
+    public class DMASTLogicalAndAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalAndAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalAndAssign(this);
+        }
+    }
+
+    public class DMASTLogicalOrAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalOrAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalOrAssign(this);
         }
     }
 

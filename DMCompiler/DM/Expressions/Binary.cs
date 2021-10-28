@@ -560,13 +560,13 @@ namespace DMCompiler.DM.Expressions {
                 var skipRHSLabel = proc.NewLabelName();
                 switch (LHS.EmitIdentifier(dmObject, proc)) {
                     case IdentifierPushResult.Unconditional: {
-                            proc.PushCopy();
-                            proc.JumpIfTrue(skipRHSLabel);
-                            RHS.EmitPushValue(dmObject, proc);
-                            proc.Assign();
-                            proc.AddLabel(skipRHSLabel);
-                            break;
-                        }
+                        proc.PushCopy();
+                        proc.JumpIfTrue(skipRHSLabel);
+                        RHS.EmitPushValue(dmObject, proc);
+                        proc.Assign();
+                        proc.AddLabel(skipRHSLabel);
+                        break;
+                    }
                     case IdentifierPushResult.Conditional: {
                             var skipLabel = proc.NewLabelName();
                             var endLabel = proc.NewLabelName();

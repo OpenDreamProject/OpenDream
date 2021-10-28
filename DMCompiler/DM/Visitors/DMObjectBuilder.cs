@@ -193,6 +193,11 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public HashSet<string> const_procs = new() { "rgb", "matrix" };
+        private bool ConstProc(string s) {
+            return const_procs.Contains(s);
+        }
+
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
 
@@ -205,6 +210,17 @@ namespace DMCompiler.DM.Visitors {
                 EmitInitializationAssign(variable, expression);
                 return;
             }
+            if (value is DMASTProcCall ast_proc && ast_proc.Callable is DMASTCallableProcIdentifier ast_callable && ConstProc(ast_callable.Identifier)) {
+                EmitInitializationAssign(variable, expression);
+                variable.Value = new Expressions.Null();
+                return;
+            }
+            if (value is DMASTNewList) {
+                variable.Value = new Expressions.Null();
+                EmitInitializationAssign(variable, expression);
+                return;
+            }
+
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewPath:

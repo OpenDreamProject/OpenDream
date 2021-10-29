@@ -23,6 +23,9 @@ namespace DMCompiler.DM.Expressions {
                 return true;
             }
             else if (astNode.Expression is DMASTDereference deref) {
+                if (deref.Type == DMASTDereference.DereferenceType.Search) {
+                    return true;
+                }
                 if (expr is Dereference _deref) {
                     return DirectConvertable(_deref._expr, deref);
                 }

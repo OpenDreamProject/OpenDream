@@ -12,10 +12,12 @@ namespace DMCompiler.DM {
         public class DMLocalVariable {
             public int Id;
             public DreamPath? Type;
+            public DMExpression Value;
 
-            public DMLocalVariable(int id, DreamPath? type) {
+            public DMLocalVariable(int id, DreamPath? type, DMExpression constValue) {
                 Id = id;
                 Type = type;
+                Value = constValue;
             }
         }
 
@@ -122,10 +124,10 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public void AddLocalVariable(string name, DreamPath? type) {
+        public void AddLocalVariable(string name, DreamPath? type, DMExpression constValue = null) {
             int localVarId = _localVariableIdCounter++;
 
-            _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type));
+            _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type, constValue));
         }
 
         public DMLocalVariable GetLocalVariable(string name) {

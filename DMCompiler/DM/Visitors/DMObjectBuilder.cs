@@ -62,7 +62,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
-            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsToplevel || varDefinition.IsGlobal);
+            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsToplevel || varDefinition.IsGlobal, varDefinition.IsConst);
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
@@ -132,7 +132,7 @@ namespace DMCompiler.DM.Visitors {
                     foreach (var stmt in GetStatements(procDefinition.Body)) {
                         // TODO multiple var definitions.
                         if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
-                            DMVariable variable = new DMVariable(varDeclaration.Type, varDeclaration.Name, true);
+                            DMVariable variable = new DMVariable(varDeclaration.Type, varDeclaration.Name, true, varDeclaration.IsConst);
                             variable.InternalName = "PROC$$$$" + _currentObject.Path + "$" + procName + "$" + varDeclaration.Name;
                             variable.Value = new Expressions.Null();
                             variable.Type = varDeclaration.Type;
@@ -196,6 +196,10 @@ namespace DMCompiler.DM.Visitors {
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
 
+            if (variable.IsConst) {
+                variable.Value = expression.ToConstant();
+                return;
+            }
             if (variable.IsGlobal && variable.Name != "world") {
                 variable.Value = new Expressions.Null();
                 EmitInitializationAssign(variable, expression);

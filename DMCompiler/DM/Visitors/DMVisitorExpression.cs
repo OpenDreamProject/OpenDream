@@ -83,23 +83,34 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
-                DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
+                DMVariable field;
+                if (_proc != null) {
+                    DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
-                if (localVar != null) {
-                    Result = new Expressions.Local(localVar.Type, name);
-                    return;
+                    if (localVar != null) {
+                        if (localVar.Value != null) {
+                            Result = localVar.Value.ToConstant();
+                            return;
+                        }
+                        Result = new Expressions.Local(localVar.Type, name);
+                        return;
+                    }
+                    field = _proc.GetGlobalVariable(name);
+                    if (field != null) {
+                        field = DMObjectTree.GetDMObject(DreamPath.Root).GetGlobalVariable(field.InternalName);
+                        Result = new Expressions.Field(field.Type, field.InternalName);
+                        return;
+                    }
                 }
 
-                var field = _proc.GetGlobalVariable(name);
-                if (field != null) {
-                    field = DMObjectTree.GetDMObject(DreamPath.Root).GetGlobalVariable(field.InternalName);
-                    Result = new Expressions.Field(field.Type, field.InternalName);
-                    return;
-                }
-                field =  field ?? _dmObject.GetVariable(name);
+                field =  _dmObject.GetVariable(name);
                 field = field ?? _dmObject.GetGlobalVariable(name);
                 if (field == null) {
                     throw new CompileErrorException($"unknown identifier {name}");
+                }
+                if (field.IsConst) {
+                    Result = field.Value.ToConstant();
+                    return;
                 }
                 Result = new Expressions.Field(field.Type, field.InternalName);
             }

@@ -43,6 +43,9 @@ namespace DMCompiler.DM {
 
         // Attempt to convert this expression into a Constant expression
         public virtual Expressions.Constant ToConstant() {
+            if (ConstValue != null) {
+                return ConstValue;
+            }
             throw new CompileErrorException($"expression {this} can not be const-evaluated");
         }
 
@@ -66,6 +69,8 @@ namespace DMCompiler.DM {
         }
 
         public virtual DreamPath? Path => null;
+        public virtual bool IsConst { get; set; } = false;
+        public Expressions.Constant ConstValue => null;
     }
 
     // (a, b, c, ...)

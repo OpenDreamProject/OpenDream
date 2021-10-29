@@ -1,5 +1,7 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using OpenDreamShared.Compiler.DM;
+using OpenDreamShared.Compiler;
 using System;
 using System.Collections.Generic;
 
@@ -124,6 +126,43 @@ namespace DMCompiler.DM {
             }
 
             return jsonObjects[DreamPath.Root];
+        }
+
+        static public HashSet<string> const_procs = new() { "rgb", "matrix" };
+        static public bool ConstProc(string s) {
+            return const_procs.Contains(s);
+        }
+
+        static public bool CheckConst(DMASTExpression expr, DMObject obj, DMProc proc) {
+            try {
+                DMExpression.Constant(obj, proc, expr).ToConstant();
+                return true;
+            }
+            catch (CompileErrorException) {
+                return false;
+            }
+        }
+
+        static public bool CheckConstExpression(DMASTExpression value, DMObject dm_object, DMProc dm_proc) {
+            if (value is DMASTProcCall ast_proc && ast_proc.Callable is DMASTCallableProcIdentifier ast_callable && DMObjectTree.ConstProc(ast_callable.Identifier)) {
+                bool all_const = true;
+                foreach (var expr in ast_proc.Parameters) {
+                    if (!DMObjectTree.CheckConst(expr.Value, dm_object, dm_proc)) {
+                        all_const = false;
+                    }
+                }
+                return all_const;
+            }
+            if (value is DMASTNewList newl) {
+                bool all_const = true;
+                foreach (var expr in newl.Parameters) {
+                    if (!DMObjectTree.CheckConst(expr.Value, dm_object, dm_proc)) {
+                        all_const = false;
+                    }
+                }
+                return all_const;
+            }
+            return false;
         }
     }
 }

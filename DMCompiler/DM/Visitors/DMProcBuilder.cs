@@ -159,7 +159,15 @@ namespace DMCompiler.DM.Visitors {
             if (varDeclaration.IsGlobal) { return; }
 
             if (varDeclaration.IsConst) {
-                _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type, DMExpression.Create(_dmObject, _proc, varDeclaration.Value));
+                var expression = DMExpression.Create(_dmObject, _proc, varDeclaration.Value);
+                if (expression.IsConst ||
+                    DMObjectTree.CheckConstExpression(varDeclaration.Value, _dmObject, null) ||
+                    DMObjectTree.CheckConst(varDeclaration.Value, _dmObject, null)) {
+                    _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type, expression);
+                }
+                else {
+                    throw new CompileErrorException("Assignment of non-const expression to const");
+                }
             }
             else {
                 _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);

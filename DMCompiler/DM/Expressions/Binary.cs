@@ -6,6 +6,9 @@ namespace DMCompiler.DM.Expressions {
         public BinaryOp(DMExpression lhs, DMExpression rhs) {
             LHS = lhs;
             RHS = rhs;
+            if (lhs.IsConst && rhs.IsConst) {
+                IsConst = true;
+            }
         }
     }
 
@@ -14,7 +17,8 @@ namespace DMCompiler.DM.Expressions {
     class Add : BinaryOp {
         public Add(DMExpression lhs, DMExpression rhs)
             : base(lhs, rhs)
-        {}
+        {
+        }
 
         public override Constant ToConstant()
         {

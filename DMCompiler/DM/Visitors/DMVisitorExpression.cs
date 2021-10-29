@@ -88,17 +88,19 @@ namespace DMCompiler.DM.Visitors {
                     DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                     if (localVar != null) {
-                        if (localVar.Value != null) {
-                            Result = localVar.Value.ToConstant();
-                            return;
-                        }
                         Result = new Expressions.Local(localVar.Type, name);
+                        if (localVar.Value != null) {
+                            Result.IsConst = true;
+                        }
                         return;
                     }
                     field = _proc.GetGlobalVariable(name);
                     if (field != null) {
                         field = DMObjectTree.GetDMObject(DreamPath.Root).GetGlobalVariable(field.InternalName);
                         Result = new Expressions.Field(field.Type, field.InternalName);
+                        if (field.IsConst) {
+                            Result.IsConst = true;
+                        }
                         return;
                     }
                 }
@@ -108,11 +110,10 @@ namespace DMCompiler.DM.Visitors {
                 if (field == null) {
                     throw new CompileErrorException($"unknown identifier {name}");
                 }
-                if (field.IsConst) {
-                    Result = field.Value.ToConstant();
-                    return;
-                }
                 Result = new Expressions.Field(field.Type, field.InternalName);
+                if (field.IsConst) {
+                    Result.IsConst = true;
+                }
             }
         }
 
@@ -368,6 +369,13 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitDereference(DMASTDereference dereference) {
             var expr = DMExpression.Create(_dmObject, _proc, dereference.Expression, _inferredPath);
+            if (expr.Path.HasValue) {
+                var dm_obj = DMObjectTree.GetDMObject(expr.Path.Value);
+                var field = dm_obj.GetVariable(dereference.Property) ?? dm_obj.GetGlobalVariable(dereference.Property);
+                if (field != null && field.IsConst) {
+                    expr.IsConst = true;
+                }
+            }
             Result = new Expressions.Dereference(expr, dereference);
         }
 

@@ -10,6 +10,8 @@ namespace DMCompiler.DM.Expressions {
             return this;
         }
 
+        public override bool IsConst => true;
+
         public abstract bool IsTruthy();
 
         #region Unary Operations
@@ -81,6 +83,8 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException($"const operation `{this} | {rhs}` is invalid");
         }
         #endregion
+
+
     }
 
     // null

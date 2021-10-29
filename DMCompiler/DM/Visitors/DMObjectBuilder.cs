@@ -193,29 +193,20 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public HashSet<string> const_procs = new() { "rgb", "matrix" };
-        private bool ConstProc(string s) {
-            return const_procs.Contains(s);
-        }
 
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
 
             if (variable.IsConst) {
-                variable.Value = expression.ToConstant();
-                return;
+                if (expression.IsConst || DMObjectTree.CheckConstExpression(value, _currentObject, null) || DMObjectTree.CheckConst(value, _currentObject, null)) {
+                    variable.Value = new Expressions.Null();
+                    EmitInitializationAssign(variable, expression);
+                    return;
+                }
+                new DMAST.DMASTNodePrinter().Print(value, Console.Out);
+                throw new CompileErrorException("Assignment of non-const expression to const");
             }
             if (variable.IsGlobal && variable.Name != "world") {
-                variable.Value = new Expressions.Null();
-                EmitInitializationAssign(variable, expression);
-                return;
-            }
-            if (value is DMASTProcCall ast_proc && ast_proc.Callable is DMASTCallableProcIdentifier ast_callable && ConstProc(ast_callable.Identifier)) {
-                EmitInitializationAssign(variable, expression);
-                variable.Value = new Expressions.Null();
-                return;
-            }
-            if (value is DMASTNewList) {
                 variable.Value = new Expressions.Null();
                 EmitInitializationAssign(variable, expression);
                 return;
@@ -235,7 +226,8 @@ namespace DMCompiler.DM.Visitors {
                     EmitInitializationAssign(variable, expression);
                     break;
                 default:
-                    variable.Value = expression.ToConstant();
+                    variable.Value = new Expressions.Null();
+                    EmitInitializationAssign(variable, expression);
                     break;
             }
         }

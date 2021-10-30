@@ -12,13 +12,22 @@ namespace DMCompiler.DM {
         public class DMLocalVariable {
             public int Id;
             public DreamPath? Type;
-            public DMExpression Value;
+            public bool IsConst;
+            public DMExpression InitialExpression;
 
-            public DMLocalVariable(int id, DreamPath? type, DMExpression constValue) {
+            public DMLocalVariable(int id, DreamPath? type, bool isConst) {
                 Id = id;
                 Type = type;
-                Value = constValue;
+                IsConst = isConst;
             }
+
+            public void Initialize(DMExpression expression) {
+                InitialExpression = expression;
+                if (IsConst) {
+                    InitialExpression.ConstValue = DMObjectTree.TryConstConvert(expression);
+                }
+            }
+
         }
 
         private class DMProcScope {
@@ -124,10 +133,12 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public void AddLocalVariable(string name, DreamPath? type, DMExpression constValue = null) {
+        public DMLocalVariable AddLocalVariable(string name, DreamPath? type, bool isConst = false) {
             int localVarId = _localVariableIdCounter++;
 
-            _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type, constValue));
+            var localVar = new DMLocalVariable(localVarId, type, isConst);
+            _scopes.Peek().LocalVariables.Add(name, localVar);
+            return localVar;
         }
 
         public DMLocalVariable GetLocalVariable(string name) {

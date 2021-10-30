@@ -38,6 +38,9 @@ namespace DMCompiler.DM.Expressions {
                         return;
                     }
                 }
+                if (current.IsConst) {
+                    IsConst = true;
+                }
                 if (current == null) throw new CompileErrorException($"Invalid property \"{_propertyName}\" on type {dmObject.Path}");
 
                 _path = current.Type;

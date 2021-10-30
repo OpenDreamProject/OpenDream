@@ -134,13 +134,13 @@ namespace DMCompiler.DM.Visitors {
                         if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
                             DMVariable variable = new DMVariable(varDeclaration.Type, varDeclaration.Name, true, varDeclaration.IsConst);
                             variable.InternalName = "PROC$$$$" + _currentObject.Path + "$" + procName + "$" + varDeclaration.Name;
-                            variable.Value = new Expressions.Null();
                             variable.Type = varDeclaration.Type;
 
                             DMObjectTree.GetDMObject(DreamPath.Root).GlobalVariables[variable.InternalName] = variable;
                             Expressions.Field field = new Expressions.Field(variable.Type, variable.InternalName);
                             if (varDeclaration.Value != null) {
                                 DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
+                                variable.Initialize(expression);
                                 Expressions.Assignment assign = new Expressions.Assignment(field, expression);
                                 DMObjectTree.AddGlobalInitProcAssign(assign);
                             }
@@ -196,39 +196,14 @@ namespace DMCompiler.DM.Visitors {
 
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
+            variable.Initialize(expression);
 
-            if (variable.IsConst) {
-                if (expression.IsConst || DMObjectTree.CheckConstExpression(value, _currentObject, null) || DMObjectTree.CheckConst(value, _currentObject, null)) {
-                    variable.Value = new Expressions.Null();
-                    EmitInitializationAssign(variable, expression);
-                    return;
-                }
-                new DMAST.DMASTNodePrinter().Print(value, Console.Out);
+            if (variable.IsConst && !expression.IsConst) {
                 throw new CompileErrorException("Assignment of non-const expression to const");
             }
-            if (variable.IsGlobal && variable.Name != "world") {
-                variable.Value = new Expressions.Null();
+            if (variable.InitialExpression.ConstValue == null) {
+                variable.JsonValue = new Expressions.Null();
                 EmitInitializationAssign(variable, expression);
-                return;
-            }
-
-            switch (expression) {
-                case Expressions.List:
-                case Expressions.NewPath:
-                    variable.Value = new Expressions.Null();
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                case Expressions.StringFormat:
-                case Expressions.ProcCall:
-                    if (!variable.IsGlobal) throw new CompileErrorException($"Invalid initial value for \"{variable.Name}\"");
-
-                    variable.Value = new Expressions.Null();
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                default:
-                    variable.Value = new Expressions.Null();
-                    EmitInitializationAssign(variable, expression);
-                    break;
             }
         }
 

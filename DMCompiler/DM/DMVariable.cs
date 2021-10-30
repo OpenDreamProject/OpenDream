@@ -7,7 +7,8 @@ namespace DMCompiler.DM {
         public string InternalName;
         public bool IsGlobal;
         public bool IsConst;
-        public DMExpression Value;
+        public Expressions.Constant JsonValue;
+        public DMExpression InitialExpression;
 
         public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst = false) {
             Type = type;
@@ -15,7 +16,12 @@ namespace DMCompiler.DM {
             InternalName = name;
             IsGlobal = isGlobal;
             IsConst = isConst;
-            Value = null;
+        }
+
+        public void Initialize(DMExpression expression) {
+            InitialExpression = expression;
+            InitialExpression.ConstValue = DMObjectTree.TryConstConvert(expression);
+            JsonValue = InitialExpression.ConstValue;
         }
     }
 }

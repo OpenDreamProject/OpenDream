@@ -70,13 +70,13 @@ namespace DMCompiler.DM {
 
         public virtual DreamPath? Path => null;
         public virtual bool IsConst { get; set; } = false;
-        public Expressions.Constant ConstValue => null;
+        public Expressions.Constant ConstValue { get; set; } = null;
     }
 
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
     class ArgumentList {
-        (string Name, DMExpression Expr)[] Expressions;
+        public (string Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
 
         public ArgumentList(DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {

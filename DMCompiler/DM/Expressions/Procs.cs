@@ -1,9 +1,10 @@
 using OpenDreamShared.Compiler;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
     class Proc : DMExpression {
-        string _identifier;
+        public readonly string _identifier;
 
         public Proc(string identifier) {
             _identifier = identifier;
@@ -63,9 +64,25 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _target;
         ArgumentList _arguments;
 
+        static public HashSet<string> const_procs = new() { "rgb", "matrix" };
+        static public bool ConstProc(string s) {
+            return const_procs.Contains(s);
+        }
+
         public ProcCall(DMExpression target, ArgumentList arguments) {
             _target = target;
             _arguments = arguments;
+            IsConst = true;
+            foreach (var arg_exprs in arguments.Expressions) {
+                if (!arg_exprs.Expr.IsConst) {
+                    IsConst = false;
+                    break;
+                }
+            }
+            if (target is Proc proc_expr && !ConstProc(proc_expr._identifier)) {
+                IsConst = false;
+            }
+
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

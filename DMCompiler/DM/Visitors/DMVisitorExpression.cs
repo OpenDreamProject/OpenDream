@@ -89,8 +89,9 @@ namespace DMCompiler.DM.Visitors {
 
                     if (localVar != null) {
                         Result = new Expressions.Local(localVar.Type, name);
-                        if (localVar.Value != null) {
+                        if (localVar.IsConst) {
                             Result.IsConst = true;
+                            Result.ConstValue = localVar.InitialExpression.ConstValue;
                         }
                         return;
                     }
@@ -100,6 +101,7 @@ namespace DMCompiler.DM.Visitors {
                         Result = new Expressions.Field(field.Type, field.InternalName);
                         if (field.IsConst) {
                             Result.IsConst = true;
+                            Result.ConstValue = field.InitialExpression.ConstValue;
                         }
                         return;
                     }
@@ -113,6 +115,7 @@ namespace DMCompiler.DM.Visitors {
                 Result = new Expressions.Field(field.Type, field.InternalName);
                 if (field.IsConst) {
                     Result.IsConst = true;
+                    Result.ConstValue = field.InitialExpression.ConstValue;
                 }
             }
         }
@@ -150,6 +153,9 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
+            if (lhs.IsConst) {
+                throw new CompileErrorException("assignment to const");
+            }
             Result = new Expressions.Assignment(lhs, rhs);
         }
 

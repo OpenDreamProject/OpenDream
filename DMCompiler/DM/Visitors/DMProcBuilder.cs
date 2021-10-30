@@ -158,22 +158,16 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             if (varDeclaration.IsGlobal) { return; }
 
-            if (varDeclaration.IsConst) {
-                var expression = DMExpression.Create(_dmObject, _proc, varDeclaration.Value);
-                if (expression.IsConst ||
-                    DMObjectTree.CheckConstExpression(varDeclaration.Value, _dmObject, null) ||
-                    DMObjectTree.CheckConst(varDeclaration.Value, _dmObject, null)) {
-                    _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type, expression);
-                }
-                else {
-                    throw new CompileErrorException("Assignment of non-const expression to const");
-                }
-            }
-            else {
-                _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
-            }
+            var localVar = _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.IsConst);
 
             if (varDeclaration.Value != null) {
+                if (varDeclaration.IsConst) {
+                    var expression = DMExpression.Create(_dmObject, _proc, varDeclaration.Value);
+                    if (!expression.IsConst) {
+                        throw new CompileErrorException("Assignment of non-const expression to const");
+                    }
+                    localVar.Initialize(expression);
+                }
                 DMExpression.Emit(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
             } else {
                 _proc.PushNull();

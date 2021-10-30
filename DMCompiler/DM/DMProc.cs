@@ -61,10 +61,10 @@ namespace DMCompiler.DM {
                 new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
             }
             catch (CompileErrorException e) {
-                Program.Error(e.Error);
-                if (DMObjectTree.PrintOnError) {
-                    Console.WriteLine(_astDefinition.ObjectPath + " " + _astDefinition.Name);
+                if (DMObjectTree.PrintPathOnError) {
+                    e.Error.Message = $"{_astDefinition.ObjectPath} {_astDefinition.Name}: {e.Error.Message}";
                 }
+                Program.Error(e.Error);
                 if (DMObjectTree.ThrowOnError) {
                     throw;
                 }

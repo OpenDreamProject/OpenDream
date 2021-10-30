@@ -29,10 +29,10 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) {
-                    Program.Error(e.Error);
-                    if (DMObjectTree.PrintOnError) {
-                        Console.WriteLine(_currentObject.Path);
+                    if (DMObjectTree.PrintPathOnError) {
+                        e.Error.Message = $"{_currentObject.Path}: {e.Error.Message}";
                     }
+                    Program.Error(e.Error);
                     if (DMObjectTree.ThrowOnError) {
                         throw;
                     }
@@ -80,10 +80,10 @@ namespace DMCompiler.DM.Visitors {
             try {
                 SetVariableValue(variable, varDefinition.Value, varDefinition.Type);
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
-                if (DMObjectTree.PrintOnError) {
-                    Console.WriteLine(varDefinition.ObjectPath + " " + varDefinition.Name);
+                if (DMObjectTree.PrintPathOnError) {
+                    e.Error.Message = $"{varDefinition.ObjectPath} {varDefinition.Name}: {e.Error.Message}";
                 }
+                Program.Error(e.Error);
                 if (DMObjectTree.ThrowOnError) {
                     throw;
                 }
@@ -110,10 +110,10 @@ namespace DMCompiler.DM.Visitors {
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
-                if (DMObjectTree.PrintOnError) {
-                    Console.WriteLine(varOverride.ObjectPath + " " + varOverride.VarName);
+                if (DMObjectTree.PrintPathOnError) {
+                    e.Error.Message = $"{varOverride.ObjectPath} {varOverride.VarName}: {e.Error.Message}";
                 }
+                Program.Error(e.Error);
                 if (DMObjectTree.ThrowOnError) {
                     throw;
                 }
@@ -147,10 +147,10 @@ namespace DMCompiler.DM.Visitors {
                     dmObject.InitializationProcExpressions.Add(append);
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
-                if (DMObjectTree.PrintOnError) {
-                    Console.WriteLine(procDefinition.ObjectPath + " " + procDefinition.Name);
+                if (DMObjectTree.PrintPathOnError) {
+                    e.Error.Message = $"{procDefinition.ObjectPath} {procDefinition.Name}: {e.Error.Message}";
                 }
+                Program.Error(e.Error);
                 if (DMObjectTree.ThrowOnError) {
                     throw;
                 }

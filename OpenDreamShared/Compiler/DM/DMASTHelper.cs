@@ -87,6 +87,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
         public class ObjectPrinter {
 
+            bool WarnOnUnknown = false;
             public List<Type> equality_field_types = new() {
                 typeof(string),
                 typeof(int),
@@ -169,7 +170,7 @@ namespace OpenDreamShared.Compiler.DM {
                         line += field.Name + "=" + v.ToString() + " ";
                     }
                     else {
-                        throw new Exception("unknown field type " + ty.ToString());
+                        if (WarnOnUnknown) { Console.WriteLine("WARNING: unknown field type " + ty.ToString()); }
                     }
                 }
                 if (node_labels.ContainsKey(node)) {
@@ -198,13 +199,12 @@ namespace OpenDreamShared.Compiler.DM {
         public class DMASTNodePrinter : ObjectPrinter {
             public DMASTNodePrinter() {
                 equality_field_types.Add(typeof(DMValueType));
-                tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath) } );
-                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode) } );
+                tostring_types.AddRange(new Type[] { typeof(DMValueType), typeof(DreamPath) });
+                recurse_types.AddRange(new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode) });
             }
         }
 
         public static DMASTNodePrinter Printer = new DMASTNodePrinter();
-
         public delegate void CompareResult(DMASTNode n_l, DMASTNode n_r, string s);
         public static bool Compare(DMASTNode node_l, DMASTNode node_r, CompareResult cr) {
             if (node_l == null || node_r == null) {

@@ -11,7 +11,7 @@ namespace DMCompiler.DM {
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
         public static bool ThrowOnError = false;
-        public static bool PrintOnError = true;
+        public static bool PrintPathOnError = true;
         public static bool PrintUnimplementedWarnings = false;
 
         private static List<Expressions.Assignment> _globalInitProcAssigns = new();
@@ -98,10 +98,10 @@ namespace DMCompiler.DM {
                     assign.EmitPushValue(root, GlobalInitProc);
                 }
                 catch (CompileErrorException e) {
-                    Program.Error(e.Error);
-                    if (PrintOnError) {
-                        Console.WriteLine(assign.Path);
+                    if (PrintPathOnError) {
+                        e.Error.Message = $"{assign.Path}: {e.Error.Message}";
                     }
+                    Program.Error(e.Error);
                     if (ThrowOnError) {
                         throw;
                     }

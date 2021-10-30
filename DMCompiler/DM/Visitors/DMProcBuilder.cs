@@ -50,10 +50,10 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) { //Retreat from the statement when there's an error
-                    Program.Error(e.Error);
-                    if (DMObjectTree.PrintOnError) {
-                        Console.WriteLine(_procDef.ObjectPath + " " + _procDef.Name);
+                    if (DMObjectTree.PrintPathOnError) {
+                        e.Error.Message = $"{_procDef.ObjectPath} {_procDef.Name}: {e.Error.Message}";
                     }
+                    Program.Error(e.Error);
                     if (DMObjectTree.ThrowOnError) {
                         throw;
                     }

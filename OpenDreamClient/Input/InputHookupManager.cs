@@ -59,12 +59,12 @@ namespace OpenDreamClient.Input {
         }
 
         private IList<IEntity> GetEntitiesUnderMouse(MapCoordinates coords) {
-            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (1, 1)));
+            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (IEntity entity in entities) {
                 if (entity.TryGetComponent<DMISpriteComponent>(out var sprite)
-                    && sprite.IsMouseOver(coords.Position)) {
+                    && sprite.CheckClick(coords.Position)) {
                     foundSprites.Add(sprite);
                 }
             }

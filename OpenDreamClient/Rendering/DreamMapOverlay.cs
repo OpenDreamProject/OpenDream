@@ -3,7 +3,6 @@ using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using System.Collections.Generic;
 
@@ -11,7 +10,6 @@ namespace OpenDreamClient.Rendering {
     class DreamMapOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
-        private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
@@ -24,11 +22,7 @@ namespace OpenDreamClient.Rendering {
             foreach (IEntity entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
                 if (!entity.TryGetComponent(out DMISpriteComponent sprite))
                     continue;
-
-                //Only render turfs (children of map entity) and their contents (secondary child of map entity)
-                ITransformComponent transform = entity.Transform;
-                EntityUid mapEntity = _mapManager.GetMapEntityId(transform.MapID);
-                if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
+                if (!sprite.IsVisible())
                     continue;
 
                 sprites.Add(sprite);
@@ -36,16 +30,11 @@ namespace OpenDreamClient.Rendering {
 
             sprites.Sort(_renderOrderComparer);
             foreach (DMISpriteComponent sprite in sprites) {
-                if (sprite.Icon != null) {
-                    RenderIcon(handle, sprite.Owner.Transform.WorldPosition, sprite.Icon);
-                }
+                RenderIcon(handle, sprite.Owner.Transform.WorldPosition, sprite.Icon);
             }
         }
 
         private void RenderIcon(DrawingHandleWorld handle, Vector2 position, DreamIcon icon) {
-            //TODO: mob.see_invisibility
-            if (icon.Appearance.Invisibility > 0) return;
-
             position += icon.Appearance.PixelOffset / new Vector2(32, 32); //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
 
             foreach (DreamIcon underlay in icon.Underlays) {
@@ -54,7 +43,7 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position, icon.Appearance.Color);
+                handle.DrawTexture(frame, position);
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

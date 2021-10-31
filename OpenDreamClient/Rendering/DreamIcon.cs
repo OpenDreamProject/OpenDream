@@ -7,13 +7,23 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Rendering {
     class DreamIcon {
-        public DMIResource DMI { get; private set; } = null;
+        public delegate void DMIChangedEventHandler(DMIResource oldDMI, DMIResource newDMI);
+
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
+        public event DMIChangedEventHandler DMIChanged;
+
+        public DMIResource DMI {
+            get => _dmi;
+            private set {
+                DMIChanged?.Invoke(_dmi, value);
+                _dmi = value;
+            }
+        }
+        private DMIResource _dmi;
 
         public int AnimationFrame {
             get {
@@ -29,12 +39,12 @@ namespace OpenDreamClient.Rendering {
                 UpdateIcon();
             }
         }
+        private IconAppearance _appearance;
 
         public AtlasTexture CurrentFrame {
             get => DMI?.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
         }
 
-        private IconAppearance _appearance;
         private int _animationFrame;
         private DateTime _animationFrameTime = DateTime.Now;
 
@@ -44,10 +54,15 @@ namespace OpenDreamClient.Rendering {
             SetAppearance(appearanceId, parentDir);
         }
 
-        public void SetAppearance(uint appearanceId, AtomDirection? parentDir = null) {
+        public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
+            if (appearanceId == null) {
+                Appearance = null;
+                return;
+            }
+
             ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
 
-            appearanceSystem.LoadAppearance(appearanceId, appearance => {
+            appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
                 if (appearance.Direction == AtomDirection.None && parentDir != null) {
                     appearance = new IconAppearance(appearance) {
                         Direction = parentDir.Value
@@ -74,46 +89,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        public Color GetPixel(int x, int y) {
-            UpdateAnimation();
-
-            //TODO
-            return Color.White;
-
-            /*Rectangle textureRect = DMI.GetTextureRect(Appearance.IconState, Appearance.Direction, AnimationFrame);
-            if (x > 0 && x < textureRect.Width && y > 0 && y < textureRect.Height) {
-                Color pixel = DMI.ImageBitmap.GetPixel(textureRect.X + x, textureRect.Y + y);
-
-                if (pixel.A == Color.Transparent.A || !IsValidIcon()) {
-                    foreach (DreamIcon overlay in Overlays) {
-                        pixel = overlay.GetPixel(x, y);
-
-                        if (pixel.A != Color.Transparent.A) return pixel;
-                    }
-
-                    return Color.Transparent;
-                } else {
-                    return pixel;
-                }
-            } else {
-                return Color.Transparent;
-            }*/
-        }
-
-        public bool IsMouseOver(int x, int y) {
-            switch (Appearance.MouseOpacity) {
-                case MouseOpacity.Transparent: return false;
-                case MouseOpacity.Opaque: return true;
-                case MouseOpacity.PixelOpaque: return GetPixel(x, y).A != 0;
-                default: throw new InvalidOperationException($"Icon has an invalid mouse opacity ({Appearance.MouseOpacity})");
-            }
-        }
-
-        public bool IsValidIcon() {
-            return DMI != null && DMI.Description.States.ContainsKey(Appearance.IconState);
-        }
-
-        public static int LayerSort(DreamIcon first, DreamIcon second) {
+        private static int LayerSort(DreamIcon first, DreamIcon second) {
             float diff = first.Appearance.Layer - second.Appearance.Layer;
 
             if (diff < 0) return -1;

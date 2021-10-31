@@ -21,7 +21,9 @@ namespace DMCompiler.DM {
         public void Initialize(DMExpression expression) {
             InitialExpression = expression;
             InitialExpression.ConstValue = DMObjectTree.TryConstConvert(expression);
-            JsonValue = InitialExpression.ConstValue;
+            if (InitialExpression.ConstValue != null) {
+                JsonValue = InitialExpression.ConstValue;
+            }
         }
     }
 }

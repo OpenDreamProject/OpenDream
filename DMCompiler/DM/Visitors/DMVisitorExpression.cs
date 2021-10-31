@@ -153,7 +153,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
-            if (lhs.IsConst) {
+            if (lhs.IsConst && !DMExpression.InArgumentList.Peek()) {
                 throw new CompileErrorException("assignment to const");
             }
             Result = new Expressions.Assignment(lhs, rhs);
@@ -480,7 +480,20 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitList(DMASTList list) {
-            Result = new Expressions.List(list);
+
+            DMExpression[] expressions = new DMExpression[list.Values.Length];
+            for (int i = 0; i < list.Values.Length; i++) {
+                DMASTCallParameter parameter = list.Values[i];
+                try {
+                    DMExpression.InArgumentList.Push(true);
+                    expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
+                }
+                finally {
+                    DMExpression.InArgumentList.Pop();
+                }
+            }
+            Result = new Expressions.List(expressions, list);
+
         }
 
         public void VisitNewList(DMASTNewList newList) {

@@ -257,9 +257,17 @@ namespace DMCompiler.DM.Expressions {
     // list(...)
     class List : DMExpression {
         // Lazy
+        DMExpression[] _exprs;
         DMASTList _astNode;
 
-        public List(DMASTList astNode) {
+        public List(DMExpression[] expressions, DMASTList astNode) {
+            _exprs = expressions;
+            IsConst = true;
+            foreach (var expr in _exprs) {
+                if (!expr.IsConst) {
+                    IsConst = false;
+                }
+            }
             _astNode = astNode;
         }
 

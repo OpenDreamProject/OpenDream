@@ -71,6 +71,8 @@ namespace DMCompiler.DM {
         public virtual DreamPath? Path => null;
         public virtual bool IsConst { get; set; } = false;
         public Expressions.Constant ConstValue { get; set; } = null;
+
+        public static Stack<bool> InArgumentList = new(new List<bool>() { false });
     }
 
     // (a, b, c, ...)
@@ -89,8 +91,14 @@ namespace DMCompiler.DM {
 
             int idx = 0;
             foreach(var arg in arguments) {
-                var expr = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
-                Expressions[idx++] = (arg.Name, expr);
+                try {
+                    DMExpression.InArgumentList.Push(true);
+                    var expr = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
+                    Expressions[idx++] = (arg.Name, expr);
+                }
+                finally {
+                    DMExpression.InArgumentList.Pop();
+                }
             }
         }
 

@@ -134,6 +134,7 @@ namespace DMCompiler.DM.Visitors {
                         if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
                             DMVariable variable = new DMVariable(varDeclaration.Type, varDeclaration.Name, true, varDeclaration.IsConst);
                             variable.InternalName = "PROC$$$$" + _currentObject.Path + "$" + procName + "$" + varDeclaration.Name;
+                            variable.JsonValue = new Expressions.Null();
                             variable.Type = varDeclaration.Type;
 
                             DMObjectTree.GetDMObject(DreamPath.Root).GlobalVariables[variable.InternalName] = variable;

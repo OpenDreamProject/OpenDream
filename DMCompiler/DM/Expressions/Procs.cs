@@ -64,7 +64,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _target;
         ArgumentList _arguments;
 
-        static public HashSet<string> const_procs = new() { "rgb", "matrix" };
+        static public HashSet<string> const_procs = new() { "rgb", "matrix", "list" };
         static public bool ConstProc(string s) {
             return const_procs.Contains(s);
         }

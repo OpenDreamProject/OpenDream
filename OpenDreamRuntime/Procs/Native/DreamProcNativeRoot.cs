@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -1109,6 +1110,46 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 return new DreamValue(String.Format("#{0:X2}{1:X2}{2:X2}{3:X2}", r, g, b, a));
             }
+        }
+
+        [DreamProc("rgb2num")]
+        [DreamProcParameter("color", Type = DreamValueType.String)]
+        [DreamProcParameter("space", Type = DreamValueType.Float, DefaultValue = 0)] // Same value as COLORSPACE_RGB
+        public static DreamValue NativeProc_rgb2num(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            string color = arguments.GetArgument(0, "color").GetValueAsString();
+            int space = (int)arguments.GetArgument(1, "space").GetValueAsFloat();
+
+            if (space != 0)
+            {
+                //TODO implement other colorspace support
+                throw new NotImplementedException("rgb2num() currently only supports COLORSPACE_RGB");
+            }
+
+            if (!ColorHelpers.IsValidHexLength(color))
+            {
+                throw new Exception("bad color");
+            }
+
+            color = ColorHelpers.ParseHexColor(color, false);
+
+            List<DreamValue> rgbValues = new List<DreamValue>(color.Length == 6 ? 3 : 4)
+            {
+                new DreamValue(int.Parse(color.Substring(0, 2), NumberStyles.HexNumber)),
+                new DreamValue(int.Parse(color.Substring(2, 2), NumberStyles.HexNumber)),
+                new DreamValue(int.Parse(color.Substring(4, 2), NumberStyles.HexNumber))
+            };
+            if (color.Length == 8)
+            {
+                rgbValues.Add(new DreamValue(int.Parse(color.Substring(6, 2), NumberStyles.HexNumber)));
+            }
+
+            DreamList list = DreamList.Create(CurrentRuntime);
+            foreach (var val in rgbValues)
+            {
+                list.AddValue(val);
+            }
+
+            return new DreamValue(list);
         }
 
         [DreamProc("replacetextEx")]

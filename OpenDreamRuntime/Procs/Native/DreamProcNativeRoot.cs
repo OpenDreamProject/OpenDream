@@ -1132,21 +1132,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
             color = ColorHelpers.ParseHexColor(color, false);
 
-            List<DreamValue> rgbValues = new List<DreamValue>(color.Length == 6 ? 3 : 4)
-            {
-                new DreamValue(int.Parse(color.Substring(0, 2), NumberStyles.HexNumber)),
-                new DreamValue(int.Parse(color.Substring(2, 2), NumberStyles.HexNumber)),
-                new DreamValue(int.Parse(color.Substring(4, 2), NumberStyles.HexNumber))
-            };
+            DreamList list = DreamList.Create(CurrentRuntime);
+
+            list.AddValue(new DreamValue(int.Parse(color.Substring(0, 2), NumberStyles.HexNumber)));
+            list.AddValue(new DreamValue(int.Parse(color.Substring(2, 2), NumberStyles.HexNumber)));
+            list.AddValue(new DreamValue(int.Parse(color.Substring(4, 2), NumberStyles.HexNumber)));
+            
             if (color.Length == 8)
             {
-                rgbValues.Add(new DreamValue(int.Parse(color.Substring(6, 2), NumberStyles.HexNumber)));
-            }
-
-            DreamList list = DreamList.Create(CurrentRuntime);
-            foreach (var val in rgbValues)
-            {
-                list.AddValue(val);
+                list.AddValue(new DreamValue(int.Parse(color.Substring(6, 2), NumberStyles.HexNumber)));
             }
 
             return new DreamValue(list);

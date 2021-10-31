@@ -112,8 +112,6 @@ namespace OpenDreamShared.Dream {
 
         public void SetColor(string color) {
             if (color.StartsWith("#")) {
-                color = color.Substring(1);
-
                 color = ColorHelpers.ParseHexColor(color);
 
                 Color = Convert.ToUInt32(color, 16);

@@ -85,7 +85,7 @@
 	var/list/filters = list()
 	var/list/vis_contents = list()
 
-/matrix/Interpolate(Matrix2, t)
+/matrix/proc/Interpolate(Matrix2, t)
 
 /mutable_appearance
 	var/transform
@@ -112,15 +112,16 @@
 	var/reachable
 	var/game_state
 	var/host
-	Profile(command, format)
-	Profile(command, type, format)
-	GetConfig(config_set,param)
-	SetConfig(config_set,param,value)
-	Export(Addr,File,Persist,Clients)
-	OpenPort(port)
-	IsSubscribed(player, type)
+	proc/Profile(command, format)
+	proc/Profile(command, type, format)
+	proc/GetConfig(config_set,param)
+	proc/SetConfig(config_set,param,value)
+	proc/Export(Addr,File,Persist,Clients)
+	proc/OpenPort(port)
+	proc/IsSubscribed(player, type)
 
 /database
+	parent_type = /datum
 	proc/Close()
 	proc/Error()
 	proc/ErrorMsg()
@@ -138,24 +139,6 @@
 	proc/GetColumn(column)
 	proc/GetRowData()
 	New(text, ...)
-	NextRow()
-	Reset()
-	RowsAffected()
-
-/DBConnection
-	proc/_dm_db_new_con()
-	proc/_dm_db_connect()
-	proc/_dm_db_close()
-	proc/_dm_db_is_connected()
-	proc/_dm_db_quote()
-	proc/_dm_db_error_msg()
-
-/DBQuery
-	proc/_dm_db_new_query()
-	proc/_dm_db_execute()
-	proc/_dm_db_next_row()
-	proc/_dm_db_rows_affected()
-	proc/_dm_db_row_count()
-	proc/_dm_db_error_msg()
-	proc/_dm_db_columns()
-	proc/_dm_db_close()
+	proc/NextRow()
+	proc/Reset()
+	proc/RowsAffected()

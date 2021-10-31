@@ -2,6 +2,8 @@
 	var/screen_loc
 
 	var/animate_movement = FORWARD_STEPS
+	var/list/locs = list()
+	var/glide_size
 
 	proc/Bump(atom/Obstacle)
 	

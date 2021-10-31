@@ -39,6 +39,25 @@
 	proc/New()
 	proc/Del()
 
+	var/map_cpu = 0
+	var/hub
+	var/hub_password
+	var/reachable
+	var/game_state
+	var/host
+	proc/Profile(command, type, format)
+		set opendream_unimplemented = TRUE
+	proc/GetConfig(config_set,param)
+		set opendream_unimplemented = TRUE
+	proc/SetConfig(config_set,param,value)
+		set opendream_unimplemented = TRUE
+	proc/Export(Addr,File,Persist,Clients)
+		set opendream_unimplemented = TRUE
+	proc/OpenPort(port)
+		set opendream_unimplemented = TRUE
+	proc/IsSubscribed(player, type)
+		set opendream_unimplemented = TRUE
+
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
 		CRASH("/world.Reboot() is not implemented")

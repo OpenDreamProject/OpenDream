@@ -28,6 +28,21 @@
 
 	var/timezone
 
+	var/color = 0
+	var/control_freak
+	var/mouse_pointer_icon
+	var/preload_rsc = 1
+	var/fps = 0
+	var/dir = NORTH
+	var/gender = "neuter"
+	var/glide_size
+	proc/SoundQuery()
+		set opendream_unimplemented = TRUE
+	proc/Export(file)
+		set opendream_unimplemented = TRUE
+	proc/MeasureText(text, style, width=0)
+		set opendream_unimplemented = TRUE
+	
 	proc/New(TopicData)
 		view = world.view
 		mob = new world.mob(null)

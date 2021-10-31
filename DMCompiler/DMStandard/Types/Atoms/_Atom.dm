@@ -37,6 +37,29 @@
 
 	var/maptext //TODO
 
+	var/filters = list()
+	var/appearance
+	var/appearance_flags
+	var/maptext_width
+	var/maptext_height
+	var/maptext_x = 32
+	var/maptext_y = 32
+	var/pixel_x
+	var/pixel_y
+	var/pixel_z
+	var/pixel_w
+	var/step_x
+	var/step_y
+	var/render_source
+	var/bound_width
+	var/bound_height
+	var/mouse_drag_pointer
+	var/mouse_drop_pointer
+	var/render_target
+	var/vis_flags
+	var/vis_locs = list()
+	var/list/vis_contents = list()
+
 	proc/Click(location, control, params)
 
 	proc/Entered(atom/movable/Obj, atom/OldLoc)

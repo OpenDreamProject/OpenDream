@@ -10,6 +10,10 @@
 	var/y
 	var/z
 
+	var/environment
+	var/echo
+	var/len
+
 	var/priority = 0 //TODO
 	var/status = 0 //TODO
 

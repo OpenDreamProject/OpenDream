@@ -29,7 +29,13 @@
                 <Button Name="QuitButtonProtected"
                         Text="Quit"
                         TextAlign="Center" />
+                <Control MinHeight="128"></Control>
+                <BoxContainer Name="WIP" Orientation="Horizontal"
+                              SeparationOverride="4">
+                    <Label Name="WIPLabel" Text="Work In Progress" FontColorOverride="#FFFFFF"/>
+                </BoxContainer>
             </BoxContainer>
+
         </LayoutContainer>
     </PanelContainer>
 </Control>

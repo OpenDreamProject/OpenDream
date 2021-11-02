@@ -43,7 +43,7 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position);
+                handle.DrawTexture(frame, position, icon.Appearance.Color);
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

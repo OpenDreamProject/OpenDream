@@ -238,7 +238,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (overlayAppearanceId == null) return;
 
             UpdateAppearance(atom, appearance => {
-                appearance.Underlays.Remove(overlayAppearanceId.Value);
+                appearance.Overlays.Remove(overlayAppearanceId.Value);
             });
         }
 

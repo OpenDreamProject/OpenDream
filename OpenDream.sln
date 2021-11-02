@@ -43,7 +43,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Client.Injectors", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Client.NameGenerator", "RobustToolbox\Robust.Client.NameGenerator\Robust.Client.NameGenerator.csproj", "{B4312CDA-EE13-4EFC-ACC1-24FB29900F2F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Client.CEF", "RobustToolbox\Robust.Client.CEF\Robust.Client.CEF.csproj", "{F5B751BB-FFC3-4331-873A-51315740462A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Client.WebView", "RobustToolbox\Robust.Client.WebView\Robust.Client.WebView.csproj", "{F5B751BB-FFC3-4331-873A-51315740462A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Analyzers", "RobustToolbox\Robust.Analyzers\Robust.Analyzers.csproj", "{A34BFECC-B541-48E6-82BA-506BBDB7C40B}"
 EndProject

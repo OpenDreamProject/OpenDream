@@ -1,33 +1,13 @@
 using JetBrains.Annotations;
-using Robust.Client.CEF;
+using Robust.Client.WebView;
 
 namespace OpenDreamClient.Interface
 {
     // Used for headless unit testing
     [UsedImplicitly]
-    public class DummyCefManager : ICefManager
+    public class DummyCefManager : IWebViewManager
     {
-        public void Initialize()
-        {
-
-        }
-
-        public void CheckInitialized()
-        {
-
-        }
-
-        public void Update()
-        {
-
-        }
-
-        public void Shutdown()
-        {
-
-        }
-
-        public IBrowserWindow CreateBrowserWindow(BrowserWindowCreateParameters createParams)
+        public IWebViewWindow CreateBrowserWindow(BrowserWindowCreateParameters createParams)
         {
             return null;
         }

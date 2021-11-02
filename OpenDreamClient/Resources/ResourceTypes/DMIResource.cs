@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenDreamClient.Input;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
-    class DMIResource : DreamResource {
+    public class DMIResource : DreamResource {
         private readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
 
         public Texture Texture;
@@ -26,13 +29,19 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
             dmiStream.Seek(0, SeekOrigin.Begin);
 
-            Texture = IoCManager.Resolve<IClyde>().LoadTextureFromPNGStream(dmiStream);
+            Image<Rgba32> image = Image.Load<Rgba32>(dmiStream);
+            Texture = IoCManager.Resolve<IClyde>().LoadTextureFromImage(image);
             IconSize = new Vector2i(description.Width, description.Height);
             Description = description;
 
+            IClickMapManager clickMapManager = IoCManager.Resolve<IClickMapManager>();
+
             _states = new Dictionary<string, State>();
             foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
-                _states.Add(parsedState.Name, new State(Texture, parsedState, description.Width, description.Height));
+                State state = new State(Texture, parsedState, description.Width, description.Height);
+
+                _states.Add(parsedState.Name, state);
+                clickMapManager.CreateClickMap(state, image);
             }
         }
 
@@ -53,10 +62,10 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         }
 
         public struct State {
-            private Dictionary<AtomDirection, AtlasTexture[]> _frames;
+            public Dictionary<AtomDirection, AtlasTexture[]> Frames;
 
             public State(Texture texture, DMIParser.ParsedDMIState parsedState, int width, int height) {
-                _frames = new Dictionary<AtomDirection, AtlasTexture[]>();
+                Frames = new Dictionary<AtomDirection, AtlasTexture[]>();
 
                 foreach (KeyValuePair<AtomDirection, DMIParser.ParsedDMIFrame[]> pair in parsedState.Directions) {
                     AtomDirection dir = pair.Key;
@@ -69,13 +78,13 @@ namespace OpenDreamClient.Resources.ResourceTypes {
                         frames[i] = new AtlasTexture(texture, new UIBox2(parsedFrame.X, parsedFrame.Y, parsedFrame.X + width, parsedFrame.Y + height));
                     }
 
-                    _frames.Add(dir, frames);
+                    Frames.Add(dir, frames);
                 }
             }
 
             public AtlasTexture[] GetFrames(AtomDirection direction) {
-                if (!_frames.TryGetValue(direction, out AtlasTexture[] frames))
-                    frames = _frames[AtomDirection.South];
+                if (!Frames.TryGetValue(direction, out AtlasTexture[] frames))
+                    frames = Frames[AtomDirection.South];
 
                 return frames;
             }

@@ -12,6 +12,7 @@ namespace OpenDreamClient {
             IoCManager.Register<IDreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<DreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
+            IoCManager.Register<IClickMapManager, ClickMapManager>();
             IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();
             IoCManager.Register<IDreamSoundEngine, DreamSoundEngine>();

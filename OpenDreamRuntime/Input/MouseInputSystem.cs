@@ -12,7 +12,7 @@ namespace OpenDreamRuntime.Input {
     class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private IAtomManager _atomManager = default!;
         [Dependency] private IEntityManager _entityManager = default!;
-        [Dependency] private IDreamManager _dreamManager;
+        [Dependency] private IDreamManager _dreamManager = default!;
 
         public override void Initialize() {
             base.Initialize();

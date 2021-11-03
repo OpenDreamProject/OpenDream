@@ -38,7 +38,6 @@ namespace Content.IntegrationTests {
             options.BeforeStart += () => {
                 IoCManager.Resolve<IModLoader>().SetModuleBaseCallbacks(new ClientModuleTestingCallbacks {
                     ClientBeforeIoC = () => {
-                        //IoCManager.Register<IWebViewManager, DummyWebViewManager>(true);
                         IoCManager.Register<IDreamInterfaceManager, DummyDreamInterfaceManager>(true);
                         if (options is ClientContentIntegrationOption contentOptions) {
                             contentOptions.ContentBeforeIoC?.Invoke();

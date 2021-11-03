@@ -19,7 +19,7 @@ namespace OpenDreamClient.Interface.Controls
 
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
-        // windows can be embedded into other windows as a way to do nesting.du
+        // windows can be embedded into other windows as a way to do nesting.
 
         public readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
 

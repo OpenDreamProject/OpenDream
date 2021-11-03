@@ -5,6 +5,9 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Interface
 {
+    /// <summary>
+    /// Used in unit testing to run a headless client.
+    /// </summary>
     public class DummyDreamInterfaceManager : IDreamInterfaceManager
     {
         public string[] AvailableVerbs { get; }

@@ -8,7 +8,7 @@ using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    abstract class InterfaceControl : InterfaceElement
+    public abstract class InterfaceControl : InterfaceElement
     {
         public Control UIElement { get; private set; }
         public bool IsDefault { get => _controlDescriptor.IsDefault; }

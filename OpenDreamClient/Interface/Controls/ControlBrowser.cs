@@ -5,8 +5,8 @@ using System.Net;
 using System.Web;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
-using Robust.Client.CEF;
 using Robust.Client.UserInterface;
+using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
 using Robust.Shared.IoC;
@@ -37,7 +37,7 @@ namespace OpenDreamClient.Interface.Controls
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
-        private BrowserControl _webView;
+        private WebViewControl _webView;
 
         public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
             : base(controlDescriptor, window)
@@ -46,7 +46,7 @@ namespace OpenDreamClient.Interface.Controls
         }
 
         protected override Control CreateUIElement() {
-            _webView = new BrowserControl();
+            _webView = new WebViewControl();
 
             _webView.AddResourceRequestHandler(RequestHandler);
             _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
@@ -66,7 +66,7 @@ namespace OpenDreamClient.Interface.Controls
             _webView.Url = (userData ? "usr://" : "res://") + filepath;
         }
 
-        private void BeforeBrowseHandler(BeforeBrowseContext context)
+        private void BeforeBrowseHandler(IBeforeBrowseContext context)
         {
             if (string.IsNullOrEmpty(_webView.Url))
                 return;
@@ -83,7 +83,7 @@ namespace OpenDreamClient.Interface.Controls
             }
         }
 
-        private void RequestHandler(RequestHandlerContext context)
+        private void RequestHandler(IRequestHandlerContext context)
         {
             Uri newUri = new Uri(context.Url);
 
@@ -137,7 +137,7 @@ namespace OpenDreamClient.Interface.Controls
                 Url = args[0]
             };
 
-            var cef = IoCManager.Resolve<CefManager>();
+            var cef = IoCManager.Resolve<IWebViewManager>();
             cef.CreateBrowserWindow(parameters);
         }
     }

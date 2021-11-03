@@ -4,7 +4,6 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
-using Robust.Client.CEF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Shared;
@@ -23,8 +22,6 @@ namespace OpenDreamClient {
         private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency]
         private readonly IDreamResourceManager _dreamResource = default!;
-        [Dependency]
-        private readonly CefManager _cef = default!;
 
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
@@ -42,7 +39,6 @@ namespace OpenDreamClient {
             IoCManager.BuildGraph();
             IoCManager.InjectDependencies(this);
 
-            _cef.Initialize();
             IoCManager.Resolve<DreamUserInterfaceStateManager>().Initialize();
 
             componentFactory.GenerateNetIds();
@@ -72,7 +68,6 @@ namespace OpenDreamClient {
         protected override void Dispose(bool disposing)
         {
             _dreamResource.Shutdown();
-            _cef.Shutdown();
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs)
@@ -80,8 +75,6 @@ namespace OpenDreamClient {
             if (level == ModUpdateLevel.FramePostEngine)
             {
                 _dreamInterface.FrameUpdate(frameEventArgs);
-
-                _cef.Update();
             }
         }
     }

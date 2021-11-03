@@ -12,7 +12,7 @@ using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    sealed class ControlWindow : InterfaceControl
+    public sealed class ControlWindow : InterfaceControl
     {
         [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
@@ -142,7 +142,7 @@ namespace OpenDreamClient.Interface.Controls
             }
         }
 
-        public void CreateChildControls(DreamInterfaceManager manager)
+        public void CreateChildControls(IDreamInterfaceManager manager)
         {
             foreach (ControlDescriptor controlDescriptor in _windowDescriptor.ControlDescriptors)
             {

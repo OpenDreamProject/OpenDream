@@ -32,7 +32,6 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
-
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
         public ControlWindow DefaultWindow;
@@ -42,7 +41,7 @@ namespace OpenDreamClient.Interface {
 
         public string[] AvailableVerbs { get; private set; } = Array.Empty<string>();
 
-        public readonly Dictionary<string, ControlWindow> Windows = new();
+        public Dictionary<string, ControlWindow> Windows { get; } = new();
         public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
 
         public void LoadInterfaceFromSource(string source) {
@@ -334,9 +333,10 @@ namespace OpenDreamClient.Interface {
         }
     }
 
-    interface IDreamInterfaceManager
+    public interface IDreamInterfaceManager
     {
         string[] AvailableVerbs { get; }
+        Dictionary<string, ControlWindow> Windows { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
         void Initialize();

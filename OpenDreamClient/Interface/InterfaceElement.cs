@@ -6,7 +6,7 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface
 {
-    class InterfaceElement {
+    public class InterfaceElement {
         public string Name { get => ElementDescriptor.Name; }
 
         protected readonly ElementDescriptor ElementDescriptor;

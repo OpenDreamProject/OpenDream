@@ -10,7 +10,7 @@ namespace OpenDreamClient.Interface.Controls {
         // todo: robust needs GridSplitter.
         // and a non-shit grid control.
 
-        [Dependency] private readonly DreamInterfaceManager _dreamInterface;
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface;
 
         private SplitContainer _grid;
         private ControlWindow _leftElement, _rightElement;

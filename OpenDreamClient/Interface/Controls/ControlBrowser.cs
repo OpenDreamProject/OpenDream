@@ -66,7 +66,7 @@ namespace OpenDreamClient.Interface.Controls
             _webView.Url = (userData ? "usr://" : "res://") + filepath;
         }
 
-        private void BeforeBrowseHandler(BeforeBrowseContext context)
+        private void BeforeBrowseHandler(IBeforeBrowseContext context)
         {
             if (string.IsNullOrEmpty(_webView.Url))
                 return;
@@ -83,7 +83,7 @@ namespace OpenDreamClient.Interface.Controls
             }
         }
 
-        private void RequestHandler(RequestHandlerContext context)
+        private void RequestHandler(IRequestHandlerContext context)
         {
             Uri newUri = new Uri(context.Url);
 

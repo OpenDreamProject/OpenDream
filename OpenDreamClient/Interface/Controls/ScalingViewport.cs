@@ -29,7 +29,7 @@ namespace OpenDreamClient.Interface.Controls
         private IEye? _eye;
         private Vector2i _viewportSize;
         private int _curRenderScale;
-        private ScalingViewportStretchMode _stretchMode = ScalingViewportStretchMode.Nearest;
+        private ScalingViewportStretchMode _stretchMode = ScalingViewportStretchMode.Bilinear;
         private ScalingViewportRenderScaleMode _renderScaleMode = ScalingViewportRenderScaleMode.CeilInt;
         private int _fixedRenderScale = 1;
 

@@ -29,8 +29,8 @@ namespace OpenDreamClient.Interface.Controls
         private IEye? _eye;
         private Vector2i _viewportSize;
         private int _curRenderScale;
-        private ScalingViewportStretchMode _stretchMode = ScalingViewportStretchMode.Bilinear;
-        private ScalingViewportRenderScaleMode _renderScaleMode = ScalingViewportRenderScaleMode.Fixed;
+        private ScalingViewportStretchMode _stretchMode = ScalingViewportStretchMode.Nearest;
+        private ScalingViewportRenderScaleMode _renderScaleMode = ScalingViewportRenderScaleMode.CeilInt;
         private int _fixedRenderScale = 1;
 
         private readonly List<CopyPixelsDelegate<Rgba32>> _queuedScreenshots = new();
@@ -228,7 +228,7 @@ namespace OpenDreamClient.Interface.Controls
                 ViewportSize * renderScale,
                 new TextureSampleParameters
                 {
-                    Filter = StretchMode == ScalingViewportStretchMode.Bilinear,
+                    Filter = StretchMode == ScalingViewportStretchMode.Nearest,
                 });
 
             _viewport.RenderScale = (renderScale, renderScale);
@@ -316,7 +316,7 @@ namespace OpenDreamClient.Interface.Controls
         /// <summary>
         ///     Nearest neighbor sampling is used.
         /// </summary>
-        Nearest,
+        Nearest
     }
 
     /// <summary>

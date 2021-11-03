@@ -24,6 +24,7 @@ namespace OpenDreamClient.States.MainMenu
             RobustXamlLoader.Load(this);
 
             Panel.PanelOverride = new StyleBoxFlat(Color.Black);
+            WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
 
             LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 

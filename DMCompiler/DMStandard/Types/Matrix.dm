@@ -36,6 +36,26 @@
 		f += Matrix2.f
 		return src
 
+	proc/Invert()
+		var/determinant = a*e - d*b
+		if(!determinant)
+			CRASH("Invalid matrix")
+		var/old_a = a
+		var/old_b = b
+		var/old_c = c
+		var/old_d = d
+		var/old_e = e
+		var/old_f = f
+
+		a = old_e
+		b = -old_b
+		c = old_b*old_f - old_e*old_c
+		d = -old_d
+		e = old_a
+		f = old_d*old_c - old_a*old_f
+
+		return Scale(1/determinant)
+
 	proc/Multiply(m)
 		if(!istype(m, /matrix))
 			return Scale(m)
@@ -84,11 +104,11 @@
 		f += y
 
 	proc/Turn(angle)
-        var/angleCos = cos(angle)
-        var/angleSin = sin(angle)
-        var/matrix/rotation = new(angleCos, angleSin, 0, -angleSin, angleCos, 0)
+		var/angleCos = cos(angle)
+		var/angleSin = sin(angle)
+		var/matrix/rotation = new(angleCos, angleSin, 0, -angleSin, angleCos, 0)
 
-        return Multiply(rotation)
+		return Multiply(rotation)
 
 proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)
 	return new /matrix(a, b, c, d, e, f)

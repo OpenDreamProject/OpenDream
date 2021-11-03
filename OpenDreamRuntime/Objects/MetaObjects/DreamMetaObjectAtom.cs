@@ -1,10 +1,10 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Maths;
-using Robust.Shared.Utility;
+using System;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
@@ -29,8 +29,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _atomManager.DeleteAtomEntity(dreamObject);
             _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
 
-            //Runtime.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
-            //Runtime.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
+            _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
+            _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
 
             base.OnObjectDeleted(dreamObject);
         }
@@ -39,82 +39,90 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "icon") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
-                    sprite.Icon = new ResourcePath(resource.ResourcePath);
-                } else {
-                    sprite.Icon = null;
-                }
+                UpdateAppearance(dreamObject, appearance => {
+                    if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
+                        appearance.Icon = resource.ResourcePath;
+                    } else {
+                        appearance.Icon = null;
+                    }
+                });
             } else if (variableName == "icon_state") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                variableValue.TryGetValueAsString(out string iconState);
-                sprite.IconState = iconState;
+                UpdateAppearance(dreamObject, appearance => {
+                    variableValue.TryGetValueAsString(out appearance.IconState);
+                });
             } else if (variableName == "pixel_x") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.PixelOffset = new Vector2i(variableValue.GetValueAsInteger(), sprite.PixelOffset.Y);
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.PixelOffset.X = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "pixel_y") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.PixelOffset = new Vector2i(sprite.PixelOffset.X, variableValue.GetValueAsInteger());
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.PixelOffset.Y = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "layer") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Layer = variableValue.GetValueAsFloat();
+                });
             } else if (variableName == "invisibility") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Invisibility = variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "mouse_opacity") {
-                //TODO
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "color") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                if (variableValue.TryGetValueAsString(out string color)) {
-                    sprite.Color = DreamColors.GetColor(color);
-                } else {
-                    sprite.Color = DreamColors.GetColor("white");
-                }
+                UpdateAppearance(dreamObject, appearance => {
+                    variableValue.TryGetValueAsString(out string color);
+                    color ??= "white";
+                    appearance.SetColor(color);
+                });
             } else if (variableName == "dir") {
-                DMISpriteComponent sprite = _atomManager.GetAtomEntity(dreamObject).GetComponent<DMISpriteComponent>();
-
-                sprite.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                });
             } else if (variableName == "transform") {
-                //TODO
+                DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
+
+                UpdateAppearance(dreamObject, appearance => {
+                    appearance.Transform[0] = matrix.GetVariable("a").GetValueAsFloat();
+                    appearance.Transform[1] = matrix.GetVariable("d").GetValueAsFloat();
+                    appearance.Transform[2] = matrix.GetVariable("b").GetValueAsFloat();
+                    appearance.Transform[3] = matrix.GetVariable("e").GetValueAsFloat();
+                    appearance.Transform[4] = matrix.GetVariable("c").GetValueAsFloat();
+                    appearance.Transform[5] = matrix.GetVariable("f").GetValueAsFloat();
+                });
             } else if (variableName == "overlays") {
-                //TODO
+                if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    oldList.Cut();
+                    oldList.ValueAssigned -= OverlayValueAssigned;
+                    oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
+                    _atomManager.OverlaysListToAtom.Remove(oldList);
+                }
 
-                //if (oldVariableValue != DreamValue.Null && oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
-                //    oldList.Cut();
-                //    oldList.ValueAssigned -= OverlayValueAssigned;
-                //    oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
-                //    Runtime.OverlaysListToAtom.Remove(oldList);
-                //}
+                DreamList overlayList;
+                if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
+                    overlayList = DreamList.Create();
+                }
 
-                //DreamList overlayList;
-                //if (!variableValue.TryGetValueAsDreamList(out overlayList)) {
-                //    overlayList = DreamList.Create(Runtime);
-                //}
-
-                //overlayList.ValueAssigned += OverlayValueAssigned;
-                //overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
-                //Runtime.OverlaysListToAtom[overlayList] = dreamObject;
+                overlayList.ValueAssigned += OverlayValueAssigned;
+                overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
+                _atomManager.OverlaysListToAtom[overlayList] = dreamObject;
             } else if (variableName == "underlays") {
-                //TODO
+                if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    oldList.Cut();
+                    oldList.ValueAssigned -= UnderlayValueAssigned;
+                    oldList.BeforeValueRemoved -= UnderlayBeforeValueRemoved;
+                    _atomManager.UnderlaysListToAtom.Remove(oldList);
+                }
 
-                //if (oldVariableValue != DreamValue.Null && oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
-                //    oldList.Cut();
-                //    oldList.ValueAssigned -= UnderlayValueAssigned;
-                //    oldList.BeforeValueRemoved -= UnderlayBeforeValueRemoved;
-                //    Runtime.UnderlaysListToAtom.Remove(oldList);
-                //}
+                DreamList underlayList;
+                if (!variableValue.TryGetValueAsDreamList(out underlayList)) {
+                    underlayList = DreamList.Create();
+                }
 
-                //DreamList underlayList;
-                //if (!variableValue.TryGetValueAsDreamList(out underlayList)) {
-                //    underlayList = DreamList.Create(Runtime);
-                //}
-
-                //underlayList.ValueAssigned += UnderlayValueAssigned;
-                //underlayList.BeforeValueRemoved += UnderlayBeforeValueRemoved;
-                //Runtime.UnderlaysListToAtom[underlayList] = dreamObject;
+                underlayList.ValueAssigned += UnderlayValueAssigned;
+                underlayList.BeforeValueRemoved += UnderlayBeforeValueRemoved;
+                _atomManager.UnderlaysListToAtom[underlayList] = dreamObject;
             }
         }
 
@@ -139,23 +147,28 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new(contents);
                 case "transform":
                     // Clone the matrix
-                    //DreamObject matrix = Runtime.ObjectTree.CreateObject(DreamPath.Matrix);
-                    //matrix.InitSpawn(new DreamProcArguments(new() { variableValue }));
+                    DreamObject matrix = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
+                    matrix.InitSpawn(new DreamProcArguments(new() { variableValue }));
 
-                    //return new DreamValue(matrix);
-
-                    //TODO
-                    return DreamValue.Null;
+                    return new DreamValue(matrix);
                 default:
                     return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 
-        /*private ServerIconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
-            ServerIconAppearance appearance = new ServerIconAppearance(Runtime);
+        private void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
+            DMISpriteComponent sprite = _atomManager.GetAtomEntity(atom).GetComponent<DMISpriteComponent>();
+            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+
+            update(appearance);
+            sprite.Appearance = appearance;
+        }
+
+        private IconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
+            IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = GetAppearance(Runtime, atom).Icon;
+                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
@@ -164,7 +177,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 } else if (icon.TryGetValueAsString(out string iconString)) {
                     appearance.Icon = iconString;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = GetAppearance(Runtime, atom).Icon;
+                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");
@@ -176,8 +189,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
                 appearance.Layer = mutableAppearance.GetVariable("layer").GetValueAsFloat();
-                appearance.PixelX = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
-                appearance.PixelY = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();
+                appearance.PixelOffset.X = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
+                appearance.PixelOffset.Y = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Image, out DreamObject image)) {
                 DreamValue icon = image.GetVariable("icon");
                 DreamValue iconState = image.GetVariable("icon_state");
@@ -192,12 +205,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.SetColor(image.GetVariable("color").GetValueAsString());
                 appearance.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
                 appearance.Layer = image.GetVariable("layer").GetValueAsFloat();
-                appearance.PixelX = image.GetVariable("pixel_x").GetValueAsInteger();
-                appearance.PixelY = image.GetVariable("pixel_y").GetValueAsInteger();
+                appearance.PixelOffset.X = image.GetVariable("pixel_x").GetValueAsInteger();
+                appearance.PixelOffset.Y = image.GetVariable("pixel_y").GetValueAsInteger();
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom)) {
-                appearance = BuildAtomAppearance(overlayAtom);
+                appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
             } else {
-                throw new Exception("Invalid overlay (" + value + ")");
+                throw new Exception($"Invalid overlay {value}");
             }
 
             return appearance;
@@ -206,53 +219,53 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private void OverlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = Runtime.OverlaysListToAtom[overlayList];
-            ServerIconAppearance atomAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, atom));
-            ServerIconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
+            DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
 
-            atomAppearance.Overlays.Add(overlayAppearance.GetID());
-            UpdateAppearance(Runtime, atom, atomAppearance);
+            UpdateAppearance(atom, appearance => {
+                IconAppearance overlay = CreateOverlayAppearance(atom, value);
+                uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(overlay);
+
+                appearance.Overlays.Add(id);
+            });
         }
 
         private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = Runtime.OverlaysListToAtom[overlayList];
-            ServerIconAppearance atomAppearance = GetAppearance(Runtime, atom);
-            ServerIconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
-            int overlayAppearanceId = overlayAppearance.GetID();
+            DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
+            IconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
+            uint? overlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(overlayAppearance);
+            if (overlayAppearanceId == null) return;
 
-            if (atomAppearance.Overlays.Contains(overlayAppearanceId)) {
-                atomAppearance = new ServerIconAppearance(Runtime, atomAppearance);
-                atomAppearance.Overlays.Remove(overlayAppearance.GetID());
-                UpdateAppearance(Runtime, atom, atomAppearance);
-            }
+            UpdateAppearance(atom, appearance => {
+                appearance.Overlays.Remove(overlayAppearanceId.Value);
+            });
         }
 
         private void UnderlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = Runtime.UnderlaysListToAtom[overlayList];
-            ServerIconAppearance atomAppearance = new ServerIconAppearance(Runtime, GetAppearance(Runtime, atom));
-            ServerIconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
+            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
 
-            atomAppearance.Underlays.Add(underlayAppearance.GetID());
-            UpdateAppearance(Runtime, atom, atomAppearance);
+            UpdateAppearance(atom, appearance => {
+                IconAppearance underlay = CreateOverlayAppearance(atom, value);
+                uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(underlay);
+
+                appearance.Underlays.Add(id);
+            });
         }
 
         private void UnderlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = Runtime.UnderlaysListToAtom[overlayList];
-            ServerIconAppearance atomAppearance = GetAppearance(Runtime, atom);
-            ServerIconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
-            int underlayAppearanceId = underlayAppearance.GetID();
+            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
+            uint? underlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(underlayAppearance);
+            if (underlayAppearanceId == null) return;
 
-            if (atomAppearance.Underlays.Contains(underlayAppearanceId)) {
-                atomAppearance = new ServerIconAppearance(Runtime, atomAppearance);
-                atomAppearance.Underlays.Remove(underlayAppearance.GetID());
-                UpdateAppearance(Runtime, atom, atomAppearance);
-            }
-        }*/
+            UpdateAppearance(atom, appearance => {
+                appearance.Underlays.Remove(underlayAppearanceId.Value);
+            });
+        }
     }
 }

@@ -199,11 +199,12 @@ namespace OpenDreamShared.Compiler.DMF {
         public MenuElementDescriptor MenuElement(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Elem)) {
                 Token elementNameToken = Current();
-                bool hasName = Check(TokenType.DMF_String);
+                bool hasId = Check(TokenType.DMF_String);
                 Newline();
 
                 var attributes = Attributes();
-                if (hasName) attributes.Add("name", (string) elementNameToken.Value);
+                //TODO: Name and Id are separate
+                if (hasId && !attributes.Has("name")) attributes.Add("name", (string) elementNameToken.Value);
 
                 return serializationManager.ReadValue<MenuElementDescriptor>(attributes);
             }
@@ -229,7 +230,7 @@ namespace OpenDreamShared.Compiler.DMF {
 
                 Newline();
                 key = attributeToken.Text;
-                if(attributeValue.Type != TokenType.DMF_None) token = attributeValue.Text;
+                token = attributeValue.Text;
                 return true;
             }
 
@@ -242,6 +243,8 @@ namespace OpenDreamShared.Compiler.DMF {
 
             while (TryGetAttribute(out var key, out var value))
             {
+                if (value == "none") continue;
+
                 if (value[0] == '"')
                 {
                     value = value.Substring(1, value.Length - 2);

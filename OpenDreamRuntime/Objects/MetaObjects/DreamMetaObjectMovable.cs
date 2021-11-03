@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -49,10 +50,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
                         IEntity locEntity = _atomManager.GetAtomEntity(loc);
 
-                        if (locEntity.Transform != entity.Transform) {
-                            entity.Transform.AttachParent(locEntity);
-                            entity.Transform.LocalPosition = Vector2.Zero;
-                        }
+                        entity.Transform.AttachParent(locEntity);
+                        entity.Transform.LocalPosition = Vector2.Zero;
                     } else {
                         entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
                     }
@@ -66,14 +65,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         private void UpdateScreenLocation(DreamObject movable, DreamValue screenLocationValue) {
-            /*ScreenLocation screenLocation;
+            ScreenLocation screenLocation;
             if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
             } else {
                 screenLocation = new ScreenLocation(0, 0, 0, 0);
             }
 
-            Runtime.StateManager.AddAtomScreenLocationDelta(movable, screenLocation);*/
+            _atomManager.GetAtomEntity(movable).GetComponent<DMISpriteComponent>().ScreenLocation = screenLocation;
         }
     }
 }

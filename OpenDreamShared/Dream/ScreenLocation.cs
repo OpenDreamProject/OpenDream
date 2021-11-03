@@ -1,8 +1,10 @@
 ﻿using Robust.Shared.Maths;
+using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
+    [Serializable, NetSerializable]
     public class ScreenLocation {
         public int X, Y;
         public int PixelOffsetX, PixelOffsetY;
@@ -43,8 +45,8 @@ namespace OpenDreamShared.Dream {
             PixelOffsetY = y.PixelOffset;
         }
 
-        public Vector2i GetScreenCoordinates(int iconSize) {
-            return new Vector2i(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        public Vector2 GetScreenCoordinates(int iconSize) {
+            return new Vector2(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
         }
 
         public override string ToString() {

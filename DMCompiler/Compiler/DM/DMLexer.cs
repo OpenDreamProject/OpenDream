@@ -56,7 +56,9 @@ namespace DMCompiler.Compiler.DM {
             { "spawn", TokenType.DM_Spawn },
             { "newlist", TokenType.DM_NewList },
             { "goto", TokenType.DM_Goto },
-            { "step", TokenType.DM_Step }
+            { "step", TokenType.DM_Step },
+            { "try", TokenType.DM_Try },
+            { "catch", TokenType.DM_Catch }
         };
 
         public int BracketNesting = 0;

@@ -1,57 +1,44 @@
-﻿using System;
+﻿using Robust.Shared.Maths;
+using Robust.Shared.Serialization;
+using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
+    [Serializable, NetSerializable]
     public class IconAppearance : IEquatable<IconAppearance> {
-        public enum AppearanceProperty {
-            End,
-            Icon,
-            IconState,
-            Direction,
-            PixelX,
-            PixelY,
-            Color,
-            Layer,
-            Invisibility,
-            Overlays,
-            Underlays,
-            Transform,
-            MouseOpacity
-        }
-
-        public static readonly Dictionary<String, UInt32> Colors = new() {
-            { "black", 0x000000FF },
-            { "silver", 0xC0C0C0FF },
-            { "gray", 0x808080FF },
-            { "grey", 0x808080FF },
-            { "white", 0xFFFFFFFF },
-            { "maroon", 0x800000FF },
-            { "red", 0xFF0000FF },
-            { "purple", 0x800080FF },
-            { "fuchsia", 0xFF00FFFF },
-            { "magenta", 0xFF00FFFF },
-            { "green", 0x00C000FF },
-            { "lime", 0x00FF00FF },
-            { "olive", 0x808000FF },
-            { "gold", 0x808000FF },
-            { "yellow", 0xFFFF00FF },
-            { "navy", 0x000080FF },
-            { "blue", 0x0000FFFF },
-            { "teal", 0x008080FF },
-            { "aqua", 0x00FFFFFF },
-            { "cyan", 0x00FFFFFF }
+        public static readonly Dictionary<String, Color> Colors = new() {
+            { "black", new Color(00, 00, 00) },
+            { "silver", new Color(192, 192, 192) },
+            { "gray", new Color(128, 128, 128) },
+            { "grey", new Color(128, 128, 128) },
+            { "white", new Color(255, 255, 255) },
+            { "maroon", new Color(128, 0, 0) },
+            { "red", new Color(255, 0, 0) },
+            { "purple", new Color(128, 0, 128) },
+            { "fuchsia", new Color(255, 0, 255) },
+            { "magenta", new Color(255, 0, 255) },
+            { "green", new Color(0, 192, 0) },
+            { "lime", new Color(0, 255, 0) },
+            { "olive", new Color(128, 128, 0) },
+            { "gold", new Color(128, 128, 0) },
+            { "yellow", new Color(255, 255, 0) },
+            { "navy", new Color(0, 0, 128) },
+            { "blue", new Color(0, 0, 255) },
+            { "teal", new Color(0, 128, 128) },
+            { "aqua", new Color(0, 255, 255) },
+            { "cyan", new Color(0, 255, 255) }
         };
 
         public string Icon;
         public string IconState;
         public AtomDirection Direction;
-        public int PixelX, PixelY;
-        public UInt32 Color = 0xFFFFFFFF;
+        public Vector2i PixelOffset;
+        public Color Color = Color.White;
         public float Layer;
         public int Invisibility;
         public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-        public List<int> Overlays = new();
-        public List<int> Underlays = new();
+        public List<uint> Overlays = new();
+        public List<uint> Underlays = new();
         public float[] Transform = new float[6] {   1, 0,
                                                     0, 1,
                                                     0, 0 };
@@ -62,14 +49,13 @@ namespace OpenDreamShared.Dream {
             Icon = appearance.Icon;
             IconState = appearance.IconState;
             Direction = appearance.Direction;
-            PixelX = appearance.PixelX;
-            PixelY = appearance.PixelY;
+            PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
             MouseOpacity = appearance.MouseOpacity;
-            Overlays = new List<int>(appearance.Overlays);
-            Underlays = new List<int>(appearance.Underlays);
+            Overlays = new List<uint>(appearance.Overlays);
+            Underlays = new List<uint>(appearance.Underlays);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];
@@ -84,8 +70,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Icon != Icon) return false;
             if (appearance.IconState != IconState) return false;
             if (appearance.Direction != Direction) return false;
-            if (appearance.PixelX != PixelX) return false;
-            if (appearance.PixelY != PixelY) return false;
+            if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Invisibility != Invisibility) return false;
@@ -110,8 +95,7 @@ namespace OpenDreamShared.Dream {
         public override int GetHashCode() {
             int hashCode = (Icon + IconState).GetHashCode();
             hashCode += Direction.GetHashCode();
-            hashCode += PixelX;
-            hashCode += PixelY;
+            hashCode += PixelOffset.GetHashCode();
             hashCode += Color.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Invisibility;
@@ -134,32 +118,18 @@ namespace OpenDreamShared.Dream {
 
         public void SetColor(string color) {
             if (color.StartsWith("#")) {
-                color = color.Substring(1);
+                if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
+                    string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : "ff";
 
-                if (color.Length == 3 || color.Length == 4) { //4-bit color; repeat each digit
-                    string alphaComponent = (color.Length == 4) ? new string(color[3], 2) : "ff";
-
-                    color = new string(color[0], 2) + new string(color[1], 2) + new string(color[2], 2) + alphaComponent;
-                } else if (color.Length == 6) { //Missing alpha
+                    color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
+                } else if (color.Length == 7) { //Missing alpha
                     color += "ff";
                 }
 
-                Color = uint.Parse(color, System.Globalization.NumberStyles.HexNumber);
-
+                Color = Color.FromHex(color, Color.White);
             } else if (!Colors.TryGetValue(color.ToLower(), out Color)) {
                 throw new ArgumentException("Invalid color '" + color + "'");
             }
-        }
-
-        private bool IsTransformIdentity() {
-            if (Transform[0] != 1.0f) return false;
-            if (Transform[1] != 0.0f) return false;
-            if (Transform[2] != 0.0f) return false;
-            if (Transform[3] != 1.0f) return false;
-            if (Transform[4] != 0.0f) return false;
-            if (Transform[5] != 0.0f) return false;
-
-            return true;
         }
     }
 }

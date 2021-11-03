@@ -41,8 +41,6 @@ namespace OpenDreamClient.Interface {
 
         public string[] AvailableVerbs { get; private set; } = Array.Empty<string>();
 
-        // private IClydeWindow _window;
-
         public Dictionary<string, ControlWindow> Windows { get; } = new();
         public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
 

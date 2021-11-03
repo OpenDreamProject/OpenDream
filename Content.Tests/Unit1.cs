@@ -431,6 +431,20 @@ namespace OpenDreamRuntime.Tests
 
             Assert.Zero(runtime.ExceptionCount);
         }
+
+        [Test]
+        public void UnicodeProcsTest()
+        {
+            var runtime = CreateRuntime();
+            DreamThread.Run(runtime, async state =>
+            {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("unicode_procs_test");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.Zero(runtime.ExceptionCount);
+        }
     }
 }
 */

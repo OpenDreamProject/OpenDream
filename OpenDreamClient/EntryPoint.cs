@@ -1,4 +1,5 @@
 using System.Globalization;
+using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
@@ -50,16 +51,18 @@ namespace OpenDreamClient {
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
 
-            // Game logic runs all single threaded, disable prediction to reduce CPU load and lag.
-            var cfg = IoCManager.Resolve<IConfigurationManager>();
-            cfg.SetCVar(CVars.NetPredict, false);
+            //TODO: Disable prediction once bugs in RobustToolbox are fixed
         }
 
         public override void PostInit() {
             IoCManager.Resolve<ILightManager>().Enabled = false;
 
-            IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamMapOverlay());
+            IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+            overlayManager.AddOverlay(new DreamMapOverlay());
+            overlayManager.AddOverlay(new DreamScreenOverlay());
+
             _dreamInterface.Initialize();
+            IoCManager.Resolve<IDreamSoundEngine>().Initialize();
         }
 
         protected override void Dispose(bool disposing)

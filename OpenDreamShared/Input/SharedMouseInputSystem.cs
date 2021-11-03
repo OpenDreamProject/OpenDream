@@ -7,9 +7,15 @@ namespace OpenDreamShared.Input {
         [Serializable, NetSerializable]
         public class EntityClickedEvent : EntityEventArgs {
             public EntityUid EntityUid { get; }
+            public bool Shift { get; }
+            public bool Ctrl { get; }
+            public bool Alt { get; }
 
-            public EntityClickedEvent(EntityUid entityUid) {
+            public EntityClickedEvent(EntityUid entityUid, bool shift, bool ctrl, bool alt) {
                 EntityUid = entityUid;
+                Shift = shift;
+                Ctrl = ctrl;
+                Alt = alt;
             }
         }
     }

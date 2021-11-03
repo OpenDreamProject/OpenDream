@@ -23,6 +23,7 @@ proc/file2text(File)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
+proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0)
 proc/flick(Icon, Object)
 proc/flist(Path)
 proc/hascall(Object, ProcName)
@@ -45,6 +46,7 @@ proc/isturf(Loc1)
 proc/json_decode(JSON)
 proc/json_encode(Value)
 proc/length(E)
+proc/length_char(E)
 proc/list2params(List)
 proc/log(X, Y)
 proc/lowertext(T)
@@ -94,6 +96,7 @@ proc/winset(player, control_id, params)
 #include "Defines.dm"
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
+#include "Types\Exception.dm"
 #include "Types\Icon.dm"
 #include "Types\Image.dm"
 #include "Types\List.dm"

@@ -12,7 +12,7 @@ namespace OpenDreamRuntime.Input {
     class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private IAtomManager _atomManager = default!;
         [Dependency] private IEntityManager _entityManager = default!;
-        [Dependency] private IDreamManager _dreamManager;
+        [Dependency] private IDreamManager _dreamManager = default!;
 
         public override void Initialize() {
             base.Initialize();
@@ -28,13 +28,17 @@ namespace OpenDreamRuntime.Input {
 
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
             var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
+            var usr = client.GetVariable("mob").GetValueAsDreamObject();
 
-            client.SpawnProc("Click", ConstructClickArguments(atom));
+            client.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
         }
 
-        private DreamProcArguments ConstructClickArguments(DreamObject atom) {
+        private DreamProcArguments ConstructClickArguments(DreamObject atom, EntityClickedEvent e) {
             NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
-            //TODO: click params ("icon-x", "icon-y", "screen-loc", "shift", "ctrl", "alt")
+            if (e.Shift) paramsBuilder.Add("shift", "1");
+            if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
+            if (e.Alt) paramsBuilder.Add("alt", "1");
+            //TODO: "icon-x", "icon-y", "screen-loc"
 
             return new DreamProcArguments(new() {
                 new DreamValue(atom),

@@ -228,7 +228,7 @@ namespace OpenDreamClient.Interface.Controls
                 ViewportSize * renderScale,
                 new TextureSampleParameters
                 {
-                    Filter = StretchMode == ScalingViewportStretchMode.Nearest,
+                    Filter = StretchMode == ScalingViewportStretchMode.Bilinear,
                 });
 
             _viewport.RenderScale = (renderScale, renderScale);

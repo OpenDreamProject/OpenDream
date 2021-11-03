@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using OpenDreamClient.Interface.Controls;
 using OpenDreamShared.Interface;
 using Robust.Shared.Timing;
 
@@ -6,6 +8,7 @@ namespace OpenDreamClient.Interface
     public class DummyDreamInterfaceManager : IDreamInterfaceManager
     {
         public string[] AvailableVerbs { get; }
+        public Dictionary<string, ControlWindow> Windows { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
         public void Initialize()

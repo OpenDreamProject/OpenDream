@@ -40,3 +40,12 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+    - name: Compile TestGame
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe main\TestGame\environment.dme
+    - name: Checkout Modified /tg/station
+      uses: actions/checkout@v2
+      with:
+        repository: wixoaGit/tgstation
+        path: tg
+    - name: Compile Modified /tg/station
+      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe tg\tgstation.dme 

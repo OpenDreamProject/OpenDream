@@ -1,10 +1,10 @@
-name: Build & Test
+name: Compile Test Codebases
 
 on:
   push:
-    branches: [ master ]
+    branches: [ RobustToolbox  ]
   pull_request:
-    branches: [ master ]
+    branches: [ RobustToolbox  ]
 
 jobs:
   build:

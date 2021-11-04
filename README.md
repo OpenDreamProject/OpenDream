@@ -12,7 +12,8 @@ A detailed description of differences with BYOND can be found [here](https://git
 
 ## Building
 
-The first step to building OpenDream is initializing the submodule for the game engine, [Robust Toolbox](https://github.com/space-wizards/RobustToolbox). To do this, simply run `git submodule update --init --recursive` in git bash and let it finish.
+The first step to building OpenDream is initializing the submodule for the game engine, [Robust Toolbox](https://github.com/space-wizards/RobustToolbox). 
+To do this, simply run `git submodule update --init --recursive` in git bash and let it finish.
 
 OpenDream requires .NET 5. To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
 

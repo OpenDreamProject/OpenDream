@@ -80,37 +80,36 @@ namespace OpenDreamClient.Rendering {
             Box2? aabb = null;
 
             if (DMI != null) {
-                //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
-                Vector2 size = DMI.IconSize / (32, 32);
-                Vector2 pixelOffset = Appearance.PixelOffset / (32, 32);
+                Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+                Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
                 worldPos += pixelOffset;
-                Vector2 position = (worldPos ?? Vector2.Zero) + (size / 2);
-
-                aabb = Box2.CenteredAround(position, size);
+                aabb = Box2.CenteredAround(worldPos ?? Vector2.Zero, size);
             }
 
             foreach (DreamIcon underlay in Underlays) {
                 Box2 underlayAABB = underlay.GetWorldAABB(worldPos);
 
-                aabb = aabb?.Union(underlayAABB) ?? underlayAABB;
+                if (aabb == null) aabb = underlayAABB;
+                else aabb = aabb.Value.Union(underlayAABB);
             }
 
             foreach (DreamIcon overlay in Overlays) {
                 Box2 overlayAABB = overlay.GetWorldAABB(worldPos);
 
-                aabb = aabb?.Union(overlayAABB) ?? overlayAABB;
+                if (aabb == null) aabb = overlayAABB;
+                else aabb = aabb.Value.Union(overlayAABB);
             }
 
             return aabb ?? Box2.FromDimensions(Vector2.Zero, Vector2.Zero);
         }
 
-        public bool CheckClick(Vector2 iconPos, Vector2 worldPos) {
+        public bool CheckClick(Vector2 iconPos, Vector2 clickWorldPos) {
             IClickMapManager _clickMap = IoCManager.Resolve<IClickMapManager>();
-            iconPos += Appearance.PixelOffset;
+            iconPos += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
             if (CurrentFrame != null) {
-                Vector2 pos = (worldPos - iconPos) * DMI.IconSize;
+                Vector2 pos = (clickWorldPos - (iconPos - 0.5f)) * EyeManager.PixelsPerMeter;
 
                 if (_clickMap.IsOccluding(CurrentFrame, ((int)pos.X, DMI.IconSize.Y - (int)pos.Y))) {
                     return true;
@@ -118,13 +117,13 @@ namespace OpenDreamClient.Rendering {
             }
 
             foreach (DreamIcon underlay in Underlays) {
-                if (underlay.CheckClick(iconPos, worldPos)) {
+                if (underlay.CheckClick(iconPos, clickWorldPos)) {
                     return true;
                 }
             }
 
             foreach (DreamIcon overlay in Overlays) {
-                if (overlay.CheckClick(iconPos, worldPos)) {
+                if (overlay.CheckClick(iconPos, clickWorldPos)) {
                     return true;
                 }
             }

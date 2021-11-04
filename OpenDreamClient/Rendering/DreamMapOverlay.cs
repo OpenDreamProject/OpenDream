@@ -35,7 +35,7 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void RenderIcon(DrawingHandleWorld handle, Vector2 position, DreamIcon icon) {
-            position += icon.Appearance.PixelOffset / new Vector2(32, 32); //TODO: Unit size is likely stored somewhere, use that instead of hardcoding 32
+            position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
             foreach (DreamIcon underlay in icon.Underlays) {
                 RenderIcon(handle, position, underlay);
@@ -43,7 +43,7 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position, icon.Appearance.Color);
+                handle.DrawTexture(frame, position - 0.5f, icon.Appearance.Color);
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

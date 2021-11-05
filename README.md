@@ -4,7 +4,7 @@
 
 This project is currently in early stages, and is not feature-complete.
 
-The compiler and server should work fine for Linux-based machines. The client should also work fine on Linux but none of the developers use it. More details and potentially useful troubleshooting for running on Linux can be found in the haphazardly written FAQ [here](https://github.com/wixoaGit/OpenDream/blob/RobustToolbox/LINUX_FAQ.md).
+All parts of OpenDream should work fine on Windows and Linux, though the latter is not used as much and therefore isn't as thoroughly tested.
 
 For more information or if you'd like to contribute, join our [Discord server](https://discord.gg/qreryhZxxs).
 

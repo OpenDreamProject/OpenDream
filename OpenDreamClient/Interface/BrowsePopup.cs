@@ -35,7 +35,7 @@ namespace OpenDreamClient.Interface
             });
 
             WindowElement = new ControlWindow(popupWindowDescriptor);
-            WindowElement.CreateChildControls(IoCManager.Resolve<DreamInterfaceManager>());
+            WindowElement.CreateChildControls(IoCManager.Resolve<IDreamInterfaceManager>());
 
             _window = WindowElement.CreateWindow();
             _window.StartupLocation = WindowStartupLocation.CenterOwner;

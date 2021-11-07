@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -22,6 +23,8 @@ namespace DMCompiler {
         public static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
             CompilerArgs = args;
+
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
             DateTime startTime = DateTime.Now;
 

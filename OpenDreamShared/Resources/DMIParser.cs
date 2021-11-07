@@ -25,19 +25,32 @@ namespace OpenDreamShared.Resources {
             public string Source;
             public float Version;
             public int Width, Height;
-            public string DefaultStateName;
             public Dictionary<string, ParsedDMIState> States;
 
-            public bool HasState(string stateName = null) {
-                if (stateName == null) stateName = DefaultStateName;
+            public static ParsedDMIDescription CreateEmpty(int width, int height) {
+                ParsedDMIFrame[] frames = { new() };
+                ParsedDMIState state = new();
+                state.Directions.Add(AtomDirection.South, frames);
 
-                return States.ContainsKey(stateName);
+                return new ParsedDMIDescription() {
+                    Source = null,
+                    Version = 4f,
+                    Width = width,
+                    Height = height,
+                    States = new() {
+                        { "", state }
+                    }
+                };
+            }
+
+            public bool HasState(string stateName = null) {
+                return States.ContainsKey(stateName ?? "");
             }
 
             public ParsedDMIState GetState(string stateName = null) {
-                if (!States.ContainsKey(stateName)) stateName = DefaultStateName;
+                States.TryGetValue(stateName ?? "", out var state);
 
-                return States[stateName];
+                return state;
             }
         }
 
@@ -177,8 +190,6 @@ namespace OpenDreamShared.Resources {
                                         }
                                     }
                                 }
-                            } else {
-                                description.DefaultStateName = stateName;
                             }
 
                             currentStateFrameCount = 1;

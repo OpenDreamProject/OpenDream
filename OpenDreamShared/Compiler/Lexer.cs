@@ -131,7 +131,7 @@ namespace OpenDreamShared.Compiler {
             Token current = base.Advance();
 
             //Warnings and errors go straight to output, no processing
-            while (current.Type is TokenType.Warning or TokenType.Error) {
+            while (current.Type is TokenType.Warning or TokenType.Error && !AtEndOfSource) {
                 _pendingTokenQueue.Enqueue(current);
                 current = base.Advance();
             }

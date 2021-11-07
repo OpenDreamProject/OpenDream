@@ -58,7 +58,8 @@ namespace DMCompiler.Compiler.DM {
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step },
             { "try", TokenType.DM_Try },
-            { "catch", TokenType.DM_Catch }
+            { "catch", TokenType.DM_Catch },
+            { "throw", TokenType.DM_Throw }
         };
 
         public int BracketNesting = 0;
@@ -187,6 +188,7 @@ namespace DMCompiler.Compiler.DM {
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
                                 case "&": token = CreateToken(TokenType.DM_And, c); break;
                                 case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
+                                case "&&=": token = CreateToken(TokenType.DM_AndAndEquals, c); break;
                                 case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;
                                 case "+": token = CreateToken(TokenType.DM_Plus, c); break;
                                 case "++": token = CreateToken(TokenType.DM_PlusPlus, c); break;
@@ -199,6 +201,7 @@ namespace DMCompiler.Compiler.DM {
                                 case "*=": token = CreateToken(TokenType.DM_StarEquals, c); break;
                                 case "|": token = CreateToken(TokenType.DM_Bar, c); break;
                                 case "||": token = CreateToken(TokenType.DM_BarBar, c); break;
+                                case "||=": token = CreateToken(TokenType.DM_BarBarEquals, c); break;
                                 case "|=": token = CreateToken(TokenType.DM_BarEquals, c); break;
                                 case "<": token = CreateToken(TokenType.DM_LessThan, c); break;
                                 case "<<": token = CreateToken(TokenType.DM_LeftShift, c); break;

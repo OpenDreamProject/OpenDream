@@ -21,7 +21,9 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_PlusEquals,
             TokenType.DM_MinusEquals,
             TokenType.DM_BarEquals,
+            TokenType.DM_AndAndEquals,
             TokenType.DM_AndEquals,
+            TokenType.DM_AndAndEquals,
             TokenType.DM_StarEquals,
             TokenType.DM_SlashEquals,
             TokenType.DM_LeftShiftEquals,
@@ -292,7 +294,8 @@ namespace DMCompiler.Compiler.DM {
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
                 TokenType.DM_NewList,
-                TokenType.DM_Step
+                TokenType.DM_Step,
+                TokenType.DM_Throw
             };
 
             Token elementToken = Current();
@@ -523,6 +526,7 @@ namespace DMCompiler.Compiler.DM {
                 if (procStatement == null) procStatement = DoWhile();
                 if (procStatement == null) procStatement = Switch();
                 if (procStatement == null) procStatement = TryCatch();
+                if (procStatement == null) procStatement = Throw();
 
                 if (procStatement != null) {
                     Whitespace();
@@ -1131,11 +1135,24 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] ProcCall(bool includeEmptyParameters = true) {
+        public DMASTProcStatementThrow Throw()
+        {
+            if (Check(TokenType.DM_Throw)) {
+                Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                Whitespace();
+                DMASTExpression value = Expression();
+
+                return new DMASTProcStatementThrow(value);
+            } else {
+                return null;
+            }
+        }
+
+        public DMASTCallParameter[] ProcCall() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
 
-                DMASTCallParameter[] callParameters = CallParameters(includeEmptyParameters);
+                DMASTCallParameter[] callParameters = CallParameters();
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
                 BracketWhitespace();
                 ConsumeRightParenthesis();
@@ -1193,24 +1210,18 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[] CallParameters(bool includeEmpty) {
+        public DMASTCallParameter[] CallParameters() {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
 
-            while (parameter != null) {
+            while (Check(TokenType.DM_Comma)) {
+                BracketWhitespace();
+                parameters.Add(parameter ?? new DMASTCallParameter(new DMASTConstantNull()));
+                parameter = CallParameter();
+            }
+
+            if (parameter != null) {
                 parameters.Add(parameter);
-
-                if (Check(TokenType.DM_Comma)) {
-                    BracketWhitespace();
-                    parameter = CallParameter();
-
-                    if (parameter == null) {
-                        if (includeEmpty) parameter = new DMASTCallParameter(new DMASTConstantNull());
-                        else while (Check(TokenType.DM_Comma)) Whitespace();
-                    }
-                } else {
-                    parameter = null;
-                }
             }
 
             if (parameters.Count > 0) {
@@ -1317,7 +1328,9 @@ namespace DMCompiler.Compiler.DM {
                             case TokenType.DM_PlusEquals: return new DMASTAppend(expression, value);
                             case TokenType.DM_MinusEquals: return new DMASTRemove(expression, value);
                             case TokenType.DM_BarEquals: return new DMASTCombine(expression, value);
+                            case TokenType.DM_BarBarEquals: return new DMASTLogicalOrAssign(expression, value);
                             case TokenType.DM_AndEquals: return new DMASTMask(expression, value);
+                            case TokenType.DM_AndAndEquals: return new DMASTLogicalAndAssign(expression, value);
                             case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(expression, value);
                             case TokenType.DM_SlashEquals: return new DMASTDivideAssign(expression, value);
                             case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(expression, value);
@@ -1746,7 +1759,7 @@ namespace DMCompiler.Compiler.DM {
 
             if (primary == null && Check(TokenType.DM_NewList)) {
                 Whitespace();
-                DMASTCallParameter[] values = ProcCall(false);
+                DMASTCallParameter[] values = ProcCall();
 
                 primary = new DMASTNewList(values);
             }

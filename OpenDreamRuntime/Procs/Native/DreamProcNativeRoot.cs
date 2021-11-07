@@ -446,8 +446,9 @@ namespace OpenDreamRuntime.Procs.Native {
             var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
             if (mode != 0)
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("Only mode 0 is implemented");
             }
+
             var resource = arguments.GetArgument(0, "Icon").GetValueAsDreamResource();
             DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
 
@@ -1316,12 +1317,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue((float)Math.Tan(rad));
         }
 
-        [DreamProc("text")]
-        [DreamProcParameter("FormatText", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            return arguments.GetArgument(0, "FormatText"); //TODO: Format text
-        }
-
         [DreamProc("text2ascii")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("pos", Type = DreamValueType.Float, DefaultValue = 1)]
@@ -1329,7 +1324,11 @@ namespace OpenDreamRuntime.Procs.Native {
             string text = arguments.GetArgument(0, "T").GetValueAsString();
             int pos = arguments.GetArgument(1, "pos").GetValueAsInteger(); //1-indexed
 
-            return new DreamValue((int)text[pos - 1]);
+            if (pos > text.Length || pos < 1) {
+                return new DreamValue(0);
+            } else {
+                return new DreamValue((int)text[pos - 1]);
+            }
         }
 
         [DreamProc("text2file")]

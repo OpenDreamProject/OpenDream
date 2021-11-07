@@ -36,6 +36,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
+        public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
@@ -88,6 +89,8 @@ namespace DMCompiler.Compiler.DM {
         public void VisitRemove(DMASTRemove remove) { throw new NotImplementedException(); }
         public void VisitCombine(DMASTCombine combine) { throw new NotImplementedException(); }
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign landAssign) { throw new NotImplementedException(); }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lorAssign) { throw new NotImplementedException(); }
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) { throw new NotImplementedException(); }
         public void VisitDivideAssign(DMASTDivideAssign divideAssign) { throw new NotImplementedException(); }
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) { throw new NotImplementedException(); }
@@ -633,6 +636,18 @@ namespace DMCompiler.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementTryCatch(this);
+        }
+    }
+
+    public class DMASTProcStatementThrow : DMASTProcStatement {
+        public DMASTExpression Value;
+
+        public DMASTProcStatementThrow(DMASTExpression value) {
+            Value = value;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementThrow(this);
         }
     }
 
@@ -1292,6 +1307,32 @@ namespace DMCompiler.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitMask(this);
+        }
+    }
+
+    public class DMASTLogicalAndAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalAndAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalAndAssign(this);
+        }
+    }
+
+    public class DMASTLogicalOrAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalOrAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalOrAssign(this);
         }
     }
 

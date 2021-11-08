@@ -3,7 +3,6 @@ using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
-using Robust.Shared.Maths;
 using System.Collections.Generic;
 
 namespace OpenDreamClient.Rendering {
@@ -30,24 +29,7 @@ namespace OpenDreamClient.Rendering {
 
             sprites.Sort(_renderOrderComparer);
             foreach (DMISpriteComponent sprite in sprites) {
-                RenderIcon(handle, sprite.Owner.Transform.WorldPosition, sprite.Icon);
-            }
-        }
-
-        private void RenderIcon(DrawingHandleWorld handle, Vector2 position, DreamIcon icon) {
-            position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
-
-            foreach (DreamIcon underlay in icon.Underlays) {
-                RenderIcon(handle, position, underlay);
-            }
-
-            AtlasTexture frame = icon.CurrentFrame;
-            if (frame != null) {
-                handle.DrawTexture(frame, position - 0.5f, icon.Appearance.Color);
-            }
-
-            foreach (DreamIcon overlay in icon.Overlays) {
-                RenderIcon(handle, position, overlay);
+                sprite.Icon.Draw(handle, sprite.Owner.Transform.WorldPosition);
             }
         }
     }

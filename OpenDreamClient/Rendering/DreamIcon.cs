@@ -131,7 +131,27 @@ namespace OpenDreamClient.Rendering {
             return false;
         }
 
-        public void UpdateAnimation() {
+        public void Draw(DrawingHandleBase handle, Vector2 position) {
+            position += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+
+            foreach (DreamIcon underlay in Underlays) {
+                underlay.Draw(handle, position);
+            }
+
+            AtlasTexture frame = CurrentFrame;
+            if (frame != null) {
+                switch (handle) {
+                    case DrawingHandleWorld world: world.DrawTexture(frame, position - 0.5f, Appearance.Color); break;
+                    case DrawingHandleScreen screen: screen.DrawTexture(frame, position - (0f, DMI.IconSize.Y), Appearance.Color); break;
+                }
+            }
+
+            foreach (DreamIcon overlay in Overlays) {
+                overlay.Draw(handle, position);
+            }
+        }
+
+        private void UpdateAnimation() {
             DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 

@@ -36,13 +36,8 @@ namespace OpenDreamShared.Dream {
 
             string[] coordinateSplit = rangeSplit[0].Split(",");
             if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
-            (int Coordinate, int PixelOffset) x = ParseScreenLocCoordinate(coordinateSplit[0]);
-            (int Coordinate, int PixelOffset) y = ParseScreenLocCoordinate(coordinateSplit[1]);
-
-            X = x.Coordinate;
-            Y = y.Coordinate;
-            PixelOffsetX = x.PixelOffset;
-            PixelOffsetY = y.PixelOffset;
+            (X, PixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
+            (Y, PixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
         }
 
         public Vector2 GetScreenCoordinates(int iconSize) {

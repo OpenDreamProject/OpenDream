@@ -1306,7 +1306,7 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_To))
                 {
                     Whitespace();
-                    DMASTExpression endRange = Expression();
+                    DMASTExpression endRange = ExpressionIn();
                     if (endRange is null)
                     {
                         Error("Missing end range");

@@ -39,7 +39,7 @@ namespace OpenDreamClient.Rendering {
 
             //Only render turfs (children of map entity) and their contents (secondary child of map entity)
             //TODO: Use RobustToolbox's container system/components?
-            ITransformComponent transform = Owner.Transform;
+            TransformComponent transform = Owner.Transform;
             EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
             if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
                 return false;

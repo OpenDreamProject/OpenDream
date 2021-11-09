@@ -91,7 +91,8 @@ namespace OpenDreamShared.Dream.Procs {
         Decrement = 0x57,
         CompareEquivalent = 0x58,
         CompareNotEquivalent = 0x59,
-        Throw = 0x5A
+        Throw = 0x5A,
+        IsInRange = 0x5B
     }
 
     public enum DreamProcOpcodeParameterType {

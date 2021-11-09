@@ -33,4 +33,24 @@ namespace DMCompiler.DM.Expressions {
             proc.AddLabel(endLabel);
         }
     }
+
+    // var in x to y
+    class InRange : DMExpression
+    {
+        DMExpression _var, _start, _end;
+
+        public InRange(DMExpression var, DMExpression start, DMExpression end)
+        {
+            _var = var;
+            _start = start;
+            _end = end;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _var.EmitPushValue(dmObject, proc);
+            _start.EmitPushValue(dmObject, proc);
+            _end.EmitPushValue(dmObject, proc);
+            proc.IsInRange();
+        }
+    }
 }

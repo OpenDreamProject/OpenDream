@@ -558,6 +558,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsInList);
         }
 
+        public void IsInRange() {
+            WriteOpcode(DreamProcOpcode.IsInRange);
+        }
+
         public void IsNull() {
             WriteOpcode(DreamProcOpcode.IsNull);
         }

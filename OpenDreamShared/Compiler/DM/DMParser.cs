@@ -1300,7 +1300,7 @@ namespace OpenDreamShared.Compiler.DM {
 
             if (value != null && Check(TokenType.DM_In)) {
                 Whitespace();
-                DMASTExpression list = Expression();
+                DMASTExpression list = ExpressionIn();
 
                 Whitespace();
                 if (Check(TokenType.DM_To))

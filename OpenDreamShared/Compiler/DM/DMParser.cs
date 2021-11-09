@@ -1590,7 +1590,11 @@ namespace OpenDreamShared.Compiler.DM {
                 {
                     Whitespace();
                     DMASTExpression endRange = Expression();
-                    if (endRange is not null)
+                    if (endRange is null)
+                    {
+                        Error("Missing end range");
+                    }
+                    else
                     {
                         return new DMASTExpressionInRange(value, list, endRange);
                     }

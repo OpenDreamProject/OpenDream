@@ -2,6 +2,7 @@
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMObjectBuilder {
@@ -72,7 +73,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             try {
-                SetVariableValue(variable, varDefinition.Value, varDefinition.Type);
+                SetVariableValue(variable, varDefinition.Value, varDefinition.Type, varDefinition.ValType);
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
@@ -94,13 +95,18 @@ namespace DMCompiler.DM.Visitors {
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
 
+                    if (variable.Value is not null && variable.Value.ValType == DMValueType.Unimplemented)
+                    {
+                        Program.Warning(new CompilerWarning(null, $"{variable.Type}.{variable.Name} is not implemented and will have unexpected behavior"));
+                    }
+
                     SetVariableValue(variable, varOverride.Value, null);
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
-            
+
             _currentObject = oldObject;
         }
 
@@ -132,8 +138,9 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
+        private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type, DMValueType valType = DMValueType.Anything) {
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
+            expression.ValType = valType;
 
             switch (expression) {
                 case Expressions.List:

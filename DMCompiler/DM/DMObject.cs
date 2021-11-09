@@ -2,6 +2,8 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMObject {
@@ -45,6 +47,10 @@ namespace DMCompiler.DM {
 
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
+                if (variable.Value.ValType == DMValueType.Unimplemented)
+                {
+                    Program.Warning(new CompilerWarning(null, $"{Path}.{name} is not implemented and will have unexpected behavior"));
+                }
                 return variable;
             }
             return Parent?.GetVariable(name);

@@ -240,6 +240,7 @@ namespace OpenDreamShared.Compiler.DM {
         public string Name;
         public DMASTExpression Value;
         public bool IsGlobal = false;
+        public DMValueType ValType = DMValueType.Anything;
 
         public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value) {
             int globalElementIndex = path.FindElement("global");

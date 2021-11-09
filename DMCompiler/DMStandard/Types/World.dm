@@ -16,6 +16,8 @@
 	var/fps = null
 	var/tick_usage
 
+	var/unimp_test = "wumbo" as opendream_unimplemented
+
 	var/maxx = 0
 	var/maxy = 0
 	var/maxz = 0

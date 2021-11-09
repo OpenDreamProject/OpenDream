@@ -132,9 +132,11 @@ namespace OpenDreamShared.Compiler.DM {
 
                             if (value == null) value = new DMASTConstantNull();
 
-                            AsTypes();
+                            var val = AsTypes();
+                            var varDef = new DMASTObjectVarDefinition(varPath, value);
+                            varDef.ValType = val;
 
-                            varDefinitions.Add(new DMASTObjectVarDefinition(varPath, value));
+                            varDefinitions.Add(varDef);
                             if (Check(TokenType.DM_Comma)) {
                                 Whitespace();
                                 DMASTPath newVarPath = Path();
@@ -2120,6 +2122,7 @@ namespace OpenDreamShared.Compiler.DM {
                         case "command_text": type |= DMValueType.CommandText; break;
                         case "sound": type |= DMValueType.Sound; break;
                         case "icon": type |= DMValueType.Icon; break;
+                        case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
                 } while (Check(TokenType.DM_Bar));

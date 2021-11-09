@@ -25,6 +25,8 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
+        public DMValueType ValType = DMValueType.Anything;
+
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);

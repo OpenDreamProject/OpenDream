@@ -120,6 +120,7 @@ namespace OpenDreamShared.Dream.Procs {
         File = 0x200,
         CommandText = 0x400,
         Sound = 0x800,
-        Icon = 0x1000
+        Icon = 0x1000,
+        Unimplemented = 0x2000
     }
 }

@@ -1246,7 +1246,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionAssign() {
-            DMASTExpression expression = ExpressionTernary();
+            DMASTExpression expression = ExpressionIn();
 
             if (expression != null) {
                 Token token = Current();
@@ -1564,7 +1564,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPower() {
-            DMASTExpression a = ExpressionIn();
+            DMASTExpression a = ExpressionUnary();
 
             if (a != null) {
                 while (Check(TokenType.DM_StarStar)) {
@@ -1579,7 +1579,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionUnary();
+            DMASTExpression value = ExpressionTernary();
 
             if (value != null && Check(TokenType.DM_In)) {
                 Whitespace();

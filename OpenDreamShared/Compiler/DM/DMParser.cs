@@ -1295,6 +1295,34 @@ namespace OpenDreamShared.Compiler.DM {
             return expression;
         }
 
+        public DMASTExpression ExpressionIn() {
+            DMASTExpression value = ExpressionTernary();
+
+            if (value != null && Check(TokenType.DM_In)) {
+                Whitespace();
+                DMASTExpression list = Expression();
+
+                Whitespace();
+                if (Check(TokenType.DM_To))
+                {
+                    Whitespace();
+                    DMASTExpression endRange = Expression();
+                    if (endRange is null)
+                    {
+                        Error("Missing end range");
+                    }
+                    else
+                    {
+                        return new DMASTExpressionInRange(value, list, endRange);
+                    }
+                }
+
+                return new DMASTExpressionIn(value, list);
+            }
+
+            return value;
+        }
+
         public DMASTExpression ExpressionTernary() {
             DMASTExpression a = ExpressionOr();
 
@@ -1576,34 +1604,6 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return a;
-        }
-
-        public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionTernary();
-
-            if (value != null && Check(TokenType.DM_In)) {
-                Whitespace();
-                DMASTExpression list = Expression();
-
-                Whitespace();
-                if (Check(TokenType.DM_To))
-                {
-                    Whitespace();
-                    DMASTExpression endRange = Expression();
-                    if (endRange is null)
-                    {
-                        Error("Missing end range");
-                    }
-                    else
-                    {
-                        return new DMASTExpressionInRange(value, list, endRange);
-                    }
-                }
-
-                return new DMASTExpressionIn(value, list);
-            }
-
-            return value;
         }
 
         public DMASTExpression ExpressionUnary() {

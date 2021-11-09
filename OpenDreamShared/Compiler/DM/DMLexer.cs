@@ -187,6 +187,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
                                 case "&": token = CreateToken(TokenType.DM_And, c); break;
                                 case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
+                                case "&&=": token = CreateToken(TokenType.DM_AndAndEquals, c); break;
                                 case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;
                                 case "+": token = CreateToken(TokenType.DM_Plus, c); break;
                                 case "++": token = CreateToken(TokenType.DM_PlusPlus, c); break;
@@ -199,6 +200,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "*=": token = CreateToken(TokenType.DM_StarEquals, c); break;
                                 case "|": token = CreateToken(TokenType.DM_Bar, c); break;
                                 case "||": token = CreateToken(TokenType.DM_BarBar, c); break;
+                                case "||=": token = CreateToken(TokenType.DM_BarBarEquals, c); break;
                                 case "|=": token = CreateToken(TokenType.DM_BarEquals, c); break;
                                 case "<": token = CreateToken(TokenType.DM_LessThan, c); break;
                                 case "<<": token = CreateToken(TokenType.DM_LeftShift, c); break;

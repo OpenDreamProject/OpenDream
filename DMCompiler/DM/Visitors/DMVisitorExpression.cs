@@ -216,6 +216,17 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Mask(lhs, rhs);
         }
 
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
+            var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
+            Result = new Expressions.LogicalAndAssign(lhs, rhs);
+        }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
+            var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
+            Result = new Expressions.LogicalOrAssign(lhs, rhs);
+        }
+
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.B);

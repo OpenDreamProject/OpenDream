@@ -20,6 +20,7 @@ namespace OpenDreamClient.Interface.Controls
     {
         private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
         {
+            { "css", "text/css" },
             { "html", "text/html" },
             { "htm", "text/html" },
             { "png", "image/png" },

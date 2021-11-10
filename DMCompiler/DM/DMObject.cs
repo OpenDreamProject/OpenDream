@@ -47,7 +47,7 @@ namespace DMCompiler.DM {
 
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
-                if (variable.Value.ValType == DMValueType.Unimplemented)
+                if ((variable.Value.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented)
                 {
                     Program.Warning(new CompilerWarning(null, $"{Path}.{name} is not implemented and will have unexpected behavior"));
                 }

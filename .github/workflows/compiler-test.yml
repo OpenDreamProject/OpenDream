@@ -27,17 +27,17 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.100
+        dotnet-version: 6.0.100
     - name: Install dependencies
       run: dotnet restore main/OpenDream.sln
     - name: Build
       run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe main\TestGame\environment.dme
+      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Modified /tg/station
       uses: actions/checkout@v2
       with:
         repository: wixoaGit/tgstation
         path: tg
     - name: Compile Modified /tg/station
-      run: main\DMCompiler\bin\Release\net5.0\DMCompiler.exe tg\tgstation.dme 
+      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe tg\tgstation.dme 

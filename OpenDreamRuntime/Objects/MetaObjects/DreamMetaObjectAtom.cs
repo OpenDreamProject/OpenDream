@@ -138,7 +138,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     DreamList contents = DreamList.Create();
                     IEntity entity = _atomManager.GetAtomEntity(dreamObject);
 
-                    foreach (ITransformComponent child in entity.Transform.Children) {
+                    foreach (TransformComponent child in entity.Transform.Children) {
                         DreamObject childAtom = _atomManager.GetAtomFromEntity(child.Owner);
 
                         contents.AddValue(new DreamValue(childAtom));

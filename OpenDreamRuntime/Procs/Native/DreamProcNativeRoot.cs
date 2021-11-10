@@ -866,6 +866,21 @@ namespace OpenDreamRuntime.Procs.Native {
             return currentMin;
         }
 
+        [DreamProc("nonspantext")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needles", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        public static DreamValue NativeProc_nonspantext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            string text = arguments.GetArgument(0, "Haystack").GetValueAsString();
+            string needles = arguments.GetArgument(1, "Needles").GetValueAsString();
+            float start = arguments.GetArgument(2, "Start").GetValueAsFloat() - 1; // Decrease, because in DM the enumeration starts from 1
+
+            var index = text.IndexOf(needles, (int)start, StringComparison.InvariantCulture) - 1;
+
+            return new DreamValue(index);
+        }
+
         [DreamProc("num2text")]
         [DreamProcParameter("N")]
         [DreamProcParameter("Digits", Type = DreamValueType.Float)]

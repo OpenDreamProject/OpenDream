@@ -9,6 +9,7 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
+using Robust.Shared.Network;
 
 namespace OpenDreamClient.Interface.Controls
 {
@@ -58,7 +59,7 @@ namespace OpenDreamClient.Interface.Controls
 
     class VerbPanel : InfoPanel
     {
-        [Dependency] private readonly IDreamInterfaceManager _dreamInterface;
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         private readonly GridContainer _grid;
 
         public VerbPanel(string name) : base(name)
@@ -96,8 +97,7 @@ namespace OpenDreamClient.Interface.Controls
 
     class ControlInfo : InterfaceControl
     {
-        // [Dependency]
-        // private readonly OpenDream _openDream = default!;
+        [Dependency] private readonly IClientNetManager _netManager = default!;
 
         private TabContainer _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
@@ -105,6 +105,7 @@ namespace OpenDreamClient.Interface.Controls
 
         public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
         {
+            IoCManager.InjectDependencies(this);
         }
 
         protected override Control CreateUIElement()
@@ -167,7 +168,9 @@ namespace OpenDreamClient.Interface.Controls
         {
             InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);
 
-            // _openDream.Connection.SendPacket(new PacketSelectStatPanel(panel.PanelName));
+            var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
+            msg.StatPanel = panel.PanelName;
+            _netManager.ClientSendMessage(msg);
         }
     }
 }

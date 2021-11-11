@@ -12,7 +12,12 @@ namespace OpenDreamShared.Compiler.DM {
 
         private DreamPath _currentPath = DreamPath.Root;
 
-        public DMParser(DMLexer lexer) : base(lexer) { }
+        private bool _unimplementedWarnings;
+
+        public DMParser(DMLexer lexer, bool unimplementedWarnings) : base(lexer)
+        {
+            _unimplementedWarnings = unimplementedWarnings;
+        }
 
         public DMASTFile File() {
             List<DMASTStatement> statements = new();
@@ -1038,7 +1043,10 @@ namespace OpenDreamShared.Compiler.DM {
                     tryBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                Warning("Exceptions in 'try/catch' blocks are currently not caught");
+                if (_unimplementedWarnings)
+                {
+                    Warning("Exceptions in 'try/catch' blocks are currently not caught");
+                }
 
                 Newline();
                 Consume(TokenType.DM_Catch, "Expected catch");
@@ -1071,7 +1079,10 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementThrow Throw()
         {
             if (Check(TokenType.DM_Throw)) {
-                Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                if (_unimplementedWarnings)
+                {
+                    Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                }
                 Whitespace();
                 DMASTExpression value = Expression();
 
@@ -1807,7 +1818,7 @@ namespace OpenDreamShared.Compiler.DM {
                                     } while (preprocToken.Type != TokenType.EndOfFile);
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
-                                    DMParser expressionParser = new DMParser(expressionLexer);
+                                    DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
 
                                     expressionParser.Whitespace(true);
                                     DMASTExpression expression = expressionParser.Expression();

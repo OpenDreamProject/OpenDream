@@ -121,7 +121,7 @@ namespace DMCompiler {
 
         private static bool Compile(List<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
-            DMParser dmParser = new DMParser(dmLexer);
+            DMParser dmParser = new DMParser(dmLexer, WarnForUnimplemented);
             DMASTFile astFile = dmParser.File();
 
             if (dmParser.Warnings.Count > 0) {

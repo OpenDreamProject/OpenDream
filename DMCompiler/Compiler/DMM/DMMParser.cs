@@ -9,7 +9,7 @@ namespace DMCompiler.Compiler.DMM {
     class DMMParser : DMParser {
         private int _cellNameLength = -1;
 
-        public DMMParser(DMLexer lexer) : base(lexer) { }
+        public DMMParser(DMLexer lexer) : base(lexer, true) { }
 
         public DreamMapJson ParseMap() {
             DreamMapJson map = new DreamMapJson();

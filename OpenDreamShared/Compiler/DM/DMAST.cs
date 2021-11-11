@@ -240,8 +240,9 @@ namespace OpenDreamShared.Compiler.DM {
         public string Name;
         public DMASTExpression Value;
         public bool IsGlobal = false;
+        public DMValueType ValType;
 
-        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value) {
+        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             int globalElementIndex = path.FindElement("global");
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
@@ -255,6 +256,7 @@ namespace OpenDreamShared.Compiler.DM {
             IsGlobal = globalElementIndex != -1 || ObjectPath.Equals(DreamPath.Root);
             Name = varPath.LastElement;
             Value = value;
+            ValType = valType;
         }
 
         public void Visit(DMASTVisitor visitor) {

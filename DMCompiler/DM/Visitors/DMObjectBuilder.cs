@@ -95,11 +95,6 @@ namespace DMCompiler.DM.Visitors {
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
 
-                    if (variable.Value is not null && variable.Value.ValType == DMValueType.Unimplemented)
-                    {
-                        Program.Warning(new CompilerWarning(null, $"{variable.Type}.{variable.Name} is not implemented and will have unexpected behavior"));
-                    }
-
                     SetVariableValue(variable, varOverride.Value, null);
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }

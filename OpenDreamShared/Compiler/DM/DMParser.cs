@@ -132,9 +132,8 @@ namespace OpenDreamShared.Compiler.DM {
 
                             if (value == null) value = new DMASTConstantNull();
 
-                            var val = AsTypes();
-                            var varDef = new DMASTObjectVarDefinition(varPath, value);
-                            varDef.ValType = val;
+                            var valType = AsTypes();
+                            var varDef = new DMASTObjectVarDefinition(varPath, value, valType);
 
                             varDefinitions.Add(varDef);
                             if (Check(TokenType.DM_Comma)) {

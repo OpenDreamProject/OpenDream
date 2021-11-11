@@ -876,21 +876,12 @@ namespace OpenDreamRuntime.Procs.Native {
             string needles = arguments.GetArgument(1, "Needles").GetValueAsString();
             float start = arguments.GetArgument(2, "Start").GetValueAsFloat() - 1; // Decrease, because in DM the enumeration starts from 1
 
-            int index = 0;
             if (start < 0)
             {
                 start = text.Length + start;
-                index = text.IndexOfAny(needles.ToCharArray(), (int)start);
-            }
-            else
-            {
-                index = text.IndexOfAny(needles.ToCharArray(), (int)start);
-            }
 
-            if (index > 0)
-            {
-                index++; // Increase, because in DM the enumaration starts from 1
             }
+            int index = text.IndexOfAny(needles.ToCharArray(), (int)start);
 
             return new DreamValue(index);
         }

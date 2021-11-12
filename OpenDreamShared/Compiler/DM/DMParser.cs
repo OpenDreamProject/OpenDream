@@ -619,21 +619,21 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementSpawn Spawn() {
             if (Check(TokenType.DM_Spawn)) {
                 Whitespace();
-                Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                Whitespace();
+                bool hasArg = Check(TokenType.DM_LeftParenthesis);
+                DMASTExpression delay = null;
 
-                DMASTExpression delay;
-                if (Check(TokenType.DM_RightParenthesis)) {
-                    //No parameters, default to zero
-                    delay = new DMASTConstantInteger(0);
-                } else {
-                    delay = Expression();
+                if (hasArg) {
+                    Whitespace();
 
-                    if (delay == null) Error("Expected an expression");
-                    ConsumeRightParenthesis();
+                    if (!Check(TokenType.DM_RightParenthesis)) {
+                        delay = Expression();
+
+                        if (delay == null) Error("Expected an expression");
+                        ConsumeRightParenthesis();
+                        Whitespace();
+                    }
                 }
 
-                Whitespace();
                 Newline();
 
                 DMASTProcBlockInner body = ProcBlock();
@@ -644,7 +644,7 @@ namespace OpenDreamShared.Compiler.DM {
                     body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                return new DMASTProcStatementSpawn(delay, body);
+                return new DMASTProcStatementSpawn(delay ?? new DMASTConstantInteger(0), body);
             } else {
                 return null;
             }

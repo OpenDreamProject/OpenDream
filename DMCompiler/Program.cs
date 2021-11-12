@@ -105,9 +105,11 @@ namespace DMCompiler {
         private static DMPreprocessor Preprocess(List<string> files) {
             DMPreprocessor preprocessor = new DMPreprocessor(true, WarnForUnimplemented);
 
-            string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
-            preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+            if (!HasArgument("--no-standard")) {
+                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+                preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+            }
 
             foreach (string file in files) {
                 string directoryPath = Path.GetDirectoryName(file);

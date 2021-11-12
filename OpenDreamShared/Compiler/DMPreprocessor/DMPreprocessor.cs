@@ -17,13 +17,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         private List<Token> _currentLine = new();
         private bool _isCurrentLineWhitespaceOnly = true;
         private bool _enableDirectives;
+        private bool _unimplementedWarnings;
         private Dictionary<string, DMMacro> _defines = new() {
             { "__LINE__", new DMMacroLine() },
             { "__FILE__", new DMMacroFile() }
         };
 
-        public DMPreprocessor(bool enableDirectives) {
+        public DMPreprocessor(bool enableDirectives, bool unimplementedWarnings) {
             _enableDirectives = enableDirectives;
+            _unimplementedWarnings = unimplementedWarnings;
         }
 
         public void IncludeFile(string includePath, string file) {
@@ -191,7 +193,10 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     {
                         //TODO Implement #if properly
                         SkipIfBody();
-                        EmitWarningToken(token, "#if is not implemented");
+                        if (_unimplementedWarnings)
+                        {
+                            EmitWarningToken(token, "#if is not implemented");
+                        }
                         break;
                     }
                     case TokenType.DM_Preproc_Ifdef: {

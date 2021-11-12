@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using OpenDreamShared.Net.Packets;
 using System.Threading.Tasks;
@@ -443,6 +444,29 @@ namespace OpenDreamRuntime.Tests
             });
 
             Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [Test]
+        public void NonspantextTest()
+        {
+            var runtime = CreateRuntime();
+
+            var haystack = new DreamValue("Hello, World!");
+            var needles = new DreamValue(", ");
+            var start = new DreamValue(-1);
+            var valueFound = new DreamValue(6);
+
+            var listDreamValue = new List<DreamValue>() { haystack, needles, start };
+            var dicDreamValue = new Dictionary<string, DreamValue>() { ["Haystack"] = haystack, ["Needles"] = needles, ["Start"] = start };
+
+            var result = DreamThread.Run(runtime, async state =>
+            {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("nonspantext");
+                return await state.Call(proc, world, null, new DreamProcArguments(listDreamValue, dicDreamValue));
+            });
+            Assert.Zero(runtime.ExceptionCount);
+            Assert.AreEqual(valueFound, result);
         }
     }
 }

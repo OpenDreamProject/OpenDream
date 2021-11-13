@@ -12,9 +12,9 @@
 	var/color = "#FFFFFF"
 	var/alpha = 255
 
-	var/blend_mode = 0
+	var/blend_mode = 0 as opendream_unimplemented
 	var/matrix/transform
-	var/override = 1 //TODO
+	var/override = 1 as opendream_unimplemented
 
 	New(icon, loc, icon_state, layer, dir)
 		src.icon = icon

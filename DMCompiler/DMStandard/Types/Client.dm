@@ -1,7 +1,7 @@
 ﻿/client
 	var/list/verbs = list()
 	var/list/screen = list()
-	var/list/images = list()
+	var/list/images = list() as opendream_unimplemented
 
 	var/atom/statobj
 	var/statpanel
@@ -10,21 +10,21 @@
 	var/atom/eye
 	var/perspective = MOB_PERSPECTIVE
 	var/view
-	var/pixel_x = 0
-	var/pixel_y = 0
-	var/pixel_z = 0
-	var/pixel_w = 0
-	var/show_popup_menus = 1 //TODO
+	var/pixel_x = 0 as opendream_unimplemented
+	var/pixel_y = 0 as opendream_unimplemented
+	var/pixel_z = 0 as opendream_unimplemented
+	var/pixel_w = 0 as opendream_unimplemented
+	var/show_popup_menus = 1 as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
 
 	var/address
-	var/inactivity = 0
+	var/inactivity = 0 as opendream_unimplemented
 	var/key
 	var/ckey
 	var/connection
-	var/computer_id = 0 //TODO
+	var/computer_id = 0 as opendream_unimplemented
 
 	var/timezone
 

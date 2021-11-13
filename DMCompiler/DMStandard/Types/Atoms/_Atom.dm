@@ -3,7 +3,7 @@
 
 	var/name = "atom"
 	var/desc = null
-	var/suffix = null
+	var/suffix = null as opendream_unimplemented
 	var/list/verbs = list()
 
 	var/list/contents = list()
@@ -16,26 +16,26 @@
 	var/z = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/pixel_z = 0
-	var/pixel_w = 0
+	var/pixel_z = 0 as opendream_unimplemented
+	var/pixel_w = 0 as opendream_unimplemented
 
 	var/icon = null
 	var/icon_state = ""
 	var/layer = 2.0
-	var/plane = FLOAT_PLANE
+	var/plane = FLOAT_PLANE as opendream_unimplemented
 	var/alpha = 255
 	var/color = "#FFFFFF"
 	var/invisibility = 0
 	var/mouse_opacity = 1
-	var/luminosity = 0
-	var/opacity = 0
+	var/luminosity = 0 as opendream_unimplemented
+	var/opacity = 0 as opendream_unimplemented
 	var/matrix/transform
-	var/blend_mode = 0
+	var/blend_mode = 0 as opendream_unimplemented
 
-	var/gender = "neuter"
+	var/gender = NEUTER
 	var/density = FALSE
 
-	var/maptext //TODO
+	var/maptext as opendream_unimplemented
 
 	proc/Click(location, control, params)
 

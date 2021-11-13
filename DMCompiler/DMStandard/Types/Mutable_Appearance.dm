@@ -12,14 +12,14 @@
 	var/list/overlays = list()
 	var/list/underlays = list()
 	
-	var/maptext
-	var/maptext_x = 0
-	var/maptext_y = 0
-	var/maptext_height = 32
-	var/maptext_width = 32
+	var/maptext as opendream_unimplemented
+	var/maptext_x = 0 as opendream_unimplemented
+	var/maptext_y = 0 as opendream_unimplemented
+	var/maptext_height = 32 as opendream_unimplemented
+	var/maptext_width = 32 as opendream_unimplemented
 	
-	var/blend_mode = 0
-	var/appearance_flags = 0
+	var/blend_mode = 0 as opendream_unimplemented
+	var/appearance_flags = 0 as opendream_unimplemented
 	
 	var/mouse_opacity = 1
 

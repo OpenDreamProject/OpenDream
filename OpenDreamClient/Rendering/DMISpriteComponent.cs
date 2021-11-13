@@ -33,21 +33,23 @@ namespace OpenDreamClient.Rendering {
             return Icon.GetWorldAABB(worldPos);
         }
 
-        public bool IsVisible() {
+        public bool IsVisible(bool checkWorld = true) {
             if (Icon == null) return false;
             if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
 
-            //Only render turfs (children of map entity) and their contents (secondary child of map entity)
-            //TODO: Use RobustToolbox's container system/components?
-            TransformComponent transform = Owner.Transform;
-            EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
-            if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
-                return false;
+            if (checkWorld) {
+                //Only render turfs (children of map entity) and their contents (secondary child of map entity)
+                //TODO: Use RobustToolbox's container system/components?
+                TransformComponent transform = Owner.Transform;
+                EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
+                if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
+                    return false;
+            }
 
             return true;
         }
 
-        public bool CheckClick(Vector2 worldPos) {
+        public bool CheckClickWorld(Vector2 worldPos) {
             if (!IsVisible()) return false;
 
             switch (Icon.Appearance.MouseOpacity) {
@@ -56,8 +58,22 @@ namespace OpenDreamClient.Rendering {
                 case MouseOpacity.PixelOpaque: {
                     Vector2 iconPos = Owner.Transform.WorldPosition;
 
-                    return Icon.CheckClick(iconPos, worldPos);
+                    return Icon.CheckClickWorld(iconPos, worldPos);
                 }
+                default: throw new InvalidOperationException("Invalid mouse_opacity");
+            }
+        }
+
+        public bool CheckClickScreen(Vector2 mousePos, Vector2 screenPos) {
+            if (!IsVisible(checkWorld: false)) return false;
+
+            switch (Icon.Appearance.MouseOpacity) {
+                case MouseOpacity.Opaque: {
+                    if (Icon.DMI == null) return false;
+                    else return UIBox2.FromDimensions(screenPos, Icon.DMI.IconSize).Contains(mousePos);
+                }
+                case MouseOpacity.Transparent: return false;
+                case MouseOpacity.PixelOpaque: return Icon.CheckClickScreen(screenPos, mousePos);
                 default: throw new InvalidOperationException("Invalid mouse_opacity");
             }
         }

@@ -17,7 +17,6 @@ namespace OpenDreamClient.Interface
         private OSWindow _window;
 
         public BrowsePopup(
-            DreamInterfaceManager manager,
             string name,
             Vector2i size,
             IClydeWindow ownerWindow) {

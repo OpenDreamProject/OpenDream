@@ -104,7 +104,7 @@ namespace OpenDreamClient.Rendering {
             return aabb ?? Box2.FromDimensions(Vector2.Zero, Vector2.Zero);
         }
 
-        public bool CheckClick(Vector2 iconPos, Vector2 clickWorldPos) {
+        public bool CheckClickWorld(Vector2 iconPos, Vector2 clickWorldPos) {
             IClickMapManager _clickMap = IoCManager.Resolve<IClickMapManager>();
             iconPos += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
@@ -117,13 +117,41 @@ namespace OpenDreamClient.Rendering {
             }
 
             foreach (DreamIcon underlay in Underlays) {
-                if (underlay.CheckClick(iconPos, clickWorldPos)) {
+                if (underlay.CheckClickWorld(iconPos, clickWorldPos)) {
                     return true;
                 }
             }
 
             foreach (DreamIcon overlay in Overlays) {
-                if (overlay.CheckClick(iconPos, clickWorldPos)) {
+                if (overlay.CheckClickWorld(iconPos, clickWorldPos)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool CheckClickScreen(Vector2 screenPos, Vector2 clickPos) {
+            IClickMapManager _clickMap = IoCManager.Resolve<IClickMapManager>();
+
+            if (CurrentFrame != null) {
+                Vector2 pos = clickPos - screenPos;
+
+                if (_clickMap.IsOccluding(CurrentFrame, ((int)pos.X, (int)pos.Y))) {
+                    return true;
+                }
+            }
+
+            foreach (DreamIcon underlay in Underlays) {
+                //TODO: Pixel offset?
+                if (underlay.CheckClickScreen(screenPos + underlay.Appearance.PixelOffset, clickPos)) {
+                    return true;
+                }
+            }
+
+            foreach (DreamIcon overlay in Overlays) {
+                //TODO: Pixel offset?
+                if (overlay.CheckClickScreen(screenPos, clickPos)) {
                     return true;
                 }
             }

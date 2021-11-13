@@ -175,7 +175,7 @@ namespace OpenDreamClient.Interface {
 
                         if (!PopupWindows.TryGetValue(pBrowse.Window, out popup))
                         {
-                            popup = new BrowsePopup(this, pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
+                            popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
                             popup.Closed += () => {
                                 PopupWindows.Remove(pBrowse.Window);
                             };

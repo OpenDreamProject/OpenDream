@@ -1,6 +1,8 @@
-﻿using OpenDreamClient.Rendering;
+﻿using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Rendering;
 using Robust.Client;
 using Robust.Client.GameObjects;
+using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.Player;
 using Robust.Client.UserInterface.CustomControls;
@@ -10,6 +12,7 @@ using Robust.Shared.IoC;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;
 using Robust.Shared.Timing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,11 +46,10 @@ namespace OpenDreamClient.Input {
 
             EntityCoordinates coords = EntityCoordinates.Invalid;
             EntityUid entity = EntityUid.Invalid;
-            if (args.Viewport is IViewportControl viewport) {
+            if (args.Viewport is ScalingViewport viewport) {
                 MapCoordinates mapCoords = viewport.ScreenToMap(keyArgs.PointerLocation.Position);
-                IList<IEntity> possibleEntities = GetEntitiesUnderMouse(mapCoords);
 
-                entity = possibleEntities.Count > 0 ? possibleEntities[0].Uid : EntityUid.Invalid;
+                entity = GetEntityUnderMouse(viewport, keyArgs.PointerLocation.Position, mapCoords);
                 coords = _mapManager.TryFindGridAt(mapCoords, out var grid) ? grid.MapToGrid(mapCoords) :
                     EntityCoordinates.FromMap(_mapManager, mapCoords);
             }
@@ -58,25 +60,55 @@ namespace OpenDreamClient.Input {
             }
         }
 
-        private IList<IEntity> GetEntitiesUnderMouse(MapCoordinates coords) {
-            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
+        private EntityUid GetEntityUnderMouse(ScalingViewport viewport, Vector2 mousePos, MapCoordinates coords) {
+            IEntity entity = GetEntityOnScreen(mousePos, viewport);
+            entity ??= GetEntityOnMap(coords);
+
+            return entity?.Uid ?? EntityUid.Invalid;
+        }
+
+        private IEntity GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
+            ClientScreenOverlaySystem screenOverlay = EntitySystem.Get<ClientScreenOverlaySystem>();
+            UIBox2 viewportDrawBox = viewport.GetDrawBox();
+            Vector2 viewportScale = viewportDrawBox.Size / 480f; //TODO: Don't hardcode 480x480
+
+            mousePos -= viewport.GlobalPixelPosition;
+            mousePos /= viewportScale;
 
             var foundSprites = new List<DMISpriteComponent>();
-            foreach (IEntity entity in entities) {
-                if (entity.TryGetComponent<DMISpriteComponent>(out var sprite)
-                    && sprite.CheckClick(coords.Position)) {
+            foreach (DMISpriteComponent sprite in screenOverlay.EnumerateScreenObjects()) {
+                Vector2 screenPos = sprite.ScreenLocation.GetScreenCoordinates(EyeManager.PixelsPerMeter);
+                screenPos.Y += sprite.Icon?.DMI?.IconSize.Y ?? 0;
+                screenPos.Y = 480 - screenPos.Y;
+
+                if (sprite.CheckClickScreen(mousePos, screenPos)) {
                     foundSprites.Add(sprite);
                 }
             }
 
             if (foundSprites.Count == 0)
-                return new List<IEntity>();
+                return null;
 
-            //Sort by render order, and put top-most sprite at 0
             foundSprites.Sort(new RenderOrderComparer());
-            foundSprites.Reverse();
+            return foundSprites[^1].Owner;
+        }
 
-            return foundSprites.Select(a => a.Owner).ToList();
+        private IEntity GetEntityOnMap(MapCoordinates coords) {
+            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
+
+            var foundSprites = new List<DMISpriteComponent>();
+            foreach (IEntity entity in entities) {
+                if (entity.TryGetComponent<DMISpriteComponent>(out var sprite)
+                    && sprite.CheckClickWorld(coords.Position)) {
+                    foundSprites.Add(sprite);
+                }
+            }
+
+            if (foundSprites.Count == 0)
+                return null;
+
+            foundSprites.Sort(new RenderOrderComparer());
+            return foundSprites[^1].Owner;
         }
     }
 }

@@ -58,6 +58,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_md5);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_nonspantext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oviewers);

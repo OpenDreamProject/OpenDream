@@ -446,9 +446,11 @@ namespace OpenDreamRuntime.Tests
             Assert.Zero(runtime.ExceptionCount);
         }
 
-        [TestCase("Hello, World!", ", ", -1, 6)]
+        [TestCase("Hello, World!", ", ", -1, 1)]
         [TestCase("Hello, World!", ", ", 3, 3)]
-        [TestCase("Hello, World!", ", ", 7, 11)]
+        [TestCase("Hello, World!", ", ", 7, 0)]
+        [TestCase("Hello, World!", ", ", 14, 0)]
+        [TestCase("Hello, World!", ", ", 0, 0)]
         public void NonspantextTest(string haystack, string needles, int start, int valueResult)
         {
             var runtime = CreateRuntime();
@@ -457,15 +459,12 @@ namespace OpenDreamRuntime.Tests
             var needlesDreamValue = new DreamValue(needles);
             var startDreamValue = new DreamValue(start);
             var valueResultDreamValue = new DreamValue(valueResult);
-
             var listDreamValue = new List<DreamValue>() { haystackDreamValue, needlesDreamValue, startDreamValue };
-            var dicDreamValue = new Dictionary<string, DreamValue>() { ["Haystack"] = haystackDreamValue, ["Needles"] = needlesDreamValue, ["Start"] = startDreamValue };
-
             var result = DreamThread.Run(runtime, async state =>
             {
                 var world = runtime.WorldInstance;
                 var proc = world.GetProc("nonspantext");
-                return await state.Call(proc, world, null, new DreamProcArguments(listDreamValue, dicDreamValue));
+                return await state.Call(proc, world, null, new DreamProcArguments(listDreamValue));
             });
             Assert.Zero(runtime.ExceptionCount);
             Assert.AreEqual(valueResultDreamValue, result);

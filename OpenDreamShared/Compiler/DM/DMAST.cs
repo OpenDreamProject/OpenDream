@@ -222,6 +222,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
+    //TODO: This can probably be replaced with a DreamPath nullable
     public class DMASTPath : DMASTNode {
         public DreamPath Path;
 

@@ -483,63 +483,100 @@ namespace OpenDreamShared.Compiler.DM {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
                 Whitespace();
-                DMASTPath varPath = Path();
-                if (varPath == null) Error("Expected a variable name");
+                DMASTProcStatementVarDeclaration[] vars = ProcVarEnd(allowMultiple);
+                if (vars == null) Error("Expected a var declaration");
 
-                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
-                while (true) {
-                    DMASTExpression value = null;
-                    Whitespace();
-
-                    //TODO: Multidimensional lists
-                    if (Check(TokenType.DM_LeftBracket)) {
-                        //Type information
-                        if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                            varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
-                        }
-
-                        Whitespace();
-                        DMASTExpression size = Expression();
-                        ConsumeRightBracket();
-                        Whitespace();
-
-                        if (size is not null) {
-                            value = new DMASTNewPath(new DMASTPath(DreamPath.List),
-                                new[] { new DMASTCallParameter(size) });
-                        }
-                    }
-
-                    if (Check(TokenType.DM_Equals)) {
-                        if (value != null) Error("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-
-                        if (value == null) Error("Expected an expression");
-                    }
-
-                    AsTypes();
-
-                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
-                    if (allowMultiple && Check(TokenType.DM_Comma)) {
-                        Whitespace();
-                        varPath = Path();
-                        if (varPath == null) Error("Expected a var declaration");
-                    } else {
-                        break;
-                    }
-                }
-
-                if (varDeclarations.Count > 1) {
-                    return new DMASTProcStatementMultipleVarDeclarations(varDeclarations.ToArray());
+                if (vars.Length > 1) {
+                    return new DMASTProcStatementMultipleVarDeclarations(vars);
                 } else {
-                    return varDeclarations[0];
+                    return vars[0];
                 }
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }
 
             return null;
+        }
+
+        public DMASTProcStatementVarDeclaration[] ProcVarBlock(DMASTPath varPath) {
+            Token newlineToken = Current();
+            bool hasNewline = Newline();
+
+            if (Check(TokenType.DM_Indent)) {
+                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+
+                while (!Check(TokenType.DM_Dedent)) {
+                    DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
+                    if (varDecl == null) Error("Expected a var declaration");
+
+                    varDeclarations.AddRange(varDecl);
+                    Newline();
+                }
+
+                return varDeclarations.ToArray();
+            } else if (hasNewline) {
+                ReuseToken(newlineToken);
+            }
+
+            return null;
+        }
+
+        public DMASTProcStatementVarDeclaration[] ProcVarEnd(bool allowMultiple, DMASTPath path = null) {
+            DMASTPath varPath = Path();
+
+            if (allowMultiple) {
+                DMASTProcStatementVarDeclaration[] block = ProcVarBlock(varPath);
+                if (block != null) return block;
+            }
+
+            if (varPath == null) return null;
+            if (path != null) varPath = new DMASTPath(path.Path.Combine(varPath.Path));
+
+            List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+            while (true) {
+                DMASTExpression value = null;
+                Whitespace();
+
+                //TODO: Multidimensional lists
+                if (Check(TokenType.DM_LeftBracket)) {
+                    //Type information
+                    if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
+                        varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
+                    }
+
+                    Whitespace();
+                    DMASTExpression size = Expression();
+                    ConsumeRightBracket();
+                    Whitespace();
+
+                    if (size is not null) {
+                        value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                            new[] { new DMASTCallParameter(size) });
+                    }
+                }
+
+                if (Check(TokenType.DM_Equals)) {
+                    if (value != null) Warning("List doubly initialized");
+
+                    Whitespace();
+                    value = Expression();
+
+                    if (value == null) Error("Expected an expression");
+                }
+
+                AsTypes();
+
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
+                if (allowMultiple && Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    varPath = Path();
+                    if (varPath == null) Error("Expected a var declaration");
+                } else {
+                    break;
+                }
+            }
+
+            return varDeclarations.ToArray();
         }
 
         public DMASTProcStatementReturn Return() {

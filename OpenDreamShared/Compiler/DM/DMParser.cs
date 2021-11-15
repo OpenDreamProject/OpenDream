@@ -8,7 +8,7 @@ using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
     public partial class DMParser : Parser<Token> {
-        public static char StringFormatCharacter = (char)0xFF;
+        public const char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
 
@@ -664,11 +664,12 @@ namespace OpenDreamShared.Compiler.DM {
 
                     if (!Check(TokenType.DM_RightParenthesis)) {
                         delay = Expression();
-
                         if (delay == null) Error("Expected an expression");
+
                         ConsumeRightParenthesis();
-                        Whitespace();
                     }
+
+                    Whitespace();
                 }
 
                 Newline();

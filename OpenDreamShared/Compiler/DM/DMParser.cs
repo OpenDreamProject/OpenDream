@@ -2144,9 +2144,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;
-                Whitespace();
-
+                
                 do {
+                    Whitespace();
                     Token typeToken = Current();
 
                     if (parenthetical) {
@@ -2173,6 +2173,8 @@ namespace OpenDreamShared.Compiler.DM {
                         case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
+
+                    Whitespace();
                 } while (Check(TokenType.DM_Bar));
 
                 if (parenthetical && !closed) {

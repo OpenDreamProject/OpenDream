@@ -286,8 +286,10 @@ namespace OpenDreamShared.Compiler.DM {
                             Advance();
 
                             string text = preprocToken.Text;
-                            if (text == "1.#INF") {
+                            if (text == "1.#INF" || text == "1#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
+                            } else if (text == "1.#IND" || text == "1#IND") {
+                                token = CreateToken(TokenType.DM_Float, text, Single.NaN);
                             } else if (text.StartsWith("0x") && Int32.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
                             } else if (Int32.TryParse(text, out intValue)) {

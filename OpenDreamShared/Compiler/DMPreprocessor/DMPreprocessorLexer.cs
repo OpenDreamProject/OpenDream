@@ -283,14 +283,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 if ((c == 'e' || c == 'E') && (next == '-' || next == '+')) { //1e-10 or 1e+10
                                     textBuilder.Append(next);
                                     next = Advance();
-                                } else if (c == '#' && next == 'I') { //1.#INF
-                                    if (Advance() != 'N' || Advance() != 'F') {
+                                } else if (c == '#' && next == 'I') { //1.#INF and 1.#IND
+                                    if (Advance() != 'N' || Advance() != 'F' && GetCurrent() != 'D') {
                                         error = true;
 
                                         break;
                                     }
 
-                                    textBuilder.Append("INF");
+                                    textBuilder.Append("IN");
+                                    textBuilder.Append(GetCurrent());
                                     next = Advance();
                                 }
 

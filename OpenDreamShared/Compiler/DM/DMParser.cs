@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
 using OpenDreamShared.Dream.Procs;
@@ -419,8 +420,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (expression != null) {
                 if (expression is DMASTIdentifier) {
                     Check(TokenType.DM_Colon);
-
-                    return new DMASTProcStatementLabel(((DMASTIdentifier)expression).Identifier);
+                    return Label((DMASTIdentifier)expression);
                 } else if (expression is DMASTLeftShift) {
                     DMASTLeftShift leftShift = (DMASTLeftShift)expression;
                     DMASTProcCall procCall = leftShift.B as DMASTProcCall;
@@ -591,7 +591,14 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementBreak Break() {
-            if (Check(TokenType.DM_Break)) {
+            if (Check(TokenType.DM_Break))
+            {
+                Whitespace();
+                DMASTExpression expression = Expression();
+                if (expression is DMASTIdentifier)
+                {
+                    return new DMASTProcStatementBreak((DMASTIdentifier)expression);
+                }
                 return new DMASTProcStatementBreak();
             } else {
                 return null;
@@ -600,6 +607,12 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcStatementContinue Continue() {
             if (Check(TokenType.DM_Continue)) {
+                Whitespace();
+                DMASTExpression expression = Expression();
+                if (expression is DMASTIdentifier)
+                {
+                    return new DMASTProcStatementContinue((DMASTIdentifier)expression);
+                }
                 return new DMASTProcStatementContinue();
             } else {
                 return null;
@@ -1128,6 +1141,21 @@ namespace OpenDreamShared.Compiler.DM {
             } else {
                 return null;
             }
+        }
+
+        public DMASTProcStatementLabel Label(DMASTIdentifier expression)
+        {
+            Whitespace();
+            Newline();
+
+            DMASTProcBlockInner body = ProcBlock();
+            if (body == null) {
+                DMASTProcStatement statement = ProcStatement();
+                
+                if (statement == null) return new DMASTProcStatementLabel(expression.Identifier, null);
+                body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+            }
+            return new DMASTProcStatementLabel(expression.Identifier, body);
         }
 
         public DMASTCallParameter[] ProcCall() {
@@ -2144,7 +2172,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;
-                
+
                 do {
                     Whitespace();
                     Token typeToken = Current();

@@ -106,10 +106,20 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
             _proc.AddLabel(statementLabel.Name + "_codelabel");
+            if (statementLabel.Body is not null)
+            {
+                _proc.StartScope();
+                {
+                    _proc.AddLabel(statementLabel.Name + "_start");
+                    ProcessBlockInner(statementLabel.Body);
+                }
+                _proc.EndScope();
+                _proc.AddLabel(statementLabel.Name + "_end");
+            }
         }
 
         public void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
-            _proc.Break();
+            _proc.Break(statementBreak.Label);
         }
 
         public void ProcessStatementSet(DMASTProcStatementSet statementSet) {

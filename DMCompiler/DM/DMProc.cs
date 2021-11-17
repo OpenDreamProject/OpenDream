@@ -227,16 +227,30 @@ namespace DMCompiler.DM {
             WriteLabel(jumpTo);
         }
 
-        public void Break() {
-            Jump(_loopStack.Peek() + "_end");
+        public void Break(DMASTIdentifier label = null) {
+            if (label is not null)
+            {
+                Jump(label.Identifier + "_end");
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_end");
+            }
         }
 
         public void BreakIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_end");
         }
 
-        public void Continue() {
-            Jump(_loopStack.Peek() + "_continue");
+        public void Continue(DMASTIdentifier label = null) {
+            if (label is not null)
+            {
+                Jump(label.Identifier + "_start");
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_continue");
+            }
         }
 
         public void ContinueIfFalse() {

@@ -193,7 +193,8 @@ namespace OpenDreamShared.Compiler.DM {
             bool hasPathTypeToken = true;
 
             if (Check(TokenType.DM_Slash)) {
-                pathType = DreamPath.PathType.Absolute;
+                // Check if they did "/.whatever/" instead of ".whatever/"
+                pathType = Check(TokenType.DM_Period) ? DreamPath.PathType.UpwardSearch : DreamPath.PathType.Absolute;
             } else if (Check(TokenType.DM_Colon)) {
                 pathType = DreamPath.PathType.DownwardSearch;
             } else if (Check(TokenType.DM_Period)) {
@@ -2144,7 +2145,7 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;
-                
+
                 do {
                     Whitespace();
                     Token typeToken = Current();

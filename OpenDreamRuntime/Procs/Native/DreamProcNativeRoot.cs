@@ -1117,7 +1117,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("space", Type = DreamValueType.Float, DefaultValue = 0)] // Same value as COLORSPACE_RGB
         public static DreamValue NativeProc_rgb2num(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string color = arguments.GetArgument(0, "color").GetValueAsString();
-            int space = (int)arguments.GetArgument(1, "space").GetValueAsFloat();
+            int space = arguments.GetArgument(1, "space").GetValueAsInteger();
 
             if (space != 0)
             {

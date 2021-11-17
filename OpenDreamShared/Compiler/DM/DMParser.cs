@@ -1858,12 +1858,16 @@ namespace OpenDreamShared.Compiler.DM {
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
                                     DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
 
-                                    expressionParser.Whitespace(true);
-                                    DMASTExpression expression = expressionParser.Expression();
-                                    if (expression == null) Error("Expected an expression");
-                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
-                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
+                                    DMASTExpression expression = null;
+                                    try {
+                                        expressionParser.Whitespace(true);
+                                        expression = expressionParser.Expression();
+                                        if (expression == null) Error("Expected an expression");
+                                    } catch (CompileErrorException e) {
+                                        Errors.Add(e.Error);
+                                    }
 
+                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
                                     interpolationValues.Add(expression);
                                 } else {
                                     interpolationValues.Add(null);

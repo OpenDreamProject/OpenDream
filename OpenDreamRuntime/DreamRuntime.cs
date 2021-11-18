@@ -46,6 +46,7 @@ namespace OpenDreamRuntime
         public bool Shutdown;
 
         // Global state that may not really (really really) belong here
+        public List<DreamValue> Globals = new();
         public Dictionary<ServerIconAppearance, int> AppearanceToID = new();
         public Dictionary<DreamObject, int> ReferenceIDs = new();
         public Dictionary<DreamObject, DreamList> AreaContents = new();
@@ -107,7 +108,15 @@ namespace OpenDreamRuntime
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
             WorldInstance.InitSpawn(new DreamProcArguments(null));
 
-            ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
+            if (CompiledJson.Globals != null) {
+                foreach (object globalValue in CompiledJson.Globals) {
+                    Globals.Add(ObjectTree.GetDreamValueFromJsonElement(globalValue));
+                }
+            }
+
+            //TODO: Make a GetWorld opcode
+            //For now, the first global is `world`
+            Globals[0] = new DreamValue(WorldInstance);
 
             RegisterPacketCallbacks();
 

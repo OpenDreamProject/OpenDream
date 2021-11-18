@@ -233,6 +233,13 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? GetGlobal(DMProcState state) {
+            int globalId = state.ReadInt();
+
+            state.Push(new DreamProcIdentifierGlobal(state.Runtime.Globals, globalId));
+            return null;
+        }
+
         public static ProcStatus? PushLocalVariable(DMProcState state) {
             int localVariableId = state.ReadByte();
 
@@ -1543,7 +1550,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            if (objectDefinition.HasGlobalVariable(property))
+            if (objectDefinition.GlobalVariables.ContainsKey(property))
             {
                 state.Push(new DreamValue(0));
             }

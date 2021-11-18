@@ -135,6 +135,11 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
+        public void GetGlobal(int id) {
+            WriteOpcode(DreamProcOpcode.GetGlobal);
+            WriteInt(id);
+        }
+
         public void PushLocalVariable(string name) {
             DMLocalVariable localVar = GetLocalVariable(name);
 

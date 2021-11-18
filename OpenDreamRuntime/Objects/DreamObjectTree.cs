@@ -221,11 +221,8 @@ namespace OpenDreamRuntime.Objects {
             }
 
             if (jsonObject.GlobalVariables != null) {
-                foreach (KeyValuePair<string, object> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                    DreamValue value = GetDreamValueFromJsonElement(jsonGlobalVariable.Value);
-                    DreamGlobalVariable globalVariable = new DreamGlobalVariable(value);
-
-                    objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);
+                foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
+                    objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
                 }
             }
         }

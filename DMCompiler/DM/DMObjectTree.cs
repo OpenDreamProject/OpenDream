@@ -6,6 +6,9 @@ using System.Collections.Generic;
 namespace DMCompiler.DM {
     static class DMObjectTree {
         public static Dictionary<DreamPath, DMObject> AllObjects = new();
+
+        //TODO: These don't belong in the object tree
+        public static List<DMVariable> Globals = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
@@ -79,6 +82,14 @@ namespace DMCompiler.DM {
             } else { //We're searching for an object
                 return found?.Path;
             }
+        }
+
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name) {
+            int id = Globals.Count;
+
+            global = new DMVariable(type, name, true);
+            Globals.Add(global);
+            return id;
         }
 
         public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {

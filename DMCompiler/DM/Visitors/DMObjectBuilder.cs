@@ -62,18 +62,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
-            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
+            DMVariable variable;
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
-            if (variable.IsGlobal) {
-                _currentObject.GlobalVariables[variable.Name] = variable;
+            if (varDefinition.IsGlobal) {
+                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name);
             } else {
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
                 _currentObject.Variables[variable.Name] = variable;
             }
 
             try {
-                SetVariableValue(variable, varDefinition.Value, varDefinition.Type, varDefinition.ValType);
+                SetVariableValue(variable, varDefinition.Value, varDefinition.ValType);
             } catch (CompileErrorException e) {
                 Program.Error(e.Error);
             }
@@ -95,7 +96,7 @@ namespace DMCompiler.DM.Visitors {
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
 
-                    SetVariableValue(variable, varOverride.Value, null);
+                    SetVariableValue(variable, varOverride.Value);
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
@@ -133,8 +134,8 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type, DMValueType valType = DMValueType.Anything) {
-            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
+        private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             expression.ValType = valType;
 
             switch (expression) {
@@ -157,12 +158,18 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {
-            Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
-            Expressions.Assignment assign = new Expressions.Assignment(field, expression);
-
             if (variable.IsGlobal) {
+                int? globalId = _currentObject.GetGlobalVariableId(variable.Name);
+                if (globalId == null) throw new Exception($"Invalid global {_currentObject.Path}.{variable.Name}");
+
+                Expressions.GlobalField field = new Expressions.GlobalField(variable.Type, globalId.Value);
+                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+
                 DMObjectTree.AddGlobalInitProcAssign(assign);
             } else {
+                Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
+                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+
                 _currentObject.InitializationProcExpressions.Add(assign);
             }
         }

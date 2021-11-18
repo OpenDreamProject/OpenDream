@@ -18,6 +18,7 @@
 #define OBJ_LAYER 3
 #define MOB_LAYER 4
 #define FLY_LAYER 5
+#define EFFECTS_LAYER 19999
 #define BACKGROUND_LAYER 20000
 
 #define FLOAT_PLANE -32767
@@ -99,3 +100,72 @@
 #define COLORSPACE_HSV 1
 #define COLORSPACE_HSL 2
 #define COLORSPACE_HCY 3
+
+//atom.appearance_flags
+#define LONG_GLIDE		(1<<0)
+#define RESET_COLOR		(1<<1)
+#define RESET_ALPHA		(1<<2)
+#define RESET_TRANSFORM	(1<<3)
+#define NO_CLIENT_COLOR	(1<<4)
+#define KEEP_TOGETHER	(1<<5)
+#define KEEP_APART 		(1<<6)
+#define PLANE_MASTER 	(1<<7)
+#define TILE_BOUND 		(1<<8)
+#define PIXEL_SCALE 	(1<<9)
+#define PASS_MOUSE 		(1<<10)
+#define TILE_MOVER		(1<<11)
+
+//animate() easing arg
+#define LINEAR_EASING	1
+#define SINE_EASING		2
+#define CIRCULAR_EASING	3
+#define QUAD_EASING		4
+#define CUBIC_EASING	5
+#define BOUNCE_EASING	6
+#define ELASTIC_EASING	7
+#define BACK_EASING		8
+#define JUMP_EASING		9
+
+//undocumented matrix defines?
+#define MATRIX_TRANSLATE	(1<<0)
+#define MATRIX_ROTATE		(1<<1)
+#define MATRIX_SCALE		(1<<2)
+#define MATRIX_MODIFY		(1<<3)
+
+//world/Profile() arg
+#define PROFILE_STOP	1
+#define PROFILE_CLEAR	2
+#define PROFILE_AVERAGE 3
+#define PROFILE_START	4
+#define PROFILE_REFRESH	5
+#define PROFILE_RESTART	6
+
+//filter(type="alpha", ...) flags arg
+#define MASK_INVERSE	(1<<0)
+#define MASK_SWAP		(1<<1)
+
+//filter(type="layer", ...) flags arg
+#define FILTER_OVERLAY	0
+#define FILTER_UNDERLAY	1
+
+//filter(type="outline", ...) flags arg
+#define OUTLINE_SHARP	(1<<0)
+#define OUTLINE_SQUARE	(1<<1)
+
+//filter(type="wave", ...) flags arg
+#define WAVE_BOUNDED	(1<<0)
+#define WAVE_SIDEWAYS	(1<<1)
+
+//see mouse handling
+#define MOUSE_INACTIVE_POINTER 0
+#define MOUSE_ACTIVE_POINTER 1
+#define MOUSE_DRAG_POINTER 2
+#define MOUSE_DROP_POINTER 3
+#define MOUSE_ARROW_POINTER 4
+#define MOUSE_CROSSHAIRS_POINTER 5
+#define MOUSE_HAND_POINTER 6
+
+//client.control_freak
+#define CONTROL_FREAK_ALL 		(1<<0)
+#define CONTROL_FREAK_SKIN		(1<<1)
+#define CONTROL_FREAK_MACROS	(1<<2)

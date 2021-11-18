@@ -119,6 +119,12 @@ namespace OpenDreamShared.Dream {
         public bool IsDescendantOf(DreamPath path) {
             if (path.Elements.Length > Elements.Length) return false;
 
+            if (path == List)
+            {
+                if (Elements.Contains("list") && Array.IndexOf(Elements, "list") != Elements.Length - 1) return true;
+                return false;
+            }
+
             for (int i = 0; i < path.Elements.Length; i++) {
                 if (Elements[i] != path.Elements[i]) return false;
             }

@@ -117,7 +117,9 @@ namespace OpenDreamShared.Compiler.DM {
                             {
                                 //Type information
                                 if (!varPath.IsDescendantOf(DreamPath.List)) {
-                                    varPath = DreamPath.List.AddToPath(varPath.PathString);
+                                    var elements = varPath.Elements.ToList();
+                                    elements.Insert(elements.IndexOf("var") + 1, "list");
+                                    varPath = new DreamPath("/" + String.Join("/", elements));
                                 }
 
                                 DMASTExpression size = Expression();
@@ -550,7 +552,9 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_LeftBracket)) {
                     //Type information
                     if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                        varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
+                        var elements = varPath.Path.Elements.ToList();
+                        elements.Insert(elements.IndexOf("var") + 1, "list");
+                        varPath = new DMASTPath(new DreamPath("/" + String.Join("/", elements)));
                     }
 
                     Whitespace();

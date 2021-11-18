@@ -211,8 +211,8 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         textBuilder.Append(delimiter);
 
                         bool isLong = false;
+                        c = Advance();
                         if (delimiter == '{') {
-                            c = Advance();
                             textBuilder.Append(c);
 
                             if (c == '"') isLong = true;
@@ -240,6 +240,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
 
                         string text = textBuilder.ToString();
                         string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                        Console.WriteLine(text + "\n\t" + value);
                         token = CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
                         break;
                     }

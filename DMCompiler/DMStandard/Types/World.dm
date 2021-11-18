@@ -39,12 +39,12 @@
 	proc/New()
 	proc/Del()
 
-	var/map_cpu = 0
-	var/hub
-	var/hub_password
-	var/reachable
-	var/game_state
-	var/host
+	var/map_cpu = 0 as opendream_unimplemented
+	var/hub as opendream_unimplemented
+	var/hub_password as opendream_unimplemented
+	var/reachable as opendream_unimplemented
+	var/game_state as opendream_unimplemented
+	var/host as opendream_unimplemented
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
 	proc/GetConfig(config_set,param)

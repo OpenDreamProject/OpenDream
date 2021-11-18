@@ -28,14 +28,14 @@
 
 	var/timezone
 
-	var/color = 0
-	var/control_freak
-	var/mouse_pointer_icon
-	var/preload_rsc = 1
-	var/fps = 0
-	var/dir = NORTH
-	var/gender = "neuter"
-	var/glide_size
+	var/color = 0 as opendream_unimplemented
+	var/control_freak as opendream_unimplemented
+	var/mouse_pointer_icon as opendream_unimplemented
+	var/preload_rsc = 1 as opendream_unimplemented
+	var/fps = 0 as opendream_unimplemented
+	var/dir = NORTH as opendream_unimplemented
+	var/gender = "neuter" as opendream_unimplemented
+	var/glide_size as opendream_unimplemented
 	proc/SoundQuery()
 		set opendream_unimplemented = TRUE
 	proc/Export(file)

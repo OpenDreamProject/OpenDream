@@ -2,52 +2,52 @@
 	parent_type = /datum
 
 	var/alpha = 255
-	var/appearance
-	var/appearance_flags = 0
-	var/blend_mode = 0
+	var/appearance as opendream_unimplemented
+	var/appearance_flags = 0 as opendream_unimplemented
+	var/blend_mode = 0 as opendream_unimplemented
 	var/color = "#FFFFFF"
 	var/desc = null
-	var/gender = "neuter"
-	var/infra_luminosity = 0
-	var/invisibility = 0
-	var/list/filters = list()
+	var/gender = "neuter" as opendream_unimplemented
+	var/infra_luminosity = 0 as opendream_unimplemented
+	var/invisibility = 0 as opendream_unimplemented
+	var/list/filters = list() as opendream_unimplemented
 	var/layer = FLOAT_LAYER
-	var/luminosity = 0
-	var/maptext = "i"
-	var/maptext_width = 32
-	var/maptext_height = 32
-	var/maptext_x = 0
-	var/maptext_y = 0
-	var/mouse_over_pointer = 0
-	var/mouse_drag_pointer = 0
-	var/mouse_drop_pointer = 1
-	var/mouse_drop_zone = 0
+	var/luminosity = 0 as opendream_unimplemented
+	var/maptext = "i" as opendream_unimplemented
+	var/maptext_width = 32 as opendream_unimplemented
+	var/maptext_height = 32 as opendream_unimplemented
+	var/maptext_x = 0 as opendream_unimplemented
+	var/maptext_y = 0 as opendream_unimplemented
+	var/mouse_over_pointer = 0 as opendream_unimplemented
+	var/mouse_drag_pointer = 0 as opendream_unimplemented
+	var/mouse_drop_pointer = 1 as opendream_unimplemented
+	var/mouse_drop_zone = 0 as opendream_unimplemented
 	var/mouse_opacity = 1
 	var/name = "image"
-	var/opacity = 0
+	var/opacity = 0 as opendream_unimplemented
 	var/list/overlays = list()
-	var/override = 1 //TODO
+	var/override = 1 as opendream_unimplemented
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/pixel_w = 0
-	var/pixel_z = 0
-	var/plane = FLOAT_PLANE
-	var/render_source
-	var/render_target
-	var/suffix
-	var/text = "i"
+	var/pixel_w = 0 as opendream_unimplemented
+	var/pixel_z = 0 as opendream_unimplemented
+	var/plane = FLOAT_PLANE as opendream_unimplemented
+	var/render_source as opendream_unimplemented
+	var/render_target as opendream_unimplemented
+	var/suffix as opendream_unimplemented
+	var/text = "i" as opendream_unimplemented
 	var/matrix/transform
 	var/list/underlays = list()
-	var/vis_flags = 0
+	var/vis_flags = 0 as opendream_unimplemented
 
-	var/bound_width
-	var/bound_height
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
 	var/name
 	var/x
 	var/y
 	var/z
-	var/list/filters = list()
-	var/list/vis_contents = list()
+	var/list/filters = list() as opendream_unimplemented
+	var/list/vis_contents = list() as opendream_unimplemented
 
 	var/dir = SOUTH
 	var/icon

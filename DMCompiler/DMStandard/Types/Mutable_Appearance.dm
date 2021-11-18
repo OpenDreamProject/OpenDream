@@ -1,8 +1,8 @@
 ﻿/mutable_appearance
 	parent_type = /image
 
-	var/animate_movement = 1
-	var/screen_loc
+	var/animate_movement = 1 as opendream_unimplemented
+	var/screen_loc as opendream_unimplemented
 
 	New(var/datum/copy_from)
 		if (istype(copy_from, /mutable_appearance))

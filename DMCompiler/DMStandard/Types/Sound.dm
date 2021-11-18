@@ -10,9 +10,9 @@
 	var/y
 	var/z
 
-	var/environment
-	var/echo
-	var/len
+	var/environment as opendream_unimplemented
+	var/echo as opendream_unimplemented
+	var/len as opendream_unimplemented
 
 	var/priority = 0 //TODO
 	var/status = 0 //TODO

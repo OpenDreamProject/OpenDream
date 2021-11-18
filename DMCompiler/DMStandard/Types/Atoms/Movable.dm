@@ -2,8 +2,8 @@
 	var/screen_loc
 
 	var/animate_movement = FORWARD_STEPS
-	var/list/locs = list()
-	var/glide_size
+	var/list/locs = list() as opendream_unimplemented
+	var/glide_size as opendream_unimplemented
 
 	proc/Bump(atom/Obstacle)
 	

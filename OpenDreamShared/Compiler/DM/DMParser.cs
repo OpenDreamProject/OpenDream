@@ -923,7 +923,6 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTExpression conditional = Expression();
                 if (conditional == null) Error("Expected conditional");
                 ConsumeRightParenthesis();
-                Check(TokenType.DM_Semicolon);
                 Whitespace();
 
                 return new DMASTProcStatementDoWhile(conditional, body);

@@ -8,11 +8,16 @@ using OpenDreamShared.Compiler.DMPreprocessor;
 
 namespace OpenDreamShared.Compiler.DM {
     public partial class DMParser : Parser<Token> {
-        public static char StringFormatCharacter = (char)0xFF;
+        public const char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
 
-        public DMParser(DMLexer lexer) : base(lexer) { }
+        private bool _unimplementedWarnings;
+
+        public DMParser(DMLexer lexer, bool unimplementedWarnings) : base(lexer)
+        {
+            _unimplementedWarnings = unimplementedWarnings;
+        }
 
         public DMASTFile File() {
             List<DMASTStatement> statements = new();
@@ -132,9 +137,10 @@ namespace OpenDreamShared.Compiler.DM {
 
                             if (value == null) value = new DMASTConstantNull();
 
-                            AsTypes();
+                            var valType = AsTypes();
+                            var varDef = new DMASTObjectVarDefinition(varPath, value, valType);
 
-                            varDefinitions.Add(new DMASTObjectVarDefinition(varPath, value));
+                            varDefinitions.Add(varDef);
                             if (Check(TokenType.DM_Comma)) {
                                 Whitespace();
                                 DMASTPath newVarPath = Path();
@@ -210,6 +216,16 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
+                //TODO actual modified type support
+                if (Check(TokenType.DM_LeftCurlyBracket))
+                {
+                    if(_unimplementedWarnings) Warning("Modified types are currently not supported and modified values will be ignored.");
+
+                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    Newline(); //The lexer tosses in a newline after }
+                }
+
                 return new DMASTPath(new DreamPath(pathType, pathElements.ToArray()));
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
@@ -225,7 +241,6 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Identifier,
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
-                TokenType.DM_NewList,
                 TokenType.DM_Step,
                 TokenType.DM_Throw
             };
@@ -477,63 +492,100 @@ namespace OpenDreamShared.Compiler.DM {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
                 Whitespace();
-                DMASTPath varPath = Path();
-                if (varPath == null) Error("Expected a variable name");
+                DMASTProcStatementVarDeclaration[] vars = ProcVarEnd(allowMultiple);
+                if (vars == null) Error("Expected a var declaration");
 
-                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
-                while (true) {
-                    DMASTExpression value = null;
-                    Whitespace();
-
-                    //TODO: Multidimensional lists
-                    if (Check(TokenType.DM_LeftBracket)) {
-                        //Type information
-                        if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                            varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
-                        }
-
-                        Whitespace();
-                        DMASTExpression size = Expression();
-                        ConsumeRightBracket();
-                        Whitespace();
-
-                        if (size is not null) {
-                            value = new DMASTNewPath(new DMASTPath(DreamPath.List),
-                                new[] { new DMASTCallParameter(size) });
-                        }
-                    }
-
-                    if (Check(TokenType.DM_Equals)) {
-                        if (value != null) Error("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-
-                        if (value == null) Error("Expected an expression");
-                    }
-
-                    AsTypes();
-
-                    varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
-                    if (allowMultiple && Check(TokenType.DM_Comma)) {
-                        Whitespace();
-                        varPath = Path();
-                        if (varPath == null) Error("Expected a var declaration");
-                    } else {
-                        break;
-                    }
-                }
-
-                if (varDeclarations.Count > 1) {
-                    return new DMASTProcStatementMultipleVarDeclarations(varDeclarations.ToArray());
+                if (vars.Length > 1) {
+                    return new DMASTProcStatementMultipleVarDeclarations(vars);
                 } else {
-                    return varDeclarations[0];
+                    return vars[0];
                 }
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }
 
             return null;
+        }
+
+        public DMASTProcStatementVarDeclaration[] ProcVarBlock(DMASTPath varPath) {
+            Token newlineToken = Current();
+            bool hasNewline = Newline();
+
+            if (Check(TokenType.DM_Indent)) {
+                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+
+                while (!Check(TokenType.DM_Dedent)) {
+                    DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
+                    if (varDecl == null) Error("Expected a var declaration");
+
+                    varDeclarations.AddRange(varDecl);
+                    Newline();
+                }
+
+                return varDeclarations.ToArray();
+            } else if (hasNewline) {
+                ReuseToken(newlineToken);
+            }
+
+            return null;
+        }
+
+        public DMASTProcStatementVarDeclaration[] ProcVarEnd(bool allowMultiple, DMASTPath path = null) {
+            DMASTPath varPath = Path();
+
+            if (allowMultiple) {
+                DMASTProcStatementVarDeclaration[] block = ProcVarBlock(varPath);
+                if (block != null) return block;
+            }
+
+            if (varPath == null) return null;
+            if (path != null) varPath = new DMASTPath(path.Path.Combine(varPath.Path));
+
+            List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+            while (true) {
+                DMASTExpression value = null;
+                Whitespace();
+
+                //TODO: Multidimensional lists
+                if (Check(TokenType.DM_LeftBracket)) {
+                    //Type information
+                    if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
+                        varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
+                    }
+
+                    Whitespace();
+                    DMASTExpression size = Expression();
+                    ConsumeRightBracket();
+                    Whitespace();
+
+                    if (size is not null) {
+                        value = new DMASTNewPath(new DMASTPath(DreamPath.List),
+                            new[] { new DMASTCallParameter(size) });
+                    }
+                }
+
+                if (Check(TokenType.DM_Equals)) {
+                    if (value != null) Warning("List doubly initialized");
+
+                    Whitespace();
+                    value = Expression();
+
+                    if (value == null) Error("Expected an expression");
+                }
+
+                AsTypes();
+
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(varPath, value));
+                if (allowMultiple && Check(TokenType.DM_Comma)) {
+                    Whitespace();
+                    varPath = Path();
+                    if (varPath == null) Error("Expected a var declaration");
+                } else {
+                    break;
+                }
+            }
+
+            return varDeclarations.ToArray();
         }
 
         public DMASTProcStatementReturn Return() {
@@ -613,21 +665,22 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementSpawn Spawn() {
             if (Check(TokenType.DM_Spawn)) {
                 Whitespace();
-                Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                Whitespace();
+                bool hasArg = Check(TokenType.DM_LeftParenthesis);
+                DMASTExpression delay = null;
 
-                DMASTExpression delay;
-                if (Check(TokenType.DM_RightParenthesis)) {
-                    //No parameters, default to zero
-                    delay = new DMASTConstantInteger(0);
-                } else {
-                    delay = Expression();
+                if (hasArg) {
+                    Whitespace();
 
-                    if (delay == null) Error("Expected an expression");
-                    ConsumeRightParenthesis();
+                    if (!Check(TokenType.DM_RightParenthesis)) {
+                        delay = Expression();
+                        if (delay == null) Error("Expected an expression");
+
+                        ConsumeRightParenthesis();
+                    }
+
+                    Whitespace();
                 }
 
-                Whitespace();
                 Newline();
 
                 DMASTProcBlockInner body = ProcBlock();
@@ -638,7 +691,7 @@ namespace OpenDreamShared.Compiler.DM {
                     body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                return new DMASTProcStatementSpawn(delay, body);
+                return new DMASTProcStatementSpawn(delay ?? new DMASTConstantInteger(0), body);
             } else {
                 return null;
             }
@@ -745,6 +798,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -772,6 +826,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                     Whitespace();
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -799,6 +854,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -836,6 +892,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTExpression conditional = Expression();
                 if (conditional == null) Error("Expected conditional");
                 ConsumeRightParenthesis();
+                Check(TokenType.DM_Semicolon);
                 Whitespace();
                 DMASTProcBlockInner body = ProcBlock();
 
@@ -1037,7 +1094,10 @@ namespace OpenDreamShared.Compiler.DM {
                     tryBody = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
                 }
 
-                Warning("Exceptions in 'try/catch' blocks are currently not caught");
+                if (_unimplementedWarnings)
+                {
+                    Warning("Exceptions in 'try/catch' blocks are currently not caught");
+                }
 
                 Newline();
                 Consume(TokenType.DM_Catch, "Expected catch");
@@ -1070,7 +1130,10 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementThrow Throw()
         {
             if (Check(TokenType.DM_Throw)) {
-                Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                if (_unimplementedWarnings)
+                {
+                    Warning("'throw' is not properly implemented and will just cause an uncaught runtime");
+                }
                 Whitespace();
                 DMASTExpression value = Expression();
 
@@ -1246,7 +1309,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionAssign() {
-            DMASTExpression expression = ExpressionTernary();
+            DMASTExpression expression = ExpressionIn();
 
             if (expression != null) {
                 Token token = Current();
@@ -1255,7 +1318,9 @@ namespace OpenDreamShared.Compiler.DM {
                     TokenType.DM_PlusEquals,
                     TokenType.DM_MinusEquals,
                     TokenType.DM_BarEquals,
+                    TokenType.DM_BarBarEquals,
                     TokenType.DM_AndEquals,
+                    TokenType.DM_AndAndEquals,
                     TokenType.DM_StarEquals,
                     TokenType.DM_SlashEquals,
                     TokenType.DM_LeftShiftEquals,
@@ -1274,7 +1339,9 @@ namespace OpenDreamShared.Compiler.DM {
                             case TokenType.DM_PlusEquals: return new DMASTAppend(expression, value);
                             case TokenType.DM_MinusEquals: return new DMASTRemove(expression, value);
                             case TokenType.DM_BarEquals: return new DMASTCombine(expression, value);
+                            case TokenType.DM_BarBarEquals: return new DMASTLogicalOrAssign(expression, value);
                             case TokenType.DM_AndEquals: return new DMASTMask(expression, value);
+                            case TokenType.DM_AndAndEquals: return new DMASTLogicalAndAssign(expression, value);
                             case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(expression, value);
                             case TokenType.DM_SlashEquals: return new DMASTDivideAssign(expression, value);
                             case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(expression, value);
@@ -1289,6 +1356,34 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return expression;
+        }
+
+        public DMASTExpression ExpressionIn() {
+            DMASTExpression value = ExpressionTernary();
+
+            if (value != null && Check(TokenType.DM_In)) {
+                Whitespace();
+                DMASTExpression list = ExpressionIn();
+
+                Whitespace();
+                if (Check(TokenType.DM_To))
+                {
+                    Whitespace();
+                    DMASTExpression endRange = ExpressionIn();
+                    if (endRange is null)
+                    {
+                        Error("Missing end range");
+                    }
+                    else
+                    {
+                        return new DMASTExpressionInRange(value, list, endRange);
+                    }
+                }
+
+                return new DMASTExpressionIn(value, list);
+            }
+
+            return value;
         }
 
         public DMASTExpression ExpressionTernary() {
@@ -1560,7 +1655,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPower() {
-            DMASTExpression a = ExpressionIn();
+            DMASTExpression a = ExpressionUnary();
 
             if (a != null) {
                 while (Check(TokenType.DM_StarStar)) {
@@ -1572,19 +1667,6 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             return a;
-        }
-
-        public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionUnary();
-
-            if (value != null && Check(TokenType.DM_In)) {
-                Whitespace();
-                DMASTExpression list = ExpressionIn();
-
-                return new DMASTExpressionIn(value, list);
-            }
-
-            return value;
         }
 
         public DMASTExpression ExpressionUnary() {
@@ -1730,13 +1812,6 @@ namespace OpenDreamShared.Compiler.DM {
                 primary = new DMASTCall(callParameters, procParameters);
             }
 
-            if (primary == null && Check(TokenType.DM_NewList)) {
-                Whitespace();
-                DMASTCallParameter[] values = ProcCall();
-
-                primary = new DMASTNewList(values);
-            }
-
             return primary;
         }
 
@@ -1787,14 +1862,18 @@ namespace OpenDreamShared.Compiler.DM {
                                     } while (preprocToken.Type != TokenType.EndOfFile);
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
-                                    DMParser expressionParser = new DMParser(expressionLexer);
+                                    DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
 
-                                    expressionParser.Whitespace(true);
-                                    DMASTExpression expression = expressionParser.Expression();
-                                    if (expression == null) Error("Expected an expression");
-                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
+                                    DMASTExpression expression = null;
+                                    try {
+                                        expressionParser.Whitespace(true);
+                                        expression = expressionParser.Expression();
+                                        if (expression == null) Error("Expected an expression");
+                                    } catch (CompileErrorException e) {
+                                        Errors.Add(e.Error);
+                                    }
+
                                     if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
-
                                     interpolationValues.Add(expression);
                                 } else {
                                     interpolationValues.Add(null);
@@ -1973,6 +2052,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 switch (identifier.Identifier) {
                     case "list": return new DMASTList(callParameters);
+                    case "newlist": return new DMASTNewList(callParameters);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);
@@ -2075,9 +2155,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Whitespace();
                 bool parenthetical = Check(TokenType.DM_LeftParenthesis);
                 bool closed = false;
-                Whitespace();
 
                 do {
+                    Whitespace();
                     Token typeToken = Current();
 
                     if (parenthetical) {
@@ -2101,8 +2181,11 @@ namespace OpenDreamShared.Compiler.DM {
                         case "command_text": type |= DMValueType.CommandText; break;
                         case "sound": type |= DMValueType.Sound; break;
                         case "icon": type |= DMValueType.Icon; break;
+                        case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
+
+                    Whitespace();
                 } while (Check(TokenType.DM_Bar));
 
                 if (parenthetical && !closed) {

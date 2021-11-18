@@ -53,7 +53,6 @@ namespace OpenDreamShared.Compiler.DM {
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
             { "spawn", TokenType.DM_Spawn },
-            { "newlist", TokenType.DM_NewList },
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step },
             { "try", TokenType.DM_Try },
@@ -187,6 +186,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
                                 case "&": token = CreateToken(TokenType.DM_And, c); break;
                                 case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
+                                case "&&=": token = CreateToken(TokenType.DM_AndAndEquals, c); break;
                                 case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;
                                 case "+": token = CreateToken(TokenType.DM_Plus, c); break;
                                 case "++": token = CreateToken(TokenType.DM_PlusPlus, c); break;
@@ -199,6 +199,7 @@ namespace OpenDreamShared.Compiler.DM {
                                 case "*=": token = CreateToken(TokenType.DM_StarEquals, c); break;
                                 case "|": token = CreateToken(TokenType.DM_Bar, c); break;
                                 case "||": token = CreateToken(TokenType.DM_BarBar, c); break;
+                                case "||=": token = CreateToken(TokenType.DM_BarBarEquals, c); break;
                                 case "|=": token = CreateToken(TokenType.DM_BarEquals, c); break;
                                 case "<": token = CreateToken(TokenType.DM_LessThan, c); break;
                                 case "<<": token = CreateToken(TokenType.DM_LeftShift, c); break;
@@ -284,8 +285,10 @@ namespace OpenDreamShared.Compiler.DM {
                             Advance();
 
                             string text = preprocToken.Text;
-                            if (text == "1.#INF") {
+                            if (text == "1.#INF" || text == "1#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
+                            } else if (text == "1.#IND" || text == "1#IND") {
+                                token = CreateToken(TokenType.DM_Float, text, Single.NaN);
                             } else if (text.StartsWith("0x") && Int32.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
                             } else if (Int32.TryParse(text, out intValue)) {

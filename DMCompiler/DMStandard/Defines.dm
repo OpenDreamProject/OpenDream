@@ -93,3 +93,9 @@
 #define SOUND_UPDATE (1<<3)    // update a playing sound
 
 #define EXCEPTION(value) new/exception(value, __FILE__, __LINE__)
+
+//Color spaces
+#define COLORSPACE_RGB 0
+#define COLORSPACE_HSV 1
+#define COLORSPACE_HSL 2
+#define COLORSPACE_HCY 3

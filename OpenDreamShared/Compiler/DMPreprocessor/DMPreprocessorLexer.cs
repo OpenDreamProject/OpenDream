@@ -73,7 +73,13 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     }
                     case '|': {
                         switch (Advance()) {
-                            case '|': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "||"); break;
+                            case '|': {
+                                switch (Advance()) {
+                                    case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "||="); break;
+                                    default: token = CreateToken(TokenType.DM_Preproc_Punctuator, "||"); break;
+                                }
+                                break;
+                            }
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "|="); break;
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '|'); break;
                         }
@@ -100,7 +106,13 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                     }
                     case '&': {
                         switch (Advance()) {
-                            case '&': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&"); break;
+                            case '&': {
+                                switch (Advance()) {
+                                    case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&="); break;
+                                    default: token = CreateToken(TokenType.DM_Preproc_Punctuator, "&&"); break;
+                                }
+                                break;
+                            }
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "&="); break;
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '&'); break;
                         }
@@ -198,15 +210,37 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
 
-                        do {
-                            c = Advance();
-
+                        bool isLong = false;
+                        c = Advance();
+                        if (delimiter == '{') {
                             textBuilder.Append(c);
-                        } while (c != delimiter && c != '\n');
+
+                            if (c == '"') isLong = true;
+                        }
+
+                        if (isLong) {
+                            do {
+                                c = Advance();
+
+                                textBuilder.Append(c);
+                                if (c == '"') {
+                                    c = Advance();
+                                    if (c == '}') break;
+                                }
+                            } while (!AtEndOfSource);
+                        } else {
+                            while (c != delimiter && c != '\n' && !AtEndOfSource) {
+                                textBuilder.Append(c);
+                                c = Advance();
+                            }
+                        }
+
+                        textBuilder.Append(c);
                         Advance();
 
                         string text = textBuilder.ToString();
-                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(2, text.Length - 3));
+                        string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
                         break;
                     }
                     case '\'':
@@ -271,14 +305,15 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                                 if ((c == 'e' || c == 'E') && (next == '-' || next == '+')) { //1e-10 or 1e+10
                                     textBuilder.Append(next);
                                     next = Advance();
-                                } else if (c == '#' && next == 'I') { //1.#INF
-                                    if (Advance() != 'N' || Advance() != 'F') {
+                                } else if (c == '#' && next == 'I') { //1.#INF and 1.#IND
+                                    if (Advance() != 'N' || Advance() != 'F' && GetCurrent() != 'D') {
                                         error = true;
 
                                         break;
                                     }
 
-                                    textBuilder.Append("INF");
+                                    textBuilder.Append("IN");
+                                    textBuilder.Append(GetCurrent());
                                     next = Advance();
                                 }
 

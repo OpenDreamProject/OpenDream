@@ -1,3 +1,5 @@
+//The first global in the runtime is always `world`
+//So keep this at the top
 /var/world/world = null
 
 proc/abs(A)
@@ -53,6 +55,7 @@ proc/lowertext(T)
 proc/max(A)
 proc/md5(T)
 proc/min(A)
+proc/nonspantext(Haystack, Needles, Start = 1)
 proc/num2text(N, Digits, Radix)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
@@ -64,6 +67,7 @@ proc/ref(Object)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/rgb(R, G, B, A)
+proc/rgb2num(color, space = COLORSPACE_RGB)
 proc/roll(ndice = 1, sides)
 proc/round(A, B)
 proc/shutdown(Addr,Natural = 0)

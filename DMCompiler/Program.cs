@@ -19,6 +19,7 @@ namespace DMCompiler {
         public static int _errorCount = 0;
         public static string[] CompilerArgs;
         public static List<string> CompiledFiles = new List<string>(1);
+        public static bool WarnForUnimplemented = true;
 
         static void Main(string[] args) {
             if (!VerifyArguments(args)) return;
@@ -27,6 +28,12 @@ namespace DMCompiler {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
             DateTime startTime = DateTime.Now;
+
+            if (HasArgument("--suppress-unimplemented"))
+            {
+                WarnForUnimplemented = false;
+                Warning(new CompilerWarning(null, "Unimplemented proc & var warnings are currently suppressed"));
+            }
 
             DMPreprocessor preprocessor = Preprocess(CompiledFiles);
             if (HasArgument("--dump-preprocessor"))
@@ -42,7 +49,7 @@ namespace DMCompiler {
             }
 
             bool successfulCompile = Compile(preprocessor.GetResult());
-            
+
             if (successfulCompile) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(CompiledFiles[0], "json");
@@ -96,11 +103,13 @@ namespace DMCompiler {
         }
 
         private static DMPreprocessor Preprocess(List<string> files) {
-            DMPreprocessor preprocessor = new DMPreprocessor(true);
+            DMPreprocessor preprocessor = new DMPreprocessor(true, WarnForUnimplemented);
 
-            string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
-            preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+            if (!HasArgument("--no-standard")) {
+                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+                preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+            }
 
             foreach (string file in files) {
                 string directoryPath = Path.GetDirectoryName(file);
@@ -114,7 +123,7 @@ namespace DMCompiler {
 
         private static bool Compile(List<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
-            DMParser dmParser = new DMParser(dmLexer);
+            DMParser dmParser = new DMParser(dmLexer, WarnForUnimplemented);
             DMASTFile astFile = dmParser.File();
 
             if (dmParser.Warnings.Count > 0) {
@@ -159,7 +168,7 @@ namespace DMCompiler {
             List<DreamMapJson> maps = new();
 
             foreach (string mapPath in mapPaths) {
-                DMPreprocessor preprocessor = new DMPreprocessor(false);
+                DMPreprocessor preprocessor = new DMPreprocessor(false, WarnForUnimplemented);
                 preprocessor.IncludeFile(String.Empty, mapPath);
 
                 DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
@@ -187,6 +196,14 @@ namespace DMCompiler {
             compiledDream.Interface = interfaceFile;
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+
+            if (DMObjectTree.Globals.Count > 0) {
+                compiledDream.Globals = new List<object>();
+
+                foreach (DMVariable global in DMObjectTree.Globals) {
+                    compiledDream.Globals.Add(global.ToJsonRepresentation());
+                }
+            }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true

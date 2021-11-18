@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using OpenDreamShared.Net.Packets;
 using System.Threading.Tasks;
@@ -443,6 +444,30 @@ namespace OpenDreamRuntime.Tests
             });
 
             Assert.Zero(runtime.ExceptionCount);
+        }
+
+        [TestCase("Hello, World!", ", ", -1, 1)]
+        [TestCase("Hello, World!", ", ", 3, 3)]
+        [TestCase("Hello, World!", ", ", 7, 0)]
+        [TestCase("Hello, World!", ", ", 14, 0)]
+        [TestCase("Hello, World!", ", ", 0, 0)]
+        public void NonspantextTest(string haystack, string needles, int start, int valueResult)
+        {
+            var runtime = CreateRuntime();
+
+            var haystackDreamValue = new DreamValue(haystack);
+            var needlesDreamValue = new DreamValue(needles);
+            var startDreamValue = new DreamValue(start);
+            var valueResultDreamValue = new DreamValue(valueResult);
+            var listDreamValue = new List<DreamValue>() { haystackDreamValue, needlesDreamValue, startDreamValue };
+            var result = DreamThread.Run(runtime, async state =>
+            {
+                var world = runtime.WorldInstance;
+                var proc = world.GetProc("nonspantext");
+                return await state.Call(proc, world, null, new DreamProcArguments(listDreamValue));
+            });
+            Assert.Zero(runtime.ExceptionCount);
+            Assert.AreEqual(valueResultDreamValue, result);
         }
     }
 }

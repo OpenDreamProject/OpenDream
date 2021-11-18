@@ -58,6 +58,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_max);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_md5);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_min);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_nonspantext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_num2text);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oview);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_oviewers);
@@ -70,6 +71,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_replacetextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_rgb2num);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_roll);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_round);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_shutdown);

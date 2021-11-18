@@ -88,6 +88,8 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitRemove(DMASTRemove remove) { throw new NotImplementedException(); }
         public void VisitCombine(DMASTCombine combine) { throw new NotImplementedException(); }
         public void VisitMask(DMASTMask mask) { throw new NotImplementedException(); }
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign landAssign) { throw new NotImplementedException(); }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lorAssign) { throw new NotImplementedException(); }
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) { throw new NotImplementedException(); }
         public void VisitDivideAssign(DMASTDivideAssign divideAssign) { throw new NotImplementedException(); }
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) { throw new NotImplementedException(); }
@@ -103,6 +105,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitLeftShift(DMASTLeftShift leftShift) { throw new NotImplementedException(); }
         public void VisitRightShift(DMASTRightShift rightShift) { throw new NotImplementedException(); }
         public void VisitIn(DMASTExpressionIn expressionIn) { throw new NotImplementedException(); }
+        public void VisitInRange(DMASTExpressionInRange expressionInRange) { throw new NotImplementedException(); }
         public void VisitListIndex(DMASTListIndex listIndex) { throw new NotImplementedException(); }
         public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }
         public void VisitCallParameter(DMASTCallParameter callParameter) { throw new NotImplementedException(); }
@@ -219,6 +222,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
+    //TODO: This can probably be replaced with a DreamPath nullable
     public class DMASTPath : DMASTNode {
         public DreamPath Path;
 
@@ -237,8 +241,9 @@ namespace OpenDreamShared.Compiler.DM {
         public string Name;
         public DMASTExpression Value;
         public bool IsGlobal = false;
+        public DMValueType ValType;
 
-        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value) {
+        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             int globalElementIndex = path.FindElement("global");
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
@@ -252,6 +257,7 @@ namespace OpenDreamShared.Compiler.DM {
             IsGlobal = globalElementIndex != -1 || ObjectPath.Equals(DreamPath.Root);
             Name = varPath.LastElement;
             Value = value;
+            ValType = valType;
         }
 
         public void Visit(DMASTVisitor visitor) {
@@ -1307,6 +1313,32 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
+    public class DMASTLogicalAndAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalAndAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalAndAssign(this);
+        }
+    }
+
+    public class DMASTLogicalOrAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTLogicalOrAssign(DMASTExpression a, DMASTExpression b) {
+            A = a;
+            B = b;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitLogicalOrAssign(this);
+        }
+    }
+
     public class DMASTMultiplyAssign : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -1499,6 +1531,22 @@ namespace OpenDreamShared.Compiler.DM {
 
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitIn(this);
+        }
+    }
+
+    public class DMASTExpressionInRange : DMASTExpression {
+        public DMASTExpression Value;
+        public DMASTExpression StartRange;
+        public DMASTExpression EndRange;
+
+        public DMASTExpressionInRange(DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange) {
+            Value = value;
+            StartRange = startRange;
+            EndRange = endRange;
+        }
+
+        public void Visit(DMASTVisitor visitor) {
+            visitor.VisitInRange(this);
         }
     }
 

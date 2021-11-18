@@ -1,3 +1,4 @@
+using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -83,6 +84,11 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
+                if (_proc is null)
+                {
+                    // Probably an undefined macro
+                    throw new CompileErrorException($"unknown identifier {name}");
+                }
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                 if (localVar != null) {
@@ -91,16 +97,16 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 var field = _dmObject.GetVariable(name);
-
-                if (field == null) {
-                    field = _dmObject.GetGlobalVariable(name);
+                if (field != null) {
+                    Result = new Expressions.Field(field.Type, name);
+                } else {
+                    int? globalId = _dmObject.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        Result = new Expressions.GlobalField(DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                    } else {
+                        throw new CompileErrorException($"unknown identifier {name}");
+                    }
                 }
-
-                if (field == null) {
-                    throw new CompileErrorException($"unknown identifier {name}");
-                }
-
-                Result = new Expressions.Field(field.Type, name);
             }
         }
 
@@ -213,6 +219,17 @@ namespace DMCompiler.DM.Visitors {
             var lhs = DMExpression.Create(_dmObject, _proc, mask.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, mask.B, _inferredPath);
             Result = new Expressions.Mask(lhs, rhs);
+        }
+
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
+            var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
+            Result = new Expressions.LogicalAndAssign(lhs, rhs);
+        }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
+            var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
+            Result = new Expressions.LogicalOrAssign(lhs, rhs);
         }
 
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) {
@@ -483,6 +500,13 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);
             Result = new Expressions.In(expr, container);
+        }
+
+        public void VisitInRange(DMASTExpressionInRange expressionInRange) {
+            var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath);
+            var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath);
+            var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath);
+            Result = new Expressions.InRange(value, startRange, endRange);
         }
 
         public void VisitPick(DMASTPick pick) {

@@ -27,12 +27,12 @@
 
 	var/address
 	var/port
-	var/internet_address = "127.0.0.1" //TODO
+	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url
-	var/status
-	var/list/params = null
+	var/status as opendream_unimplemented
+	var/list/params = null as opendream_unimplemented
 
-	var/sleep_offline = 0 //TODO
+	var/sleep_offline = 0 as opendream_unimplemented
 
 	var/system_type
 
@@ -60,11 +60,9 @@
 
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
-		CRASH("/world.Reboot() is not implemented")
 
 	proc/Repop()
 		set opendream_unimplemented = TRUE
-		CRASH("/world.Repop() will not be implemented")
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

@@ -6,10 +6,9 @@
 	var/ckey
 
 
-	//TODO Actually implement these vars
 	var/see_invisible = 0
-	var/sight = 0
-	var/see_in_dark = 2
+	var/sight = 0 as opendream_unimplemented
+	var/see_in_dark = 2 as opendream_unimplemented
 
 	layer = MOB_LAYER
 

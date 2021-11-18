@@ -1,3 +1,5 @@
+//The first global in the runtime is always `world`
+//So keep this at the top
 /var/world/world = null
 
 proc/abs(A)

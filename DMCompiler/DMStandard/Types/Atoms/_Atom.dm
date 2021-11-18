@@ -37,6 +37,29 @@
 
 	var/maptext as opendream_unimplemented
 
+	var/filters = list() as opendream_unimplemented
+	var/appearance as opendream_unimplemented
+	var/appearance_flags as opendream_unimplemented
+	var/maptext_width as opendream_unimplemented
+	var/maptext_height as opendream_unimplemented
+	var/maptext_x = 32 as opendream_unimplemented
+	var/maptext_y = 32 as opendream_unimplemented
+	var/pixel_x as opendream_unimplemented
+	var/pixel_y as opendream_unimplemented
+	var/pixel_z as opendream_unimplemented
+	var/pixel_w as opendream_unimplemented
+	var/step_x as opendream_unimplemented
+	var/step_y as opendream_unimplemented
+	var/render_source as opendream_unimplemented
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
+	var/mouse_drag_pointer as opendream_unimplemented
+	var/mouse_drop_pointer as opendream_unimplemented
+	var/render_target as opendream_unimplemented
+	var/vis_flags as opendream_unimplemented
+	var/vis_locs = list() as opendream_unimplemented
+	var/list/vis_contents = list() as opendream_unimplemented
+
 	proc/Click(location, control, params)
 
 	proc/Entered(atom/movable/Obj, atom/OldLoc)

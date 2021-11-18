@@ -114,8 +114,7 @@ namespace OpenDreamRuntime
                 }
             }
 
-            //TODO: Make a GetWorld opcode
-            //For now, the first global is `world`
+            //The first global is always `world`
             Globals[0] = new DreamValue(WorldInstance);
 
             RegisterPacketCallbacks();

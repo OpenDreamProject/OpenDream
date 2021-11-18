@@ -23,8 +23,6 @@
 		set opendream_unimplemented = TRUE
 /proc/replacetext_char(Haystack,Needle,Replacement,Start=1,End=0)
 		set opendream_unimplemented = TRUE
-/proc/rgb2num(color, space)
-		set opendream_unimplemented = TRUE
 /proc/spantext_char(Haystack,Needles,Start=1)
 		set opendream_unimplemented = TRUE
 /proc/winget(player, control_id, params)

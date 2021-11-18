@@ -210,15 +210,37 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         textBuilder.Append('@');
                         textBuilder.Append(delimiter);
 
-                        do {
+                        bool isLong = false;
+                        if (delimiter == '{') {
                             c = Advance();
-
                             textBuilder.Append(c);
-                        } while (c != delimiter && c != '\n');
+
+                            if (c == '"') isLong = true;
+                        }
+
+                        if (isLong) {
+                            do {
+                                c = Advance();
+
+                                textBuilder.Append(c);
+                                if (c == '"') {
+                                    c = Advance();
+                                    if (c == '}') break;
+                                }
+                            } while (!AtEndOfSource);
+                        } else {
+                            while (c != delimiter && c != '\n' && !AtEndOfSource) {
+                                textBuilder.Append(c);
+                                c = Advance();
+                            }
+                        }
+
+                        textBuilder.Append(c);
                         Advance();
 
                         string text = textBuilder.ToString();
-                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, text.Substring(2, text.Length - 3));
+                        string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                        token = CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
                         break;
                     }
                     case '\'':

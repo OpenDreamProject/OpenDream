@@ -1,4 +1,4 @@
-﻿using DMCompiler.DM.Visitors;
+using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -6,6 +6,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
@@ -96,7 +97,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    throw new Exception("Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                    Program.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
                 }
             }
 
@@ -124,6 +125,18 @@ namespace DMCompiler.DM {
             }
 
             return null;
+        }
+
+        public bool HasLocalVariable(string name) {
+            DMProcScope scope = _scopes.Peek();
+
+            while (scope != null) {
+                if (scope.LocalVariables.ContainsKey(name)) return true;
+
+                scope = scope.ParentScope;
+            }
+
+            return false;
         }
 
         public void Error() {

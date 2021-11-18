@@ -84,6 +84,11 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
+                if (_proc is null)
+                {
+                    // Probably an undefined macro
+                    throw new CompileErrorException($"unknown identifier {name}");
+                }
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                 if (localVar != null) {

@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
@@ -29,7 +30,7 @@ namespace DMCompiler.DM {
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new CompileErrorException("Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {

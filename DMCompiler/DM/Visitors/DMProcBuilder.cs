@@ -20,6 +20,11 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
+                if (_proc.HasLocalVariable(parameterName))
+                {
+                    Program.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
+                    continue;
+                }
                 _proc.AddLocalVariable(parameterName, parameter.ObjectType);
                 if (parameter.Value != null) { //Parameter has a default value
                     string afterDefaultValueCheck = _proc.NewLabelName();

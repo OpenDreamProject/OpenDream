@@ -241,7 +241,6 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Identifier,
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
-                TokenType.DM_NewList,
                 TokenType.DM_Step,
                 TokenType.DM_Throw
             };
@@ -1813,13 +1812,6 @@ namespace OpenDreamShared.Compiler.DM {
                 primary = new DMASTCall(callParameters, procParameters);
             }
 
-            if (primary == null && Check(TokenType.DM_NewList)) {
-                Whitespace();
-                DMASTCallParameter[] values = ProcCall();
-
-                primary = new DMASTNewList(values);
-            }
-
             return primary;
         }
 
@@ -2060,6 +2052,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 switch (identifier.Identifier) {
                     case "list": return new DMASTList(callParameters);
+                    case "newlist": return new DMASTNewList(callParameters);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);

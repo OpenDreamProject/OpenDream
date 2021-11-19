@@ -1564,6 +1564,9 @@ namespace OpenDreamShared.Compiler.DM {
             int varElementIndex = path.FindElement("var");
             if (varElementIndex != -1) path = path.RemoveElement(varElementIndex);
 
+            varElementIndex = path.FindElement("const");
+            if (varElementIndex != -1) path = path.RemoveElement(varElementIndex);
+
             ObjectType = (path.Elements.Length > 1) ? path.FromElements(0, -2) : null;
             Name = path.LastElement;
             Value = value;

@@ -4,6 +4,9 @@ namespace DMCompiler.DM.Expressions {
 
         public UnaryOp(DMExpression expr) {
             Expr = expr;
+            if (Expr.IsConst) {
+                IsConst = true;
+            }
         }
     }
 

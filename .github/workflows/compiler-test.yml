@@ -37,11 +37,11 @@ jobs:
     - name: Build
       run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe main\TestGame\environment.dme
+      run: main/DMCompiler/bin/Release\net6.0/DMCompiler.exe main/TestGame/environment.dme
     - name: Checkout Modified /tg/station
       uses: actions/checkout@v2
       with:
         repository: wixoaGit/tgstation
         path: tg
     - name: Compile Modified /tg/station
-      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe tg\tgstation.dme 
+      run: main/DMCompiler/bin/Release/net6.0/DMCompiler.exe tg/tgstation.dme 

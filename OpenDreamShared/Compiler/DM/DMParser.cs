@@ -594,12 +594,9 @@ namespace OpenDreamShared.Compiler.DM {
             if (Check(TokenType.DM_Break))
             {
                 Whitespace();
-                DMASTExpression expression = Expression();
-                if (expression is DMASTIdentifier)
-                {
-                    return new DMASTProcStatementBreak((DMASTIdentifier)expression);
-                }
-                return new DMASTProcStatementBreak();
+                DMASTExpression label = Expression();
+                
+                return new DMASTProcStatementBreak(label as DMASTIdentifier);
             } else {
                 return null;
             }

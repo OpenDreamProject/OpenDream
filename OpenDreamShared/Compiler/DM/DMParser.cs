@@ -605,12 +605,9 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatementContinue Continue() {
             if (Check(TokenType.DM_Continue)) {
                 Whitespace();
-                DMASTExpression expression = Expression();
-                if (expression is DMASTIdentifier)
-                {
-                    return new DMASTProcStatementContinue((DMASTIdentifier)expression);
-                }
-                return new DMASTProcStatementContinue();
+                DMASTExpression label = Expression();
+                
+                return new DMASTProcStatementContinue(label as DMASTIdentifier);
             } else {
                 return null;
             }

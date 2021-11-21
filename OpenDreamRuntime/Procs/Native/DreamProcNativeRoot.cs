@@ -706,8 +706,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 DreamValueType.String when countBytes => new DreamValue(value.GetValueAsString().Length),
                 DreamValueType.String => new DreamValue(value.GetValueAsString().EnumerateRunes().Count()),
                 DreamValueType.Float => new DreamValue(0),
-                DreamValueType.DreamObject when value.TryGetValueAsDreamObjectOfType(DreamPath.List,
-                    out DreamObject listObject) => listObject.GetVariable("len"),
+                DreamValueType.DreamObject when value.TryGetValueAsDreamList(out var list) => new(list.GetLength()),
                 DreamValueType.DreamObject => new DreamValue(0),
                 DreamValueType.DreamPath => new DreamValue(0),
                 _ => throw new Exception("Cannot check length of " + value + "")

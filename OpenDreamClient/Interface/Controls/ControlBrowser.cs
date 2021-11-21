@@ -47,7 +47,12 @@ namespace OpenDreamClient.Interface.Controls {
             if (_webViewReady) _webView.CoreWebView2.Navigate("file://" + _fileSource);
         }
 
-        private void OnWebView2InitializationCompleted(object sender, EventArgs e) {
+        private void OnWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e) {
+            if (!e.IsSuccess) {
+                Console.WriteLine(e.InitializationException);
+                return;
+            }
+
             _webViewReady = true;
 
             _dockPanel.Children.Remove(_loadingLabel);

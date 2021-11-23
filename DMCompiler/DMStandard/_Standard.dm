@@ -1,3 +1,5 @@
+//The first global in the runtime is always `world`
+//So keep this at the top
 /var/world/world = null
 
 proc/abs(A)
@@ -113,6 +115,7 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Movable.dm"
 #include "Types\Atoms\Obj.dm"
 #include "Types\Atoms\Turf.dm"
+#include "UnsortedAdditions.dm"
 
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()

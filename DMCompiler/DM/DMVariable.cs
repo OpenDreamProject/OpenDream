@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Dream;
+using System;
 
 namespace DMCompiler.DM {
     class DMVariable {
@@ -12,6 +13,13 @@ namespace DMCompiler.DM {
             Name = name;
             IsGlobal = isGlobal;
             Value = null;
+        }
+
+        public object ToJsonRepresentation() {
+            Expressions.Constant value = Value as Expressions.Constant;
+            if (value == null) throw new Exception($"Value of {Name} must be a constant");
+
+            return value.ToJsonRepresentation();
         }
     }
 }

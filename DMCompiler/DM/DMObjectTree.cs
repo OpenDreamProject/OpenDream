@@ -2,10 +2,14 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
         public static Dictionary<DreamPath, DMObject> AllObjects = new();
+
+        //TODO: These don't belong in the object tree
+        public static List<DMVariable> Globals = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
@@ -29,7 +33,7 @@ namespace DMCompiler.DM {
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new CompileErrorException("Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
@@ -79,6 +83,14 @@ namespace DMCompiler.DM {
             } else { //We're searching for an object
                 return found?.Path;
             }
+        }
+
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name) {
+            int id = Globals.Count;
+
+            global = new DMVariable(type, name, true);
+            Globals.Add(global);
+            return id;
         }
 
         public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {

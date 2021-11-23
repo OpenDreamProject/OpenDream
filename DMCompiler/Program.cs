@@ -197,6 +197,14 @@ namespace DMCompiler {
             compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
+            if (DMObjectTree.Globals.Count > 0) {
+                compiledDream.Globals = new List<object>();
+
+                foreach (DMVariable global in DMObjectTree.Globals) {
+                    compiledDream.Globals.Add(global.ToJsonRepresentation());
+                }
+            }
+
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 IgnoreNullValues = true
             });

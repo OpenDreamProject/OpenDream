@@ -8,6 +8,9 @@
 	var/e = 1
 	var/f = 0
 
+	proc/Interpolate(Matrix2, t)
+		set opendream_unimplemented = TRUE
+
 	New(var/a = 1, var/b = 0, var/c = 0, var/d = 0, var/e = 1, var/f = 0)
 		if (istype(a, /matrix))
 			var/matrix/mat = a

@@ -39,6 +39,25 @@
 	proc/New()
 	proc/Del()
 
+	var/map_cpu = 0 as opendream_unimplemented
+	var/hub as opendream_unimplemented
+	var/hub_password as opendream_unimplemented
+	var/reachable as opendream_unimplemented
+	var/game_state as opendream_unimplemented
+	var/host as opendream_unimplemented
+	proc/Profile(command, type, format)
+		set opendream_unimplemented = TRUE
+	proc/GetConfig(config_set,param)
+		set opendream_unimplemented = TRUE
+	proc/SetConfig(config_set,param,value)
+		set opendream_unimplemented = TRUE
+	proc/Export(Addr,File,Persist,Clients)
+		set opendream_unimplemented = TRUE
+	proc/OpenPort(port)
+		set opendream_unimplemented = TRUE
+	proc/IsSubscribed(player, type)
+		set opendream_unimplemented = TRUE
+
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
@@ -118,7 +119,9 @@ namespace OpenDreamShared.Compiler.DM {
                             {
                                 //Type information
                                 if (!varPath.IsDescendantOf(DreamPath.List)) {
-                                    varPath = DreamPath.List.AddToPath(varPath.PathString);
+                                    var elements = varPath.Elements.ToList();
+                                    elements.Insert(elements.IndexOf("var") + 1, "list");
+                                    varPath = new DreamPath("/" + String.Join("/", elements));
                                 }
 
                                 DMASTExpression size = Expression();
@@ -217,6 +220,16 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
+                //TODO actual modified type support
+                if (Check(TokenType.DM_LeftCurlyBracket))
+                {
+                    if(_unimplementedWarnings) Warning("Modified types are currently not supported and modified values will be ignored.");
+
+                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    Newline(); //The lexer tosses in a newline after }
+                }
+
                 return new DMASTPath(new DreamPath(pathType, pathElements.ToArray()));
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
@@ -232,7 +245,6 @@ namespace OpenDreamShared.Compiler.DM {
                 TokenType.DM_Identifier,
                 TokenType.DM_Var,
                 TokenType.DM_Proc,
-                TokenType.DM_NewList,
                 TokenType.DM_Step,
                 TokenType.DM_Throw
             };
@@ -541,7 +553,9 @@ namespace OpenDreamShared.Compiler.DM {
                 if (Check(TokenType.DM_LeftBracket)) {
                     //Type information
                     if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                        varPath = new DMASTPath(new DreamPath(DreamPath.List.PathString + "/" + varPath.Path.PathString));
+                        var elements = varPath.Path.Elements.ToList();
+                        elements.Insert(elements.IndexOf("var") + 1, "list");
+                        varPath = new DMASTPath(new DreamPath("/" + String.Join("/", elements)));
                     }
 
                     Whitespace();
@@ -796,6 +810,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -823,6 +838,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                     Whitespace();
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -850,6 +866,7 @@ namespace OpenDreamShared.Compiler.DM {
                     }
 
                     ConsumeRightParenthesis();
+                    Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
 
@@ -887,6 +904,7 @@ namespace OpenDreamShared.Compiler.DM {
                 DMASTExpression conditional = Expression();
                 if (conditional == null) Error("Expected conditional");
                 ConsumeRightParenthesis();
+                Check(TokenType.DM_Semicolon);
                 Whitespace();
                 DMASTProcBlockInner body = ProcBlock();
 
@@ -1821,13 +1839,6 @@ namespace OpenDreamShared.Compiler.DM {
                 primary = new DMASTCall(callParameters, procParameters);
             }
 
-            if (primary == null && Check(TokenType.DM_NewList)) {
-                Whitespace();
-                DMASTCallParameter[] values = ProcCall();
-
-                primary = new DMASTNewList(values);
-            }
-
             return primary;
         }
 
@@ -1880,12 +1891,16 @@ namespace OpenDreamShared.Compiler.DM {
                                     DMLexer expressionLexer = new DMLexer(constantToken.SourceFile, preprocTokens);
                                     DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
 
-                                    expressionParser.Whitespace(true);
-                                    DMASTExpression expression = expressionParser.Expression();
-                                    if (expression == null) Error("Expected an expression");
-                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
-                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
+                                    DMASTExpression expression = null;
+                                    try {
+                                        expressionParser.Whitespace(true);
+                                        expression = expressionParser.Expression();
+                                        if (expression == null) Error("Expected an expression");
+                                    } catch (CompileErrorException e) {
+                                        Errors.Add(e.Error);
+                                    }
 
+                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
                                     interpolationValues.Add(expression);
                                 } else {
                                     interpolationValues.Add(null);
@@ -2064,6 +2079,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                 switch (identifier.Identifier) {
                     case "list": return new DMASTList(callParameters);
+                    case "newlist": return new DMASTNewList(callParameters);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);

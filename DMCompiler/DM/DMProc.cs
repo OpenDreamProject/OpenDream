@@ -98,7 +98,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    throw new Exception("Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                    Program.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
                 }
             }
 
@@ -245,6 +245,7 @@ namespace DMCompiler.DM {
         }
 
         public void Continue(DMASTIdentifier label = null) {
+            // TODO: Clean up this godawful label handling
             if (label is not null)
             {
                 var codeLabel = label.Identifier + "_codelabel";
@@ -254,11 +255,11 @@ namespace DMCompiler.DM {
                 }
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;
-                for (var i = labelList.IndexOf(codeLabel); i < labelList.Count; i++)
+                for (var i = labelList.IndexOf(codeLabel) + 2; i < labelList.Count; i++)
                 {
-                    if(labelList[i].EndsWith("_continue"))
+                    if(labelList[i].EndsWith("_start"))
                     {
-                        continueLabel = labelList[i];
+                        continueLabel = labelList[i].Replace("_start", "_continue");
                         break;
                     }
                 }

@@ -97,7 +97,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {
-            _proc.Continue();
+            _proc.Continue(statementContinue.Label);
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {

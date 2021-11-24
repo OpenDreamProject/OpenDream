@@ -116,8 +116,8 @@ namespace DMCompiler.DM.Expressions {
             if (_expr.Path == null) return;
 
             DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
-            if (Program.WarnForUnimplemented && dmObject.IsProcUnimplemented(_field)) {
-                Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_field}() is not implemented"));
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && dmObject.IsProcUnimplemented(_field)) {
+                DMCompiler.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_field}() is not implemented"));
             }
         }
     }

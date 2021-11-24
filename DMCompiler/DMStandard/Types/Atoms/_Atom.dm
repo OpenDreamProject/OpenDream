@@ -44,10 +44,6 @@
 	var/maptext_height as opendream_unimplemented
 	var/maptext_x = 32 as opendream_unimplemented
 	var/maptext_y = 32 as opendream_unimplemented
-	var/pixel_x as opendream_unimplemented
-	var/pixel_y as opendream_unimplemented
-	var/pixel_z as opendream_unimplemented
-	var/pixel_w as opendream_unimplemented
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
 	var/render_source as opendream_unimplemented

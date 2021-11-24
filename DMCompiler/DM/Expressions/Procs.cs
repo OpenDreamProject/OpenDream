@@ -23,8 +23,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public void UnimplementedCheck(DMObject dmObject) {
-            if (Program.WarnForUnimplemented && dmObject.IsProcUnimplemented(_identifier)) {
-                Program.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && dmObject.IsProcUnimplemented(_identifier)) {
+                DMCompiler.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
             }
         }
     }

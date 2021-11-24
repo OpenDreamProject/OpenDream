@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using OpenDreamRuntime.Objects;
+using DMCompiler;
 
 namespace OpenDreamRuntime.Tests
 {
@@ -49,20 +49,11 @@ namespace OpenDreamRuntime.Tests
     public class Tests {
         [OneTimeSetUp]
         public void Compile() {
-            // Terrible platform-specific way to build our test dependencies
-            var info = new ProcessStartInfo {
-                FileName = "DMCompiler.exe",
-                Arguments = "DMProject\\environment.dme",
-                RedirectStandardInput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            };
+            bool successfulCompile = DMCompiler.DMCompiler.Compile(new DMCompilerSettings() {
+                Files = new() { "DMProject\\environment.dme" }
+            });
 
-            var process = new Process { StartInfo = info };
-            process.Start();
-            process.WaitForExit();
-
-            Assert.AreEqual(0, process.ExitCode);
+            Assert.IsTrue(successfulCompile);
         }
 
         private DreamRuntime CreateRuntime() {

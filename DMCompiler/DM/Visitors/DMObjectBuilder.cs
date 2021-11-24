@@ -30,7 +30,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) {
-                    Program.Error(e.Error);
+                    DMCompiler.Error(e.Error);
                 }
             }
         }
@@ -76,7 +76,7 @@ namespace DMCompiler.DM.Visitors {
             try {
                 SetVariableValue(variable, varDefinition.Value, varDefinition.ValType);
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
 
             _currentObject = oldObject;
@@ -100,7 +100,7 @@ namespace DMCompiler.DM.Visitors {
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
 
             _currentObject = oldObject;
@@ -130,7 +130,7 @@ namespace DMCompiler.DM.Visitors {
                     dmObject.InitializationProcExpressions.Add(append);
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
         }
 

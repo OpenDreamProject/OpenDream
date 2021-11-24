@@ -170,7 +170,7 @@ namespace DMCompiler.DM.Expressions {
 
             if (weighted) {
                 if (_values.Length == 1) {
-                    Program.Warning(new CompilerWarning(null, "Weighted pick() with one argument"));
+                    DMCompiler.Warning(new CompilerWarning(null, "Weighted pick() with one argument"));
                 }
 
                 foreach (PickValue pickValue in _values) {

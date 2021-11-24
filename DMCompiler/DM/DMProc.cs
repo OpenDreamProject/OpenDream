@@ -98,7 +98,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    Program.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
+                    DMCompiler.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
                 }
             }
 

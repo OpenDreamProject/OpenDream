@@ -22,7 +22,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (_proc.HasLocalVariable(parameterName))
                 {
-                    Program.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
+                    DMCompiler.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
                     continue;
                 }
                 _proc.AddLocalVariable(parameterName, parameter.ObjectType);
@@ -39,7 +39,7 @@ namespace DMCompiler.DM.Visitors {
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
-                        Program.Error(e.Error);
+                        DMCompiler.Error(e.Error);
                     }
                     _proc.Assign();
 
@@ -56,7 +56,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) { //Retreat from the statement when there's an error
-                    Program.Error(e.Error);
+                    DMCompiler.Error(e.Error);
                 }
             }
         }
@@ -270,7 +270,7 @@ namespace DMCompiler.DM.Visitors {
                         if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
                         {
                             var warn = new CompilerWarning(null, "Cannot currently loop 'in world' for non-ATOM types");
-                            Program.Warning(warn);
+                            DMCompiler.Warning(warn);
                         }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
                         _proc.PushPath(varDeclaration.Type.Value);

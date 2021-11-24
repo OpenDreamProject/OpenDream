@@ -44,8 +44,6 @@ namespace OpenDreamClient.Interface {
             InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
 
             if (dmfParser.Warnings.Count > 0) {
-                Console.WriteLine("Warnings while parsing interface data");
-
                 foreach (CompilerWarning warning in dmfParser.Warnings) {
                     Console.WriteLine(warning);
                 }
@@ -214,13 +212,13 @@ namespace OpenDreamClient.Interface {
 
         public void HandlePacketPrompt(PacketPrompt pPrompt) {
             PromptWindow prompt = null;
-            bool canCancel = pPrompt.Types.HasFlag(DMValueType.Null);
+            bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
 
-            if (pPrompt.Types.HasFlag(DMValueType.Text)) {
+            if ((pPrompt.Types & DMValueType.Text) == DMValueType.Text) {
                 prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
-            } else if (pPrompt.Types.HasFlag(DMValueType.Num)) {
+            } else if ((pPrompt.Types & DMValueType.Num) == DMValueType.Num) {
                 prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
-            } else if (pPrompt.Types.HasFlag(DMValueType.Message)) {
+            } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
                 prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
             }
 
@@ -260,7 +258,7 @@ namespace OpenDreamClient.Interface {
                     string value = query.GetValues(attribute)[^1];
 
                     Token attributeValue = new DMFLexer(null, value).GetNextToken();
-                    if (DMFParser.ValidAttributeValueTypes.Contains(attributeValue.Type)) {
+                    if (Array.IndexOf(DMFParser.ValidAttributeValueTypes, attributeValue.Type) >= 0) {
                         element.SetAttribute(attribute, attributeValue.Value);
                     } else {
                         throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");

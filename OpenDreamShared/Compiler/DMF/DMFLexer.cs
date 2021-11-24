@@ -6,53 +6,144 @@ using System.Text;
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFLexer : TextLexer {
         public static readonly List<string> ValidAttributes = new() {
-            "type",
-            "pos",
-            "size",
+            "align",
+            "allow-html",
+            "alpha",
             "anchor1",
             "anchor2",
-            "is-default",
-            "is-pane",
-            "is-vert",
-            "is-visible",
-            "is-disabled",
-            "left",
-            "right",
-            "name",
-            "command",
-            "category",
-            "saved-params",
+            "angle1",
+            "angle2",
+            "auto-format",
             "background-color",
+            "bar-color",
             "border",
             "button-type",
+            "can-check",
+            "can-close",
+            "can-minimize",
+            "can-resize",
+            "can-scroll",
+            "category",
+            "command",
+            "cell-span",
+            "cells",
+            "current-cell",
+            "current-tab",
+            "dir",
+            "drop-zone",
+            "enable-http-images",
+            "flash",
+            "focus",
             "font-family",
             "font-size",
-            "zoom-mode",
-            "text-color",
-            "auto-format",
-            "statusbar",
-            "right-click",
+            "font-style",
+            "group",
+            "highlight-color",
             "icon",
-            "text"
+            "icon-size",
+            "id",
+            "image",
+            "image-mode",
+            "index",
+            "is-checked",
+            "is-default",
+            "is-disabled",
+            "is-flat",
+            "is-list",
+            "is-minimized",
+            "is-maximized",
+            "is-pane",
+            "is-password",
+            "is-slider",
+            "is-transparent",
+            "is-vert",
+            "is-visible",
+            "keep-aspect",
+            "legacy-size",
+            "letterbox",
+            "line-color",
+            "link-color",
+            "lock",
+            "map-to",
+            "max-lines",
+            "multi-line",
+            "name",
+            "no-command",
+            "on-close",
+            "on-change",
+            "on-hide",
+            "on-show",
+            "on-size",
+            "on-tab",
+            "pos",
+            "prefix-color",
+            "right-click",
+            "saved-params",
+            "size",
+            "show-history",
+            "show-lines",
+            "show-names",
+            "show-splitter",
+            "show-url",
+            "small-icons",
+            "splitter",
+            "suffix-color",
+            "statusbar",
+            "style",
+            "tab-background-color",
+            "tab-font-family",
+            "tab-font-size",
+            "tab-font-style",
+            "tab-text-color",
+            "tabs",
+            "text",
+            "text-color",
+            "text-mode",
+            "text-wrap",
+            "title",
+            "titlebar",
+            "transparent-color",
+            "type",
+            "use-title",
+            "value",
+            "view-size",
+            "visited-color",
+            "width",
+            "zoom",
+            "zoom-mode",
+            "zoom-mode"
         };
 
-        private static Dictionary<string, TokenType> _keywords = new() {
-            { "macro", TokenType.DMF_Macro },
-            { "menu", TokenType.DMF_Menu },
-            { "window", TokenType.DMF_Window },
-            { "elem", TokenType.DMF_Elem },
-            { "MAIN", TokenType.DMF_Main },
+        private static readonly Dictionary<string, TokenType> _keywords = new() {
+            { "bottom", TokenType.DMF_Bottom },
+            { "bottom-left", TokenType.DMF_BottomLeft },
+            { "bottom-right", TokenType.DMF_BottomRight },
+            { "BROWSER", TokenType.DMF_Browser },
+            { "BUTTON", TokenType.DMF_Button },
             { "CHILD", TokenType.DMF_Child },
-            { "MAP", TokenType.DMF_Map },
-            { "OUTPUT", TokenType.DMF_Output },
+            { "center", TokenType.DMF_Center },
+            { "distort", TokenType.DMF_Distort },
+            { "elem", TokenType.DMF_Elem },
             { "INFO", TokenType.DMF_Info },
             { "INPUT", TokenType.DMF_Input },
-            { "BUTTON", TokenType.DMF_Button },
-            { "BROWSER", TokenType.DMF_Browser },
-            { "sunken", TokenType.DMF_Sunken },
+            { "LABEL", TokenType.DMF_Label },
+            { "left", TokenType.DMF_Left },
+            { "macro", TokenType.DMF_Macro },
+            { "MAIN", TokenType.DMF_Main },
+            { "MAP", TokenType.DMF_Map },
+            { "menu", TokenType.DMF_Menu },
+            { "none", TokenType.DMF_None },
+            { "OUTPUT", TokenType.DMF_Output },
             { "pushbox", TokenType.DMF_PushBox },
-            { "distort", TokenType.DMF_Distort },
-            { "none", TokenType.DMF_None }
+            { "pushbutton", TokenType.DMF_PushButton },
+            { "right", TokenType.DMF_Right },
+            { "stretch", TokenType.DMF_Stretch },
+            { "sunken", TokenType.DMF_Sunken },
+            { "top", TokenType.DMF_Top },
+            { "top-left", TokenType.DMF_TopLeft },
+            { "top-right", TokenType.DMF_TopRight },
+            { "vertical", TokenType.DMF_Vertical },
+            { "window", TokenType.DMF_Window }
         };
 
         public DMFLexer(string sourceName, string source) : base(sourceName, source) { }
@@ -60,7 +151,7 @@ namespace OpenDreamShared.Compiler.DMF {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token.Type == TokenType.Unknown) {
+            if (token == null) {
                 char c = GetCurrent();
 
                 switch (c) {
@@ -88,7 +179,7 @@ namespace OpenDreamShared.Compiler.DMF {
                             } else {
                                 text += GetCurrent();
                             }
-                        } 
+                        }
                         if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
                         text += c;
                         Advance();
@@ -125,7 +216,7 @@ namespace OpenDreamShared.Compiler.DMF {
                             } else if (ValidAttributes.Contains(text)) {
                                 token = CreateToken(TokenType.DMF_Attribute, text);
                             } else {
-                                throw new Exception("Invalid keyword '" + text + "'");
+                                token = CreateToken(TokenType.Error, text, "Invalid keyword '" + text + "'");
                             }
 
                             break;
@@ -152,6 +243,7 @@ namespace OpenDreamShared.Compiler.DMF {
                             break;
                         }
 
+                        token = CreateToken(TokenType.Error, $"Unknown character: {c.ToString()}");
                         Advance();
                         break;
                     }

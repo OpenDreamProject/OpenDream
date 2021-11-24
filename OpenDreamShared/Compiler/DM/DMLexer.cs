@@ -4,27 +4,35 @@ using System.Globalization;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DM {
-    public class DMLexer : Lexer<Token> {
-        public static List<string> ValidEscapeSequences = new List<string>() {
+    public partial class DMLexer : TokenLexer {
+        public static List<string> ValidEscapeSequences = new() {
             "t", "n",
             "[", "]",
-            "\\", "\"", "'",
+            "\\", " ", "\"", "'",
+            "<", ">",
 
             "icon",
             "Roman", "roman",
             "The", "the",
             "A", "a", "An", "an",
+            "th",
             "s",
+            "He", "he",
+            "She", "she",
             "him",
+            "himself", "herself",
             "His", "his",
             "Hers", "hers",
+            "icon",
             "ref",
             "improper", "proper",
             "red", "blue", "green", "black",
+            "b", "bold", "italic",
             "..."
+            //TODO: ASCII/Unicode values
         };
 
-        public static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
+        public static Dictionary<string, TokenType> Keywords = new() {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "continue", TokenType.DM_Continue },
@@ -45,18 +53,18 @@ namespace OpenDreamShared.Compiler.DM {
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
             { "spawn", TokenType.DM_Spawn },
-            { "list", TokenType.DM_List },
             { "goto", TokenType.DM_Goto },
-            { "step", TokenType.DM_Step }
+            { "step", TokenType.DM_Step },
+            { "try", TokenType.DM_Try },
+            { "catch", TokenType.DM_Catch },
+            { "throw", TokenType.DM_Throw }
         };
 
-        private bool _checkingIndentation = true;
-        private int bracketNesting = 0;
-        private Stack<int> _indentationStack = new Stack<int>(new int[] { 0 });
+        public int BracketNesting = 0;
 
-        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) {
-            Advance();
-        }
+        private Stack<int> _indentationStack = new(new int[] { 0 });
+
+        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
             Token token;
@@ -72,9 +80,9 @@ namespace OpenDreamShared.Compiler.DM {
                 Token preprocToken = GetCurrent();
 
                 if (preprocToken.Type == TokenType.Newline) {
-                    if (_checkingIndentation) {
-                        Advance();
+                    Advance();
 
+                    if (BracketNesting == 0) { //Don't parse indentation when inside brackets/parentheses
                         int currentIndentationLevel = _indentationStack.Peek();
                         int indentationLevel = CheckIndentation();
                         if (indentationLevel > currentIndentationLevel) {
@@ -83,17 +91,17 @@ namespace OpenDreamShared.Compiler.DM {
                             _pendingTokenQueue.Enqueue(preprocToken);
                             token = CreateToken(TokenType.DM_Indent, '\t');
                         } else if (indentationLevel < currentIndentationLevel) {
-                            _pendingTokenQueue.Enqueue(preprocToken);
+                            if (_indentationStack.Contains(indentationLevel)) {
+                                token = preprocToken;
+                            } else {
+                                _pendingTokenQueue.Enqueue(preprocToken);
+                                token = CreateToken(TokenType.Error, null, "Invalid indentation");
+                            }
+
                             do {
                                 _indentationStack.Pop();
                                 _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
                             } while (indentationLevel < _indentationStack.Peek());
-
-                            if (indentationLevel == _indentationStack.Peek()) {
-                                token = _pendingTokenQueue.Dequeue();
-                            } else {
-                                token = CreateToken(TokenType.Error, null, "Invalid indentation");
-                            }
                         } else {
                             token = preprocToken;
                         }
@@ -109,10 +117,10 @@ namespace OpenDreamShared.Compiler.DM {
                             token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
                             break;
                         }
-                        case TokenType.DM_Preproc_Punctuator_LeftParenthesis: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_RightParenthesis: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_LeftBracket: bracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
-                        case TokenType.DM_Preproc_Punctuator_RightBracket: bracketNesting--; Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_LeftParenthesis: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightParenthesis: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_LeftBracket: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
+                        case TokenType.DM_Preproc_Punctuator_RightBracket: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightBracket, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Comma: Advance(); token = CreateToken(TokenType.DM_Comma, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Colon: Advance(); token = CreateToken(TokenType.DM_Colon, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_Question:
@@ -142,7 +150,7 @@ namespace OpenDreamShared.Compiler.DM {
                                     } else {
                                         token = CreateToken(TokenType.DM_SuperProc, "..");
                                     }
-                                    
+
                                     break;
 
                                 default:
@@ -163,215 +171,44 @@ namespace OpenDreamShared.Compiler.DM {
 
                                     break;
                                 }
-                                case "/": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_SlashEquals, "/=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Slash, c);
-                                    }
-
-                                    break;
-                                }
-                                case "=": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_EqualsEquals, "==");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Equals, c);
-                                    }
-
-                                    break;
-                                }
-                                case "!": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_ExclamationEquals, "!=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Exclamation, c);
-                                    }
-
-                                    break;
-                                }
-                                case "^": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_XorEquals, "^=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Xor, c);
-                                    }
-
-                                    break;
-                                }
-                                case "%": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_ModulusEquals, "%=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Modulus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "~": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_TildeEquals, "~=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Tilde, c);
-                                    }
-
-                                    break;
-                                }
-                                case "&": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "&") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_AndAnd, "&&");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_AndEquals, "&=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_And, c);
-                                    }
-
-                                    break;
-                                }
-                                case "+": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "+") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_PlusPlus, "++");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_PlusEquals, "+=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Plus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "-": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "-") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_MinusMinus, "--");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_MinusEquals, "-=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Minus, c);
-                                    }
-
-                                    break;
-                                }
-                                case "*": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "*") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_StarStar, "**");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_StarEquals, "*=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Star, c);
-                                    }
-
-                                    break;
-                                }
-                                case "|": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "|") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_BarBar, "||");
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_BarEquals, "|=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_Bar, c);
-                                    }
-
-                                    break;
-                                }
-                                case "<": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "<") {
-                                        current = Advance();
-
-                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                            Advance();
-
-                                            token = CreateToken(TokenType.DM_LeftShiftEquals, "<<=");
-                                        } else {
-                                            token = CreateToken(TokenType.DM_LeftShift, "<<");
-                                        }
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_LessThanEquals, "<=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_LessThan, c);
-                                    }
-
-                                    break;
-                                }
-                                case ">": {
-                                    Token current = GetCurrent();
-
-                                    if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == ">") {
-                                        current = Advance();
-
-                                        if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                            Advance();
-
-                                            token = CreateToken(TokenType.DM_RightShiftEquals, ">>=");
-                                        } else {
-                                            token = CreateToken(TokenType.DM_RightShift, ">>");
-                                        }
-                                    } else if (current.Type == TokenType.DM_Preproc_Punctuator && current.Text == "=") {
-                                        Advance();
-
-                                        token = CreateToken(TokenType.DM_GreaterThanEquals, ">=");
-                                    } else {
-                                        token = CreateToken(TokenType.DM_GreaterThan, c);
-                                    }
-
-                                    break;
-                                }
+                                case "/": token = CreateToken(TokenType.DM_Slash, c); break;
+                                case "/=": token = CreateToken(TokenType.DM_SlashEquals, c); break;
+                                case "=": token = CreateToken(TokenType.DM_Equals, c); break;
+                                case "==": token = CreateToken(TokenType.DM_EqualsEquals, c); break;
+                                case "!": token = CreateToken(TokenType.DM_Exclamation, c); break;
+                                case "!=": token = CreateToken(TokenType.DM_ExclamationEquals, c); break;
+                                case "^": token = CreateToken(TokenType.DM_Xor, c); break;
+                                case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;
+                                case "%": token = CreateToken(TokenType.DM_Modulus, c); break;
+                                case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
+                                case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
+                                case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
+                                case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
+                                case "&": token = CreateToken(TokenType.DM_And, c); break;
+                                case "&&": token = CreateToken(TokenType.DM_AndAnd, c); break;
+                                case "&&=": token = CreateToken(TokenType.DM_AndAndEquals, c); break;
+                                case "&=": token = CreateToken(TokenType.DM_AndEquals, c); break;
+                                case "+": token = CreateToken(TokenType.DM_Plus, c); break;
+                                case "++": token = CreateToken(TokenType.DM_PlusPlus, c); break;
+                                case "+=": token = CreateToken(TokenType.DM_PlusEquals, c); break;
+                                case "-": token = CreateToken(TokenType.DM_Minus, c); break;
+                                case "--": token = CreateToken(TokenType.DM_MinusMinus, c); break;
+                                case "-=": token = CreateToken(TokenType.DM_MinusEquals, c); break;
+                                case "*": token = CreateToken(TokenType.DM_Star, c); break;
+                                case "**": token = CreateToken(TokenType.DM_StarStar, c); break;
+                                case "*=": token = CreateToken(TokenType.DM_StarEquals, c); break;
+                                case "|": token = CreateToken(TokenType.DM_Bar, c); break;
+                                case "||": token = CreateToken(TokenType.DM_BarBar, c); break;
+                                case "||=": token = CreateToken(TokenType.DM_BarBarEquals, c); break;
+                                case "|=": token = CreateToken(TokenType.DM_BarEquals, c); break;
+                                case "<": token = CreateToken(TokenType.DM_LessThan, c); break;
+                                case "<<": token = CreateToken(TokenType.DM_LeftShift, c); break;
+                                case "<=": token = CreateToken(TokenType.DM_LessThanEquals, c); break;
+                                case "<<=": token = CreateToken(TokenType.DM_LeftShiftEquals, c); break;
+                                case ">": token = CreateToken(TokenType.DM_GreaterThan, c); break;
+                                case ">>": token = CreateToken(TokenType.DM_RightShift, c); break;
+                                case ">=": token = CreateToken(TokenType.DM_GreaterThanEquals, c); break;
+                                case ">>=": token = CreateToken(TokenType.DM_RightShiftEquals, c); break;
                                 default: throw new Exception("Invalid punctuator token '" + c + "'");
                             }
 
@@ -448,8 +285,10 @@ namespace OpenDreamShared.Compiler.DM {
                             Advance();
 
                             string text = preprocToken.Text;
-                            if (text == "1.#INF") {
+                            if (text == "1.#INF" || text == "1#INF") {
                                 token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
+                            } else if (text == "1.#IND" || text == "1#IND") {
+                                token = CreateToken(TokenType.DM_Float, text, Single.NaN);
                             } else if (text.StartsWith("0x") && Int32.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
                             } else if (Int32.TryParse(text, out intValue)) {
@@ -462,9 +301,7 @@ namespace OpenDreamShared.Compiler.DM {
 
                             break;
                         }
-                        case TokenType.EndOfFile:
-                        case TokenType.Error:
-                        case TokenType.Warning: token = preprocToken; Advance(); break;
+                        case TokenType.EndOfFile: token = preprocToken; Advance(); break;
                         default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                     }
                 }
@@ -473,18 +310,8 @@ namespace OpenDreamShared.Compiler.DM {
             return token;
         }
 
-        protected override Token Advance() {
-            Token current = base.Advance();
-
-            //Skip any newlines when inside brackets
-            if (bracketNesting != 0) {
-                while (current.Type == TokenType.Newline) current = Advance();
-            }
-
-            SourceName = current.SourceFile;
-            CurrentLine = current.Line;
-            CurrentColumn = current.Column;
-            return current;
+        public int CurrentIndentation() {
+            return _indentationStack.Peek();
         }
 
         private int CheckIndentation() {

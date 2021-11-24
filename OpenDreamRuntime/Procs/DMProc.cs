@@ -37,7 +37,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.GetIdentifier,
             DMOpcodeHandlers.PushString,
             DMOpcodeHandlers.FormatString,
-            null, //0x5
+            DMOpcodeHandlers.SwitchCaseRange,
             DMOpcodeHandlers.SetLocalVariable,
             DMOpcodeHandlers.PushPath,
             DMOpcodeHandlers.Add,
@@ -115,7 +115,16 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.JumpIfNullIdentifier,
             DMOpcodeHandlers.Pop,
             DMOpcodeHandlers.PushCopy,
-            DMOpcodeHandlers.IsSaved
+            DMOpcodeHandlers.IsSaved,
+            DMOpcodeHandlers.PickUnweighted,
+            DMOpcodeHandlers.PickWeighted,
+            DMOpcodeHandlers.Increment,
+            DMOpcodeHandlers.Decrement,
+            DMOpcodeHandlers.CompareEquivalent,
+            DMOpcodeHandlers.CompareNotEquivalent,
+            DMOpcodeHandlers.Throw,
+            DMOpcodeHandlers.IsInRange,
+            DMOpcodeHandlers.GetGlobal
         };
         #endregion
 
@@ -242,8 +251,12 @@ namespace OpenDreamRuntime.Procs {
             _stack.Push(_stack.Peek());
         }
 
-        public void Pop() {
-            _stack.Pop();
+        public object Pop() {
+            return _stack.Pop();
+        }
+
+        public object Peek() {
+            return _stack.Peek();
         }
 
         public IDreamProcIdentifier PeekIdentifier() {

@@ -144,5 +144,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return a;
         }
+
+        public override DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
+            return ((DreamList)dreamObject).GetValue(index);
+        }
+
+        public override void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
+            ((DreamList)dreamObject).SetValue(index, value);
+        }
     }
 }

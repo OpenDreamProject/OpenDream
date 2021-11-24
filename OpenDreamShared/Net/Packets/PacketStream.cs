@@ -112,16 +112,5 @@ namespace OpenDreamShared.Net.Packets {
             this.Read(buffer, 0, (int)length);
             return buffer;
         }
-
-        public ScreenLocation ReadScreenLocation() {
-            return new ScreenLocation(ReadSByte(), ReadSByte(), ReadSByte(), ReadSByte());
-        }
-
-        public void WriteScreenLocation(ScreenLocation screenLocation) {
-            WriteSByte((sbyte)screenLocation.X);
-            WriteSByte((sbyte)screenLocation.Y);
-            WriteSByte((sbyte)screenLocation.PixelOffsetX);
-            WriteSByte((sbyte)screenLocation.PixelOffsetY);
-        }
     }
 }

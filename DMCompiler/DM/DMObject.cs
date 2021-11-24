@@ -1,9 +1,9 @@
-﻿using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMObject {
@@ -13,8 +13,8 @@ namespace DMCompiler.DM {
         public Dictionary<string, List<DMProc>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
-        public Dictionary<string, DMVariable> GlobalVariables = new();
-        public List<DMASTProcStatement> InitializationProcStatements = new();
+        public Dictionary<string, int> GlobalVariables = new();
+        public List<DMExpression> InitializationProcExpressions = new();
         public DMProc InitializationProc = null;
 
         public DMObject(UInt32 id, DreamPath path, DMObject parent) {
@@ -24,11 +24,11 @@ namespace DMCompiler.DM {
         }
 
         public void CompileProcs() {
-            if (InitializationProcStatements.Count > 0) {
-                DMVisitorProcBuilder initProcBuilder = new DMVisitorProcBuilder(this, CreateInitializationProc());
+            if (InitializationProcExpressions.Count > 0) {
+                CreateInitializationProc();
 
-                foreach (DMASTProcStatement statement in InitializationProcStatements) {
-                    statement.Visit(initProcBuilder);
+                foreach (DMExpression expression in InitializationProcExpressions) {
+                    expression.EmitPushValue(this, InitializationProc);
                 }
             }
 
@@ -47,6 +47,10 @@ namespace DMCompiler.DM {
 
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
+                if ((variable.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings)
+                {
+                    DMCompiler.Warning(new CompilerWarning(null, $"{Path}.{name} is not implemented and will have unexpected behavior"));
+                }
                 return variable;
             }
             return Parent?.GetVariable(name);
@@ -58,14 +62,44 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
-        public DMVariable GetGlobalVariable(string name) {
-            if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
-                return variable;
-            }
-            return Parent?.GetGlobalVariable(name);
+        public List<DMProc> GetProcs(string name) {
+            return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 
-        public DMProc CreateInitializationProc() {
+        public bool IsProcUnimplemented(string name) {
+            List<DMProc> procs = GetProcs(name);
+
+            if (procs != null) {
+                foreach (DMProc proc in procs) {
+                    if (proc.Unimplemented) return true;
+                }
+            }
+
+            return false;
+        }
+
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name) {
+            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name);
+
+            GlobalVariables[name] = id;
+            return global;
+        }
+
+        public int? GetGlobalVariableId(string name) {
+            if (GlobalVariables.TryGetValue(name, out int id)) {
+                return id;
+            }
+
+            return Parent?.GetGlobalVariableId(name);
+        }
+
+        public DMVariable GetGlobalVariable(string name) {
+            int? id = GetGlobalVariableId(name);
+
+            return (id == null) ? null : DMObjectTree.Globals[id.Value];
+        }
+
+        public void CreateInitializationProc() {
             if (InitializationProc == null) {
                 InitializationProc = new DMProc(null);
 
@@ -79,8 +113,6 @@ namespace DMCompiler.DM {
                 InitializationProc.AddLabel("no_super");
                 InitializationProc.ResolveLabels();
             }
-
-            return InitializationProc;
         }
 
         public DreamObjectJson CreateJsonRepresentation() {
@@ -93,20 +125,16 @@ namespace DMCompiler.DM {
                 objectJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    objectJson.Variables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
+                    objectJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    objectJson.Variables[variable.Key] = CreateDreamObjectJsonVariable(variable.Value.Value);
+                    objectJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
                 }
             }
 
             if (GlobalVariables.Count > 0) {
-                objectJson.GlobalVariables = new Dictionary<string, object>();
-
-                foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
-                    objectJson.GlobalVariables.Add(variable.Key, CreateDreamObjectJsonVariable(variable.Value.Value));
-                }
+                objectJson.GlobalVariables = GlobalVariables;
             }
 
             if (InitializationProc != null) {
@@ -119,7 +147,7 @@ namespace DMCompiler.DM {
                 objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
 
                 foreach (KeyValuePair<string, List<DMProc>> procs in Procs) {
-                    List<ProcDefinitionJson> procJson = new List<ProcDefinitionJson>();
+                    List<ProcDefinitionJson> procJson = new();
 
                     foreach (DMProc proc in procs.Value) {
                         procJson.Add(proc.GetJsonRepresentation());
@@ -132,26 +160,10 @@ namespace DMCompiler.DM {
             return objectJson;
         }
 
-        private static object CreateDreamObjectJsonVariable(object value) {
-            if (value is int || value is float || value is string) {
-                return value;
-            } else if (value is null) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Null }
-                };
-            } else if (value is DMResource resource) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Resource },
-                    { "resourcePath", resource.ResourcePath }
-                };
-            } else if (value is DreamPath path) {
-                return new Dictionary<string, object>() {
-                    { "type", JsonVariableType.Path },
-                    { "value", path.PathString }
-                };
-            } else {
-                throw new Exception("Invalid variable value");
-            }
+        public bool IsSubtypeOf(DreamPath path) {
+            if (Path.IsDescendantOf(path)) return true;
+            if (Parent != null) return Parent.IsSubtypeOf(path);
+            return false;
         }
     }
 }

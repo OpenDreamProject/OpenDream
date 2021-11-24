@@ -13,6 +13,8 @@ namespace OpenDreamClient.Interface.Prompts {
 
             CreateButton("Ok", true);
             if (canCancel) CreateButton("Cancel", false);
+
+            _inputControl.Focus();
         }
 
         protected virtual Control CreateInputControl(String defaultValue) {

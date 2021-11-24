@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler.DMF {
     public class DMFParser : Parser<char> {
-        public static readonly List<TokenType> ValidAttributeValueTypes = new() {
+        public static readonly TokenType[] ValidAttributeValueTypes = {
             TokenType.DMF_None,
             TokenType.DMF_String,
             TokenType.DMF_Integer,
@@ -14,7 +14,19 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Resource,
             TokenType.DMF_Sunken,
             TokenType.DMF_PushBox,
+            TokenType.DMF_PushButton,
             TokenType.DMF_Distort,
+            TokenType.DMF_Stretch,
+            TokenType.DMF_Center,
+            TokenType.DMF_Left,
+            TokenType.DMF_Right,
+            TokenType.DMF_Top,
+            TokenType.DMF_TopLeft,
+            TokenType.DMF_TopRight,
+            TokenType.DMF_Bottom,
+            TokenType.DMF_BottomLeft,
+            TokenType.DMF_BottomRight,
+            TokenType.DMF_Vertical,
 
             TokenType.DMF_Main,
             TokenType.DMF_Input,
@@ -23,7 +35,8 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Output,
             TokenType.DMF_Info,
             TokenType.DMF_Map,
-            TokenType.DMF_Browser
+            TokenType.DMF_Browser,
+            TokenType.DMF_Label
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -102,6 +115,7 @@ namespace OpenDreamShared.Compiler.DMF {
                     TokenType.DMF_Input => new ControlDescriptorInput(elementName),
                     TokenType.DMF_Button => new ControlDescriptorButton(elementName),
                     TokenType.DMF_Browser => new ControlDescriptorBrowser(elementName),
+                    TokenType.DMF_Label => new ControlDescriptorLabel(elementName),
                     _ => null
                 };
 
@@ -134,9 +148,11 @@ namespace OpenDreamShared.Compiler.DMF {
 
         public MacroDescriptor Macro() {
             if (Check(TokenType.DMF_Elem)) {
+                Token macroIdToken = Current();
+                bool hasId = Check(TokenType.DMF_String);
                 Newline();
 
-                MacroDescriptor descriptor = new MacroDescriptor();
+                MacroDescriptor descriptor = new MacroDescriptor(hasId ? macroIdToken.Text : null);
                 Dictionary<string, Token> attributes = Attributes();
 
                 SetAttributes(descriptor, attributes);
@@ -185,7 +201,7 @@ namespace OpenDreamShared.Compiler.DMF {
         public (string, Token)? AttributeAssign() {
             Token attributeToken = Current();
 
-            if (Check(TokenType.DMF_Attribute) || Check(TokenType.DMF_Macro) || Check(TokenType.DMF_Menu)) {
+            if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu, TokenType.DMF_Stretch, TokenType.DMF_Left, TokenType.DMF_Right })) {
                 if (!Check(TokenType.DMF_Equals)) {
                     ReuseToken(attributeToken);
 

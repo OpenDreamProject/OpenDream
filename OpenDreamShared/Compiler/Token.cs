@@ -1,5 +1,6 @@
 ﻿namespace OpenDreamShared.Compiler {
-    public enum TokenType {
+    // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
+    public enum TokenType : byte {
         //Base lexer
         Error,
         Warning,
@@ -42,12 +43,15 @@
         DM_And,
         DM_AndAnd,
         DM_AndEquals,
+        DM_AndAndEquals,
         DM_As,
         DM_Bar,
         DM_BarBar,
         DM_BarEquals,
+        DM_BarBarEquals,
         DM_Break,
         DM_Call,
+        DM_Catch,
         DM_Colon,
         DM_Comma,
         DM_Continue,
@@ -79,7 +83,6 @@
         DM_LeftShiftEquals,
         DM_LessThan,
         DM_LessThanEquals,
-        DM_List,
         DM_Minus,
         DM_MinusEquals,
         DM_MinusMinus,
@@ -113,9 +116,12 @@
         DM_String,
         DM_SuperProc,
         DM_Switch,
+        DM_Throw,
         DM_Tilde,
         DM_TildeEquals,
+        DM_TildeExclamation,
         DM_To,
+        DM_Try,
         DM_Var,
         DM_While,
         DM_Whitespace,
@@ -125,8 +131,12 @@
         //DMF
         DMF_Attribute,
         DMF_Boolean,
+        DMF_Bottom,
+        DMF_BottomLeft,
+        DMF_BottomRight,
         DMF_Browser,
         DMF_Button,
+        DMF_Center,
         DMF_Child,
         DMF_Color,
         DMF_Dimension,
@@ -136,6 +146,8 @@
         DMF_Info,
         DMF_Input,
         DMF_Integer,
+        DMF_Label,
+        DMF_Left,
         DMF_Macro,
         DMF_Main,
         DMF_Map,
@@ -144,18 +156,29 @@
         DMF_Output,
         DMF_Position,
         DMF_PushBox,
+        DMF_PushButton,
         DMF_Resource,
+        DMF_Right,
+        DMF_Stretch,
         DMF_String,
         DMF_Sunken,
+        DMF_Top,
+        DMF_TopLeft,
+        DMF_TopRight,
+        DMF_Vertical,
         DMF_Window
     }
 
-    public class Token {
+    public partial class Token {
         public TokenType Type;
         public string Text;
         public string SourceFile;
         public int Line, Column;
         public object Value;
+
+        public string PrintableText {
+            get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        }
 
         public Token(TokenType type, string text, string sourceFile, int line, int column, object value) {
             Type = type;
@@ -167,7 +190,7 @@
         }
 
         public override string ToString() {
-            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + Text + ")";
+            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + PrintableText + ")";
         }
     }
 }

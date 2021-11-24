@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Json {
     public enum JsonVariableType {
         Resource = 0,
-        Null = 1,
-        Path = 2
+        Path = 1,
+        List = 2
     }
 
     public class DreamObjectJson {
@@ -14,7 +14,7 @@ namespace OpenDreamShared.Json {
         public ProcDefinitionJson InitProc { get; set; }
         public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
-        public Dictionary<string, object> GlobalVariables { get; set; }
+        public Dictionary<string, int> GlobalVariables { get; set; }
         public List<DreamObjectJson> Children { get; set; }
     }
 

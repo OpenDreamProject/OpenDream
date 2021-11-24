@@ -46,17 +46,19 @@ namespace OpenDreamRuntime
         public bool Shutdown;
 
         // Global state that may not really (really really) belong here
+        public List<DreamValue> Globals = new();
         public Dictionary<ServerIconAppearance, int> AppearanceToID = new();
         public Dictionary<DreamObject, int> ReferenceIDs = new();
         public Dictionary<DreamObject, DreamList> AreaContents = new();
         public Dictionary<DreamObject, UInt32> AtomIDs = new();
         public Dictionary<UInt32, DreamObject> AtomIDToAtom = new();
-        public ConcurrentDictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new();
+        public Dictionary<DreamObject, ServerIconAppearance> AtomToAppearance = new(1);
         public UInt32 AtomIDCounter;
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom = new();
         public List<DreamObject> Mobs = new ();
         public DreamList WorldContentsList;
+        public Random Random = new();
 
         public DreamRuntime(DreamServer server, string executablePath) {
             MainThread = Thread.CurrentThread;
@@ -87,6 +89,7 @@ namespace OpenDreamRuntime
             ObjectTree.LoadFromJson(CompiledJson.RootObject);
             ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot(this));
             ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList(this));
+            ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile(this));
             ObjectTree.SetMetaObject(DreamPath.Sound, new DreamMetaObjectSound(this));
             ObjectTree.SetMetaObject(DreamPath.Image, new DreamMetaObjectImage(this));
             ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld(this));
@@ -105,7 +108,14 @@ namespace OpenDreamRuntime
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
             WorldInstance.InitSpawn(new DreamProcArguments(null));
 
-            ObjectTree.GetObjectDefinitionFromPath(DreamPath.Root).GlobalVariables["world"].Value = new DreamValue(WorldInstance);
+            if (CompiledJson.Globals != null) {
+                foreach (object globalValue in CompiledJson.Globals) {
+                    Globals.Add(ObjectTree.GetDreamValueFromJsonElement(globalValue));
+                }
+            }
+
+            //The first global is always `world`
+            Globals[0] = new DreamValue(WorldInstance);
 
             RegisterPacketCallbacks();
 

@@ -1,6 +1,8 @@
-using System;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -31,7 +33,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new Exception("invalid use of `arglist`");
+            throw new CompileErrorException("invalid use of `arglist`");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
@@ -138,6 +140,57 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // pick(50;x, 200;y)
+    // pick(x, y)
+    class Pick : DMExpression {
+        public struct PickValue {
+            public DMExpression Weight;
+            public DMExpression Value;
+
+            public PickValue(DMExpression weight, DMExpression value) {
+                Weight = weight;
+                Value = value;
+            }
+        }
+
+        PickValue[] _values;
+
+        public Pick(PickValue[] values) {
+            _values = values;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            bool weighted = false;
+            foreach (PickValue pickValue in _values) {
+                if (pickValue.Weight != null) {
+                    weighted = true;
+                    break;
+                }
+            }
+
+            if (weighted) {
+                if (_values.Length == 1) {
+                    DMCompiler.Warning(new CompilerWarning(null, "Weighted pick() with one argument"));
+                }
+
+                foreach (PickValue pickValue in _values) {
+                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(100)); //Default of 100
+
+                    weight.EmitPushValue(dmObject, proc);
+                    pickValue.Value.EmitPushValue(dmObject, proc);
+                }
+
+                proc.PickWeighted(_values.Length);
+            } else {
+                foreach (PickValue pickValue in _values) {
+                    pickValue.Value.EmitPushValue(dmObject, proc);
+                }
+
+                proc.PickUnweighted(_values.Length);
+            }
+        }
+    }
+
     // issaved(x)
     class IsSaved : DMExpression {
         DMExpression _expr;
@@ -163,7 +216,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new Exception($"can't get saved value of {_expr}");
+            throw new CompileErrorException($"can't get saved value of {_expr}");
         }
     }
 
@@ -220,8 +273,8 @@ namespace DMCompiler.DM.Expressions {
                     if (associatedAssign != null) {
                         DMExpression.Create(dmObject, proc, associatedAssign.Value).EmitPushValue(dmObject, proc);
 
-                        if (associatedAssign.Expression is DMASTIdentifier) {
-                            proc.PushString(value.Name);
+                        if (associatedAssign.Expression is DMASTIdentifier identifier) {
+                            proc.PushString(identifier.Identifier);
                             proc.ListAppendAssociated();
                         } else {
                             DMExpression.Create(dmObject, proc, associatedAssign.Expression).EmitPushValue(dmObject, proc);
@@ -240,6 +293,58 @@ namespace DMCompiler.DM.Expressions {
                 }
             }
         }
+
+        public override object ToJsonRepresentation() {
+            List<object> list = new();
+            Dictionary<string, object> associatedValues = new();
+
+            foreach (DMASTCallParameter parameter in _astNode.Values) {
+                object value = DMExpression.Create(null, null, parameter.Value).ToJsonRepresentation();
+                DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
+
+                if (associatedAssign != null) {
+                    if (associatedAssign.Expression is DMASTIdentifier identifier) {
+                        associatedValues.Add(identifier.Identifier, value);
+                    } else {
+                        throw new System.Exception("Invalid associated value key");
+                    }
+                } else if (parameter.Name != null) {
+                    associatedValues.Add(parameter.Name, value);
+                } else {
+                    list.Add(value);
+                }
+            }
+
+            Dictionary<string, object> jsonRepresentation = new();
+            jsonRepresentation.Add("type", JsonVariableType.List);
+            if (list.Count > 0) jsonRepresentation.Add("values", list);
+            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
+            return jsonRepresentation;
+        }
+    }
+
+    // newlist(...)
+    class NewList : DMExpression {
+        DMExpression[] _parameters;
+
+        public NewList(DMExpression[] parameters) {
+            _parameters = parameters;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.CreateList();
+
+            foreach (DMExpression parameter in _parameters) {
+                parameter.EmitPushValue(dmObject, proc);
+                proc.PushArguments(0);
+                proc.CreateObject();
+                proc.ListAppend();
+            }
+        }
+
+        public override object ToJsonRepresentation() {
+            return null; //TODO
+        }
     }
 
     // input(...)
@@ -252,14 +357,14 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new Exception("Invalid input() parameter count");
+            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new CompileErrorException("Invalid input() parameter count");
 
             //Push input's four arguments, pushing null for the missing ones
             for (int i = 3; i >= 0; i--) {
                 if (i < _astNode.Parameters.Length) {
                     DMASTCallParameter parameter = _astNode.Parameters[i];
 
-                    if (parameter.Name != null) throw new Exception("input() does not take named arguments");
+                    if (parameter.Name != null) throw new CompileErrorException("input() does not take named arguments");
                     DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();
@@ -291,7 +396,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new Exception($"can't get initial value of {_expr}");
+            throw new CompileErrorException($"can't get initial value of {_expr}");
         }
     }
 

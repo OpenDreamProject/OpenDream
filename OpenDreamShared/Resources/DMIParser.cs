@@ -1,11 +1,15 @@
 ﻿using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using System.Globalization;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
+        private static readonly AtomDirection[] DMIFrameDirections = {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -20,19 +24,32 @@ namespace OpenDreamShared.Resources {
             public string Source;
             public float Version;
             public int Width, Height;
-            public string DefaultStateName;
             public Dictionary<string, ParsedDMIState> States;
 
-            public bool HasState(string stateName = null) {
-                if (stateName == null) stateName = DefaultStateName;
+            public static ParsedDMIDescription CreateEmpty(int width, int height) {
+                ParsedDMIFrame[] frames = { new() };
+                ParsedDMIState state = new();
+                state.Directions.Add(AtomDirection.South, frames);
 
-                return States.ContainsKey(stateName);
+                return new ParsedDMIDescription() {
+                    Source = null,
+                    Version = 4f,
+                    Width = width,
+                    Height = height,
+                    States = new() {
+                        { "", state }
+                    }
+                };
+            }
+
+            public bool HasState(string stateName = null) {
+                return States.ContainsKey(stateName ?? "");
             }
 
             public ParsedDMIState GetState(string stateName = null) {
-                if (!States.ContainsKey(stateName)) stateName = DefaultStateName;
+                States.TryGetValue(stateName ?? "", out var state);
 
-                return States[stateName];
+                return state;
             }
         }
 
@@ -54,6 +71,102 @@ namespace OpenDreamShared.Resources {
             public float Delay;
         }
 
+        private static uint _readBigEndianUint32(BinaryReader reader)
+        {
+            byte[] bytes = reader.ReadBytes(4);
+            Array.Reverse(bytes); //Little to Big-Endian
+            return BitConverter.ToUInt32(bytes);
+        }
+
+        private static (uint, string) _readChunk(BinaryReader reader)
+        {
+            uint chunkLength = _readBigEndianUint32(reader);
+            string chunkType = new string(reader.ReadChars(4));
+
+            return (chunkLength, chunkType);
+        }
+
+        public static bool TryReadDMIDescription(byte[] bytes, out string description) {
+            MemoryStream stream = new MemoryStream(bytes);
+            BinaryReader reader = new BinaryReader(stream);
+
+            stream.Seek(8, SeekOrigin.Begin);
+
+            while (stream.Position < stream.Length) {
+                var (chunkLength, chunkType) = _readChunk(reader);
+
+                if (chunkType != "zTXt") {
+                    stream.Seek(chunkLength + 4, SeekOrigin.Current);
+                } else {
+                    long chunkDataPosition = stream.Position;
+                    string keyword = String.Empty + reader.ReadChar();
+
+                    while (reader.PeekChar() != 0 && keyword.Length < 79) {
+                        keyword += reader.ReadChar();
+                    }
+                    stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
+
+                    if (keyword == "Description") {
+                        stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
+
+                        DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                        MemoryStream uncompressedDataStream = new MemoryStream();
+
+                        deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+
+                        byte[] uncompressedData = new byte[uncompressedDataStream.Length];
+                        uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                        uncompressedDataStream.Read(uncompressedData);
+
+                        description = Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
+                        return true;
+                    } else {
+                        stream.Position = chunkDataPosition + chunkLength + 4;
+                    }
+                }
+            }
+
+            description = null;
+            return false;
+        }
+
+        public static List<string> GetIconStatesFromDescription(string dmiDescription)
+        {
+            var states = new List<string>();
+            dmiDescription = TrimDescription(dmiDescription);
+
+            var lines = dmiDescription.Split("\n");
+            foreach (var line in lines)
+            {
+                var equalsIndex = line.IndexOf('=');
+
+                if (equalsIndex == -1)
+                {
+                    throw new Exception("Invalid line in DMI description: \"" + line + "\"");
+                }
+                var key = line[..equalsIndex].Trim();
+                var value = line[(equalsIndex + 1)..].Trim();
+
+                if (key != "state")
+                {
+                    continue;
+                }
+                var stateName = ParseString(value);
+                states.Add(stateName);
+            }
+
+            return states;
+        }
+
+        private static string TrimDescription(string dmiDescription)
+        {
+            return dmiDescription
+                .Replace("# BEGIN DMI", "")
+                .Replace("# END DMI", "")
+                .Replace("\t", "")
+                .Trim();
+        }
+
         public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, int imageWidth) {
             ParsedDMIDescription description = new ParsedDMIDescription();
             ParsedDMIState currentState = null;
@@ -65,10 +178,7 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            dmiDescription = dmiDescription.Replace("# BEGIN DMI", "");
-            dmiDescription = dmiDescription.Replace("# END DMI", "");
-            dmiDescription = dmiDescription.Replace("\t", "");
-            dmiDescription = dmiDescription.Trim();
+            dmiDescription = TrimDescription(dmiDescription);
             description.Source = dmiDescription;
 
             string[] lines = dmiDescription.Split("\n");
@@ -81,7 +191,7 @@ namespace OpenDreamShared.Resources {
 
                     switch (key) {
                         case "version":
-                            description.Version = float.Parse(value);
+                            description.Version = float.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "width":
                             description.Width = int.Parse(value);
@@ -119,8 +229,6 @@ namespace OpenDreamShared.Resources {
                                         }
                                     }
                                 }
-                            } else {
-                                description.DefaultStateName = stateName;
                             }
 
                             currentStateFrameCount = 1;
@@ -142,7 +250,7 @@ namespace OpenDreamShared.Resources {
 
                             currentStateFrameDelays = new float[frameDelays.Length];
                             for (int i = 0; i < frameDelays.Length; i++) {
-                                currentStateFrameDelays[i] = float.Parse(frameDelays[i]);
+                                currentStateFrameDelays[i] = float.Parse(frameDelays[i], CultureInfo.InvariantCulture);
                             }
 
                             break;

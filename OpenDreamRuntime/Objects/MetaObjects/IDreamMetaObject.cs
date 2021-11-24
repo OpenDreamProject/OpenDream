@@ -17,5 +17,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OperatorOr(DreamValue a, DreamValue b);
         public DreamValue OperatorCombine(DreamValue a, DreamValue b);
         public DreamValue OperatorMask(DreamValue a, DreamValue b);
+        public DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index);
+        public void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value);
     }
 }

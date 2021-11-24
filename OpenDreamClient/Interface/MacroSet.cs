@@ -27,7 +27,7 @@ namespace OpenDreamClient.Interface {
         }
 
         public Key Key;
-        public ModifierKeys Modifier;
+        public ModifierKeys Modifier = ModifierKeys.None;
         public MacroSuffix Suffix;
         public string Command;
 
@@ -41,17 +41,26 @@ namespace OpenDreamClient.Interface {
             MacroDescriptor macroDescriptor = (MacroDescriptor)_elementDescriptor;
             string macroName = macroDescriptor.Name.ToUpper();
 
-            if (macroName.StartsWith("SHIFT+")) Modifier = ModifierKeys.Shift;
-            else if (macroName.StartsWith("CTRL+")) Modifier = ModifierKeys.Control;
-            else if (macroName.StartsWith("ALT+")) Modifier = ModifierKeys.Alt;
-            else Modifier = ModifierKeys.None;
+            if (macroName.Contains("SHIFT+")) {
+                Modifier |= ModifierKeys.Shift;
+                macroName = macroName.Replace("SHIFT+", "");
+            }
+
+            if (macroName.Contains("CTRL+")) {
+                Modifier |= ModifierKeys.Control;
+                macroName = macroName.Replace("CTRL+", "");
+            }
+
+            if (macroName.StartsWith("ALT+")) {
+                Modifier = ModifierKeys.Alt;
+                macroName = macroName.Replace("ALT+", "");
+            }
 
             if (macroName.EndsWith("+REP")) Suffix = MacroSuffix.Repeat;
             else if (macroName.EndsWith("+UP")) Suffix = MacroSuffix.Release;
             else Suffix = MacroSuffix.None;
 
-            //Remove the modifier and suffix, if they exist
-            if (Modifier != ModifierKeys.None) macroName = macroName.Substring(macroName.IndexOf("+"));
+            //Remove the suffix, if it exists
             if (Suffix != MacroSuffix.None) macroName = macroName.Substring(0, macroName.LastIndexOf("+"));
 
             Key = KeyNameToKey(macroName);
@@ -69,6 +78,18 @@ namespace OpenDreamClient.Interface {
                 }
             } else {
                 switch (keyName) {
+                    case "F1": return Key.F1;
+                    case "F2": return Key.F2;
+                    case "F3": return Key.F3;
+                    case "F4": return Key.F4;
+                    case "F5": return Key.F5;
+                    case "F6": return Key.F6;
+                    case "F7": return Key.F7;
+                    case "F8": return Key.F8;
+                    case "F9": return Key.F9;
+                    case "F10": return Key.F10;
+                    case "F11": return Key.F11;
+                    case "F12": return Key.F12;
                     case "NUMPAD0": return Key.NumPad0;
                     case "NUMPAD1": return Key.NumPad1;
                     case "NUMPAD2": return Key.NumPad2;

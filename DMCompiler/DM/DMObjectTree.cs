@@ -1,18 +1,20 @@
-﻿using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
         public static Dictionary<DreamPath, DMObject> AllObjects = new();
+
+        //TODO: These don't belong in the object tree
+        public static List<DMVariable> Globals = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
-        public static DMProc GlobalInitProc = null;
+        public static DMProc GlobalInitProc = new DMProc(null);
 
-        private static List<DMASTProcStatement> _globalInitProcStatements = new();
+        private static List<Expressions.Assignment> _globalInitProcAssigns = new();
 
         private static uint _dmObjectIdCounter = 0;
 
@@ -31,7 +33,7 @@ namespace DMCompiler.DM {
             DMObject dmObject;
 
             if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistent) throw new Exception("Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new CompileErrorException("Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
@@ -45,18 +47,62 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
-        public static void AddGlobalInitProcStatement(DMASTProcStatement statement) {
-            _globalInitProcStatements.Add(statement);
+        public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
+            // I was unable to find any situation where searching for an absolute path worked
+            if (search.Type == DreamPath.PathType.Absolute) return null;
+
+            DreamPath searchObjectPath;
+
+            int procElement = search.FindElement("proc");
+            if (procElement == -1) procElement = search.FindElement("verb");
+            if (procElement != -1) {
+                searchObjectPath = search.FromElements(0, procElement);
+                searchObjectPath.Type = DreamPath.PathType.Relative; // FromElements makes an absolute path
+            } else {
+                searchObjectPath = search;
+            }
+
+            DMObject found;
+            DreamPath currentPath = path;
+            while (!AllObjects.TryGetValue(currentPath.Combine(searchObjectPath), out found)) {
+                if (currentPath == DreamPath.Root) break;
+
+                currentPath = currentPath.AddToPath("..");
+            }
+
+            //We're searching for a proc
+            if (procElement != -1) {
+                DreamPath procPath = search.FromElements(procElement + 1);
+                if (procPath.Elements.Length != 1) return null;
+
+                if (found.HasProc(procPath.LastElement)) {
+                    return new DreamPath(found.Path.PathString + "/proc" + procPath);
+                } else {
+                    return null;
+                }
+            } else { //We're searching for an object
+                return found?.Path;
+            }
+        }
+
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name) {
+            int id = Globals.Count;
+
+            global = new DMVariable(type, name, true);
+            Globals.Add(global);
+            return id;
+        }
+
+        public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {
+            _globalInitProcAssigns.Add(assign);
         }
 
         public static void CreateGlobalInitProc() {
-            if (_globalInitProcStatements.Count == 0) return;
+            if (_globalInitProcAssigns.Count == 0) return;
 
-            GlobalInitProc = new DMProc(null);
-            DMVisitorProcBuilder globalInitProcBuilder = new DMVisitorProcBuilder(DMObjectTree.GetDMObject(DreamPath.Root), GlobalInitProc);
-
-            foreach (DMASTProcStatement statement in _globalInitProcStatements) {
-                statement.Visit(globalInitProcBuilder);
+            DMObject root = GetDMObject(DreamPath.Root);
+            foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
+                assign.EmitPushValue(root, GlobalInitProc);
             }
         }
 

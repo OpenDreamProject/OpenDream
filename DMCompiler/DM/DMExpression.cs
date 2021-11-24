@@ -1,8 +1,8 @@
 using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
-using System;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM {
@@ -25,6 +25,8 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
+        public DMValueType ValType = DMValueType.Anything;
+
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
@@ -43,7 +45,12 @@ namespace DMCompiler.DM {
 
         // Attempt to convert this expression into a Constant expression
         public virtual Expressions.Constant ToConstant() {
-            throw new Exception($"expression {this} can not be const-evaluated");
+            throw new CompileErrorException($"expression {this} can not be const-evaluated");
+        }
+
+        // Attempt to create a json-serializable version of this expression
+        public virtual object ToJsonRepresentation() {
+            throw new CompileErrorException($"expression {this} can not be serialized to json");
         }
 
         // Emits code that pushes the result of this expression to the proc's stack
@@ -53,11 +60,11 @@ namespace DMCompiler.DM {
         // Emits code that pushes the identifier of this expression to the proc's stack
         // May throw if this expression is unable to be written
         public virtual IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
-            throw new Exception("attempt to assign to r-value");
+            throw new CompileErrorException("attempt to assign to r-value");
         }
 
         public virtual ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            throw new Exception("attempt to use non-proc expression as proc");
+            throw new CompileErrorException("attempt to use non-proc expression as proc");
         }
 
         public virtual DreamPath? Path => null;
@@ -92,7 +99,7 @@ namespace DMCompiler.DM {
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
                 if (Expressions.Length != 1) {
-                    throw new Exception("`arglist` expression should be the only argument");
+                    throw new CompileErrorException("`arglist` expression should be the only argument");
                 }
 
                 arglist.EmitPushArglist(dmObject, proc);

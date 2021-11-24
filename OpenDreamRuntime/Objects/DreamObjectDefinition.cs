@@ -15,7 +15,7 @@ namespace OpenDreamRuntime.Objects {
         public Dictionary<string, DreamProc> Procs { get; private set; } = new();
         public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new();
         public Dictionary<string, DreamValue> Variables { get; private set; } = new();
-        public Dictionary<string, DreamGlobalVariable> GlobalVariables { get; private set; } = new();
+        public Dictionary<string, int> GlobalVariables { get; private set; } = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
@@ -132,18 +132,6 @@ namespace OpenDreamRuntime.Objects {
             return Variables.ContainsKey(variableName);
         }
 
-        public bool HasGlobalVariable(string globalVariableName) {
-            return GlobalVariables.ContainsKey(globalVariableName);
-        }
-
-        public DreamGlobalVariable GetGlobalVariable(string globalVariableName) {
-            if (!HasGlobalVariable(globalVariableName)) {
-                throw new Exception("Object type '" + Type + "' does not have a global variable named '" + globalVariableName + "'");
-            }
-
-            return GlobalVariables[globalVariableName];
-        }
-
         public bool IsSubtypeOf(DreamPath path) {
             if (Type.IsDescendantOf(path)) return true;
             else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);
@@ -151,13 +139,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         private void CopyVariablesFrom(DreamObjectDefinition definition) {
-            foreach (KeyValuePair<string, DreamValue> variable in definition.Variables) {
-                Variables.Add(variable.Key, variable.Value);
-            }
-
-            foreach (KeyValuePair<string, DreamGlobalVariable> globalVariable in definition.GlobalVariables) {
-                GlobalVariables.Add(globalVariable.Key, globalVariable.Value);
-            }
+            Variables = new Dictionary<string, DreamValue>(definition.Variables);
+            GlobalVariables = new Dictionary<string, int>(definition.GlobalVariables);
         }
     }
 }

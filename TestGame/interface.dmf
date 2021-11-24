@@ -79,9 +79,17 @@ window "outputwindow"
 	elem "output"
 		type = OUTPUT
 		pos = 0,0
-		size = 640x480
+		size = 640x458
 		anchor1 = 0,0
 		anchor2 = 100,100
+		is-default = true
+	elem "input"
+		type = INPUT
+		pos = 0,460
+		size = 640x20
+		anchor1 = 0,100
+		anchor2 = 100,100
+		background-color = #d3b5b5
 		is-default = true
 
 window "statwindow"
@@ -105,10 +113,11 @@ window "mainwindow"
 		is-default = true
 		menu = "menu"
 		macro = "macro"
+		icon = "icons/mob.dmi"
 	elem "split"
 		type = CHILD
 		pos = 3,0
-		size = 634x417
+		size = 634x438
 		anchor1 = 0,0
 		anchor2 = 100,100
 		left = "mapwindow"

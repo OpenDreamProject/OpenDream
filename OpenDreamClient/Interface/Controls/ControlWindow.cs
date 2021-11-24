@@ -56,12 +56,8 @@ namespace OpenDreamClient.Interface.Controls {
                 _menu.Visibility = Visibility.Collapsed;
             }
 
-            if (controlDescriptor.Icon != null) {
-                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(controlDescriptor.Icon, iconResource => {
-                    SetIcon(iconResource.CreateWPFImageSource());
-                });
-            } else {
-                SetIcon(null);
+            foreach (Window window in _openWindows) {
+                UpdateWindowAttributes(window, controlDescriptor);
             }
         }
 
@@ -83,6 +79,7 @@ namespace OpenDreamClient.Interface.Controls {
                     ControlDescriptorInfo => new ControlInfo(controlDescriptor, this),
                     ControlDescriptorMap => new ControlMap(controlDescriptor, this),
                     ControlDescriptorBrowser => new ControlBrowser(controlDescriptor, this),
+                    ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
                     _ => throw new Exception("Invalid descriptor")
                 };
 
@@ -103,6 +100,7 @@ namespace OpenDreamClient.Interface.Controls {
             };
 
             _openWindows.Add(window);
+            UpdateWindowAttributes(window, (ControlDescriptorMain)_elementDescriptor);
             return window;
         }
 
@@ -135,9 +133,15 @@ namespace OpenDreamClient.Interface.Controls {
             }
         }
 
-        private void SetIcon(ImageSource icon) {
-            foreach (Window window in _openWindows) {
-                window.Icon = icon;
+        private void UpdateWindowAttributes(Window window, ControlDescriptorMain descriptor) {
+            window.Title = descriptor.Title ?? "OpenDream World";
+
+            if (descriptor.Icon != null) {
+                Program.OpenDream.ResourceManager.LoadResourceAsync<ResourceDMI>(descriptor.Icon, iconResource => {
+                    window.Icon = iconResource.CreateWPFImageSource();
+                });
+            } else {
+                window.Icon = null;
             }
         }
 

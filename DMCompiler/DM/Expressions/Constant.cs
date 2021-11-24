@@ -1,5 +1,8 @@
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using System;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -9,21 +12,21 @@ namespace DMCompiler.DM.Expressions {
 
         public abstract bool IsTruthy();
 
-#region Unary Operations
+        #region Unary Operations
         public Constant Not() {
             return new Number(IsTruthy() ? 0 : 1);
         }
 
         public virtual Constant Negate() {
-            throw new Exception($"const operation `-{this}` is invalid");
+            throw new CompileErrorException($"const operation `-{this}` is invalid");
         }
 
         public virtual Constant BinaryNot() {
-            throw new Exception($"const operation `~{this}` is invalid");
+            throw new CompileErrorException($"const operation `~{this}` is invalid");
         }
-#endregion
+        #endregion
 
-#region Binary Operations
+        #region Binary Operations
         public Constant And(Constant rhs) {
             var truthy = IsTruthy() && rhs.IsTruthy();
             return new Number(truthy ? 1 : 0);
@@ -35,49 +38,49 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Add(Constant rhs) {
-            throw new Exception($"const operation `{this} + {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} + {rhs}` is invalid");
         }
 
         public virtual Constant Subtract(Constant rhs) {
-            throw new Exception($"const operation `{this} - {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} - {rhs}` is invalid");
         }
 
         public virtual Constant Multiply(Constant rhs) {
-            throw new Exception($"const operation `{this} * {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} * {rhs}` is invalid");
         }
 
         public virtual Constant Divide(Constant rhs) {
-            throw new Exception($"const operation `{this} / {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} / {rhs}` is invalid");
         }
 
         public virtual Constant Modulo(Constant rhs) {
-            throw new Exception($"const operation `{this} % {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} % {rhs}` is invalid");
         }
 
         public virtual Constant Power(Constant rhs) {
-            throw new Exception($"const operation `{this} ** {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} ** {rhs}` is invalid");
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new Exception($"const operation `{this} << {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} << {rhs}` is invalid");
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new Exception($"const operation `{this} >> {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} >> {rhs}` is invalid");
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
-            throw new Exception($"const operation `{this} & {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} & {rhs}` is invalid");
         }
 
         public virtual Constant BinaryXor(Constant rhs) {
-            throw new Exception($"const operation `{this} ^ {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} ^ {rhs}` is invalid");
         }
 
         public virtual Constant BinaryOr(Constant rhs) {
-            throw new Exception($"const operation `{this} | {rhs}` is invalid");
+            throw new CompileErrorException($"const operation `{this} | {rhs}` is invalid");
         }
-#endregion
+        #endregion
     }
 
     // null
@@ -87,6 +90,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool IsTruthy() => false;
+
+        public override object ToJsonRepresentation() => null;
     }
 
     // 4.0, -4.0
@@ -107,12 +112,14 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => Value != 0;
 
+        public override object ToJsonRepresentation() => Value;
+
         public override Constant Negate() {
             return new Number(-Value);
         }
 
         public override Constant BinaryNot() {
-            return new Number(~(int) Value);
+            return new Number(~(int)Value);
         }
 
         public override Constant Add(Constant rhs) {
@@ -168,7 +175,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int) Value) << ((int) rhsNum.Value));
+            return new Number(((int)Value) << ((int)rhsNum.Value));
         }
 
         public override Constant RightShift(Constant rhs) {
@@ -176,7 +183,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int) Value) >> ((int) rhsNum.Value));
+            return new Number(((int)Value) >> ((int)rhsNum.Value));
         }
 
 
@@ -185,7 +192,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int) Value) & ((int) rhsNum.Value));
+            return new Number(((int)Value) & ((int)rhsNum.Value));
         }
 
 
@@ -194,7 +201,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int) Value) ^ ((int) rhsNum.Value));
+            return new Number(((int)Value) ^ ((int)rhsNum.Value));
         }
 
 
@@ -203,7 +210,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int) Value) | ((int) rhsNum.Value));
+            return new Number(((int)Value) | ((int)rhsNum.Value));
         }
     }
 
@@ -220,6 +227,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool IsTruthy() => Value.Length != 0;
+
+        public override object ToJsonRepresentation() => Value;
 
         public override Constant Add(Constant rhs) {
             if (rhs is not String rhsString) {
@@ -243,11 +252,18 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool IsTruthy() => true;
+
+        public override object ToJsonRepresentation() {
+            return new Dictionary<string, object>() {
+                { "type", JsonVariableType.Resource },
+                { "resourcePath", Value }
+            };
+        }
     }
 
     // /a/b/c
     class Path : Constant {
-        DreamPath Value { get; }
+        public DreamPath Value { get; }
 
         public Path(DreamPath value) {
             Value = value;
@@ -258,5 +274,12 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool IsTruthy() => true;
+
+        public override object ToJsonRepresentation() {
+            return new Dictionary<string, object>() {
+                { "type", JsonVariableType.Path },
+                { "value", Value.PathString }
+            };
+        }
     }
 }

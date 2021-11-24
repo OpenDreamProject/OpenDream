@@ -1,16 +1,59 @@
 ﻿/image
 	parent_type = /datum
 
-	var/icon = null
-	var/icon_state = null
-	var/list/overlays = list()
-	var/atom/loc = null
+	var/alpha = 255
+	var/appearance as opendream_unimplemented
+	var/appearance_flags = 0 as opendream_unimplemented
+	var/blend_mode = 0 as opendream_unimplemented
+	var/color = "#FFFFFF"
+	var/desc = null
+	var/gender = "neuter" as opendream_unimplemented
+	var/infra_luminosity = 0 as opendream_unimplemented
+	var/invisibility = 0 as opendream_unimplemented
+	var/list/filters = list() as opendream_unimplemented
 	var/layer = FLOAT_LAYER
-	var/dir = SOUTH
+	var/luminosity = 0 as opendream_unimplemented
+	var/maptext = "i" as opendream_unimplemented
+	var/maptext_width = 32 as opendream_unimplemented
+	var/maptext_height = 32 as opendream_unimplemented
+	var/maptext_x = 0 as opendream_unimplemented
+	var/maptext_y = 0 as opendream_unimplemented
+	var/mouse_over_pointer = 0 as opendream_unimplemented
+	var/mouse_drag_pointer = 0 as opendream_unimplemented
+	var/mouse_drop_pointer = 1 as opendream_unimplemented
+	var/mouse_drop_zone = 0 as opendream_unimplemented
+	var/mouse_opacity = 1
+	var/name = "image"
+	var/opacity = 0 as opendream_unimplemented
+	var/list/overlays = list()
+	var/override = 1 as opendream_unimplemented
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/color = "#FFFFFF"
-	var/alpha = 255
+	var/pixel_w = 0 as opendream_unimplemented
+	var/pixel_z = 0 as opendream_unimplemented
+	var/plane = FLOAT_PLANE as opendream_unimplemented
+	var/render_source as opendream_unimplemented
+	var/render_target as opendream_unimplemented
+	var/suffix as opendream_unimplemented
+	var/text = "i" as opendream_unimplemented
+	var/matrix/transform
+	var/list/underlays = list()
+	var/vis_flags = 0 as opendream_unimplemented
+
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
+	var/name
+	var/x
+	var/y
+	var/z
+	var/list/filters = list() as opendream_unimplemented
+	var/list/vis_contents = list() as opendream_unimplemented
+
+	var/dir = SOUTH
+	var/icon
+	var/icon_state
+
+	var/atom/loc = null
 
 	New(icon, loc, icon_state, layer, dir)
 		src.icon = icon

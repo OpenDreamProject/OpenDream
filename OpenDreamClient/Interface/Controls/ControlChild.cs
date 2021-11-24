@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Interface;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -23,24 +24,26 @@ namespace OpenDreamClient.Interface.Controls {
             _grid.Children.Remove(_leftElement?.UIElement);
             _grid.Children.Remove(_rightElement?.UIElement);
 
-            if (controlDescriptor.Left != null) {
+            if (!String.IsNullOrEmpty(controlDescriptor.Left)) {
                 _leftElement = Program.OpenDream.Interface.Windows[controlDescriptor.Left];
-
                 _grid.Children.Add(_leftElement.UIElement);
+            } else {
+                _leftElement = null;
             }
 
-            if (controlDescriptor.Right != null) {
+            if (!String.IsNullOrEmpty(controlDescriptor.Right)) {
                 _rightElement = Program.OpenDream.Interface.Windows[controlDescriptor.Right];
-
                 _grid.Children.Add(_rightElement.UIElement);
+            } else {
+                _rightElement = null;
             }
 
             UpdateGrid(controlDescriptor.IsVert);
         }
 
         public override void Shutdown() {
-            _leftElement.Shutdown();
-            _rightElement.Shutdown();
+            _leftElement?.Shutdown();
+            _rightElement?.Shutdown();
         }
 
         private void UpdateGrid(bool isVert) {
@@ -66,9 +69,9 @@ namespace OpenDreamClient.Interface.Controls {
                 rightColumnDef.Width = new GridLength(1, GridUnitType.Star);
                 _grid.ColumnDefinitions.Add(rightColumnDef);
 
-                Grid.SetColumn(_leftElement.UIElement, 0);
+                if (_leftElement != null) Grid.SetColumn(_leftElement.UIElement, 0);
                 Grid.SetColumn(splitter, 1);
-                Grid.SetColumn(_rightElement.UIElement, 2);
+                if (_rightElement != null) Grid.SetColumn(_rightElement.UIElement, 2);
             } else {
                 RowDefinition leftRowDef = new RowDefinition();
                 leftRowDef.Height = new GridLength(1, GridUnitType.Star);
@@ -82,9 +85,9 @@ namespace OpenDreamClient.Interface.Controls {
                 rightRowDef.Height = new GridLength(1, GridUnitType.Star);
                 _grid.RowDefinitions.Add(rightRowDef);
 
-                Grid.SetRow(_leftElement.UIElement, 0);
+                if (_leftElement != null) Grid.SetRow(_leftElement.UIElement, 0);
                 Grid.SetRow(splitter, 1);
-                Grid.SetRow(_rightElement.UIElement, 2);
+                if (_rightElement != null) Grid.SetRow(_rightElement.UIElement, 2);
             }
         }
     }

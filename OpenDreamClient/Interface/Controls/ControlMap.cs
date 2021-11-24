@@ -61,8 +61,8 @@ namespace OpenDreamClient.Interface.Controls {
             Rectangle iconRect = _dreamRenderer.GetIconRect(atom, isScreenAtom);
 
             if (_dreamRenderer.IsAtomVisible(atom, isScreenAtom) && iconRect.Contains(new System.Drawing.Point(screenCoordinates.X, screenCoordinates.Y))) {
-                int atomIconX = screenCoordinates.X - iconRect.X;
-                int atomIconY = 32 - (screenCoordinates.Y - iconRect.Y);
+                int atomIconX = (screenCoordinates.X - iconRect.X) % 32;
+                int atomIconY = 32 - ((screenCoordinates.Y - iconRect.Y) % 32);
 
                 return atom.Icon.IsMouseOver(atomIconX, atomIconY);
             }
@@ -85,8 +85,8 @@ namespace OpenDreamClient.Interface.Controls {
 
                 if (IsOverAtom(screenObject, screenCoordinates, true)) {
                     clickedATOM = screenObject;
-                    iconX = screenCoordinates.X - iconRect.X;
-                    iconY = screenCoordinates.Y - iconRect.Y;
+                    iconX = (screenCoordinates.X - iconRect.X) % 32;
+                    iconY = (screenCoordinates.Y - iconRect.Y) % 32;
                 }
             }
 
@@ -117,9 +117,9 @@ namespace OpenDreamClient.Interface.Controls {
             _grid.Focus();
 
             PacketClickAtom pClickAtom = new PacketClickAtom(clickedATOM.ID, iconX, iconY, screenLocation);
-            pClickAtom.ModifierShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            pClickAtom.ModifierCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-            pClickAtom.ModifierAlt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
+            pClickAtom.ModifierShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            pClickAtom.ModifierCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            pClickAtom.ModifierAlt = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
             Program.OpenDream.Connection.SendPacket(pClickAtom);
         }
 

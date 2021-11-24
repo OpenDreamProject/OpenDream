@@ -6,7 +6,7 @@ namespace OpenDreamShared.Dream.Procs {
         GetIdentifier = 0x2,
         PushString = 0x3,
         FormatString = 0x4,
-        //0x5
+        SwitchCaseRange = 0x5,
         SetLocalVariable = 0x6,
         PushPath = 0x7,
         Add = 0x8,
@@ -84,7 +84,16 @@ namespace OpenDreamShared.Dream.Procs {
         JumpIfNullIdentifier = 0x50,
         Pop = 0x51,
         PushCopy = 0x52,
-        IsSaved = 0x53
+        IsSaved = 0x53,
+        PickUnweighted = 0x54,
+        PickWeighted = 0x55,
+        Increment = 0x56,
+        Decrement = 0x57,
+        CompareEquivalent = 0x58,
+        CompareNotEquivalent = 0x59,
+        Throw = 0x5A,
+        IsInRange = 0x5B,
+        GetGlobal = 0x5C
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -109,6 +118,10 @@ namespace OpenDreamShared.Dream.Procs {
         Message = 0x40,
         Area = 0x80,
         Color = 0x100,
-        File = 0x200
+        File = 0x200,
+        CommandText = 0x400,
+        Sound = 0x800,
+        Icon = 0x1000,
+        Unimplemented = 0x2000
     }
 }

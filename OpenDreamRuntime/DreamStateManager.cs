@@ -85,6 +85,10 @@ namespace OpenDreamRuntime {
             _currentDeltaState.AddClientPerspectiveDelta(ckey, newPerspective);
         }
 
+        public void AddClientSeeInvisibleDelta(string ckey, byte newSeeInvisible) {
+            _currentDeltaState.AddClientSeeInvisibleDelta(ckey, newSeeInvisible);
+        }
+
         public void AddClientScreenObject(string ckey, DreamObject atom) {
             _currentDeltaState.AddClientScreenObject(ckey, Runtime.AtomIDs[atom]);
         }

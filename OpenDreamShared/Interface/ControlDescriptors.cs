@@ -47,6 +47,8 @@ namespace OpenDreamShared.Interface {
         public string Icon = null;
         [InterfaceAttribute("menu")]
         public string Menu = null;
+        [InterfaceAttribute("title")]
+        public string Title = null;
 
         public ControlDescriptorMain(string name) : base(name) { }
     }
@@ -89,5 +91,12 @@ namespace OpenDreamShared.Interface {
 
     public class ControlDescriptorBrowser : ControlDescriptor {
         public ControlDescriptorBrowser(string name) : base(name) { }
+    }
+
+    public class ControlDescriptorLabel : ControlDescriptor {
+        [InterfaceAttribute("text")]
+        public string Text = null;
+
+        public ControlDescriptorLabel(string name) : base(name) { }
     }
 }

@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime {
+    [JsonConverter(typeof(DreamValueJsonConverter))]
     public struct DreamValue : IEquatable<DreamValue> {
         [Flags]
         public enum DreamValueType {
@@ -69,7 +72,7 @@ namespace OpenDreamRuntime {
                 DreamObject => DreamValueType.DreamObject,
                 DreamPath => DreamValueType.DreamPath,
                 DreamProc => DreamValueType.DreamProc,
-                _ => throw new ArgumentException("Invalid DreamValue value (" + value + ")")
+                _ => throw new ArgumentException("Invalid DreamValue value (" + value + ", " + value.GetType() + ")")
             };
         }
 
@@ -239,6 +242,7 @@ namespace OpenDreamRuntime {
         public bool IsTruthy() {
             switch (Type) {
                 case DreamValue.DreamValueType.DreamObject:
+                    return Value != null && ((DreamObject)Value).Deleted == false;
                 case DreamValue.DreamValueType.DreamProc:
                     return Value != null;
                 case DreamValue.DreamValueType.DreamResource:
@@ -300,6 +304,56 @@ namespace OpenDreamRuntime {
 
         public static bool operator !=(DreamValue a, DreamValue b) {
             return !a.Equals(b);
+        }
+    }
+
+    public class DreamValueJsonConverter : JsonConverter<DreamValue> {
+        public override void Write(Utf8JsonWriter writer, DreamValue value, JsonSerializerOptions options) {
+            writer.WriteStartObject();
+            writer.WriteNumber("Type", (int)value.Type);
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.String: writer.WriteString("Value", (string)value.Value); break;
+                case DreamValue.DreamValueType.Float: writer.WriteNumber("Value", (float)value.Value); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: writer.WriteNull("Value"); break;
+                default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
+            }
+
+            writer.WriteEndObject();
+        }
+
+        public override DreamValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+            if (reader.TokenType != JsonTokenType.StartObject) throw new Exception("Expected StartObject token");
+            reader.Read();
+
+            if (reader.GetString() != "Type") throw new Exception("Expected type property");
+            reader.Read();
+            DreamValue.DreamValueType type = (DreamValue.DreamValueType)reader.GetInt32();
+            reader.Read();
+
+            if (reader.GetString() != "Value") throw new Exception("Expected value property");
+            reader.Read();
+
+            DreamValue value;
+            switch (type) {
+                case DreamValue.DreamValueType.String: value = new DreamValue(reader.GetString()); break;
+                case DreamValue.DreamValueType.Float: value = new DreamValue((float)reader.GetSingle()); break;
+                case DreamValue.DreamValueType.DreamObject when reader.TokenType == JsonTokenType.Null: {
+                    if (reader.TokenType == JsonTokenType.Null) {
+                        value = DreamValue.Null;
+                    } else {
+                        throw new NotImplementedException("Json deserialization for DreamObjects are not implemented");
+                    }
+
+                    break;
+                }
+                default: throw new NotImplementedException("Json deserialization for type " + type + " is not implemented");
+            }
+            reader.Read();
+
+            if (reader.TokenType != JsonTokenType.EndObject) throw new Exception("Expected EndObject token");
+
+            return value;
         }
     }
 }

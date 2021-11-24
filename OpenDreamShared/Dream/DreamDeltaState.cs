@@ -7,7 +7,7 @@ namespace OpenDreamShared.Dream {
             public AtomType Type;
             public UInt32 LocationID = UInt32.MaxValue;
             public int IconAppearanceID;
-            public ScreenLocation ScreenLocation = new ScreenLocation();
+            public ScreenLocation ScreenLocation = new ScreenLocation(0, 0, 0, 0);
 
             public AtomCreation(AtomType type, int appearanceID) {
                 Type = type;
@@ -27,12 +27,13 @@ namespace OpenDreamShared.Dream {
 
         public class AtomDelta {
             public int? NewIconAppearanceID = null;
-            public ScreenLocation? ScreenLocation;
+            public ScreenLocation ScreenLocation;
         }
 
         public class ClientDelta {
             public UInt32? NewEyeID;
             public ClientPerspective? NewPerspective;
+            public byte? NewSeeInvisible;
             public List<UInt32> ScreenObjectAdditions;
             public List<UInt32> ScreenObjectRemovals;
         }
@@ -108,6 +109,11 @@ namespace OpenDreamShared.Dream {
 
         public void AddClientPerspectiveDelta(string ckey, ClientPerspective newPerspective) {
             GetClientDelta(ckey).NewPerspective = newPerspective;
+        }
+
+        public void AddClientSeeInvisibleDelta(string ckey, byte newSeeInvisible)
+        {
+            GetClientDelta(ckey).NewSeeInvisible = newSeeInvisible;
         }
 
         public void AddClientScreenObject(string ckey, UInt32 screenObjectID) {

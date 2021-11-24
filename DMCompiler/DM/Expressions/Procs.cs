@@ -1,4 +1,4 @@
-using System;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -10,16 +10,22 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new Exception("attempt to use proc as value");
+            throw new CompileErrorException("attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             if (!dmObject.HasProc(_identifier)) {
-                throw new Exception($"Type + {dmObject.Path} does not have a proc named `{_identifier}`");
+                throw new CompileErrorException($"Type {dmObject.Path} does not have a proc named `{_identifier}`");
             }
 
             proc.GetProc(_identifier);
             return ProcPushResult.Unconditional;
+        }
+
+        public void UnimplementedCheck(DMObject dmObject) {
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && dmObject.IsProcUnimplemented(_identifier)) {
+                DMCompiler.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
+            }
         }
     }
 
@@ -43,7 +49,7 @@ namespace DMCompiler.DM.Expressions {
     // ..
     class ProcSuper : DMExpression {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new Exception("attempt to use proc as value");
+            throw new CompileErrorException("attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
@@ -63,6 +69,10 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            switch (_target) {
+                case Proc procTarget: procTarget.UnimplementedCheck(dmObject); break;
+                case DereferenceProc derefTarget: derefTarget.UnimplementedCheck(); break;
+            }
 
             var _procResult = _target.EmitPushProc(dmObject, proc);
 

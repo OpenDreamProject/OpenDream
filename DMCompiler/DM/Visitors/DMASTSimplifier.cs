@@ -26,6 +26,12 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref objectVarDefinition.Value);
         }
 
+        public void VisitMultipleObjectVarDefinitions(DMASTMultipleObjectVarDefinitions multipleObjectVarDefinitions) {
+            foreach (DMASTObjectVarDefinition varDefinition in multipleObjectVarDefinitions.VarDefinitions) {
+                varDefinition.Visit(this);
+            }
+        }
+
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) {
             SimplifyExpression(ref objectVarOverride.Value);
         }
@@ -96,6 +102,11 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementSwitch.Value);
 
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
+                if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
+                    for (var i = 0; i < switchCaseValues.Values.Length; i++) {
+                        SimplifyExpression(ref switchCaseValues.Values[i]);
+                    }
+                }
                 switchCase.Body?.Visit(this);
             }
         }
@@ -154,6 +165,21 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             SimplifyExpression(ref varDeclaration.Value);
         }
+
+        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
+            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
+                varDeclaration.Visit(this);
+            }
+        }
+
+        public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
+            tryCatch.TryBody.Visit(this);
+            tryCatch.CatchBody.Visit(this);
+        }
+
+        public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) {
+            SimplifyExpression(ref statementThrow.Value);
+        }
         #endregion Procs
 
         private void SimplifyExpression(ref DMASTExpression expression) {
@@ -207,6 +233,15 @@ namespace DMCompiler.DM.Visitors {
 
                 return;
             }
+
+            DMASTExpressionInRange inRange = expression as DMASTExpressionInRange;
+            if (inRange != null) {
+                SimplifyExpression(ref inRange.Value);
+                SimplifyExpression(ref inRange.StartRange);
+                SimplifyExpression(ref inRange.EndRange);
+
+                return;
+            }
             #endregion Comparators
 
             #region Math
@@ -215,11 +250,10 @@ namespace DMCompiler.DM.Visitors {
                 SimplifyExpression(ref negate.Expression);
                 if (negate.Expression is not DMASTExpressionConstant) return;
 
-                DMASTConstantInteger exprInteger = negate.Expression as DMASTConstantInteger;
-                DMASTConstantFloat exprFloat = negate.Expression as DMASTConstantFloat;
-
-                if (exprInteger != null) expression = new DMASTConstantInteger(-exprInteger.Value);
-                else if (exprFloat != null) expression = new DMASTConstantFloat(-exprFloat.Value);
+                switch (negate.Expression) {
+                    case DMASTConstantInteger exprInteger: expression = new DMASTConstantInteger(-exprInteger.Value); break;
+                    case DMASTConstantFloat exprFloat: expression = new DMASTConstantFloat(-exprFloat.Value); break;
+                }
 
                 return;
             }
@@ -242,12 +276,14 @@ namespace DMCompiler.DM.Visitors {
             if (or != null) {
                 SimplifyExpression(ref or.A);
                 SimplifyExpression(ref or.B);
+                if (SimpleTruth(or.A) == true) {
+                    expression = or.A;
+                    return;
+                }
                 if (or.A is not DMASTExpressionConstant || or.B is not DMASTExpressionConstant) return;
-
                 DMASTConstantInteger aInteger = or.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = or.B as DMASTConstantInteger;
-
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) || (bInteger.Value != 0)) ? 1 : 0);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) || (bInteger.Value != 0)) ? bInteger.Value : 0);
 
                 return;
             }
@@ -256,12 +292,14 @@ namespace DMCompiler.DM.Visitors {
             if (and != null) {
                 SimplifyExpression(ref and.A);
                 SimplifyExpression(ref and.B);
+                if (SimpleTruth(and.A) == false) {
+                    expression = and.A;
+                    return;
+                }
                 if (and.A is not DMASTExpressionConstant || and.B is not DMASTExpressionConstant) return;
-
                 DMASTConstantInteger aInteger = and.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = and.B as DMASTConstantInteger;
-
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) && (bInteger.Value != 0)) ? 1 : 0);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) && (bInteger.Value != 0)) ? bInteger.Value : 0);
 
                 return;
             }
@@ -427,13 +465,13 @@ namespace DMCompiler.DM.Visitors {
             }
 
             DMASTPower power = expression as DMASTPower;
-            if (modulus != null) {
-                SimplifyExpression(ref modulus.A);
-                SimplifyExpression(ref modulus.B);
-                if (modulus.A is not DMASTExpressionConstant || modulus.B is not DMASTExpressionConstant) return;
+            if (power != null) {
+                SimplifyExpression(ref power.A);
+                SimplifyExpression(ref power.B);
+                if (power.A is not DMASTExpressionConstant || power.B is not DMASTExpressionConstant) return;
 
-                DMASTConstantInteger aInteger = modulus.A as DMASTConstantInteger;
-                DMASTConstantInteger bInteger = modulus.B as DMASTConstantInteger;
+                DMASTConstantInteger aInteger = power.A as DMASTConstantInteger;
+                DMASTConstantInteger bInteger = power.B as DMASTConstantInteger;
 
                 if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger((int)Math.Pow(aInteger.Value, bInteger.Value));
 
@@ -541,7 +579,24 @@ namespace DMCompiler.DM.Visitors {
 
                 return;
             }
+            if (expression is DMASTSwitchCaseRange switchCaseRange) {
+                SimplifyExpression(ref switchCaseRange.RangeStart);
+                SimplifyExpression(ref switchCaseRange.RangeEnd);
+                return;
+            }
             #endregion Others
+        }
+
+        bool? SimpleTruth(DMASTExpression expr) {
+            switch (expr) {
+                case DMASTConstantInteger e: return e.Value != 0;
+                case DMASTConstantFloat e: return e.Value != 0;
+                case DMASTConstantString e: return e.Value.Length != 0;
+                case DMASTConstantNull: return false;
+                case DMASTConstantPath: return true;
+                case DMASTConstantResource: return true;
+                default: return null;
+            }
         }
     }
 }

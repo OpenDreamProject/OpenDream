@@ -1,8 +1,7 @@
+using DMCompiler.DM.Expressions;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using System;
-using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {
@@ -46,6 +45,20 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Path(constant.Value.Path);
         }
 
+        public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
+            var pathExpr = DMExpression.Constant(_dmObject, _proc, constant.Path);
+            if (pathExpr is not Expressions.Path) throw new CompileErrorException("Cannot do an upward path search on " + pathExpr);
+
+            DreamPath path = ((Expressions.Path)pathExpr).Value;
+            DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
+
+            if (foundPath == null) {
+                throw new CompileErrorException($"Invalid path {path}.{constant.Search.Path}");
+            }
+
+            Result = new Expressions.Path(foundPath.Value);
+        }
+
         public void VisitStringFormat(DMASTStringFormat stringFormat) {
             var expressions = new DMExpression[stringFormat.InterpolatedValues.Length];
 
@@ -71,6 +84,11 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args();
             } else {
+                if (_proc is null)
+                {
+                    // Probably an undefined macro
+                    throw new CompileErrorException($"unknown identifier {name}");
+                }
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                 if (localVar != null) {
@@ -79,16 +97,16 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 var field = _dmObject.GetVariable(name);
-
-                if (field == null) {
-                    field = _dmObject.GetGlobalVariable(name);
+                if (field != null) {
+                    Result = new Expressions.Field(field.Type, name);
+                } else {
+                    int? globalId = _dmObject.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        Result = new Expressions.GlobalField(DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                    } else {
+                        throw new CompileErrorException($"unknown identifier {name}");
+                    }
                 }
-
-                if (field == null) {
-                    throw new Exception($"unknown identifier {name}");
-                }
-
-                Result = new Expressions.Field(field.Type, name);
             }
         }
 
@@ -109,7 +127,7 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new Exception("arglist must have 1 argument");
+                    if (procCall.Parameters.Length != 1) throw new CompileErrorException("arglist must have 1 argument");
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
                     Result = new Expressions.Arglist(expr);
@@ -203,6 +221,17 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Mask(lhs, rhs);
         }
 
+        public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
+            var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
+            Result = new Expressions.LogicalAndAssign(lhs, rhs);
+        }
+        public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
+            var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
+            Result = new Expressions.LogicalOrAssign(lhs, rhs);
+        }
+
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.B);
@@ -281,6 +310,18 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NotEqual(lhs, rhs);
         }
 
+        public void VisitEquivalent(DMASTEquivalent equivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, equivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, equivalent.B, _inferredPath);
+            Result = new Expressions.Equivalent(lhs, rhs);
+        }
+
+        public void VisitNotEquivalent(DMASTNotEquivalent notEquivalent) {
+            var lhs = DMExpression.Create(_dmObject, _proc, notEquivalent.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, notEquivalent.B, _inferredPath);
+            Result = new Expressions.NotEquivalent(lhs, rhs);
+        }
+
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
             var lhs = DMExpression.Create(_dmObject, _proc, greaterThan.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, greaterThan.B, _inferredPath);
@@ -332,7 +373,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitDereference(DMASTDereference dereference) {
             var expr = DMExpression.Create(_dmObject, _proc, dereference.Expression, _inferredPath);
-            Result = new Expressions.Dereference(expr, dereference, true);
+            Result = new Expressions.Dereference(expr, dereference);
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
@@ -347,7 +388,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
-                throw new Exception("An inferred new requires a type!");
+                throw new CompileErrorException("An inferred new requires a type!");
             }
 
             var args = new ArgumentList(_dmObject, _proc, newInferred.Parameters, _inferredPath);
@@ -391,7 +432,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (locate.Expression == null) {
                 if (_inferredPath == null) {
-                    throw new Exception("inferred lcoate requires a type");
+                    throw new CompileErrorException("inferred lcoate requires a type");
                 }
                 Result = new Expressions.LocateInferred(_inferredPath.Value, container);
                 return;
@@ -423,7 +464,7 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
 
             if (expr.Path is null) {
-                throw new Exception("An inferred istype requires a type!");
+                throw new CompileErrorException("An inferred istype requires a type!");
             }
 
             Result = new Expressions.IsTypeInferred(expr, expr.Path.Value);
@@ -431,6 +472,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitList(DMASTList list) {
             Result = new Expressions.List(list);
+        }
+
+        public void VisitNewList(DMASTNewList newList) {
+            DMExpression[] expressions = new DMExpression[newList.Parameters.Length];
+
+            for (int i = 0; i < newList.Parameters.Length; i++) {
+                DMASTCallParameter parameter = newList.Parameters[i];
+                if (parameter.Name != null) throw new CompileErrorException("newlist() does not take named arguments");
+
+                expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
+            }
+
+            Result = new Expressions.NewList(expressions);
         }
 
         public void VisitInput(DMASTInput input) {
@@ -446,6 +500,26 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);
             Result = new Expressions.In(expr, container);
+        }
+
+        public void VisitInRange(DMASTExpressionInRange expressionInRange) {
+            var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath);
+            var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath);
+            var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath);
+            Result = new Expressions.InRange(value, startRange, endRange);
+        }
+
+        public void VisitPick(DMASTPick pick) {
+            Expressions.Pick.PickValue[] pickValues = new Expressions.Pick.PickValue[pick.Values.Length];
+            for (int i = 0; i < pickValues.Length; i++) {
+                DMASTPick.PickValue pickValue = pick.Values[i];
+                DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
+                DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                pickValues[i] = new Expressions.Pick.PickValue(weight, value);
+            }
+
+            Result = new Expressions.Pick(pickValues);
         }
 
         public void VisitCall(DMASTCall call) {
@@ -468,7 +542,7 @@ namespace DMCompiler.DM.Visitors {
                     break;
 
                 default:
-                    throw new Exception("invalid argument count for call()");
+                    throw new CompileErrorException("invalid argument count for call()");
             }
         }
     }

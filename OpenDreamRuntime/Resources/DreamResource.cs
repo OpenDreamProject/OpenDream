@@ -35,16 +35,25 @@ namespace OpenDreamRuntime.Resources {
             return resourceString;
         }
 
+        public virtual void Clear() {
+            CreateDirectory();
+            File.WriteAllText(_filePath, String.Empty);
+        }
+
         public virtual void Output(DreamValue value) {
             if (value.TryGetValueAsString(out string text)) {
                 string filePath = Path.Combine(Runtime.ResourceManager.RootPath, ResourcePath);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
+                CreateDirectory();
                 File.AppendAllText(filePath, text + "\r\n");
                 _resourceData = null;
             } else {
                 throw new Exception("Invalid output operation on '" + ResourcePath + "'");
             }
+        }
+
+        private void CreateDirectory() {
+            Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
         }
     }
 }

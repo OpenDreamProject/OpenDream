@@ -24,58 +24,87 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             base.OnObjectDeleted(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue)
+        {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            if (variableName == "x" || variableName == "y" || variableName == "z") {
-                int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
-                int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
-                int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
-                DreamObject newLocation = Runtime.Map.GetTurfAt(x, y, z);
+            switch (variableName)
+            {
+                case "x":
+                case "y":
+                case "z":
+                {
+                    int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
+                    int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
+                    int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
+                    DreamObject newLocation = Runtime.Map.GetTurfAt(x, y, z);
 
-                dreamObject.SetVariable("loc", new DreamValue(newLocation));
-            } else if (variableName == "loc") {
-                Runtime.StateManager.AddAtomLocationDelta(dreamObject, variableValue.GetValueAsDreamObject());
-
-                if (oldVariableValue.Value != null) {
-                    DreamObject oldLoc = oldVariableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                    DreamList oldLocContents = oldLoc.GetVariable("contents").GetValueAsDreamList();
-
-                    oldLocContents.RemoveValue(new DreamValue(dreamObject));
+                    dreamObject.SetVariable("loc", new DreamValue(newLocation));
+                    break;
                 }
+                case "loc":
+                {
+                    Runtime.StateManager.AddAtomLocationDelta(dreamObject, variableValue.GetValueAsDreamObject());
 
-                if (variableValue.Value != null) {
-                    DreamObject newLoc = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                    DreamList newLocContents = newLoc.GetVariable("contents").GetValueAsDreamList();
+                    if (oldVariableValue.Value != null) {
+                        DreamObject oldLoc = oldVariableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
+                        DreamList oldLocContents = oldLoc.GetVariable("contents").GetValueAsDreamList();
 
-                    newLocContents.AddValue(new DreamValue(dreamObject));
+                        oldLocContents.RemoveValue(new DreamValue(dreamObject));
+                    }
+
+                    if (variableValue.Value != null) {
+                        DreamObject newLoc = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
+                        DreamList newLocContents = newLoc.GetVariable("contents").GetValueAsDreamList();
+
+                        newLocContents.AddValue(new DreamValue(dreamObject));
+                    }
+
+                    break;
                 }
-            } else if (variableName == "screen_loc") {
-                UpdateScreenLocation(dreamObject, variableValue);
+                case "screen_loc":
+                    UpdateScreenLocation(dreamObject, variableValue);
+                    break;
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "x" || variableName == "y" || variableName == "z") {
-                DreamObject location = dreamObject.GetVariable("loc").GetValueAsDreamObject();
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
+        {
+            switch (variableName)
+            {
+                case "x":
+                case "y":
+                case "z":
+                {
+                    DreamObject location = dreamObject.GetVariable("loc").GetValueAsDreamObject();
 
-                if (location != null) {
-                    return location.GetVariable(variableName);
-                } else {
-                    return new DreamValue(0);
+                    if (location != null)
+                    {
+                        return location.GetVariable(variableName);
+                    }
+                    else
+                    {
+                        return new DreamValue(0);
+                    }
                 }
-            } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+                case "locs":
+                {
+                    //TODO multi-tile support
+                    var list = DreamList.Create(Runtime);
+                    list.AddValue(dreamObject.GetVariable("loc"));
+                    return new DreamValue(list);
+                }
+                default:
+                    return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 
         private void UpdateScreenLocation(DreamObject movable, DreamValue screenLocationValue) {
             ScreenLocation screenLocation;
-            if (screenLocationValue.Value != null) {
-                string screenLocationString = screenLocationValue.GetValueAsString();
+            if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
             } else {
-                screenLocation = new ScreenLocation();
+                screenLocation = new ScreenLocation(0, 0, 0, 0);
             }
 
             Runtime.StateManager.AddAtomScreenLocationDelta(movable, screenLocation);

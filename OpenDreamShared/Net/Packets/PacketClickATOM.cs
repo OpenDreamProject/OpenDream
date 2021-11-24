@@ -23,7 +23,7 @@ namespace OpenDreamShared.Net.Packets {
             AtomID = stream.ReadUInt32();
             IconX = stream.ReadByte();
             IconY = stream.ReadByte();
-            ScreenLocation = stream.ReadScreenLocation();
+            ScreenLocation = ScreenLocation.ReadFromPacket(stream);
             ModifierShift = stream.ReadBool();
             ModifierCtrl = stream.ReadBool();
             ModifierAlt = stream.ReadBool();
@@ -33,7 +33,7 @@ namespace OpenDreamShared.Net.Packets {
             stream.WriteUInt32(AtomID);
             stream.WriteByte((byte)IconX);
             stream.WriteByte((byte)IconY);
-            stream.WriteScreenLocation(ScreenLocation);
+            ScreenLocation.WriteToPacket(stream);
             stream.WriteBool(ModifierShift);
             stream.WriteBool(ModifierCtrl);
             stream.WriteBool(ModifierAlt);

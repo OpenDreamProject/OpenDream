@@ -82,7 +82,7 @@ namespace OpenDreamShared.Compiler {
             switch (c) {
                 case '\n': token = CreateToken(TokenType.Newline, c); Advance(); break;
                 case '\0': token = CreateToken(TokenType.EndOfFile, c); Advance(); break;
-                default: token = CreateToken(TokenType.Unknown, c); break;
+                default: token = null; break;
             }
 
             return token;
@@ -119,6 +119,27 @@ namespace OpenDreamShared.Compiler {
 
         protected bool IsHex(char c) {
             return IsNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        }
+    }
+
+    public class TokenLexer : Lexer<Token> {
+        public TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
+            Advance();
+        }
+
+        protected override Token Advance() {
+            Token current = base.Advance();
+
+            //Warnings and errors go straight to output, no processing
+            while (current.Type is TokenType.Warning or TokenType.Error && !AtEndOfSource) {
+                _pendingTokenQueue.Enqueue(current);
+                current = base.Advance();
+            }
+
+            SourceName = current.SourceFile;
+            CurrentLine = current.Line;
+            CurrentColumn = current.Column;
+            return current;
         }
     }
 }

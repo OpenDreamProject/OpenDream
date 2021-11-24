@@ -4,7 +4,7 @@
 
 	var/list/vars
 
-	var/tag = null
+	var/tag = null as opendream_unimplemented
 
 	proc/New()
 	proc/Del()

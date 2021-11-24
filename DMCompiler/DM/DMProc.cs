@@ -272,7 +272,7 @@ namespace DMCompiler.DM {
                 }
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;
-                for (var i = labelList.IndexOf(codeLabel) + 2; i < labelList.Count; i++)
+                for (var i = labelList.IndexOf(codeLabel) + 1; i < labelList.Count; i++)
                 {
                     if(labelList[i].EndsWith("_start"))
                     {

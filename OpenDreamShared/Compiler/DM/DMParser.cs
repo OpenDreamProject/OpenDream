@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using DereferenceType = OpenDreamShared.Compiler.DM.DMASTDereference.DereferenceType;
 using OpenDreamShared.Dream.Procs;
@@ -431,8 +432,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (expression != null) {
                 if (expression is DMASTIdentifier) {
                     Check(TokenType.DM_Colon);
-
-                    return new DMASTProcStatementLabel(((DMASTIdentifier)expression).Identifier);
+                    return Label((DMASTIdentifier)expression);
                 } else if (expression is DMASTLeftShift) {
                     DMASTLeftShift leftShift = (DMASTLeftShift)expression;
                     DMASTProcCall procCall = leftShift.B as DMASTProcCall;
@@ -605,8 +605,12 @@ namespace OpenDreamShared.Compiler.DM {
         }
 
         public DMASTProcStatementBreak Break() {
-            if (Check(TokenType.DM_Break)) {
-                return new DMASTProcStatementBreak();
+            if (Check(TokenType.DM_Break))
+            {
+                Whitespace();
+                DMASTExpression label = Expression();
+                
+                return new DMASTProcStatementBreak(label as DMASTIdentifier);
             } else {
                 return null;
             }
@@ -614,7 +618,10 @@ namespace OpenDreamShared.Compiler.DM {
 
         public DMASTProcStatementContinue Continue() {
             if (Check(TokenType.DM_Continue)) {
-                return new DMASTProcStatementContinue();
+                Whitespace();
+                DMASTExpression label = Expression();
+                
+                return new DMASTProcStatementContinue(label as DMASTIdentifier);
             } else {
                 return null;
             }
@@ -1146,6 +1153,20 @@ namespace OpenDreamShared.Compiler.DM {
             } else {
                 return null;
             }
+        }
+
+        public DMASTProcStatementLabel Label(DMASTIdentifier expression)
+        {
+            Whitespace();
+            Newline();
+
+            DMASTProcBlockInner body = ProcBlock();
+            if (body == null) {
+                DMASTProcStatement statement = ProcStatement();
+                
+                if (statement != null) body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+            }
+            return new DMASTProcStatementLabel(expression.Identifier, body);
         }
 
         public DMASTCallParameter[] ProcCall() {

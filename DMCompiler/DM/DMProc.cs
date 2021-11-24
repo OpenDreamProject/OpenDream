@@ -6,6 +6,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
@@ -245,16 +246,46 @@ namespace DMCompiler.DM {
             WriteLabel(jumpTo);
         }
 
-        public void Break() {
-            Jump(_loopStack.Peek() + "_end");
+        public void Break(DMASTIdentifier label = null) {
+            if (label is not null)
+            {
+                Jump(label.Identifier + "_end");
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_end");
+            }
         }
 
         public void BreakIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_end");
         }
 
-        public void Continue() {
-            Jump(_loopStack.Peek() + "_continue");
+        public void Continue(DMASTIdentifier label = null) {
+            // TODO: Clean up this godawful label handling
+            if (label is not null)
+            {
+                var codeLabel = label.Identifier + "_codelabel";
+                if (!_labels.ContainsKey(codeLabel))
+                {
+                    Program.Error(new CompilerError(null, $"Unknown label {label.Identifier}"));
+                }
+                var labelList = _labels.Keys.ToList();
+                var continueLabel = string.Empty;
+                for (var i = labelList.IndexOf(codeLabel) + 1; i < labelList.Count; i++)
+                {
+                    if(labelList[i].EndsWith("_start"))
+                    {
+                        continueLabel = labelList[i].Replace("_start", "_continue");
+                        break;
+                    }
+                }
+                Jump(continueLabel);
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_continue");
+            }
         }
 
         public void ContinueIfFalse() {

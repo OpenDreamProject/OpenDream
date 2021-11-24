@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -348,13 +349,26 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    public class DMASTProcStatementBreak : DMASTProcStatement {
+    public class DMASTProcStatementBreak : DMASTProcStatement
+    {
+        public DMASTIdentifier Label;
+
+        public DMASTProcStatementBreak(DMASTIdentifier label = null)
+        {
+            Label = label;
+        }
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBreak(this);
         }
     }
 
     public class DMASTProcStatementContinue : DMASTProcStatement {
+        public DMASTIdentifier Label;
+
+        public DMASTProcStatementContinue(DMASTIdentifier label = null)
+        {
+            Label = label;
+        }
         public void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementContinue(this);
         }
@@ -374,9 +388,11 @@ namespace OpenDreamShared.Compiler.DM {
 
     public class DMASTProcStatementLabel : DMASTProcStatement {
         public string Name;
+        public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementLabel(string name) {
+        public DMASTProcStatementLabel(string name, DMASTProcBlockInner body) {
             Name = name;
+            Body = body;
         }
 
         public void Visit(DMASTVisitor visitor) {

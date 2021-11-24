@@ -1164,8 +1164,7 @@ namespace OpenDreamShared.Compiler.DM {
             if (body == null) {
                 DMASTProcStatement statement = ProcStatement();
                 
-                if (statement == null) return new DMASTProcStatementLabel(expression.Identifier, null);
-                body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
+                if (statement != null) body = new DMASTProcBlockInner(new DMASTProcStatement[] { statement });
             }
             return new DMASTProcStatementLabel(expression.Identifier, body);
         }

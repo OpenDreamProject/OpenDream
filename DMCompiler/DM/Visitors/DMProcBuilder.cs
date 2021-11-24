@@ -115,7 +115,6 @@ namespace DMCompiler.DM.Visitors {
             {
                 _proc.StartScope();
                 {
-                    _proc.AddLabel(statementLabel.Name + "_start");
                     ProcessBlockInner(statementLabel.Body);
                 }
                 _proc.EndScope();

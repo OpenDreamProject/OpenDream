@@ -268,7 +268,7 @@ namespace DMCompiler.DM {
                 var codeLabel = label.Identifier + "_codelabel";
                 if (!_labels.ContainsKey(codeLabel))
                 {
-                    Program.Error(new CompilerError(null, $"Unknown label {label.Identifier}"));
+                    DMCompiler.Error(new CompilerError(null, $"Unknown label {label.Identifier}"));
                 }
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;

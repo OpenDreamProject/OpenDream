@@ -147,18 +147,25 @@ namespace DMCompiler.DM.Expressions {
     class ListIndex : LValue {
         DMExpression _expr;
         DMExpression _index;
+        bool _conditional;
 
-        public ListIndex(DMExpression expr, DMExpression index, DreamPath? path)
+        public ListIndex(DMExpression expr, DMExpression index, DreamPath? path, bool conditional)
             : base(path)
         {
             _expr = expr;
             _index = index;
+            _conditional = conditional;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             _index.EmitPushValue(dmObject, proc);
-            proc.IndexList();
+
+            if (_conditional) {
+                proc.IndexListConditional();
+            } else {
+                proc.IndexList();
+            }
         }
     }
 }

@@ -2038,12 +2038,15 @@ namespace OpenDreamShared.Compiler.DM {
                 }
 
                 Whitespace();
-                if (Check(TokenType.DM_LeftBracket)) {
+                Token indexToken = Current();
+                if (Check(TokenType.DM_LeftBracket) || Check(TokenType.DM_QuestionLeftBracket)) {
+                    bool conditional = indexToken.Type == TokenType.DM_QuestionLeftBracket;
+
                     Whitespace();
                     DMASTExpression index = Expression();
                     ConsumeRightBracket();
 
-                    expression = new DMASTListIndex(expression, index);
+                    expression = new DMASTListIndex(expression, index, conditional);
                     expression = ParseDereference(expression);
                     Whitespace();
                 }

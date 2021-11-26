@@ -124,7 +124,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
             DMOpcodeHandlers.IsInRange,
-            DMOpcodeHandlers.GetGlobal
+            DMOpcodeHandlers.GetGlobal,
+            DMOpcodeHandlers.IndexListConditional
         };
         #endregion
 

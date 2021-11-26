@@ -1569,10 +1569,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTListIndex : DMASTExpression {
         public DMASTExpression Expression;
         public DMASTExpression Index;
+        public bool Conditional;
 
-        public DMASTListIndex(DMASTExpression expression, DMASTExpression index) {
+        public DMASTListIndex(DMASTExpression expression, DMASTExpression index, bool conditional) {
             Expression = expression;
             Index = index;
+            Conditional = conditional;
         }
 
         public void Visit(DMASTVisitor visitor) {

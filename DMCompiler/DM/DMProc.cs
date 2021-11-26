@@ -603,6 +603,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IndexList);
         }
 
+        public void IndexListConditional() {
+            WriteOpcode(DreamProcOpcode.IndexListConditional);
+        }
+
         public void IsInList() {
             WriteOpcode(DreamProcOpcode.IsInList);
         }

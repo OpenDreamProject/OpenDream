@@ -16,24 +16,16 @@ namespace DMCompiler.DM.Expressions {
         DreamPath? _path;
 
         public static bool DirectConvertable(DMExpression expr, DMASTDereference astNode) {
-            if (expr.Path == null && astNode.Expression is DMASTProcCall) {
-                return true;
-            }
-            else if (astNode.Expression is DMASTListIndex) {
-                return true;
-            }
-            else if (astNode.Expression is DMASTDereference deref) {
-                if (deref.Type == DMASTDereference.DereferenceType.Search) {
+            switch (astNode.Expression) {
+                case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
+                case DMASTProcCall when expr.Path == null:
+                case DMASTDereferenceProc:
+                case DMASTListIndex:
                     return true;
-                }
-                if (expr is Dereference _deref) {
+                case DMASTDereference deref when expr is Dereference _deref:
                     return DirectConvertable(_deref._expr, deref);
-                }
+                default: return false;
             }
-            else if (astNode.Expression is DMASTDereferenceProc) {
-                return true;
-            }
-            return false;
         }
 
         public Dereference(DMExpression expr, DMASTDereference astNode)

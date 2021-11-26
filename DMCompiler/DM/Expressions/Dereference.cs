@@ -15,6 +15,19 @@ namespace DMCompiler.DM.Expressions {
         public override DreamPath? Path => _path;
         DreamPath? _path;
 
+        public static bool DirectConvertable(DMExpression expr, DMASTDereference astNode) {
+            switch (astNode.Expression) {
+                case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
+                case DMASTProcCall when expr.Path == null:
+                case DMASTDereferenceProc:
+                case DMASTListIndex:
+                    return true;
+                case DMASTDereference deref when expr is Dereference _deref:
+                    return DirectConvertable(_deref._expr, deref);
+                default: return false;
+            }
+        }
+
         public Dereference(DMExpression expr, DMASTDereference astNode)
             : base(null) // This gets filled in later
         {
@@ -23,8 +36,12 @@ namespace DMCompiler.DM.Expressions {
             _propertyName = astNode.Property;
 
             if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
-                if (expr.Path == null) {
-                    throw new CompileErrorException($"Cannot dereference property \"{_propertyName}\" because a type specifier is missing");
+                if (DirectConvertable(expr, astNode)) {
+                    astNode.Type = DMASTDereference.DereferenceType.Search;
+                    return;
+                }
+                else if (expr.Path == null) {
+                    throw new CompileErrorException($"Invalid property {_propertyName}");
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
@@ -87,8 +104,12 @@ namespace DMCompiler.DM.Expressions {
             _field = astNode.Property;
 
             if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
-                if (_expr.Path == null) {
-                    throw new CompileErrorException($"Cannot dereference property \"{_field}\" because a type specifier is missing");
+                if (Dereference.DirectConvertable(expr, astNode)) {
+                    astNode.Type = DMASTDereference.DereferenceType.Search;
+                    return;
+                }
+                else if (expr.Path == null) {
+                    throw new CompileErrorException($"Invalid property {_field}");
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);

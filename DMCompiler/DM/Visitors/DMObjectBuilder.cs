@@ -91,7 +91,7 @@ namespace DMCompiler.DM.Visitors {
                 if (varOverride.VarName == "parent_type") {
                     DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                    if (parentType == null) throw new CompileErrorException("Expected a constant path");
+                    if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
@@ -116,7 +116,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                    throw new CompileErrorException(procDefinition.Location, "Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
                 }
 
                 DMProc proc = new DMProc(procDefinition);
@@ -146,7 +146,7 @@ namespace DMCompiler.DM.Visitors {
                     break;
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:
-                    if (!variable.IsGlobal) throw new CompileErrorException($"Invalid initial value for \"{variable.Name}\"");
+                    if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");
 
                     variable.Value = new Expressions.Null();
                     EmitInitializationAssign(variable, expression);

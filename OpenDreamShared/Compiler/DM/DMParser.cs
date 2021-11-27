@@ -1865,7 +1865,7 @@ namespace OpenDreamShared.Compiler.DM {
             }
 
             if (primary == null) {
-                primary = Callable();
+                primary = (DMASTExpression)Callable();
 
                 if (primary != null) {
                     primary = ParseProcCall(primary);

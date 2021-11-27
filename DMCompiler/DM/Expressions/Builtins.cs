@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException("invalid use of `arglist`");
+            throw new CompileErrorException(Location.Unknown, "invalid use of `arglist`");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
@@ -174,7 +174,7 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 foreach (PickValue pickValue in _values) {
-                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(100)); //Default of 100
+                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location.Unknown, 100)); //Default of 100
 
                     weight.EmitPushValue(dmObject, proc);
                     pickValue.Value.EmitPushValue(dmObject, proc);
@@ -216,7 +216,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException($"can't get saved value of {_expr}");
+            throw new CompileErrorException(Location.Unknown, $"can't get saved value of {_expr}");
         }
     }
 
@@ -357,14 +357,14 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new CompileErrorException("Invalid input() parameter count");
+            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new CompileErrorException(_astNode.Location,"Invalid input() parameter count");
 
             //Push input's four arguments, pushing null for the missing ones
             for (int i = 3; i >= 0; i--) {
                 if (i < _astNode.Parameters.Length) {
                     DMASTCallParameter parameter = _astNode.Parameters[i];
 
-                    if (parameter.Name != null) throw new CompileErrorException("input() does not take named arguments");
+                    if (parameter.Name != null) throw new CompileErrorException(parameter.Location,"input() does not take named arguments");
                     DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();
@@ -396,7 +396,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException($"can't get initial value of {_expr}");
+            throw new CompileErrorException(Location.Unknown,$"can't get initial value of {_expr}");
         }
     }
 

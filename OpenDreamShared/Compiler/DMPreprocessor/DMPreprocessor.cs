@@ -360,7 +360,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 }
 
                 parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException("Missing ')' in macro call");
+                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException(leftParenToken.Location,"Missing ')' in macro call");
 
                 return parameters;
             }

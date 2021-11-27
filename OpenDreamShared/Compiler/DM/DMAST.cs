@@ -1,5 +1,4 @@
 using System;
-using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -79,7 +78,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
         public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
-        public void VisitSubtract(DMASTSubtract subtract) { throw new CompileErrorException("DMASTSubstract"); }
+        public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) { throw new NotImplementedException(); }
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) { throw new NotImplementedException(); }
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }
@@ -153,10 +152,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    public abstract class DMASTCallable : DMASTExpression {
-        public DMASTCallable(Location location)
-            : base(location)
-        {}
+    public interface DMASTCallable {
     }
 
     public class DMASTFile : DMASTNode {
@@ -1662,7 +1658,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    public class DMASTDereference : DMASTExpression {
+    public class DMASTDereference : DMASTExpression, DMASTCallable {
         public enum DereferenceType {
             Direct,
             Search,
@@ -1693,7 +1689,7 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    public class DMASTCallableProcIdentifier : DMASTCallable {
+    public class DMASTCallableProcIdentifier : DMASTExpression, DMASTCallable {
         public string Identifier;
 
         public DMASTCallableProcIdentifier(Location location, string identifier) : base(location) {
@@ -1705,14 +1701,14 @@ namespace OpenDreamShared.Compiler.DM {
         }
     }
 
-    public class DMASTCallableSuper : DMASTCallable {
+    public class DMASTCallableSuper : DMASTExpression, DMASTCallable {
         public DMASTCallableSuper(Location location) : base(location){}
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSuper(this);
         }
     }
 
-    public class DMASTCallableSelf : DMASTCallable {
+    public class DMASTCallableSelf : DMASTExpression, DMASTCallable {
         public DMASTCallableSelf(Location location) : base(location){}
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSelf(this);

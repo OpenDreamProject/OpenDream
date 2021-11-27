@@ -102,11 +102,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public void EmitPushInitial(DMProc proc) {
-            throw new CompileErrorException("initial() on globals is unimplemented");
+            throw new CompileErrorException(Location.Unknown,"initial() on globals is unimplemented");
         }
 
         public void EmitPushIsSaved(DMProc proc) {
-            throw new CompileErrorException("issaved() on globals is unimplemented");
+            throw new CompileErrorException(Location.Unknown,"issaved() on globals is unimplemented");
         }
     }
 

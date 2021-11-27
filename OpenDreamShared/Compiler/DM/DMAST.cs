@@ -1,5 +1,4 @@
 using System;
-using System.Reflection.Emit;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -79,7 +78,7 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
         public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
-        public void VisitSubtract(DMASTSubtract subtract) { throw new CompileErrorException("DMASTSubstract"); }
+        public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) { throw new NotImplementedException(); }
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) { throw new NotImplementedException(); }
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) { throw new NotImplementedException(); }
@@ -118,38 +117,54 @@ namespace OpenDreamShared.Compiler.DM {
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
     }
 
-    public interface DMASTNode : ASTNode<DMASTVisitor> {
+    public abstract class DMASTNode : ASTNode<DMASTVisitor> {
+        public DMASTNode(Location location) {
+            Location = location;
+        }
 
+        public readonly Location Location;
+
+        public abstract void Visit(DMASTVisitor visitor);
     }
 
-    public interface DMASTStatement : DMASTNode {
-
+    public abstract class DMASTStatement : DMASTNode {
+        public DMASTStatement(Location location)
+            : base(location)
+        {}
     }
 
-    public interface DMASTProcStatement : DMASTNode {
-
+    public abstract class DMASTProcStatement : DMASTNode {
+        public DMASTProcStatement(Location location)
+            : base(location)
+        {}
     }
 
-    public interface DMASTExpression : DMASTNode {
-
+    public abstract class DMASTExpression : DMASTNode {
+        public DMASTExpression(Location location)
+            : base(location)
+        {}
     }
 
-    public interface DMASTExpressionConstant : DMASTExpression {
-
+    public abstract class DMASTExpressionConstant : DMASTExpression {
+        public DMASTExpressionConstant(Location location)
+            : base(location)
+        {
+        }
     }
 
-    public interface DMASTCallable : DMASTExpression {
-
+    public interface DMASTCallable {
     }
 
     public class DMASTFile : DMASTNode {
         public DMASTBlockInner BlockInner;
 
-        public DMASTFile(DMASTBlockInner blockInner) {
+        public DMASTFile(Location location, DMASTBlockInner blockInner)
+            : base(location)
+        {
             BlockInner = blockInner;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitFile(this);
         }
     }
@@ -157,11 +172,13 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTBlockInner : DMASTNode {
         public DMASTStatement[] Statements;
 
-        public DMASTBlockInner(DMASTStatement[] statements) {
+        public DMASTBlockInner(Location location, DMASTStatement[] statements)
+            : base(location)
+        {
             Statements = statements;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBlockInner(this);
         }
     }
@@ -169,11 +186,13 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcBlockInner : DMASTNode {
         public DMASTProcStatement[] Statements;
 
-        public DMASTProcBlockInner(DMASTProcStatement[] statements) {
+        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements)
+            : base(location)
+        {
             Statements = statements;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcBlockInner(this);
         }
     }
@@ -182,12 +201,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DreamPath Path;
         public DMASTBlockInner InnerBlock;
 
-        public DMASTObjectDefinition(DreamPath path, DMASTBlockInner innerBlock) {
+        public DMASTObjectDefinition(Location location, DreamPath path, DMASTBlockInner innerBlock) : base(location)
+        {
             Path = path;
             InnerBlock = innerBlock;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitObjectDefinition(this);
         }
     }
@@ -200,7 +220,8 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTDefinitionParameter[] Parameters;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcDefinition(DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) {
+        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) : base(location)
+        {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -218,7 +239,7 @@ namespace OpenDreamShared.Compiler.DM {
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcDefinition(this);
         }
     }
@@ -227,11 +248,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPath : DMASTNode {
         public DreamPath Path;
 
-        public DMASTPath(DreamPath path) {
+        public DMASTPath(Location location, DreamPath path) : base(location)
+        {
             Path = path;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPath(this);
         }
     }
@@ -244,7 +266,7 @@ namespace OpenDreamShared.Compiler.DM {
         public bool IsGlobal = false;
         public DMValueType ValType;
 
-        public DMASTObjectVarDefinition(DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+        public DMASTObjectVarDefinition(Location location, DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) : base(location) {
             int globalElementIndex = path.FindElement("global");
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
@@ -261,7 +283,7 @@ namespace OpenDreamShared.Compiler.DM {
             ValType = valType;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitObjectVarDefinition(this);
         }
     }
@@ -269,11 +291,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTMultipleObjectVarDefinitions : DMASTStatement {
         public DMASTObjectVarDefinition[] VarDefinitions;
 
-        public DMASTMultipleObjectVarDefinitions(DMASTObjectVarDefinition[] varDefinitions) {
+        public DMASTMultipleObjectVarDefinitions(Location location, DMASTObjectVarDefinition[] varDefinitions) : base(location) {
             VarDefinitions = varDefinitions;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMultipleObjectVarDefinitions(this);
         }
     }
@@ -283,13 +305,13 @@ namespace OpenDreamShared.Compiler.DM {
         public string VarName;
         public DMASTExpression Value;
 
-        public DMASTObjectVarOverride(DreamPath path, DMASTExpression value) {
+        public DMASTObjectVarOverride(Location location, DreamPath path, DMASTExpression value) : base(location) {
             ObjectPath = path.FromElements(0, -2);
             VarName = path.LastElement;
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitObjectVarOverride(this);
         }
     }
@@ -297,11 +319,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementExpression : DMASTProcStatement {
         public DMASTExpression Expression;
 
-        public DMASTProcStatementExpression(DMASTExpression expression) {
+        public DMASTProcStatementExpression(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementExpression(this);
         }
     }
@@ -311,7 +333,7 @@ namespace OpenDreamShared.Compiler.DM {
         public string Name;
         public DMASTExpression Value;
 
-        public DMASTProcStatementVarDeclaration(DMASTPath path, DMASTExpression value) {
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location) {
             int varElementIndex = path.Path.FindElement("var");
             DreamPath typePath = path.Path.FromElements(varElementIndex + 1, -2);
 
@@ -320,7 +342,7 @@ namespace OpenDreamShared.Compiler.DM {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementVarDeclaration(this);
         }
     }
@@ -328,11 +350,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementMultipleVarDeclarations : DMASTProcStatement {
         public DMASTProcStatementVarDeclaration[] VarDeclarations;
 
-        public DMASTProcStatementMultipleVarDeclarations(DMASTProcStatementVarDeclaration[] varDeclarations) {
+        public DMASTProcStatementMultipleVarDeclarations(Location location, DMASTProcStatementVarDeclaration[] varDeclarations) : base(location) {
             VarDeclarations = varDeclarations;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementMultipleVarDeclarations(this);
         }
     }
@@ -340,11 +362,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementReturn : DMASTProcStatement {
         public DMASTExpression Value;
 
-        public DMASTProcStatementReturn(DMASTExpression value) {
+        public DMASTProcStatementReturn(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementReturn(this);
         }
     }
@@ -353,11 +375,11 @@ namespace OpenDreamShared.Compiler.DM {
     {
         public DMASTIdentifier Label;
 
-        public DMASTProcStatementBreak(DMASTIdentifier label = null)
+        public DMASTProcStatementBreak(Location location, DMASTIdentifier label = null) : base(location)
         {
             Label = label;
         }
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBreak(this);
         }
     }
@@ -365,11 +387,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementContinue : DMASTProcStatement {
         public DMASTIdentifier Label;
 
-        public DMASTProcStatementContinue(DMASTIdentifier label = null)
+        public DMASTProcStatementContinue(Location location, DMASTIdentifier label = null) : base(location)
         {
             Label = label;
         }
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementContinue(this);
         }
     }
@@ -377,11 +399,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementGoto : DMASTProcStatement {
         public DMASTIdentifier Label;
 
-        public DMASTProcStatementGoto(DMASTIdentifier label) {
+        public DMASTProcStatementGoto(Location location, DMASTIdentifier label) : base(location) {
             Label = label;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementGoto(this);
         }
     }
@@ -390,12 +412,12 @@ namespace OpenDreamShared.Compiler.DM {
         public string Name;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementLabel(string name, DMASTProcBlockInner body) {
+        public DMASTProcStatementLabel(Location location, string name, DMASTProcBlockInner body) : base(location) {
             Name = name;
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementLabel(this);
         }
     }
@@ -403,11 +425,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementDel : DMASTProcStatement {
         public DMASTExpression Value;
 
-        public DMASTProcStatementDel(DMASTExpression value) {
+        public DMASTProcStatementDel(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementDel(this);
         }
     }
@@ -416,12 +438,12 @@ namespace OpenDreamShared.Compiler.DM {
         public string Attribute;
         public DMASTExpression Value;
 
-        public DMASTProcStatementSet(string attribute, DMASTExpression value) {
+        public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value) : base(location) {
             Attribute = attribute;
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSet(this);
         }
     }
@@ -430,12 +452,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Delay;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementSpawn(DMASTExpression delay, DMASTProcBlockInner body) {
+        public DMASTProcStatementSpawn(Location location, DMASTExpression delay, DMASTProcBlockInner body) : base(location) {
             Delay = delay;
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSpawn(this);
         }
     }
@@ -445,13 +467,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcBlockInner Body;
         public DMASTProcBlockInner ElseBody;
 
-        public DMASTProcStatementIf(DMASTExpression condition, DMASTProcBlockInner body, DMASTProcBlockInner elseBody = null) {
+        public DMASTProcStatementIf(Location location, DMASTExpression condition, DMASTProcBlockInner body, DMASTProcBlockInner elseBody = null) : base(location) {
             Condition = condition;
             Body = body;
             ElseBody = elseBody;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementIf(this);
         }
     }
@@ -460,12 +482,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcStatement Initializer;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementFor(DMASTProcStatement initializer, DMASTProcBlockInner body) {
+        public DMASTProcStatementFor(Location location, DMASTProcStatement initializer, DMASTProcBlockInner body) : base(location) {
             Initializer = initializer;
             Body = body;
         }
 
-        public virtual void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             throw new NotImplementedException();
         }
     }
@@ -473,7 +495,7 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementForStandard : DMASTProcStatementFor {
         public DMASTExpression Comparator, Incrementor;
 
-        public DMASTProcStatementForStandard(DMASTProcStatement initializer, DMASTExpression comparator, DMASTExpression incrementor, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForStandard(Location location, DMASTProcStatement initializer, DMASTExpression comparator, DMASTExpression incrementor, DMASTProcBlockInner body) : base(location, initializer, body) {
             Comparator = comparator;
             Incrementor = incrementor;
         }
@@ -487,7 +509,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTIdentifier Variable;
         public DMASTExpression List;
 
-        public DMASTProcStatementForList(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForList(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(location, initializer, body) {
             Variable = variable;
             List = list;
         }
@@ -501,7 +523,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTIdentifier Variable;
         public DMASTExpression RangeStart, RangeEnd, Step;
 
-        public DMASTProcStatementForRange(DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(initializer, body) {
+        public DMASTProcStatementForRange(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(location, initializer, body) {
             Variable = variable;
             RangeStart = rangeStart;
             RangeEnd = rangeEnd;
@@ -519,7 +541,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Condition, Incrementer;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementForLoop(DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression condition, DMASTExpression incrementer, DMASTProcBlockInner body) {
+        public DMASTProcStatementForLoop(Location location, DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression condition, DMASTExpression incrementer, DMASTProcBlockInner body) : base(location) {
             VariableDeclaration = variableDeclaration;
             Variable = variable;
             Condition = condition;
@@ -527,7 +549,7 @@ namespace OpenDreamShared.Compiler.DM {
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementForLoop(this);
         }
     }
@@ -536,12 +558,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Conditional;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementWhile(DMASTExpression conditional, DMASTProcBlockInner body) {
+        public DMASTProcStatementWhile(Location location, DMASTExpression conditional, DMASTProcBlockInner body) : base(location) {
             Conditional = conditional;
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementWhile(this);
         }
     }
@@ -550,12 +572,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Conditional;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementDoWhile(DMASTExpression conditional, DMASTProcBlockInner body) {
+        public DMASTProcStatementDoWhile(Location location, DMASTExpression conditional, DMASTProcBlockInner body) : base(location) {
             Conditional = conditional;
             Body = body;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementDoWhile(this);
         }
     }
@@ -584,12 +606,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Value;
         public SwitchCase[] Cases;
 
-        public DMASTProcStatementSwitch(DMASTExpression value, SwitchCase[] cases) {
+        public DMASTProcStatementSwitch(Location location, DMASTExpression value, SwitchCase[] cases) : base(location) {
             Value = value;
             Cases = cases;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSwitch(this);
         }
     }
@@ -599,13 +621,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Body;
         public DMASTExpression Options;
 
-        public DMASTProcStatementBrowse(DMASTExpression receiver, DMASTExpression body, DMASTExpression options) {
+        public DMASTProcStatementBrowse(Location location, DMASTExpression receiver, DMASTExpression body, DMASTExpression options) : base(location) {
             Receiver = receiver;
             Body = body;
             Options = options;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBrowse(this);
         }
     }
@@ -615,13 +637,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression File;
         public DMASTExpression Filename;
 
-        public DMASTProcStatementBrowseResource(DMASTExpression receiver, DMASTExpression file, DMASTExpression filename) {
+        public DMASTProcStatementBrowseResource(Location location, DMASTExpression receiver, DMASTExpression file, DMASTExpression filename) : base(location) {
             Receiver = receiver;
             File = file;
             Filename = filename;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBrowseResource(this);
         }
     }
@@ -631,13 +653,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Message;
         public DMASTExpression Control;
 
-        public DMASTProcStatementOutputControl(DMASTExpression receiver, DMASTExpression message, DMASTExpression control) {
+        public DMASTProcStatementOutputControl(Location location, DMASTExpression receiver, DMASTExpression message, DMASTExpression control) : base(location) {
             Receiver = receiver;
             Message = message;
             Control = control;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementOutputControl(this);
         }
     }
@@ -646,14 +668,14 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTProcBlockInner TryBody;
         public DMASTProcBlockInner CatchBody;
         public DMASTProcStatement CatchParameter;
-        public DMASTProcStatementTryCatch(DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTProcStatement catchParameter)
+        public DMASTProcStatementTryCatch(Location location, DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTProcStatement catchParameter) : base(location)
         {
             TryBody = tryBody;
             CatchBody = catchBody;
             CatchParameter = catchParameter;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementTryCatch(this);
         }
     }
@@ -661,11 +683,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTProcStatementThrow : DMASTProcStatement {
         public DMASTExpression Value;
 
-        public DMASTProcStatementThrow(DMASTExpression value) {
+        public DMASTProcStatementThrow(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementThrow(this);
         }
     }
@@ -673,11 +695,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTIdentifier : DMASTExpression {
         public string Identifier;
 
-        public DMASTIdentifier(string identifier) {
+        public DMASTIdentifier(Location location, string identifier) : base(location) {
             Identifier = identifier;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIdentifier(this);
         }
     }
@@ -685,11 +707,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTConstantInteger : DMASTExpressionConstant {
         public int Value;
 
-        public DMASTConstantInteger(int value) {
+        public DMASTConstantInteger(Location location, int value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantInteger(this);
         }
     }
@@ -697,11 +719,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTConstantFloat : DMASTExpressionConstant {
         public float Value;
 
-        public DMASTConstantFloat(float value) {
+        public DMASTConstantFloat(Location location, float value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantFloat(this);
         }
     }
@@ -709,11 +731,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTConstantString : DMASTExpressionConstant {
         public string Value;
 
-        public DMASTConstantString(string value) {
+        public DMASTConstantString(Location location, string value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantString(this);
         }
     }
@@ -721,17 +743,20 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTConstantResource : DMASTExpressionConstant {
         public string Path;
 
-        public DMASTConstantResource(string path) {
+        public DMASTConstantResource(Location location, string path) : base(location) {
             Path = path;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantResource(this);
         }
     }
 
     public class DMASTConstantNull : DMASTExpressionConstant {
-        public void Visit(DMASTVisitor visitor) {
+        public DMASTConstantNull(Location location)
+            : base(location)
+        {}
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantNull(this);
         }
     }
@@ -739,11 +764,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTConstantPath : DMASTExpressionConstant {
         public DMASTPath Value;
 
-        public DMASTConstantPath(DMASTPath value) {
+        public DMASTConstantPath(Location location, DMASTPath value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitConstantPath(this);
         }
     }
@@ -752,12 +777,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpressionConstant Path;
         public DMASTPath Search;
 
-        public DMASTUpwardPathSearch(DMASTExpressionConstant path, DMASTPath search) {
+        public DMASTUpwardPathSearch(Location location, DMASTExpressionConstant path, DMASTPath search) : base(location) {
             Path = path;
             Search = search;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitUpwardPathSearch(this);
         }
     }
@@ -765,12 +790,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTSwitchCaseRange : DMASTExpression {
         public DMASTExpression RangeStart, RangeEnd;
 
-        public DMASTSwitchCaseRange(DMASTExpression rangeStart, DMASTExpression rangeEnd) {
+        public DMASTSwitchCaseRange(Location location, DMASTExpression rangeStart, DMASTExpression rangeEnd) : base(location) {
             RangeStart = rangeStart;
             RangeEnd = rangeEnd;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitSwitchCaseRange(this);
         }
     }
@@ -779,12 +804,12 @@ namespace OpenDreamShared.Compiler.DM {
         public string Value;
         public DMASTExpression[] InterpolatedValues;
 
-        public DMASTStringFormat(string value, DMASTExpression[] interpolatedValues) {
+        public DMASTStringFormat(Location location, string value, DMASTExpression[] interpolatedValues) : base(location) {
             Value = value;
             InterpolatedValues = interpolatedValues;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitStringFormat(this);
         }
     }
@@ -792,11 +817,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTList : DMASTExpression {
         public DMASTCallParameter[] Values;
 
-        public DMASTList(DMASTCallParameter[] values) {
+        public DMASTList(Location location, DMASTCallParameter[] values) : base(location) {
             Values = values;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitList(this);
         }
     }
@@ -804,11 +829,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNewList : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewList(DMASTCallParameter[] parameters) {
+        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewList(this);
         }
     }
@@ -818,13 +843,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMValueType Types;
         public DMASTExpression List;
 
-        public DMASTInput(DMASTCallParameter[] parameters, DMValueType types, DMASTExpression list) {
+        public DMASTInput(Location location, DMASTCallParameter[] parameters, DMValueType types, DMASTExpression list) : base(location) {
             Parameters = parameters;
             Types = types;
             List = list;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitInput(this);
         }
     }
@@ -832,11 +857,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTInitial : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTInitial(DMASTExpression expression) {
+        public DMASTInitial(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitInitial(this);
         }
     }
@@ -844,11 +869,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTIsSaved : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTIsSaved(DMASTExpression expression) {
+        public DMASTIsSaved(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIsSaved(this);
         }
     }
@@ -857,12 +882,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Value;
         public DMASTExpression Type;
 
-        public DMASTIsType(DMASTExpression value, DMASTExpression type) {
+        public DMASTIsType(Location location, DMASTExpression value, DMASTExpression type) : base(location) {
             Value = value;
             Type = type;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIsType(this);
         }
     }
@@ -870,11 +895,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTImplicitIsType : DMASTExpression {
         public DMASTExpression Value;
 
-        public DMASTImplicitIsType(DMASTExpression value) {
+        public DMASTImplicitIsType(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitImplicitIsType(this);
         }
     }
@@ -882,13 +907,13 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLocateCoordinates : DMASTExpression {
         public DMASTExpression X, Y, Z;
 
-        public DMASTLocateCoordinates(DMASTExpression x, DMASTExpression y, DMASTExpression z) {
+        public DMASTLocateCoordinates(Location location, DMASTExpression x, DMASTExpression y, DMASTExpression z) : base(location) {
             X = x;
             Y = y;
             Z = z;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLocateCoordinates(this);
         }
     }
@@ -897,12 +922,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Expression;
         public DMASTExpression Container;
 
-        public DMASTLocate(DMASTExpression expression, DMASTExpression container) {
+        public DMASTLocate(Location location, DMASTExpression expression, DMASTExpression container) : base(location) {
             Expression = expression;
             Container = container;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLocate(this);
         }
     }
@@ -920,11 +945,11 @@ namespace OpenDreamShared.Compiler.DM {
 
         public PickValue[] Values;
 
-        public DMASTPick(PickValue[] values) {
+        public DMASTPick(Location location, PickValue[] values) : base(location) {
             Values = values;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPick(this);
         }
     }
@@ -932,12 +957,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTCall : DMASTExpression {
         public DMASTCallParameter[] CallParameters, ProcParameters;
 
-        public DMASTCall(DMASTCallParameter[] callParameters, DMASTCallParameter[] procParameters) {
+        public DMASTCall(Location location, DMASTCallParameter[] callParameters, DMASTCallParameter[] procParameters) : base(location) {
             CallParameters = callParameters;
             ProcParameters = procParameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCall(this);
         }
     }
@@ -945,12 +970,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTAssign : DMASTExpression {
         public DMASTExpression Expression, Value;
 
-        public DMASTAssign(DMASTExpression expression, DMASTExpression value) {
+        public DMASTAssign(Location location, DMASTExpression expression, DMASTExpression value) : base(location) {
             Expression = expression;
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAssign(this);
         }
     }
@@ -959,12 +984,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTPath Path;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewPath(DMASTPath path, DMASTCallParameter[] parameters) {
+        public DMASTNewPath(Location location, DMASTPath path, DMASTCallParameter[] parameters) : base(location) {
             Path = path;
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewPath(this);
         }
     }
@@ -973,12 +998,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTIdentifier Identifier;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewIdentifier(DMASTIdentifier identifier, DMASTCallParameter[] parameters) {
+        public DMASTNewIdentifier(Location location, DMASTIdentifier identifier, DMASTCallParameter[] parameters) : base(location) {
             Identifier = identifier;
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewIdentifier(this);
         }
     }
@@ -987,12 +1012,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTDereference Dereference;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewDereference(DMASTDereference dereference, DMASTCallParameter[] parameters) {
+        public DMASTNewDereference(Location location, DMASTDereference dereference, DMASTCallParameter[] parameters) : base(location) {
             Dereference = dereference;
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewDereference(this);
         }
     }
@@ -1000,11 +1025,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNewInferred : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewInferred(DMASTCallParameter[] parameters) {
+        public DMASTNewInferred(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewInferred(this);
         }
     }
@@ -1012,11 +1037,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNot : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTNot(DMASTExpression expression) {
+        public DMASTNot(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNot(this);
         }
     }
@@ -1024,11 +1049,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNegate : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTNegate(DMASTExpression expression) {
+        public DMASTNegate(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNegate(this);
         }
     }
@@ -1036,12 +1061,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTEqual : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTEqual(DMASTExpression a, DMASTExpression b) {
+        public DMASTEqual(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitEqual(this);
         }
     }
@@ -1049,12 +1074,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNotEqual : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTNotEqual(DMASTExpression a, DMASTExpression b) {
+        public DMASTNotEqual(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNotEqual(this);
         }
     }
@@ -1062,12 +1087,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTEquivalent : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTEquivalent(DMASTExpression a, DMASTExpression b) {
+        public DMASTEquivalent(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitEquivalent(this);
         }
     }
@@ -1075,12 +1100,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTNotEquivalent : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTNotEquivalent(DMASTExpression a, DMASTExpression b) {
+        public DMASTNotEquivalent(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNotEquivalent(this);
         }
     }
@@ -1088,12 +1113,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLessThan : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLessThan(DMASTExpression a, DMASTExpression b) {
+        public DMASTLessThan(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLessThan(this);
         }
     }
@@ -1101,12 +1126,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLessThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLessThanOrEqual(DMASTExpression a, DMASTExpression b) {
+        public DMASTLessThanOrEqual(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLessThanOrEqual(this);
         }
     }
@@ -1114,12 +1139,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTGreaterThan : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTGreaterThan(DMASTExpression a, DMASTExpression b) {
+        public DMASTGreaterThan(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGreaterThan(this);
         }
     }
@@ -1127,12 +1152,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTGreaterThanOrEqual : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTGreaterThanOrEqual(DMASTExpression a, DMASTExpression b) {
+        public DMASTGreaterThanOrEqual(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGreaterThanOrEqual(this);
         }
     }
@@ -1140,12 +1165,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTMultiply : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTMultiply(DMASTExpression a, DMASTExpression b) {
+        public DMASTMultiply(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMultiply(this);
         }
     }
@@ -1153,12 +1178,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTDivide : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTDivide(DMASTExpression a, DMASTExpression b) {
+        public DMASTDivide(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDivide(this);
         }
     }
@@ -1166,12 +1191,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTModulus : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTModulus(DMASTExpression a, DMASTExpression b) {
+        public DMASTModulus(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitModulus(this);
         }
     }
@@ -1179,12 +1204,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPower : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTPower(DMASTExpression a, DMASTExpression b) {
+        public DMASTPower(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPower(this);
         }
     }
@@ -1192,12 +1217,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTAdd : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTAdd(DMASTExpression a, DMASTExpression b) {
+        public DMASTAdd(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAdd(this);
         }
     }
@@ -1205,12 +1230,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTSubtract : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTSubtract(DMASTExpression a, DMASTExpression b) {
+        public DMASTSubtract(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitSubtract(this);
         }
     }
@@ -1218,11 +1243,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPreIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTPreIncrement(DMASTExpression expression) {
+        public DMASTPreIncrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPreIncrement(this);
         }
     }
@@ -1230,11 +1255,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPreDecrement : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTPreDecrement(DMASTExpression expression) {
+        public DMASTPreDecrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPreDecrement(this);
         }
     }
@@ -1242,11 +1267,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPostIncrement : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTPostIncrement(DMASTExpression expression) {
+        public DMASTPostIncrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPostIncrement(this);
         }
     }
@@ -1254,11 +1279,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTPostDecrement : DMASTExpression {
         public DMASTExpression Expression;
 
-        public DMASTPostDecrement(DMASTExpression expression) {
+        public DMASTPostDecrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPostDecrement(this);
         }
     }
@@ -1266,13 +1291,13 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTTernary : DMASTExpression {
         public DMASTExpression A, B, C;
 
-        public DMASTTernary(DMASTExpression a, DMASTExpression b, DMASTExpression c) {
+        public DMASTTernary(Location location, DMASTExpression a, DMASTExpression b, DMASTExpression c) : base(location) {
             A = a;
             B = b;
             C = c;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitTernary(this);
         }
     }
@@ -1280,12 +1305,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTAppend : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTAppend(DMASTExpression a, DMASTExpression b) {
+        public DMASTAppend(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAppend(this);
         }
     }
@@ -1293,12 +1318,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTRemove : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTRemove(DMASTExpression a, DMASTExpression b) {
+        public DMASTRemove(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRemove(this);
         }
     }
@@ -1306,12 +1331,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTCombine : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTCombine(DMASTExpression a, DMASTExpression b) {
+        public DMASTCombine(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCombine(this);
         }
     }
@@ -1319,12 +1344,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTMask : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTMask(DMASTExpression a, DMASTExpression b) {
+        public DMASTMask(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMask(this);
         }
     }
@@ -1332,12 +1357,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLogicalAndAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLogicalAndAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTLogicalAndAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLogicalAndAssign(this);
         }
     }
@@ -1345,12 +1370,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLogicalOrAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLogicalOrAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTLogicalOrAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLogicalOrAssign(this);
         }
     }
@@ -1358,12 +1383,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTMultiplyAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTMultiplyAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTMultiplyAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMultiplyAssign(this);
         }
     }
@@ -1371,12 +1396,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTDivideAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTDivideAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTDivideAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDivideAssign(this);
         }
     }
@@ -1384,12 +1409,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLeftShiftAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLeftShiftAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTLeftShiftAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLeftShiftAssign(this);
         }
     }
@@ -1397,12 +1422,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTRightShiftAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTRightShiftAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTRightShiftAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShiftAssign(this);
         }
     }
@@ -1410,12 +1435,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTXorAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTXorAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTXorAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitXorAssign(this);
         }
     }
@@ -1423,12 +1448,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTModulusAssign : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTModulusAssign(DMASTExpression a, DMASTExpression b) {
+        public DMASTModulusAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitModulusAssign(this);
         }
     }
@@ -1436,12 +1461,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTOr : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTOr(DMASTExpression a, DMASTExpression b) {
+        public DMASTOr(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitOr(this);
         }
     }
@@ -1449,12 +1474,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTAnd : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTAnd(DMASTExpression a, DMASTExpression b) {
+        public DMASTAnd(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAnd(this);
         }
     }
@@ -1462,12 +1487,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTBinaryAnd : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTBinaryAnd(DMASTExpression a, DMASTExpression b) {
+        public DMASTBinaryAnd(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryAnd(this);
         }
     }
@@ -1475,12 +1500,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTBinaryXor : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTBinaryXor(DMASTExpression a, DMASTExpression b) {
+        public DMASTBinaryXor(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryXor(this);
         }
     }
@@ -1488,12 +1513,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTBinaryOr : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTBinaryOr(DMASTExpression a, DMASTExpression b) {
+        public DMASTBinaryOr(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryOr(this);
         }
     }
@@ -1501,11 +1526,11 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTBinaryNot : DMASTExpression {
         public DMASTExpression Value;
 
-        public DMASTBinaryNot(DMASTExpression value) {
+        public DMASTBinaryNot(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryNot(this);
         }
     }
@@ -1513,12 +1538,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTLeftShift : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTLeftShift(DMASTExpression a, DMASTExpression b) {
+        public DMASTLeftShift(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLeftShift(this);
         }
     }
@@ -1526,12 +1551,12 @@ namespace OpenDreamShared.Compiler.DM {
     public class DMASTRightShift : DMASTExpression {
         public DMASTExpression A, B;
 
-        public DMASTRightShift(DMASTExpression a, DMASTExpression b) {
+        public DMASTRightShift(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
             B = b;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShift(this);
         }
     }
@@ -1540,12 +1565,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Value;
         public DMASTExpression List;
 
-        public DMASTExpressionIn(DMASTExpression value, DMASTExpression list) {
+        public DMASTExpressionIn(Location location, DMASTExpression value, DMASTExpression list) : base(location) {
             Value = value;
             List = list;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIn(this);
         }
     }
@@ -1555,13 +1580,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression StartRange;
         public DMASTExpression EndRange;
 
-        public DMASTExpressionInRange(DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange) {
+        public DMASTExpressionInRange(Location location, DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange) : base(location) {
             Value = value;
             StartRange = startRange;
             EndRange = endRange;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitInRange(this);
         }
     }
@@ -1571,13 +1596,13 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Index;
         public bool Conditional;
 
-        public DMASTListIndex(DMASTExpression expression, DMASTExpression index, bool conditional) {
+        public DMASTListIndex(Location location, DMASTExpression expression, DMASTExpression index, bool conditional) : base(location) {
             Expression = expression;
             Index = index;
             Conditional = conditional;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitListIndex(this);
         }
     }
@@ -1586,12 +1611,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTCallable Callable;
         public DMASTCallParameter[] Parameters;
 
-        public DMASTProcCall(DMASTCallable callable, DMASTCallParameter[] parameters) {
+        public DMASTProcCall(Location location, DMASTCallable callable, DMASTCallParameter[] parameters) : base(location) {
             Callable = callable;
             Parameters = parameters;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcCall(this);
         }
     }
@@ -1600,12 +1625,12 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Value;
         public string Name;
 
-        public DMASTCallParameter(DMASTExpression value, string name = null) {
+        public DMASTCallParameter(Location location, DMASTExpression value, string name = null) : base(location) {
             Value = value;
             Name = name;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallParameter(this);
         }
     }
@@ -1617,7 +1642,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMValueType Type;
         public DMASTExpression PossibleValues;
 
-        public DMASTDefinitionParameter(DMASTPath astPath, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) {
+        public DMASTDefinitionParameter(Location location, DMASTPath astPath, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) : base(location) {
             DreamPath path = astPath.Path;
 
             int varElementIndex = path.FindElement("var");
@@ -1630,12 +1655,12 @@ namespace OpenDreamShared.Compiler.DM {
             PossibleValues = possibleValues;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDefinitionParameter(this);
         }
     }
 
-    public class DMASTDereference : DMASTExpression {
+    public class DMASTDereference : DMASTExpression, DMASTCallable {
         public enum DereferenceType {
             Direct,
             Search,
@@ -1646,46 +1671,48 @@ namespace OpenDreamShared.Compiler.DM {
         public DereferenceType Type;
         public bool Conditional;
 
-        public DMASTDereference(DMASTExpression expression, string property, DereferenceType type, bool conditional) {
+        public DMASTDereference(Location location, DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(location) {
             Expression = expression;
             Property = property;
             Type = type;
             Conditional = conditional;
         }
 
-        public virtual void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDereference(this);
         }
     }
 
-    public class DMASTDereferenceProc : DMASTDereference, DMASTCallable {
-        public DMASTDereferenceProc(DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(expression, property, type, conditional) { }
+    public class DMASTDereferenceProc : DMASTDereference {
+        public DMASTDereferenceProc(Location location, DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(location, expression, property, type, conditional) { }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDereferenceProc(this);
         }
     }
 
-    public class DMASTCallableProcIdentifier : DMASTCallable {
+    public class DMASTCallableProcIdentifier : DMASTExpression, DMASTCallable {
         public string Identifier;
 
-        public DMASTCallableProcIdentifier(string identifier) {
+        public DMASTCallableProcIdentifier(Location location, string identifier) : base(location) {
             Identifier = identifier;
         }
 
-        public void Visit(DMASTVisitor visitor) {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableProcIdentifier(this);
         }
     }
 
-    public class DMASTCallableSuper : DMASTCallable {
-        public void Visit(DMASTVisitor visitor) {
+    public class DMASTCallableSuper : DMASTExpression, DMASTCallable {
+        public DMASTCallableSuper(Location location) : base(location){}
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSuper(this);
         }
     }
 
-    public class DMASTCallableSelf : DMASTCallable {
-        public void Visit(DMASTVisitor visitor) {
+    public class DMASTCallableSelf : DMASTExpression, DMASTCallable {
+        public DMASTCallableSelf(Location location) : base(location){}
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSelf(this);
         }
     }

@@ -6,25 +6,27 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Compiler {
     public struct CompilerError {
         public Token Token;
+        public Location? Location;
         public string Message;
         public StackTrace StackTrace;
 
         public CompilerError(Token token, string message) {
             Token = token;
+            Location = token?.Location ?? Compiler.Location.Unknown;
+            Message = message;
+            StackTrace = new StackTrace(true);
+        }
+
+        public CompilerError(Location location, string message)
+        {
+            Token = null;
+            Location = location;
             Message = message;
             StackTrace = new StackTrace(true);
         }
 
         public override string ToString() {
-            string location;
-
-            if (Token != null) {
-                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
-            } else {
-                location = "(unknown location)";
-            }
-
-            return $"Error at {location}: {Message}";
+            return $"Error at {Location.ToString()}: {Message}";
         }
     }
 
@@ -41,9 +43,9 @@ namespace OpenDreamShared.Compiler {
             string location;
 
             if (Token != null) {
-                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
+                location = Token.Location.ToString();
             } else {
-                location = "(unknown location)";
+                location = Location.Unknown.ToString();
             }
 
             return $"Warning at {location}: {Message}";
@@ -53,12 +55,17 @@ namespace OpenDreamShared.Compiler {
     public class CompileErrorException : Exception {
         public CompilerError Error;
 
-        public CompileErrorException(CompilerError error) : base(error.Message) {
+        public CompileErrorException(CompilerError error) : base(error.Message)
+        {
             Error = error;
         }
 
-        public CompileErrorException(string message) : base(message) {
-            Error = new CompilerError(null, message);
+        public CompileErrorException(Token token, string message) : base(message) {
+            Error = new CompilerError(token, message);
+        }
+
+        public CompileErrorException(Location location, string message) : base(message) {
+            Error = new CompilerError(location, message);
         }
     }
 }

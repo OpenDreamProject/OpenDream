@@ -133,7 +133,7 @@ namespace DMCompiler.DM.Visitors {
                     var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
                     if (constant is not Expressions.Number) {
-                        throw new CompileErrorException($"waitfor attribute should be a number (got {constant})");
+                        throw new CompileErrorException(statementSet.Location, $"waitfor attribute should be a number (got {constant})");
                     }
 
                     _proc.WaitFor(constant.IsTruthy());
@@ -143,7 +143,7 @@ namespace DMCompiler.DM.Visitors {
                     var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
                     if (constant is not Expressions.Number) {
-                        throw new CompileErrorException($"opendream_unimplemented attribute should be a number (got {constant})");
+                        throw new CompileErrorException(statementSet.Location,$"opendream_unimplemented attribute should be a number (got {constant})");
                     }
 
                     _proc.Unimplemented = constant.IsTruthy();

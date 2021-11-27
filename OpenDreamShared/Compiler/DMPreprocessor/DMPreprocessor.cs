@@ -177,7 +177,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                             expandedTokens.Reverse();
 
                             foreach (Token expandedToken in expandedTokens) {
-                                Token newToken = new Token(expandedToken.Type, expandedToken.Text, token.SourceFile, token.Line, token.Column, expandedToken.Value);
+                                Token newToken = new Token(expandedToken.Type, expandedToken.Text, token.Location, expandedToken.Value);
 
                                 _unprocessedTokens.Push(newToken);
                             }
@@ -246,7 +246,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         TokenType type = (token.Type == TokenType.DM_Preproc_Error) ? TokenType.Error : TokenType.Warning;
 
                         _isCurrentLineWhitespaceOnly = false;
-                        _currentLine.Add(new Token(type, token.Text, token.SourceFile, token.Line, token.Column, message));
+                        _currentLine.Add(new Token(type, token.Text, token.Location, message));
                         break;
                     }
                     case TokenType.Newline: {
@@ -360,7 +360,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                 }
 
                 parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException("Missing ')' in macro call");
+                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException(leftParenToken.Location,"Missing ')' in macro call");
 
                 return parameters;
             }
@@ -370,11 +370,11 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
         }
 
         private void EmitErrorToken(Token token, string errorMessage) {
-            _result.Add(new Token(TokenType.Error, String.Empty, token.SourceFile, token.Line, token.Column, errorMessage));
+            _result.Add(new Token(TokenType.Error, String.Empty, token.Location, errorMessage));
         }
 
         private void EmitWarningToken(Token token, string warningMessage) {
-            _result.Add(new Token(TokenType.Warning, String.Empty, token.SourceFile, token.Line, token.Column, warningMessage));
+            _result.Add(new Token(TokenType.Warning, String.Empty, token.Location, warningMessage));
         }
     }
 }

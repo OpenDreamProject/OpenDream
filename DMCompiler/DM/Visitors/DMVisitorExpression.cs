@@ -47,13 +47,13 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
             var pathExpr = DMExpression.Constant(_dmObject, _proc, constant.Path);
-            if (pathExpr is not Expressions.Path) throw new CompileErrorException("Cannot do an upward path search on " + pathExpr);
+            if (pathExpr is not Expressions.Path) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
 
             DreamPath path = ((Expressions.Path)pathExpr).Value;
             DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
 
             if (foundPath == null) {
-                throw new CompileErrorException($"Invalid path {path}.{constant.Search.Path}");
+                throw new CompileErrorException(constant.Location,$"Invalid path {path}.{constant.Search.Path}");
             }
 
             Result = new Expressions.Path(foundPath.Value);
@@ -87,7 +87,7 @@ namespace DMCompiler.DM.Visitors {
                 if (_proc is null)
                 {
                     // Probably an undefined macro
-                    throw new CompileErrorException($"unknown identifier {name}");
+                    throw new CompileErrorException(identifier.Location, $"unknown identifier \"{name}\"");
                 }
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
@@ -104,7 +104,7 @@ namespace DMCompiler.DM.Visitors {
                     if (globalId != null) {
                         Result = new Expressions.GlobalField(DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
                     } else {
-                        throw new CompileErrorException($"unknown identifier {name}");
+                        throw new CompileErrorException(identifier.Location,$"unknown identifier \"{name}\"");
                     }
                 }
             }
@@ -127,7 +127,7 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new CompileErrorException("arglist must have 1 argument");
+                    if (procCall.Parameters.Length != 1) throw new CompileErrorException(procCall.Location, "arglist must have 1 argument");
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
                     Result = new Expressions.Arglist(expr);
@@ -135,7 +135,7 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            var target = DMExpression.Create(_dmObject, _proc, procCall.Callable, _inferredPath);
+            var target = DMExpression.Create(_dmObject, _proc, (DMASTExpression)procCall.Callable, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, procCall.Parameters);
             Result = new Expressions.ProcCall(target, args);
         }
@@ -388,7 +388,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
-                throw new CompileErrorException("An inferred new requires a type!");
+                throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");
             }
 
             var args = new ArgumentList(_dmObject, _proc, newInferred.Parameters, _inferredPath);
@@ -432,7 +432,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (locate.Expression == null) {
                 if (_inferredPath == null) {
-                    throw new CompileErrorException("inferred lcoate requires a type");
+                    throw new CompileErrorException(locate.Location, "inferred lcoate requires a type");
                 }
                 Result = new Expressions.LocateInferred(_inferredPath.Value, container);
                 return;
@@ -464,7 +464,7 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
 
             if (expr.Path is null) {
-                throw new CompileErrorException("An inferred istype requires a type!");
+                throw new CompileErrorException(isType.Location,"An inferred istype requires a type!");
             }
 
             Result = new Expressions.IsTypeInferred(expr, expr.Path.Value);
@@ -479,7 +479,7 @@ namespace DMCompiler.DM.Visitors {
 
             for (int i = 0; i < newList.Parameters.Length; i++) {
                 DMASTCallParameter parameter = newList.Parameters[i];
-                if (parameter.Name != null) throw new CompileErrorException("newlist() does not take named arguments");
+                if (parameter.Name != null) throw new CompileErrorException(newList.Location,"newlist() does not take named arguments");
 
                 expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
             }
@@ -542,7 +542,7 @@ namespace DMCompiler.DM.Visitors {
                     break;
 
                 default:
-                    throw new CompileErrorException("invalid argument count for call()");
+                    throw new CompileErrorException(call.Location,"invalid argument count for call()");
             }
         }
     }

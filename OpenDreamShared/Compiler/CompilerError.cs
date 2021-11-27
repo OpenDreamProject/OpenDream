@@ -61,7 +61,7 @@ namespace OpenDreamShared.Compiler {
         }
 
         public CompileErrorException(Token token, string message) : base(message) {
-            Error = new CompilerError(null, message);
+            Error = new CompilerError(token, message);
         }
 
         public CompileErrorException(Location location, string message) : base(message) {

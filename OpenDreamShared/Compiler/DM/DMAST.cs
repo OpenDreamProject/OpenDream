@@ -1596,7 +1596,7 @@ namespace OpenDreamShared.Compiler.DM {
         public DMASTExpression Index;
         public bool Conditional;
 
-        public DMASTListIndex(Location location, DMASTExpression expression, DMASTExpression index) : base(location) {
+        public DMASTListIndex(Location location, DMASTExpression expression, DMASTExpression index, bool conditional) : base(location) {
             Expression = expression;
             Index = index;
             Conditional = conditional;

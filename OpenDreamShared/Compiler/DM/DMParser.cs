@@ -2087,7 +2087,7 @@ namespace OpenDreamShared.Compiler.DM {
                     DMASTExpression index = Expression();
                     ConsumeRightBracket();
 
-                    expression = new DMASTListIndex(expression.Location, expression, index);
+                    expression = new DMASTListIndex(expression.Location, expression, index, conditional);
                     expression = ParseDereference(expression);
                     Whitespace();
                 }

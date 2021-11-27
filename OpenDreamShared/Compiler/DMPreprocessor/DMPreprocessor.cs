@@ -246,7 +246,7 @@ namespace OpenDreamShared.Compiler.DMPreprocessor {
                         TokenType type = (token.Type == TokenType.DM_Preproc_Error) ? TokenType.Error : TokenType.Warning;
 
                         _isCurrentLineWhitespaceOnly = false;
-                        _currentLine.Add(new Token(type, token.Text, Location.Unknown, message));
+                        _currentLine.Add(new Token(type, token.Text, token.Location, message));
                         break;
                     }
                     case TokenType.Newline: {

@@ -188,7 +188,7 @@
         }
 
         public override string ToString() {
-            return Type + "(" + Location.SourceFile + ":" + Location.Line + ":" + Location.Column + ", " + PrintableText + ")";
+            return $"{Type}({Location.ToString()}, {PrintableText})";
         }
     }
 }

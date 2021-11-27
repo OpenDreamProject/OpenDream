@@ -171,26 +171,23 @@
 
     public partial class Token {
         public TokenType Type;
+        public Location Location;
         public string Text;
-        public string SourceFile;
-        public int Line, Column;
         public object Value;
 
         public string PrintableText {
             get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
         }
 
-        public Token(TokenType type, string text, string sourceFile, int line, int column, object value) {
+        public Token(TokenType type, string text, Location location, object value) {
             Type = type;
             Text = text;
-            SourceFile = sourceFile;
-            Line = line;
-            Column = column;
+            Location = location;
             Value = value;
         }
 
         public override string ToString() {
-            return Type + "(" + SourceFile + ":" + Line + ":" + Column + ", " + PrintableText + ")";
+            return Type + "(" + Location.SourceFile + ":" + Location.Line + ":" + Location.Column + ", " + PrintableText + ")";
         }
     }
 }

@@ -19,9 +19,9 @@ namespace OpenDreamShared.Compiler {
             string location;
 
             if (Token != null) {
-                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
+                location = Token.Location.ToString();
             } else {
-                location = "(unknown location)";
+                location = Location.Unknown.ToString();
             }
 
             return $"Error at {location}: {Message}";
@@ -41,9 +41,9 @@ namespace OpenDreamShared.Compiler {
             string location;
 
             if (Token != null) {
-                location = $"{Token.SourceFile}:{Token.Line}:{Token.Column} at '{Token.PrintableText}'";
+                location = Token.Location.ToString();
             } else {
-                location = "(unknown location)";
+                location = Location.Unknown.ToString();
             }
 
             return $"Warning at {location}: {Message}";

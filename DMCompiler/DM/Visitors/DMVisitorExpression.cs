@@ -368,7 +368,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitListIndex(DMASTListIndex listIndex) {
             var expr = DMExpression.Create(_dmObject, _proc, listIndex.Expression, _inferredPath);
             var index = DMExpression.Create(_dmObject, _proc, listIndex.Index, expr.Path);
-            Result = new Expressions.ListIndex(expr, index, expr.Path);
+            Result = new Expressions.ListIndex(expr, index, expr.Path, listIndex.Conditional);
         }
 
         public void VisitDereference(DMASTDereference dereference) {

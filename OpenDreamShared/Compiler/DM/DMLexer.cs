@@ -135,6 +135,11 @@ namespace OpenDreamShared.Compiler.DM {
                                     Advance();
                                     break;
 
+                                case TokenType.DM_Preproc_Punctuator_LeftBracket:
+                                    token = CreateToken(TokenType.DM_QuestionLeftBracket, "?[");
+                                    Advance();
+                                    break;
+
                                 default:
                                     token = CreateToken(TokenType.DM_Question, "?");
                                     break;

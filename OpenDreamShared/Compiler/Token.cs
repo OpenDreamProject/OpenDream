@@ -97,6 +97,7 @@
         DM_Proc,
         DM_Question,
         DM_QuestionColon,
+        DM_QuestionLeftBracket,
         DM_QuestionPeriod,
         DM_RawString,
         DM_Resource,

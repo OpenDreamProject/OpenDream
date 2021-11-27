@@ -93,7 +93,8 @@ namespace OpenDreamShared.Dream.Procs {
         CompareNotEquivalent = 0x59,
         Throw = 0x5A,
         IsInRange = 0x5B,
-        GetGlobal = 0x5C
+        GetGlobal = 0x5C,
+        IndexListConditional = 0x5D
     }
 
     public enum DreamProcOpcodeParameterType {

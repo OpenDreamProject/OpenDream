@@ -225,16 +225,6 @@ namespace OpenDreamShared.Compiler.DM {
                     }
                 }
 
-                //TODO actual modified type support
-                if (Check(TokenType.DM_LeftCurlyBracket))
-                {
-                    if(_unimplementedWarnings) Warning("Modified types are currently not supported and modified values will be ignored.");
-
-                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
-                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                    Newline(); //The lexer tosses in a newline after }
-                }
-
                 return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()));
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
@@ -1856,6 +1846,15 @@ namespace OpenDreamShared.Compiler.DM {
                         if (search == null) Error("Expected a path for an upward search");
 
                         primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                    }
+
+                    //TODO actual modified type support
+                    if (Check(TokenType.DM_LeftCurlyBracket)) {
+                        if (_unimplementedWarnings) Warning("Modified types are currently not supported and modified values will be ignored.");
+
+                        while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                        Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                        Newline(); //The lexer tosses in a newline after }
                     }
                 }
             }

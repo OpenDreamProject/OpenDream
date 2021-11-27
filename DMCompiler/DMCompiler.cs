@@ -18,6 +18,8 @@ namespace DMCompiler {
     public static class DMCompiler {
         public static int ErrorCount = 0;
         public static DMCompilerSettings Settings;
+        //Only used for --unique-errors
+        private static List<String> UniqueErrorMessages = new();
 
         public static bool Compile(DMCompilerSettings settings) {
             Settings = settings;
@@ -52,8 +54,11 @@ namespace DMCompiler {
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);
-            } else {
-                Console.WriteLine($"Compilation failed with {ErrorCount} errors");
+            } else
+            {
+                Console.WriteLine(!DMCompiler.Settings.UniqueErrors
+                    ? $"Compilation failed with {ErrorCount} errors"
+                    : $"Compilation failed with {ErrorCount} unique errors");
             }
 
             TimeSpan duration = DateTime.Now - startTime;
@@ -93,9 +98,24 @@ namespace DMCompiler {
             }
 
             if (dmParser.Errors.Count > 0) {
-                foreach (CompilerError error in dmParser.Errors) {
-                    Error(error);
+                if (!DMCompiler.Settings.UniqueErrors)
+                {
+                    foreach (CompilerError error in dmParser.Errors) {
+                        Error(error);
+                    }
                 }
+                else
+                {
+                    foreach (CompilerError error in dmParser.Errors) {
+                        if (!UniqueErrorMessages.Contains(error.Message))
+                        {
+                            UniqueErrorMessages.Add(error.Message);
+                            Error(error);
+                        }
+
+                    }
+                }
+
 
                 return false;
             }
@@ -116,8 +136,17 @@ namespace DMCompiler {
         }
 
         public static void Error(CompilerError error) {
-            Console.WriteLine(error);
-            ErrorCount++;
+            if (!DMCompiler.Settings.UniqueErrors)
+            {
+                Console.WriteLine(error);
+                ErrorCount++;
+            }
+            else if (!UniqueErrorMessages.Contains(error.Message))
+            {
+                UniqueErrorMessages.Add(error.Message);
+                Console.WriteLine(error);
+                ErrorCount++;
+            }
         }
 
         public static void Warning(CompilerWarning warning) {
@@ -179,5 +208,6 @@ namespace DMCompiler {
         public bool SuppressUnimplementedWarnings;
         public bool DumpPreprocessor;
         public bool NoStandard;
+        public bool UniqueErrors;
     }
 }

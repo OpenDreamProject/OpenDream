@@ -14,7 +14,7 @@ A detailed description of differences with BYOND can be found [here](https://git
 
 The first step to building OpenDream is initializing the submodule for the game engine, [Robust Toolbox](https://github.com/space-wizards/RobustToolbox). 
 
-To do this, simply run `git submodule update --init --recursive` in git bash and let it finish.
+To do this, simply run `git submodule update --init --recursive` in git bash and let it finish. If doing that gives you any weird messages/errors related to `cefglue`, run this then try the previous command again: `pushd RobustToolbox/cefglue && git remote set-url origin https://github.com/space-wizards/cefglue.git && popd`
 
 OpenDream requires .NET 6. To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
 

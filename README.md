@@ -22,7 +22,7 @@ There's 3 main parts: Compiler, Server, and Client
 
 ## Running
 
-**Compiler:** Run `DMCompiler.exe`, and pass any number of .dm or .dme files to compile as arguments.
+**Compiler:** Run `DMCompiler.exe`, and pass any number of .dm or .dme files to compile as arguments. Optional arguments can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Compiler-Options).
 
 **Server:** Run `OpenDreamServer.exe` and pass the compiled JSON file you got as a result of running the compiler above as an argument like this: `--cvar opendream.json_path=C:/path/to/compiler/output.json`
 

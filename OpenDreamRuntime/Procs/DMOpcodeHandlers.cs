@@ -1310,7 +1310,6 @@ namespace OpenDreamRuntime.Procs {
 
         //Copy & run the interpreter in a new thread
         //Jump the current thread to after the spawn's code
-        // TODO: If delay negative, do a switcharoo
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             float delay = state.PopDreamValue().GetValueAsFloat();
@@ -1319,11 +1318,19 @@ namespace OpenDreamRuntime.Procs {
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
-            new Task(async () => {
-                await Task.Delay(delayMilliseconds);
-                newContext.Resume();
-            }).Start(TaskScheduler.FromCurrentSynchronizationContext());
 
+            //Negative delays mean the spawned code runs immediately
+            if (delayMilliseconds < 0) {
+                newContext.Resume();
+                // TODO: Does the rest of the proc get scheduled?
+                // Does the value of the delay mean anything?
+            } else {
+                new Task(async () => {
+                    await Task.Delay(delayMilliseconds);
+                    newContext.Resume();
+                }).Start(TaskScheduler.FromCurrentSynchronizationContext());
+            }
+            
             state.Jump(jumpTo);
             return null;
         }

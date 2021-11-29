@@ -234,6 +234,13 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? GetGlobal(DMProcState state) {
+            int globalId = state.ReadInt();
+
+            state.Push(new DreamProcIdentifierGlobal(state.DreamManager.Globals, globalId));
+            return null;
+        }
+
         public static ProcStatus? PushLocalVariable(DMProcState state) {
             int localVariableId = state.ReadByte();
 
@@ -252,10 +259,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? IndexList(DMProcState state) {
-            DreamValue index = state.PopDreamValue();
-            DreamValue indexing = state.PopDreamValue();
-
+        private static void Index(DMProcState state, DreamValue index, DreamValue indexing) {
             if (indexing.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 state.Push(new DreamProcIdentifierIndex(dreamObject, index));
             } else if (indexing.TryGetValueAsString(out string text)) {
@@ -264,6 +268,25 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new DreamValue(Convert.ToString(c)));
             } else {
                 throw new Exception("Cannot index " + indexing);
+            }
+        }
+
+        public static ProcStatus? IndexList(DMProcState state) {
+            DreamValue index = state.PopDreamValue();
+            DreamValue indexing = state.PopDreamValue();
+
+            Index(state, index, indexing);
+            return null;
+        }
+
+        public static ProcStatus? IndexListConditional(DMProcState state) {
+            DreamValue index = state.PopDreamValue();
+            DreamValue indexing = state.PopDreamValue();
+
+            if (indexing == DreamValue.Null) {
+                state.Push(DreamValue.Null);
+            } else {
+                Index(state, index, indexing);
             }
 
             return null;
@@ -1058,6 +1081,19 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? IsInRange(DMProcState state)
+        {
+            DreamValue end = state.PopDreamValue();
+            DreamValue start = state.PopDreamValue();
+            DreamValue var = state.PopDreamValue();
+            if (var.Type != DreamValue.DreamValueType.Float) var = new DreamValue(0f);
+            if (start.Type != DreamValue.DreamValueType.Float) start = new DreamValue(0f);
+            if (end.Type != DreamValue.DreamValueType.Float) end = new DreamValue(0f);
+            bool inRange = (IsEqual(start, var) || IsLessThan(start, var)) && (IsEqual(var, end) || IsLessThan(var, end));
+            state.Push(new DreamValue(inRange ? 1 : 0));
+            return null;
+        }
+
         public static ProcStatus? IsType(DMProcState state) {
             DreamValue typeValue = state.PopDreamValue();
             DreamValue value = state.PopDreamValue();
@@ -1528,14 +1564,14 @@ namespace OpenDreamRuntime.Procs {
             }
 
             //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            //if (objectDefinition.HasGlobalVariable(property))
-            //{
-            //    state.Push(new DreamValue(0));
-            //}
-            //else
-            //{
+            if (objectDefinition.GlobalVariables.ContainsKey(property))
+            {
+                state.Push(new DreamValue(0));
+            }
+            else
+            {
                 state.Push(new DreamValue(1));
-            //}
+            }
             return null;
         }
         #endregion Others

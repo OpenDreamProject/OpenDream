@@ -1,5 +1,7 @@
 ﻿using System;
 using OpenDreamRuntime.Objects;
+using System.Collections.Generic;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     interface IDreamProcIdentifier {
@@ -20,8 +22,8 @@ namespace OpenDreamRuntime.Procs {
             if (Instance.TryGetVariable(IdentifierName, out DreamValue value)) {
                 return value;
             }
-            if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
-                return Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value;
+            if (Instance.ObjectDefinition.GlobalVariables.TryGetValue(IdentifierName, out int globalId)) {
+                return IoCManager.Resolve<IDreamManager>().Globals[globalId]; //TODO: This probably isn't very performant
             }
             throw new Exception("Value '" + IdentifierName + "' doesn't exist");
         }
@@ -29,11 +31,30 @@ namespace OpenDreamRuntime.Procs {
         public void Assign(DreamValue value) {
             if (Instance.HasVariable(IdentifierName)) {
                 Instance.SetVariable(IdentifierName, value);
-            } else if (Instance.ObjectDefinition.HasGlobalVariable(IdentifierName)) {
-                Instance.ObjectDefinition.GetGlobalVariable(IdentifierName).Value = value;
+            } else if (Instance.ObjectDefinition.GlobalVariables.TryGetValue(IdentifierName, out int globalId)) {
+                IoCManager.Resolve<IDreamManager>().Globals[globalId] = value; //TODO: This probably isn't very performant
             } else {
                 throw new Exception("Value '" + IdentifierName + "' doesn't exist");
             }
+        }
+    }
+
+    struct DreamProcIdentifierGlobal : IDreamProcIdentifier {
+        public int GlobalId;
+
+        private List<DreamValue> _globals;
+
+        public DreamProcIdentifierGlobal(List<DreamValue> globals, int globalId) {
+            _globals = globals;
+            GlobalId = globalId;
+        }
+
+        public DreamValue GetValue() {
+            return _globals[GlobalId];
+        }
+
+        public void Assign(DreamValue value) {
+            _globals[GlobalId] = value;
         }
     }
 

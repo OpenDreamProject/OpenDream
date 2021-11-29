@@ -8,7 +8,6 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Shared.IoC;
-using GlobalVariable = OpenDreamRuntime.Objects.DreamObjectDefinition.GlobalVariable;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectTree {
@@ -222,11 +221,8 @@ namespace OpenDreamRuntime.Objects {
             }
 
             if (jsonObject.GlobalVariables != null) {
-                foreach (KeyValuePair<string, object> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                    DreamValue value = GetDreamValueFromJsonElement(jsonGlobalVariable.Value);
-                    GlobalVariable globalVariable = new GlobalVariable(value);
-
-                    objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, globalVariable);
+                foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
+                    objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
                 }
             }
         }

@@ -1,4 +1,4 @@
-﻿using DMCompiler.DM.Visitors;
+using DMCompiler.DM.Visitors;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -6,6 +6,8 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
@@ -96,7 +98,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    throw new Exception("Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                    DMCompiler.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
                 }
             }
 
@@ -126,6 +128,18 @@ namespace DMCompiler.DM {
             return null;
         }
 
+        public bool HasLocalVariable(string name) {
+            DMProcScope scope = _scopes.Peek();
+
+            while (scope != null) {
+                if (scope.LocalVariables.ContainsKey(name)) return true;
+
+                scope = scope.ParentScope;
+            }
+
+            return false;
+        }
+
         public void Error() {
             WriteOpcode(DreamProcOpcode.Error);
         }
@@ -133,6 +147,11 @@ namespace DMCompiler.DM {
         public void GetIdentifier(string identifier) {
             WriteOpcode(DreamProcOpcode.GetIdentifier);
             WriteString(identifier);
+        }
+
+        public void GetGlobal(int id) {
+            WriteOpcode(DreamProcOpcode.GetGlobal);
+            WriteInt(id);
         }
 
         public void PushLocalVariable(string name) {
@@ -227,16 +246,46 @@ namespace DMCompiler.DM {
             WriteLabel(jumpTo);
         }
 
-        public void Break() {
-            Jump(_loopStack.Peek() + "_end");
+        public void Break(DMASTIdentifier label = null) {
+            if (label is not null)
+            {
+                Jump(label.Identifier + "_end");
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_end");
+            }
         }
 
         public void BreakIfFalse() {
             JumpIfFalse(_loopStack.Peek() + "_end");
         }
 
-        public void Continue() {
-            Jump(_loopStack.Peek() + "_continue");
+        public void Continue(DMASTIdentifier label = null) {
+            // TODO: Clean up this godawful label handling
+            if (label is not null)
+            {
+                var codeLabel = label.Identifier + "_codelabel";
+                if (!_labels.ContainsKey(codeLabel))
+                {
+                    DMCompiler.Error(new CompilerError(null, $"Unknown label {label.Identifier}"));
+                }
+                var labelList = _labels.Keys.ToList();
+                var continueLabel = string.Empty;
+                for (var i = labelList.IndexOf(codeLabel) + 1; i < labelList.Count; i++)
+                {
+                    if(labelList[i].EndsWith("_start"))
+                    {
+                        continueLabel = labelList[i].Replace("_start", "_continue");
+                        break;
+                    }
+                }
+                Jump(continueLabel);
+            }
+            else
+            {
+                Jump(_loopStack.Peek() + "_continue");
+            }
         }
 
         public void ContinueIfFalse() {
@@ -554,8 +603,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IndexList);
         }
 
+        public void IndexListConditional() {
+            WriteOpcode(DreamProcOpcode.IndexListConditional);
+        }
+
         public void IsInList() {
             WriteOpcode(DreamProcOpcode.IsInList);
+        }
+
+        public void IsInRange() {
+            WriteOpcode(DreamProcOpcode.IsInRange);
         }
 
         public void IsNull() {

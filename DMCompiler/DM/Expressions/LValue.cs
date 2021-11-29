@@ -1,3 +1,4 @@
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
@@ -63,7 +64,7 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // Identifier of field (potentially a global variable)
+    // Identifier of field
     class Field : LValue {
         string Name { get; }
 
@@ -84,6 +85,28 @@ namespace DMCompiler.DM.Expressions {
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushSrc();
             proc.IsSaved(Name);
+        }
+    }
+
+    // Id of global field
+    class GlobalField : LValue {
+        int Id { get; }
+
+        public GlobalField(DreamPath? path, int id)
+            : base(path) {
+            Id = id;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.GetGlobal(Id);
+        }
+
+        public void EmitPushInitial(DMProc proc) {
+            throw new CompileErrorException(Location.Unknown,"initial() on globals is unimplemented");
+        }
+
+        public void EmitPushIsSaved(DMProc proc) {
+            throw new CompileErrorException(Location.Unknown,"issaved() on globals is unimplemented");
         }
     }
 

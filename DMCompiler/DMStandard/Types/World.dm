@@ -27,25 +27,40 @@
 
 	var/address
 	var/port
-	var/internet_address = "127.0.0.1" //TODO
+	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url
-	var/status
-	var/list/params = null
+	var/status as opendream_unimplemented
+	var/list/params = null as opendream_unimplemented
 
-	var/sleep_offline = 0 //TODO
+	var/sleep_offline = 0 as opendream_unimplemented
 
 	var/system_type
 
 	proc/New()
 	proc/Del()
 
+	var/map_cpu = 0 as opendream_unimplemented
+	var/hub as opendream_unimplemented
+	var/hub_password as opendream_unimplemented
+	var/reachable as opendream_unimplemented
+	var/game_state as opendream_unimplemented
+	var/host as opendream_unimplemented
+	proc/Profile(command, type, format)
+		set opendream_unimplemented = TRUE
+	proc/GetConfig(config_set,param)
+		set opendream_unimplemented = TRUE
+	proc/SetConfig(config_set,param,value)
+		set opendream_unimplemented = TRUE
+	proc/OpenPort(port)
+		set opendream_unimplemented = TRUE
+	proc/IsSubscribed(player, type)
+		set opendream_unimplemented = TRUE
+
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
-		CRASH("/world.Reboot() is not implemented")
 
 	proc/Repop()
 		set opendream_unimplemented = TRUE
-		CRASH("/world.Repop() will not be implemented")
 
 	proc/Export(Addr, File, Persist, Clients)
 

@@ -234,6 +234,15 @@ namespace DMCompiler.DM.Visitors {
 
                 return;
             }
+
+            DMASTExpressionInRange inRange = expression as DMASTExpressionInRange;
+            if (inRange != null) {
+                SimplifyExpression(ref inRange.Value);
+                SimplifyExpression(ref inRange.StartRange);
+                SimplifyExpression(ref inRange.EndRange);
+
+                return;
+            }
             #endregion Comparators
 
             #region Math
@@ -243,8 +252,8 @@ namespace DMCompiler.DM.Visitors {
                 if (negate.Expression is not DMASTExpressionConstant) return;
 
                 switch (negate.Expression) {
-                    case DMASTConstantInteger exprInteger: expression = new DMASTConstantInteger(-exprInteger.Value); break;
-                    case DMASTConstantFloat exprFloat: expression = new DMASTConstantFloat(-exprFloat.Value); break;
+                    case DMASTConstantInteger exprInteger: expression = new DMASTConstantInteger(expression.Location, -exprInteger.Value); break;
+                    case DMASTConstantFloat exprFloat: expression = new DMASTConstantFloat(expression.Location, -exprFloat.Value); break;
                 }
 
                 return;
@@ -258,8 +267,8 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger exprInteger = not.Expression as DMASTConstantInteger;
                 DMASTConstantFloat exprFloat = not.Expression as DMASTConstantFloat;
 
-                if (exprInteger != null) expression = new DMASTConstantInteger((exprInteger.Value != 0) ? 1 : 0);
-                else if (exprFloat != null) expression = new DMASTConstantFloat((exprFloat.Value != 0) ? 1 : 0);
+                if (exprInteger != null) expression = new DMASTConstantInteger(expression.Location, (exprInteger.Value != 0) ? 1 : 0);
+                else if (exprFloat != null) expression = new DMASTConstantFloat(expression.Location, (exprFloat.Value != 0) ? 1 : 0);
 
                 return;
             }
@@ -275,7 +284,7 @@ namespace DMCompiler.DM.Visitors {
                 if (or.A is not DMASTExpressionConstant || or.B is not DMASTExpressionConstant) return;
                 DMASTConstantInteger aInteger = or.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = or.B as DMASTConstantInteger;
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) || (bInteger.Value != 0)) ? bInteger.Value : 0);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, ((aInteger.Value != 0) || (bInteger.Value != 0)) ? bInteger.Value : 0);
 
                 return;
             }
@@ -291,7 +300,7 @@ namespace DMCompiler.DM.Visitors {
                 if (and.A is not DMASTExpressionConstant || and.B is not DMASTExpressionConstant) return;
                 DMASTConstantInteger aInteger = and.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = and.B as DMASTConstantInteger;
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(((aInteger.Value != 0) && (bInteger.Value != 0)) ? bInteger.Value : 0);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, ((aInteger.Value != 0) && (bInteger.Value != 0)) ? bInteger.Value : 0);
 
                 return;
             }
@@ -305,7 +314,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = leftShift.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = leftShift.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value << bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value << bInteger.Value);
 
                 return;
             }
@@ -319,7 +328,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = rightShift.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = rightShift.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value >> bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value >> bInteger.Value);
 
                 return;
             }
@@ -333,7 +342,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = binaryAnd.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = binaryAnd.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value & bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value & bInteger.Value);
 
                 return;
             }
@@ -347,7 +356,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = binaryOr.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = binaryOr.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value | bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value | bInteger.Value);
 
                 return;
             }
@@ -359,7 +368,7 @@ namespace DMCompiler.DM.Visitors {
 
                 DMASTConstantInteger valueInteger = binaryNot.Value as DMASTConstantInteger;
 
-                if (valueInteger != null) expression = new DMASTConstantInteger((~valueInteger.Value) & 0xFFFFFF);
+                if (valueInteger != null) expression = new DMASTConstantInteger(expression.Location, (~valueInteger.Value) & 0xFFFFFF);
 
                 return;
             }
@@ -377,11 +386,11 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantFloat bFloat = add.B as DMASTConstantFloat;
                 DMASTConstantString bString = add.B as DMASTConstantString;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value + bInteger.Value);
-                else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(aInteger.Value + bFloat.Value);
-                else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(aFloat.Value + bInteger.Value);
-                else if (aFloat != null && bFloat != null) expression = new DMASTConstantFloat(aFloat.Value + bFloat.Value);
-                else if (aString != null && bString != null) expression = new DMASTConstantString(aString.Value + bString.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value + bInteger.Value);
+                else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(expression.Location, aInteger.Value + bFloat.Value);
+                else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(expression.Location, aFloat.Value + bInteger.Value);
+                else if (aFloat != null && bFloat != null) expression = new DMASTConstantFloat(expression.Location, aFloat.Value + bFloat.Value);
+                else if (aString != null && bString != null) expression = new DMASTConstantString(expression.Location, aString.Value + bString.Value);
 
                 return;
             }
@@ -395,7 +404,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = subtract.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = subtract.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value - bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value - bInteger.Value);
 
                 return;
             }
@@ -411,10 +420,10 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger bInteger = multiply.B as DMASTConstantInteger;
                 DMASTConstantFloat bFloat = multiply.B as DMASTConstantFloat;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value * bInteger.Value);
-                else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(aInteger.Value * bFloat.Value);
-                else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(aFloat.Value * bInteger.Value);
-                else if (aFloat != null && bFloat != null) expression = new DMASTConstantFloat(aFloat.Value * bFloat.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value * bInteger.Value);
+                else if (aInteger != null && bFloat != null) expression = new DMASTConstantFloat(expression.Location, aInteger.Value * bFloat.Value);
+                else if (aFloat != null && bInteger != null) expression = new DMASTConstantFloat(expression.Location, aFloat.Value * bInteger.Value);
+                else if (aFloat != null && bFloat != null) expression = new DMASTConstantFloat(expression.Location, aFloat.Value * bFloat.Value);
 
                 return;
             }
@@ -431,12 +440,12 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantFloat bFloat = divide.B as DMASTConstantFloat;
 
                 if (aInteger != null && bInteger != null) {
-                    if (aInteger.Value % bInteger.Value == 0) expression = new DMASTConstantFloat(aInteger.Value / bInteger.Value);
-                    else expression = new DMASTConstantFloat((float)aInteger.Value / (float)bInteger.Value);
+                    if (aInteger.Value % bInteger.Value == 0) expression = new DMASTConstantFloat(expression.Location, aInteger.Value / bInteger.Value);
+                    else expression = new DMASTConstantFloat(expression.Location, (float)aInteger.Value / (float)bInteger.Value);
                 } else if (aFloat != null && bInteger != null) {
-                    expression = new DMASTConstantFloat(aFloat.Value / bInteger.Value);
+                    expression = new DMASTConstantFloat(expression.Location, aFloat.Value / bInteger.Value);
                 } else if (aFloat != null && bFloat != null) {
-                    expression = new DMASTConstantFloat(aFloat.Value / bFloat.Value);
+                    expression = new DMASTConstantFloat(expression.Location, aFloat.Value / bFloat.Value);
                 }
 
                 return;
@@ -451,7 +460,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = modulus.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = modulus.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(aInteger.Value % bInteger.Value);
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, aInteger.Value % bInteger.Value);
 
                 return;
             }
@@ -465,7 +474,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = power.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = power.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger((int)Math.Pow(aInteger.Value, bInteger.Value));
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, (int)Math.Pow(aInteger.Value, bInteger.Value));
 
                 return;
             }

@@ -8,21 +8,13 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectDefinition {
-        public class GlobalVariable {
-            public DreamValue Value;
-
-            public GlobalVariable(DreamValue value) {
-                Value = value;
-            }
-        }
-
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
         public DreamProc InitializionProc = null;
         public readonly Dictionary<string, DreamProc> Procs = new();
         public readonly Dictionary<string, DreamProc> OverridingProcs = new();
         public readonly Dictionary<string, DreamValue> Variables = new();
-        public readonly Dictionary<string, GlobalVariable> GlobalVariables = new();
+        public readonly Dictionary<string, int> GlobalVariables = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
@@ -37,7 +29,7 @@ namespace OpenDreamRuntime.Objects {
             _parentObjectDefinition = copyFrom._parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
-            GlobalVariables = new Dictionary<string, GlobalVariable>(copyFrom.GlobalVariables);
+            GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
             Procs = new Dictionary<string, DreamProc>(copyFrom.Procs);
             OverridingProcs = new Dictionary<string, DreamProc>(copyFrom.OverridingProcs);
         }
@@ -48,7 +40,7 @@ namespace OpenDreamRuntime.Objects {
             _parentObjectDefinition = parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(parentObjectDefinition.Variables);
-            GlobalVariables = new Dictionary<string, GlobalVariable>(parentObjectDefinition.GlobalVariables);
+            GlobalVariables = new Dictionary<string, int>(parentObjectDefinition.GlobalVariables);
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {
@@ -130,18 +122,6 @@ namespace OpenDreamRuntime.Objects {
 
         public bool HasVariable(string variableName) {
             return Variables.ContainsKey(variableName);
-        }
-
-        public bool HasGlobalVariable(string globalVariableName) {
-            return GlobalVariables.ContainsKey(globalVariableName);
-        }
-
-        public GlobalVariable GetGlobalVariable(string globalVariableName) {
-            if (!HasGlobalVariable(globalVariableName)) {
-                throw new Exception("Object type '" + Type + "' does not have a global variable named '" + globalVariableName + "'");
-            }
-
-            return GlobalVariables[globalVariableName];
         }
 
         public bool IsSubtypeOf(DreamPath path) {

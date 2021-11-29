@@ -18,13 +18,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private List<Token> _currentLine = new();
         private bool _isCurrentLineWhitespaceOnly = true;
         private bool _enableDirectives;
+        private bool _unimplementedWarnings;
         private Dictionary<string, DMMacro> _defines = new() {
             { "__LINE__", new DMMacroLine() },
             { "__FILE__", new DMMacroFile() }
         };
 
-        public DMPreprocessor(bool enableDirectives) {
+        public DMPreprocessor(bool enableDirectives, bool unimplementedWarnings) {
             _enableDirectives = enableDirectives;
+            _unimplementedWarnings = unimplementedWarnings;
         }
 
         public void IncludeFile(string includePath, string file) {
@@ -176,7 +178,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             expandedTokens.Reverse();
 
                             foreach (Token expandedToken in expandedTokens) {
-                                Token newToken = new Token(expandedToken.Type, expandedToken.Text, token.SourceFile, token.Line, token.Column, expandedToken.Value);
+                                Token newToken = new Token(expandedToken.Type, expandedToken.Text, token.Location, expandedToken.Value);
 
                                 _unprocessedTokens.Push(newToken);
                             }
@@ -192,7 +194,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     {
                         //TODO Implement #if properly
                         SkipIfBody();
-                        EmitWarningToken(token, "#if is not implemented");
+                        if (_unimplementedWarnings)
+                        {
+                            EmitWarningToken(token, "#if is not implemented");
+                        }
                         break;
                     }
                     case TokenType.DM_Preproc_Ifdef: {
@@ -242,7 +247,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         TokenType type = (token.Type == TokenType.DM_Preproc_Error) ? TokenType.Error : TokenType.Warning;
 
                         _isCurrentLineWhitespaceOnly = false;
-                        _currentLine.Add(new Token(type, token.Text, token.SourceFile, token.Line, token.Column, message));
+                        _currentLine.Add(new Token(type, token.Text, token.Location, message));
                         break;
                     }
                     case TokenType.Newline: {
@@ -356,7 +361,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 }
 
                 parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException("Missing ')' in macro call");
+                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new CompileErrorException(leftParenToken.Location,"Missing ')' in macro call");
 
                 return parameters;
             }
@@ -366,11 +371,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         private void EmitErrorToken(Token token, string errorMessage) {
-            _result.Add(new Token(TokenType.Error, String.Empty, token.SourceFile, token.Line, token.Column, errorMessage));
+            _result.Add(new Token(TokenType.Error, String.Empty, token.Location, errorMessage));
         }
 
         private void EmitWarningToken(Token token, string warningMessage) {
-            _result.Add(new Token(TokenType.Warning, String.Empty, token.SourceFile, token.Line, token.Column, warningMessage));
+            _result.Add(new Token(TokenType.Warning, String.Empty, token.Location, warningMessage));
         }
     }
 }

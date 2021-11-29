@@ -29,6 +29,7 @@ namespace OpenDreamRuntime {
         public int DMExceptionCount { get; set; }
 
         // Global state that may not really (really really) belong here
+        public List<DreamValue> Globals { get; set; } = new();
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -52,8 +53,16 @@ namespace OpenDreamRuntime {
 
             _dreamMapManager.Initialize();
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
-            ObjectTree.Root.ObjectDefinition.GlobalVariables["world"].Value = new DreamValue(WorldInstance);
             WorldInstance.InitSpawn(new DreamProcArguments(null));
+
+            if (_compiledJson.Globals != null) {
+                foreach (object globalValue in _compiledJson.Globals) {
+                    Globals.Add(ObjectTree.GetDreamValueFromJsonElement(globalValue));
+                }
+            }
+
+            //The first global is always `world`
+            Globals[0] = new DreamValue(WorldInstance);
 
             if (json.GlobalInitProc != null) {
                 var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, true);

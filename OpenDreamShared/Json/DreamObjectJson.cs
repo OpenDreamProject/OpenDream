@@ -14,7 +14,7 @@ namespace OpenDreamShared.Json {
         public ProcDefinitionJson InitProc { get; set; }
         public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
-        public Dictionary<string, object> GlobalVariables { get; set; }
+        public Dictionary<string, int> GlobalVariables { get; set; }
         public List<DreamObjectJson> Children { get; set; }
     }
 

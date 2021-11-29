@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {
 
@@ -71,7 +71,7 @@ namespace DMCompiler.Compiler.DM {
             }
 
             public DMASTProcDefinition GetProcByPath(string path) {
-                var h = Hash(new DMASTProcDefinition(new OpenDreamShared.Dream.DreamPath(path), new DMASTDefinitionParameter[0], null));
+                var h = Hash(new DMASTProcDefinition(Location.Unknown, new OpenDreamShared.Dream.DreamPath(path), new DMASTDefinitionParameter[0], null));
                 return nodes[h][0] as DMASTProcDefinition;
             }
             public void HashDefine(DMASTNode node) {

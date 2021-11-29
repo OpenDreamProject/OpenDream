@@ -4,10 +4,8 @@ using System.IO;
 
 namespace OpenDreamShared.Compiler {
     public class Lexer<SourceType> {
-        public string SourceName { get; protected set; }
+        public Location CurrentLocation { get; protected set; }
         public IEnumerable<SourceType> Source { get; protected set; }
-        public int CurrentLine { get; protected set; } = 1;
-        public int CurrentColumn { get; protected set; } = 0;
         public bool AtEndOfSource { get; protected set; } = false;
 
         protected Queue<Token> _pendingTokenQueue = new();
@@ -16,7 +14,7 @@ namespace OpenDreamShared.Compiler {
         private SourceType _current;
 
         public Lexer(string sourceName, IEnumerable<SourceType> source) {
-            SourceName = sourceName;
+            CurrentLocation = new Location(sourceName, 1, 0);
             Source = source;
             if (source == null)
                 throw new FileNotFoundException("Source file could not be read: " + sourceName);
@@ -43,7 +41,7 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected Token CreateToken(TokenType type, string text, object value = null) {
-            return new Token(type, text, SourceName, CurrentLine, CurrentColumn, value);
+            return new Token(type, text, CurrentLocation, value);
         }
 
         protected Token CreateToken(TokenType type, char text, object value = null) {
@@ -95,10 +93,17 @@ namespace OpenDreamShared.Compiler {
 
         protected override char Advance() {
             if (GetCurrent() == '\n') {
-                CurrentLine++;
-                CurrentColumn = 1;
+                CurrentLocation = new Location(
+                    CurrentLocation.SourceFile,
+                    CurrentLocation.Line + 1,
+                    1
+                );
             } else {
-                CurrentColumn++;
+                CurrentLocation = new Location(
+                    CurrentLocation.SourceFile,
+                    CurrentLocation.Line,
+                    CurrentLocation.Column + 1
+                );
             }
 
             _currentPosition++;
@@ -136,9 +141,7 @@ namespace OpenDreamShared.Compiler {
                 current = base.Advance();
             }
 
-            SourceName = current.SourceFile;
-            CurrentLine = current.Line;
-            CurrentColumn = current.Column;
+            CurrentLocation = current.Location;
             return current;
         }
     }

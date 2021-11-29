@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
+using System.Globalization;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -152,7 +153,7 @@ namespace OpenDreamShared.Resources {
 
                     switch (key) {
                         case "version":
-                            description.Version = float.Parse(value);
+                            description.Version = float.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "width":
                             description.Width = int.Parse(value);
@@ -211,7 +212,7 @@ namespace OpenDreamShared.Resources {
 
                             currentStateFrameDelays = new float[frameDelays.Length];
                             for (int i = 0; i < frameDelays.Length; i++) {
-                                currentStateFrameDelays[i] = float.Parse(frameDelays[i]);
+                                currentStateFrameDelays[i] = float.Parse(frameDelays[i], CultureInfo.InvariantCulture);
                             }
 
                             break;

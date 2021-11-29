@@ -1,27 +1,8 @@
 ﻿/mutable_appearance
-	parent_type = /datum
+	parent_type = /image
 
-	var/icon = null
-	var/icon_state = ""
-	var/dir = SOUTH
-	var/color = "#FFFFFF"
-	var/alpha = 255
-	var/layer = 0.0
-	var/pixel_x = 0
-	var/pixel_y = 0
-	var/list/overlays = list()
-	var/list/underlays = list()
-	
-	var/maptext
-	var/maptext_x = 0
-	var/maptext_y = 0
-	var/maptext_height = 32
-	var/maptext_width = 32
-	
-	var/blend_mode = 0
-	var/appearance_flags = 0
-	
-	var/mouse_opacity = 1
+	var/animate_movement = 1 as opendream_unimplemented
+	var/screen_loc as opendream_unimplemented
 
 	New(var/datum/copy_from)
 		if (istype(copy_from, /mutable_appearance))

@@ -2,6 +2,7 @@
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMObjectBuilder {
@@ -29,7 +30,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) {
-                    Program.Error(e.Error);
+                    DMCompiler.Error(e.Error);
                 }
             }
         }
@@ -61,20 +62,21 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMObject oldObject = _currentObject;
-            DMVariable variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
+            DMVariable variable;
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
-            if (variable.IsGlobal) {
-                _currentObject.GlobalVariables[variable.Name] = variable;
+            if (varDefinition.IsGlobal) {
+                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name);
             } else {
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
                 _currentObject.Variables[variable.Name] = variable;
             }
 
             try {
-                SetVariableValue(variable, varDefinition.Value, varDefinition.Type);
+                SetVariableValue(variable, varDefinition.Value, varDefinition.ValType);
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
 
             _currentObject = oldObject;
@@ -89,16 +91,16 @@ namespace DMCompiler.DM.Visitors {
                 if (varOverride.VarName == "parent_type") {
                     DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                    if (parentType == null) throw new CompileErrorException("Expected a constant path");
+                    if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                 } else {
                     DMVariable variable = new DMVariable(null, varOverride.VarName, false);
 
-                    SetVariableValue(variable, varOverride.Value, null);
+                    SetVariableValue(variable, varOverride.Value);
                     _currentObject.VariableOverrides[variable.Name] = variable;
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
 
             _currentObject = oldObject;
@@ -114,7 +116,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException("Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                    throw new CompileErrorException(procDefinition.Location, "Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
                 }
 
                 DMProc proc = new DMProc(procDefinition);
@@ -128,12 +130,13 @@ namespace DMCompiler.DM.Visitors {
                     dmObject.InitializationProcExpressions.Add(append);
                 }
             } catch (CompileErrorException e) {
-                Program.Error(e.Error);
+                DMCompiler.Error(e.Error);
             }
         }
 
-        private void SetVariableValue(DMVariable variable, DMASTExpression value, DreamPath? type) {
-            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, type);
+        private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            expression.ValType = valType;
 
             switch (expression) {
                 case Expressions.List:
@@ -143,7 +146,7 @@ namespace DMCompiler.DM.Visitors {
                     break;
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:
-                    if (!variable.IsGlobal) throw new CompileErrorException($"Invalid initial value for \"{variable.Name}\"");
+                    if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");
 
                     variable.Value = new Expressions.Null();
                     EmitInitializationAssign(variable, expression);
@@ -155,12 +158,18 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {
-            Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
-            Expressions.Assignment assign = new Expressions.Assignment(field, expression);
-
             if (variable.IsGlobal) {
+                int? globalId = _currentObject.GetGlobalVariableId(variable.Name);
+                if (globalId == null) throw new Exception($"Invalid global {_currentObject.Path}.{variable.Name}");
+
+                Expressions.GlobalField field = new Expressions.GlobalField(variable.Type, globalId.Value);
+                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+
                 DMObjectTree.AddGlobalInitProcAssign(assign);
             } else {
+                Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
+                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+
                 _currentObject.InitializationProcExpressions.Add(assign);
             }
         }

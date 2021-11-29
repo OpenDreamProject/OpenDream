@@ -54,7 +54,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             tokenTextBuilder.Append('"');
 
                             string tokenText = tokenTextBuilder.ToString();
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, null, 0, 0, tokenText.Substring(1, tokenText.Length - 2)));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, Location.Unknown, tokenText.Substring(1, tokenText.Length - 2)));
                         } else {
                             foreach (Token parameterToken in parameter) {
                                 expandedTokens.Add(parameterToken);
@@ -66,7 +66,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 expandedTokens.Add(parameterToken);
                             }
 
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", null, 0, 0, null));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
                         }
                     } else {
                         expandedTokens.Add(token);
@@ -85,7 +85,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             return new() {
-                new Token(TokenType.DM_Preproc_Number, replacing.Line.ToString(), replacing.SourceFile, replacing.Line, replacing.Column, null)
+                new Token(TokenType.DM_Preproc_Number, replacing.Location.Line.ToString(), replacing.Location, null)
             };
         }
     }
@@ -94,10 +94,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public DMMacroFile() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-            string path = replacing.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
+            string path = replacing.Location.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
             return new() {
-                new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.SourceFile, replacing.Line, replacing.Column, path)
+                new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.Location, path)
             };
         }
     }

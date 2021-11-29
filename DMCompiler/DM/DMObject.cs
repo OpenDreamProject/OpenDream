@@ -4,6 +4,8 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMObject {
@@ -13,7 +15,7 @@ namespace DMCompiler.DM {
         public Dictionary<string, List<DMProc>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
-        public Dictionary<string, DMVariable> GlobalVariables = new();
+        public Dictionary<string, int> GlobalVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
         public DMProc InitializationProc = null;
 
@@ -47,6 +49,10 @@ namespace DMCompiler.DM {
 
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
+                if ((variable.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings)
+                {
+                    DMCompiler.Warning(new CompilerWarning(null, $"{Path}.{name} is not implemented and will have unexpected behavior"));
+                }
                 return variable;
             }
             return Parent?.GetVariable(name);
@@ -74,11 +80,25 @@ namespace DMCompiler.DM {
             return false;
         }
 
-        public DMVariable GetGlobalVariable(string name) {
-            if (GlobalVariables.TryGetValue(name, out DMVariable variable)) {
-                return variable;
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name) {
+            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name);
+
+            GlobalVariables[name] = id;
+            return global;
+        }
+
+        public int? GetGlobalVariableId(string name) {
+            if (GlobalVariables.TryGetValue(name, out int id)) {
+                return id;
             }
-            return Parent?.GetGlobalVariable(name);
+
+            return Parent?.GetGlobalVariableId(name);
+        }
+
+        public DMVariable GetGlobalVariable(string name) {
+            int? id = GetGlobalVariableId(name);
+
+            return (id == null) ? null : DMObjectTree.Globals[id.Value];
         }
 
         public void CreateInitializationProc() {
@@ -107,29 +127,16 @@ namespace DMCompiler.DM {
                 objectJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
-
-                    objectJson.Variables.Add(variable.Key, value.ToJsonRepresentation());
+                    objectJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
-
-                    objectJson.Variables[variable.Key] = value.ToJsonRepresentation();
+                    objectJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
                 }
             }
 
             if (GlobalVariables.Count > 0) {
-                objectJson.GlobalVariables = new Dictionary<string, object>();
-
-                foreach (KeyValuePair<string, DMVariable> variable in GlobalVariables) {
-                    Expressions.Constant value = variable.Value.Value as Expressions.Constant;
-                    if (value == null) throw new Exception($"Value of {variable.Value.Name} must be a constant");
-
-                    objectJson.GlobalVariables.Add(variable.Key, value.ToJsonRepresentation());
-                }
+                objectJson.GlobalVariables = GlobalVariables;
             }
 
             if (InitializationProc != null) {

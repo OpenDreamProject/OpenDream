@@ -44,9 +44,6 @@
 		var/v = input("A") as num
 		usr << "you entered [v]"
 
-	verb/test_browsersc()
-		usr << browse_rsc('icons/mob.dmi')
-
 	verb/test_browse()
 		usr << browse({"
 <!DOCTYPE html>
@@ -77,16 +74,6 @@
 	statpanel("Status", "CPU: [world.cpu]")
 	stat("time", world.time)
 
-/client/Click(var/atom/A)
-	..()
-	Move(A, get_dir(mob, A))
-
 /world/New()
 	..()
 	world.log << "World loaded!"
-
-/client/Topic(href,href_list,hsrc)
-	usr << href
-	usr << json_encode(href_list)
-
-	..()

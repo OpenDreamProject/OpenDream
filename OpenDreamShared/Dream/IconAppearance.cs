@@ -6,29 +6,6 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public class IconAppearance : IEquatable<IconAppearance> {
-        public static readonly Dictionary<String, Color> Colors = new() {
-            { "black", new Color(00, 00, 00) },
-            { "silver", new Color(192, 192, 192) },
-            { "gray", new Color(128, 128, 128) },
-            { "grey", new Color(128, 128, 128) },
-            { "white", new Color(255, 255, 255) },
-            { "maroon", new Color(128, 0, 0) },
-            { "red", new Color(255, 0, 0) },
-            { "purple", new Color(128, 0, 128) },
-            { "fuchsia", new Color(255, 0, 255) },
-            { "magenta", new Color(255, 0, 255) },
-            { "green", new Color(0, 192, 0) },
-            { "lime", new Color(0, 255, 0) },
-            { "olive", new Color(128, 128, 0) },
-            { "gold", new Color(128, 128, 0) },
-            { "yellow", new Color(255, 255, 0) },
-            { "navy", new Color(0, 0, 128) },
-            { "blue", new Color(0, 0, 255) },
-            { "teal", new Color(0, 128, 128) },
-            { "aqua", new Color(0, 255, 255) },
-            { "cyan", new Color(0, 255, 255) }
-        };
-
         public string Icon;
         public string IconState;
         public AtomDirection Direction;
@@ -117,18 +94,8 @@ namespace OpenDreamShared.Dream {
         }
 
         public void SetColor(string color) {
-            if (color.StartsWith("#")) {
-                if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
-                    string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : "ff";
-
-                    color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
-                } else if (color.Length == 7) { //Missing alpha
-                    color += "ff";
-                }
-
-                Color = Color.FromHex(color, Color.White);
-            } else if (!Colors.TryGetValue(color.ToLower(), out Color)) {
-                throw new ArgumentException("Invalid color '" + color + "'");
+            if (!ColorHelpers.TryParseColor(color, out Color)) {
+                throw new ArgumentException($"Invalid color '{color}'");
             }
         }
     }

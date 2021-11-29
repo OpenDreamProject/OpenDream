@@ -20,6 +20,11 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
+                if (_proc.HasLocalVariable(parameterName))
+                {
+                    DMCompiler.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
+                    continue;
+                }
                 _proc.AddLocalVariable(parameterName, parameter.ObjectType);
                 if (parameter.Value != null) { //Parameter has a default value
                     string afterDefaultValueCheck = _proc.NewLabelName();
@@ -34,7 +39,7 @@ namespace DMCompiler.DM.Visitors {
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
-                        Program.Error(e.Error);
+                        DMCompiler.Error(e.Error);
                     }
                     _proc.Assign();
 
@@ -51,7 +56,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) { //Retreat from the statement when there's an error
-                    Program.Error(e.Error);
+                    DMCompiler.Error(e.Error);
                 }
             }
         }
@@ -97,7 +102,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {
-            _proc.Continue();
+            _proc.Continue(statementContinue.Label);
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
@@ -106,10 +111,19 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
             _proc.AddLabel(statementLabel.Name + "_codelabel");
+            if (statementLabel.Body is not null)
+            {
+                _proc.StartScope();
+                {
+                    ProcessBlockInner(statementLabel.Body);
+                }
+                _proc.EndScope();
+                _proc.AddLabel(statementLabel.Name + "_end");
+            }
         }
 
         public void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
-            _proc.Break();
+            _proc.Break(statementBreak.Label);
         }
 
         public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
@@ -119,7 +133,7 @@ namespace DMCompiler.DM.Visitors {
                     var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
                     if (constant is not Expressions.Number) {
-                        throw new CompileErrorException($"waitfor attribute should be a number (got {constant})");
+                        throw new CompileErrorException(statementSet.Location, $"waitfor attribute should be a number (got {constant})");
                     }
 
                     _proc.WaitFor(constant.IsTruthy());
@@ -129,7 +143,7 @@ namespace DMCompiler.DM.Visitors {
                     var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
 
                     if (constant is not Expressions.Number) {
-                        throw new CompileErrorException($"opendream_unimplemented attribute should be a number (got {constant})");
+                        throw new CompileErrorException(statementSet.Location,$"opendream_unimplemented attribute should be a number (got {constant})");
                     }
 
                     _proc.Unimplemented = constant.IsTruthy();
@@ -256,7 +270,7 @@ namespace DMCompiler.DM.Visitors {
                         if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
                         {
                             var warn = new CompilerWarning(null, "Cannot currently loop 'in world' for non-ATOM types");
-                            Program.Warning(warn);
+                            DMCompiler.Warning(warn);
                         }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
                         _proc.PushPath(varDeclaration.Type.Value);

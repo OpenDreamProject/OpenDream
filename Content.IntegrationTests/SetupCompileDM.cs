@@ -16,13 +16,12 @@ public class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
-        // TODO: Make this more sane.
-        DMCompiler.Program.Main(new []{ DmEnvironment });
+        bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
+            Files = new() { DmEnvironment }
+        });
 
-        if (!File.Exists(CompiledProject)) {
-            Console.WriteLine("Failed to compile DM test project!");
-            System.Environment.Exit(1);
-        }
+        Assert.IsTrue(successfulCompile);
+        Assert.IsTrue(File.Exists(CompiledProject), "Failed to compile DM test project!");
     }
 
     [OneTimeTearDown]

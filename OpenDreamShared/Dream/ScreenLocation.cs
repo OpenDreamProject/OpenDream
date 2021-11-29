@@ -2,6 +2,7 @@
 using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
@@ -73,7 +74,7 @@ namespace OpenDreamShared.Dream {
                     string[] numberSplit = currentNumber.Split(":");
                     if (numberSplit.Length > 2) throw new Exception("Invalid number in screen_loc");
 
-                    operations.Add((currentOperation, float.Parse(numberSplit[0]), (numberSplit.Length == 2) ? int.Parse(numberSplit[1]) : 0));
+                    operations.Add((currentOperation, float.Parse(numberSplit[0], CultureInfo.InvariantCulture), (numberSplit.Length == 2) ? int.Parse(numberSplit[1]) : 0));
                     currentOperation = c.ToString();
                     currentNumber = String.Empty;
                 }

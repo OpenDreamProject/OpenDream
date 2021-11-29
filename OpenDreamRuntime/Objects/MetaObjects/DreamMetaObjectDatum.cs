@@ -1,16 +1,10 @@
-﻿using OpenDreamRuntime.Procs;
+﻿using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectDatum : DreamMetaObjectRoot {
-        public DreamMetaObjectDatum(DreamRuntime runtime)
-            : base(runtime)
-        {}
-
         public override bool ShouldCallNew => true;
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
-        }
+        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
@@ -22,7 +16,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (variableName == "type") {
                 return new DreamValue(dreamObject.ObjectDefinition.Type);
             } else if (variableName == "parent_type") {
-                return new DreamValue(Runtime.ObjectTree.GetTreeEntryFromPath(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
+                return new DreamValue(_dreamManager.ObjectTree.GetTreeEntryFromPath(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
             } else if (variableName == "vars") {
                 return new DreamValue(DreamListVars.Create(dreamObject));
             } else {

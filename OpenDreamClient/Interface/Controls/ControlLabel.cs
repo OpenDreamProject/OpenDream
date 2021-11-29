@@ -1,19 +1,18 @@
-﻿using OpenDreamShared.Interface;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using OpenDreamShared.Interface;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
+namespace OpenDreamClient.Interface.Controls
+{
     class ControlLabel : InterfaceControl {
         private Label _label;
 
         public ControlLabel(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
-        protected override FrameworkElement CreateUIElement() {
+        protected override Control CreateUIElement() {
             _label = new Label() {
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                VerticalContentAlignment = VerticalAlignment.Center,
-                FontFamily = new FontFamily("Courier New")
+                HorizontalAlignment = Control.HAlignment.Center,
+                VerticalAlignment = Control.VAlignment.Center,
             };
 
             return _label;
@@ -22,8 +21,8 @@ namespace OpenDreamClient.Interface.Controls {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ControlDescriptorLabel controlDescriptor = (ControlDescriptorLabel)_elementDescriptor;
-            _label.Content = controlDescriptor.Text;
+            ControlDescriptorLabel controlDescriptor = (ControlDescriptorLabel)ElementDescriptor;
+            _label.Text = controlDescriptor.Text;
         }
     }
 }

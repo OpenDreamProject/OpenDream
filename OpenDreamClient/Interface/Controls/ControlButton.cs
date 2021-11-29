@@ -1,16 +1,20 @@
 ﻿using OpenDreamShared.Interface;
-using System.Windows;
-using System.Windows.Controls;
+using OpenDreamClient.Input;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlButton : InterfaceControl {
+    class ControlButton : InterfaceControl
+    {
         private Button _button;
 
         public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
-        protected override FrameworkElement CreateUIElement() {
+        protected override Control CreateUIElement() {
             _button = new Button();
-            _button.Click += OnButtonClick;
+            _button.OnPressed += OnButtonClick;
 
             return _button;
         }
@@ -18,15 +22,15 @@ namespace OpenDreamClient.Interface.Controls {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)_elementDescriptor;
-            _button.Content = controlDescriptor.Text;
+            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+            _button.Text = controlDescriptor.Text;
         }
 
-        private void OnButtonClick(object sender, RoutedEventArgs e) {
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)_elementDescriptor;
+        private void OnButtonClick(BaseButton.ButtonEventArgs args) {
+            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
             if (controlDescriptor.Command != null) {
-                Program.OpenDream.RunCommand(controlDescriptor.Command);
+                EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.Command);
             }
         }
     }

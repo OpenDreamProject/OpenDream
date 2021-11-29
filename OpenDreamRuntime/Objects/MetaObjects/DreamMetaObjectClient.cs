@@ -1,61 +1,52 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using System;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectClient : DreamMetaObjectRoot {
-        public DreamMetaObjectClient(DreamRuntime runtime)
-            : base(runtime)
-
-        {}
-
         public override bool ShouldCallNew => true;
 
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
+        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-
             ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
             if (perspective != ClientPerspective.Mob) {
-                Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
+                //Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
             }
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue)
-        {
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            switch (variableName)
-            {
-                case "eye":
-                {
+            switch (variableName) {
+                case "eye": {
                     string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
                     DreamObject eye = variableValue.GetValueAsDreamObject();
-                    UInt32 eyeID = (eye != null) ? Runtime.AtomIDs[eye] : UInt32.MaxValue;
 
-                    Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
+                    //Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
                     break;
                 }
-                case "perspective":
-                {
+                case "perspective": {
                     string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
 
-                    Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
+                    //Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
                     break;
                 }
-                case "mob":
-                {
-                    DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                case "mob": {
+                    DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
 
                     connection.MobDreamObject = variableValue.GetValueAsDreamObject();
                     break;
                 }
-                case "screen":
-                {
+                case "screen": {
                     if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= ScreenValueAssigned;
@@ -65,7 +56,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList screenList;
                     if (!variableValue.TryGetValueAsDreamList(out screenList)) {
-                        screenList = DreamList.Create(Runtime);
+                        screenList = DreamList.Create();
                     }
 
                     screenList.ValueAssigned += ScreenValueAssigned;
@@ -73,60 +64,49 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     _screenListToClient[screenList] = dreamObject;
                     break;
                 }
-                case "statpanel":
-                {
-                    DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                case "statpanel": {
+                    //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
 
-                    connection.SelectedStatPanel = variableValue.GetValueAsString();
+                    //connection.SelectedStatPanel = variableValue.GetValueAsString();
                     break;
                 }
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
-        {
-            switch (variableName)
-            {
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
+            switch (variableName) {
                 //TODO actually return the key
                 case "key":
                 case "ckey":
-                {
-                    var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    return new DreamValue(connection.CKey);
+                    return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                case "address":
+                    return new(_dreamManager.GetSessionFromClient(dreamObject).ConnectedClient.RemoteEndPoint.Address.ToString());
+                case "inactivity":
+                    return new DreamValue(0);
+                case "timezone": {
+                    //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                    //return new DreamValue((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
+                    return new(0);
+                }
+                case "statpanel": {
+                    //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                    //return new DreamValue(connection.SelectedStatPanel);
+                    return DreamValue.Null;
                 }
                 case "mob":
                 {
-                    var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                    var connection = _dreamManager.GetConnectionFromClient(dreamObject);
                     return new DreamValue(connection.MobDreamObject);
                 }
-                case "address":
-                {
-                    var connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    return new DreamValue(connection.Address.ToString());
-                }
-                case "inactivity":
-                    return new DreamValue(0);
-                case "timezone":
-                {
-                    DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    return new DreamValue((float)connection.ClientData.Timezone.BaseUtcOffset.TotalHours);
-                }
-                case "statpanel":
-                {
-                    DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    return new DreamValue(connection.SelectedStatPanel);
-                }
                 case "connection":
-                {
                     return new DreamValue("seeker");
-                }
                 default:
                     return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            DreamConnection connection = Runtime.Server.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
 
             connection.OutputDreamValue(b);
             return new DreamValue(0);
@@ -136,14 +116,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (screenValue == DreamValue.Null) return;
 
             DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
-            Runtime.StateManager.AddClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, atom);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
             if (screenValue == DreamValue.Null) return;
 
             DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
-            Runtime.StateManager.RemoveClientScreenObject(_screenListToClient[screenList].GetVariable("ckey").GetValueAsString(), atom);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, atom);
         }
     }
 }

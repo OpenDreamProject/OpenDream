@@ -1,15 +1,17 @@
-﻿using OpenDreamShared.Dream;
+﻿using Robust.Shared.Maths;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using OpenDreamShared.Dream;
 using System.Globalization;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly AtomDirection[] DMIFrameDirections = {
+        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+        private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -71,103 +73,60 @@ namespace OpenDreamShared.Resources {
             public float Delay;
         }
 
-        private static uint _readBigEndianUint32(BinaryReader reader)
-        {
-            byte[] bytes = reader.ReadBytes(4);
-            Array.Reverse(bytes); //Little to Big-Endian
-            return BitConverter.ToUInt32(bytes);
-        }
+        public static ParsedDMIDescription ParseDMI(Stream stream) {
+            if (!VerifyPNG(stream)) throw new Exception("Provided stream was not a valid PNG");
 
-        private static (uint, string) _readChunk(BinaryReader reader)
-        {
-            uint chunkLength = _readBigEndianUint32(reader);
-            string chunkType = new string(reader.ReadChars(4));
-
-            return (chunkLength, chunkType);
-        }
-
-        public static bool TryReadDMIDescription(byte[] bytes, out string description) {
-            MemoryStream stream = new MemoryStream(bytes);
             BinaryReader reader = new BinaryReader(stream);
-
-            stream.Seek(8, SeekOrigin.Begin);
+            Vector2u? imageSize = null;
 
             while (stream.Position < stream.Length) {
-                var (chunkLength, chunkType) = _readChunk(reader);
+                uint chunkLength = ReadBigEndianUint32(reader);
+                string chunkType = new string(reader.ReadChars(4));
 
-                if (chunkType != "zTXt") {
-                    stream.Seek(chunkLength + 4, SeekOrigin.Current);
-                } else {
-                    long chunkDataPosition = stream.Position;
-                    string keyword = String.Empty + reader.ReadChar();
+                switch (chunkType) {
+                    case "IHDR": //Image header, contains the image size
+                        imageSize = new Vector2u(ReadBigEndianUint32(reader), ReadBigEndianUint32(reader));
+                        stream.Seek(chunkLength - 4, SeekOrigin.Current); //Skip the rest of the chunk
+                        break;
+                    case "zTXt": //Compressed text, likely contains our DMI description
+                        if (imageSize == null) throw new Exception("The PNG did not contain an IHDR chunk");
 
-                    while (reader.PeekChar() != 0 && keyword.Length < 79) {
-                        keyword += reader.ReadChar();
-                    }
-                    stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
+                        long chunkDataPosition = stream.Position;
+                        string keyword = char.ToString(reader.ReadChar());
 
-                    if (keyword == "Description") {
-                        stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
+                        while (reader.PeekChar() != 0 && keyword.Length < 79) {
+                            keyword += reader.ReadChar();
+                        }
+                        stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
 
-                        DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
-                        MemoryStream uncompressedDataStream = new MemoryStream();
+                        if (keyword == "Description") {
+                            stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
 
-                        deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+                            DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                            MemoryStream uncompressedDataStream = new MemoryStream();
 
-                        byte[] uncompressedData = new byte[uncompressedDataStream.Length];
-                        uncompressedDataStream.Seek(0, SeekOrigin.Begin);
-                        uncompressedDataStream.Read(uncompressedData);
+                            deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
 
-                        description = Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
-                        return true;
-                    } else {
-                        stream.Position = chunkDataPosition + chunkLength + 4;
-                    }
+                            byte[] uncompressedData = new byte[uncompressedDataStream.Length];
+                            uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                            uncompressedDataStream.Read(uncompressedData);
+
+                            string dmiDescription = Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
+                            return ParseDMIDescription(dmiDescription, imageSize.Value.X);
+                        } else {
+                            stream.Position = chunkDataPosition + chunkLength + 4;
+                        }
+                        break;
+                    default: //Nothing we care about, skip it
+                        stream.Seek(chunkLength + 4, SeekOrigin.Current);
+                        break;
                 }
             }
 
-            description = null;
-            return false;
+            throw new Exception("Could not find a DMI description");
         }
 
-        public static List<string> GetIconStatesFromDescription(string dmiDescription)
-        {
-            var states = new List<string>();
-            dmiDescription = TrimDescription(dmiDescription);
-
-            var lines = dmiDescription.Split("\n");
-            foreach (var line in lines)
-            {
-                var equalsIndex = line.IndexOf('=');
-
-                if (equalsIndex == -1)
-                {
-                    throw new Exception("Invalid line in DMI description: \"" + line + "\"");
-                }
-                var key = line[..equalsIndex].Trim();
-                var value = line[(equalsIndex + 1)..].Trim();
-
-                if (key != "state")
-                {
-                    continue;
-                }
-                var stateName = ParseString(value);
-                states.Add(stateName);
-            }
-
-            return states;
-        }
-
-        private static string TrimDescription(string dmiDescription)
-        {
-            return dmiDescription
-                .Replace("# BEGIN DMI", "")
-                .Replace("# END DMI", "")
-                .Replace("\t", "")
-                .Trim();
-        }
-
-        public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, int imageWidth) {
+        public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
             ParsedDMIDescription description = new ParsedDMIDescription();
             ParsedDMIState currentState = null;
             int currentFrameX = 0;
@@ -178,7 +137,10 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            dmiDescription = TrimDescription(dmiDescription);
+            dmiDescription = dmiDescription.Replace("# BEGIN DMI", "");
+            dmiDescription = dmiDescription.Replace("# END DMI", "");
+            dmiDescription = dmiDescription.Replace("\t", "");
+            dmiDescription = dmiDescription.Trim();
             description.Source = dmiDescription;
 
             string[] lines = dmiDescription.Split("\n");
@@ -310,6 +272,23 @@ namespace OpenDreamShared.Resources {
             } else {
                 throw new Exception("Invalid string in DMI description: " + value);
             }
+        }
+
+        private static bool VerifyPNG(Stream stream) {
+            byte[] header = new byte[PngHeader.Length];
+            if (stream.Read(header, 0, header.Length) < header.Length) return false;
+
+            for (int i = 0; i < PngHeader.Length; i++) {
+                if (header[i] != PngHeader[i]) return false;
+            }
+
+            return true;
+        }
+
+        private static uint ReadBigEndianUint32(BinaryReader reader) {
+            byte[] bytes = reader.ReadBytes(4);
+            Array.Reverse(bytes); //Little to Big-Endian
+            return BitConverter.ToUInt32(bytes);
         }
     }
 }

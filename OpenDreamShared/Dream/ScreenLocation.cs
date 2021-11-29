@@ -1,10 +1,11 @@
-﻿using OpenDreamShared.Net.Packets;
+﻿using Robust.Shared.Maths;
+using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Globalization;
 
 namespace OpenDreamShared.Dream {
+    [Serializable, NetSerializable]
     public class ScreenLocation {
         public int X, Y;
         public int PixelOffsetX, PixelOffsetY;
@@ -36,45 +37,16 @@ namespace OpenDreamShared.Dream {
 
             string[] coordinateSplit = rangeSplit[0].Split(",");
             if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
-            (int Coordinate, int PixelOffset) x = ParseScreenLocCoordinate(coordinateSplit[0]);
-            (int Coordinate, int PixelOffset) y = ParseScreenLocCoordinate(coordinateSplit[1]);
-
-            X = x.Coordinate;
-            Y = y.Coordinate;
-            PixelOffsetX = x.PixelOffset;
-            PixelOffsetY = y.PixelOffset;
+            (X, PixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
+            (Y, PixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
         }
 
-        public Point GetScreenCoordinates(int iconSize) {
-            return new Point(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        public Vector2 GetScreenCoordinates(int iconSize) {
+            return new Vector2(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
         }
 
         public override string ToString() {
             return X + ":" + PixelOffsetX + "," + Y + ":" + PixelOffsetY;
-        }
-
-        public void WriteToPacket(PacketStream stream) {
-            stream.WriteSByte((sbyte)X);
-            stream.WriteSByte((sbyte)Y);
-            stream.WriteSByte((sbyte)PixelOffsetX);
-            stream.WriteSByte((sbyte)PixelOffsetY);
-
-            stream.WriteBool(Range != null);
-            Range?.WriteToPacket(stream);
-        }
-
-        public static ScreenLocation ReadFromPacket(PacketStream stream) {
-            int X = stream.ReadSByte();
-            int Y = stream.ReadSByte();
-            int pixelOffsetX = stream.ReadSByte();
-            int pixelOffsetY = stream.ReadSByte();
-
-            ScreenLocation range = null;
-            if (stream.ReadBool()) {
-                range = ReadFromPacket(stream);
-            }
-
-            return new ScreenLocation(X, Y, pixelOffsetX, pixelOffsetY, range);
         }
 
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {

@@ -1,7 +1,7 @@
-﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using DreamRegex = OpenDreamRuntime.Objects.MetaObjects.DreamMetaObjectRegex.DreamRegex;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 instance.SetVariable("index", new DreamValue(match.Index + 1));
                 instance.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamList.Create(DreamProcNativeRoot.CurrentRuntime);
+                    DreamList groupList = DreamList.Create();
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));

@@ -1,73 +1,145 @@
 ﻿using System;
-using Microsoft.Web.WebView2.Wpf;
-using System.Windows.Controls;
-using OpenDreamShared.Interface;
-using Microsoft.Web.WebView2.Core;
-using OpenDreamShared.Net.Packets;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Web;
-using System.Windows;
+using OpenDreamShared.Interface;
+using OpenDreamShared.Network.Messages;
+using Robust.Client.UserInterface;
+using Robust.Client.WebView;
+using Robust.Shared.Console;
+using Robust.Shared.ContentPack;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
+using Robust.Shared.Network;
+using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Controls {
-    class ControlBrowser : InterfaceControl {
-        private WebView2 _webView;
-        private DockPanel _dockPanel;
-        private Label _loadingLabel;
-        private string _fileSource;
-        private bool _webViewReady;
+namespace OpenDreamClient.Interface.Controls
+{
+    class ControlBrowser : InterfaceControl
+    {
+        private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
+        {
+            { "css", "text/css" },
+            { "html", "text/html" },
+            { "htm", "text/html" },
+            { "png", "image/png" },
+            { "svg", "image/svg+xml" },
+            { "jpeg", "image/jpeg" },
+            { "jpg", "image/jpeg" },
+            { "js", "application/javascript" },
+            { "json", "application/json" },
+            { "ttf", "font/ttf" },
+            { "txt", "text/plain" }
+        };
 
-        public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+        [Dependency] private readonly IResourceManager _resourceManager = default!;
+        [Dependency] private readonly IClientNetManager _netManager = default!;
 
-        protected override FrameworkElement CreateUIElement() {
-            _dockPanel = new DockPanel();
-            _webView = new WebView2();
-            _loadingLabel = new Label() {
-                Content = "Loading WebView2\nIf nothing happens, you may need to install the WebView2 runtime"
-            };
+        private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
-            _dockPanel.Children.Add(_webView);
-            _dockPanel.Children.Add(_loadingLabel);
-            _webView.CoreWebView2InitializationCompleted += OnWebView2InitializationCompleted;
-            _webView.NavigationStarting += OnWebViewNavigationStarting;
-            _webView.EnsureCoreWebView2Async();
+        private WebViewControl _webView;
 
-            return _dockPanel;
+        public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
+            : base(controlDescriptor, window)
+        {
+            IoCManager.InjectDependencies(this);
+        }
+
+        protected override Control CreateUIElement() {
+            _webView = new WebViewControl();
+
+            _webView.AddResourceRequestHandler(RequestHandler);
+            _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
+
+            return _webView;
         }
 
         public override void Output(string value, string jsFunction) {
-            if (!_webViewReady) return;
             if (jsFunction == null) return;
 
             value = HttpUtility.UrlDecode(value);
             value = value.Replace("\"", "\\\"");
-            _webView.CoreWebView2.ExecuteScriptAsync(jsFunction + "(\"" + value + "\")");
+            _webView.ExecuteJavaScript(jsFunction + "(\"" + value + "\")");
         }
 
-        public void SetFileSource(string filepath) {
-            _fileSource = filepath;
-            if (_webViewReady) _webView.CoreWebView2.Navigate("file://" + _fileSource);
+        public void SetFileSource(ResourcePath filepath, bool userData) {
+            _webView.Url = (userData ? "usr://" : "res://") + filepath;
         }
 
-        private void OnWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e) {
-            if (!e.IsSuccess) {
-                Console.WriteLine(e.InitializationException);
+        private void BeforeBrowseHandler(IBeforeBrowseContext context)
+        {
+            if (string.IsNullOrEmpty(_webView.Url))
+                return;
+
+            Uri oldUri = new Uri(_webView.Url);
+            Uri newUri = new Uri(context.Url);
+
+            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
+                context.DoCancel();
+
+                var msg = _netManager.CreateNetMessage<MsgTopic>();
+                msg.Query = newUri.Query;
+                _netManager.ClientSendMessage(msg);
+            }
+        }
+
+        private void RequestHandler(IRequestHandlerContext context)
+        {
+            Uri newUri = new Uri(context.Url);
+
+            if (newUri.Scheme == "usr")
+            {
+                Stream stream;
+                HttpStatusCode status;
+                var path = new ResourcePath(newUri.AbsolutePath);
+                try
+                {
+                    stream = _resourceManager.UserData.OpenRead(path);
+                    status = HttpStatusCode.OK;
+                }
+                catch (FileNotFoundException)
+                {
+                    stream = Stream.Null;
+                    status = HttpStatusCode.NotFound;
+                }
+                catch (Exception e)
+                {
+                    _sawmill.Error($"Exception while loading file from usr://:\n{e}");
+                    stream = Stream.Null;
+                    status = HttpStatusCode.InternalServerError;
+                }
+
+                if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
+                    mimeType = "application/octet-stream";
+
+                context.DoRespondStream(stream, mimeType, status);
+                return;
+            }
+        }
+    }
+
+    public sealed class BrowseWinCommand : IConsoleCommand
+    {
+        public string Command => "browsewin";
+        public string Description => "";
+        public string Help => "";
+
+        public void Execute(IConsoleShell shell, string argStr, string[] args)
+        {
+            if (args.Length != 1)
+            {
+                shell.WriteError("Incorrect amount of arguments! Must be a single one.");
                 return;
             }
 
-            _webViewReady = true;
+            var parameters = new BrowserWindowCreateParameters(1280, 720)
+            {
+                Url = args[0]
+            };
 
-            _dockPanel.Children.Remove(_loadingLabel);
-            if (_fileSource != null) _webView.CoreWebView2.Navigate("file://" + _fileSource);
-        }
-
-        private void OnWebViewNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e) {
-            Uri oldUri = new Uri(_webView.CoreWebView2.Source);
-            Uri newUri = new Uri(e.Uri);
-
-            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
-                e.Cancel = true;
-
-                Program.OpenDream.Connection.SendPacket(new PacketTopic(newUri.Query));
-            }
+            var cef = IoCManager.Resolve<IWebViewManager>();
+            cef.CreateBrowserWindow(parameters);
         }
     }
 }

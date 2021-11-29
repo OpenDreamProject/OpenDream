@@ -1,13 +1,8 @@
-﻿using OpenDreamRuntime.Procs;
-using System;
+﻿using System;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectRoot : IDreamMetaObject {
-        public DreamMetaObjectRoot(DreamRuntime runtime) {
-            Runtime = runtime;
-        }
-        public DreamRuntime Runtime { get; }
-
         public virtual bool ShouldCallNew => false;
 
         public virtual void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

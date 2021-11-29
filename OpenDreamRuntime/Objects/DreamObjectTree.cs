@@ -1,22 +1,16 @@
-﻿using OpenDreamRuntime.Objects.MetaObjects;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
 using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Json;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectTree {
-        public DreamRuntime Runtime { get; }
-
-        public DreamObjectTree(DreamRuntime runtime) {
-            Runtime = runtime;
-            RootObject = new DreamObjectTreeEntry(Runtime, DreamPath.Root);
-        }
-
         public class DreamObjectTreeEntry {
             public DreamObjectDefinition ObjectDefinition;
             public Dictionary<string, DreamObjectTreeEntry> Children = new();
@@ -26,8 +20,8 @@ namespace OpenDreamRuntime.Objects {
             //Ex: /obj is a child of /atom/movable, but /obj's path isn't /atom/movable/obj
             public Dictionary<string, DreamObjectTreeEntry> BranchBreakingChildren = new();
 
-            public DreamObjectTreeEntry(DreamRuntime runtime, DreamPath path) {
-                ObjectDefinition = new DreamObjectDefinition(runtime, path);
+            public DreamObjectTreeEntry(DreamPath path) {
+                ObjectDefinition = new DreamObjectDefinition(path);
             }
 
             public DreamObjectTreeEntry(DreamPath path, DreamObjectTreeEntry parentTreeEntry) {
@@ -57,14 +51,28 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamObjectTreeEntry RootObject;
+        public DreamObjectTreeEntry Root = new DreamObjectTreeEntry(DreamPath.Root);
+        public DreamObjectTreeEntry List;
+        public List<string> Strings; //TODO: Store this somewhere else
+
+        public DreamObjectTree(DreamCompiledJson json) {
+            Strings = json.Strings;
+
+            DreamObjectJson rootJsonObject = json.RootObject;
+            if (rootJsonObject.Name != "") {
+                throw new Exception("Root object in json should have an empty name");
+            }
+
+            LoadTreeEntryFromJson(Root, rootJsonObject);
+            List = GetTreeEntryFromPath(DreamPath.List);
+        }
 
         public bool HasTreeEntry(DreamPath path) {
             if (path.Type != DreamPath.PathType.Absolute) return false;
 
-            if (path.Equals(DreamPath.Root) && RootObject != null) return true;
+            if (path.Equals(DreamPath.Root) && Root != null) return true;
 
-            DreamObjectTreeEntry treeEntry = RootObject;
+            DreamObjectTreeEntry treeEntry = Root;
             foreach (string element in path.Elements) {
                 if (!treeEntry.Children.TryGetValue(element, out treeEntry)) return false;
             }
@@ -77,9 +85,9 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Path must be an absolute path");
             }
 
-            if (path.Equals(DreamPath.Root)) return RootObject;
+            if (path.Equals(DreamPath.Root)) return Root;
 
-            DreamObjectTreeEntry treeEntry = RootObject;
+            DreamObjectTreeEntry treeEntry = Root;
             foreach (string element in path.Elements) {
                 if (!treeEntry.Children.TryGetValue(element, out treeEntry)) {
                     throw new Exception("Object '" + path + "' does not exist");
@@ -97,9 +105,9 @@ namespace OpenDreamRuntime.Objects {
         // by calling the result of DreamObject.InitProc or DreamObject.InitSpawn
         public DreamObject CreateObject(DreamPath path) {
             if (path.Equals(DreamPath.List)) {
-                return DreamList.CreateUninitialized(Runtime);
+                return DreamList.CreateUninitialized();
             } else {
-                return new DreamObject(Runtime, GetObjectDefinitionFromPath(path));
+                return new DreamObject(GetObjectDefinitionFromPath(path));
             }
         }
 
@@ -109,15 +117,6 @@ namespace OpenDreamRuntime.Objects {
             foreach (DreamObjectTreeEntry treeEntry in treeEntries) {
                 treeEntry.ObjectDefinition.MetaObject = metaObject;
             }
-        }
-
-        public void LoadFromJson(DreamObjectJson rootJsonObject) {
-            if (rootJsonObject.Name != "") {
-                throw new Exception("Root object in json should have an empty name");
-            }
-
-            RootObject = new DreamObjectTreeEntry(Runtime, DreamPath.Root);
-            LoadTreeEntryFromJson(RootObject, rootJsonObject);
         }
 
         public DreamValue GetDreamValueFromJsonElement(object value) {
@@ -138,7 +137,8 @@ namespace OpenDreamRuntime.Objects {
 
                             switch (resourcePathElement.ValueKind) {
                                 case JsonValueKind.String: {
-                                    DreamResource resource = Runtime.ResourceManager.LoadResource(resourcePathElement.GetString());
+                                    var resM = IoCManager.Resolve<DreamResourceManager>();
+                                    DreamResource resource = resM.LoadResource(resourcePathElement.GetString());
 
                                     return new DreamValue(resource);
                                 }
@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Objects {
                         case JsonVariableType.Path:
                             return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
                         case JsonVariableType.List:
-                            DreamList list = DreamList.Create(Runtime);
+                            DreamList list = DreamList.Create();
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
@@ -181,7 +181,7 @@ namespace OpenDreamRuntime.Objects {
             LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
 
             if (jsonObject.InitProc != null) {
-                var initProc = new DMProc($"{treeEntry.ObjectDefinition.Type}/(init)", Runtime, null, null, null, jsonObject.InitProc.Bytecode, true);
+                var initProc = new DMProc($"{treeEntry.ObjectDefinition.Type}/(init)", null, null, null, jsonObject.InitProc.Bytecode, true);
 
                 initProc.SuperProc = treeEntry.ObjectDefinition.InitializionProc;
                 treeEntry.ObjectDefinition.InitializionProc = initProc;
@@ -243,7 +243,7 @@ namespace OpenDreamRuntime.Objects {
                         }
                     }
 
-                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", Runtime, null, argumentNames, argumentTypes, bytecode, procDefinition.WaitFor);
+                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", null, argumentNames, argumentTypes, bytecode, procDefinition.WaitFor);
                     objectDefinition.SetProcDefinition(jsonProc.Key, proc);
                 }
             }

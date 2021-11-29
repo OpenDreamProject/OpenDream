@@ -1,6 +1,7 @@
-﻿using OpenDreamRuntime.Procs;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using OpenDreamRuntime.Procs;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
@@ -13,22 +14,22 @@ namespace OpenDreamRuntime.Objects {
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = null;
 
-        protected DreamList(DreamRuntime runtime)
-            : base(runtime, runtime.ListDefinition)
-        {}
-
-        public static DreamList CreateUninitialized(DreamRuntime runtime) {
-            return new DreamList(runtime);
+        protected DreamList() : base(null) {
+            ObjectDefinition = IoCManager.Resolve<IDreamManager>().ObjectTree.List.ObjectDefinition;
         }
 
-        public static DreamList Create(DreamRuntime runtime) {
-            var list = new DreamList(runtime);
+        public static DreamList CreateUninitialized() {
+            return new DreamList();
+        }
+
+        public static DreamList Create() {
+            var list = new DreamList();
             list.InitSpawn(new DreamProcArguments(null));
             return list;
         }
 
-        public static DreamList Create(DreamRuntime runtime, IEnumerable<object> collection) {
-            var list = new DreamList(runtime);
+        public static DreamList Create(IEnumerable<object> collection) {
+            var list = new DreamList();
             list.InitSpawn(new DreamProcArguments(null));
 
             foreach (object value in collection) {
@@ -43,7 +44,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
-            DreamList copy = Create(Runtime);
+            DreamList copy = Create();
 
             if (end == 0 || end > _values.Count) end = _values.Count;
 
@@ -164,7 +165,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList Union(DreamList other) {
-            DreamList newList = new DreamList(Runtime);
+            DreamList newList = new DreamList();
             newList._values = _values.Union(other.GetValues()).ToList();
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
                 newList.SetValue(key, value);
@@ -178,7 +179,7 @@ namespace OpenDreamRuntime.Objects {
     class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 
-        private DreamListVars(DreamObject dreamObject) : base(dreamObject.Runtime) {
+        private DreamListVars(DreamObject dreamObject) : base() {
             _dreamObject = dreamObject;
         }
 

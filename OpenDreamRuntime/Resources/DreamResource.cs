@@ -1,11 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Resources {
     public class DreamResource {
-        public DreamRuntime Runtime { get; }
-
         public string ResourcePath;
         public byte[] ResourceData {
             get {
@@ -20,8 +19,7 @@ namespace OpenDreamRuntime.Resources {
         private string _filePath;
         private byte[] _resourceData = null;
 
-        public DreamResource(DreamRuntime runtime, string filePath, string resourcePath) {
-            Runtime = runtime;
+        public DreamResource(string filePath, string resourcePath) {
             _filePath = filePath;
             ResourcePath = resourcePath;
         }
@@ -42,7 +40,7 @@ namespace OpenDreamRuntime.Resources {
 
         public virtual void Output(DreamValue value) {
             if (value.TryGetValueAsString(out string text)) {
-                string filePath = Path.Combine(Runtime.ResourceManager.RootPath, ResourcePath);
+                string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
 
                 CreateDirectory();
                 File.AppendAllText(filePath, text + "\r\n");

@@ -1,5 +1,5 @@
-﻿using OpenDreamRuntime.Objects;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
     public struct DreamProcArguments {
@@ -31,8 +31,8 @@ namespace OpenDreamRuntime.Procs {
             return DreamValue.Null;
         }
 
-        public DreamList CreateDreamList(DreamRuntime runtime) {
-            DreamList list = DreamList.Create(runtime);
+        public DreamList CreateDreamList() {
+            DreamList list = DreamList.Create();
 
             foreach (DreamValue argument in OrderedArguments) {
                 list.AddValue(argument);

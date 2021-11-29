@@ -1,18 +1,33 @@
-﻿using OpenDreamShared.Net.Packets;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenDreamShared;
+using OpenDreamShared.Network.Messages;
+using Robust.Shared.Configuration;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
+using Robust.Shared.Network;
 
-namespace OpenDreamRuntime.Resources {
-    public class DreamResourceManager {
-        public DreamRuntime Runtime { get; }
-        public string RootPath;
+namespace OpenDreamRuntime.Resources
+{
+    public class DreamResourceManager
+    {
+        [Dependency] private readonly IServerNetManager _netManager = default!;
+        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
-        private Dictionary<string, DreamResource> _resourceCache = new();
+        public string RootPath { get; private set; }
 
-        public DreamResourceManager(DreamRuntime runtime, string rootPath) {
-            Runtime = runtime;
-            RootPath = rootPath;
+        private readonly Dictionary<string, DreamResource> _resourceCache = new();
+
+        public void Initialize()
+        {
+            var fullPath = Path.GetFullPath(_cfg.GetCVar(OpenDreamCVars.JsonPath));
+            RootPath = Path.GetDirectoryName(fullPath);
+
+            Logger.DebugS("opendream.res", $"Resource root path is {RootPath}");
+
+            _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
+            _netManager.RegisterNetMessage<MsgResource>();
         }
 
         public bool DoesFileExist(string resourcePath) {
@@ -20,23 +35,27 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public DreamResource LoadResource(string resourcePath) {
-            if (resourcePath == "") return new ConsoleOutputResource(Runtime); //An empty resource path is the console
+            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
 
             if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource)) {
-                resource = new DreamResource(Runtime, Path.Combine(RootPath, resourcePath), resourcePath);
+                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
                 _resourceCache.Add(resourcePath, resource);
             }
 
             return resource;
         }
 
-        public void HandleRequestResourcePacket(DreamConnection connection, PacketRequestResource pRequestResource) {
+        public void RxRequestResource(MsgRequestResource pRequestResource) {
             DreamResource resource = LoadResource(pRequestResource.ResourcePath);
 
-            if (resource.ResourceData != null) {
-                connection.SendPacket(new PacketResource(resource.ResourcePath, resource.ResourceData));
+            if (resource.ResourceData != null)
+            {
+                var msg = _netManager.CreateNetMessage<MsgResource>();
+                msg.ResourcePath = resource.ResourcePath;
+                msg.ResourceData = resource.ResourceData;
+                pRequestResource.MsgChannel.SendMessage(msg);
             } else {
-                Console.WriteLine("User \"" + connection.CKey + "\" requested resource '" + pRequestResource.ResourcePath + "', which doesn't exist");
+                Logger.WarningS("opendream.res", $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");
             }
         }
 

@@ -1,18 +1,22 @@
-﻿using NAudio.Wave;
-using OpenDreamClient.Resources.ResourceTypes;
+using System;
+using Robust.Client.Graphics;
 
-namespace OpenDreamClient.Audio {
-    class DreamSoundChannel {
-        public ResourceSound Sound;
-        public ISampleProvider SampleProvider;
+namespace OpenDreamClient.Audio
+{
+    public class DreamSoundChannel : IDisposable {
+        public IClydeAudioSource Source { get; }
 
-        public DreamSoundChannel(ResourceSound sound, ISampleProvider sampleProvider) {
-            Sound = sound;
-            SampleProvider = sampleProvider;
+        public DreamSoundChannel(IClydeAudioSource source) {
+            Source = source;
         }
 
         public void Stop() {
-            Sound.Stop(SampleProvider);
+            Source?.StopPlaying();
+        }
+
+        public void Dispose() {
+            Stop();
+            Source?.Dispose();
         }
     }
 }

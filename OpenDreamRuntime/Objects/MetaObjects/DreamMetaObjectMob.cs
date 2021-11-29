@@ -1,72 +1,63 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using Robust.Server.Player;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectMob : DreamMetaObjectMovable {
-        public DreamMetaObjectMob(DreamRuntime runtime)
-            : base(runtime)
-        {}
+        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
-            Runtime.Mobs.Add(dreamObject);
+            _dreamManager.Mobs.Add(dreamObject);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
-            Runtime.Mobs.Remove(dreamObject);
+            _dreamManager.Mobs.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "key" || variableName == "ckey") {
-                DreamConnection newClientConnection =
-                    Runtime.Server.GetConnectionFromCKey(variableValue.GetValueAsString());
+                if (_playerManager.TryGetSessionByUsername(variableValue.GetValueAsString(), out var session)) {
+                    var connection = _dreamManager.GetConnectionBySession(session);
 
-                newClientConnection.MobDreamObject = dreamObject;
-            }
-            else if (variableName == "see_invisible") {
-                string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-                Runtime.StateManager.AddClientSeeInvisibleDelta(ckey, (byte)variableValue.GetValueAsInteger());
-
+                    connection.MobDreamObject = dreamObject;
+                }
+            } else if (variableName == "see_invisible") {
+               //TODO
             } else if (variableName == "client" && variableValue != oldVariableValue) {
-                DreamObject newClient = variableValue.GetValueAsDreamObject();
-                DreamObject oldClient = oldVariableValue.GetValueAsDreamObject();
+                var newClient = variableValue.GetValueAsDreamObject();
+                var oldClient = oldVariableValue.GetValueAsDreamObject();
 
                 if (newClient != null) {
-                    Runtime.Server.GetConnectionFromClient(newClient).MobDreamObject = dreamObject;
+                    _dreamManager.GetConnectionFromClient(newClient).MobDreamObject = dreamObject;
                 } else if (oldClient != null) {
-                    Runtime.Server.GetConnectionFromClient(oldClient).MobDreamObject = null;
+                    _dreamManager.GetConnectionFromClient(oldClient).MobDreamObject = null;
                 }
             }
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "key" || variableName == "ckey") {
-                DreamObject clientObject = dreamObject.GetVariable("client").GetValueAsDreamObject();
-
-                if (clientObject != null && clientObject.IsSubtypeOf(DreamPath.Client)) {
-                    return clientObject.GetVariable(variableName);
+                if (dreamObject.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client)) {
+                    return client.GetVariable(variableName);
                 } else {
                     return DreamValue.Null;
                 }
             } else if (variableName == "client") {
-                DreamConnection connection = Runtime.Server.GetConnectionFromMob(dreamObject);
-
-                if (connection != null && connection.ClientDreamObject != null) {
-                    return new DreamValue(connection.ClientDreamObject);
-                } else {
-                    return DreamValue.Null;
-                }
+                return new(_dreamManager.GetClientFromMob(dreamObject));
             } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+              return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             DreamObject client = a.GetValueAsDreamObjectOfType(DreamPath.Mob).GetVariable("client").GetValueAsDreamObjectOfType(DreamPath.Client);
-            DreamConnection connection = Runtime.Server.GetConnectionFromClient(client);
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
 
             connection.OutputDreamValue(b);
             return new DreamValue(0);

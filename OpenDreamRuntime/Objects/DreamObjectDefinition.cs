@@ -1,54 +1,46 @@
-﻿using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectDefinition {
-        public DreamRuntime Runtime { get; }
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
         public DreamProc InitializionProc = null;
-        public Dictionary<string, DreamProc> Procs { get; private set; } = new();
-        public Dictionary<string, DreamProc> OverridingProcs { get; private set; } = new();
-        public Dictionary<string, DreamValue> Variables { get; private set; } = new();
-        public Dictionary<string, int> GlobalVariables { get; private set; } = new();
+        public readonly Dictionary<string, DreamProc> Procs = new();
+        public readonly Dictionary<string, DreamProc> OverridingProcs = new();
+        public readonly Dictionary<string, DreamValue> Variables = new();
+        public readonly Dictionary<string, int> GlobalVariables = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
-        public DreamObjectDefinition(DreamRuntime runtime, DreamPath type) {
-            Runtime = runtime;
+        public DreamObjectDefinition(DreamPath type) {
             Type = type;
         }
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
-            Runtime = copyFrom.Runtime;
             Type = copyFrom.Type;
             MetaObject = copyFrom.MetaObject;
             InitializionProc = copyFrom.InitializionProc;
             _parentObjectDefinition = copyFrom._parentObjectDefinition;
 
-            CopyVariablesFrom(copyFrom);
-
-            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.Procs) {
-                Procs.Add(proc.Key, proc.Value);
-            }
-
-            foreach (KeyValuePair<string, DreamProc> proc in copyFrom.OverridingProcs) {
-                OverridingProcs.Add(proc.Key, proc.Value);
-            }
+            Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
+            GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
+            Procs = new Dictionary<string, DreamProc>(copyFrom.Procs);
+            OverridingProcs = new Dictionary<string, DreamProc>(copyFrom.OverridingProcs);
         }
 
         public DreamObjectDefinition(DreamPath type, DreamObjectDefinition parentObjectDefinition) {
-            CopyVariablesFrom(parentObjectDefinition);
-
-            Runtime = parentObjectDefinition.Runtime;
             Type = type;
             InitializionProc = parentObjectDefinition.InitializionProc;
             _parentObjectDefinition = parentObjectDefinition;
+
+            Variables = new Dictionary<string, DreamValue>(parentObjectDefinition.Variables);
+            GlobalVariables = new Dictionary<string, int>(parentObjectDefinition.GlobalVariables);
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {
@@ -88,13 +80,13 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
-            var proc = new NativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
             SetProcDefinition(name, proc);
         }
 
         public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, Runtime, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
             SetProcDefinition(name, proc);
         }
 
@@ -136,11 +128,6 @@ namespace OpenDreamRuntime.Objects {
             if (Type.IsDescendantOf(path)) return true;
             else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);
             else return false;
-        }
-
-        private void CopyVariablesFrom(DreamObjectDefinition definition) {
-            Variables = new Dictionary<string, DreamValue>(definition.Variables);
-            GlobalVariables = new Dictionary<string, int>(definition.GlobalVariables);
         }
     }
 }

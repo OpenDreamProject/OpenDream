@@ -1,95 +1,107 @@
 ﻿using System;
-using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Net.Packets;
-using System.Windows;
-using System.Windows.Controls;
-using System.Runtime.InteropServices;
-using System.Windows.Interop;
 using System.ComponentModel;
+using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.IoC;
+using Robust.Shared.Maths;
+using Robust.Shared.Network;
 
-namespace OpenDreamClient.Interface.Prompts {
-    class PromptWindow : Window {
-        protected DockPanel _dockPanel;
+namespace OpenDreamClient.Interface.Prompts
+{
+    public abstract class PromptWindow : OSWindow
+    {
+        [Dependency] private readonly IClientNetManager _netManager = default!;
+
+        protected readonly Control InputControl;
+
+        private BoxContainer _dockPanel;
 
         private int _promptId;
-        private StackPanel _buttonPanel;
+        private BoxContainer _buttonPanel;
         private bool _responseSent = false;
 
-        //Used for hiding the close button
-        private const int GWL_STYLE = -16;
-        private const int WS_SYSMENU = 0x80000;
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-        [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        public PromptWindow(int promptId, String title, String message)
+        {
+            IoCManager.InjectDependencies(this);
 
-        public PromptWindow(int promptId, String title, String message) {
             _promptId = promptId;
 
             Title = !String.IsNullOrEmpty(title) ? title : "OpenDream";
 
             Label messageLabel = new Label();
             messageLabel.Margin = new Thickness(5);
-            messageLabel.Content = message;
+            messageLabel.Text = message;
 
-            _buttonPanel = new StackPanel();
+            _buttonPanel = new BoxContainer();
             _buttonPanel.Margin = new Thickness(5);
-            _buttonPanel.Orientation = Orientation.Horizontal;
-            _buttonPanel.HorizontalAlignment = HorizontalAlignment.Right;
-            _buttonPanel.VerticalAlignment = VerticalAlignment.Bottom;
+            _buttonPanel.Orientation = BoxContainer.LayoutOrientation.Horizontal;
+            _buttonPanel.HorizontalAlignment = HAlignment.Right;
+            _buttonPanel.VerticalAlignment = VAlignment.Bottom;
 
-            _dockPanel = new DockPanel();
+            InputControl = new Control
+            {
+                VerticalExpand = true
+            };
+
+            _dockPanel = new BoxContainer();
+            _dockPanel.Orientation = BoxContainer.LayoutOrientation.Vertical;
             _dockPanel.Margin = new Thickness(5);
-            DockPanel.SetDock(messageLabel, Dock.Top);
-            DockPanel.SetDock(_buttonPanel, Dock.Bottom);
             _dockPanel.Children.Add(messageLabel);
+            _dockPanel.Children.Add(InputControl);
             _dockPanel.Children.Add(_buttonPanel);
 
-            SizeToContent = SizeToContent.WidthAndHeight;
+            SizeToContent = WindowSizeToContent.WidthAndHeight;
             MinWidth = 300;
             MinHeight = 150;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            StartupLocation = WindowStartupLocation.CenterOwner;
             Closing += PromptWindow_Closing;
+            WindowStyles = OSWindowStyles.NoTitleOptions;
 
             AddChild(_dockPanel);
         }
 
-        public new void Show() {
-            base.Show();
-
-            //Hide the close button
-            IntPtr hwnd = new WindowInteropHelper(this).Handle;
-            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
-        }
-
-        protected void CreateButton(string text, bool isDefault) {
-            Button button = new Button() {
-                Content = text,
+        protected void CreateButton(string text, bool isDefault)
+        {
+            Button button = new Button()
+            {
                 Margin = new Thickness(15, 0, 0, 0),
-                Padding = new Thickness(5, 2, 5, 2),
-                IsDefault = isDefault
+                Children = { new Label { Text = text, Margin = new Thickness(5, 2, 5, 2) } }
+                /*IsDefault = isDefault*/
             };
 
-            button.Click += (object sender, RoutedEventArgs e) => ButtonClicked(text);
+            button.OnPressed += _ => ButtonClicked(text);
             _buttonPanel.Children.Add(button);
         }
 
-        protected virtual void ButtonClicked(string button) {
+        protected virtual void ButtonClicked(string button)
+        {
             Close();
         }
 
-        protected void FinishPrompt(DMValueType responseType, object value) {
+        protected void FinishPrompt(DMValueType responseType, object value)
+        {
             if (_responseSent) return;
             _responseSent = true;
 
-            Program.OpenDream.Connection.SendPacket(new PacketPromptResponse(_promptId, responseType, value));
+            var msg = _netManager.CreateNetMessage<MsgPromptResponse>();
+            msg.PromptId = _promptId;
+            msg.Type = responseType;
+            msg.Value = value;
+            _netManager.ClientSendMessage(msg);
         }
 
-        private void PromptWindow_Closing(object sender, CancelEventArgs e) {
+        private void PromptWindow_Closing(CancelEventArgs e)
+        {
             //Don't allow closing if there hasn't been a response to the prompt
-            if (!_responseSent) {
+            if (!_responseSent)
+            {
                 e.Cancel = true;
-            } else {
+            }
+            else
+            {
                 Owner = null;
             }
         }

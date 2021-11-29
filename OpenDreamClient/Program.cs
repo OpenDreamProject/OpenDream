@@ -1,12 +1,16 @@
-﻿using System;
+using Robust.Client;
+using Robust.Shared.Utility;
 
 namespace OpenDreamClient {
-    class Program {
-        public static OpenDream OpenDream;
-
-        [STAThread]
-        static void Main(string[] args) {
-            new OpenDreamApplication().Run();
+    internal static class Program {
+        public static void Main(string[] args) {
+            ContentStart.StartLibrary(args, new GameControllerOptions() {
+                Sandboxing = true,
+                DefaultWindowTitle = "OpenDream",
+                WindowIconSet = new ResourcePath("/OpenDream/Logo/Icon"),
+                SplashLogo = new ResourcePath("/OpenDream/Logo/logo.png"),
+                ContentModulePrefix = "OpenDream",
+            });
         }
     }
 }

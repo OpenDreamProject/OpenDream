@@ -1,34 +1,43 @@
-﻿using OpenDreamClient.Interface.Controls;
+﻿using System;
 using OpenDreamShared.Interface;
-using System;
-using System.Windows;
+using OpenDreamClient.Interface.Controls;
+using Robust.Client.Graphics;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 
-namespace OpenDreamClient.Interface {
+namespace OpenDreamClient.Interface
+{
     class BrowsePopup {
-        public event EventHandler Closed;
+        public event Action Closed;
 
         public ControlBrowser Browser;
         public ControlWindow WindowElement;
 
-        private Window _window;
+        private OSWindow _window;
 
-        public BrowsePopup(string name, System.Drawing.Size size, Window ownerWindow) {
+        public BrowsePopup(
+            string name,
+            Vector2i size,
+            IClydeWindow ownerWindow) {
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name, new() {
-                new ControlDescriptorMain("main") {
+                new ControlDescriptorMain() {
+                    Name = "main",
                     Size = size
                 },
-                new ControlDescriptorBrowser("browser") {
+                new ControlDescriptorBrowser() {
+                    Name = "browser",
                     Size = size,
-                    Anchor1 = new System.Drawing.Point(0, 0),
-                    Anchor2 = new System.Drawing.Point(100, 100)
+                    Anchor1 = new Vector2i(0, 0),
+                    Anchor2 = new Vector2i(100, 100)
                 }
             });
 
             WindowElement = new ControlWindow(popupWindowDescriptor);
-            WindowElement.CreateChildControls();
+            WindowElement.CreateChildControls(IoCManager.Resolve<IDreamInterfaceManager>());
 
             _window = WindowElement.CreateWindow();
-            _window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            _window.StartupLocation = WindowStartupLocation.CenterOwner;
             _window.Owner = ownerWindow;
             _window.Closed += OnWindowClosed;
 
@@ -37,15 +46,14 @@ namespace OpenDreamClient.Interface {
 
         public void Open() {
             _window.Show();
-            _window.Focus();
+            // _window.Focus();
         }
 
         public void Close() {
             _window.Close();
         }
 
-        private void OnWindowClosed(object sender, EventArgs e) {
-            Closed?.Invoke(sender, e);
+        private void OnWindowClosed() {
+            Closed?.Invoke();
         }
-    }
-}
+    }}

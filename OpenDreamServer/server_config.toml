@@ -1,0 +1,36 @@
+﻿
+[log]
+path = "logs"
+format = "log_%(date)s-%(time)s.txt"
+level = 1
+enabled = false
+
+[net]
+tickrate = 20
+port = 25566
+bindto = "::,0.0.0.0"
+
+[status]
+enabled = true
+bind = "*:1212"
+
+[game]
+hostname = "MyServer"
+mapname = "stationstation"
+maxplayers = 64
+type = 1
+welcomemsg = "Welcome to the server!"
+
+[console]
+width = 120
+height = 60
+password = "honk"
+hostpassword = "blah"
+# If this is true, people connecting from this machine (loopback)
+# will automatically be elevated to full admin privileges.
+# This literally works by checking if address == 127.0.0.1 || address == ::1
+loginlocal = true
+
+[opendream]
+# The path to DMCompiler's output
+json_path = ""

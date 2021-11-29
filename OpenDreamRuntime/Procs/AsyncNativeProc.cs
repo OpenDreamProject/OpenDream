@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public class AsyncNativeProc : DreamProc {
@@ -24,7 +24,6 @@ namespace OpenDreamRuntime.Procs {
             private DreamValue? _callResult;
 
             private bool _inResume;
-            private bool _hasReturned;
 
             public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
                 : base(thread)
@@ -62,7 +61,6 @@ namespace OpenDreamRuntime.Procs {
 
             private async Task InternalResumeAsync() {
                 Result = await _taskFunc(this);
-                _hasReturned = true;
             }
 
             protected override ProcStatus InternalResume()
@@ -72,23 +70,24 @@ namespace OpenDreamRuntime.Procs {
                 // We've just been created, start our task
                 if (_task == null) {
                     // Pull execution of our task outside of StartNew to allow it to inline here
-                    var inlined  = InternalResumeAsync();
+                    _task = InternalResumeAsync();
 
                     // Shortcut: If our proc was synchronous, we don't need to schedule
                     //           This also means we won't reach Resume on a finished proc through our continuation
-                    if (_hasReturned) {
-                        if (inlined.Exception != null) {
-                            throw inlined.Exception;
+                    if (_task.IsCompleted) {
+                        if (_task.Exception != null) {
+                            throw _task.Exception;
                         }
 
                         return ProcStatus.Returned;
                     }
 
-                    _task = Thread.Runtime.TaskFactory.StartNew(() => inlined).Unwrap();
-
                     // We have to resume now so that the execution context knows we have returned
                     // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
-                    _task.ContinueWith(_ => SafeResume(), Thread.Runtime.TaskScheduler);
+                    _task.ContinueWith(
+                        (_, inst) => ((State)inst).SafeResume(),
+                        this,
+                        TaskScheduler.FromCurrentSynchronizationContext());
                 }
 
                 // We need to call a proc.
@@ -114,7 +113,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 // If the task is finished, we're all done
-                if (_hasReturned) {
+                if (_task.IsCompleted) {
                     if (_task.Exception != null) {
                         throw _task.Exception;
                     }
@@ -141,12 +140,12 @@ namespace OpenDreamRuntime.Procs {
         private Dictionary<string, DreamValue> _defaultArgumentValues;
         private Func<State, Task<DreamValue>> _taskFunc;
 
-        private AsyncNativeProc(DreamRuntime runtime)
-            : base("<anonymous async proc>", runtime, null, false, null, null)
+        private AsyncNativeProc()
+            : base("<anonymous async proc>", null, false, null, null)
         {}
 
-        public AsyncNativeProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(name, runtime, superProc, true, argumentNames, argumentTypes)
+        public AsyncNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
+            : base(name, superProc, true, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;

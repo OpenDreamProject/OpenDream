@@ -1,11 +1,16 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Map;
+using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectMovable : DreamMetaObjectAtom {
-        public DreamMetaObjectMovable(DreamRuntime runtime)
-            : base(runtime)
-        {}
+        private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
+        private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+        private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
@@ -24,40 +29,31 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             base.OnObjectDeleted(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue)
-        {
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            switch (variableName)
-            {
+            switch (variableName) {
                 case "x":
                 case "y":
-                case "z":
-                {
+                case "z": {
                     int x = (variableName == "x") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("x").GetValueAsInteger();
                     int y = (variableName == "y") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("y").GetValueAsInteger();
                     int z = (variableName == "z") ? variableValue.GetValueAsInteger() : dreamObject.GetVariable("z").GetValueAsInteger();
-                    DreamObject newLocation = Runtime.Map.GetTurfAt(x, y, z);
+                    DreamObject newLocation = _dreamMapManager.GetTurf(x, y, z);
 
                     dreamObject.SetVariable("loc", new DreamValue(newLocation));
                     break;
                 }
-                case "loc":
-                {
-                    Runtime.StateManager.AddAtomLocationDelta(dreamObject, variableValue.GetValueAsDreamObject());
+                case "loc": {
+                    IEntity entity = _atomManager.GetAtomEntity(dreamObject);
 
-                    if (oldVariableValue.Value != null) {
-                        DreamObject oldLoc = oldVariableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                        DreamList oldLocContents = oldLoc.GetVariable("contents").GetValueAsDreamList();
+                    if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
+                        IEntity locEntity = _atomManager.GetAtomEntity(loc);
 
-                        oldLocContents.RemoveValue(new DreamValue(dreamObject));
-                    }
-
-                    if (variableValue.Value != null) {
-                        DreamObject newLoc = variableValue.GetValueAsDreamObjectOfType(DreamPath.Atom);
-                        DreamList newLocContents = newLoc.GetVariable("contents").GetValueAsDreamList();
-
-                        newLocContents.AddValue(new DreamValue(dreamObject));
+                        entity.Transform.AttachParent(locEntity);
+                        entity.Transform.LocalPosition = Vector2.Zero;
+                    } else {
+                        entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
                     }
 
                     break;
@@ -65,37 +61,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "screen_loc":
                     UpdateScreenLocation(dreamObject, variableValue);
                     break;
-            }
-        }
-
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
-        {
-            switch (variableName)
-            {
-                case "x":
-                case "y":
-                case "z":
-                {
-                    DreamObject location = dreamObject.GetVariable("loc").GetValueAsDreamObject();
-
-                    if (location != null)
-                    {
-                        return location.GetVariable(variableName);
-                    }
-                    else
-                    {
-                        return new DreamValue(0);
-                    }
-                }
-                case "locs":
-                {
-                    //TODO multi-tile support
-                    var list = DreamList.Create(Runtime);
-                    list.AddValue(dreamObject.GetVariable("loc"));
-                    return new DreamValue(list);
-                }
-                default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 
@@ -107,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 screenLocation = new ScreenLocation(0, 0, 0, 0);
             }
 
-            Runtime.StateManager.AddAtomScreenLocationDelta(movable, screenLocation);
+            _atomManager.GetAtomEntity(movable).GetComponent<DMISpriteComponent>().ScreenLocation = screenLocation;
         }
     }
 }

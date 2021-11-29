@@ -1,28 +1,21 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Text;
-using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     public struct CompilerError {
         public Token Token;
         public Location? Location;
         public string Message;
-        public StackTrace StackTrace;
 
         public CompilerError(Token token, string message) {
             Token = token;
             Location = token?.Location ?? Compiler.Location.Unknown;
             Message = message;
-            StackTrace = new StackTrace(true);
         }
 
-        public CompilerError(Location location, string message)
-        {
+        public CompilerError(Location location, string message) {
             Token = null;
             Location = location;
             Message = message;
-            StackTrace = new StackTrace(true);
         }
 
         public override string ToString() {

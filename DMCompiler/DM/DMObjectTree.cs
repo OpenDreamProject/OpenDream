@@ -1,4 +1,6 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMCompiler.DM.Visitors;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;

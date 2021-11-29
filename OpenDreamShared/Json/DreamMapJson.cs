@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Dream;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Json {
     public class DreamMapJson {

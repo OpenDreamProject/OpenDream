@@ -51,8 +51,6 @@
 		set opendream_unimplemented = TRUE
 	proc/SetConfig(config_set,param,value)
 		set opendream_unimplemented = TRUE
-	proc/Export(Addr,File,Persist,Clients)
-		set opendream_unimplemented = TRUE
 	proc/OpenPort(port)
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)
@@ -63,6 +61,8 @@
 
 	proc/Repop()
 		set opendream_unimplemented = TRUE
+
+	proc/Export(Addr, File, Persist, Clients)
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

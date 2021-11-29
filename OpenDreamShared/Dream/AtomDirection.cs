@@ -1,4 +1,8 @@
-﻿namespace OpenDreamShared.Dream {
+﻿using Robust.Shared.Serialization;
+using System;
+
+namespace OpenDreamShared.Dream {
+    [Serializable, NetSerializable]
     public enum AtomDirection {
         None = 0,
 

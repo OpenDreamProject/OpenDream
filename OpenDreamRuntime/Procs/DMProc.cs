@@ -1,17 +1,17 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        public DMProc(string name, DreamRuntime runtime, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, bool waitFor)
-            : base(name, runtime, superProc, waitFor, argumentNames, argumentTypes)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, bool waitFor)
+            : base(name, superProc, waitFor, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
         }
@@ -129,6 +129,7 @@ namespace OpenDreamRuntime.Procs {
         };
         #endregion
 
+        public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
         public readonly DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
@@ -225,7 +226,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamThread Spawn() {
-            var thread = new DreamThread(Runtime);
+            var thread = new DreamThread();
 
             var state = new DMProcState(this, thread);
             thread.PushProcState(state);
@@ -305,7 +306,7 @@ namespace OpenDreamRuntime.Procs {
         public string ReadString() {
             int stringID = ReadInt();
 
-            return Runtime.CompiledJson.Strings[stringID];
+            return DreamManager.ObjectTree.Strings[stringID];
         }
         #endregion
     }

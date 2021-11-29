@@ -37,6 +37,8 @@ namespace OpenDreamRuntime {
 
         public DreamValue(UInt32 value) : this((float)value) { }
 
+        public DreamValue(double value) : this((float)value) { }
+
         public DreamValue(DreamResource value) {
             Type = DreamValueType.DreamResource;
             Value = value;
@@ -167,10 +169,6 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamList GetValueAsDreamList() {
-            return (DreamList)GetValueAsDreamObject();
-        }
-
         public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {
             if (Type == DreamValueType.DreamObject) {
                 dreamObject = GetValueAsDreamObject();
@@ -193,6 +191,10 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsDreamObjectOfType(DreamPath type, out DreamObject dreamObject) {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
+        }
+
+        public DreamList GetValueAsDreamList() {
+            return (DreamList)GetValueAsDreamObject();
         }
 
         public bool TryGetValueAsDreamList(out DreamList list) {

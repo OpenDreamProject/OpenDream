@@ -1,30 +1,21 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
-
     public class DreamObject {
-        public DreamRuntime Runtime { get; }
-
-        public DreamObjectDefinition ObjectDefinition;
+        public DreamObjectDefinition ObjectDefinition { get; protected set; }
         public bool Deleted = false;
 
-        /// <summary>
-        /// Any variables that may differ from the default
-        /// </summary>
         private Dictionary<string, DreamValue> _variables = new();
 
-        public DreamObject(DreamRuntime runtime, DreamObjectDefinition objectDefinition) {
-            Runtime = runtime;
+        public DreamObject(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread(Runtime);
+            var thread = new DreamThread();
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
 
@@ -37,31 +28,31 @@ namespace OpenDreamRuntime.Objects {
             return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
-        public static DreamObject GetFromReferenceID(DreamRuntime runtime, int refID) {
-            foreach (KeyValuePair<DreamObject, int> referenceIDPair in runtime.ReferenceIDs) {
+        public static DreamObject GetFromReferenceID(IDreamManager manager, int refID) {
+            foreach (KeyValuePair<DreamObject, int> referenceIDPair in manager.ReferenceIDs) {
                 if (referenceIDPair.Value == refID) return referenceIDPair.Key;
             }
 
             return null;
         }
 
-        public int CreateReferenceID() {
+        public int CreateReferenceID(IDreamManager manager) {
             int referenceID;
 
-            if (!Runtime.ReferenceIDs.TryGetValue(this, out referenceID)) {
-                referenceID = Runtime.ReferenceIDs.Count;
+            if (!manager.ReferenceIDs.TryGetValue(this, out referenceID)) {
+                referenceID = manager.ReferenceIDs.Count;
 
-                Runtime.ReferenceIDs.Add(this, referenceID);
+                manager.ReferenceIDs.Add(this, referenceID);
             }
 
             return referenceID;
         }
 
-        public void Delete() {
+        public void Delete(IDreamManager manager) {
             if (Deleted) return;
             ObjectDefinition.MetaObject?.OnObjectDeleted(this);
 
-            Runtime.ReferenceIDs.Remove(this);
+            manager.ReferenceIDs.Remove(this);
             Deleted = true;
         }
 

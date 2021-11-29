@@ -1,6 +1,7 @@
-﻿using OpenDreamRuntime.Objects;
-using System;
+﻿using System;
+using OpenDreamRuntime.Objects;
 using System.Collections.Generic;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     interface IDreamProcIdentifier {
@@ -22,7 +23,7 @@ namespace OpenDreamRuntime.Procs {
                 return value;
             }
             if (Instance.ObjectDefinition.GlobalVariables.TryGetValue(IdentifierName, out int globalId)) {
-                return Instance.Runtime.Globals[globalId];
+                return IoCManager.Resolve<IDreamManager>().Globals[globalId]; //TODO: This probably isn't very performant
             }
             throw new Exception("Value '" + IdentifierName + "' doesn't exist");
         }
@@ -31,7 +32,7 @@ namespace OpenDreamRuntime.Procs {
             if (Instance.HasVariable(IdentifierName)) {
                 Instance.SetVariable(IdentifierName, value);
             } else if (Instance.ObjectDefinition.GlobalVariables.TryGetValue(IdentifierName, out int globalId)) {
-                Instance.Runtime.Globals[globalId] = value;
+                IoCManager.Resolve<IDreamManager>().Globals[globalId] = value; //TODO: This probably isn't very performant
             } else {
                 throw new Exception("Value '" + IdentifierName + "' doesn't exist");
             }

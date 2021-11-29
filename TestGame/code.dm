@@ -36,8 +36,43 @@
 		var/result = roll(dice)
 		usr << "The total shown on the dice is: [result]"
 
+	verb/test_alert()
+		alert(usr, "Prepare to die.")
+		usr << "prompt done"
+
+	verb/input_num()
+		var/v = input("A") as num
+		usr << "you entered [v]"
+
+	verb/test_browse()
+		usr << browse({"
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Foo</title>
+	<style>
+	body {
+		background: red;
+	}
+	</style>
+	<script>
+	function foo(v) {
+		document.getElementById("mark").innerHTML = v;
+	}
+	</script>
+</head>
+<body>
+	<marquee id="mark">Honk</marquee>
+	<a href="?honk=1">click me</a>
+</body>
+</html>"},"window=honk")
+
+	verb/test_output()
+		usr << output("help sec griffing me", "honk.browser:foo")
+
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
+	stat("time", world.time)
 
 /world/New()
 	..()

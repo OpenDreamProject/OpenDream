@@ -45,7 +45,7 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected Token CreateToken(TokenType type, char text, object value = null) {
-            return CreateToken(type, Convert.ToString(text), value);
+            return CreateToken(type, char.ToString(text), value);
         }
 
         protected virtual SourceType GetCurrent() {

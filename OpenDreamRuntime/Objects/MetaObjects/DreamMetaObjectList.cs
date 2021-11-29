@@ -2,11 +2,6 @@
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
-        public DreamMetaObjectList(DreamRuntime runtime)
-            : base(runtime)
-
-        {}
-
         public override bool ShouldCallNew => true;
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

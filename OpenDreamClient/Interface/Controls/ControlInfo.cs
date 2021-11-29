@@ -1,42 +1,55 @@
-﻿using OpenDreamShared.Interface;
-using OpenDreamShared.Net.Packets;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using OpenDreamShared.Interface;
+using OpenDreamShared.Network.Messages;
+using OpenDreamClient.Input;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Maths;
+using Robust.Shared.Network;
 
-namespace OpenDreamClient.Interface.Controls {
-    class InfoPanel : TabItem {
+namespace OpenDreamClient.Interface.Controls
+{
+    class InfoPanel : Control
+    {
         public string PanelName { get; private set; }
 
-        public InfoPanel(string name) {
+        public InfoPanel(string name)
+        {
             PanelName = name;
-            Header = PanelName;
+            TabContainer.SetTabTitle(this, name);
         }
     }
 
-    class StatPanel : InfoPanel {
-        private TextBlock _textBlock;
+    class StatPanel : InfoPanel
+    {
+        private Label _textBlock;
 
-        public StatPanel(string name) : base(name) {
-            _textBlock = new TextBlock() {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                FontFamily = new FontFamily("Courier New")
+        public StatPanel(string name) : base(name)
+        {
+            _textBlock = new Label()
+            {
+                HorizontalAlignment = HAlignment.Stretch,
+                VerticalAlignment = VAlignment.Stretch,
+                // FontFamily = new FontFamily("Courier New")
             };
 
-            ScrollViewer scrollViewer = new ScrollViewer() {
-                Content = _textBlock
+            var scrollViewer = new ScrollContainer()
+            {
+                Children = { _textBlock }
             };
             AddChild(scrollViewer);
         }
 
-        public void UpdateLines(List<string> lines) {
+        public void UpdateLines(List<string> lines)
+        {
             StringBuilder text = new StringBuilder();
 
-            foreach (string line in lines) {
+            foreach (string line in lines)
+            {
                 text.Append(line + Environment.NewLine);
             }
 
@@ -44,82 +57,106 @@ namespace OpenDreamClient.Interface.Controls {
         }
     }
 
-    class VerbPanel : InfoPanel {
-        private WrapPanel _wrapPanel;
+    class VerbPanel : InfoPanel
+    {
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+        private readonly GridContainer _grid;
 
-        public VerbPanel(string name) : base(name) {
-            _wrapPanel = new WrapPanel();
-            AddChild(_wrapPanel);
+        public VerbPanel(string name) : base(name)
+        {
+            _grid = new GridContainer { Columns = 4 };
+            IoCManager.InjectDependencies(this);
+            AddChild(_grid);
         }
 
-        public void RefreshVerbs() {
-            _wrapPanel.Children.Clear();
-            if (Program.OpenDream.AvailableVerbs == null) return;
+        public void RefreshVerbs()
+        {
+            _grid.Children.Clear();
 
-            foreach (string verbName in Program.OpenDream.AvailableVerbs) {
-                Button verbButton = new Button() {
-                    Content = verbName.Replace("_", "__"), //WPF uses underscores for mnemonics; they need to be replaced with a double underscore
+            foreach (string verbName in _dreamInterface.AvailableVerbs)
+            {
+                Button verbButton = new Button()
+                {
                     Margin = new Thickness(2),
-                    Padding = new Thickness(6, 0, 6, 2),
-                    MinWidth = 100
+                    MinWidth = 100,
+                    Children =
+                    {
+                        new Label { Text = verbName, Margin = new Thickness(6, 0, 6, 2) }
+                    }
                 };
 
-                verbButton.Click += new RoutedEventHandler((object sender, RoutedEventArgs e) => {
-                    Program.OpenDream.RunCommand(verbName);
-                });
+                verbButton.OnPressed += _ =>
+                {
+                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbName);
+                };
 
-                _wrapPanel.Children.Add(verbButton);
+                _grid.Children.Add(verbButton);
             }
         }
     }
 
-    class ControlInfo : InterfaceControl {
-        private TabControl _tabControl;
+    class ControlInfo : InterfaceControl
+    {
+        [Dependency] private readonly IClientNetManager _netManager = default!;
+
+        private TabContainer _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
         private VerbPanel _verbPanel;
 
-        public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+        public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
+        {
+            IoCManager.InjectDependencies(this);
+        }
 
-        protected override FrameworkElement CreateUIElement() {
-            _tabControl = new TabControl() {
-                BorderBrush = Brushes.Black,
-                BorderThickness = new Thickness(1)
+        protected override Control CreateUIElement()
+        {
+            _tabControl = new TabContainer()
+            {
+                /*BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(1)*/
             };
-            _tabControl.SelectionChanged += OnSelectionChanged;
+            _tabControl.OnTabChanged += OnSelectionChanged;
 
             _verbPanel = new VerbPanel("Verbs");
-            _tabControl.Items.Add(_verbPanel);
+            _tabControl.AddChild(_verbPanel);
 
             RefreshVerbs();
 
             return _tabControl;
         }
 
-        public void RefreshVerbs() {
+        public void RefreshVerbs()
+        {
             _verbPanel.RefreshVerbs();
         }
 
-        public void SelectStatPanel(string statPanelName) {
-            _statPanels.TryGetValue(statPanelName, out StatPanel panel);
-            _tabControl.SelectedItem = panel;
+        public void SelectStatPanel(string statPanelName)
+        {
+            if (_statPanels.TryGetValue(statPanelName, out StatPanel panel))
+                _tabControl.CurrentTab = panel.GetPositionInParent();
         }
 
-        public void UpdateStatPanels(PacketUpdateStatPanels pUpdateStatPanels) {
+        public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels)
+        {
             //Remove any panels the packet doesn't contain
-            foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels) {
-                if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key)) {
-                    _tabControl.Items.Remove(existingPanel.Value);
+            foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels)
+            {
+                if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key))
+                {
+                    _tabControl.RemoveChild(existingPanel.Value);
                     _statPanels.Remove(existingPanel.Key);
                 }
             }
 
-            foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels) {
+            foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels)
+            {
                 StatPanel panel;
 
-                if (!_statPanels.TryGetValue(updatingPanel.Key, out panel)) {
+                if (!_statPanels.TryGetValue(updatingPanel.Key, out panel))
+                {
                     panel = new StatPanel(updatingPanel.Key);
 
-                    _tabControl.Items.Insert(_tabControl.Items.Count - 1, panel);
+                    _tabControl.AddChild(panel);
                     _statPanels.Add(updatingPanel.Key, panel);
                 }
 
@@ -127,10 +164,13 @@ namespace OpenDreamClient.Interface.Controls {
             }
         }
 
-        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) {
-            InfoPanel panel = (InfoPanel)e.AddedItems[0];
+        private void OnSelectionChanged(int tabIndex)
+        {
+            InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);
 
-            Program.OpenDream.Connection.SendPacket(new PacketSelectStatPanel(panel.PanelName));
+            var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
+            msg.StatPanel = panel.PanelName;
+            _netManager.ClientSendMessage(msg);
         }
     }
 }

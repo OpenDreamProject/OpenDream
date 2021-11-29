@@ -1,14 +1,10 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectRegex : DreamMetaObjectDatum {
-        public DreamMetaObjectRegex(DreamRuntime runtime)
-            : base(runtime)
-        {}
-
         public struct DreamRegex {
             public Regex Regex;
             public bool IsGlobal;

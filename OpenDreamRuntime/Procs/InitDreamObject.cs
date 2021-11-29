@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {

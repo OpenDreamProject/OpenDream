@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Dream.Procs;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Json {
     public enum JsonVariableType {

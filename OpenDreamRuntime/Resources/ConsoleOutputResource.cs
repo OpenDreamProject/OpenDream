@@ -1,21 +1,20 @@
-﻿using System;
+﻿using Robust.Shared.Log;
 
-namespace OpenDreamRuntime.Resources {
-    //A special resource that outputs to the console
-    //world.log defaults to this
+namespace OpenDreamRuntime.Resources
+{
+    /// <summary>
+    /// A special resource that outputs to the console
+    /// <c>world.log</c> defaults to this
+    /// </summary>
     class ConsoleOutputResource : DreamResource {
-        public ConsoleOutputResource(DreamRuntime runtime) : base(runtime, null, null) { }
+        public ConsoleOutputResource() : base(null, null) { }
 
         public override string ReadAsString() {
             return null;
         }
 
         public override void Output(DreamValue value) {
-            if (value.TryGetValueAsString(out string text)) {
-                Console.WriteLine(text);
-            } else {
-                Console.WriteLine(value.ToString());
-            }
+            Logger.Info(value.Stringify());
         }
     }
 }

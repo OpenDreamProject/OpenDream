@@ -1,9 +1,9 @@
-﻿using DMCompiler.Compiler.DMM;
+﻿using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DMM;
+using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
-using OpenDreamShared.Compiler.DMPreprocessor;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;

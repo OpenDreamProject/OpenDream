@@ -1,27 +1,35 @@
-﻿using OpenDreamRuntime.Procs;
+﻿using System;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using System;
+using Robust.Shared;
+using Robust.Shared.Configuration;
+using Robust.Shared.IoC;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
+        [Dependency] private IDreamManager _dreamManager = null;
+        [Dependency] private IDreamMapManager _dreamMapManager = null;
+        [Dependency] private IGameTiming _gameTiming = null;
+        [Dependency] private IConfigurationManager _cfg = null;
+
         private ViewRange _viewRange;
 
-        public DreamMetaObjectWorld(DreamRuntime runtime)
-            : base(runtime)
-
-        {}
+        public DreamMetaObjectWorld() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            Runtime.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
-            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource(Runtime)));
+            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
             if (fps.Value != null) {
-                dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / fps.GetValueAsInteger()));
+                _cfg.SetCVar(CVars.NetTickrate, fps.GetValueAsInteger());
             }
 
             DreamValue view = dreamObject.ObjectDefinition.Variables["view"];
@@ -30,60 +38,48 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else {
                 _viewRange = new ViewRange(view.GetValueAsInteger());
             }
-
-            //New() is not called here
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
             base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
-            if (variableName == "fps") {
-                dreamObject.SetVariable("tick_lag", new DreamValue(10.0f / variableValue.GetValueAsInteger()));
-            } else if (variableName == "maxz") {
-                int newMaxZ = variableValue.GetValueAsInteger();
-
-                if (newMaxZ < Runtime.Map.Levels.Count) {
-                    while (Runtime.Map.Levels.Count > newMaxZ) {
-                        Runtime.Map.RemoveLevel();
-                    }
-                } else {
-                    while (Runtime.Map.Levels.Count < newMaxZ) {
-                        Runtime.Map.AddLevel();
-                    }
-                }
+            switch (variableName) {
+                case "fps":
+                    _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
+                case "maxz":
+                    _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
             }
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             switch (variableName) {
+                case "tick_lag":
+                    return new DreamValue(_gameTiming.TickPeriod.TotalMilliseconds / 100);
                 case "fps":
-                    return new DreamValue(10.0f / dreamObject.GetVariable("tick_lag").GetValueAsFloat());
+                    return new DreamValue(_gameTiming.TickRate);
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(dreamObject.GetVariable("tick_lag").GetValueAsFloat() * Runtime.TickCount);
+                    return new DreamValue(_gameTiming.CurTime.TotalMilliseconds / 100);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {
-                    long currentTime = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
-                    long elapsedTime = (currentTime - Runtime.TickStartTime);
-                    double tickLength = (dreamObject.GetVariable("tick_lag").GetValueAsFloat() * 100);
-                    int tickUsage = (int)(elapsedTime / tickLength * 100);
-
-                    return new DreamValue(tickUsage);
+                    //TODO: This can only go up to 100%, tick_usage should be able to go higher
+                    float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
+                    return new DreamValue(tickUsage * 100);
                 }
                 case "maxx":
-                    return new DreamValue(Runtime.Map.Width);
+                    return new DreamValue(_dreamMapManager.Size.X);
                 case "maxy":
-                    return new DreamValue(Runtime.Map.Height);
+                    return new DreamValue(_dreamMapManager.Size.Y);
                 case "maxz":
-                    return new DreamValue(Runtime.Map.Levels.Count);
-                case "address":
-                    return new(Runtime.Server.Address.ToString());
-                case "port":
-                    return new(Runtime.Server.Port);
-                case "url":
-                    return new("opendream://" + Runtime.Server.Address + ":" + Runtime.Server.Port);
+                    return new DreamValue(_dreamMapManager.Levels);
+                //case "address":
+                //    return new(Runtime.Server.Address.ToString());
+                //case "port":
+                //    return new(Runtime.Server.Port);
+                //case "url":
+                //    return new("opendream://" + Runtime.Server.Address + ":" + Runtime.Server.Port);
                 case "system_type": {
                     //system_type value should match the defines in Defines.dm
                     if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other) {
@@ -102,7 +98,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            foreach (DreamConnection connection in Runtime.Server.Connections) {
+            foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }
 

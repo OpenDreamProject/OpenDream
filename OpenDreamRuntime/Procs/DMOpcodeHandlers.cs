@@ -1,9 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -11,6 +6,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
@@ -24,7 +25,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateList(DMProcState state) {
-            var list = state.Runtime.ObjectTree.CreateObject(DreamPath.List);
+            var list = DreamList.Create();
 
             var initProcState = list.InitProc(state.Thread, state.Usr, new DreamProcArguments(null));
             state.Thread.PushProcState(initProcState);
@@ -75,7 +76,7 @@ namespace OpenDreamRuntime.Procs {
                 if (val.TryGetValueAsString(out var pathString))
                 {
                     objectPath = new DreamPath(pathString);
-                    if (!state.Runtime.ObjectTree.HasTreeEntry(objectPath))
+                    if (!state.DreamManager.ObjectTree.HasTreeEntry(objectPath))
                     {
                         throw new Exception($"Cannot create unknown object {val.Value}");
                     }
@@ -87,7 +88,7 @@ namespace OpenDreamRuntime.Procs {
 
             }
 
-            DreamObject newObject = state.Runtime.ObjectTree.CreateObject(objectPath);
+            DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
         }
@@ -185,7 +186,7 @@ namespace OpenDreamRuntime.Procs {
                         case StringFormatTypes.Ref: {
                             DreamObject refObject = state.PopDreamValue().GetValueAsDreamObject();
 
-                            formattedString.Append(refObject.CreateReferenceID());
+                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
                         }
                         default: throw new Exception("Invalid special character");
@@ -203,7 +204,7 @@ namespace OpenDreamRuntime.Procs {
             string identifierName = state.ReadString();
 
             if (identifierName == "args") {
-                DreamList argsList = state.Arguments.CreateDreamList(state.Runtime);
+                DreamList argsList = state.Arguments.CreateDreamList();
 
                 argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
                     switch (key.Type) {
@@ -236,7 +237,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? GetGlobal(DMProcState state) {
             int globalId = state.ReadInt();
 
-            state.Push(new DreamProcIdentifierGlobal(state.Runtime.Globals, globalId));
+            state.Push(new DreamProcIdentifierGlobal(state.DreamManager.Globals, globalId));
             return null;
         }
 
@@ -299,7 +300,7 @@ namespace OpenDreamRuntime.Procs {
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsPath(out DreamPath path)) {
-                objectDefinition = state.Runtime.ObjectTree.GetObjectDefinitionFromPath(path);
+                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinitionFromPath(path);
             } else {
                 throw new Exception("Invalid owner for initial() call " + owner);
             }
@@ -449,7 +450,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            state.Push(new DreamValue(state.Runtime.ResourceManager.LoadResource(resourcePath)));
+            state.Push(new DreamValue(IoCManager.Resolve<DreamResourceManager>().LoadResource(resourcePath)));
             return null;
         }
 
@@ -598,7 +599,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create(state.Runtime);
+                DreamList newList = DreamList.Create();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
@@ -747,7 +748,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.PopDreamValue();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create(state.Runtime);
+                DreamList newList = DreamList.Create();
                 List<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
@@ -1183,7 +1184,7 @@ namespace OpenDreamRuntime.Procs {
                         var dllName = source.GetValueAsString();
                         var procName = state.PopDreamValue().GetValueAsString();
                         // DLL Invoke
-                        var entryPoint = DllHelper.ResolveDllTarget(state.Runtime, dllName, procName);
+                        var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
 
                         Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
                         argV.Fill(0);
@@ -1318,10 +1319,10 @@ namespace OpenDreamRuntime.Procs {
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
-            state.Runtime.TaskFactory.StartNew(async () => {
+            new Task(async () => {
                 await Task.Delay(delayMilliseconds);
                 newContext.Resume();
-            });
+            }).Start(TaskScheduler.FromCurrentSynchronizationContext());
 
             state.Jump(jumpTo);
             return null;
@@ -1344,7 +1345,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 string browseValue;
                 if (body.Type == DreamValue.DreamValueType.DreamResource) {
@@ -1374,7 +1375,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 connection.BrowseResource(file, (filename.Value != null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
             }
@@ -1385,10 +1386,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? DeleteObject(DMProcState state) {
             DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
 
-            if (dreamObject != null) {
-                dreamObject.Delete();
-            }
-
+            dreamObject?.Delete(state.DreamManager);
             return null;
         }
 
@@ -1407,7 +1405,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(client);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
 
                 if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
                 connection.OutputControl((string)message.Value, control);
@@ -1436,7 +1434,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamObject clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
-                DreamConnection connection = state.Runtime.Server.GetConnectionFromClient(clientObject);
+                DreamConnection connection = state.DreamManager.GetConnectionFromClient(clientObject);
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 
                 // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
@@ -1453,7 +1451,7 @@ namespace OpenDreamRuntime.Procs {
             int y = state.PopDreamValue().GetValueAsInteger();
             int x = state.PopDreamValue().GetValueAsInteger();
 
-            state.Push(new DreamValue(state.Runtime.Map.GetTurfAt(x, y, z)));
+            state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }
 
@@ -1471,7 +1469,7 @@ namespace OpenDreamRuntime.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 int refID = int.Parse(refString);
 
-                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.Runtime, refID)));
+                state.Push(DreamValue.Null); //state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.Runtime, refID)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);
@@ -1524,7 +1522,7 @@ namespace OpenDreamRuntime.Procs {
                 values[i] = (value, totalWeight);
             }
 
-            double pick = state.Runtime.Random.NextDouble() * totalWeight;
+            double pick = state.DreamManager.Random.NextDouble() * totalWeight;
             for (int i = 0; i < values.Length; i++) {
                 if (pick < values[i].CumulativeWeight) {
                     state.Push(values[i].Value);
@@ -1548,7 +1546,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            state.Push(values[state.Runtime.Random.Next(0, values.Length)]);
+            state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
             return null;
         }
 
@@ -1560,7 +1558,7 @@ namespace OpenDreamRuntime.Procs {
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsPath(out DreamPath path)) {
-                objectDefinition = state.Runtime.ObjectTree.GetObjectDefinitionFromPath(path);
+                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinitionFromPath(path);
             } else {
                 throw new Exception("Invalid owner for issaved() call " + owner);
             }

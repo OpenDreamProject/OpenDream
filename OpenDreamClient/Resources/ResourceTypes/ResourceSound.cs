@@ -1,46 +1,38 @@
-﻿using NAudio.Vorbis;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 using System;
 using System.IO;
+using Robust.Client.Audio;
+using Robust.Client.Graphics;
+using Robust.Shared.Audio;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
 
-namespace OpenDreamClient.Resources.ResourceTypes {
-    class ResourceSound : Resource {
-        private WaveOutEvent _outputDevice = new WaveOutEvent();
-        private MixingSampleProvider _mixer = null;
+namespace OpenDreamClient.Resources.ResourceTypes
+{
+    public class ResourceSound : DreamResource {
+        private readonly AudioStream _stream;
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {
-            if (!resourcePath.EndsWith(".ogg")) {
-                throw new Exception("Only *.ogg audio files are supported");
-            }
-
-            _mixer = new MixingSampleProvider(new VorbisSampleProvider(new MemoryStream(data)).WaveFormat);
-            _outputDevice.Init(_mixer);
+            if (resourcePath.EndsWith(".ogg"))
+                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
+            else if (resourcePath.EndsWith(".wav"))
+                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(data), resourcePath);
+            else
+                Logger.Fatal("Only *.ogg and *.wav audio files are supported.");
         }
 
-        ~ResourceSound() {
-            _outputDevice.Stop();
-            _outputDevice.Dispose();
-        }
+        public IClydeAudioSource Play(AudioParams audioParams)
+        {
+            var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
 
-        public ISampleProvider Play(float volume) {
-            ISampleProvider sampleProvider = new VorbisSampleProvider(new MemoryStream(Data));
+            // TODO: Positional audio.
+            source.SetGlobal();
+            source.SetPitch(audioParams.PitchScale);
+            source.SetVolume(audioParams.Volume);
+            source.SetPlaybackPosition(audioParams.PlayOffsetSeconds);
+            source.IsLooping = audioParams.Loop;
 
-            if (volume != 1.0f) {
-                VolumeSampleProvider volumeProvider = new VolumeSampleProvider(sampleProvider);
-                volumeProvider.Volume = volume;
-
-                sampleProvider = volumeProvider;
-            }
-
-            _mixer.AddMixerInput(sampleProvider);
-            _outputDevice.Play();
-
-            return sampleProvider;
-        }
-
-        public void Stop(ISampleProvider sampleProvider) {
-            _mixer.RemoveMixerInput(sampleProvider);
+            source.StartPlaying();
+            return source;
         }
     }
 }

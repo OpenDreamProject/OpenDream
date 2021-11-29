@@ -1,9 +1,12 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
+            DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
+
             DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);
@@ -113,8 +116,11 @@ namespace OpenDreamRuntime.Procs.Native {
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
 
-            DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
-            regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
+            //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
+            //regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
+
+            DreamObjectDefinition world = objectTree.GetObjectDefinitionFromPath(DreamPath.World);
+            world.SetNativeProc(DreamProcNativeWorld.NativeProc_Export);
         }
     }
 }

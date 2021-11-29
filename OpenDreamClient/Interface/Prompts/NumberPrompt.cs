@@ -1,21 +1,26 @@
-﻿using OpenDreamShared.Dream.Procs;
-using System;
-using System.Windows.Controls;
-using System.Windows.Input;
+﻿using System;
+using OpenDreamShared.Dream.Procs;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Log;
 
-namespace OpenDreamClient.Interface.Prompts {
+namespace OpenDreamClient.Interface.Prompts
+{
     class NumberPrompt : InputWindow {
         public NumberPrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message, defaultValue, canCancel) { }
 
         protected override Control CreateInputControl(String defaultValue) {
-            TextBox numberInput = new() {
-                Text = defaultValue
+            // TODO: text input validation.
+            LineEdit numberInput = new() {
+                Text = defaultValue,
+                VerticalAlignment = VAlignment.Top
             };
-            numberInput.PreviewTextInput += NumberInput_PreviewTextInput;
+            //numberInput.PreviewTextInput += NumberInput_PreviewTextInput;
 
             return numberInput;
         }
 
+        /*
         private void NumberInput_PreviewTextInput(object sender, TextCompositionEventArgs e) {
             //Only allow numbers
             foreach (char c in e.Text) {
@@ -26,10 +31,11 @@ namespace OpenDreamClient.Interface.Prompts {
                 }
             }
         }
+        */
 
         protected override void OkButtonClicked() {
-            if (!Int32.TryParse(((TextBox)_inputControl).Text, out Int32 num)) {
-                Console.Error.WriteLine("Error while trying to convert " + ((TextBox)_inputControl).Text + " to a number.");
+            if (!float.TryParse(((LineEdit)_inputControl).Text, out float num)) {
+                Logger.Error("Error while trying to convert " + ((LineEdit)_inputControl).Text + " to a number.");
             }
 
             FinishPrompt(DMValueType.Num, num);

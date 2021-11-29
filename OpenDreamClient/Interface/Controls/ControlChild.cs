@@ -1,17 +1,26 @@
-﻿using OpenDreamShared.Interface;
-using System;
-using System.Windows;
-using System.Windows.Controls;
+﻿using System;
+using OpenDreamShared.Interface;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
+using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlChild : InterfaceControl {
-        private Grid _grid;
+    class ControlChild : InterfaceControl
+    {
+        // todo: robust needs GridSplitter.
+        // and a non-shit grid control.
+
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+
+        private SplitContainer _grid;
         private ControlWindow _leftElement, _rightElement;
 
-        public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+        public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
+        {
+        }
 
-        protected override FrameworkElement CreateUIElement() {
-            _grid = new Grid();
+        protected override Control CreateUIElement() {
+            _grid = new SplitContainer();
 
             return _grid;
         }
@@ -19,20 +28,24 @@ namespace OpenDreamClient.Interface.Controls {
         public override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
-            ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)_elementDescriptor;
+            ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)ElementDescriptor;
 
             _grid.Children.Remove(_leftElement?.UIElement);
             _grid.Children.Remove(_rightElement?.UIElement);
 
             if (!String.IsNullOrEmpty(controlDescriptor.Left)) {
-                _leftElement = Program.OpenDream.Interface.Windows[controlDescriptor.Left];
+                _leftElement = _dreamInterface.Windows[controlDescriptor.Left];
+                _leftElement.UIElement.HorizontalExpand = true;
+                _leftElement.UIElement.VerticalExpand = true;
                 _grid.Children.Add(_leftElement.UIElement);
             } else {
                 _leftElement = null;
             }
 
             if (!String.IsNullOrEmpty(controlDescriptor.Right)) {
-                _rightElement = Program.OpenDream.Interface.Windows[controlDescriptor.Right];
+                _rightElement = _dreamInterface.Windows[controlDescriptor.Right];
+                _rightElement.UIElement.HorizontalExpand = true;
+                _rightElement.UIElement.VerticalExpand = true;
                 _grid.Children.Add(_rightElement.UIElement);
             } else {
                 _rightElement = null;
@@ -47,48 +60,9 @@ namespace OpenDreamClient.Interface.Controls {
         }
 
         private void UpdateGrid(bool isVert) {
-            _grid.ColumnDefinitions.Clear();
-            _grid.RowDefinitions.Clear();
-
-            GridSplitter splitter = new GridSplitter() {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-            _grid.Children.Add(splitter);
-
-            if (isVert) {
-                ColumnDefinition leftColumnDef = new ColumnDefinition();
-                leftColumnDef.Width = new GridLength(1, GridUnitType.Star);
-                _grid.ColumnDefinitions.Add(leftColumnDef);
-
-                ColumnDefinition splitterColumnDef = new ColumnDefinition();
-                splitterColumnDef.Width = new GridLength(5);
-                _grid.ColumnDefinitions.Add(splitterColumnDef);
-
-                ColumnDefinition rightColumnDef = new ColumnDefinition();
-                rightColumnDef.Width = new GridLength(1, GridUnitType.Star);
-                _grid.ColumnDefinitions.Add(rightColumnDef);
-
-                if (_leftElement != null) Grid.SetColumn(_leftElement.UIElement, 0);
-                Grid.SetColumn(splitter, 1);
-                if (_rightElement != null) Grid.SetColumn(_rightElement.UIElement, 2);
-            } else {
-                RowDefinition leftRowDef = new RowDefinition();
-                leftRowDef.Height = new GridLength(1, GridUnitType.Star);
-                _grid.RowDefinitions.Add(leftRowDef);
-
-                RowDefinition splitterRowDef = new RowDefinition();
-                splitterRowDef.Height = new GridLength(5);
-                _grid.RowDefinitions.Add(splitterRowDef);
-
-                RowDefinition rightRowDef = new RowDefinition();
-                rightRowDef.Height = new GridLength(1, GridUnitType.Star);
-                _grid.RowDefinitions.Add(rightRowDef);
-
-                if (_leftElement != null) Grid.SetRow(_leftElement.UIElement, 0);
-                Grid.SetRow(splitter, 1);
-                if (_rightElement != null) Grid.SetRow(_rightElement.UIElement, 2);
-            }
+            _grid.Orientation = isVert
+                ? SplitContainer.SplitOrientation.Horizontal
+                : SplitContainer.SplitOrientation.Vertical;
         }
     }
 }

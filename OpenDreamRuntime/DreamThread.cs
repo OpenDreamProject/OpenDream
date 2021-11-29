@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream.Procs;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
@@ -17,8 +19,6 @@ namespace OpenDreamRuntime {
     public abstract class DreamProc {
         public string Name { get; }
 
-        public DreamRuntime Runtime { get; }
-
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc SuperProc { set; get; }
 
@@ -28,9 +28,8 @@ namespace OpenDreamRuntime {
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected DreamProc(string name, DreamRuntime runtime, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
-            Runtime = runtime;
             SuperProc = superProc;
             WaitFor = waitFor;
             ArgumentNames = argumentNames ?? new();
@@ -41,7 +40,7 @@ namespace OpenDreamRuntime {
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
         public DreamValue Spawn(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
-            var context = new DreamThread(Runtime);
+            var context = new DreamThread();
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
             return context.Resume();
@@ -61,7 +60,6 @@ namespace OpenDreamRuntime {
     }
 
     public abstract class ProcState {
-        public DreamRuntime Runtime => Thread.Runtime;
         public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
 
@@ -99,12 +97,6 @@ namespace OpenDreamRuntime {
     }
 
     public class DreamThread {
-        public DreamThread(DreamRuntime runtime) {
-            Runtime = runtime;
-        }
-
-        public DreamRuntime Runtime { get; }
-
         private const int MaxStackDepth = 256;
 
         private ProcState _current;
@@ -114,24 +106,20 @@ namespace OpenDreamRuntime {
         private int _syncCount = 0;
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
-            var context = new DreamThread(proc.Runtime);
+            var context = new DreamThread();
             var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
             context.PushProcState(state);
             return context.Resume();
         }
 
-        public static DreamValue Run(DreamRuntime runtime, Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
-            var context = new DreamThread(runtime);
+        public static DreamValue Run(Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+            var context = new DreamThread();
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
             context.PushProcState(state);
             return context.Resume();
         }
 
         public DreamValue Resume() {
-            if (System.Threading.Thread.CurrentThread != Runtime.MainThread) {
-                throw new InvalidOperationException();
-            }
-
             while (_current != null) {
                 // _current.Resume may mutate our state!!!
                 switch (_current.Resume()) {
@@ -220,7 +208,7 @@ namespace OpenDreamRuntime {
             newStackReversed.Push(_current);
             PopProcState();
 
-            DreamThread newThread = new DreamThread(Runtime);
+            DreamThread newThread = new DreamThread();
             foreach (var frame in newStackReversed) {
                 frame.Thread = newThread;
                 newThread.PushProcState(frame);
@@ -251,7 +239,7 @@ namespace OpenDreamRuntime {
         }
 
         public void HandleException(Exception exception) {
-            Runtime.ExceptionCount += 1;
+            IoCManager.Resolve<IDreamManager>().DMExceptionCount += 1;
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception Occured: {exception.Message}");
@@ -264,7 +252,7 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-            Console.WriteLine(builder.ToString());
+            Logger.Error(builder.ToString());
         }
     }
 }

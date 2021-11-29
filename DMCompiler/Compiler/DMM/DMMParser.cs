@@ -1,9 +1,9 @@
-﻿using DMCompiler.DM;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Compiler.DM;
+﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using DMCompiler.DM;
 using System.Collections.Generic;
+using DMCompiler.Compiler.DM;
 
 namespace DMCompiler.Compiler.DMM {
     class DMMParser : DMParser {

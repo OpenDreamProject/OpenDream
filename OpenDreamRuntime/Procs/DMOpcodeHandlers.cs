@@ -1545,7 +1545,14 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue[] values;
             if (count == 1) {
-                values = state.PopDreamValue().GetValueAsDreamList().GetValues().ToArray();
+                DreamValue value = state.PopDreamValue();
+
+                if (value.TryGetValueAsDreamList(out DreamList list)) {
+                    values = list.GetValues().ToArray();
+                } else {
+                    state.Push(value);
+                    return null;
+                }
             } else {
                 values = new DreamValue[count];
                 for (int i = 0; i < count; i++) {

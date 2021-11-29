@@ -15,8 +15,6 @@ namespace OpenDreamClient.Rendering {
 
             handle.SetTransform(transform);
             foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
-                if (sprite.ScreenLocation == null) continue;
-
                 Vector2 position = sprite.ScreenLocation.GetScreenCoordinates(EyeManager.PixelsPerMeter);
                 position.Y = (480 - position.Y);
 

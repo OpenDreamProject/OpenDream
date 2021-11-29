@@ -21,6 +21,8 @@ namespace OpenDreamClient.Rendering {
         public IEnumerable<DMISpriteComponent> EnumerateScreenObjects() {
             foreach (EntityUid uid in ScreenObjects) {
                 if (_entityManager.TryGetComponent(uid, out DMISpriteComponent sprite)) {
+                    if (sprite.ScreenLocation == null) continue;
+
                     yield return sprite;
                 }
             }

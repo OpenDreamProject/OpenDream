@@ -19,7 +19,6 @@ namespace OpenDreamClient.Rendering {
         }
 
         public IEnumerable<DMISpriteComponent> EnumerateScreenObjects() {
-            //TODO: PVS currently gets in the way of rendering screen objects that are not nearby on the map
             foreach (EntityUid uid in ScreenObjects) {
                 if (_entityManager.TryGetComponent(uid, out DMISpriteComponent sprite)) {
                     yield return sprite;

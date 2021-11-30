@@ -10,12 +10,12 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"attempt to use proc as value");
+            throw new CompileErrorException(proc.Location,"attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             if (!dmObject.HasProc(_identifier)) {
-                throw new CompileErrorException(Location.Unknown,$"Type {dmObject.Path} does not have a proc named `{_identifier}`");
+                throw new CompileErrorException(proc.Location,$"Type {dmObject.Path} does not have a proc named `{_identifier}`");
             }
 
             proc.GetProc(_identifier);
@@ -49,7 +49,7 @@ namespace DMCompiler.DM.Expressions {
     // ..
     class ProcSuper : DMExpression {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"attempt to use proc as value");
+            throw new CompileErrorException(proc.Location,"attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {

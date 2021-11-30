@@ -77,6 +77,8 @@ namespace OpenDreamClient.Input {
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (DMISpriteComponent sprite in screenOverlay.EnumerateScreenObjects()) {
+                if (!sprite.IsVisible(checkWorld: false)) continue;
+
                 Vector2 screenPos = sprite.ScreenLocation.GetScreenCoordinates(EyeManager.PixelsPerMeter);
                 screenPos.Y += sprite.Icon?.DMI?.IconSize.Y ?? 0;
                 screenPos.Y = 480 - screenPos.Y;

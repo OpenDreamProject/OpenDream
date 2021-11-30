@@ -1,3 +1,4 @@
+using System;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Network.Messages;
@@ -44,7 +45,7 @@ namespace OpenDreamClient.Audio
 
             StopChannel(channel);
 
-            var source = sound.Play(AudioParams.Default.WithVolume(volume));
+            var source = sound.Play(AudioParams.Default.WithVolume(20 * MathF.Log10(volume)));
             _channels[channel - 1] = new DreamSoundChannel(source);
         }
 

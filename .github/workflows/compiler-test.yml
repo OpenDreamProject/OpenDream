@@ -2,9 +2,9 @@ name: Compile Test Codebases
 
 on:
   push:
-    branches: [ RobustToolbox  ]
+    branches: [ master  ]
   pull_request:
-    branches: [ RobustToolbox  ]
+    branches: [ master  ]
 
 jobs:
   build:

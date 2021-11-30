@@ -36,6 +36,7 @@ namespace DMCompiler.DM {
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
+        public Location Location = Location.Unknown;
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
@@ -49,6 +50,8 @@ namespace DMCompiler.DM {
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
+            //TODO move location to DMExpression
+            Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
         }

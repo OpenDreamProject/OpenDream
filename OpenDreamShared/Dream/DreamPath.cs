@@ -53,14 +53,11 @@ namespace OpenDreamShared.Dream {
                 if (_pathString != null) return _pathString;
 
                 StringBuilder pathStringBuilder = new StringBuilder();
-                if (Type == PathType.Absolute) pathStringBuilder.Append("/");
-                else if (Type == PathType.DownwardSearch) pathStringBuilder.Append(":");
-                else if (Type == PathType.UpwardSearch) pathStringBuilder.Append(".");
+                if (Type == PathType.Absolute) pathStringBuilder.Append('/');
+                else if (Type == PathType.DownwardSearch) pathStringBuilder.Append(':');
+                else if (Type == PathType.UpwardSearch) pathStringBuilder.Append('.');
 
-                for (int i = 0; i < Elements.Length; i++) {
-                    pathStringBuilder.Append(Elements[i]);
-                    if (i < Elements.Length - 1) pathStringBuilder.Append("/");
-                }
+                pathStringBuilder.AppendJoin('/', Elements);
 
                 _pathString = pathStringBuilder.ToString();
                 return _pathString;
@@ -86,33 +83,41 @@ namespace OpenDreamShared.Dream {
             _elements = elements;
             _pathString = null;
 
-            Normalize();
+            Normalize(true);
         }
 
         public void SetFromString(string rawPath) {
             char pathTypeChar = rawPath[0];
+            string[] tempElements = rawPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            bool skipFirstChar = false;
 
             switch (pathTypeChar)
             {
                 case '/':
                     Type = PathType.Absolute;
-                    rawPath = rawPath[1..];
+                    // No need to skip the first char, as it will end up as an empty entry in tempElements
                     break;
                 case ':':
                     Type = PathType.DownwardSearch;
-                    rawPath = rawPath[1..];
+                    skipFirstChar = true;
                     break;
                 case '.':
                     Type = PathType.UpwardSearch;
-                    rawPath = rawPath[1..];
+                    skipFirstChar = true;
                     break;
                 default:
                     Type = PathType.Relative;
                     break;
             }
 
-            Elements = rawPath.Split("/");
-            Normalize();
+            if (skipFirstChar)
+            {
+                // Skip the '/', ':' or '.' if needed
+                tempElements[0] = tempElements[0][1..];
+            }
+
+            Elements = tempElements;
+            Normalize(false);
         }
 
         public bool IsDescendantOf(DreamPath path) {
@@ -120,7 +125,7 @@ namespace OpenDreamShared.Dream {
 
             if (path == List)
             {
-                if (Elements.Contains("list") && Array.IndexOf(Elements, "list") != Elements.Length - 1) return true;
+                if (Elements.Length != 0 && Array.IndexOf(Elements, "list") != Elements.Length - 1) return true;
             }
 
             for (int i = 0; i < path.Elements.Length; i++) {
@@ -133,30 +138,24 @@ namespace OpenDreamShared.Dream {
         public DreamPath AddToPath(string path) {
             string rawPath = PathString;
 
-            if (!rawPath.EndsWith("/") && !path.StartsWith("/")) {
-                path = "/" + path;
+            if (!rawPath.EndsWith('/') && !path.StartsWith('/')) {
+                path = '/' + path;
             }
 
             return new DreamPath(rawPath + path);
         }
 
         public int FindElement(string element) {
-            for (int i = 0; i < Elements.Length; i++) {
-                if (Elements[i] == element) return i;
-            }
-
-            return -1;
+            return Array.IndexOf(Elements, element);
         }
 
         public string[] GetElements(int elementStart, int elementEnd = -1) {
-            List<string> elements = new List<string>();
-
             if (elementEnd < 0) elementEnd = Elements.Length + elementEnd + 1;
-            for (int i = elementStart; i < elementEnd; i++) {
-                elements.Add(Elements[i]);
-            }
 
-            return elements.ToArray();
+            string[] elements = new string[elementEnd - elementStart];
+            Array.Copy(Elements, elementStart, elements, 0, elements.Length);
+
+            return elements;
         }
 
         public DreamPath FromElements(int elementStart, int elementEnd = -1) {
@@ -214,25 +213,32 @@ namespace OpenDreamShared.Dream {
 
         public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
-        private void Normalize()
+        private void Normalize(bool canHaveEmptyEntries)
         {
-            var writeIdx = 0;
-            for (var i = 0; i < _elements.Length; i++)
+            if (canHaveEmptyEntries && _elements.Contains(""))
+            {
+                // Slow path :(
+                _elements = _elements.Where(el => !string.IsNullOrEmpty(el)).ToArray();
+            }
+
+            var writeIdx = Array.IndexOf(_elements, "..");
+            if (writeIdx == -1) return;
+
+            for (var i = writeIdx; i < _elements.Length; i++)
             {
                 var elem = _elements[i];
                 if (elem == "..")
                 {
                     writeIdx -= 1;
                 }
-                else if (elem != "")
+                else
                 {
                     _elements[writeIdx] = elem;
                     writeIdx += 1;
                 }
-
             }
 
-            Elements = Elements[..writeIdx];
+            Elements = _elements[..writeIdx];
         }
     }
 }

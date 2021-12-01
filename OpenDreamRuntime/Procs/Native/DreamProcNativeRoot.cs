@@ -1304,6 +1304,27 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(soundObject);
         }
 
+
+        [DreamProc("splicetext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
+        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            string text = arguments.GetArgument(0, "Text").GetValueAsString();
+            int start = arguments.GetArgument(1, "Start").GetValueAsInteger();
+            int end = arguments.GetArgument(2, "End").GetValueAsInteger();
+            string insert = arguments.GetArgument(3, "Insert").GetValueAsString();
+
+            if (end == 0)
+            {
+                end = text.Length + 1;
+            }
+
+            return new DreamValue(text.Substring(0, start - 1) + insert + text.Substring(end - 1));
+        }
+
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueType.String)]

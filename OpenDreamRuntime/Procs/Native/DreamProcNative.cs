@@ -83,6 +83,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sound);
+            root.SetNativeProc(DreamProcNativeRoot.NativeProc_splicetext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_splittext);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_stat);

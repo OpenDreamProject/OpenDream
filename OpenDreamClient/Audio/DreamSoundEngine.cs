@@ -45,7 +45,7 @@ namespace OpenDreamClient.Audio
 
             StopChannel(channel);
 
-            var source = sound.Play(AudioParams.Default.WithVolume(20 * MathF.Log10(volume)));
+            var source = sound.Play(AudioParams.Default.WithVolume(20 * MathF.Log10(volume))); // convert from DM volume (0-100) to OpenAL volume (db)
             _channels[channel - 1] = new DreamSoundChannel(source);
         }
 

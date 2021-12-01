@@ -41,8 +41,8 @@ namespace OpenDreamShared.Dream {
             (Y, PixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
         }
 
-        public Vector2 GetScreenCoordinates(int iconSize) {
-            return new Vector2(iconSize * (X - 1) + PixelOffsetX, iconSize * (Y - 1) + PixelOffsetY);
+        public Vector2 GetViewPosition(Vector2 viewOffset, float iconSize) {
+            return viewOffset + ((X - 1) + (PixelOffsetX / iconSize), (Y - 1) + (PixelOffsetY / iconSize));
         }
 
         public override string ToString() {

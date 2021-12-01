@@ -171,7 +171,7 @@ namespace OpenDreamClient.Interface.Controls
         }
 
         // Draw box in pixel coords to draw the viewport at.
-        public UIBox2i GetDrawBox()
+        private UIBox2i GetDrawBox()
         {
             DebugTools.AssertNotNull(_viewport);
 

@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using Robust.Client.Graphics;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Map;
@@ -64,14 +65,11 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        public bool CheckClickScreen(Vector2 mousePos, Vector2 screenPos) {
+        public bool CheckClickScreen(Vector2 screenPos, Vector2 mousePos) {
             if (!IsVisible(checkWorld: false)) return false;
 
             switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: {
-                    if (Icon.DMI == null) return false;
-                    else return UIBox2.FromDimensions(screenPos, Icon.DMI.IconSize).Contains(mousePos);
-                }
+                case MouseOpacity.Opaque: return Box2.FromDimensions(screenPos, Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter).Contains(mousePos);
                 case MouseOpacity.Transparent: return false;
                 case MouseOpacity.PixelOpaque: return Icon.CheckClickScreen(screenPos, mousePos);
                 default: throw new InvalidOperationException("Invalid mouse_opacity");

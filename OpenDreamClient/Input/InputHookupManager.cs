@@ -69,21 +69,15 @@ namespace OpenDreamClient.Input {
 
         private IEntity GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
             ClientScreenOverlaySystem screenOverlay = EntitySystem.Get<ClientScreenOverlaySystem>();
-            UIBox2 viewportDrawBox = viewport.GetDrawBox();
-            Vector2 viewportScale = viewportDrawBox.Size / 480f; //TODO: Don't hardcode 480x480
-
-            mousePos -= viewport.GlobalPixelPosition;
-            mousePos /= viewportScale;
+            IEntity eye = _playerManager.LocalPlayer.Session.AttachedEntity;
+            Vector2 viewOffset = eye.Transform.WorldPosition - 7.5f; //TODO: Don't hardcode a 15x15 view
+            MapCoordinates coords = viewport.ScreenToMap(mousePos);
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (DMISpriteComponent sprite in screenOverlay.EnumerateScreenObjects()) {
-                if (!sprite.IsVisible(checkWorld: false)) continue;
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
 
-                Vector2 screenPos = sprite.ScreenLocation.GetScreenCoordinates(EyeManager.PixelsPerMeter);
-                screenPos.Y += sprite.Icon?.DMI?.IconSize.Y ?? 0;
-                screenPos.Y = 480 - screenPos.Y;
-
-                if (sprite.CheckClickScreen(mousePos, screenPos)) {
+                if (sprite.CheckClickScreen(position, coords.Position)) {
                     foundSprites.Add(sprite);
                 }
             }

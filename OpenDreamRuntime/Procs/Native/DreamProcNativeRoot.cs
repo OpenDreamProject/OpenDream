@@ -317,7 +317,9 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
-            if (end == 0) {
+            if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
             }
 
@@ -336,7 +338,9 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
             int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
-            if (end == 0) {
+            if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
             }
 

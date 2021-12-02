@@ -125,7 +125,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Throw,
             DMOpcodeHandlers.IsInRange,
             DMOpcodeHandlers.GetGlobal,
-            DMOpcodeHandlers.IndexListConditional
+            DMOpcodeHandlers.IndexListConditional,
+            DMOpcodeHandlers.PushType
         };
         #endregion
 

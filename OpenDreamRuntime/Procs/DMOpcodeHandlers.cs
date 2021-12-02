@@ -442,6 +442,14 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? PushType(DMProcState state) {
+            int typeId = state.ReadInt();
+            DreamPath path = state.DreamManager.ObjectTree.Types[typeId].Path;
+
+            state.Push(new DreamValue(path));
+            return null;
+        }
+
         public static ProcStatus? PushProcArguments(DMProcState state) {
             state.Push(state.Arguments);
             return null;

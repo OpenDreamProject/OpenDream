@@ -52,6 +52,10 @@ namespace DMCompiler.DM {
             }
         }
 
+        public static bool TryGetTypeId(DreamPath path, out int typeId) {
+            return _pathToTypeId.TryGetValue(path, out typeId);
+        }
+
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
             // I was unable to find any situation where searching for an absolute path worked
             if (search.Type == DreamPath.PathType.Absolute) return null;

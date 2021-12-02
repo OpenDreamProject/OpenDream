@@ -436,7 +436,6 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
-
         public void CreateObject() {
             WriteOpcode(DreamProcOpcode.CreateObject);
         }
@@ -589,8 +588,15 @@ namespace DMCompiler.DM {
         }
 
         public void PushPath(DreamPath value) {
-            WriteOpcode(DreamProcOpcode.PushPath);
-            WriteString(value.PathString);
+            if (DMObjectTree.TryGetTypeId(value, out int typeId)) {
+                WriteOpcode(DreamProcOpcode.PushType);
+                WriteInt(typeId);
+            } else {
+                //TODO: Remove PushPath?
+                //It's currently still used by things like paths to procs
+                WriteOpcode(DreamProcOpcode.PushPath);
+                WriteString(value.PathString);
+            }
         }
 
         public void PushNull() {

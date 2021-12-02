@@ -125,7 +125,7 @@ namespace OpenDreamShared.Dream {
 
             if (path == List)
             {
-                if (Elements.Length != 0 && Array.IndexOf(Elements, "list") != Elements.Length - 1) return true;
+                if (Elements.Length > 1 && Array.LastIndexOf(Elements, "list", Elements.Length - 2) != -1) return true;
             }
 
             for (int i = 0; i < path.Elements.Length; i++) {

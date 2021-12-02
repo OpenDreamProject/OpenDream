@@ -166,8 +166,7 @@ namespace OpenDreamRuntime {
                 return null;
             }
 
-            DreamObjectTree.DreamObjectTreeEntry objectTreeEntry = _dreamManager.ObjectTree.GetTreeEntryFromPath(mapObject.Type);
-            DreamObjectDefinition definition = objectTreeEntry.ObjectDefinition;
+            DreamObjectDefinition definition = _dreamManager.ObjectTree.GetObjectDefinitionFromPath(mapObject.Type);
             if (mapObject.VarOverrides?.Count > 0) {
                 definition = new DreamObjectDefinition(definition);
 

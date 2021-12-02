@@ -8,14 +8,14 @@ namespace OpenDreamShared.Json {
         List = 2
     }
 
-    public class DreamObjectJson {
-        public string Name { get; set; }
-        public string Parent { get; set; }
+    public class DreamTypeJson {
+        public string Path { get; set; }
+        public int? Parent { get; set; }
         public ProcDefinitionJson InitProc { get; set; }
         public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
         public Dictionary<string, int> GlobalVariables { get; set; }
-        public List<DreamObjectJson> Children { get; set; }
+        public List<int> Children { get; set; }
     }
 
     public class ProcDefinitionJson {

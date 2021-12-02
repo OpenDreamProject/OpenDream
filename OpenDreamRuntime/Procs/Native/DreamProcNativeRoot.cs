@@ -1478,11 +1478,10 @@ namespace OpenDreamRuntime.Procs.Native {
                         list.AddValue(new DreamValue(proc.Key));
                     }
                 } else {
-                    DreamObjectTree.DreamObjectTreeEntry objectTreeEntry = DreamManager.ObjectTree.GetTreeEntryFromPath(typePath);
-                    List<DreamObjectTree.DreamObjectTreeEntry> objectTreeDescendants = objectTreeEntry.GetAllDescendants(true, true);
+                    var descendants = DreamManager.ObjectTree.GetAllDescendants(typePath);
 
-                    foreach (DreamObjectTree.DreamObjectTreeEntry objectTreeDescendant in objectTreeDescendants) {
-                        list.AddValue(new DreamValue(objectTreeDescendant.ObjectDefinition.Type));
+                    foreach (var descendant in descendants) {
+                        list.AddValue(new DreamValue(descendant.ObjectDefinition.Type));
                     }
                 }
             }

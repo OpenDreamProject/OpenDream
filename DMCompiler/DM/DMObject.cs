@@ -9,7 +9,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMObject {
-        public UInt32 Id;
+        public int Id;
         public DreamPath Path;
         public DMObject Parent;
         public Dictionary<string, List<DMProc>> Procs = new();
@@ -19,7 +19,7 @@ namespace DMCompiler.DM {
         public List<DMExpression> InitializationProcExpressions = new();
         public DMProc InitializationProc = null;
 
-        public DMObject(UInt32 id, DreamPath path, DMObject parent) {
+        public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
             Path = path;
             Parent = parent;
@@ -117,36 +117,36 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DreamObjectJson CreateJsonRepresentation() {
-            DreamObjectJson objectJson = new DreamObjectJson();
+        public DreamTypeJson CreateJsonRepresentation() {
+            DreamTypeJson typeJson = new DreamTypeJson();
 
-            objectJson.Name = (!Path.Equals(DreamPath.Root)) ? Path.LastElement : "";
-            objectJson.Parent = Parent?.Path.PathString;
+            typeJson.Path = Path.PathString;
+            typeJson.Parent = Parent?.Id;
 
             if (Variables.Count > 0 || VariableOverrides.Count > 0) {
-                objectJson.Variables = new Dictionary<string, object>();
+                typeJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    objectJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
+                    typeJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    objectJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
+                    typeJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
                 }
             }
 
             if (GlobalVariables.Count > 0) {
-                objectJson.GlobalVariables = GlobalVariables;
+                typeJson.GlobalVariables = GlobalVariables;
             }
 
             if (InitializationProc != null) {
-                objectJson.InitProc = new ProcDefinitionJson() {
+                typeJson.InitProc = new ProcDefinitionJson() {
                     Bytecode = InitializationProc.Bytecode.ToArray()
                 };
             }
 
             if (Procs.Count > 0) {
-                objectJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
+                typeJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
 
                 foreach (KeyValuePair<string, List<DMProc>> procs in Procs) {
                     List<ProcDefinitionJson> procJson = new();
@@ -155,11 +155,11 @@ namespace DMCompiler.DM {
                         procJson.Add(proc.GetJsonRepresentation());
                     }
 
-                    objectJson.Procs.Add(procs.Key, procJson);
+                    typeJson.Procs.Add(procs.Key, procJson);
                 }
             }
 
-            return objectJson;
+            return typeJson;
         }
 
         public bool IsSubtypeOf(DreamPath path) {

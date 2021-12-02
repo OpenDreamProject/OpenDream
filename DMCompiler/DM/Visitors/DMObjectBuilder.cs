@@ -12,7 +12,7 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.Reset();
             ProcessFile(astFile);
 
-            foreach (DMObject dmObject in DMObjectTree.AllObjects.Values) {
+            foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CompileProcs();
             }
 

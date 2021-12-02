@@ -8,7 +8,7 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
-        public static Dictionary<DreamPath, DMObject> AllObjects = new();
+        public static List<DMObject> AllObjects = new();
 
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
@@ -18,7 +18,8 @@ namespace DMCompiler.DM {
 
         private static List<Expressions.Assignment> _globalInitProcAssigns = new();
 
-        private static uint _dmObjectIdCounter = 0;
+        private static Dictionary<DreamPath, int> _pathToTypeId = new();
+        private static int _dmObjectIdCounter = 0;
 
         static DMObjectTree() {
             Reset();
@@ -26,27 +27,29 @@ namespace DMCompiler.DM {
 
         public static void Reset() {
             AllObjects.Clear();
+            _pathToTypeId.Clear();
+            _dmObjectIdCounter = 0;
             GetDMObject(DreamPath.Root);
         }
 
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
 
-            DMObject dmObject;
-
-            if (!AllObjects.TryGetValue(path, out dmObject)) {
-                if (!createIfNonexistent) throw new CompileErrorException(Location.Unknown,"Type " + path + " does not exist");
+            if (_pathToTypeId.TryGetValue(path, out int typeId)) {
+                return AllObjects[typeId];
+            } else {
+                if (!createIfNonexistent) throw new CompileErrorException(Location.Unknown, "Type " + path + " does not exist");
 
                 DMObject parent = null;
                 if (path.Elements.Length > 0) {
                     parent = GetDMObject(path.FromElements(0, -2), createIfNonexistent);
                 }
 
-                dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
-                AllObjects.Add(path, dmObject);
+                DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+                AllObjects.Add(dmObject);
+                _pathToTypeId[path] = dmObject.Id;
+                return dmObject;
             }
-
-            return dmObject;
         }
 
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
@@ -64,13 +67,15 @@ namespace DMCompiler.DM {
                 searchObjectPath = search;
             }
 
-            DMObject found;
+            int foundTypeId;
             DreamPath currentPath = path;
-            while (!AllObjects.TryGetValue(currentPath.Combine(searchObjectPath), out found)) {
+            while (!_pathToTypeId.TryGetValue(currentPath.Combine(searchObjectPath), out foundTypeId)) {
                 if (currentPath == DreamPath.Root) break;
 
                 currentPath = currentPath.AddToPath("..");
             }
+
+            DMObject found = AllObjects[foundTypeId];
 
             //We're searching for a proc
             if (procElement != -1) {
@@ -108,36 +113,14 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static DreamObjectJson CreateJsonRepresentation() {
-            Dictionary<DreamPath, DreamObjectJson> jsonObjects = new();
-            Queue<(DMObject, DreamObjectJson)> unparentedObjects = new();
+        public static DreamTypeJson[] CreateJsonRepresentation() {
+            DreamTypeJson[] types = new DreamTypeJson[AllObjects.Count];
 
-            foreach (KeyValuePair<DreamPath, DMObject> dmObject in AllObjects) {
-                DreamObjectJson jsonObject = dmObject.Value.CreateJsonRepresentation();
-
-                jsonObjects.Add(dmObject.Key, jsonObject);
-                if (!dmObject.Key.Equals(DreamPath.Root)) {
-                    unparentedObjects.Enqueue((dmObject.Value, jsonObject));
-                }
+            foreach (DMObject dmObject in AllObjects) {
+                types[dmObject.Id] = dmObject.CreateJsonRepresentation();
             }
 
-            while (unparentedObjects.Count > 0) {
-                (DMObject, DreamObjectJson) unparentedObject = unparentedObjects.Dequeue();
-                DreamPath treeParentPath = unparentedObject.Item1.Path.FromElements(0, -2);
-
-                if (jsonObjects.TryGetValue(treeParentPath, out DreamObjectJson treeParent)) {
-                    if (treeParent.Children == null) treeParent.Children = new List<DreamObjectJson>();
-
-                    treeParent.Children.Add(unparentedObject.Item2);
-                    if (unparentedObject.Item1.Parent != null && unparentedObject.Item1.Parent?.Path.Equals(treeParentPath) == true) {
-                        unparentedObject.Item2.Parent = null; //Parent type can be assumed
-                    }
-                } else {
-                    throw new Exception("Invalid object path \"" + unparentedObject.Item1.Path + "\"");
-                }
-            }
-
-            return jsonObjects[DreamPath.Root];
+            return types;
         }
     }
 }

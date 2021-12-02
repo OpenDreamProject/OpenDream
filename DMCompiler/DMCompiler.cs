@@ -12,6 +12,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DMCompiler {
     //TODO: Make this not a static class
@@ -154,7 +155,7 @@ namespace DMCompiler {
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
-            compiledDream.RootObject = DMObjectTree.CreateJsonRepresentation();
+            compiledDream.Types = DMObjectTree.CreateJsonRepresentation();
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
@@ -166,7 +167,7 @@ namespace DMCompiler {
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
-                IgnoreNullValues = true
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
 
             File.WriteAllText(outputFile, json);

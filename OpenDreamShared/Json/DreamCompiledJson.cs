@@ -7,6 +7,6 @@ namespace OpenDreamShared.Json {
         public ProcDefinitionJson GlobalInitProc { get; set; }
         public List<DreamMapJson> Maps { get; set; }
         public string Interface { get; set; }
-        public DreamObjectJson RootObject { get; set; }
+        public DreamTypeJson[] Types { get; set; }
     }
 }

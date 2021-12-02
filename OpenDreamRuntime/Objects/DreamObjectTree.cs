@@ -11,94 +11,57 @@ using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
     public class DreamObjectTree {
-        public class DreamObjectTreeEntry {
+        public class TreeEntry {
+            public DreamPath Path;
             public DreamObjectDefinition ObjectDefinition;
-            public Dictionary<string, DreamObjectTreeEntry> Children = new();
-            public DreamObjectTreeEntry ParentEntry = null;
+            public TreeEntry ParentEntry;
+            public List<int> InheritingTypes = new();
 
-            //Children that exist on another branch of the tree
-            //Ex: /obj is a child of /atom/movable, but /obj's path isn't /atom/movable/obj
-            public Dictionary<string, DreamObjectTreeEntry> BranchBreakingChildren = new();
-
-            public DreamObjectTreeEntry(DreamPath path) {
-                ObjectDefinition = new DreamObjectDefinition(path);
-            }
-
-            public DreamObjectTreeEntry(DreamPath path, DreamObjectTreeEntry parentTreeEntry) {
-                ObjectDefinition = new DreamObjectDefinition(path, parentTreeEntry.ObjectDefinition);
-                ParentEntry = parentTreeEntry;
-            }
-
-            public List<DreamObjectTreeEntry> GetAllDescendants(bool includeBranchBreakingDescendants = false, bool inclusive = false) {
-                List<DreamObjectTreeEntry> descendants = new List<DreamObjectTreeEntry>();
-
-                if (inclusive) {
-                    descendants.Add(this);
-                }
-
-                foreach (KeyValuePair<string, DreamObjectTreeEntry> child in Children) {
-                    descendants.AddRange(child.Value.GetAllDescendants(includeBranchBreakingDescendants, true));
-                }
-
-                if (includeBranchBreakingDescendants) {
-                    foreach (KeyValuePair<string, DreamObjectTreeEntry> child in BranchBreakingChildren) {
-                        descendants.AddRange(child.Value.GetAllDescendants(includeBranchBreakingDescendants, true));
-                    }
-                }
-
-
-                return descendants;
+            public TreeEntry(DreamPath path) {
+                Path = path;
             }
         }
 
-        public DreamObjectTreeEntry Root = new DreamObjectTreeEntry(DreamPath.Root);
-        public DreamObjectTreeEntry List;
+        public TreeEntry[] Types;
+        public TreeEntry List;
         public List<string> Strings; //TODO: Store this somewhere else
+
+        private Dictionary<DreamPath, TreeEntry> _pathToType = new();
 
         public DreamObjectTree(DreamCompiledJson json) {
             Strings = json.Strings;
-
-            DreamObjectJson rootJsonObject = json.RootObject;
-            if (rootJsonObject.Name != "") {
-                throw new Exception("Root object in json should have an empty name");
-            }
-
-            LoadTreeEntryFromJson(Root, rootJsonObject);
+            
+            LoadTypesFromJson(json.Types);
             List = GetTreeEntryFromPath(DreamPath.List);
         }
 
         public bool HasTreeEntry(DreamPath path) {
-            if (path.Type != DreamPath.PathType.Absolute) return false;
-
-            if (path.Equals(DreamPath.Root) && Root != null) return true;
-
-            DreamObjectTreeEntry treeEntry = Root;
-            foreach (string element in path.Elements) {
-                if (!treeEntry.Children.TryGetValue(element, out treeEntry)) return false;
-            }
-
-            return true;
+            return _pathToType.ContainsKey(path);
         }
 
-        public DreamObjectTreeEntry GetTreeEntryFromPath(DreamPath path) {
-            if (path.Type != DreamPath.PathType.Absolute) {
-                throw new Exception("Path must be an absolute path");
+        public TreeEntry GetTreeEntryFromPath(DreamPath path) {
+            if (!_pathToType.TryGetValue(path, out TreeEntry type)) {
+                throw new Exception($"Object '{path}' does not exist");
             }
 
-            if (path.Equals(DreamPath.Root)) return Root;
-
-            DreamObjectTreeEntry treeEntry = Root;
-            foreach (string element in path.Elements) {
-                if (!treeEntry.Children.TryGetValue(element, out treeEntry)) {
-                    throw new Exception("Object '" + path + "' does not exist");
-                }
-            }
-
-            return treeEntry;
+            return type;
         }
 
         public DreamObjectDefinition GetObjectDefinitionFromPath(DreamPath path) {
             return GetTreeEntryFromPath(path).ObjectDefinition;
+        }
+
+        public IEnumerable<TreeEntry> GetAllDescendants(DreamPath path) {
+            TreeEntry treeEntry = GetTreeEntryFromPath(path);
+
+            yield return treeEntry;
+
+            foreach (int typeId in treeEntry.InheritingTypes) {
+                TreeEntry type = Types[typeId];
+                IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type.Path).GetEnumerator();
+
+                while (typeChildren.MoveNext()) yield return typeChildren.Current;
+            }
         }
 
         // It is the job of whatever calls this function to then initialize the object
@@ -112,9 +75,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {
-            List<DreamObjectTreeEntry> treeEntries = GetTreeEntryFromPath(path).GetAllDescendants(true, true);
-
-            foreach (DreamObjectTreeEntry treeEntry in treeEntries) {
+            foreach (TreeEntry treeEntry in GetAllDescendants(path)) {
                 treeEntry.ObjectDefinition.MetaObject = metaObject;
             }
         }
@@ -177,41 +138,62 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        private void LoadTreeEntryFromJson(DreamObjectTreeEntry treeEntry, DreamObjectJson jsonObject) {
-            LoadVariablesFromJson(treeEntry.ObjectDefinition, jsonObject);
+        private void LoadTypesFromJson(DreamTypeJson[] types) {
+            Dictionary<DreamPath, int> pathToTypeId = new();
+            Types = new TreeEntry[types.Length];
 
-            if (jsonObject.InitProc != null) {
-                var initProc = new DMProc($"{treeEntry.ObjectDefinition.Type}/(init)", null, null, null, jsonObject.InitProc.Bytecode, true);
+            //First pass: Create types and set them up for initialization
+            for (int i = 0; i < Types.Length; i++) {
+                DreamPath path = new DreamPath(types[i].Path);
 
-                initProc.SuperProc = treeEntry.ObjectDefinition.InitializionProc;
-                treeEntry.ObjectDefinition.InitializionProc = initProc;
+                Types[i] = new TreeEntry(path);
+                _pathToType[path] = Types[i];
+                pathToTypeId[path] = i;
             }
 
-            if (jsonObject.Procs != null) {
-                LoadProcsFromJson(treeEntry.ObjectDefinition, jsonObject.Procs);
+            //Second pass: Set each type's parent and children
+            for (int i = 0; i < Types.Length; i++) {
+                DreamTypeJson jsonType = types[i];
+                TreeEntry type = Types[i];
+
+                if (jsonType.Parent != null) {
+                    TreeEntry parent = Types[jsonType.Parent.Value];
+
+                    parent.InheritingTypes.Add(i);
+                    type.ParentEntry = parent;
+                }
             }
 
-            if (jsonObject.Children != null) {
-                foreach (DreamObjectJson childJsonObject in jsonObject.Children) {
-                    DreamObjectTreeEntry childObjectTreeEntry;
-                    DreamPath childObjectPath = treeEntry.ObjectDefinition.Type.AddToPath(childJsonObject.Name);
+            //Third pass: Load each type's vars and procs
+            //This must happen top-down from the root of the object tree for inheritance to work
+            //Thus, the enumeration of GetAllDescendants()
+            foreach (TreeEntry type in GetAllDescendants(DreamPath.Root)) {
+                int typeId = pathToTypeId[type.Path];
+                DreamTypeJson jsonType = types[typeId];
 
-                    if (childJsonObject.Parent != null) {
-                        DreamObjectTreeEntry parentTreeEntry = GetTreeEntryFromPath(new DreamPath(childJsonObject.Parent));
+                DreamObjectDefinition definition;
+                if (type.ParentEntry != null) {
+                    definition = new DreamObjectDefinition(type.Path, type.ParentEntry.ObjectDefinition);
+                } else {
+                    definition = new DreamObjectDefinition(type.Path);
+                }
+                type.ObjectDefinition = definition;
 
-                        childObjectTreeEntry = new DreamObjectTreeEntry(childObjectPath, parentTreeEntry);
-                        parentTreeEntry.BranchBreakingChildren.Add(childJsonObject.Name, childObjectTreeEntry);
-                    } else {
-                        childObjectTreeEntry = new DreamObjectTreeEntry(childObjectPath, treeEntry);
-                    }
+                LoadVariablesFromJson(definition, jsonType);
+                if (jsonType.Procs != null) {
+                    LoadProcsFromJson(definition, jsonType.Procs);
+                }
 
-                    LoadTreeEntryFromJson(childObjectTreeEntry, childJsonObject);
-                    treeEntry.Children.Add(childJsonObject.Name, childObjectTreeEntry);
+                if (jsonType.InitProc != null) {
+                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, true);
+
+                    initProc.SuperProc = definition.InitializionProc;
+                    definition.InitializionProc = initProc;
                 }
             }
         }
 
-        private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamObjectJson jsonObject) {
+        private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamTypeJson jsonObject) {
             if (jsonObject.Variables != null) {
                 foreach (KeyValuePair<string, object> jsonVariable in jsonObject.Variables) {
                     DreamValue value = GetDreamValueFromJsonElement(jsonVariable.Value);

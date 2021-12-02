@@ -207,10 +207,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                     }
                                 }
 
-                                while (GetCurrent() == ' ' || GetCurrent() == '\t') {
-                                    Advance();
-                                }
-
                                 token = CreateToken(TokenType.Skip, "/* */");
                                 break;
                             }

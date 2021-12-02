@@ -182,17 +182,29 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             case '*': {
                                 //Skip everything up to the "*/"
                                 Advance();
-                                while (true) {
-                                    bool isStar = GetCurrent() == '*';
-
-                                    if (isStar && Advance() == '/') {
+                                var comment_depth = 1;
+                                while (comment_depth > 0) {
+                                    if (GetCurrent() == '/') {
                                         Advance();
-                                        while (GetCurrent() == ' ' || GetCurrent() == '\t') {
+                                        if (GetCurrent() == '*') {
+                                            // We found another comment - up the nest count
+                                            comment_depth++;
+                                            Advance();
+                                        } else if (GetCurrent() == '/') {
+                                            // Encountered a line comment - skip to end of line
+                                            while (Advance() != '\n' && !AtEndOfSource) ;
+                                        }
+                                    } else if (GetCurrent() == '*') {
+                                        if (Advance() == '/') {
+                                            // End of comment - decrease nest count
+                                            comment_depth--;
                                             Advance();
                                         }
-                                        break;
-                                    } else if (AtEndOfSource) return CreateToken(TokenType.Error, null, "Expected \"*/\" to end multiline comment");
-                                    else if (!isStar) Advance();
+                                    } else if (AtEndOfSource) {
+                                        return CreateToken(TokenType.Error, null, "Expected \"*/\" to end multiline comment");
+                                    } else {
+                                        Advance();
+                                    }
                                 }
 
                                 token = CreateToken(TokenType.Skip, "/* */");

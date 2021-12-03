@@ -10,7 +10,9 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using Robust.Server;
 using Robust.Server.Player;
+using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
@@ -85,8 +87,8 @@ namespace OpenDreamRuntime {
         private DreamCompiledJson LoadJson() {
             string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
-                Logger.Error("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
-
+                Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
+                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
                 return null;
             }
 

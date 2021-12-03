@@ -36,7 +36,7 @@ namespace OpenDreamClient.Rendering {
 
             sprites.Sort(_renderOrderComparer);
             foreach (DMISpriteComponent sprite in sprites) {
-                sprite.Icon.Draw(handle, sprite.Owner.Transform.WorldPosition - 0.5f);
+                DrawIcon(handle, sprite.Icon, sprite.Owner.Transform.WorldPosition - 0.5f);
             }
         }
 
@@ -44,11 +44,40 @@ namespace OpenDreamClient.Rendering {
             ClientScreenOverlaySystem screenOverlaySystem = EntitySystem.Get<ClientScreenOverlaySystem>();
             Vector2 viewOffset = eye.Transform.WorldPosition - (worldAABB.Size / 2f);
 
+            List<DMISpriteComponent> sprites = new();
             foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
                 if (!sprite.IsVisible(checkWorld: false)) continue;
 
+                sprites.Add(sprite);
+            }
+
+            sprites.Sort(_renderOrderComparer);
+            foreach (DMISpriteComponent sprite in sprites) {
                 Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
-                sprite.Icon.Draw(handle, position);
+                Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+
+                for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
+                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                        DrawIcon(handle, sprite.Icon, position + iconSize * (x, y));
+                    }
+                }
+            }
+        }
+
+        private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
+            position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+
+            foreach (DreamIcon underlay in icon.Underlays) {
+                DrawIcon(handle, underlay, position);
+            }
+
+            AtlasTexture frame = icon.CurrentFrame;
+            if (frame != null) {
+                handle.DrawTexture(frame, position, icon.Appearance.Color);
+            }
+
+            foreach (DreamIcon overlay in icon.Overlays) {
+                DrawIcon(handle, overlay, position);
             }
         }
     }

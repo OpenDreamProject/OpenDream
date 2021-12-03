@@ -136,7 +136,8 @@ namespace OpenDreamClient.Rendering {
 
             if (CurrentFrame != null) {
                 Vector2 pos = (clickPos - screenPos) * EyeManager.PixelsPerMeter;
-                pos.Y = DMI.IconSize.Y - pos.Y;
+                pos.X %= DMI.IconSize.X;
+                pos.Y = DMI.IconSize.Y - (pos.Y % DMI.IconSize.Y);
 
                 if (_clickMap.IsOccluding(CurrentFrame, ((int)pos.X, (int)pos.Y))) {
                     return true;
@@ -158,23 +159,6 @@ namespace OpenDreamClient.Rendering {
             }
 
             return false;
-        }
-
-        public void Draw(DrawingHandleWorld handle, Vector2 position) {
-            position += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
-
-            foreach (DreamIcon underlay in Underlays) {
-                underlay.Draw(handle, position);
-            }
-
-            AtlasTexture frame = CurrentFrame;
-            if (frame != null) {
-                handle.DrawTexture(frame, position, Appearance.Color);
-            }
-
-            foreach (DreamIcon overlay in Overlays) {
-                overlay.Draw(handle, position);
-            }
         }
 
         private void UpdateAnimation() {

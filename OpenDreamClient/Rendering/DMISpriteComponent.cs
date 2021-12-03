@@ -67,10 +67,14 @@ namespace OpenDreamClient.Rendering {
 
         public bool CheckClickScreen(Vector2 screenPos, Vector2 mousePos) {
             if (!IsVisible(checkWorld: false)) return false;
+            if (Icon.Appearance.MouseOpacity == MouseOpacity.Transparent) return false;
+
+            Vector2 size = Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter * (ScreenLocation.RepeatX, ScreenLocation.RepeatY);
+            Box2 iconBox = Box2.FromDimensions(screenPos, size);
+            if (!iconBox.Contains(mousePos)) return false;
 
             switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: return Box2.FromDimensions(screenPos, Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter).Contains(mousePos);
-                case MouseOpacity.Transparent: return false;
+                case MouseOpacity.Opaque: return true;
                 case MouseOpacity.PixelOpaque: return Icon.CheckClickScreen(screenPos, mousePos);
                 default: throw new InvalidOperationException("Invalid mouse_opacity");
             }

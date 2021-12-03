@@ -690,6 +690,7 @@ namespace OpenDreamRuntime.Procs {
             //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
             if (first is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
                 index.Assign(second);
+                state.Push(new DreamValue(0));
 
                 return null;
             }
@@ -731,6 +732,7 @@ namespace OpenDreamRuntime.Procs {
             //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
             if (state.Peek() is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
                 state.Pop();
+                state.Push(new DreamValue(0));
 
                 secondIdentifier.Assign(index.GetValue());
                 return null;
@@ -1483,7 +1485,7 @@ namespace OpenDreamRuntime.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 int refID = int.Parse(refString);
 
-                state.Push(DreamValue.Null); //state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.Runtime, refID)));
+                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);

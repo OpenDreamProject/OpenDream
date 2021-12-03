@@ -10,15 +10,18 @@ namespace OpenDreamRuntime.Procs {
     class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, bool waitFor)
+        private readonly int _maxStackSize;
+
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, bool waitFor)
             : base(name, superProc, waitFor, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
+            _maxStackSize = maxStackSize;
         }
 
         public override DMProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
-            return new DMProcState(this, thread, src, usr, arguments);
+            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
         }
     }
 
@@ -26,8 +29,9 @@ namespace OpenDreamRuntime.Procs {
     {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
-        // TODO: This pool is not returned to if the proc runtimes
+        // TODO: These pools are not returned to if the proc runtimes
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
+        private static ArrayPool<object> _stackPool = ArrayPool<object>.Shared;
 
         #region Opcode Handlers
         //In the same order as the DreamProcOpcode enum
@@ -142,10 +146,11 @@ namespace OpenDreamRuntime.Procs {
         private DMProc _proc;
         public override DreamProc Proc => _proc;
 
-        public DMProcState(DMProc proc, DreamThread thread, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
             : base(thread)
         {
             _proc = proc;
+            _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
             Arguments = arguments;
@@ -177,7 +182,9 @@ namespace OpenDreamRuntime.Procs {
             Usr = other.Usr;
             Arguments = other.Arguments;
             _pc = other._pc;
-            _stack = new Stack<object>(other._stack);
+
+            _stack = _stackPool.Rent(other._stack.Length);
+            Array.Copy(other._stack, _stack, _stack.Length);
 
             LocalVariables = _dreamValuePool.Rent(256);
             Array.Copy(other.LocalVariables, LocalVariables, 256);
@@ -192,14 +199,18 @@ namespace OpenDreamRuntime.Procs {
 
                 if (status != null) {
                     if (status == ProcStatus.Returned) {
-                        _dreamValuePool.Return(LocalVariables, true); // TODO: This should be automatic (dispose pattern?)
+                        // TODO: This should be automatic (dispose pattern?)
+                        _dreamValuePool.Return(LocalVariables, true);
+                        _stackPool.Return(_stack);
                     }
 
                     return status.Value;
                 }
             }
 
-            _dreamValuePool.Return(LocalVariables, true); // TODO: This should be automatic (dispose pattern?)
+            // TODO: This should be automatic (dispose pattern?)
+            _dreamValuePool.Return(LocalVariables, true);
+            _stackPool.Return(_stack);
             return ProcStatus.Returned;
         }
 
@@ -236,42 +247,44 @@ namespace OpenDreamRuntime.Procs {
         }
 
         #region Stack
-        private Stack<object> _stack = new();
+        private object[] _stack;
+        private int _stackIndex = 0;
 
         public void Push(DreamValue value) {
-            _stack.Push(value);
+            _stack[_stackIndex++] = value;
         }
 
         public void Push(IDreamProcIdentifier value) {
-            _stack.Push(value);
+            _stack[_stackIndex++] = value;
         }
 
         public void Push(DreamProcArguments value) {
-            _stack.Push(value);
+            _stack[_stackIndex++] = value;
         }
 
         public void PushCopy() {
-            _stack.Push(_stack.Peek());
+            _stack[_stackIndex] = Peek();
+            _stackIndex++;
         }
 
         public object Pop() {
-            return _stack.Pop();
+            return _stack[--_stackIndex];
         }
 
         public object Peek() {
-            return _stack.Peek();
+            return _stack[_stackIndex - 1];
         }
 
         public IDreamProcIdentifier PeekIdentifier() {
-            return (IDreamProcIdentifier)_stack.Peek();
+            return (IDreamProcIdentifier)Peek();
         }
 
         public IDreamProcIdentifier PopIdentifier() {
-            return (IDreamProcIdentifier)_stack.Pop();
+            return (IDreamProcIdentifier)Pop();
         }
 
         public DreamValue PopDreamValue() {
-            object value = _stack.Pop();
+            object value = Pop();
 
             return value switch {
                 IDreamProcIdentifier identifier => identifier.GetValue(),
@@ -281,7 +294,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            return (DreamProcArguments)_stack.Pop();
+            return (DreamProcArguments)Pop();
         }
         #endregion
 

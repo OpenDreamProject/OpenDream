@@ -141,9 +141,7 @@ namespace DMCompiler.DM {
             }
 
             if (InitializationProc != null) {
-                typeJson.InitProc = new ProcDefinitionJson() {
-                    Bytecode = InitializationProc.Bytecode.ToArray()
-                };
+                typeJson.InitProc = InitializationProc.GetJsonRepresentation();
             }
 
             if (Procs.Count > 0) {

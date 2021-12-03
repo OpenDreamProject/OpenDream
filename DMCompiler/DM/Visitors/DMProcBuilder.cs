@@ -164,7 +164,10 @@ namespace DMCompiler.DM.Visitors {
             _proc.Spawn(afterSpawnLabel);
 
             ProcessBlockInner(statementSpawn.Body);
-            _proc.Return(); //Prevent the new thread from executing outside its own code
+
+            //Prevent the new thread from executing outside its own code
+            _proc.PushNull();
+            _proc.Return();
 
             _proc.AddLabel(afterSpawnLabel);
         }
@@ -238,6 +241,7 @@ namespace DMCompiler.DM.Visitors {
                     if (statementForStandard.Incrementor != null)
                     {
                         DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                        _proc.Pop();
                     }
                     _proc.LoopJumpToStart(loopLabel);
                 }
@@ -387,6 +391,7 @@ namespace DMCompiler.DM.Visitors {
                     defaultCaseBody = ((DMASTProcStatementSwitch.SwitchCaseDefault)switchCase).Body;
                 }
             }
+            _proc.Pop();
 
             if (defaultCaseBody != null) {
                 _proc.StartScope();

@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (variableName == "type") {
                 return new DreamValue(dreamObject.ObjectDefinition.Type);
             } else if (variableName == "parent_type") {
-                return new DreamValue(_dreamManager.ObjectTree.GetTreeEntryFromPath(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
+                return new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
             } else if (variableName == "vars") {
                 return new DreamValue(DreamListVars.Create(dreamObject));
             } else {

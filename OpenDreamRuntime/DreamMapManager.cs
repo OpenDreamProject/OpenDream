@@ -31,7 +31,7 @@ namespace OpenDreamRuntime {
         public void Initialize() {
             _mapManager.CreateNewMapEntity(MapId.Nullspace);
 
-            DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinitionFromPath(DreamPath.World);
+            DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinition(DreamPath.World);
             _defaultArea = worldDefinition.Variables["area"].GetValueAsPath();
             _defaultTurf = worldDefinition.Variables["turf"].GetValueAsPath();
         }
@@ -134,7 +134,8 @@ namespace OpenDreamRuntime {
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
                 DreamObject turf = CreateMapObject(cellDefinition.Turf);
-                DreamObject area = GetArea(cellDefinition.Area?.Type ?? _defaultArea);
+                DreamPath areaType = cellDefinition.Area != null ? _dreamManager.ObjectTree.Types[cellDefinition.Area.Type].Path : _defaultArea;
+                DreamObject area = GetArea(areaType);
 
                 //Turf's type didn't exist and was skipped
                 if (turf == null) {
@@ -160,13 +161,7 @@ namespace OpenDreamRuntime {
         }
 
         private DreamObject CreateMapObject(MapObjectJson mapObject, DreamObject loc = null) {
-            if (!_dreamManager.ObjectTree.HasTreeEntry(mapObject.Type)) {
-                Logger.Warning("MAP LOAD: Skipping " + mapObject.Type);
-
-                return null;
-            }
-
-            DreamObjectDefinition definition = _dreamManager.ObjectTree.GetObjectDefinitionFromPath(mapObject.Type);
+            DreamObjectDefinition definition = _dreamManager.ObjectTree.GetObjectDefinition(mapObject.Type);
             if (mapObject.VarOverrides?.Count > 0) {
                 definition = new DreamObjectDefinition(definition);
 

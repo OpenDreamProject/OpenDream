@@ -7,7 +7,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
             DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
 
-            DreamObjectDefinition root = objectTree.GetObjectDefinitionFromPath(DreamPath.Root);
+            DreamObjectDefinition root = objectTree.GetObjectDefinition(DreamPath.Root);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_animate);
@@ -103,7 +103,7 @@ namespace OpenDreamRuntime.Procs.Native {
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
-            DreamObjectDefinition list = objectTree.GetObjectDefinitionFromPath(DreamPath.List);
+            DreamObjectDefinition list = objectTree.GetObjectDefinition(DreamPath.List);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Add);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Copy);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Cut);
@@ -112,14 +112,14 @@ namespace OpenDreamRuntime.Procs.Native {
             list.SetNativeProc(DreamProcNativeList.NativeProc_Remove);
             list.SetNativeProc(DreamProcNativeList.NativeProc_Swap);
 
-            DreamObjectDefinition regex = objectTree.GetObjectDefinitionFromPath(DreamPath.Regex);
+            DreamObjectDefinition regex = objectTree.GetObjectDefinition(DreamPath.Regex);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
 
             //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
             //regex.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
 
-            DreamObjectDefinition world = objectTree.GetObjectDefinitionFromPath(DreamPath.World);
+            DreamObjectDefinition world = objectTree.GetObjectDefinition(DreamPath.World);
             world.SetNativeProc(DreamProcNativeWorld.NativeProc_Export);
         }
     }

@@ -299,7 +299,7 @@ namespace OpenDreamRuntime.Procs {
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsPath(out DreamPath path)) {
-                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinitionFromPath(path);
+                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinition(path);
             } else {
                 throw new Exception("Invalid owner for initial() call " + owner);
             }
@@ -1579,7 +1579,7 @@ namespace OpenDreamRuntime.Procs {
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsPath(out DreamPath path)) {
-                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinitionFromPath(path);
+                objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinition(path);
             } else {
                 throw new Exception("Invalid owner for issaved() call " + owner);
             }

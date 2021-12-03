@@ -22,10 +22,10 @@ namespace OpenDreamShared.Json {
     }
 
     public class MapObjectJson {
-        public DreamPath Type { get; set; }
+        public int Type { get; set; }
         public Dictionary<string, object> VarOverrides { get; set; }
 
-        public MapObjectJson(DreamPath type) {
+        public MapObjectJson(int type) {
             Type = type;
         }
 

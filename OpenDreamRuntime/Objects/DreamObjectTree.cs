@@ -32,14 +32,14 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
             
             LoadTypesFromJson(json.Types);
-            List = GetTreeEntryFromPath(DreamPath.List);
+            List = GetTreeEntry(DreamPath.List);
         }
 
         public bool HasTreeEntry(DreamPath path) {
             return _pathToType.ContainsKey(path);
         }
 
-        public TreeEntry GetTreeEntryFromPath(DreamPath path) {
+        public TreeEntry GetTreeEntry(DreamPath path) {
             if (!_pathToType.TryGetValue(path, out TreeEntry type)) {
                 throw new Exception($"Object '{path}' does not exist");
             }
@@ -47,12 +47,20 @@ namespace OpenDreamRuntime.Objects {
             return type;
         }
 
-        public DreamObjectDefinition GetObjectDefinitionFromPath(DreamPath path) {
-            return GetTreeEntryFromPath(path).ObjectDefinition;
+        public TreeEntry GetTreeEntry(int typeId) {
+            return Types[typeId];
+        }
+
+        public DreamObjectDefinition GetObjectDefinition(DreamPath path) {
+            return GetTreeEntry(path).ObjectDefinition;
+        }
+
+        public DreamObjectDefinition GetObjectDefinition(int typeId) {
+            return GetTreeEntry(typeId).ObjectDefinition;
         }
 
         public IEnumerable<TreeEntry> GetAllDescendants(DreamPath path) {
-            TreeEntry treeEntry = GetTreeEntryFromPath(path);
+            TreeEntry treeEntry = GetTreeEntry(path);
 
             yield return treeEntry;
 
@@ -70,7 +78,7 @@ namespace OpenDreamRuntime.Objects {
             if (path.Equals(DreamPath.List)) {
                 return DreamList.CreateUninitialized();
             } else {
-                return new DreamObject(GetObjectDefinitionFromPath(path));
+                return new DreamObject(GetObjectDefinition(path));
             }
         }
 
@@ -110,7 +118,13 @@ namespace OpenDreamRuntime.Objects {
                             }
                         }
                         case JsonVariableType.Path:
-                            return new DreamValue(new DreamPath(jsonElement.GetProperty("value").GetString()));
+                            JsonElement pathValue = jsonElement.GetProperty("value");
+
+                            switch (pathValue.ValueKind) {
+                                case JsonValueKind.Number: return new DreamValue(Types[pathValue.GetInt32()].Path);
+                                case JsonValueKind.String: return new DreamValue(new DreamPath(pathValue.GetString()));
+                                default: throw new Exception("Invalid path value");
+                            }
                         case JsonVariableType.List:
                             DreamList list = DreamList.Create();
 

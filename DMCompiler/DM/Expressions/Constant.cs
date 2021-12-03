@@ -276,9 +276,17 @@ namespace DMCompiler.DM.Expressions {
         public override bool IsTruthy() => true;
 
         public override object ToJsonRepresentation() {
+            object value;
+
+            if (DMObjectTree.TryGetTypeId(Value, out int typeId)) {
+                value = typeId;
+            } else {
+                value = Value.PathString;
+            }
+
             return new Dictionary<string, object>() {
                 { "type", JsonVariableType.Path },
-                { "value", Value.PathString }
+                { "value", value }
             };
         }
     }

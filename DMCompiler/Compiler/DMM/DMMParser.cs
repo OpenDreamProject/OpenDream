@@ -8,6 +8,7 @@ using DMCompiler.Compiler.DM;
 namespace DMCompiler.Compiler.DMM {
     class DMMParser : DMParser {
         private int _cellNameLength = -1;
+        private HashSet<DreamPath> _skippedTypes = new();
 
         public DMMParser(DMLexer lexer) : base(lexer, true) { }
 
@@ -54,7 +55,12 @@ namespace DMCompiler.Compiler.DMM {
                 CellDefinitionJson cellDefinition = new CellDefinitionJson((string)currentToken.Value);
                 DMASTPath objectType = Path();
                 while (objectType != null) {
-                    MapObjectJson mapObject = new MapObjectJson(objectType.Path);
+                    bool skipType = !DMObjectTree.TryGetTypeId(objectType.Path, out int typeId);
+                    if (skipType && _skippedTypes.Add(objectType.Path)) {
+                        Warning($"Skipping type '{objectType.Path}'");
+                    }
+
+                    MapObjectJson mapObject = new MapObjectJson(typeId);
 
                     if (Check(TokenType.DM_LeftCurlyBracket)) {
                         DMASTStatement statement = Statement(requireDelimiter: false);
@@ -77,13 +83,16 @@ namespace DMCompiler.Compiler.DMM {
                         Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                     }
 
-                    if (mapObject.Type.IsDescendantOf(DreamPath.Turf)) {
-                        cellDefinition.Turf = mapObject;
-                    } else if (mapObject.Type.IsDescendantOf(DreamPath.Area)) {
-                        cellDefinition.Area = mapObject;
-                    } else {
-                        cellDefinition.Objects.Add(mapObject);
+                    if (!skipType) {
+                        if (objectType.Path.IsDescendantOf(DreamPath.Turf)) {
+                            cellDefinition.Turf = mapObject;
+                        } else if (objectType.Path.IsDescendantOf(DreamPath.Area)) {
+                            cellDefinition.Area = mapObject;
+                        } else {
+                            cellDefinition.Objects.Add(mapObject);
+                        }
                     }
+                    
 
                     if (Check(TokenType.DM_Comma)) {
                         objectType = Path();

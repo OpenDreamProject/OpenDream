@@ -145,7 +145,7 @@ namespace DMCompiler {
                 VerbosePrint($"Converting map {mapPath}");
 
                 DMPreprocessor preprocessor = new DMPreprocessor(false, !Settings.SuppressUnimplementedWarnings);
-                preprocessor.IncludeFile(String.Empty, mapPath);
+                preprocessor.IncludeFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
 
                 DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
                 DMMParser parser = new DMMParser(lexer);
@@ -157,6 +157,12 @@ namespace DMCompiler {
                     }
 
                     continue;
+                }
+
+                if (parser.Warnings.Count > 0) {
+                    foreach (CompilerWarning warning in parser.Warnings) {
+                        Warning(warning);
+                    }
                 }
 
                 maps.Add(map);

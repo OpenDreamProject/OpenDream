@@ -587,7 +587,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (value.TryGetValueAsPath(out DreamPath valuePath)) {
                 if (type.TryGetValueAsPath(out DreamPath typePath)) {
-                    DreamObjectDefinition valueDefinition = DreamManager.ObjectTree.GetObjectDefinitionFromPath(valuePath);
+                    DreamObjectDefinition valueDefinition = DreamManager.ObjectTree.GetObjectDefinition(valuePath);
 
                     return new DreamValue(valueDefinition.IsSubtypeOf(typePath) ? 1 : 0);
                 } else {
@@ -1476,7 +1476,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (typePath.LastElement == "proc") {
                     DreamPath objectTypePath = typePath.AddToPath("..");
-                    DreamObjectDefinition objectDefinition = DreamManager.ObjectTree.GetObjectDefinitionFromPath(objectTypePath);
+                    DreamObjectDefinition objectDefinition = DreamManager.ObjectTree.GetObjectDefinition(objectTypePath);
 
                     foreach (KeyValuePair<string, DreamProc> proc in objectDefinition.Procs) {
                         list.AddValue(new DreamValue(proc.Key));

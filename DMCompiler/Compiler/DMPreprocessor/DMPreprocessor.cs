@@ -38,6 +38,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             _includedFiles.Add(path);
             _lexerStack.Push(new DMPreprocessorLexer(file, source));
+            DMCompiler.VerbosePrint($"Preprocessing {file}");
 
             Token token = GetNextToken();
             while (token.Type != TokenType.EndOfFile) {

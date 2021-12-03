@@ -20,6 +20,8 @@ namespace DMCompiler {
         public static int ErrorCount = 0;
         public static DMCompilerSettings Settings;
 
+        private static DateTime _compileStartTime;
+
         public static bool Compile(DMCompilerSettings settings) {
             Settings = settings;
             if (Settings.Files == null) return false;
@@ -27,7 +29,7 @@ namespace DMCompiler {
             //TODO: Only use InvariantCulture where necessary instead of it being the default
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
-            DateTime startTime = DateTime.Now;
+            _compileStartTime = DateTime.Now;
 
             if (settings.SuppressUnimplementedWarnings) {
                 Warning(new CompilerWarning(null, "Unimplemented proc & var warnings are currently suppressed"));
@@ -57,7 +59,7 @@ namespace DMCompiler {
                 Console.WriteLine($"Compilation failed with {ErrorCount} errors");
             }
 
-            TimeSpan duration = DateTime.Now - startTime;
+            TimeSpan duration = DateTime.Now - _compileStartTime;
             Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
 
             return successfulCompile;
@@ -72,6 +74,7 @@ namespace DMCompiler {
                 preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
 
+            VerbosePrint("Preprocessing");
             foreach (string file in files) {
                 string directoryPath = Path.GetDirectoryName(file);
                 string fileName = Path.GetFileName(file);
@@ -85,6 +88,8 @@ namespace DMCompiler {
         private static bool Compile(List<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
             DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
+
+            VerbosePrint("Parsing");
             DMASTFile astFile = dmParser.File();
 
             if (dmParser.Warnings.Count > 0) {
@@ -104,6 +109,7 @@ namespace DMCompiler {
             if (astFile == null) return false;
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
+            VerbosePrint("Constant folding");
             astSimplifier.SimplifyAST(astFile);
 
             DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
@@ -125,10 +131,19 @@ namespace DMCompiler {
             Console.WriteLine(warning);
         }
 
+        public static void VerbosePrint(string message) {
+            if (!Settings.Verbose) return;
+
+            TimeSpan duration = DateTime.Now - _compileStartTime;
+            Console.WriteLine($"{duration.ToString(@"mm\:ss\.fffffff")}: {message}");
+        }
+
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
 
             foreach (string mapPath in mapPaths) {
+                VerbosePrint($"Converting map {mapPath}");
+
                 DMPreprocessor preprocessor = new DMPreprocessor(false, !Settings.SuppressUnimplementedWarnings);
                 preprocessor.IncludeFile(String.Empty, mapPath);
 
@@ -180,5 +195,6 @@ namespace DMCompiler {
         public bool SuppressUnimplementedWarnings;
         public bool DumpPreprocessor;
         public bool NoStandard;
+        public bool Verbose;
     }
 }

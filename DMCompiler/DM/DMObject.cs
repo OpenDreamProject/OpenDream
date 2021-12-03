@@ -36,6 +36,7 @@ namespace DMCompiler.DM {
 
             foreach (List<DMProc> procs in Procs.Values) {
                 foreach (DMProc proc in procs) {
+                    DMCompiler.VerbosePrint($"Compiling proc {Path}.{proc.Name}()");
                     proc.Compile(this);
                 }
             }

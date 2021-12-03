@@ -37,6 +37,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
+        public string Name { get => _astDefinition.Name; }
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;

@@ -110,7 +110,6 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public List<DMASTStatement> BlockInner() {
-            var loc = Current().Location;
             List<DMASTStatement> statements = new();
 
             do {

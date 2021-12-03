@@ -55,6 +55,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
             DMObject oldObject = _currentObject;
 
+            DMCompiler.VerbosePrint($"Generating {objectDefinition.Path}");
             _currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
             if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock);
             _currentObject = oldObject;

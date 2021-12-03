@@ -264,11 +264,19 @@ namespace DMCompiler.Compiler.DM {
         public DreamPath? Type;
         public string Name;
         public DMASTExpression Value;
+        public bool IsTmp = false;
+        public bool IsConst = false;
         public bool IsGlobal = false;
         public DMValueType ValType;
 
         public DMASTObjectVarDefinition(Location location, DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) : base(location) {
+            int tmpElementIndex = path.FindElement("tmp");
+            int constElementIndex = path.FindElement("const");
             int globalElementIndex = path.FindElement("global");
+            if (globalElementIndex == -1) globalElementIndex = path.FindElement("static");
+
+            if (tmpElementIndex != -1) path = path.RemoveElement(tmpElementIndex);
+            if (constElementIndex != -1) path = path.RemoveElement(constElementIndex);
             if (globalElementIndex != -1) path = path.RemoveElement(globalElementIndex);
 
             int varElementIndex = path.FindElement("var");
@@ -278,6 +286,8 @@ namespace DMCompiler.Compiler.DM {
 
             ObjectPath = path.FromElements(0, varElementIndex);
             Type = (varPath.Elements.Length > 1) ? varPath.FromElements(0, -2) : null;
+            IsTmp = tmpElementIndex != -1;
+            IsConst = constElementIndex != -1;
             IsGlobal = globalElementIndex != -1 || ObjectPath.Equals(DreamPath.Root);
             Name = varPath.LastElement;
             Value = value;

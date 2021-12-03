@@ -133,12 +133,14 @@ namespace OpenDreamRuntime {
 
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
-                DreamObject turf = CreateMapObject(cellDefinition.Turf);
                 DreamPath areaType = cellDefinition.Area != null ? _dreamManager.ObjectTree.Types[cellDefinition.Area.Type].Path : _defaultArea;
                 DreamObject area = GetArea(areaType);
 
-                //Turf's type didn't exist and was skipped
-                if (turf == null) {
+                DreamObject turf;
+                if (cellDefinition.Turf != null) {
+                    turf = CreateMapObject(cellDefinition.Turf);
+                } else {
+                    throw new Exception(cell);
                     turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
                     turf.InitSpawn(new DreamProcArguments(null));
                 }

@@ -140,7 +140,6 @@ namespace OpenDreamRuntime {
                 if (cellDefinition.Turf != null) {
                     turf = CreateMapObject(cellDefinition.Turf);
                 } else {
-                    throw new Exception(cell);
                     turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
                     turf.InitSpawn(new DreamProcArguments(null));
                 }

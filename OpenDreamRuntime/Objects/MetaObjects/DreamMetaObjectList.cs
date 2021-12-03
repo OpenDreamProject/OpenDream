@@ -2,10 +2,12 @@
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
-        public override bool ShouldCallNew => true;
-
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
+
+            if (creationArguments.GetArgument(0, "Size").TryGetValueAsInteger(out int size)) {
+                ((DreamList)dreamObject).Resize(size);
+            }
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

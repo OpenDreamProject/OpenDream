@@ -2,7 +2,6 @@
 	var/len
 
 	proc/New(Size)
-		if (Size != null) len = Size
 
 	proc/Add(Item1)
 	proc/Copy(Start = 1, End = 0)

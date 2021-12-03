@@ -27,9 +27,8 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CreateList(DMProcState state) {
             var list = DreamList.Create();
 
-            var initProcState = list.InitProc(state.Thread, state.Usr, new DreamProcArguments(null));
-            state.Thread.PushProcState(initProcState);
-            return ProcStatus.Called;
+            state.Push(new DreamValue(list));
+            return null;
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
@@ -1338,7 +1337,7 @@ namespace OpenDreamRuntime.Procs {
                     newContext.Resume();
                 }).Start(TaskScheduler.FromCurrentSynchronizationContext());
             }
-            
+
             state.Jump(jumpTo);
             return null;
         }

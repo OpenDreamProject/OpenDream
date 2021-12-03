@@ -437,10 +437,10 @@ namespace DMCompiler.DM.Expressions {
 
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 var identifierPushResult = LHS.EmitIdentifier(dmObject, proc);
-                proc.PushCopy();
-
+                
                 switch (identifierPushResult) {
                     case IdentifierPushResult.Unconditional:
+                        proc.PushCopy();
                         RHS.EmitPushValue(dmObject, proc);
                         EmitOps(dmObject, proc);
                         break;
@@ -449,11 +449,11 @@ namespace DMCompiler.DM.Expressions {
                         var skipLabel = proc.NewLabelName();
                         var endLabel = proc.NewLabelName();
                         proc.JumpIfNullIdentifier(skipLabel);
+                        proc.PushCopy();
                         RHS.EmitPushValue(dmObject, proc);
                         EmitOps(dmObject, proc);
                         proc.Jump(endLabel);
                         proc.AddLabel(skipLabel);
-                        proc.Pop();
                         proc.Pop();
                         proc.PushNull();
                         proc.AddLabel(endLabel);

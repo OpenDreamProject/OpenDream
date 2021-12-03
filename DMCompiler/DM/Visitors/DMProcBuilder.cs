@@ -98,7 +98,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementExpression(DMASTProcStatementExpression statement) {
             DMExpression.Emit(_dmObject, _proc, statement.Expression);
-            // TODO: does this need pop?
+            _proc.Pop();
         }
 
         public void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {

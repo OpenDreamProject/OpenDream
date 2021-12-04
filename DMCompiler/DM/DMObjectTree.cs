@@ -38,11 +38,24 @@ namespace DMCompiler.DM {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             } else {
-                if (!createIfNonexistent) throw new CompileErrorException(Location.Unknown, "Type " + path + " does not exist");
+                if (!createIfNonexistent) throw new CompileErrorException(Location.Unknown, $"Type {path} does not exist");
 
                 DMObject parent = null;
-                if (path.Elements.Length > 0) {
+                if (path.Elements.Length > 1) {
                     parent = GetDMObject(path.FromElements(0, -2), createIfNonexistent);
+                } else if (path.Elements.Length == 1) {
+                    switch (path.LastElement) {
+                        case "client":
+                        case "datum":
+                        case "list":
+                        case "savefile":
+                        case "world":
+                            parent = GetDMObject(DreamPath.Root);
+                            break;
+                        default:
+                            parent = GetDMObject(DreamPath.Datum);
+                            break;
+                    }
                 }
 
                 DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);

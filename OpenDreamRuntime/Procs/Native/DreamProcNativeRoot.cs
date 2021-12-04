@@ -1414,7 +1414,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (text.Length != 0) {
                     try {
                         if (radix == 10) {
-                            return new DreamValue(Convert.ToSingle(text));
+                            return new DreamValue(Convert.ToSingle(text, CultureInfo.InvariantCulture));
                         } else {
                             return new DreamValue(Convert.ToInt32(text, radix));
                         }

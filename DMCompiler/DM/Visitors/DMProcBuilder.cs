@@ -262,7 +262,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    _proc.Enumerate(statementForList.Variable.Identifier);
+                    DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
+                    _proc.Enumerate();
                     _proc.BreakIfFalse();
 
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
@@ -308,7 +309,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    _proc.Enumerate(statementForRange.Variable.Identifier);
+                    DMExpression.Emit(_dmObject, _proc, statementForRange.Variable);
+                    _proc.Enumerate();
                     _proc.BreakIfFalse();
 
                     ProcessBlockInner(statementForRange.Body);

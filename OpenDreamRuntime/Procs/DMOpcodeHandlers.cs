@@ -154,13 +154,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Enumerate(DMProcState state) {
-            int outputVarId = state.ReadByte();
             IEnumerator<DreamValue> enumerator = state.EnumeratorStack.Peek();
+            IDreamProcIdentifier identifier = state.PopIdentifier();
             bool successfulEnumeration = enumerator.MoveNext();
 
             state.Push(new DreamValue(successfulEnumeration ? 1 : 0));
             if (successfulEnumeration) {
-                state.LocalVariables[outputVarId] = enumerator.Current;
+                identifier.Assign(enumerator.Current);
             }
             return null;
         }

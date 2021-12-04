@@ -190,10 +190,8 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
-        public void Enumerate(string outputVariableName) {
-            GrowStack(1);
+        public void Enumerate() {
             WriteOpcode(DreamProcOpcode.Enumerate);
-            WriteByte((byte)GetLocalVariable(outputVariableName).Id);
         }
 
         public void DestroyEnumerator() {

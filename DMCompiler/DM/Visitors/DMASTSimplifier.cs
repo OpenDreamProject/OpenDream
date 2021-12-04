@@ -93,6 +93,10 @@ namespace DMCompiler.DM.Visitors {
             statementWhile.Body?.Visit(this);
         }
 
+        public void VisitProcStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop){
+            statementInfLoop.Body?.Visit(this);
+        }
+
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
             SimplifyExpression(ref statementDoWhile.Conditional);
 

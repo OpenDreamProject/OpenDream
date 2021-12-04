@@ -44,6 +44,14 @@
 		var/v = input("A") as num
 		usr << "you entered [v]"
 
+	verb/test_inf_loop()
+		var/i = 0
+		for()
+			world << "i"
+			i++
+			if(i > 10)
+				 break
+
 	verb/test_browse()
 		usr << browse({"
 <!DOCTYPE html>

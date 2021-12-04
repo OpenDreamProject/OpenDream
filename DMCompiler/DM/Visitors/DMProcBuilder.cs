@@ -76,6 +76,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
                 case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
                 case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
+                case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
                 case DMASTProcStatementSwitch statementSwitch: ProcessStatementSwitch(statementSwitch); break;
@@ -316,6 +317,22 @@ namespace DMCompiler.DM.Visitors {
             }
             _proc.EndScope();
             _proc.DestroyEnumerator();
+        }
+
+        //Generic infinite loop, while loops with static expression as their conditional with positive truthfullness get turned into this as well as empty for() calls
+        public void ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop){
+            _proc.StartScope();
+            {
+                string loopLabel = _proc.NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    ProcessBlockInner(statementInfLoop.Body);
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
+                }
+                _proc.LoopEnd();
+            }
+            _proc.EndScope();
         }
 
         public void ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {

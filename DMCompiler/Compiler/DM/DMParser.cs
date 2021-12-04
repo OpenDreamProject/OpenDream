@@ -857,6 +857,12 @@ namespace DMCompiler.Compiler.DM {
 
                             initializer = new DMASTProcStatementExpression(variable.Location, new DMASTAssign(variable.Location, variable, value));
                         }
+                    } else {
+                        ConsumeRightParenthesis();
+                        Check(TokenType.DM_Semicolon);
+                        Whitespace();
+                        Newline();
+                        return new DMASTProcStatementInfLoop(Current().Location,GetForBody());
                     }
                 }
 
@@ -947,6 +953,7 @@ namespace DMCompiler.Compiler.DM {
                     Check(TokenType.DM_Semicolon);
                     Whitespace();
                     Newline();
+
 
                     //Implicit "in world"
                     if (variableDeclaration.Value is null && rangeEnd is null && defaultStep) {

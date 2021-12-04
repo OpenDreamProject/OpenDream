@@ -26,6 +26,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_PlusEquals,
             TokenType.DM_MinusEquals,
             TokenType.DM_BarEquals,
+            TokenType.DM_BarBarEquals,
             TokenType.DM_AndAndEquals,
             TokenType.DM_AndEquals,
             TokenType.DM_AndAndEquals,

@@ -114,6 +114,11 @@ namespace DMCompiler.DM {
         }
 
         public void AddLabel(string name) {
+            if (_labels.ContainsKey(name)) {
+                DMCompiler.Error(new CompilerError(Location, $"A label with the name \"{name}\" already exists"));
+                return;
+            }
+
             _labels.Add(name, Bytecode.Position);
         }
 

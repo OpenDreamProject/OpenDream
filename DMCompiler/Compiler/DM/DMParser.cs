@@ -982,7 +982,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementWhile While() {
+        public DMASTProcStatement While() {
             if (Check(TokenType.DM_While)) {
                 var loc = Current().Location;
                 Whitespace();
@@ -1003,8 +1003,13 @@ namespace DMCompiler.Compiler.DM {
 
                     body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
                 }
-
+                if(conditional is DMASTConstantInteger){
+                    if(((DMASTConstantInteger)conditional).Value != 0){
+                        return new DMASTProcStatementInfLoop(loc,body);
+                    }
+                }
                 return new DMASTProcStatementWhile(loc, conditional, body);
+
             }
 
             return null;

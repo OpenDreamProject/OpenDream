@@ -36,7 +36,7 @@ namespace OpenDreamShared.Dream {
 
         [JsonIgnore]
         public string LastElement {
-            get => Elements.Last();
+            get => Elements.Length > 0 ? Elements.Last() : String.Empty;
         }
 
         [JsonIgnore]

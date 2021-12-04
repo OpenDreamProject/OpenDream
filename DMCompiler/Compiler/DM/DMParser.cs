@@ -406,6 +406,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Current().Type == TokenType.DM_Indent) {
                     block = IndentedProcBlock();
                     Newline();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 } else {
                     List<DMASTProcStatement> statements = new();
 

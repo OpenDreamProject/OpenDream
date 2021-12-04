@@ -592,7 +592,26 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 return varDeclarations.ToArray();
-            } else if (hasNewline) {
+            } else if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+
+                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+                while (!Check(isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket)) {
+                    DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
+                    Check(TokenType.DM_Semicolon);
+                    if (varDecl == null) Error("Expected a var declaration");
+
+                    varDeclarations.AddRange(varDecl);
+                    Newline();
+                }
+
+                if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+
+                return varDeclarations.ToArray();
+            }
+            else if (hasNewline) {
                 ReuseToken(newlineToken);
             }
 
@@ -2031,7 +2050,7 @@ namespace DMCompiler.Compiler.DM {
         protected bool Whitespace(bool includeIndentation = false) {
             if (includeIndentation) {
                 bool hadWhitespace = false;
-                
+
                 while (Check(WhitespaceTypes)) hadWhitespace = true;
                 return hadWhitespace;
             } else {

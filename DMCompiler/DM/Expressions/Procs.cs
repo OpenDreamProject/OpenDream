@@ -15,7 +15,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             if (!dmObject.HasProc(_identifier)) {
-                throw new CompileErrorException(proc.Location,$"Type {dmObject.Path} does not have a proc named `{_identifier}`");
+                throw new CompileErrorException(proc.Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             }
 
             proc.GetProc(_identifier);

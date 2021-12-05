@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown, "invalid use of `arglist`");
+            throw new CompileErrorException(Location.Unknown, "invalid use of arglist");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {

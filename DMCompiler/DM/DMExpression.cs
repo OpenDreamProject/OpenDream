@@ -99,7 +99,7 @@ namespace DMCompiler.DM {
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
                 if (Expressions.Length != 1) {
-                    throw new CompileErrorException(Location.Unknown,"`arglist` expression should be the only argument");
+                    throw new CompileErrorException(Location.Unknown, "arglist expression should be the only argument");
                 }
 
                 arglist.EmitPushArglist(dmObject, proc);

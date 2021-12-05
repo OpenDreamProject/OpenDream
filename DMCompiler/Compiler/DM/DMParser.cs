@@ -1086,7 +1086,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatementSwitch.SwitchCase[] IndentedSwitchInner() {
             if (Check(TokenType.DM_Indent)) {
                 DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
-                Consume(TokenType.DM_Dedent, "Expected dedent");
+                Consume(TokenType.DM_Dedent, "Expected \"if\" or \"else\"");
 
                 return switchInner;
             }
@@ -1163,6 +1163,10 @@ namespace DMCompiler.Compiler.DM {
             } else if (Check(TokenType.DM_Else)) {
                 var loc = Current().Location;
                 Whitespace();
+                if (Check(TokenType.DM_If))
+                {
+                    DMCompiler.Error(new CompilerError(loc, "Expected \"if\" or \"else\""));
+                }
                 DMASTProcBlockInner body = ProcBlock();
 
                 if (body == null) {
@@ -2032,7 +2036,7 @@ namespace DMCompiler.Compiler.DM {
         protected bool Whitespace(bool includeIndentation = false) {
             if (includeIndentation) {
                 bool hadWhitespace = false;
-                
+
                 while (Check(WhitespaceTypes)) hadWhitespace = true;
                 return hadWhitespace;
             } else {

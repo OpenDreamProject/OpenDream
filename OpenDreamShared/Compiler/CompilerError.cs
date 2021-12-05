@@ -21,7 +21,7 @@ namespace OpenDreamShared.Compiler {
     }
 
     public struct CompilerWarning {
-        public Location? Location;
+        public Location Location;
         public string Message;
 
         public CompilerWarning(Token token, string message) {

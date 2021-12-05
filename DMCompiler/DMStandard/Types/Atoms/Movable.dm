@@ -4,6 +4,13 @@
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
 	var/list/locs = list() as opendream_unimplemented
 	var/glide_size as opendream_unimplemented
+	var/bound_x as opendream_unimplemented
+	var/bound_y as opendream_unimplemented
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
+
+	//Undocumented var. "[x],[y]" or "[x],[y] to [x2],[y2]" based on bound_* vars
+	var/bounds as opendream_unimplemented
 
 	proc/Bump(atom/Obstacle)
 	

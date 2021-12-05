@@ -32,7 +32,7 @@ namespace DMCompiler {
             _compileStartTime = DateTime.Now;
 
             if (settings.SuppressUnimplementedWarnings) {
-                Warning(new CompilerWarning(null, "Unimplemented proc & var warnings are currently suppressed"));
+                Warning(new CompilerWarning(Location.Unknown, "Unimplemented proc & var warnings are currently suppressed"));
             }
 
             DMPreprocessor preprocessor = Preprocess(settings.Files);

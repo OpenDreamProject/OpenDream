@@ -52,7 +52,7 @@ namespace DMCompiler.DM {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
                 if ((variable.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings)
                 {
-                    DMCompiler.Warning(new CompilerWarning(null, $"{Path}.{name} is not implemented and will have unexpected behavior"));
+                    DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"{Path}.{name} is not implemented and will have unexpected behavior"));
                 }
                 return variable;
             }

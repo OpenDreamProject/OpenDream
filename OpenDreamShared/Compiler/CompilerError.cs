@@ -2,18 +2,15 @@
 
 namespace OpenDreamShared.Compiler {
     public struct CompilerError {
-        public Token Token;
-        public Location? Location;
+        public Location Location;
         public string Message;
 
         public CompilerError(Token token, string message) {
-            Token = token;
             Location = token?.Location ?? Compiler.Location.Unknown;
             Message = message;
         }
 
         public CompilerError(Location location, string message) {
-            Token = null;
             Location = location;
             Message = message;
         }
@@ -24,24 +21,21 @@ namespace OpenDreamShared.Compiler {
     }
 
     public struct CompilerWarning {
-        public Token Token;
+        public Location Location;
         public string Message;
 
         public CompilerWarning(Token token, string message) {
-            Token = token;
+            Location = token?.Location ?? Compiler.Location.Unknown;
+            Message = message;
+        }
+
+        public CompilerWarning(Location location, string message) {
+            Location = location;
             Message = message;
         }
 
         public override string ToString() {
-            string location;
-
-            if (Token != null) {
-                location = Token.Location.ToString();
-            } else {
-                location = Location.Unknown.ToString();
-            }
-
-            return $"Warning at {location}: {Message}";
+            return $"Warning at {Location.ToString()}: {Message}";
         }
     }
 

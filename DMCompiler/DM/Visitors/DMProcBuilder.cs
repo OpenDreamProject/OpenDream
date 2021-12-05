@@ -274,7 +274,7 @@ namespace DMCompiler.DM.Visitors {
                         var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
                         if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
                         {
-                            var warn = new CompilerWarning(null, "Cannot currently loop 'in world' for non-ATOM types");
+                            var warn = new CompilerWarning(statementForList.Location, "Cannot currently loop 'in world' for non-ATOM types");
                             DMCompiler.Warning(warn);
                         }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);

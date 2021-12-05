@@ -24,7 +24,7 @@ namespace DMCompiler.DM.Expressions {
 
         public void UnimplementedCheck(DMObject dmObject) {
             if (!DMCompiler.Settings.SuppressUnimplementedWarnings && dmObject.IsProcUnimplemented(_identifier)) {
-                DMCompiler.Warning(new CompilerWarning(null, $"{dmObject.Path}.{_identifier}() is not implemented"));
+                DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"{dmObject.Path}.{_identifier}() is not implemented"));
             }
         }
     }

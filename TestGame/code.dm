@@ -46,7 +46,7 @@
 
 	verb/test_inf_loop()
 		var/i = 0
-        var/k = 0
+		var/k = 0
 		for()
 			world << "i"
 			i++

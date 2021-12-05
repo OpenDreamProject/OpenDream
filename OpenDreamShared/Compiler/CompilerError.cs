@@ -2,7 +2,7 @@
 
 namespace OpenDreamShared.Compiler {
     public struct CompilerError {
-        public Location? Location;
+        public Location Location;
         public string Message;
 
         public CompilerError(Token token, string message) {

@@ -1165,7 +1165,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 if (Check(TokenType.DM_If))
                 {
-                    DMCompiler.Error(new CompilerError(loc, "Expected \"if\" or \"else\""));
+                    Error("Expected \"if\" or \"else\"");
                 }
                 DMASTProcBlockInner body = ProcBlock();
 

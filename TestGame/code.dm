@@ -53,11 +53,11 @@
 			if(i > 10)
 				 break
 
-        while(1)
-            world << "k"
-            k++
-            if(k > 10)
-                 break
+		while(1)
+			world << "k"
+			k++
+			if(k > 10)
+				 break
 
 	verb/test_browse()
 		usr << browse({"

@@ -22,7 +22,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (_proc.HasLocalVariable(parameterName))
                 {
-                    DMCompiler.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
+                    DMCompiler.Error(new CompilerError(procDefinition.Location, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
                     continue;
                 }
                 _proc.AddLocalVariable(parameterName, parameter.ObjectType);

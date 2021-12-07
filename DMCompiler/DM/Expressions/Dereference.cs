@@ -46,6 +46,7 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
+                if (dmObject == null) throw new CompileErrorException(Location, $"Type {expr.Path.Value} does not exist");
 
                 var current = dmObject.GetVariable(_propertyName);
                 if (current == null) current = dmObject.GetGlobalVariable(_propertyName);
@@ -118,12 +119,13 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
+                if (dmObject == null) throw new CompileErrorException(Location, $"Type {expr.Path.Value} does not exist");
                 if (!dmObject.HasProc(_field)) throw new CompileErrorException(Location, $"Type {_expr.Path.Value} does not have a proc named \"{_field}\"");
             }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"attempt to use proc as value");
+            throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {

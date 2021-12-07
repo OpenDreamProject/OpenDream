@@ -20,11 +20,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Negate() {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"-{this}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"-{this}\" is invalid");
         }
 
         public virtual Constant BinaryNot() {
-            throw new CompileErrorException(Location.Unknown,$"const operation \"~{this}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"~{this}\" is invalid");
         }
         #endregion
 
@@ -40,47 +40,47 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Add(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} + {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");
         }
 
         public virtual Constant Subtract(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} - {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} - {rhs}\" is invalid");
         }
 
         public virtual Constant Multiply(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} * {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} * {rhs}\" is invalid");
         }
 
         public virtual Constant Divide(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} / {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} / {rhs}\" is invalid");
         }
 
         public virtual Constant Modulo(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} % {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
         }
 
         public virtual Constant Power(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} ** {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} ** {rhs}\" is invalid");
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} << {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} << {rhs}\" is invalid");
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} >> {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} >> {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} & {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} & {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryXor(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} ^ {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} ^ {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryOr(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} | {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
         #endregion
     }

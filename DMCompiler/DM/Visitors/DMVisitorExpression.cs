@@ -136,7 +136,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             var target = DMExpression.Create(_dmObject, _proc, (DMASTExpression)procCall.Callable, _inferredPath);
-            var args = new ArgumentList(_dmObject, _proc, procCall.Parameters);
+            var args = new ArgumentList(procCall.Location, _dmObject, _proc, procCall.Parameters);
             Result = new Expressions.ProcCall(procCall.Location, target, args);
         }
 
@@ -382,7 +382,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {
-            var args = new ArgumentList(_dmObject, _proc, newPath.Parameters, _inferredPath);
+            var args = new ArgumentList(newPath.Location, _dmObject, _proc, newPath.Parameters, _inferredPath);
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
@@ -391,19 +391,19 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");
             }
 
-            var args = new ArgumentList(_dmObject, _proc, newInferred.Parameters, _inferredPath);
+            var args = new ArgumentList(newInferred.Location, _dmObject, _proc, newInferred.Parameters, _inferredPath);
             Result = new Expressions.NewPath(newInferred.Location, _inferredPath.Value, args);
         }
 
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) {
             var expr = DMExpression.Create(_dmObject, _proc, newIdentifier.Identifier, _inferredPath);
-            var args = new ArgumentList(_dmObject, _proc, newIdentifier.Parameters, _inferredPath);
+            var args = new ArgumentList(newIdentifier.Location, _dmObject, _proc, newIdentifier.Parameters, _inferredPath);
             Result = new Expressions.New(newIdentifier.Location, expr, args);
         }
 
         public void VisitNewDereference(DMASTNewDereference newDereference) {
             var expr = DMExpression.Create(_dmObject, _proc, newDereference.Dereference, _inferredPath);
-            var args = new ArgumentList(_dmObject, _proc, newDereference.Parameters, _inferredPath);
+            var args = new ArgumentList(newDereference.Location, _dmObject, _proc, newDereference.Parameters, _inferredPath);
             Result = new Expressions.New(newDereference.Location, expr, args);
         }
 
@@ -523,7 +523,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCall(DMASTCall call) {
-            var procArgs = new ArgumentList(_dmObject, _proc, call.ProcParameters, _inferredPath);
+            var procArgs = new ArgumentList(call.Location, _dmObject, _proc, call.ProcParameters, _inferredPath);
 
             switch (call.CallParameters.Length) {
                 case 1:

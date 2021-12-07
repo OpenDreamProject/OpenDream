@@ -38,11 +38,11 @@ namespace DMCompiler.DM {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             } else {
-                if (!createIfNonexistent) throw new CompileErrorException(Location.Unknown, $"Type {path} does not exist");
+                if (!createIfNonexistent) return null;
 
                 DMObject parent = null;
                 if (path.Elements.Length > 1) {
-                    parent = GetDMObject(path.FromElements(0, -2), createIfNonexistent);
+                    parent = GetDMObject(path.FromElements(0, -2), true);
                 } else if (path.Elements.Length == 1) {
                     switch (path.LastElement) {
                         case "client":

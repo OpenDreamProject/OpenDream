@@ -104,7 +104,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    DMCompiler.Error(new CompilerError(null, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
+                    DMCompiler.Error(new CompilerError(Location, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
                 }
             }
 
@@ -291,7 +291,7 @@ namespace DMCompiler.DM {
                 var codeLabel = label.Identifier + "_codelabel";
                 if (!_labels.ContainsKey(codeLabel))
                 {
-                    DMCompiler.Error(new CompilerError(null, $"Unknown label {label.Identifier}"));
+                    DMCompiler.Error(new CompilerError(Location, $"Unknown label {label.Identifier}"));
                 }
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;

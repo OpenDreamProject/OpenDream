@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown, "invalid use of arglist");
+            throw new CompileErrorException(Location, "invalid use of arglist");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
@@ -174,7 +174,7 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 foreach (PickValue pickValue in _values) {
-                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location.Unknown, 100)); //Default of 100
+                    DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100
 
                     weight.EmitPushValue(dmObject, proc);
                     pickValue.Value.EmitPushValue(dmObject, proc);
@@ -216,7 +216,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException(Location.Unknown, $"can't get saved value of {_expr}");
+            throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
         }
     }
 
@@ -396,7 +396,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException(Location.Unknown,$"can't get initial value of {_expr}");
+            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
         }
     }
 

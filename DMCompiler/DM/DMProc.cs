@@ -53,7 +53,6 @@ namespace DMCompiler.DM {
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
-            //TODO move location to DMExpression
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());

@@ -1,16 +1,18 @@
+using OpenDreamShared.Compiler;
+
 namespace DMCompiler.DM.Expressions {
     abstract class UnaryOp : DMExpression {
         protected DMExpression Expr { get; }
 
-        public UnaryOp(DMExpression expr) {
+        public UnaryOp(Location location, DMExpression expr) : base(location) {
             Expr = expr;
         }
     }
 
     // -x
     class Negate : UnaryOp {
-        public Negate(DMExpression expr)
-            : base(expr)
+        public Negate(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override Constant ToConstant()
@@ -26,8 +28,8 @@ namespace DMCompiler.DM.Expressions {
 
     // !x
     class Not : UnaryOp {
-        public Not(DMExpression expr)
-            : base(expr)
+        public Not(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override Constant ToConstant()
@@ -43,8 +45,8 @@ namespace DMCompiler.DM.Expressions {
 
     // ~x
     class BinaryNot : UnaryOp {
-        public BinaryNot(DMExpression expr)
-            : base(expr)
+        public BinaryNot(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override Constant ToConstant()
@@ -60,8 +62,8 @@ namespace DMCompiler.DM.Expressions {
 
     // ++x
     class PreIncrement : UnaryOp {
-        public PreIncrement(DMExpression expr)
-            : base(expr)
+        public PreIncrement(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -73,8 +75,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x++
     class PostIncrement : UnaryOp {
-        public PostIncrement(DMExpression expr)
-            : base(expr)
+        public PostIncrement(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -85,8 +87,8 @@ namespace DMCompiler.DM.Expressions {
 
     // --x
     class PreDecrement : UnaryOp {
-        public PreDecrement(DMExpression expr)
-            : base(expr)
+        public PreDecrement(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -98,8 +100,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x--
     class PostDecrement : UnaryOp {
-        public PostDecrement(DMExpression expr)
-            : base(expr)
+        public PostDecrement(Location location, DMExpression expr)
+            : base(location, expr)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

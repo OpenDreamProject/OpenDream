@@ -10,7 +10,7 @@ namespace DMCompiler.DM.Expressions {
         string Value { get; }
         DMExpression[] Expressions { get; }
 
-        public StringFormat(string value, DMExpression[] expressions) {
+        public StringFormat(Location location, string value, DMExpression[] expressions) : base(location) {
             Value = value;
             Expressions = expressions;
         }
@@ -28,7 +28,7 @@ namespace DMCompiler.DM.Expressions {
     class Arglist : DMExpression {
         DMExpression _expr;
 
-        public Arglist(DMExpression expr) {
+        public Arglist(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
@@ -47,7 +47,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression Expr;
         ArgumentList Arguments;
 
-        public New(DMExpression expr, ArgumentList arguments) {
+        public New(Location location, DMExpression expr, ArgumentList arguments) : base(location) {
             Expr = expr;
             Arguments = arguments;
         }
@@ -64,7 +64,7 @@ namespace DMCompiler.DM.Expressions {
         DreamPath TargetPath;
         ArgumentList Arguments;
 
-        public NewPath(DreamPath targetPath, ArgumentList arguments) {
+        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
             TargetPath = targetPath;
             Arguments = arguments;
         }
@@ -81,7 +81,7 @@ namespace DMCompiler.DM.Expressions {
         DreamPath _path;
         DMExpression _container;
 
-        public LocateInferred(DreamPath path, DMExpression container) {
+        public LocateInferred(Location location, DreamPath path, DMExpression container) : base(location) {
             _path = path;
             _container = container;
         }
@@ -104,7 +104,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _path;
         DMExpression _container;
 
-        public Locate(DMExpression path, DMExpression container) {
+        public Locate(Location location, DMExpression path, DMExpression container) : base(location) {
             _path = path;
             _container = container;
         }
@@ -126,7 +126,7 @@ namespace DMCompiler.DM.Expressions {
     class LocateCoordinates : DMExpression {
         DMExpression _x, _y, _z;
 
-        public LocateCoordinates(DMExpression x, DMExpression y, DMExpression z) {
+        public LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : base(location) {
             _x = x;
             _y = y;
             _z = z;
@@ -155,7 +155,7 @@ namespace DMCompiler.DM.Expressions {
 
         PickValue[] _values;
 
-        public Pick(PickValue[] values) {
+        public Pick(Location location, PickValue[] values) : base(location) {
             _values = values;
         }
 
@@ -170,7 +170,7 @@ namespace DMCompiler.DM.Expressions {
 
             if (weighted) {
                 if (_values.Length == 1) {
-                    DMCompiler.Warning(new CompilerWarning(proc.Location, "Weighted pick() with one argument"));
+                    DMCompiler.Warning(new CompilerWarning(Location, "Weighted pick() with one argument"));
                 }
 
                 foreach (PickValue pickValue in _values) {
@@ -195,7 +195,7 @@ namespace DMCompiler.DM.Expressions {
     class IsSaved : DMExpression {
         DMExpression _expr;
 
-        public IsSaved(DMExpression expr) {
+        public IsSaved(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
@@ -225,7 +225,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _expr;
         DMExpression _path;
 
-        public IsType(DMExpression expr, DMExpression path) {
+        public IsType(Location location, DMExpression expr, DMExpression path) : base(location) {
             _expr = expr;
             _path = path;
         }
@@ -242,7 +242,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _expr;
         DreamPath _path;
 
-        public IsTypeInferred(DMExpression expr, DreamPath path) {
+        public IsTypeInferred(Location location, DMExpression expr, DreamPath path) : base(location) {
             _expr = expr;
             _path = path;
         }
@@ -259,7 +259,7 @@ namespace DMCompiler.DM.Expressions {
         // Lazy
         DMASTList _astNode;
 
-        public List(DMASTList astNode) {
+        public List(Location location, DMASTList astNode) : base(location) {
             _astNode = astNode;
         }
 
@@ -327,7 +327,7 @@ namespace DMCompiler.DM.Expressions {
     class NewList : DMExpression {
         DMExpression[] _parameters;
 
-        public NewList(DMExpression[] parameters) {
+        public NewList(Location location, DMExpression[] parameters) : base(location) {
             _parameters = parameters;
         }
 
@@ -352,7 +352,7 @@ namespace DMCompiler.DM.Expressions {
         // Lazy
         DMASTInput _astNode;
 
-        public Input(DMASTInput astNode) {
+        public Input(Location location, DMASTInput astNode) : base(location) {
             _astNode = astNode;
         }
 
@@ -379,7 +379,7 @@ namespace DMCompiler.DM.Expressions {
     class Initial : DMExpression {
         DMExpression _expr;
 
-        public Initial(DMExpression expr) {
+        public Initial(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
@@ -406,12 +406,12 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _b; // ProcName, FuncName
         ArgumentList _procArgs;
 
-        public CallStatement(DMExpression a, ArgumentList procArgs) {
+        public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {
             _a = a;
             _procArgs = procArgs;
         }
 
-        public CallStatement(DMExpression a, DMExpression b, ArgumentList procArgs) {
+        public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs) : base(location) {
             _a = a;
             _b = b;
             _procArgs = procArgs;

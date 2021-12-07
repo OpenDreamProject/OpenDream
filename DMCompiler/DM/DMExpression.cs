@@ -26,6 +26,11 @@ namespace DMCompiler.DM {
         }
 
         public DMValueType ValType = DMValueType.Anything;
+        public Location Location;
+
+        public DMExpression(Location location) {
+            Location = location;
+        }
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);

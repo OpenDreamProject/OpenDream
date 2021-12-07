@@ -1,9 +1,11 @@
+using OpenDreamShared.Compiler;
+
 namespace DMCompiler.DM.Expressions {
     // x ? y : z
     class Ternary : DMExpression {
         DMExpression _a, _b, _c;
 
-        public Ternary(DMExpression a, DMExpression b, DMExpression c) {
+        public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
             _a = a;
             _b = b;
             _c = c;
@@ -39,8 +41,7 @@ namespace DMCompiler.DM.Expressions {
     {
         DMExpression _var, _start, _end;
 
-        public InRange(DMExpression var, DMExpression start, DMExpression end)
-        {
+        public InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : base(location) {
             _var = var;
             _start = start;
             _end = end;

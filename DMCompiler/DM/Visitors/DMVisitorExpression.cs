@@ -22,27 +22,27 @@ namespace DMCompiler.DM.Visitors {
 
 
         public void VisitConstantNull(DMASTConstantNull constant) {
-            Result = new Expressions.Null();
+            Result = new Expressions.Null(constant.Location);
         }
 
         public void VisitConstantInteger(DMASTConstantInteger constant) {
-            Result = new Expressions.Number(constant.Value);
+            Result = new Expressions.Number(constant.Location, constant.Value);
         }
 
         public void VisitConstantFloat(DMASTConstantFloat constant) {
-            Result = new Expressions.Number(constant.Value);
+            Result = new Expressions.Number(constant.Location, constant.Value);
         }
 
         public void VisitConstantString(DMASTConstantString constant) {
-            Result = new Expressions.String(constant.Value);
+            Result = new Expressions.String(constant.Location, constant.Value);
         }
 
         public void VisitConstantResource(DMASTConstantResource constant) {
-            Result = new Expressions.Resource(constant.Path);
+            Result = new Expressions.Resource(constant.Location, constant.Path);
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
-            Result = new Expressions.Path(constant.Value.Path);
+            Result = new Expressions.Path(constant.Location, constant.Value.Path);
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
@@ -56,7 +56,7 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(constant.Location,$"Invalid path {path}.{constant.Search.Path}");
             }
 
-            Result = new Expressions.Path(foundPath.Value);
+            Result = new Expressions.Path(constant.Location, foundPath.Value);
         }
 
         public void VisitStringFormat(DMASTStringFormat stringFormat) {
@@ -64,13 +64,13 @@ namespace DMCompiler.DM.Visitors {
 
             for (int i = 0; i < stringFormat.InterpolatedValues.Length; i++) {
                 if (stringFormat.InterpolatedValues[i] is null) {
-                    expressions[i] = new Expressions.Null();
+                    expressions[i] = new Expressions.Null(stringFormat.Location);
                 } else {
                     expressions[i] = DMExpression.Create(_dmObject, _proc, stringFormat.InterpolatedValues[i], _inferredPath);
                 }
             }
 
-            Result = new Expressions.StringFormat(stringFormat.Value, expressions);
+            Result = new Expressions.StringFormat(stringFormat.Location, stringFormat.Value, expressions);
         }
 
 
@@ -78,11 +78,11 @@ namespace DMCompiler.DM.Visitors {
             var name = identifier.Identifier;
 
             if (name == "src") {
-                Result = new Expressions.Src(_dmObject.Path);
+                Result = new Expressions.Src(identifier.Location, _dmObject.Path);
             } else if (name == "usr") {
-                Result = new Expressions.Usr();
+                Result = new Expressions.Usr(identifier.Location);
             } else if (name == "args") {
-                Result = new Expressions.Args();
+                Result = new Expressions.Args(identifier.Location);
             } else {
                 if (_proc is null)
                 {
@@ -92,17 +92,17 @@ namespace DMCompiler.DM.Visitors {
                 DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
 
                 if (localVar != null) {
-                    Result = new Expressions.Local(localVar.Type, name);
+                    Result = new Expressions.Local(identifier.Location, localVar.Type, name);
                     return;
                 }
 
                 var field = _dmObject.GetVariable(name);
                 if (field != null) {
-                    Result = new Expressions.Field(field.Type, name);
+                    Result = new Expressions.Field(identifier.Location, field.Type, name);
                 } else {
                     int? globalId = _dmObject.GetGlobalVariableId(name);
                     if (globalId != null) {
-                        Result = new Expressions.GlobalField(DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
                     } else {
                         throw new CompileErrorException(identifier.Location,$"unknown identifier \"{name}\"");
                     }
@@ -112,15 +112,15 @@ namespace DMCompiler.DM.Visitors {
 
 
         public void VisitCallableSelf(DMASTCallableSelf self) {
-            Result = new Expressions.ProcSelf();
+            Result = new Expressions.ProcSelf(self.Location);
         }
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
-            Result = new Expressions.ProcSuper();
+            Result = new Expressions.ProcSuper(super.Location);
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
-            Result = new Expressions.Proc(procIdentifier.Identifier);
+            Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {
@@ -130,260 +130,260 @@ namespace DMCompiler.DM.Visitors {
                     if (procCall.Parameters.Length != 1) throw new CompileErrorException(procCall.Location, "arglist must have 1 argument");
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
-                    Result = new Expressions.Arglist(expr);
+                    Result = new Expressions.Arglist(procCall.Location, expr);
                     return;
                 }
             }
 
             var target = DMExpression.Create(_dmObject, _proc, (DMASTExpression)procCall.Callable, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, procCall.Parameters);
-            Result = new Expressions.ProcCall(target, args);
+            Result = new Expressions.ProcCall(procCall.Location, target, args);
         }
 
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
-            Result = new Expressions.Assignment(lhs, rhs);
+            Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
 
         public void VisitNegate(DMASTNegate negate) {
             var expr = DMExpression.Create(_dmObject, _proc, negate.Expression, _inferredPath);
-            Result = new Expressions.Negate(expr);
+            Result = new Expressions.Negate(negate.Location, expr);
         }
 
         public void VisitNot(DMASTNot not) {
             var expr = DMExpression.Create(_dmObject, _proc, not.Expression, _inferredPath);
-            Result = new Expressions.Not(expr);
+            Result = new Expressions.Not(not.Location, expr);
         }
 
         public void VisitBinaryNot(DMASTBinaryNot binaryNot) {
             var expr = DMExpression.Create(_dmObject, _proc, binaryNot.Value, _inferredPath);
-            Result = new Expressions.BinaryNot(expr);
+            Result = new Expressions.BinaryNot(binaryNot.Location, expr);
         }
 
         public void VisitAdd(DMASTAdd add) {
             var lhs = DMExpression.Create(_dmObject, _proc, add.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, add.B, _inferredPath);
-            Result = new Expressions.Add(lhs, rhs);
+            Result = new Expressions.Add(add.Location, lhs, rhs);
         }
 
         public void VisitSubtract(DMASTSubtract subtract) {
             var lhs = DMExpression.Create(_dmObject, _proc, subtract.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, subtract.B, _inferredPath);
-            Result = new Expressions.Subtract(lhs, rhs);
+            Result = new Expressions.Subtract(subtract.Location, lhs, rhs);
         }
 
         public void VisitMultiply(DMASTMultiply multiply) {
             var lhs = DMExpression.Create(_dmObject, _proc, multiply.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, multiply.B, _inferredPath);
-            Result = new Expressions.Multiply(lhs, rhs);
+            Result = new Expressions.Multiply(multiply.Location, lhs, rhs);
         }
 
         public void VisitDivide(DMASTDivide divide) {
             var lhs = DMExpression.Create(_dmObject, _proc, divide.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, divide.B, _inferredPath);
-            Result = new Expressions.Divide(lhs, rhs);
+            Result = new Expressions.Divide(divide.Location, lhs, rhs);
         }
 
         public void VisitModulus(DMASTModulus modulus) {
             var lhs = DMExpression.Create(_dmObject, _proc, modulus.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, modulus.B, _inferredPath);
-            Result = new Expressions.Modulo(lhs, rhs);
+            Result = new Expressions.Modulo(modulus.Location, lhs, rhs);
         }
 
         public void VisitPower(DMASTPower power) {
             var lhs = DMExpression.Create(_dmObject, _proc, power.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, power.B, _inferredPath);
-            Result = new Expressions.Power(lhs, rhs);
+            Result = new Expressions.Power(power.Location, lhs, rhs);
         }
 
         public void VisitAppend(DMASTAppend append) {
             var lhs = DMExpression.Create(_dmObject, _proc, append.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, append.B, _inferredPath);
-            Result = new Expressions.Append(lhs, rhs);
+            Result = new Expressions.Append(append.Location, lhs, rhs);
         }
 
         public void VisitCombine(DMASTCombine combine) {
             var lhs = DMExpression.Create(_dmObject, _proc, combine.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, combine.B, _inferredPath);
-            Result = new Expressions.Combine(lhs, rhs);
+            Result = new Expressions.Combine(combine.Location, lhs, rhs);
         }
 
         public void VisitRemove(DMASTRemove remove) {
             var lhs = DMExpression.Create(_dmObject, _proc, remove.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, remove.B, _inferredPath);
-            Result = new Expressions.Remove(lhs, rhs);
+            Result = new Expressions.Remove(remove.Location, lhs, rhs);
         }
 
         public void VisitMask(DMASTMask mask) {
             var lhs = DMExpression.Create(_dmObject, _proc, mask.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, mask.B, _inferredPath);
-            Result = new Expressions.Mask(lhs, rhs);
+            Result = new Expressions.Mask(mask.Location, lhs, rhs);
         }
 
         public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
             var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
-            Result = new Expressions.LogicalAndAssign(lhs, rhs);
+            Result = new Expressions.LogicalAndAssign(land.Location, lhs, rhs);
         }
         public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
             var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
-            Result = new Expressions.LogicalOrAssign(lhs, rhs);
+            Result = new Expressions.LogicalOrAssign(lor.Location, lhs, rhs);
         }
 
         public void VisitMultiplyAssign(DMASTMultiplyAssign multiplyAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, multiplyAssign.B);
-            Result = new Expressions.MultiplyAssign(lhs, rhs);
+            Result = new Expressions.MultiplyAssign(multiplyAssign.Location, lhs, rhs);
         }
 
         public void VisitDivideAssign(DMASTDivideAssign divideAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, divideAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, divideAssign.B);
-            Result = new Expressions.DivideAssign(lhs, rhs);
+            Result = new Expressions.DivideAssign(divideAssign.Location, lhs, rhs);
         }
 
         public void VisitLeftShiftAssign(DMASTLeftShiftAssign leftShiftAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, leftShiftAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, leftShiftAssign.B);
-            Result = new Expressions.LeftShiftAssign(lhs, rhs);
+            Result = new Expressions.LeftShiftAssign(leftShiftAssign.Location, lhs, rhs);
         }
 
         public void VisitRightShiftAssign(DMASTRightShiftAssign rightShiftAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, rightShiftAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, rightShiftAssign.B);
-            Result = new Expressions.RightShiftAssign(lhs, rhs);
+            Result = new Expressions.RightShiftAssign(rightShiftAssign.Location, lhs, rhs);
         }
 
         public void VisitXorAssign(DMASTXorAssign xorAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, xorAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, xorAssign.B);
-            Result = new Expressions.XorAssign(lhs, rhs);
+            Result = new Expressions.XorAssign(xorAssign.Location, lhs, rhs);
         }
 
         public void VisitModulusAssign(DMASTModulusAssign modulusAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, modulusAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, modulusAssign.B);
-            Result = new Expressions.ModulusAssign(lhs, rhs);
+            Result = new Expressions.ModulusAssign(modulusAssign.Location, lhs, rhs);
         }
 
         public void VisitLeftShift(DMASTLeftShift leftShift) {
             var lhs = DMExpression.Create(_dmObject, _proc, leftShift.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, leftShift.B, _inferredPath);
-            Result = new Expressions.LeftShift(lhs, rhs);
+            Result = new Expressions.LeftShift(leftShift.Location, lhs, rhs);
         }
 
         public void VisitRightShift(DMASTRightShift rightShift) {
             var lhs = DMExpression.Create(_dmObject, _proc, rightShift.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, rightShift.B, _inferredPath);
-            Result = new Expressions.RightShift(lhs, rhs);
+            Result = new Expressions.RightShift(rightShift.Location, lhs, rhs);
         }
 
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) {
             var lhs = DMExpression.Create(_dmObject, _proc, binaryAnd.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, binaryAnd.B, _inferredPath);
-            Result = new Expressions.BinaryAnd(lhs, rhs);
+            Result = new Expressions.BinaryAnd(binaryAnd.Location, lhs, rhs);
         }
 
         public void VisitBinaryXor(DMASTBinaryXor binaryXor) {
             var lhs = DMExpression.Create(_dmObject, _proc, binaryXor.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, binaryXor.B, _inferredPath);
-            Result = new Expressions.BinaryXor(lhs, rhs);
+            Result = new Expressions.BinaryXor(binaryXor.Location, lhs, rhs);
         }
 
         public void VisitBinaryOr(DMASTBinaryOr binaryOr) {
             var lhs = DMExpression.Create(_dmObject, _proc, binaryOr.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, binaryOr.B, _inferredPath);
-            Result = new Expressions.BinaryOr(lhs, rhs);
+            Result = new Expressions.BinaryOr(binaryOr.Location, lhs, rhs);
         }
 
         public void VisitEqual(DMASTEqual equal) {
             var lhs = DMExpression.Create(_dmObject, _proc, equal.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, equal.B, _inferredPath);
-            Result = new Expressions.Equal(lhs, rhs);
+            Result = new Expressions.Equal(equal.Location, lhs, rhs);
         }
 
         public void VisitNotEqual(DMASTNotEqual notEqual) {
             var lhs = DMExpression.Create(_dmObject, _proc, notEqual.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, notEqual.B, _inferredPath);
-            Result = new Expressions.NotEqual(lhs, rhs);
+            Result = new Expressions.NotEqual(notEqual.Location, lhs, rhs);
         }
 
         public void VisitEquivalent(DMASTEquivalent equivalent) {
             var lhs = DMExpression.Create(_dmObject, _proc, equivalent.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, equivalent.B, _inferredPath);
-            Result = new Expressions.Equivalent(lhs, rhs);
+            Result = new Expressions.Equivalent(equivalent.Location, lhs, rhs);
         }
 
         public void VisitNotEquivalent(DMASTNotEquivalent notEquivalent) {
             var lhs = DMExpression.Create(_dmObject, _proc, notEquivalent.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, notEquivalent.B, _inferredPath);
-            Result = new Expressions.NotEquivalent(lhs, rhs);
+            Result = new Expressions.NotEquivalent(notEquivalent.Location, lhs, rhs);
         }
 
         public void VisitGreaterThan(DMASTGreaterThan greaterThan) {
             var lhs = DMExpression.Create(_dmObject, _proc, greaterThan.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, greaterThan.B, _inferredPath);
-            Result = new Expressions.GreaterThan(lhs, rhs);
+            Result = new Expressions.GreaterThan(greaterThan.Location, lhs, rhs);
         }
 
         public void VisitGreaterThanOrEqual(DMASTGreaterThanOrEqual greaterThanOrEqual) {
             var lhs = DMExpression.Create(_dmObject, _proc, greaterThanOrEqual.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, greaterThanOrEqual.B, _inferredPath);
-            Result = new Expressions.GreaterThanOrEqual(lhs, rhs);
+            Result = new Expressions.GreaterThanOrEqual(greaterThanOrEqual.Location, lhs, rhs);
         }
 
         public void VisitLessThan(DMASTLessThan lessThan) {
             var lhs = DMExpression.Create(_dmObject, _proc, lessThan.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, lessThan.B, _inferredPath);
-            Result = new Expressions.LessThan(lhs, rhs);
+            Result = new Expressions.LessThan(lessThan.Location, lhs, rhs);
         }
 
         public void VisitLessThanOrEqual(DMASTLessThanOrEqual lessThanOrEqual) {
             var lhs = DMExpression.Create(_dmObject, _proc, lessThanOrEqual.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, lessThanOrEqual.B, _inferredPath);
-            Result = new Expressions.LessThanOrEqual(lhs, rhs);
+            Result = new Expressions.LessThanOrEqual(lessThanOrEqual.Location, lhs, rhs);
         }
 
         public void VisitOr(DMASTOr or) {
             var lhs = DMExpression.Create(_dmObject, _proc, or.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, or.B, _inferredPath);
-            Result = new Expressions.Or(lhs, rhs);
+            Result = new Expressions.Or(or.Location, lhs, rhs);
         }
 
         public void VisitAnd(DMASTAnd and) {
             var lhs = DMExpression.Create(_dmObject, _proc, and.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, and.B, _inferredPath);
-            Result = new Expressions.And(lhs, rhs);
+            Result = new Expressions.And(and.Location, lhs, rhs);
         }
 
         public void VisitTernary(DMASTTernary ternary) {
             var a = DMExpression.Create(_dmObject, _proc, ternary.A, _inferredPath);
             var b = DMExpression.Create(_dmObject, _proc, ternary.B, _inferredPath);
             var c = DMExpression.Create(_dmObject, _proc, ternary.C, _inferredPath);
-            Result = new Expressions.Ternary(a, b, c);
+            Result = new Expressions.Ternary(ternary.Location, a, b, c);
         }
 
         public void VisitListIndex(DMASTListIndex listIndex) {
             var expr = DMExpression.Create(_dmObject, _proc, listIndex.Expression, _inferredPath);
             var index = DMExpression.Create(_dmObject, _proc, listIndex.Index, expr.Path);
-            Result = new Expressions.ListIndex(expr, index, expr.Path, listIndex.Conditional);
+            Result = new Expressions.ListIndex(listIndex.Location, expr, index, expr.Path, listIndex.Conditional);
         }
 
         public void VisitDereference(DMASTDereference dereference) {
             var expr = DMExpression.Create(_dmObject, _proc, dereference.Expression, _inferredPath);
-            Result = new Expressions.Dereference(expr, dereference);
+            Result = new Expressions.Dereference(dereference.Location, expr, dereference);
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
             var expr = DMExpression.Create(_dmObject, _proc, dereferenceProc.Expression, _inferredPath);
-            Result = new Expressions.DereferenceProc(expr, dereferenceProc);
+            Result = new Expressions.DereferenceProc(dereferenceProc.Location, expr, dereferenceProc);
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {
             var args = new ArgumentList(_dmObject, _proc, newPath.Parameters, _inferredPath);
-            Result = new Expressions.NewPath(newPath.Path.Path, args);
+            Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
@@ -392,39 +392,39 @@ namespace DMCompiler.DM.Visitors {
             }
 
             var args = new ArgumentList(_dmObject, _proc, newInferred.Parameters, _inferredPath);
-            Result = new Expressions.NewPath(_inferredPath.Value, args);
+            Result = new Expressions.NewPath(newInferred.Location, _inferredPath.Value, args);
         }
 
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) {
             var expr = DMExpression.Create(_dmObject, _proc, newIdentifier.Identifier, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, newIdentifier.Parameters, _inferredPath);
-            Result = new Expressions.New(expr, args);
+            Result = new Expressions.New(newIdentifier.Location, expr, args);
         }
 
         public void VisitNewDereference(DMASTNewDereference newDereference) {
             var expr = DMExpression.Create(_dmObject, _proc, newDereference.Dereference, _inferredPath);
             var args = new ArgumentList(_dmObject, _proc, newDereference.Parameters, _inferredPath);
-            Result = new Expressions.New(expr, args);
+            Result = new Expressions.New(newDereference.Location, expr, args);
         }
 
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) {
             var expr = DMExpression.Create(_dmObject, _proc, preIncrement.Expression, _inferredPath);
-            Result = new Expressions.PreIncrement(expr);
+            Result = new Expressions.PreIncrement(preIncrement.Location, expr);
         }
 
         public void VisitPostIncrement(DMASTPostIncrement postIncrement) {
             var expr = DMExpression.Create(_dmObject, _proc, postIncrement.Expression, _inferredPath);
-            Result = new Expressions.PostIncrement(expr);
+            Result = new Expressions.PostIncrement(postIncrement.Location, expr);
         }
 
         public void VisitPreDecrement(DMASTPreDecrement preDecrement) {
             var expr = DMExpression.Create(_dmObject, _proc, preDecrement.Expression, _inferredPath);
-            Result = new Expressions.PreDecrement(expr);
+            Result = new Expressions.PreDecrement(preDecrement.Location, expr);
         }
 
         public void VisitPostDecrement(DMASTPostDecrement postDecrement) {
             var expr = DMExpression.Create(_dmObject, _proc, postDecrement.Expression, _inferredPath);
-            Result = new Expressions.PostDecrement(expr);
+            Result = new Expressions.PostDecrement(postDecrement.Location, expr);
         }
 
         public void VisitLocate(DMASTLocate locate) {
@@ -434,30 +434,30 @@ namespace DMCompiler.DM.Visitors {
                 if (_inferredPath == null) {
                     throw new CompileErrorException(locate.Location, "inferred lcoate requires a type");
                 }
-                Result = new Expressions.LocateInferred(_inferredPath.Value, container);
+                Result = new Expressions.LocateInferred(locate.Location, _inferredPath.Value, container);
                 return;
             }
 
             var pathExpr = DMExpression.Create(_dmObject, _proc, locate.Expression, _inferredPath);
-            Result = new Expressions.Locate(pathExpr, container);
+            Result = new Expressions.Locate(locate.Location, pathExpr, container);
         }
 
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) {
             var _x = DMExpression.Create(_dmObject, _proc, locateCoordinates.X, _inferredPath);
             var _y = DMExpression.Create(_dmObject, _proc, locateCoordinates.Y, _inferredPath);
             var _z = DMExpression.Create(_dmObject, _proc, locateCoordinates.Z, _inferredPath);
-            Result = new Expressions.LocateCoordinates(_x, _y, _z);
+            Result = new Expressions.LocateCoordinates(locateCoordinates.Location, _x, _y, _z);
         }
 
         public void VisitIsSaved(DMASTIsSaved isSaved) {
             var expr = DMExpression.Create(_dmObject, _proc, isSaved.Expression, _inferredPath);
-            Result = new Expressions.IsSaved(expr);
+            Result = new Expressions.IsSaved(isSaved.Location, expr);
         }
 
         public void VisitIsType(DMASTIsType isType) {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
             var path = DMExpression.Create(_dmObject, _proc, isType.Type, _inferredPath);
-            Result = new Expressions.IsType(expr, path);
+            Result = new Expressions.IsType(isType.Location, expr, path);
         }
 
         public void VisitImplicitIsType(DMASTImplicitIsType isType) {
@@ -467,11 +467,11 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(isType.Location,"An inferred istype requires a type!");
             }
 
-            Result = new Expressions.IsTypeInferred(expr, expr.Path.Value);
+            Result = new Expressions.IsTypeInferred(isType.Location, expr, expr.Path.Value);
         }
 
         public void VisitList(DMASTList list) {
-            Result = new Expressions.List(list);
+            Result = new Expressions.List(list.Location, list);
         }
 
         public void VisitNewList(DMASTNewList newList) {
@@ -484,29 +484,29 @@ namespace DMCompiler.DM.Visitors {
                 expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
             }
 
-            Result = new Expressions.NewList(expressions);
+            Result = new Expressions.NewList(newList.Location, expressions);
         }
 
         public void VisitInput(DMASTInput input) {
-            Result = new Expressions.Input(input);
+            Result = new Expressions.Input(input.Location, input);
         }
 
         public void VisitInitial(DMASTInitial initial) {
             var expr = DMExpression.Create(_dmObject, _proc, initial.Expression, _inferredPath);
-            Result = new Expressions.Initial(expr);
+            Result = new Expressions.Initial(initial.Location, expr);
         }
 
         public void VisitIn(DMASTExpressionIn expressionIn) {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);
-            Result = new Expressions.In(expr, container);
+            Result = new Expressions.In(expressionIn.Location, expr, container);
         }
 
         public void VisitInRange(DMASTExpressionInRange expressionInRange) {
             var value = DMExpression.Create(_dmObject, _proc, expressionInRange.Value, _inferredPath);
             var startRange = DMExpression.Create(_dmObject, _proc, expressionInRange.StartRange, _inferredPath);
             var endRange = DMExpression.Create(_dmObject, _proc, expressionInRange.EndRange, _inferredPath);
-            Result = new Expressions.InRange(value, startRange, endRange);
+            Result = new Expressions.InRange(expressionInRange.Location, value, startRange, endRange);
         }
 
         public void VisitPick(DMASTPick pick) {
@@ -519,7 +519,7 @@ namespace DMCompiler.DM.Visitors {
                 pickValues[i] = new Expressions.Pick.PickValue(weight, value);
             }
 
-            Result = new Expressions.Pick(pickValues);
+            Result = new Expressions.Pick(pick.Location, pickValues);
         }
 
         public void VisitCall(DMASTCall call) {
@@ -529,7 +529,7 @@ namespace DMCompiler.DM.Visitors {
                 case 1:
                     {
                         var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(a, procArgs);
+                        Result = new Expressions.CallStatement(call.Location, a, procArgs);
                     }
                     break;
 
@@ -537,7 +537,7 @@ namespace DMCompiler.DM.Visitors {
                     {
                         var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
                         var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(a, b, procArgs);
+                        Result = new Expressions.CallStatement(call.Location, a, b, procArgs);
                     }
                     break;
 

@@ -857,7 +857,7 @@ namespace DMCompiler.Compiler.DM {
 
                             initializer = new DMASTProcStatementExpression(variable.Location, new DMASTAssign(variable.Location, variable, value));
                         }
-                    } else {
+                    } else if(Current().Type != TokenType.DM_Comma && Current().Type != TokenType.DM_Semicolon) {
                         ConsumeRightParenthesis();
                         Check(TokenType.DM_Semicolon);
                         Whitespace();

@@ -29,6 +29,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) { throw new NotImplementedException(); }
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
+        public void VisitProcStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {throw new NotImplementedException(); }
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
@@ -562,6 +563,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementForLoop(this);
+        }
+    }
+
+    public class DMASTProcStatementInfLoop : DMASTProcStatement{
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementInfLoop(Location location, DMASTProcBlockInner body) : base(location){
+            Body = body;
+        }
+
+        public override void Visit(DMASTVisitor visitor){
+            visitor.VisitProcStatementInfLoop(this);
         }
     }
 

@@ -858,6 +858,12 @@ namespace DMCompiler.Compiler.DM {
 
                             initializer = new DMASTProcStatementExpression(variable.Location, new DMASTAssign(variable.Location, variable, value));
                         }
+                    } else if(Current().Type != TokenType.DM_Comma && Current().Type != TokenType.DM_Semicolon) {
+                        ConsumeRightParenthesis();
+                        Check(TokenType.DM_Semicolon);
+                        Whitespace();
+                        Newline();
+                        return new DMASTProcStatementInfLoop(Current().Location,GetForBody());
                     }
                 }
 
@@ -949,6 +955,7 @@ namespace DMCompiler.Compiler.DM {
                     Whitespace();
                     Newline();
 
+
                     //Implicit "in world"
                     if (variableDeclaration.Value is null && rangeEnd is null && defaultStep) {
                         return new DMASTProcStatementForList(loc, initializer, variable, new DMASTIdentifier(loc, "world"), GetForBody());
@@ -976,7 +983,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementWhile While() {
+        public DMASTProcStatement While() {
             if (Check(TokenType.DM_While)) {
                 var loc = Current().Location;
                 Whitespace();
@@ -997,8 +1004,13 @@ namespace DMCompiler.Compiler.DM {
 
                     body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
                 }
-
+                if(conditional is DMASTConstantInteger){
+                    if(((DMASTConstantInteger)conditional).Value != 0){
+                        return new DMASTProcStatementInfLoop(loc,body);
+                    }
+                }
                 return new DMASTProcStatementWhile(loc, conditional, body);
+
             }
 
             return null;

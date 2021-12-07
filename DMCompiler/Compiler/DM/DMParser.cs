@@ -1233,7 +1233,7 @@ namespace DMCompiler.Compiler.DM {
                 if (catchBody == null) {
                     DMASTProcStatement statement = ProcStatement();
 
-                    catchBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    if (statement != null) catchBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
                 }
 
                 return new DMASTProcStatementTryCatch(loc, tryBody, catchBody, parameter);

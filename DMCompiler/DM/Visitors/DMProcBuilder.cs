@@ -473,9 +473,11 @@ namespace DMCompiler.DM.Visitors {
 
             //TODO make catching actually work
             _proc.AddLabel(catchLabel);
-            _proc.StartScope();
-            ProcessBlockInner(tryCatch.CatchBody);
-            _proc.EndScope();
+            if (tryCatch.CatchBody != null) {
+                _proc.StartScope();
+                ProcessBlockInner(tryCatch.CatchBody);
+                _proc.EndScope();
+            }
             _proc.AddLabel(endLabel);
 
         }

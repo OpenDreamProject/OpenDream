@@ -179,7 +179,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
             tryCatch.TryBody.Visit(this);
-            tryCatch.CatchBody.Visit(this);
+            tryCatch.CatchBody?.Visit(this);
         }
 
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) {

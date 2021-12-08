@@ -6,6 +6,8 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
+        public Constant(Location location) : base(location) { }
+
         public sealed override Constant ToConstant() {
             return this;
         }
@@ -14,77 +16,79 @@ namespace DMCompiler.DM.Expressions {
 
         #region Unary Operations
         public Constant Not() {
-            return new Number(IsTruthy() ? 0 : 1);
+            return new Number(Location, IsTruthy() ? 0 : 1);
         }
 
         public virtual Constant Negate() {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"-{this}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"-{this}\" is invalid");
         }
 
         public virtual Constant BinaryNot() {
-            throw new CompileErrorException(Location.Unknown,$"const operation \"~{this}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"~{this}\" is invalid");
         }
         #endregion
 
         #region Binary Operations
         public Constant And(Constant rhs) {
             var truthy = IsTruthy() && rhs.IsTruthy();
-            return new Number(truthy ? 1 : 0);
+            return new Number(Location, truthy ? 1 : 0);
         }
 
         public Constant Or(Constant rhs) {
             var truthy = IsTruthy() || rhs.IsTruthy();
-            return new Number(truthy ? 1 : 0);
+            return new Number(Location, truthy ? 1 : 0);
         }
 
         public virtual Constant Add(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} + {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");
         }
 
         public virtual Constant Subtract(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} - {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} - {rhs}\" is invalid");
         }
 
         public virtual Constant Multiply(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} * {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} * {rhs}\" is invalid");
         }
 
         public virtual Constant Divide(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} / {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} / {rhs}\" is invalid");
         }
 
         public virtual Constant Modulo(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} % {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
         }
 
         public virtual Constant Power(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} ** {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} ** {rhs}\" is invalid");
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} << {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} << {rhs}\" is invalid");
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} >> {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} >> {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} & {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} & {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryXor(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} ^ {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} ^ {rhs}\" is invalid");
         }
 
         public virtual Constant BinaryOr(Constant rhs) {
-            throw new CompileErrorException(Location.Unknown, $"const operation \"{this} | {rhs}\" is invalid");
+            throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
         #endregion
     }
 
     // null
     class Null : Constant {
+        public Null(Location location) : base(location) { }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
         }
@@ -98,11 +102,11 @@ namespace DMCompiler.DM.Expressions {
     class Number : Constant {
         float Value { get; }
 
-        public Number(int value) {
+        public Number(Location location, int value) : base(location) {
             Value = value;
         }
 
-        public Number(float value) {
+        public Number(Location location, float value) : base(location) {
             Value = value;
         }
 
@@ -115,11 +119,11 @@ namespace DMCompiler.DM.Expressions {
         public override object ToJsonRepresentation() => Value;
 
         public override Constant Negate() {
-            return new Number(-Value);
+            return new Number(Location, -Value);
         }
 
         public override Constant BinaryNot() {
-            return new Number(~(int)Value);
+            return new Number(Location, ~(int)Value);
         }
 
         public override Constant Add(Constant rhs) {
@@ -127,7 +131,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(Value + rhsNum.Value);
+            return new Number(Location, Value + rhsNum.Value);
         }
 
         public override Constant Subtract(Constant rhs) {
@@ -135,7 +139,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(Value - rhsNum.Value);
+            return new Number(Location, Value - rhsNum.Value);
         }
 
         public override Constant Multiply(Constant rhs) {
@@ -143,7 +147,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(Value * rhsNum.Value);
+            return new Number(Location, Value * rhsNum.Value);
         }
 
         public override Constant Divide(Constant rhs) {
@@ -151,7 +155,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(Value / rhsNum.Value);
+            return new Number(Location, Value / rhsNum.Value);
         }
 
         public override Constant Modulo(Constant rhs) {
@@ -159,7 +163,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(Value % rhsNum.Value);
+            return new Number(Location, Value % rhsNum.Value);
         }
 
         public override Constant Power(Constant rhs) {
@@ -167,7 +171,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(MathF.Pow(Value, rhsNum.Value));
+            return new Number(Location, MathF.Pow(Value, rhsNum.Value));
         }
 
         public override Constant LeftShift(Constant rhs) {
@@ -175,7 +179,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int)Value) << ((int)rhsNum.Value));
+            return new Number(Location, ((int)Value) << ((int)rhsNum.Value));
         }
 
         public override Constant RightShift(Constant rhs) {
@@ -183,7 +187,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int)Value) >> ((int)rhsNum.Value));
+            return new Number(Location, ((int)Value) >> ((int)rhsNum.Value));
         }
 
 
@@ -192,7 +196,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int)Value) & ((int)rhsNum.Value));
+            return new Number(Location, ((int)Value) & ((int)rhsNum.Value));
         }
 
 
@@ -201,7 +205,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int)Value) ^ ((int)rhsNum.Value));
+            return new Number(Location, ((int)Value) ^ ((int)rhsNum.Value));
         }
 
 
@@ -210,7 +214,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new Number(((int)Value) | ((int)rhsNum.Value));
+            return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
         }
     }
 
@@ -218,7 +222,7 @@ namespace DMCompiler.DM.Expressions {
     class String : Constant {
         string Value { get; }
 
-        public String(string value) {
+        public String(Location location, string value) : base(location) {
             Value = value;
         }
 
@@ -235,7 +239,7 @@ namespace DMCompiler.DM.Expressions {
                 return base.Add(rhs);
             }
 
-            return new String(Value + rhsString.Value);
+            return new String(Location, Value + rhsString.Value);
         }
     }
 
@@ -243,7 +247,7 @@ namespace DMCompiler.DM.Expressions {
     class Resource : Constant {
         string Value { get; }
 
-        public Resource(string value) {
+        public Resource(Location location, string value) : base(location) {
             Value = value;
         }
 
@@ -265,7 +269,7 @@ namespace DMCompiler.DM.Expressions {
     class Path : Constant {
         public DreamPath Value { get; }
 
-        public Path(DreamPath value) {
+        public Path(Location location, DreamPath value) : base(location) {
             Value = value;
         }
 

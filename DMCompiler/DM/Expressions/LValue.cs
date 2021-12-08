@@ -6,7 +6,7 @@ namespace DMCompiler.DM.Expressions {
         public override DreamPath? Path => _path;
         DreamPath? _path;
 
-        public LValue(DreamPath? path) {
+        public LValue(Location location, DreamPath? path) : base(location) {
             _path = path;
         }
 
@@ -19,8 +19,8 @@ namespace DMCompiler.DM.Expressions {
 
     // src
     class Src : LValue {
-        public Src(DreamPath? path)
-            : base(path)
+        public Src(Location location, DreamPath? path)
+            : base(location, path)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -30,8 +30,8 @@ namespace DMCompiler.DM.Expressions {
 
     // usr
     class Usr : LValue {
-        public Usr()
-            : base(DreamPath.Mob)
+        public Usr(Location location)
+            : base(location, DreamPath.Mob)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -41,8 +41,8 @@ namespace DMCompiler.DM.Expressions {
 
     // args
     class Args : LValue {
-        public Args()
-            : base(DreamPath.List)
+        public Args(Location location)
+            : base(location, DreamPath.List)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -54,8 +54,8 @@ namespace DMCompiler.DM.Expressions {
     class Local : LValue {
         string Name { get; }
 
-        public Local(DreamPath? path, string name)
-            : base(path) {
+        public Local(Location location, DreamPath? path, string name)
+            : base(location, path) {
             Name = name;
         }
 
@@ -68,8 +68,8 @@ namespace DMCompiler.DM.Expressions {
     class Field : LValue {
         string Name { get; }
 
-        public Field(DreamPath? path, string name)
-            : base(path) {
+        public Field(Location location, DreamPath? path, string name)
+            : base(location, path) {
             Name = name;
         }
 
@@ -92,8 +92,8 @@ namespace DMCompiler.DM.Expressions {
     class GlobalField : LValue {
         int Id { get; }
 
-        public GlobalField(DreamPath? path, int id)
-            : base(path) {
+        public GlobalField(Location location, DreamPath? path, int id)
+            : base(location, path) {
             Id = id;
         }
 
@@ -102,11 +102,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public void EmitPushInitial(DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"initial() on globals is unimplemented");
+            throw new CompileErrorException(Location, "initial() on globals is unimplemented");
         }
 
         public void EmitPushIsSaved(DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"issaved() on globals is unimplemented");
+            throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
         }
     }
 

@@ -20,12 +20,12 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
-                if (_proc.HasLocalVariable(parameterName))
+                if (!_proc.TryAddLocalVariable(parameterName, parameter.ObjectType))
                 {
-                    DMCompiler.Error(new CompilerError(null, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
+                    DMCompiler.Error(new CompilerError(procDefinition.Location, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
                     continue;
                 }
-                _proc.AddLocalVariable(parameterName, parameter.ObjectType);
+
                 if (parameter.Value != null) { //Parameter has a default value
                     string afterDefaultValueCheck = _proc.NewLabelName();
 
@@ -76,6 +76,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
                 case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
                 case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
+                case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
                 case DMASTProcStatementSwitch statementSwitch: ProcessStatementSwitch(statementSwitch); break;
@@ -173,7 +174,10 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
+            if (!_proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type)) {
+                DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
+                return;
+            }
 
             if (varDeclaration.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
@@ -324,6 +328,22 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
+        //Generic infinite loop, while loops with static expression as their conditional with positive truthfullness get turned into this as well as empty for() calls
+        public void ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop){
+            _proc.StartScope();
+            {
+                string loopLabel = _proc.NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    ProcessBlockInner(statementInfLoop.Body);
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
+                }
+                _proc.LoopEnd();
+            }
+            _proc.EndScope();
+        }
+
         public void ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {
             string loopLabel = _proc.NewLabelName();
 
@@ -451,14 +471,18 @@ namespace DMCompiler.DM.Visitors {
             {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
-                _proc.AddLocalVariable(param.Name, param.Type);
+                if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
+                    DMCompiler.Error(new CompilerError(param.Location, $"Duplicate var {param.Name}"));
+                }
             }
 
             //TODO make catching actually work
             _proc.AddLabel(catchLabel);
-            _proc.StartScope();
-            ProcessBlockInner(tryCatch.CatchBody);
-            _proc.EndScope();
+            if (tryCatch.CatchBody != null) {
+                _proc.StartScope();
+                ProcessBlockInner(tryCatch.CatchBody);
+                _proc.EndScope();
+            }
             _proc.AddLabel(endLabel);
 
         }

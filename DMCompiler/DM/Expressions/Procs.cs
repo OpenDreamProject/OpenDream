@@ -5,35 +5,33 @@ namespace DMCompiler.DM.Expressions {
     class Proc : DMExpression {
         string _identifier;
 
-        public Proc(string identifier) {
+        public Proc(Location location, string identifier) : base(location) {
             _identifier = identifier;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(proc.Location,"attempt to use proc as value");
+            throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             if (!dmObject.HasProc(_identifier)) {
-                throw new CompileErrorException(proc.Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+                throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             }
 
             proc.GetProc(_identifier);
             return ProcPushResult.Unconditional;
         }
 
-        public void UnimplementedCheck(DMObject dmObject) {
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && dmObject.IsProcUnimplemented(_identifier)) {
-                DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"{dmObject.Path}.{_identifier}() is not implemented"));
-            }
+        public DMProc GetProc(DMObject dmObject) {
+            return dmObject.GetProcs(_identifier)?[^1];
         }
     }
 
     // .
     // This is an LValue _and_ a proc
     class ProcSelf : LValue {
-        public ProcSelf()
-            : base(null)
+        public ProcSelf(Location location)
+            : base(location, null)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -48,8 +46,10 @@ namespace DMCompiler.DM.Expressions {
 
     // ..
     class ProcSuper : DMExpression {
+        public ProcSuper(Location location) : base(location) { }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(proc.Location,"attempt to use proc as value");
+            throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
@@ -63,15 +63,20 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _target;
         ArgumentList _arguments;
 
-        public ProcCall(DMExpression target, ArgumentList arguments) {
+        public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
             _arguments = arguments;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            switch (_target) {
-                case Proc procTarget: procTarget.UnimplementedCheck(dmObject); break;
-                case DereferenceProc derefTarget: derefTarget.UnimplementedCheck(); break;
+            DMProc targetProc = _target switch {
+                Proc procTarget => procTarget.GetProc(dmObject),
+                DereferenceProc derefTarget => derefTarget.GetProc(),
+                _ => null
+            };
+
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && targetProc?.Unimplemented == true) {
+                DMCompiler.Warning(new CompilerWarning(Location, $"{dmObject.Path}.{targetProc.Name}() is not implemented"));
             }
 
             var _procResult = _target.EmitPushProc(dmObject, proc);

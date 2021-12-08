@@ -50,10 +50,6 @@ namespace DMCompiler.DM {
 
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
-                if ((variable.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings)
-                {
-                    DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"{Path}.{name} is not implemented and will have unexpected behavior"));
-                }
                 return variable;
             }
             return Parent?.GetVariable(name);

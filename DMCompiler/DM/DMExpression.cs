@@ -26,6 +26,11 @@ namespace DMCompiler.DM {
         }
 
         public DMValueType ValType = DMValueType.Anything;
+        public Location Location;
+
+        public DMExpression(Location location) {
+            Location = location;
+        }
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
@@ -45,12 +50,12 @@ namespace DMCompiler.DM {
 
         // Attempt to convert this expression into a Constant expression
         public virtual Expressions.Constant ToConstant() {
-            throw new CompileErrorException(Location.Unknown,$"expression {this} can not be const-evaluated");
+            throw new CompileErrorException(Location, $"expression {this} can not be const-evaluated");
         }
 
         // Attempt to create a json-serializable version of this expression
         public virtual object ToJsonRepresentation() {
-            throw new CompileErrorException(Location.Unknown,$"expression {this} can not be serialized to json");
+            throw new CompileErrorException(Location, $"expression {this} can not be serialized to json");
         }
 
         // Emits code that pushes the result of this expression to the proc's stack
@@ -60,11 +65,11 @@ namespace DMCompiler.DM {
         // Emits code that pushes the identifier of this expression to the proc's stack
         // May throw if this expression is unable to be written
         public virtual IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"attempt to assign to r-value");
+            throw new CompileErrorException(Location, "attempt to assign to r-value");
         }
 
         public virtual ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location.Unknown,"attempt to use non-proc expression as proc");
+            throw new CompileErrorException(Location, "attempt to use non-proc expression as proc");
         }
 
         public virtual DreamPath? Path => null;
@@ -75,8 +80,10 @@ namespace DMCompiler.DM {
     class ArgumentList {
         (string Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
+        public Location Location;
 
-        public ArgumentList(DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {
+        public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {
+            Location = location;
             if (arguments == null) {
                 Expressions = new (string, DMExpression)[0];
                 return;
@@ -99,7 +106,7 @@ namespace DMCompiler.DM {
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
                 if (Expressions.Length != 1) {
-                    throw new CompileErrorException(Location.Unknown, "arglist expression should be the only argument");
+                    throw new CompileErrorException(Location, "arglist expression should be the only argument");
                 }
 
                 arglist.EmitPushArglist(dmObject, proc);

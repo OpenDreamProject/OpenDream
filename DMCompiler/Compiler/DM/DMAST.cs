@@ -29,6 +29,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) { throw new NotImplementedException(); }
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
+        public void VisitProcStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {throw new NotImplementedException(); }
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementSwitch(DMASTProcStatementSwitch statementSwitch) { throw new NotImplementedException(); }
@@ -39,6 +40,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
+        public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
         public void VisitConstantFloat(DMASTConstantFloat constant) { throw new NotImplementedException(); }
         public void VisitConstantString(DMASTConstantString constant) { throw new NotImplementedException(); }
@@ -565,6 +567,18 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTProcStatementInfLoop : DMASTProcStatement{
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementInfLoop(Location location, DMASTProcBlockInner body) : base(location){
+            Body = body;
+        }
+
+        public override void Visit(DMASTVisitor visitor){
+            visitor.VisitProcStatementInfLoop(this);
+        }
+    }
+
     public class DMASTProcStatementWhile : DMASTProcStatement {
         public DMASTExpression Conditional;
         public DMASTProcBlockInner Body;
@@ -712,6 +726,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIdentifier(this);
+        }
+    }
+
+    public class DMASTGlobalIdentifier : DMASTExpression {
+        public string Identifier;
+
+        public DMASTGlobalIdentifier(Location location, string identifier) : base(location) {
+            Identifier = identifier;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitGlobalIdentifier(this);
         }
     }
 

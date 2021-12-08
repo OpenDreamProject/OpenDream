@@ -124,9 +124,9 @@ namespace DMCompiler.DM.Visitors {
 
                 dmObject.AddProc(procName, proc);
                 if (procDefinition.IsVerb) {
-                    Expressions.Field field = new Expressions.Field(DreamPath.List, "verbs");
+                    Expressions.Field field = new Expressions.Field(Location.Unknown, DreamPath.List, "verbs");
                     DreamPath procPath = new DreamPath(".proc/" + procName);
-                    Expressions.Append append = new Expressions.Append(field, new Expressions.Path(procPath));
+                    Expressions.Append append = new Expressions.Append(Location.Unknown, field, new Expressions.Path(Location.Unknown, procPath));
 
                     dmObject.InitializationProcExpressions.Add(append);
                 }
@@ -142,14 +142,14 @@ namespace DMCompiler.DM.Visitors {
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewPath:
-                    variable.Value = new Expressions.Null();
+                    variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:
                     if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");
 
-                    variable.Value = new Expressions.Null();
+                    variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;
                 default:
@@ -163,13 +163,13 @@ namespace DMCompiler.DM.Visitors {
                 int? globalId = _currentObject.GetGlobalVariableId(variable.Name);
                 if (globalId == null) throw new Exception($"Invalid global {_currentObject.Path}.{variable.Name}");
 
-                Expressions.GlobalField field = new Expressions.GlobalField(variable.Type, globalId.Value);
-                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+                Expressions.GlobalField field = new Expressions.GlobalField(Location.Unknown, variable.Type, globalId.Value);
+                Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
 
                 DMObjectTree.AddGlobalInitProcAssign(assign);
             } else {
-                Expressions.Field field = new Expressions.Field(variable.Type, variable.Name);
-                Expressions.Assignment assign = new Expressions.Assignment(field, expression);
+                Expressions.Field field = new Expressions.Field(Location.Unknown, variable.Type, variable.Name);
+                Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
 
                 _currentObject.InitializationProcExpressions.Add(assign);
             }

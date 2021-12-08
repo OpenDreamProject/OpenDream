@@ -102,8 +102,6 @@ namespace DMCompiler {
                 foreach (CompilerError error in dmParser.Errors) {
                     Error(error);
                 }
-
-                return false;
             }
 
             if (astFile == null) return false;

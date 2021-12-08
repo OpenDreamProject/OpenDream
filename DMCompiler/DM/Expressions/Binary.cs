@@ -1,9 +1,11 @@
+using OpenDreamShared.Compiler;
+
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
         protected DMExpression LHS { get; }
         protected DMExpression RHS { get; }
 
-        public BinaryOp(DMExpression lhs, DMExpression rhs) {
+        public BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
             LHS = lhs;
             RHS = rhs;
         }
@@ -12,8 +14,8 @@ namespace DMCompiler.DM.Expressions {
 #region Simple
     // x + y
     class Add : BinaryOp {
-        public Add(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Add(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -32,8 +34,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x - y
     class Subtract : BinaryOp {
-        public Subtract(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Subtract(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -52,8 +54,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x * y
     class Multiply : BinaryOp {
-        public Multiply(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Multiply(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -72,8 +74,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x / y
     class Divide : BinaryOp {
-        public Divide(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Divide(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -92,8 +94,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x % y
     class Modulo : BinaryOp {
-        public Modulo(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Modulo(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -112,8 +114,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x ** y
     class Power : BinaryOp {
-        public Power(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Power(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -132,8 +134,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x << y
     class LeftShift : BinaryOp {
-        public LeftShift(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public LeftShift(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -152,8 +154,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x >> y
     class RightShift : BinaryOp {
-        public RightShift(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public RightShift(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -172,8 +174,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x & y
     class BinaryAnd : BinaryOp {
-        public BinaryAnd(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public BinaryAnd(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -192,8 +194,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x ^ y
     class BinaryXor : BinaryOp {
-        public BinaryXor(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public BinaryXor(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -212,8 +214,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x | y
     class BinaryOr : BinaryOp {
-        public BinaryOr(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public BinaryOr(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -232,8 +234,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x == y
     class Equal : BinaryOp {
-        public Equal(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Equal(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -245,8 +247,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x != y
     class NotEqual : BinaryOp {
-        public NotEqual(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public NotEqual(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -258,8 +260,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x ~= y
     class Equivalent : BinaryOp {
-        public Equivalent(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Equivalent(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -271,8 +273,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x ~! y
     class NotEquivalent : BinaryOp {
-        public NotEquivalent(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public NotEquivalent(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -284,8 +286,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x > y
     class GreaterThan : BinaryOp {
-        public GreaterThan(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public GreaterThan(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -297,8 +299,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x >= y
     class GreaterThanOrEqual : BinaryOp {
-        public GreaterThanOrEqual(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public GreaterThanOrEqual(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -311,8 +313,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x < y
     class LessThan : BinaryOp {
-        public LessThan(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public LessThan(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -324,8 +326,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x <= y
     class LessThanOrEqual : BinaryOp {
-        public LessThanOrEqual(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public LessThanOrEqual(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -337,8 +339,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x || y
     class Or : BinaryOp {
-        public Or(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public Or(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -360,8 +362,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x && y
     class And : BinaryOp {
-        public And(DMExpression lhs, DMExpression rhs)
-            : base(lhs, rhs)
+        public And(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs)
         {}
 
         public override Constant ToConstant()
@@ -383,8 +385,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x in y
     class In : BinaryOp {
-        public In(DMExpression expr, DMExpression container)
-            : base(expr, container)
+        public In(Location location, DMExpression expr, DMExpression container)
+            : base(location, expr, container)
         {}
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -397,8 +399,8 @@ namespace DMCompiler.DM.Expressions {
 
 #region Compound Assignment
         abstract class AssignmentBinaryOp : BinaryOp {
-            public AssignmentBinaryOp(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public abstract void EmitOp(DMObject dmObject, DMProc proc);
@@ -429,8 +431,8 @@ namespace DMCompiler.DM.Expressions {
 
         // Same as AssignmentBinaryOp except the lhs identifier is pushed to the stack twice
         abstract class DoubleAssignmentBinaryOp : BinaryOp {
-            public DoubleAssignmentBinaryOp(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public DoubleAssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public abstract void EmitOps(DMObject dmObject, DMProc proc);
@@ -465,8 +467,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x = y
         class Assignment : AssignmentBinaryOp {
-            public Assignment(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public Assignment(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOp(DMObject dmObject, DMProc proc)
@@ -477,8 +479,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x += y
         class Append : AssignmentBinaryOp {
-            public Append(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public Append(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOp(DMObject dmObject, DMProc proc) {
@@ -488,8 +490,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x |= y
         class Combine : AssignmentBinaryOp {
-            public Combine(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public Combine(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOp(DMObject dmObject, DMProc proc) {
@@ -499,8 +501,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x -= y
         class Remove : AssignmentBinaryOp {
-            public Remove(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public Remove(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOp(DMObject dmObject, DMProc proc) {
@@ -510,8 +512,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x &= y
         class Mask : AssignmentBinaryOp {
-            public Mask(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public Mask(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOp(DMObject dmObject, DMProc proc) {
@@ -521,7 +523,7 @@ namespace DMCompiler.DM.Expressions {
 
         // x &&= y
         class LogicalAndAssign : BinaryOp {
-            public LogicalAndAssign(DMExpression lhs, DMExpression rhs) : base(lhs, rhs) { }
+            public LogicalAndAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 var skipRHSLabel = proc.NewLabelName();
                 switch (LHS.EmitIdentifier(dmObject, proc)) {
@@ -555,7 +557,7 @@ namespace DMCompiler.DM.Expressions {
 
         // x ||= y
         class LogicalOrAssign : BinaryOp {
-            public LogicalOrAssign(DMExpression lhs, DMExpression rhs) : base(lhs, rhs) { }
+            public LogicalOrAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
             public override void EmitPushValue(DMObject dmObject, DMProc proc) {
                 var skipRHSLabel = proc.NewLabelName();
                 switch (LHS.EmitIdentifier(dmObject, proc)) {
@@ -589,8 +591,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x *= y
         class MultiplyAssign : DoubleAssignmentBinaryOp {
-            public MultiplyAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public MultiplyAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {
@@ -601,8 +603,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x /= y
         class DivideAssign : DoubleAssignmentBinaryOp {
-            public DivideAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public DivideAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {
@@ -613,8 +615,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x <<= y
         class LeftShiftAssign : DoubleAssignmentBinaryOp {
-            public LeftShiftAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public LeftShiftAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {
@@ -625,8 +627,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x >>= y
         class RightShiftAssign : DoubleAssignmentBinaryOp {
-            public RightShiftAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public RightShiftAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {
@@ -637,8 +639,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x ^= y
         class XorAssign : DoubleAssignmentBinaryOp {
-            public XorAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public XorAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {
@@ -649,8 +651,8 @@ namespace DMCompiler.DM.Expressions {
 
         // x %= y
         class ModulusAssign : DoubleAssignmentBinaryOp {
-            public ModulusAssign(DMExpression lhs, DMExpression rhs)
-                : base(lhs, rhs)
+            public ModulusAssign(Location location, DMExpression lhs, DMExpression rhs)
+                : base(location, lhs, rhs)
             {}
 
             public override void EmitOps(DMObject dmObject, DMProc proc) {

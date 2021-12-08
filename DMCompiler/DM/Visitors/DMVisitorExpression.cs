@@ -108,6 +108,18 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
+            string name = globalIdentifier.Identifier;
+
+            int? globalId = _dmObject?.GetGlobalVariableId(name);
+            if (globalId != null) {
+                Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                return;
+            }
+
+            DMCompiler.Error(new CompilerError(globalIdentifier.Location, $"Unknown global \"{name}\""));
+            Result = new Expressions.Null(globalIdentifier.Location);
+        }
 
         public void VisitCallableSelf(DMASTCallableSelf self) {
             Result = new Expressions.ProcSelf(self.Location);
@@ -375,8 +387,12 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
-            var expr = DMExpression.Create(_dmObject, _proc, dereferenceProc.Expression, _inferredPath);
-            Result = new Expressions.DereferenceProc(dereferenceProc.Location, expr, dereferenceProc);
+            if (dereferenceProc.Expression is DMASTIdentifier ident && ident.Identifier == "global") {
+
+            } else {
+                var expr = DMExpression.Create(_dmObject, _proc, dereferenceProc.Expression, _inferredPath);
+                Result = new Expressions.DereferenceProc(dereferenceProc.Location, expr, dereferenceProc);
+            }
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {

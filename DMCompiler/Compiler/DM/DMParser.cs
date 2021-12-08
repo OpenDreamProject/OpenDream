@@ -2089,7 +2089,11 @@ namespace DMCompiler.Compiler.DM {
                             _ => throw new InvalidOperationException($"Invalid dereference token {token}")
                         };
 
-                        expression = new DMASTDereference(expression.Location, expression, property.Identifier, type, conditional);
+                        if (expression is DMASTIdentifier ident && ident.Identifier == "global" && conditional == false) { // global.x
+                            expression = new DMASTGlobalIdentifier(expression.Location, property.Identifier);
+                        } else {
+                            expression = new DMASTDereference(expression.Location, expression, property.Identifier, type, conditional);
+                        }
                     } else {
                         break;
                     }

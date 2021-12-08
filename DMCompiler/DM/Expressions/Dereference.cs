@@ -115,7 +115,7 @@ namespace DMCompiler.DM.Expressions {
                     return;
                 }
                 else if (expr.Path == null) {
-                    throw new CompileErrorException(astNode.Location,$"Invalid property {_field}");
+                    throw new CompileErrorException(astNode.Location,$"Invalid property \"{_field}\"");
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);

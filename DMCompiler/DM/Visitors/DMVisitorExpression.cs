@@ -360,7 +360,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitTernary(DMASTTernary ternary) {
             var a = DMExpression.Create(_dmObject, _proc, ternary.A, _inferredPath);
-            var b = DMExpression.Create(_dmObject, _proc, ternary.B ?? new DMASTConstantNull(ternary.Location), _inferredPath);
+            var b = DMExpression.Create(_dmObject, _proc, ternary.B, _inferredPath);
             var c = DMExpression.Create(_dmObject, _proc, ternary.C ?? new DMASTConstantNull(ternary.Location), _inferredPath);
             Result = new Expressions.Ternary(a, b, c);
         }

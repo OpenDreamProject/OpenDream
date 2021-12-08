@@ -100,6 +100,7 @@ namespace DMCompiler.DM.Visitors {
                 int? globalId = _dmObject?.GetGlobalVariableId(name);
                 if (globalId != null) {
                     Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                    return;
                 }
 
                 DMCompiler.Error(new CompilerError(identifier.Location, $"Unknown identifier \"{name}\""));

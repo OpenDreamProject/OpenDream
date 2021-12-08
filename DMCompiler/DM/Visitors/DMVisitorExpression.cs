@@ -387,12 +387,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {
-            if (dereferenceProc.Expression is DMASTIdentifier ident && ident.Identifier == "global") {
-
-            } else {
-                var expr = DMExpression.Create(_dmObject, _proc, dereferenceProc.Expression, _inferredPath);
-                Result = new Expressions.DereferenceProc(dereferenceProc.Location, expr, dereferenceProc);
-            }
+            var expr = DMExpression.Create(_dmObject, _proc, dereferenceProc.Expression, _inferredPath);
+            Result = new Expressions.DereferenceProc(dereferenceProc.Location, expr, dereferenceProc);
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {

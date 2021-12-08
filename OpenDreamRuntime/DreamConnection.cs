@@ -98,6 +98,7 @@ namespace OpenDreamRuntime
                 foreach (DreamValue mobVerbPath in mobVerbPaths)
                 {
                     DreamPath path = mobVerbPath.GetValueAsPath();
+                    if (path.LastElement is null) continue;
 
                     _availableVerbs.Add(path.LastElement, MobDreamObject.GetProc(path.LastElement));
                 }

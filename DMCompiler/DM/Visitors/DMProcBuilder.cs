@@ -20,12 +20,12 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
-                if (_proc.HasLocalVariable(parameterName))
+                if (!_proc.TryAddLocalVariable(parameterName, parameter.ObjectType))
                 {
                     DMCompiler.Error(new CompilerError(procDefinition.Location, $"Duplicate argument \"{parameterName}\" on {procDefinition.ObjectPath}/proc/{procDefinition.Name}()"));
                     continue;
                 }
-                _proc.AddLocalVariable(parameterName, parameter.ObjectType);
+
                 if (parameter.Value != null) { //Parameter has a default value
                     string afterDefaultValueCheck = _proc.NewLabelName();
 
@@ -174,7 +174,10 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            _proc.AddLocalVariable(varDeclaration.Name, varDeclaration.Type);
+            if (!_proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type)) {
+                DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
+                return;
+            }
 
             if (varDeclaration.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
@@ -468,7 +471,9 @@ namespace DMCompiler.DM.Visitors {
             {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
-                _proc.AddLocalVariable(param.Name, param.Type);
+                if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
+                    DMCompiler.Error(new CompilerError(param.Location, $"Duplicate var {param.Name}"));
+                }
             }
 
             //TODO make catching actually work

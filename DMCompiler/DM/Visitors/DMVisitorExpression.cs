@@ -84,29 +84,26 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args(identifier.Location);
             } else {
-                if (_proc is null)
-                {
-                    // Probably an undefined macro
-                    throw new CompileErrorException(identifier.Location, $"unknown identifier \"{name}\"");
-                }
-                DMProc.DMLocalVariable localVar = _proc.GetLocalVariable(name);
+                DMProc.DMLocalVariable localVar = _proc?.GetLocalVariable(name);
 
                 if (localVar != null) {
                     Result = new Expressions.Local(identifier.Location, localVar.Type, name);
                     return;
                 }
 
-                var field = _dmObject.GetVariable(name);
+                var field = _dmObject?.GetVariable(name);
                 if (field != null) {
                     Result = new Expressions.Field(identifier.Location, field.Type, name);
-                } else {
-                    int? globalId = _dmObject.GetGlobalVariableId(name);
-                    if (globalId != null) {
-                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-                    } else {
-                        throw new CompileErrorException(identifier.Location,$"unknown identifier \"{name}\"");
-                    }
+                    return;
                 }
+
+                int? globalId = _dmObject?.GetGlobalVariableId(name);
+                if (globalId != null) {
+                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                }
+
+                DMCompiler.Error(new CompilerError(identifier.Location, $"Unknown identifier \"{name}\""));
+                Result = new Expressions.Null(identifier.Location);
             }
         }
 

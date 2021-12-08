@@ -121,10 +121,10 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public void AddLocalVariable(string name, DreamPath? type) {
+        public bool TryAddLocalVariable(string name, DreamPath? type) {
             int localVarId = _localVariableIdCounter++;
 
-            _scopes.Peek().LocalVariables.Add(name, new DMLocalVariable(localVarId, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new DMLocalVariable(localVarId, type));
         }
 
         public DMLocalVariable GetLocalVariable(string name) {
@@ -137,18 +137,6 @@ namespace DMCompiler.DM {
             }
 
             return null;
-        }
-
-        public bool HasLocalVariable(string name) {
-            DMProcScope scope = _scopes.Peek();
-
-            while (scope != null) {
-                if (scope.LocalVariables.ContainsKey(name)) return true;
-
-                scope = scope.ParentScope;
-            }
-
-            return false;
         }
 
         public void Error() {

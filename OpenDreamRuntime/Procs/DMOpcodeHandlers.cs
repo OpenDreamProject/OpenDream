@@ -1164,9 +1164,9 @@ namespace OpenDreamRuntime.Procs {
 
                             if (procElementIndex != -1) {
                                 DreamPath procPath = fullProcPath.FromElements(procElementIndex + 1);
-                                string procName = procPath.LastElement;
+                                string? procName = procPath.LastElement;
 
-                                proc = dreamObject.GetProc(procName);
+                                if(procName != null) proc = dreamObject.GetProc(procName);
                             }
                             break;
                         }
@@ -1180,7 +1180,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DreamValue.DreamValueType.DreamPath: {
                     DreamPath fullProcPath = source.GetValueAsPath();
-                    if (fullProcPath.Elements.Length != 2) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
+                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
                     string procName = fullProcPath.LastElement;
                     DreamProc proc = state.Instance.GetProc(procName);
 

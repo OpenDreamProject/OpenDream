@@ -84,7 +84,7 @@ namespace DMCompiler.DM {
             //We're searching for a proc
             if (procElement != -1) {
                 DreamPath procPath = search.FromElements(procElement + 1);
-                if (procPath.Elements.Length != 1) return null;
+                if (procPath.Elements.Length != 1 || procPath.LastElement is null) return null;
 
                 if (found.HasProc(procPath.LastElement)) {
                     return new DreamPath(found.Path.PathString + "/proc" + procPath);

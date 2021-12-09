@@ -142,7 +142,8 @@ namespace DMCompiler.Compiler.DM {
             if (path != null) {
                 DreamPath oldPath = _currentPath;
                 Whitespace();
-                if (path.Path.LastElement != "proc") _currentPath = _currentPath.Combine(path.Path);
+                _currentPath = _currentPath.Combine(path.Path);
+                if (_currentPath.LastElement == "proc") _currentPath = _currentPath.RemoveElement(-1);
 
                 try {
                     DMASTStatement statement = null;

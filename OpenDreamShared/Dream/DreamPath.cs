@@ -173,7 +173,7 @@ namespace OpenDreamShared.Dream {
         }
 
         public DreamPath RemoveElement(int elementIndex) {
-            if (elementIndex < 0) elementIndex = Elements.Length + elementIndex + 1;
+            if (elementIndex < 0) elementIndex += Elements.Length;
 
             List<string> elements = new List<string>();
             elements.AddRange(GetElements(0, elementIndex));

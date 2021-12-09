@@ -143,7 +143,7 @@ namespace DMCompiler.DM.Visitors {
                 case Expressions.List:
                 case Expressions.NewPath:
                 //Not the best way to check the rgb() proc, but temporary
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Name == "rgb": 
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject)?.Name == "rgb": 
                     //TODO: A more proper compile-time evaluation of rgb()
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);

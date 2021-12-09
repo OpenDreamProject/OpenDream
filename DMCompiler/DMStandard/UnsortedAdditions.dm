@@ -58,3 +58,28 @@
 	proc/NextRow()
 	proc/Reset()
 	proc/RowsAffected()
+
+/proc/_dm_db_new_con()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_connect()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_close()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_is_connected()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_quote()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_new_query()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_execute()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_next_row()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_rows_affected()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_row_count()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_error_msg()
+	set opendream_unimplemented = TRUE
+/proc/_dm_db_columns()
+	set opendream_unimplemented = TRUE

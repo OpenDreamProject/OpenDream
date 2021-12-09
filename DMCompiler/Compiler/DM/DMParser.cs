@@ -601,12 +601,11 @@ namespace DMCompiler.Compiler.DM {
                 TokenType type = isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket;
                 while (!Check(type)) {
                     DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
-                    Check(TokenType.DM_Semicolon);
+                    Delimiter();
+                    Whitespace();
                     if (varDecl == null) Error("Expected a var declaration");
 
                     varDeclarations.AddRange(varDecl);
-                    Whitespace();
-                    Newline();
                 }
 
                 if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");

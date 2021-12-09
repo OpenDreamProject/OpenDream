@@ -16,6 +16,8 @@ namespace OpenDreamClient.Rendering {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
         }
@@ -41,7 +43,9 @@ namespace OpenDreamClient.Rendering {
             if (checkWorld) {
                 //Only render turfs (children of map entity) and their contents (secondary child of map entity)
                 //TODO: Use RobustToolbox's container system/components?
-                TransformComponent transform = Owner.Transform;
+                if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
+                    return false;
+
                 EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
                 if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
                     return false;
@@ -57,9 +61,10 @@ namespace OpenDreamClient.Rendering {
                 case MouseOpacity.Opaque: return true;
                 case MouseOpacity.Transparent: return false;
                 case MouseOpacity.PixelOpaque: {
-                    Vector2 iconPos = Owner.Transform.WorldPosition;
+                    if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
+                        return false;
 
-                    return Icon.CheckClickWorld(iconPos, worldPos);
+                    return Icon.CheckClickWorld(transform.WorldPosition, worldPos);
                 }
                 default: throw new InvalidOperationException("Invalid mouse_opacity");
             }

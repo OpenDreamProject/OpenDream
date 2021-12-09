@@ -10,23 +10,25 @@ namespace OpenDreamClient.Rendering {
     class DreamViewOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
+        private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
         protected override void Draw(in OverlayDrawArgs args) {
             DrawingHandleWorld handle = args.WorldHandle;
-            IEntity eye = _playerManager.LocalPlayer.Session.AttachedEntity;
+            EntityUid? eye = _playerManager.LocalPlayer.Session.AttachedEntity;
+            if (eye == null) return;
 
-            DrawMap(handle, eye);
-            DrawScreenObjects(handle, eye, args.WorldAABB);
+            DrawMap(handle, eye.Value);
+            DrawScreenObjects(handle, eye.Value, args.WorldAABB);
         }
 
-        private void DrawMap(DrawingHandleWorld handle, IEntity eye) {
+        private void DrawMap(DrawingHandleWorld handle, EntityUid eye) {
             List<DMISpriteComponent> sprites = new();
 
-            foreach (IEntity entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
-                if (!entity.TryGetComponent(out DMISpriteComponent sprite))
+            foreach (EntityUid entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
+                if (!_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite))
                     continue;
                 if (!sprite.IsVisible())
                     continue;
@@ -36,13 +38,20 @@ namespace OpenDreamClient.Rendering {
 
             sprites.Sort(_renderOrderComparer);
             foreach (DMISpriteComponent sprite in sprites) {
-                DrawIcon(handle, sprite.Icon, sprite.Owner.Transform.WorldPosition - 0.5f);
+                if (!_entityManager.TryGetComponent<TransformComponent>(sprite.Owner, out var spriteTransform))
+                    continue;
+
+                DrawIcon(handle, sprite.Icon, spriteTransform.WorldPosition - 0.5f);
             }
         }
 
-        private void DrawScreenObjects(DrawingHandleWorld handle, IEntity eye, Box2 worldAABB) {
+        private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB) {
+            if (!_entityManager.TryGetComponent<TransformComponent>(eye, out var eyeTransform))
+                return;
+
             ClientScreenOverlaySystem screenOverlaySystem = EntitySystem.Get<ClientScreenOverlaySystem>();
-            Vector2 viewOffset = eye.Transform.WorldPosition - (worldAABB.Size / 2f);
+
+            Vector2 viewOffset = eyeTransform.WorldPosition - (worldAABB.Size / 2f);
 
             List<DMISpriteComponent> sprites = new();
             foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {

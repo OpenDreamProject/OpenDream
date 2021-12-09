@@ -33,7 +33,7 @@ namespace OpenDreamRuntime.Rendering {
             set => AppearanceId = (value != null) ? EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(value) : null;
         }
 
-        public override ComponentState GetComponentState(ICommonSession player) {
+        public override ComponentState GetComponentState() {
             return new DMISpriteComponentState(AppearanceId, ScreenLocation);
         }
     }

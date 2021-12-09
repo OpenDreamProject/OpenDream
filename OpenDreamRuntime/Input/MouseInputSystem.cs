@@ -21,8 +21,7 @@ namespace OpenDreamRuntime.Input {
         }
 
         private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            IEntity entity = _entityManager.GetEntity(e.EntityUid);
-            DreamObject atom = _atomManager.GetAtomFromEntity(entity);
+            DreamObject atom = _atomManager.GetAtomFromEntity(e.EntityUid);
             if (atom == null)
                 return;
 

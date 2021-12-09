@@ -20,6 +20,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public Vector2i Size { get; private set; }
         public int Levels { get => _levels.Count; }
@@ -54,10 +55,12 @@ namespace OpenDreamRuntime {
 
             _levels[z - 1][x - 1, y - 1].Turf = turf;
 
-            IEntity entity = _atomManager.GetAtomEntity(turf);
+            EntityUid entity = _atomManager.GetAtomEntity(turf);
+            if (!_entityManager.TryGetComponent<TransformComponent>(entity, out var transform))
+                return;
 
-            entity.Transform.AttachParent(_mapManager.GetMapEntity(new MapId(z)));
-            entity.Transform.LocalPosition = new Vector2(x, y);
+            transform.AttachParent(_mapManager.GetMapEntityId(new MapId(z)));
+            transform.LocalPosition = new Vector2(x, y);
 
             if (replace) {
                 //Every reference to the old turf becomes the new turf

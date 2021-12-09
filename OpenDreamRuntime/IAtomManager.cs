@@ -8,9 +8,9 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
-        public IEntity CreateAtomEntity(DreamObject atom);
-        public IEntity GetAtomEntity(DreamObject atom);
-        public DreamObject GetAtomFromEntity(IEntity entity);
+        public EntityUid CreateAtomEntity(DreamObject atom);
+        public EntityUid GetAtomEntity(DreamObject atom);
+        public DreamObject GetAtomFromEntity(EntityUid entity);
         public void DeleteAtomEntity(DreamObject atom);
         public IconAppearance? GetAppearance(DreamObject atom);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);

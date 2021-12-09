@@ -13,7 +13,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             //If sorting by layer fails, sort by entity UID
-            return x.Owner.Uid.CompareTo(y.Owner.Uid);
+            return x.Owner.CompareTo(y.Owner);
         }
     }
 }

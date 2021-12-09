@@ -11,6 +11,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+        private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
@@ -45,15 +46,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "loc": {
-                    IEntity entity = _atomManager.GetAtomEntity(dreamObject);
+                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
+                    if (!_entityManager.TryGetComponent<TransformComponent>(entity, out var transform))
+                        return;
 
                     if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject loc)) {
-                        IEntity locEntity = _atomManager.GetAtomEntity(loc);
+                        EntityUid locEntity = _atomManager.GetAtomEntity(loc);
 
-                        entity.Transform.AttachParent(locEntity);
-                        entity.Transform.LocalPosition = Vector2.Zero;
+                        transform.AttachParent(locEntity);
+                        transform.LocalPosition = Vector2.Zero;
                     } else {
-                        entity.Transform.AttachParent(_mapManager.GetMapEntity(MapId.Nullspace));
+                        transform.AttachParent(_mapManager.GetMapEntityId(MapId.Nullspace));
                     }
 
                     break;
@@ -65,6 +68,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         private void UpdateScreenLocation(DreamObject movable, DreamValue screenLocationValue) {
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(_atomManager.GetAtomEntity(movable), out var sprite))
+                return;
+
             ScreenLocation screenLocation;
             if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
@@ -72,7 +78,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 screenLocation = new ScreenLocation(0, 0, 0, 0);
             }
 
-            _atomManager.GetAtomEntity(movable).GetComponent<DMISpriteComponent>().ScreenLocation = screenLocation;
+            sprite.ScreenLocation = screenLocation;
         }
     }
 }

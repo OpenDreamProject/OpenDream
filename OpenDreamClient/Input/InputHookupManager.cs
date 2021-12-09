@@ -5,7 +5,6 @@ using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.Player;
-using Robust.Client.UserInterface.CustomControls;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Input;
 using Robust.Shared.IoC;
@@ -20,6 +19,7 @@ namespace OpenDreamClient.Input {
     public class InputHookupManager : EntitySystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
@@ -61,16 +61,20 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid GetEntityUnderMouse(ScalingViewport viewport, Vector2 mousePos, MapCoordinates coords) {
-            IEntity entity = GetEntityOnScreen(mousePos, viewport);
+            EntityUid? entity = GetEntityOnScreen(mousePos, viewport);
             entity ??= GetEntityOnMap(coords);
 
-            return entity?.Uid ?? EntityUid.Invalid;
+            return entity ?? EntityUid.Invalid;
         }
 
-        private IEntity GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
+        private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
             ClientScreenOverlaySystem screenOverlay = EntitySystem.Get<ClientScreenOverlaySystem>();
-            IEntity eye = _playerManager.LocalPlayer.Session.AttachedEntity;
-            Vector2 viewOffset = eye.Transform.WorldPosition - 7.5f; //TODO: Don't hardcode a 15x15 view
+            EntityUid? eye = _playerManager.LocalPlayer.Session.AttachedEntity;
+            if (eye == null || !_entityManager.TryGetComponent<TransformComponent>(eye.Value, out var eyeTransform)) {
+                return null;
+            }
+
+            Vector2 viewOffset = eyeTransform.WorldPosition - 7.5f; //TODO: Don't hardcode a 15x15 view
             MapCoordinates coords = viewport.ScreenToMap(mousePos);
 
             var foundSprites = new List<DMISpriteComponent>();
@@ -89,12 +93,12 @@ namespace OpenDreamClient.Input {
             return foundSprites[^1].Owner;
         }
 
-        private IEntity GetEntityOnMap(MapCoordinates coords) {
-            IEnumerable<IEntity> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
+        private EntityUid? GetEntityOnMap(MapCoordinates coords) {
+            IEnumerable<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
 
             var foundSprites = new List<DMISpriteComponent>();
-            foreach (IEntity entity in entities) {
-                if (entity.TryGetComponent<DMISpriteComponent>(out var sprite)
+            foreach (EntityUid entity in entities) {
+                if (_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite)
                     && sprite.CheckClickWorld(coords.Position)) {
                     foundSprites.Add(sprite);
                 }

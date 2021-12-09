@@ -18,7 +18,7 @@ namespace OpenDreamRuntime.Rendering {
         }
 
         public void AddScreenObject(DreamConnection connection, DreamObject screenObject) {
-            EntityUid entityId = _atomManager.GetAtomEntity(screenObject).Uid;
+            EntityUid entityId = _atomManager.GetAtomEntity(screenObject);
 
             if (!_sessionToScreenObjects.TryGetValue(connection.Session, out HashSet<EntityUid> objects)) {
                 objects = new HashSet<EntityUid>();
@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Rendering {
         }
 
         public void RemoveScreenObject(DreamConnection connection, DreamObject screenObject) {
-            EntityUid entityId = _atomManager.GetAtomEntity(screenObject).Uid;
+            EntityUid entityId = _atomManager.GetAtomEntity(screenObject);
 
             _sessionToScreenObjects[connection.Session].Remove(entityId);
             RaiseNetworkEvent(new RemoveScreenObjectEvent(entityId), connection.Session.ConnectedClient);

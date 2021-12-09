@@ -16,13 +16,14 @@ namespace OpenDreamRuntime {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
-        private Dictionary<DreamObject, IEntity> _atomToEntity = new();
-        private Dictionary<IEntity, DreamObject> _entityToAtom = new();
+        private Dictionary<DreamObject, EntityUid> _atomToEntity = new();
+        private Dictionary<EntityUid, DreamObject> _entityToAtom = new();
 
-        public IEntity CreateAtomEntity(DreamObject atom) {
-            IEntity entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
+        public EntityUid CreateAtomEntity(DreamObject atom) {
+            EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
-            DMISpriteComponent sprite = entity.AddComponent<DMISpriteComponent>();
+            
+            DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
             sprite.Appearance = CreateAppearanceFromAtom(atom);
 
             _atomToEntity.Add(atom, entity);
@@ -30,26 +31,26 @@ namespace OpenDreamRuntime {
             return entity;
         }
 
-        public IEntity GetAtomEntity(DreamObject atom) {
+        public EntityUid GetAtomEntity(DreamObject atom) {
             return _atomToEntity[atom];
         }
 
-        public DreamObject GetAtomFromEntity(IEntity entity) {
+        public DreamObject GetAtomFromEntity(EntityUid entity) {
             _entityToAtom.TryGetValue(entity, out DreamObject atom);
 
             return atom;
         }
 
         public void DeleteAtomEntity(DreamObject atom) {
-            IEntity entity = GetAtomEntity(atom);
+            EntityUid entity = GetAtomEntity(atom);
 
             _entityToAtom.Remove(entity);
             _atomToEntity.Remove(atom);
-            entity.Delete();
+            _entityManager.DeleteEntity(entity);
         }
 
         public IconAppearance? GetAppearance(DreamObject atom) {
-            return GetAtomEntity(atom).GetComponent<DMISpriteComponent>().Appearance;
+            return _entityManager.GetComponent<DMISpriteComponent>(GetAtomEntity(atom)).Appearance;
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {

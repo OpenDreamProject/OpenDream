@@ -10,6 +10,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+        private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _atomManager.CreateAtomEntity(dreamObject);
@@ -129,19 +130,21 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             switch (variableName) {
                 case "x":
-                    return new(_atomManager.GetAtomEntity(dreamObject).Transform.WorldPosition.X);
+                    return new(_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.WorldPosition.X ?? 0);
                 case "y":
-                    return new(_atomManager.GetAtomEntity(dreamObject).Transform.WorldPosition.Y);
+                    return new(_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.WorldPosition.Y ?? 0);
                 case "z":
-                    return new((int)_atomManager.GetAtomEntity(dreamObject).Transform.MapID);
+                    return new(((int?)_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.MapID) ?? 0);
                 case "contents":
                     DreamList contents = DreamList.Create();
-                    IEntity entity = _atomManager.GetAtomEntity(dreamObject);
+                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
 
-                    foreach (TransformComponent child in entity.Transform.Children) {
-                        DreamObject childAtom = _atomManager.GetAtomFromEntity(child.Owner);
+                    if (_entityManager.TryGetComponent<TransformComponent>(entity, out var transform)) {
+                        foreach (TransformComponent child in transform.Children) {
+                            DreamObject childAtom = _atomManager.GetAtomFromEntity(child.Owner);
 
-                        contents.AddValue(new DreamValue(childAtom));
+                            contents.AddValue(new DreamValue(childAtom));
+                        }
                     }
 
                     return new(contents);
@@ -157,7 +160,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         private void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            DMISpriteComponent sprite = _atomManager.GetAtomEntity(atom).GetComponent<DMISpriteComponent>();
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(_atomManager.GetAtomEntity(atom), out var sprite))
+                return;
             IconAppearance appearance = new IconAppearance(sprite.Appearance);
 
             update(appearance);

@@ -54,7 +54,7 @@
 	var/mouse_over_pointer as opendream_unimplemented
 	var/render_target as opendream_unimplemented
 	var/vis_flags as opendream_unimplemented
-	var/vis_locs = list() as opendream_unimplemented
+	var/list/vis_locs = list() as opendream_unimplemented
 	var/list/vis_contents = list() as opendream_unimplemented
 
 	proc/Click(location, control, params)

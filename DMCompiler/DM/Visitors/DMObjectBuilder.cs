@@ -141,6 +141,7 @@ namespace DMCompiler.DM.Visitors {
 
             switch (expression) {
                 case Expressions.List:
+                case Expressions.NewList:
                 case Expressions.NewPath:
                 //Not the best way to check the rgb() proc, but temporary
                 case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject)?.Name == "rgb": 

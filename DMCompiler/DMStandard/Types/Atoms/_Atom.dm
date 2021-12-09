@@ -51,6 +51,7 @@
 	var/bound_height as opendream_unimplemented
 	var/mouse_drag_pointer as opendream_unimplemented
 	var/mouse_drop_pointer as opendream_unimplemented
+	var/mouse_over_pointer as opendream_unimplemented
 	var/render_target as opendream_unimplemented
 	var/vis_flags as opendream_unimplemented
 	var/vis_locs = list() as opendream_unimplemented

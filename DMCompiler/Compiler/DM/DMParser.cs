@@ -595,7 +595,30 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 return varDeclarations.ToArray();
-            } else if (hasNewline) {
+            } else if (Check(TokenType.DM_LeftCurlyBracket)) {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+
+                List<DMASTProcStatementVarDeclaration> varDeclarations = new();
+                TokenType type = isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket;
+                while (!Check(type)) {
+                    DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
+                    Delimiter();
+                    Whitespace();
+                    if (varDecl == null) Error("Expected a var declaration");
+
+                    varDeclarations.AddRange(varDecl);
+                }
+
+                if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                if (isIndented) {
+                    Newline();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                }
+                return varDeclarations.ToArray();
+            }
+            else if (hasNewline) {
                 ReuseToken(newlineToken);
             }
 

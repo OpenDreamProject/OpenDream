@@ -598,7 +598,8 @@ namespace DMCompiler.Compiler.DM {
                 bool isIndented = Check(TokenType.DM_Indent);
 
                 List<DMASTProcStatementVarDeclaration> varDeclarations = new();
-                while (!Check(isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket)) {
+                TokenType type = isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket;
+                while (!Check(type)) {
                     DMASTProcStatementVarDeclaration[] varDecl = ProcVarEnd(true, path: varPath);
                     Check(TokenType.DM_Semicolon);
                     if (varDecl == null) Error("Expected a var declaration");

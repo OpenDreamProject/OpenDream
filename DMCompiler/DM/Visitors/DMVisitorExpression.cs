@@ -103,8 +103,7 @@ namespace DMCompiler.DM.Visitors {
                     return;
                 }
 
-                DMCompiler.Error(new CompilerError(identifier.Location, $"Unknown identifier \"{name}\""));
-                Result = new Expressions.Null(identifier.Location);
+                throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
             }
         }
 
@@ -117,8 +116,7 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            DMCompiler.Error(new CompilerError(globalIdentifier.Location, $"Unknown global \"{name}\""));
-            Result = new Expressions.Null(globalIdentifier.Location);
+            throw new CompileErrorException(globalIdentifier.Location, $"Unknown global \"{name}\"");
         }
 
         public void VisitCallableSelf(DMASTCallableSelf self) {

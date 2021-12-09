@@ -126,7 +126,11 @@ namespace DMCompiler.DM {
 
             DMObject root = GetDMObject(DreamPath.Root);
             foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
-                assign.EmitPushValue(root, GlobalInitProc);
+                try {
+                    assign.EmitPushValue(root, GlobalInitProc);
+                } catch (CompileErrorException e) {
+                    DMCompiler.Error(e.Error);
+                }
             }
         }
 

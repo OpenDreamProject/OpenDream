@@ -30,7 +30,11 @@ namespace DMCompiler.DM {
                 CreateInitializationProc();
 
                 foreach (DMExpression expression in InitializationProcExpressions) {
-                    expression.EmitPushValue(this, InitializationProc);
+                    try {
+                        expression.EmitPushValue(this, InitializationProc);
+                    } catch (CompileErrorException e) {
+                        DMCompiler.Error(e.Error);
+                    }
                 }
             }
 

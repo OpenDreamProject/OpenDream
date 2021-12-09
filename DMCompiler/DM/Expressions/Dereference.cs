@@ -42,7 +42,7 @@ namespace DMCompiler.DM.Expressions {
                     return;
                 }
                 else if (expr.Path == null) {
-                    throw new CompileErrorException(astNode.Location,$"Invalid property {_propertyName}");
+                    throw new CompileErrorException(astNode.Location,$"Invalid property \"{_propertyName}\"");
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);

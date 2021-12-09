@@ -37,7 +37,7 @@
 
 	var/maptext as opendream_unimplemented
 
-	var/filters = list() as opendream_unimplemented
+	var/list/filters = list() as opendream_unimplemented
 	var/appearance as opendream_unimplemented
 	var/appearance_flags as opendream_unimplemented
 	var/maptext_width as opendream_unimplemented

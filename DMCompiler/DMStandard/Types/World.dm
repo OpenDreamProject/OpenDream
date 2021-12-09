@@ -79,4 +79,14 @@
 	proc/ClearMedal()
 		set opendream_unimplemented = TRUE
 
-
+	proc/AddCredits(player, credits, note)
+		set opendream_unimplemented = TRUE
+		return 0
+		
+	proc/GetCredits(player)
+		set opendream_unimplemented = TRUE
+		return null
+	
+	proc/PayCredits(player, credits, note)
+		set opendream_unimplemented = TRUE
+		return 0

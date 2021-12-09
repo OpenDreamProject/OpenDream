@@ -609,7 +609,10 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-
+                if (isIndented) {
+                    Newline();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                }
                 return varDeclarations.ToArray();
             }
             else if (hasNewline) {

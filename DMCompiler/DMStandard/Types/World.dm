@@ -24,6 +24,8 @@
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
+	
+	var/version = 0 as opendream_unimplemented
 
 	var/address
 	var/port

@@ -1272,7 +1272,9 @@ namespace OpenDreamRuntime.Procs.Native {
             int delayMilliseconds = (int)(delay * 100);
 
             // This is obviously not the proper behaviour
-            await Task.Delay(delayMilliseconds);
+            if (delayMilliseconds > 0) {
+                await Task.Delay(delayMilliseconds);
+            }
             return DreamValue.Null;
         }
 

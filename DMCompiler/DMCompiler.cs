@@ -18,6 +18,7 @@ namespace DMCompiler {
     //TODO: Make this not a static class
     public static class DMCompiler {
         public static int ErrorCount = 0;
+        public static int WarningCount = 0;
         public static DMCompilerSettings Settings;
 
         private static DateTime _compileStartTime;
@@ -50,13 +51,15 @@ namespace DMCompiler {
             bool successfulCompile = Compile(preprocessor.GetResult());
 
             if (successfulCompile) {
+                Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
+
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
                 SaveJson(maps, preprocessor.IncludedInterface, outputFile);
             } else {
-                Console.WriteLine($"Compilation failed with {ErrorCount} errors");
+                Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
             }
 
             TimeSpan duration = DateTime.Now - _compileStartTime;
@@ -127,6 +130,7 @@ namespace DMCompiler {
 
         public static void Warning(CompilerWarning warning) {
             Console.WriteLine(warning);
+            WarningCount++;
         }
 
         public static void VerbosePrint(string message) {

@@ -368,6 +368,9 @@ namespace DMCompiler.Compiler.DM {
             IsTmp = tmpElementIndex != -1;
             IsConst = constElementIndex != -1;
             IsGlobal = globalElementIndex != -1;
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (IsTmp || IsConst || IsGlobal)) {
+                DMCompiler.Warning(new CompilerWarning(location, $"Var modifiers (static, const, tmp, global) are currently unimplemented and ignored"));
+            }
             Name = path.Path.LastElement;
             Value = value;
         }

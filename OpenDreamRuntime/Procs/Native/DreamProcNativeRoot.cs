@@ -1271,7 +1271,10 @@ namespace OpenDreamRuntime.Procs.Native {
             float delay = state.Arguments.GetArgument(0, "Delay").GetValueAsFloat();
             int delayMilliseconds = (int)(delay * 100);
 
-            // This is obviously not the proper behaviour
+            // TODO: This is obviously not the proper behaviour, see https://www.byond.com/docs/ref/#/proc/sleep
+            // sleep(0) should sleep for the minimum amount of time possible, whereas
+            // sleep called with a negative value should do a backlog check, meaning it only sleeps
+            // when other events are backlogged
             if (delayMilliseconds > 0) {
                 await Task.Delay(delayMilliseconds);
             }

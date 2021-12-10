@@ -38,6 +38,7 @@ namespace DMCompiler.DM {
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
         public string Name { get => _astDefinition.Name; }
+        public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
@@ -91,6 +92,29 @@ namespace DMCompiler.DM {
 
         public void WaitFor(bool waitFor) {
             _waitFor = waitFor;
+        }
+
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name)
+        {
+            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name);
+
+            GlobalVariables[name] = id;
+            return global;
+        }
+        public int? GetGlobalVariableId(string name)
+        {
+            if (GlobalVariables.TryGetValue(name, out int id))
+            {
+                return id;
+            }
+            return null;
+        }
+
+        public DMVariable GetGlobalVariable(string name)
+        {
+            int? id = GetGlobalVariableId(name);
+
+            return (id == null) ? null : DMObjectTree.Globals[id.Value];
         }
 
         public void AddParameter(string name, DMValueType type) {

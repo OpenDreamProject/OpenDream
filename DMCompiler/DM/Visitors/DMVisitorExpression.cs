@@ -10,10 +10,14 @@ namespace DMCompiler.DM.Visitors {
         DreamPath? _inferredPath { get; }
         internal DMExpression Result { get; private set; }
 
-        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
+        private string _scopeMode;
+
+        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath, string scopeMode = "normal")
+        {
             _dmObject = dmObject;
             _proc = proc;
             _inferredPath = inferredPath;
+            _scopeMode = scopeMode;
         }
 
         public void VisitProcStatementExpression(DMASTProcStatementExpression statement) {
@@ -77,6 +81,23 @@ namespace DMCompiler.DM.Visitors {
         public void VisitIdentifier(DMASTIdentifier identifier) {
             var name = identifier.Identifier;
 
+            if (_scopeMode == "static")
+            {
+                int? procGlobalId = _proc.GetGlobalVariableId(name);
+                if (procGlobalId != null)
+                {
+                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
+                    return;
+                }
+                int? globalId = _dmObject.GetGlobalVariableId(name);
+                if (globalId != null)
+                {
+                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                    return;
+                }
+                throw new CompileErrorException(new CompilerError(identifier.Location, $"unknown identifier {name}"));
+            }
+
             if (name == "src") {
                 Result = new Expressions.Src(identifier.Location, _dmObject.Path);
             } else if (name == "usr") {
@@ -88,6 +109,13 @@ namespace DMCompiler.DM.Visitors {
 
                 if (localVar != null) {
                     Result = new Expressions.Local(identifier.Location, localVar.Type, name);
+                    return;
+                }
+
+                int? procGlobalId = _proc.GetGlobalVariableId(name);
+                if (procGlobalId != null)
+                {
+                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
                     return;
                 }
 
@@ -128,7 +156,18 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
-            Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
+            if (_scopeMode == "static")
+            {
+                if (!DMObjectTree.GetDMObject(DreamPath.Root).HasProc(procIdentifier.Identifier))
+                {
+                    throw new CompileErrorException(new CompilerError(procIdentifier.Location, $"Global proc {procIdentifier.Identifier} does not exist"));
+                }
+                // TODO: substitute this to global.proc()
+            }
+            else
+            {
+                Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
+            }
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {

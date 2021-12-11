@@ -47,6 +47,7 @@
 	var/reachable as opendream_unimplemented
 	var/game_state as opendream_unimplemented
 	var/host as opendream_unimplemented
+	var/map_format = TOPDOWN_MAP as opendream_unimplemented
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
 	proc/GetConfig(config_set,param)
@@ -84,11 +85,11 @@
 	proc/AddCredits(player, credits, note)
 		set opendream_unimplemented = TRUE
 		return 0
-		
+
 	proc/GetCredits(player)
 		set opendream_unimplemented = TRUE
 		return null
-	
+
 	proc/PayCredits(player, credits, note)
 		set opendream_unimplemented = TRUE
 		return 0

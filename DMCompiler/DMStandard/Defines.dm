@@ -179,3 +179,9 @@
 #define VIS_INHERIT_ID 32
 #define VIS_UNDERLAY 64
 #define VIS_HIDE 128
+
+//world.map_format
+#define TOPDOWN_MAP 0
+#define ISOMETRIC_MAP 1
+#define SIDE_MAP 2
+#define TILED_ICON_MAP 32768

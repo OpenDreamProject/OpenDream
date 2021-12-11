@@ -94,17 +94,38 @@ namespace DMCompiler.DM.Visitors {
 
                     if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
-                } else {
-                    DMVariable variable = new DMVariable(null, varOverride.VarName, false);
+                } else if (varOverride.VarName == "name" && _currentObject.IsSubtypeOf(DreamPath.Atom) && !_currentObject.VariableOverrides.ContainsKey("text"))
+                {
+                    var text = new DMVariable(null, "text", false);
+                    var name = varOverride.Value as DMASTConstantString;
 
-                    SetVariableValue(variable, varOverride.Value);
-                    _currentObject.VariableOverrides[variable.Name] = variable;
+                    if (name is null || name.Value.Length < 1)
+                    {
+                        SetVarOverride();
+                        return;
+                    }
+
+                    SetVariableValue(text, new DMASTConstantString(varOverride.Location, name.Value[0].ToString()));
+                    _currentObject.VariableOverrides[text.Name] = text;
+
+                    SetVarOverride();
+                }
+                else {
+                    SetVarOverride();
                 }
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
             }
 
             _currentObject = oldObject;
+
+            void SetVarOverride()
+            {
+                DMVariable variable = new DMVariable(null, varOverride.VarName, false);
+
+                SetVariableValue(variable, varOverride.Value);
+                _currentObject.VariableOverrides[variable.Name] = variable;
+            }
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -144,7 +165,7 @@ namespace DMCompiler.DM.Visitors {
                 case Expressions.NewList:
                 case Expressions.NewPath:
                 //Not the best way to check the rgb() proc, but temporary
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject)?.Name == "rgb": 
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject)?.Name == "rgb":
                     //TODO: A more proper compile-time evaluation of rgb()
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);

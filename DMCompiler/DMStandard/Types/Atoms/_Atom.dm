@@ -2,6 +2,7 @@
 	parent_type = /datum
 
 	var/name = "atom"
+	var/text = "a" // First letter of name. Name overrides set it during compilation.
 	var/desc = null
 	var/suffix = null as opendream_unimplemented
 	var/list/verbs = list()
@@ -75,5 +76,5 @@
 
 	proc/Exit(atom/movable/O, atom/newloc)
 		return TRUE
-	
+
 	proc/Stat()

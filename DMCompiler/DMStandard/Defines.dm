@@ -181,7 +181,7 @@
 #define VIS_HIDE 128
 
 //world.map_format
-#define TOPDOWN_MAP 1
-#define ISOMETRIC_MAP 2
-#define SIDE_MAP 3
-#define TILED_ICON_MAP 4
+#define TOPDOWN_MAP 0
+#define ISOMETRIC_MAP 1
+#define SIDE_MAP 2
+#define TILED_ICON_MAP 32768

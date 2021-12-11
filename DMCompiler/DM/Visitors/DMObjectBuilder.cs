@@ -96,19 +96,18 @@ namespace DMCompiler.DM.Visitors {
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                 } else if (varOverride.VarName == "name" && _currentObject.IsSubtypeOf(DreamPath.Atom) && !_currentObject.VariableOverrides.ContainsKey("text"))
                 {
+                    SetVarOverride();
+
                     var text = new DMVariable(null, "text", false);
                     var name = varOverride.Value as DMASTConstantString;
 
                     if (name is null || name.Value.Length < 1)
                     {
-                        SetVarOverride();
                         return;
                     }
 
                     SetVariableValue(text, new DMASTConstantString(varOverride.Location, name.Value[0].ToString()));
                     _currentObject.VariableOverrides[text.Name] = text;
-
-                    SetVarOverride();
                 }
                 else {
                     SetVarOverride();

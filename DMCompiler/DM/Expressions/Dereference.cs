@@ -140,11 +140,11 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public DMProc GetProc() {
-            if (_expr.Path == null) return null;
+        public (DMObject ProcOwner, DMProc Proc) GetProc() {
+            if (_expr.Path == null) return (null, null);
 
             DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
-            return dmObject.GetProcs(_field)?[^1];
+            return (dmObject, dmObject.GetProcs(_field)?[^1]);
         }
     }
 

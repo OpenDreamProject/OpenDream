@@ -68,18 +68,18 @@ namespace DMCompiler.DM.Expressions {
             _arguments = arguments;
         }
 
-        public DMProc GetTargetProc(DMObject dmObject) {
+        public (DMObject ProcOwner, DMProc Proc) GetTargetProc(DMObject dmObject) {
             return _target switch {
-                Proc procTarget => procTarget.GetProc(dmObject),
+                Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
                 DereferenceProc derefTarget => derefTarget.GetProc(),
-                _ => null
+                _ => (null, null)
             };
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMProc targetProc = GetTargetProc(dmObject);
+            (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
             if (!DMCompiler.Settings.SuppressUnimplementedWarnings && targetProc?.Unimplemented == true) {
-                DMCompiler.Warning(new CompilerWarning(Location, $"{dmObject.Path}.{targetProc.Name}() is not implemented"));
+                DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner.Path}.{targetProc.Name}() is not implemented"));
             }
 
             var _procResult = _target.EmitPushProc(dmObject, proc);

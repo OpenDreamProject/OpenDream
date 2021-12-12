@@ -267,7 +267,7 @@ namespace DMCompiler.Compiler.DM {
         public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;
 
-        public ObjVarDeclInfo _varDecl;
+        private ObjVarDeclInfo _varDecl;
 
         public bool IsGlobal { get => _varDecl.IsGlobal; }
         public bool IsConst { get => _varDecl.IsConst; }

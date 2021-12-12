@@ -345,12 +345,32 @@ namespace DMCompiler.Compiler.DM {
         public DreamPath? Type;
         public string Name;
         public DMASTExpression Value;
+        //TODO proper support for these
+        public bool IsTmp = false;
+        public bool IsConst = false;
+        public bool IsGlobal = false;
 
         public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location) {
+            int tmpElementIndex = path.Path.FindElement("tmp");
+            int constElementIndex = path.Path.FindElement("const");
+            int globalElementIndex = path.Path.FindElement("global");
+            if (globalElementIndex == -1) globalElementIndex = path.Path.FindElement("static");
+
+            int startIdx = 1;
+            if (tmpElementIndex != -1) startIdx++;
+            if (constElementIndex != -1) startIdx++;
+            if (globalElementIndex != -1) startIdx++;
+
             int varElementIndex = path.Path.FindElement("var");
-            DreamPath typePath = path.Path.FromElements(varElementIndex + 1, -2);
+            DreamPath typePath = path.Path.FromElements(varElementIndex + startIdx, -2);
 
             Type = (typePath.Elements.Length > 0) ? typePath : null;
+            IsTmp = tmpElementIndex != -1;
+            IsConst = constElementIndex != -1;
+            IsGlobal = globalElementIndex != -1;
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (IsTmp || IsConst || IsGlobal)) {
+                DMCompiler.Warning(new CompilerWarning(location, $"Var modifiers (static, const, tmp, global) are currently unimplemented and ignored"));
+            }
             Name = path.Path.LastElement;
             Value = value;
         }

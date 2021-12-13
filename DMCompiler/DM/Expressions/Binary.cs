@@ -18,11 +18,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Add(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Add(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -38,11 +41,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Subtract(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Subtract(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -58,11 +64,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Multiply(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Multiply(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -78,11 +87,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Divide(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Divide(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -98,11 +110,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Modulo(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Modulo(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -118,11 +133,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Power(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Power(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -138,11 +156,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.LeftShift(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.LeftShift(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -158,11 +179,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.RightShift(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.RightShift(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -178,11 +202,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.BinaryAnd(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.BinaryAnd(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -198,11 +225,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.BinaryXor(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.BinaryXor(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -218,11 +248,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.BinaryOr(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.BinaryOr(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -343,11 +376,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.Or(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Or(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -366,11 +402,14 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs)
         {}
 
-        public override Constant ToConstant()
-        {
-            var lhs = LHS.ToConstant();
-            var rhs = RHS.ToConstant();
-            return lhs.And(rhs);
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.And(rhs);
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

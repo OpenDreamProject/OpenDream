@@ -225,7 +225,10 @@ namespace DMCompiler.DM.Visitors {
                     EmitInitializationAssign(variable, expression);
                     break;
                 default:
-                    variable.Value = expression.ToConstant();
+                    if (!expression.TryAsConstant(out var constant))
+                        throw new CompileErrorException(expression.Location, "Expected a constant value for \"{variable.Name}\"");
+
+                    variable.Value = constant;
                     break;
             }
         }

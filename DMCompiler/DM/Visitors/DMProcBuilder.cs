@@ -131,20 +131,16 @@ namespace DMCompiler.DM.Visitors {
             //TODO: Proc attributes
             switch (statementSet.Attribute.ToLower()) {
                 case "waitfor": {
-                    var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
-
-                    if (constant is not Expressions.Number) {
-                        throw new CompileErrorException(statementSet.Location, $"waitfor attribute should be a number (got {constant})");
+                    if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
+                        throw new CompileErrorException(statementSet.Location, $"waitfor attribute should be a constant");
                     }
 
                     _proc.WaitFor(constant.IsTruthy());
                     break;
                 }
                 case "opendream_unimplemented": {
-                    var constant = DMExpression.Constant(_dmObject, _proc, statementSet.Value);
-
-                    if (constant is not Expressions.Number) {
-                        throw new CompileErrorException(statementSet.Location,$"opendream_unimplemented attribute should be a number (got {constant})");
+                    if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
+                        throw new CompileErrorException(statementSet.Location, $"opendream_unimplemented attribute should be a constant");
                     }
 
                     _proc.Unimplemented = constant.IsTruthy();
@@ -397,14 +393,18 @@ namespace DMCompiler.DM.Visitors {
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         if (value is DMASTSwitchCaseRange range) {
-                            var lower = DMExpression.Constant(_dmObject, _proc, range.RangeStart);
-                            var upper = DMExpression.Constant(_dmObject, _proc, range.RangeEnd);
+                            if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeStart, out var lower))
+                                throw new CompileErrorException(new CompilerError(range.RangeStart.Location, "Expected a constant"));
+                            if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeEnd, out var upper))
+                                throw new CompileErrorException(new CompilerError(range.RangeEnd.Location, "Expected a constant"));
 
                             lower.EmitPushValue(_dmObject, _proc);
                             upper.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCaseRange(caseLabel);
                         } else {
-                            var constant = DMExpression.Constant(_dmObject, _proc, value);
+                            if (!DMExpression.TryConstant(_dmObject, _proc, value, out var constant))
+                                throw new CompileErrorException(new CompilerError(value.Location, "Expected a constant"));
+
                             constant.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCase(caseLabel);
                         }

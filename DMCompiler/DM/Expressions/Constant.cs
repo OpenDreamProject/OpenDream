@@ -8,8 +8,9 @@ namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
         public Constant(Location location) : base(location) { }
 
-        public sealed override Constant ToConstant() {
-            return this;
+        public sealed override bool TryAsConstant(out Constant constant) {
+            constant = this;
+            return true;
         }
 
         public abstract bool IsTruthy();
@@ -95,7 +96,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => false;
 
-        public override object ToJsonRepresentation() => null;
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = null;
+            return true;
+        }
     }
 
     // 4.0, -4.0
@@ -116,7 +120,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => Value != 0;
 
-        public override object ToJsonRepresentation() => Value;
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = Value;
+            return true;
+        }
 
         public override Constant Negate() {
             return new Number(Location, -Value);
@@ -232,7 +239,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => Value.Length != 0;
 
-        public override object ToJsonRepresentation() => Value;
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = Value;
+            return true;
+        }
 
         public override Constant Add(Constant rhs) {
             if (rhs is not String rhsString) {
@@ -257,11 +267,13 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => true;
 
-        public override object ToJsonRepresentation() {
-            return new Dictionary<string, object>() {
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = new Dictionary<string, object>() {
                 { "type", JsonVariableType.Resource },
                 { "resourcePath", Value }
             };
+
+            return true;
         }
     }
 
@@ -279,7 +291,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool IsTruthy() => true;
 
-        public override object ToJsonRepresentation() {
+        public override bool TryAsJsonRepresentation(out object json) {
             object value;
 
             if (DMObjectTree.TryGetTypeId(Value, out int typeId)) {
@@ -288,10 +300,12 @@ namespace DMCompiler.DM.Expressions {
                 value = Value.PathString;
             }
 
-            return new Dictionary<string, object>() {
+            json = new Dictionary<string, object>() {
                 { "type", JsonVariableType.Path },
                 { "value", value }
             };
+
+            return true;
         }
     }
 }

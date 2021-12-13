@@ -128,11 +128,17 @@ namespace DMCompiler.DM {
                 typeJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    typeJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
+                    if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                        throw new Exception($"Failed to serialize {Path}.{variable.Key}");
+
+                    typeJson.Variables.Add(variable.Key, valueJson);
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    typeJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
+                    if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                        throw new Exception($"Failed to serialize {Path}.{variable.Key}");
+
+                    typeJson.Variables[variable.Key] = valueJson;
                 }
             }
 

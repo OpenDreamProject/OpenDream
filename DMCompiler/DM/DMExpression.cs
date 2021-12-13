@@ -43,19 +43,21 @@ namespace DMCompiler.DM {
             expr.EmitPushValue(dmObject, proc);
         }
 
-        public static Expressions.Constant Constant(DMObject dmObject, DMProc proc, DMASTExpression expression) {
+        public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {
             var expr = Create(dmObject, proc, expression, null);
-            return expr.ToConstant();
+            return expr.TryAsConstant(out constant);
         }
 
         // Attempt to convert this expression into a Constant expression
-        public virtual Expressions.Constant ToConstant() {
-            throw new CompileErrorException(Location, $"expression {this} can not be const-evaluated");
+        public virtual bool TryAsConstant(out Expressions.Constant constant) {
+            constant = null;
+            return false;
         }
 
         // Attempt to create a json-serializable version of this expression
-        public virtual object ToJsonRepresentation() {
-            throw new CompileErrorException(Location, $"expression {this} can not be serialized to json");
+        public virtual bool TryAsJsonRepresentation(out object json) {
+            json = null;
+            return false;
         }
 
         // Emits code that pushes the result of this expression to the proc's stack

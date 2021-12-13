@@ -17,11 +17,8 @@ namespace DMCompiler.DM {
             Value = null;
         }
 
-        public object ToJsonRepresentation() {
-            Expressions.Constant value = Value as Expressions.Constant;
-            if (value == null) throw new Exception($"Value of {Name} must be a constant");
-
-            return value.ToJsonRepresentation();
+        public bool TryAsJsonRepresentation(out object valueJson) {
+            return Value.TryAsJsonRepresentation(out valueJson);
         }
     }
 }

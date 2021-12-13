@@ -15,9 +15,11 @@ namespace DMCompiler.DM.Expressions {
             : base(location, expr)
         {}
 
-        public override Constant ToConstant()
-        {
-            return Expr.ToConstant().Negate();
+        public override bool TryAsConstant(out Constant constant) {
+            if (!Expr.TryAsConstant(out constant)) return false;
+
+            constant = constant.Negate();
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -32,9 +34,11 @@ namespace DMCompiler.DM.Expressions {
             : base(location, expr)
         {}
 
-        public override Constant ToConstant()
-        {
-            return Expr.ToConstant().Not();
+        public override bool TryAsConstant(out Constant constant) {
+            if (!Expr.TryAsConstant(out constant)) return false;
+
+            constant = constant.Not();
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -49,9 +53,11 @@ namespace DMCompiler.DM.Expressions {
             : base(location, expr)
         {}
 
-        public override Constant ToConstant()
-        {
-            return Expr.ToConstant().BinaryNot();
+        public override bool TryAsConstant(out Constant constant) {
+            if (!Expr.TryAsConstant(out constant)) return false;
+
+            constant = constant.BinaryNot();
+            return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

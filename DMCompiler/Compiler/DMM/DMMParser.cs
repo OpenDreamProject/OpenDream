@@ -70,8 +70,9 @@ namespace DMCompiler.Compiler.DMM {
                             if (varOverride == null) Error("Expected a var override");
                             if (!varOverride.ObjectPath.Equals(DreamPath.Root)) Error("Invalid var name");
                             DMExpression value = DMExpression.Create(null, null, varOverride.Value);
+                            if (!value.TryAsJsonRepresentation(out var valueJson)) Error($"Failed to serialize value to json ({value})");
 
-                            mapObject.AddVarOverride(varOverride.VarName, value.ToJsonRepresentation());
+                            mapObject.AddVarOverride(varOverride.VarName, valueJson);
 
                             if (Check(TokenType.DM_Semicolon)) {
                                 statement = Statement(requireDelimiter: false);

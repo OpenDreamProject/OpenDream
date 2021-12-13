@@ -50,7 +50,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
-            var pathExpr = DMExpression.Constant(_dmObject, _proc, constant.Path);
+            DMExpression.TryConstant(_dmObject, _proc, constant.Path, out var pathExpr);
             if (pathExpr is not Expressions.Path) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
 
             DreamPath path = ((Expressions.Path)pathExpr).Value;

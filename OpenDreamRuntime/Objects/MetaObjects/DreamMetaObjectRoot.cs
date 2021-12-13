@@ -33,6 +33,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             throw new InvalidOperationException("Subtraction cannot be done between " + a + " and " + b);
         }
 
+        public virtual DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
+            throw new InvalidOperationException("Multiplication cannot be done between " + a + " and " + b);
+        }
+
         public virtual DreamValue OperatorAppend(DreamValue a, DreamValue b) {
             throw new InvalidOperationException("Cannot append " + b + " to " + a);
         }

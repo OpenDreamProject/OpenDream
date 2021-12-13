@@ -68,11 +68,11 @@ namespace DMCompiler.DM.Visitors {
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
-            if (varDefinition.IsGlobal || varDefinition.IsToplevel)
+            if (varDefinition.IsGlobal)
             {
                 variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name);
             } else {
-                variable = new DMVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsGlobal);
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false);
                 _currentObject.Variables[variable.Name] = variable;
             }
 
@@ -125,6 +125,7 @@ namespace DMCompiler.DM.Visitors {
                 DMProc proc = new DMProc(procDefinition);
 
                 dmObject.AddProc(procName, proc);
+
                 if (procDefinition.Body != null)
                 {
                     foreach (var stmt in GetStatements(procDefinition.Body))
@@ -138,7 +139,9 @@ namespace DMCompiler.DM.Visitors {
                             Expressions.GlobalField field = new Expressions.GlobalField(varDeclaration.Location, variable.Type, proc.GetGlobalVariableId(varDeclaration.Name).Value);
                             if (varDeclaration.Value != null)
                             {
-                                DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type, scopeMode: "static");
+                                DMVisitorExpression._scopeMode = "static";
+                                DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
+                                DMVisitorExpression._scopeMode = "normal";
                                 Expressions.Assignment assign = new Expressions.Assignment(varDeclaration.Location, field, expression);
                                 DMObjectTree.AddGlobalInitProcAssign(assign);
                             }
@@ -173,6 +176,7 @@ namespace DMCompiler.DM.Visitors {
                     case DMASTProcStatementForLoop ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementWhile ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementDoWhile ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementInfLoop ps: recurse = new() { ps.Body }; break;
                     // TODO Good luck if you declare a static var inside a switch
                     case DMASTProcStatementSwitch ps:
                         {
@@ -198,7 +202,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+            DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            DMVisitorExpression._scopeMode = "normal";
             expression.ValType = valType;
 
             switch (expression) {

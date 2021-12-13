@@ -32,8 +32,8 @@ namespace DMCompiler.DM {
             Location = location;
         }
 
-        public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null, string scopeMode = "normal") {
-            var instance = new DMVisitorExpression(dmObject, proc, inferredPath, scopeMode);
+        public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
             return instance.Result;
         }

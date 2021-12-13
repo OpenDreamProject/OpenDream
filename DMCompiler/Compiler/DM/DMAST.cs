@@ -269,9 +269,10 @@ namespace DMCompiler.Compiler.DM {
 
         private ObjVarDeclInfo _varDecl;
 
-        public bool IsGlobal { get => _varDecl.IsGlobal; }
-        public bool IsConst { get => _varDecl.IsConst; }
+        public bool IsStatic { get => _varDecl.IsStatic; }
         public bool IsToplevel { get => _varDecl.IsToplevel; }
+        public bool IsGlobal { get => _varDecl.IsStatic || _varDecl.IsToplevel; }
+        public bool IsConst { get => _varDecl.IsConst; }
         public bool IsTmp { get => _varDecl.IsTmp; }
 
         public DMValueType ValType;
@@ -334,7 +335,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression Value;
         private ProcVarDeclInfo _varDecl;
 
-        public bool IsGlobal { get => _varDecl.IsGlobal; }
+        public bool IsGlobal { get => _varDecl.IsStatic; }
         public bool IsConst { get => _varDecl.IsConst; }
 
         public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location)

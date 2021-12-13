@@ -10,6 +10,7 @@ namespace DMCompiler.Compiler.DM
         public DreamPath? TypePath;
         public string VarName;
         public bool IsGlobal;
+        public bool IsStatic;
         public bool IsConst;
     }
 
@@ -29,7 +30,7 @@ namespace DMCompiler.Compiler.DM
                 var elem = elements[readIdx];
                 if (elem == "static" || elem == "global")
                 {
-                    IsGlobal = true;
+                    IsStatic = true;
                 }
                 else if (elem == "const")
                 {
@@ -81,7 +82,7 @@ namespace DMCompiler.Compiler.DM
                 var elem = elements[readIdx];
                 if (elem == "static" || elem == "global")
                 {
-                    IsGlobal = true;
+                    IsStatic = true;
                 }
                 else if (elem == "const")
                 {

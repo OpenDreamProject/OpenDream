@@ -174,6 +174,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
+            if (varDeclaration.IsGlobal) { return; }
+
             if (!_proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type)) {
                 DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
                 return;

@@ -94,7 +94,7 @@ namespace DMCompiler.DM.Visitors {
                     return;
                 }
 
-                int? procGlobalId = _proc.GetGlobalVariableId(name);
+                int? procGlobalId = _proc?.GetGlobalVariableId(name);
                 if (procGlobalId != null)
                 {
                     Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);

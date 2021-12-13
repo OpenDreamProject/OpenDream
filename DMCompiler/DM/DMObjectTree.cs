@@ -70,8 +70,7 @@ namespace DMCompiler.DM {
         }
 
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
-            // I was unable to find any situation where searching for an absolute path worked
-            if (search.Type == DreamPath.PathType.Absolute) return null;
+            bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
 
             DreamPath searchObjectPath;
 
@@ -81,6 +80,8 @@ namespace DMCompiler.DM {
                 searchObjectPath = search.FromElements(0, procElement);
                 searchObjectPath.Type = DreamPath.PathType.Relative; // FromElements makes an absolute path
             } else {
+                if (requireProcElement) return null;
+
                 searchObjectPath = search;
             }
 

@@ -53,7 +53,7 @@ namespace DMCompiler.DM {
                             parent = GetDMObject(DreamPath.Root);
                             break;
                         default:
-                            parent = GetDMObject(DreamPath.Datum);
+                            parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                             break;
                     }
                 }

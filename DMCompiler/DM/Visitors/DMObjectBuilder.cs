@@ -68,11 +68,10 @@ namespace DMCompiler.DM.Visitors {
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
 
-            if (varDefinition.IsGlobal)
-            {
-                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name);
+            if (varDefinition.IsGlobal) {
+                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
             } else {
-                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false);
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
                 _currentObject.Variables[variable.Name] = variable;
             }
 
@@ -97,7 +96,7 @@ namespace DMCompiler.DM.Visitors {
                     if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
                     _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                 } else {
-                    DMVariable variable = new DMVariable(null, varOverride.VarName, false);
+                    DMVariable variable = new DMVariable(null, varOverride.VarName, false, false);
 
                     SetVariableValue(variable, varOverride.Value);
                     _currentObject.VariableOverrides[variable.Name] = variable;
@@ -133,7 +132,7 @@ namespace DMCompiler.DM.Visitors {
                         // TODO multiple var definitions.
                         if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal)
                         {
-                            DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name);
+                            DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst);
                             variable.Value = new Expressions.Null(varDeclaration.Location);
 
                             Expressions.GlobalField field = new Expressions.GlobalField(varDeclaration.Location, variable.Type, proc.GetGlobalVariableId(varDeclaration.Name).Value);
@@ -150,7 +149,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (procDefinition.IsVerb) {
-                    Expressions.Field field = new Expressions.Field(Location.Unknown, DreamPath.List, "verbs");
+                    Expressions.Field field = new Expressions.Field(Location.Unknown, dmObject.GetVariable("verbs"));
                     DreamPath procPath = new DreamPath(".proc/" + procName);
                     Expressions.Append append = new Expressions.Append(Location.Unknown, field, new Expressions.Path(Location.Unknown, procPath));
 
@@ -207,6 +206,15 @@ namespace DMCompiler.DM.Visitors {
             DMVisitorExpression._scopeMode = "normal";
             expression.ValType = valType;
 
+            if (expression.TryAsConstant(out var constant)) {
+                variable.Value = constant;
+                return;
+            }
+
+            if (variable.IsConst) {
+                throw new CompileErrorException(value.Location, "Value of const var must be a constant");
+            }
+
             switch (expression) {
                 case Expressions.List:
                 case Expressions.NewList:
@@ -225,11 +233,7 @@ namespace DMCompiler.DM.Visitors {
                     EmitInitializationAssign(variable, expression);
                     break;
                 default:
-                    if (!expression.TryAsConstant(out var constant))
-                        throw new CompileErrorException(expression.Location, "Expected a constant value for \"{variable.Name}\"");
-
-                    variable.Value = constant;
-                    break;
+                    throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
             }
         }
 
@@ -243,7 +247,7 @@ namespace DMCompiler.DM.Visitors {
 
                 DMObjectTree.AddGlobalInitProcAssign(assign);
             } else {
-                Expressions.Field field = new Expressions.Field(Location.Unknown, variable.Type, variable.Name);
+                Expressions.Field field = new Expressions.Field(Location.Unknown, variable);
                 Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
 
                 _currentObject.InitializationProcExpressions.Add(assign);

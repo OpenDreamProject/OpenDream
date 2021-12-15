@@ -170,19 +170,33 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            if (varDeclaration.IsGlobal) { return; }
+            if (varDeclaration.IsGlobal) { return; } //Currently handled by DMObjectBuilder
 
-            if (!_proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type)) {
+            DMExpression value;
+            if (varDeclaration.Value != null) {
+                value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+            } else {
+                value = new Expressions.Null(varDeclaration.Location);
+            }
+
+            bool successful;
+            if (varDeclaration.IsConst) {
+                if (!value.TryAsConstant(out var constValue)) {
+                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
+                    return;
+                }
+                    
+                successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
+            } else {
+                successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);
+            }
+
+            if (!successful) {
                 DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
                 return;
             }
 
-            if (varDeclaration.Value != null) {
-                DMExpression.Emit(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
-            } else {
-                _proc.PushNull();
-            }
-
+            value.EmitPushValue(_dmObject, _proc);
             _proc.SetLocalVariable(varDeclaration.Name);
         }
 

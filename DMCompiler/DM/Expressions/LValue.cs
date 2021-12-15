@@ -53,38 +53,59 @@ namespace DMCompiler.DM.Expressions {
     // Identifier of local variable
     class Local : LValue {
         string Name { get; }
+        DMProc.LocalVariable LocalVar { get; }
 
-        public Local(Location location, DreamPath? path, string name)
-            : base(location, path) {
+        public Local(Location location, DMProc.LocalVariable localVar, string name)
+            : base(location, localVar.Type) {
             Name = name;
+            LocalVar = localVar;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushLocalVariable(Name);
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (LocalVar is DMProc.LocalConstVariable constVar) {
+                constant = constVar.Value;
+                return true;
+            }
+
+            constant = null;
+            return false;
+        }
     }
 
     // Identifier of field
     class Field : LValue {
-        string Name { get; }
+        DMVariable Variable;
 
-        public Field(Location location, DreamPath? path, string name)
-            : base(location, path) {
-            Name = name;
+        public Field(Location location, DMVariable variable)
+            : base(location, variable.Type) {
+            Variable = variable;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.GetIdentifier(Name);
+            proc.GetIdentifier(Variable.Name);
         }
 
         public void EmitPushInitial(DMProc proc) {
             proc.PushSrc();
-            proc.Initial(Name);
+            proc.Initial(Variable.Name);
         }
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushSrc();
-            proc.IsSaved(Name);
+            proc.IsSaved(Variable.Name);
+        }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (Variable.IsConst && Variable.Value != null) {
+                return Variable.Value.TryAsConstant(out constant);
+            }
+
+            constant = null;
+            return false;
         }
     }
 
@@ -107,6 +128,16 @@ namespace DMCompiler.DM.Expressions {
 
         public void EmitPushIsSaved(DMProc proc) {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
+        }
+
+        public override bool TryAsConstant(out Constant constant) {
+            DMVariable global = DMObjectTree.Globals[Id];
+            if (global.IsConst) {
+                return global.Value.TryAsConstant(out constant);
+            }
+
+            constant = null;
+            return false;
         }
     }
 

@@ -88,9 +88,9 @@ namespace DMCompiler.DM.Visitors {
             } else if (name == "args") {
                 Result = new Expressions.Args(identifier.Location);
             } else {
-                DMProc.DMLocalVariable localVar = _proc?.GetLocalVariable(name);
+                DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
                 if (localVar != null && _scopeMode == "normal") {
-                    Result = new Expressions.Local(identifier.Location, localVar.Type, name);
+                    Result = new Expressions.Local(identifier.Location, localVar, name);
                     return;
                 }
 
@@ -103,7 +103,7 @@ namespace DMCompiler.DM.Visitors {
 
                 var field = _dmObject?.GetVariable(name);
                 if (field != null && _scopeMode == "normal") {
-                    Result = new Expressions.Field(identifier.Location, field.Type, name);
+                    Result = new Expressions.Field(identifier.Location, field);
                     return;
                 }
 

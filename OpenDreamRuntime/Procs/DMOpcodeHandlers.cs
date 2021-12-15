@@ -909,7 +909,14 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.PopDreamValue();
             DreamValue first = state.PopDreamValue();
 
-            if (first.Value == null || second.Value == null) {
+            if (first.Value == null) {
+                state.Push(new DreamValue(0));
+            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
+                if (firstObject.ObjectDefinition.MetaObject == null)
+                    throw new Exception("Invalid multiply operation on " + first + " and " + second);
+
+                state.Push(firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second));
+            } else if (second == DreamValue.Null) {
                 state.Push(new DreamValue(0));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsFloat() * second.GetValueAsFloat()));

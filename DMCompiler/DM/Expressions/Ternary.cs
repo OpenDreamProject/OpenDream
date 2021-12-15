@@ -11,15 +11,17 @@ namespace DMCompiler.DM.Expressions {
             _c = c;
         }
 
-        public override Constant ToConstant()
-        {
-            var a = _a.ToConstant();
-
-            if (a.IsTruthy()) {
-                return _b.ToConstant();
+        public override bool TryAsConstant(out Constant constant) {
+            if (!_a.TryAsConstant(out var a)) {
+                constant = null;
+                return false;
             }
 
-            return _c.ToConstant();
+            if (a.IsTruthy()) {
+                return _b.TryAsConstant(out constant);
+            }
+
+            return _c.TryAsConstant(out constant);
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

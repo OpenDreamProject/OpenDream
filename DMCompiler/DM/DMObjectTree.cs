@@ -53,7 +53,7 @@ namespace DMCompiler.DM {
                             parent = GetDMObject(DreamPath.Root);
                             break;
                         default:
-                            parent = GetDMObject(DreamPath.Datum);
+                            parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                             break;
                     }
                 }
@@ -70,8 +70,7 @@ namespace DMCompiler.DM {
         }
 
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
-            // I was unable to find any situation where searching for an absolute path worked
-            if (search.Type == DreamPath.PathType.Absolute) return null;
+            bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
 
             DreamPath searchObjectPath;
 
@@ -81,6 +80,8 @@ namespace DMCompiler.DM {
                 searchObjectPath = search.FromElements(0, procElement);
                 searchObjectPath.Type = DreamPath.PathType.Relative; // FromElements makes an absolute path
             } else {
+                if (requireProcElement) return null;
+
                 searchObjectPath = search;
             }
 
@@ -109,10 +110,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name) {
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst) {
             int id = Globals.Count;
 
-            global = new DMVariable(type, name, true);
+            global = new DMVariable(type, name, true, isConst);
             Globals.Add(global);
             return id;
         }

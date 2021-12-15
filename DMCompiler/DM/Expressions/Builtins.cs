@@ -294,12 +294,16 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override object ToJsonRepresentation() {
+        public override bool TryAsJsonRepresentation(out object json) {
             List<object> list = new();
             Dictionary<string, object> associatedValues = new();
 
             foreach (DMASTCallParameter parameter in _astNode.Values) {
-                object value = DMExpression.Create(null, null, parameter.Value).ToJsonRepresentation();
+                if (!DMExpression.Create(null, null, parameter.Value).TryAsJsonRepresentation(out var value)) {
+                    json = null;
+                    return false;
+                }
+
                 DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
 
                 if (associatedAssign != null) {
@@ -319,7 +323,8 @@ namespace DMCompiler.DM.Expressions {
             jsonRepresentation.Add("type", JsonVariableType.List);
             if (list.Count > 0) jsonRepresentation.Add("values", list);
             if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
-            return jsonRepresentation;
+            json = jsonRepresentation;
+            return true;
         }
     }
 
@@ -342,8 +347,9 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override object ToJsonRepresentation() {
-            return null; //TODO
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = null;
+            return true; //TODO
         }
     }
 

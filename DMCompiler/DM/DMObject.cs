@@ -81,8 +81,8 @@ namespace DMCompiler.DM {
             return false;
         }
 
-        public DMVariable CreateGlobalVariable(DreamPath? type, string name) {
-            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name);
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst) {
+            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst);
 
             GlobalVariables[name] = id;
             return global;
@@ -128,11 +128,17 @@ namespace DMCompiler.DM {
                 typeJson.Variables = new Dictionary<string, object>();
 
                 foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                    typeJson.Variables.Add(variable.Key, variable.Value.ToJsonRepresentation());
+                    if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                        throw new Exception($"Failed to serialize {Path}.{variable.Key}");
+
+                    typeJson.Variables.Add(variable.Key, valueJson);
                 }
 
                 foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                    typeJson.Variables[variable.Key] = variable.Value.ToJsonRepresentation();
+                    if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                        throw new Exception($"Failed to serialize {Path}.{variable.Key}");
+
+                    typeJson.Variables[variable.Key] = valueJson;
                 }
             }
 

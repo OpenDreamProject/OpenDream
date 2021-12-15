@@ -11,18 +11,26 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
-        public class DMLocalVariable {
+        public class LocalVariable {
             public int Id;
             public DreamPath? Type;
 
-            public DMLocalVariable(int id, DreamPath? type) {
+            public LocalVariable(int id, DreamPath? type) {
                 Id = id;
                 Type = type;
             }
         }
 
+        public class LocalConstVariable : LocalVariable {
+            public Expressions.Constant Value;
+
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, type) {
+                Value = value;
+            }
+        }
+
         private class DMProcScope {
-            public Dictionary<string, DMLocalVariable> LocalVariables = new();
+            public Dictionary<string, LocalVariable> LocalVariables = new();
             public DMProcScope ParentScope;
 
             public DMProcScope() { }
@@ -38,6 +46,7 @@ namespace DMCompiler.DM {
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
         public string Name { get => _astDefinition.Name; }
+        public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
@@ -93,6 +102,30 @@ namespace DMCompiler.DM {
             _waitFor = waitFor;
         }
 
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst)
+        {
+            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst);
+
+            GlobalVariables[name] = id;
+            return global;
+        }
+
+        public int? GetGlobalVariableId(string name)
+        {
+            if (GlobalVariables.TryGetValue(name, out int id))
+            {
+                return id;
+            }
+            return null;
+        }
+
+        public DMVariable GetGlobalVariable(string name)
+        {
+            int? id = GetGlobalVariableId(name);
+
+            return (id == null) ? null : DMObjectTree.Globals[id.Value];
+        }
+
         public void AddParameter(string name, DMValueType type) {
             Parameters.Add(name);
             ParameterTypes.Add(type);
@@ -124,14 +157,20 @@ namespace DMCompiler.DM {
         public bool TryAddLocalVariable(string name, DreamPath? type) {
             int localVarId = _localVariableIdCounter++;
 
-            return _scopes.Peek().LocalVariables.TryAdd(name, new DMLocalVariable(localVarId, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, type));
         }
 
-        public DMLocalVariable GetLocalVariable(string name) {
+        public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
+            int localVarId = _localVariableIdCounter++;
+
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
+        }
+
+        public LocalVariable GetLocalVariable(string name) {
             DMProcScope scope = _scopes.Peek();
 
             while (scope != null) {
-                if (scope.LocalVariables.TryGetValue(name, out DMLocalVariable localVariable)) return localVariable;
+                if (scope.LocalVariables.TryGetValue(name, out LocalVariable localVariable)) return localVariable;
 
                 scope = scope.ParentScope;
             }
@@ -156,7 +195,7 @@ namespace DMCompiler.DM {
         }
 
         public void PushLocalVariable(string name) {
-            DMLocalVariable localVar = GetLocalVariable(name);
+            LocalVariable localVar = GetLocalVariable(name);
 
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushLocalVariable);

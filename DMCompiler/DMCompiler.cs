@@ -185,7 +185,10 @@ namespace DMCompiler {
                 compiledDream.Globals = new List<object>();
 
                 foreach (DMVariable global in DMObjectTree.Globals) {
-                    compiledDream.Globals.Add(global.ToJsonRepresentation());
+                    if (!global.TryAsJsonRepresentation(out var globalJson))
+                        throw new Exception($"Failed to serialize global {global.Name}");
+
+                    compiledDream.Globals.Add(globalJson);
                 }
             }
 

@@ -102,6 +102,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
             ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
             ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
+            ObjectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix());
             ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
             ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
             ObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());

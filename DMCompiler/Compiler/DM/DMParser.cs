@@ -531,21 +531,22 @@ namespace DMCompiler.Compiler.DM {
 
                 return new DMASTProcStatementExpression(loc, expression);
             } else {
-                DMASTProcStatement procStatement = ProcVarDeclaration();
-                if (procStatement == null) procStatement = Return();
-                if (procStatement == null) procStatement = Break();
-                if (procStatement == null) procStatement = Continue();
-                if (procStatement == null) procStatement = Goto();
-                if (procStatement == null) procStatement = Del();
-                if (procStatement == null) procStatement = Set();
-                if (procStatement == null) procStatement = Spawn();
-                if (procStatement == null) procStatement = If();
+                // These are sorted by frequency, except If() is moved to the end because it's really slow (relatively)
+                DMASTProcStatement procStatement = Return();
+                if (procStatement == null) procStatement = ProcVarDeclaration();
                 if (procStatement == null) procStatement = For();
+                if (procStatement == null) procStatement = Set();
+                if (procStatement == null) procStatement = Switch();
+                if (procStatement == null) procStatement = Continue();
+                if (procStatement == null) procStatement = Break();
+                if (procStatement == null) procStatement = Spawn();
                 if (procStatement == null) procStatement = While();
                 if (procStatement == null) procStatement = DoWhile();
-                if (procStatement == null) procStatement = Switch();
-                if (procStatement == null) procStatement = TryCatch();
                 if (procStatement == null) procStatement = Throw();
+                if (procStatement == null) procStatement = Del();
+                if (procStatement == null) procStatement = TryCatch();
+                if (procStatement == null) procStatement = Goto();
+                if (procStatement == null) procStatement = If();
 
                 if (procStatement != null) {
                     Whitespace();

@@ -52,14 +52,17 @@ namespace OpenDreamShared.Dream {
             get {
                 if (_pathString != null) return _pathString;
 
-                StringBuilder pathStringBuilder = new StringBuilder();
-                if (Type == PathType.Absolute) pathStringBuilder.Append('/');
-                else if (Type == PathType.DownwardSearch) pathStringBuilder.Append(':');
-                else if (Type == PathType.UpwardSearch) pathStringBuilder.Append('.');
+                _pathString = Type switch
+                {
+                    PathType.Absolute => "/",
+                    PathType.DownwardSearch => ":",
+                    PathType.UpwardSearch => ".",
+                    _ => string.Empty
+                };
 
-                pathStringBuilder.AppendJoin('/', Elements);
+                // Elements is usually small enough for this to be faster than StringBuilder
+                _pathString += string.Join("/", Elements);
 
-                _pathString = pathStringBuilder.ToString();
                 return _pathString;
             }
             set => SetFromString(value);

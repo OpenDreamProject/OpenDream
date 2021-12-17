@@ -531,6 +531,7 @@ namespace DMCompiler.Compiler.DM {
 
                 return new DMASTProcStatementExpression(loc, expression);
             } else {
+                // These are sorted by frequency, except If() is moved to the end because it's really slow (relatively)
                 DMASTProcStatement procStatement = Return();
                 if (procStatement == null) procStatement = ProcVarDeclaration();
                 if (procStatement == null) procStatement = For();

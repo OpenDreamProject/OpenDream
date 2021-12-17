@@ -138,10 +138,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
-            if (_scopeMode == "static")
-            {
-                if (!DMObjectTree.GetDMObject(DreamPath.Root).HasProc(procIdentifier.Identifier))
-                {
+            if (_scopeMode == "static") {
+                if (!DMObjectTree.GetDMObject(DreamPath.Root).HasProc(procIdentifier.Identifier)) {
                     throw new CompileErrorException(new CompilerError(procIdentifier.Location, $"Global proc {procIdentifier.Identifier} does not exist"));
                 }
                 // TODO: substitute this to global.proc()
@@ -151,6 +149,11 @@ namespace DMCompiler.DM.Visitors {
             {
                 Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
             }
+        }
+
+        public void VisitCallableGlobalProc(DMASTCallableGlobalProc globalProc)
+        {
+            Result = new Expressions.GlobalProc(globalProc.Location, globalProc.Identifier);
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {

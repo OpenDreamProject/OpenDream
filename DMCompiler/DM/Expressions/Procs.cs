@@ -1,4 +1,5 @@
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -14,16 +15,44 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            if (!dmObject.HasProc(_identifier)) {
-                throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            if (dmObject.HasProc(_identifier)) {
+                proc.GetProc(_identifier);
+                return ProcPushResult.Unconditional;
             }
-
-            proc.GetProc(_identifier);
-            return ProcPushResult.Unconditional;
+            else if (DMObjectTree.TryGetNamedGlobalProcId(_identifier, out var gid)) {
+                proc.GetGlobalProc( gid );
+                return ProcPushResult.Unconditional;
+            }
+            throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
         }
 
         public DMProc GetProc(DMObject dmObject) {
             return dmObject.GetProcs(_identifier)?[^1];
+        }
+    }
+
+    class GlobalProc : DMExpression
+    {
+        string _identifier;
+
+        public GlobalProc(Location loc, string identifier) : base(loc)
+        {
+            _identifier = identifier;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc)
+        {
+            throw new CompileErrorException(Location, "attempt to use proc as value");
+        }
+
+        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc)
+        {
+            if (DMObjectTree.TryGetNamedGlobalProcId(_identifier, out var gid))
+            {
+                proc.GetGlobalProc(gid);
+                return ProcPushResult.Unconditional;
+            }
+            throw new CompileErrorException(Location, $"Global scope does not have a proc named `{_identifier}`");
         }
     }
 

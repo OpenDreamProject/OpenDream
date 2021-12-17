@@ -130,7 +130,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.IsInRange,
             DMOpcodeHandlers.GetGlobal,
             DMOpcodeHandlers.IndexListConditional,
-            DMOpcodeHandlers.PushType
+            DMOpcodeHandlers.PushType,
+            DMOpcodeHandlers.GetGlobalProc
         };
         #endregion
 

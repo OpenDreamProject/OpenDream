@@ -10,6 +10,7 @@ namespace OpenDreamRuntime {
         public int DMExceptionCount { get; set; }
 
         public List<DreamValue> Globals { get; set; }
+        public List<DreamProc> GlobalProcs { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
@@ -24,6 +25,8 @@ namespace OpenDreamRuntime {
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);
         void Update();
+
+        void SetGlobalProc(string internalName, DreamProc proc);
 
         IEnumerable<DreamConnection> Connections { get; }
     }

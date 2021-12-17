@@ -95,7 +95,8 @@ namespace OpenDreamShared.Dream.Procs {
         IsInRange = 0x5B,
         GetGlobal = 0x5C,
         IndexListConditional = 0x5D,
-        PushType = 0x5E
+        PushType = 0x5E,
+        GetGlobalProc = 0x5F
     }
 
     public enum DreamProcOpcodeParameterType {

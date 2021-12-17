@@ -258,6 +258,13 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? GetGlobalProc(DMProcState state)
+        {
+            int id = state.ReadInt();
+            state.Push(new DreamProcIdentifierProc(state.DreamManager.GlobalProcs[id], null));
+            return null;
+        }
+
         private static void Index(DMProcState state, DreamValue index, DreamValue indexing) {
             if (indexing.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 state.Push(new DreamProcIdentifierIndex(dreamObject, index));

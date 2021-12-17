@@ -16,7 +16,9 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CompileProcs();
             }
-
+            foreach (DMProc gProc in DMObjectTree.GlobalProcs) {
+                gProc.Compile( DMObjectTree.GetDMObject(DreamPath.Root) );
+            }
             DMObjectTree.CreateGlobalInitProc();
         }
 
@@ -112,23 +114,33 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             DMObject dmObject = _currentObject;
 
-            try {
+            try
+            {
                 if (procDefinition.ObjectPath.HasValue) {
                     dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
-                }
+                } 
 
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
+                if (!procDefinition.IsOverride && dmObject.HasProc(procName))
+                {
                     throw new CompileErrorException(procDefinition.Location, "Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
                 }
 
                 DMProc proc = new DMProc(procDefinition);
 
-                dmObject.AddProc(procName, proc);
-
-                if (procDefinition.Body != null)
-                {
-                    foreach (var stmt in GetStatements(procDefinition.Body))
-                    {
+                if (procDefinition.ObjectPath == null) {
+                    if (DMObjectTree.HasNamedGlobalProc(procDefinition.Name)) {
+                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"{procDefinition.Name} is already defined in global scope"));
+                    }
+                    int gproc_id = DMObjectTree.CreateNamedGlobalProc(procDefinition.Name, proc);
+                    string gproc_internal = $"USRPROC${procDefinition.ObjectPath}${proc.Name}";
+                    proc.InternalName = gproc_internal;
+                    DMObjectTree.SetGlobalProcInternalName(gproc_internal, gproc_id);
+                }
+                else { 
+                    dmObject.AddProc(procName, proc);
+                }
+                if (procDefinition.Body != null) {
+                    foreach (var stmt in GetStatements(procDefinition.Body)) {
                         // TODO multiple var definitions.
                         if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal)
                         {

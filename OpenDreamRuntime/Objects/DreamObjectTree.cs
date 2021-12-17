@@ -223,24 +223,29 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        public DreamProc LoadProcJson(string procName, ProcDefinitionJson procDefinition)
+        {
+            byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
+            List<string> argumentNames = new();
+            List<DMValueType> argumentTypes = new();
+
+            if (procDefinition.Arguments != null) {
+                foreach (ProcArgumentJson argument in procDefinition.Arguments) {
+                    argumentNames.Add(argument.Name);
+                    argumentTypes.Add(argument.Type);
+                }
+            }
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor);
+
+        }
+
         private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {
             foreach (KeyValuePair<string, List<ProcDefinitionJson>> jsonProc in jsonProcs) {
-                string procName = jsonProc.Key;
+                string procName = $"{objectDefinition.Type}/{jsonProc.Key}";
 
                 foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
-                    List<string> argumentNames = new();
-                    List<DMValueType> argumentTypes = new();
-
-                    if (procDefinition.Arguments != null) {
-                        foreach (ProcArgumentJson argument in procDefinition.Arguments) {
-                            argumentNames.Add(argument.Name);
-                            argumentTypes.Add(argument.Type);
-                        }
-                    }
-
-                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor);
-                    objectDefinition.SetProcDefinition(jsonProc.Key, proc);
+                    var manager = IoCManager.Resolve<IDreamManager>();
+                    objectDefinition.SetProcDefinition(jsonProc.Key, LoadProcJson(procName, procDefinition));
                 }
             }
         }

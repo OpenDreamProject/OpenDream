@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -191,6 +192,13 @@ namespace DMCompiler {
                     compiledDream.Globals.Add(globalJson);
                 }
             }
+            if (DMObjectTree.GlobalProcs.Count > 0) {
+                compiledDream.GlobalProcs = new();
+                foreach (DMProc proc in DMObjectTree.GlobalProcs) {
+                    compiledDream.GlobalProcs.Add(proc.GetJsonRepresentation());
+                }
+            }
+            compiledDream.InternalNameToGlobalProcId = DMObjectTree.GetInternalGlobalProcNameMapping().ToList();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

@@ -9,6 +9,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
@@ -32,6 +33,8 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public List<DreamProc> GlobalProcs { get; set; } = new();
+        public Dictionary<string, int> InternalNameToGlobalProcId = new();
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -51,6 +54,13 @@ namespace OpenDreamRuntime {
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
+
+            foreach(var procJson in _compiledJson.GlobalProcs) {
+                GlobalProcs.Add(ObjectTree.LoadProcJson(procJson.InternalName, procJson));
+            }
+            foreach (var pair in _compiledJson.InternalNameToGlobalProcId) {
+                InternalNameToGlobalProcId[pair.Key] = pair.Value;
+            }
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
             _dreamMapManager.Initialize();
@@ -109,6 +119,11 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
+        }
+
+        public void SetGlobalProc(string internalName, DreamProc proc)
+        {
+            GlobalProcs[InternalNameToGlobalProcId[internalName]] = proc;
         }
     }
 }

@@ -46,6 +46,8 @@ namespace DMCompiler.DM {
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
         public string Name { get => _astDefinition.Name; }
+        public string InternalName = null;
+
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -79,6 +81,7 @@ namespace DMCompiler.DM {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
             procDefinition.WaitFor = _waitFor;
             procDefinition.MaxStackSize = _maxStackSize;
+            procDefinition.InternalName = InternalName;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
             if (Parameters.Count > 0) {
@@ -208,6 +211,12 @@ namespace DMCompiler.DM {
             WriteString(identifier);
         }
 
+        public void GetGlobalProc(int id)
+        {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.GetGlobalProc);
+            WriteInt(id);
+        }
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }

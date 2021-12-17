@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamObjectTree(DreamCompiledJson json) {
             Strings = json.Strings;
-            
+
             LoadTypesFromJson(json.Types);
             List = GetTreeEntry(DreamPath.List);
         }
@@ -239,7 +239,7 @@ namespace OpenDreamRuntime.Objects {
                         }
                     }
 
-                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor);
+                    var proc = new DMProc($"{objectDefinition.Type}/{jsonProc.Key}", null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
                     objectDefinition.SetProcDefinition(jsonProc.Key, proc);
                 }
             }

@@ -77,7 +77,7 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
-            procDefinition.WaitFor = _waitFor;
+            if(!_waitFor) procDefinition.WaitFor = _waitFor;
             procDefinition.MaxStackSize = _maxStackSize;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();

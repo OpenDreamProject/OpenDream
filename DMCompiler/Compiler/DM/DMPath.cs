@@ -12,6 +12,7 @@ namespace DMCompiler.Compiler.DM
         public bool IsGlobal;
         public bool IsStatic;
         public bool IsConst;
+        public bool IsList;
     }
 
     public class ProcVarDeclInfo : VarDeclInfo
@@ -35,6 +36,10 @@ namespace DMCompiler.Compiler.DM
                 else if (elem == "const")
                 {
                     IsConst = true;
+                }
+                else if (elem == "list")
+                {
+                    IsList = true;
                 }
                 else
                 {
@@ -88,6 +93,10 @@ namespace DMCompiler.Compiler.DM
                 {
                     IsConst = true;
                 }
+                else if (elem == "list")
+                {
+                    IsList = true;
+                }
                 else if (elem == "tmp")
                 {
                     IsTmp = true;
@@ -108,6 +117,36 @@ namespace DMCompiler.Compiler.DM
             }
             VarName = elements[elements.Length - 1];
         }
+    }
 
+    public class ProcParameterDeclInfo : VarDeclInfo {
+        public ProcParameterDeclInfo(DreamPath path) {
+            string[] elements = path.Elements;
+            var readIdx = 0;
+            List<string> currentPath = new();
+            if (elements[readIdx] == "var") {
+                readIdx++;
+            }
+            while (readIdx < elements.Length - 1) {
+                var elem = elements[readIdx];
+                if (elem == "static" || elem == "global") {
+                    //No effect
+                } else if (elem == "const") {
+                    //TODO: Parameters can be constant
+                    //If they are they can't be assigned to but still cannot be used in const-only contexts (such as switch cases)
+                } else if (elem == "list") {
+                    IsList = true;
+                } else {
+                    currentPath.Add(elem);
+                }
+                readIdx += 1;
+            }
+            if (currentPath.Count > 0) {
+                TypePath = new DreamPath(DreamPath.PathType.Absolute, currentPath.ToArray());
+            } else {
+                TypePath = null;
+            }
+            VarName = elements[elements.Length - 1];
+        }
     }
 }

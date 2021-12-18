@@ -211,7 +211,7 @@ namespace OpenDreamRuntime.Objects {
             {
                 if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name))
                 {
-                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(name[..1]));
+                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(String.IsNullOrEmpty(name) ? String.Empty : name[..1]));
                 }
             }
         }

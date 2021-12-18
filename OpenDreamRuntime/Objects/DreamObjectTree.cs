@@ -205,6 +205,15 @@ namespace OpenDreamRuntime.Objects {
                     definition.InitializionProc = initProc;
                 }
             }
+
+            //Fourth pass: Set atom's text
+            foreach (TreeEntry type in GetAllDescendants(DreamPath.Atom))
+            {
+                if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name))
+                {
+                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(name[..1]));
+                }
+            }
         }
 
         private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamTypeJson jsonObject) {

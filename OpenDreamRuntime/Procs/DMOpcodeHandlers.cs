@@ -1206,25 +1206,29 @@ namespace OpenDreamRuntime.Procs {
                         argV.Fill(0);
                         try
                         {
-                            for (var i = 0; i < arguments.ArgumentCount; i++)
+                            for (var i = 0; i < argV.Length; i++)
                             {
                                 var arg = arguments.OrderedArguments[i].Stringify();
                                 argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
                             }
 
-                            fixed (nint* ptr = &argV[0])
-                            {
-                                var ret = entryPoint(arguments.ArgumentCount, (byte**) ptr);
-                                if (ret == null)
-                                {
-                                    state.Push(DreamValue.Null);
-                                    return null;
+                            byte* ret;
+                            if (arguments.ArgumentCount > 0) {
+                                fixed (nint* ptr = &argV[0]) {
+                                    ret = entryPoint(arguments.ArgumentCount, (byte**)ptr);
                                 }
+                            } else {
+                                ret = entryPoint(0, (byte**)0);
+                            }
 
-                                var retString = Marshal.PtrToStringUTF8((nint) ret);
-                                state.Push(new DreamValue(retString));
+                            if (ret == null) {
+                                state.Push(DreamValue.Null);
                                 return null;
                             }
+
+                            var retString = Marshal.PtrToStringUTF8((nint)ret);
+                            state.Push(new DreamValue(retString));
+                            return null;
                         }
                         finally
                         {

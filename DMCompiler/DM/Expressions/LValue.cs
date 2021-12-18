@@ -15,6 +15,10 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
             return IdentifierPushResult.Unconditional;
         }
+
+        public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            throw new CompileErrorException(Location, $"Can't get initial value of {this}");
+        }
     }
 
     // src
@@ -89,7 +93,7 @@ namespace DMCompiler.DM.Expressions {
             proc.GetIdentifier(Variable.Name);
         }
 
-        public void EmitPushInitial(DMProc proc) {
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushSrc();
             proc.Initial(Variable.Name);
         }
@@ -120,10 +124,6 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.GetGlobal(Id);
-        }
-
-        public void EmitPushInitial(DMProc proc) {
-            throw new CompileErrorException(Location, "initial() on globals is unimplemented");
         }
 
         public void EmitPushIsSaved(DMProc proc) {

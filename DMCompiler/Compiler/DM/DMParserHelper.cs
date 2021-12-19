@@ -26,7 +26,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 if (Current().Type == TokenType.EndOfFile) break;
-            } while (((DMLexer)_lexer).CurrentIndentation() != 0);
+            } while (_dmlexer.CurrentIndentation() != 0);
 
             Delimiter();
         }
@@ -35,7 +35,7 @@ namespace DMCompiler.Compiler.DM {
             //A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
             //To keep indentation working correctly
             if (!Check(TokenType.DM_RightParenthesis)) {
-                ((DMLexer)_lexer).BracketNesting--;
+                _dmlexer.BracketNesting--;
                 Error("Expected ')'");
             }
         }
@@ -43,7 +43,7 @@ namespace DMCompiler.Compiler.DM {
         private void ConsumeRightBracket() {
             //Similar to ConsumeRightParenthesis()
             if (!Check(TokenType.DM_RightBracket)) {
-                ((DMLexer)_lexer).BracketNesting--;
+                _dmlexer.BracketNesting--;
                 Error("Expected ']'");
             }
         }

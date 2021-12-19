@@ -51,7 +51,7 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Tab,
         };
 
-        public DMFParser(DMFLexer lexer) : base(lexer) { }
+        public DMFParser(IDMFLexer lexer) : base(lexer) { }
 
         public InterfaceDescriptor Interface() {
             List<WindowDescriptor> windowDescriptors = new();

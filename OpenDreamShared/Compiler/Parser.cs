@@ -7,11 +7,11 @@ namespace OpenDreamShared.Compiler {
         public List<CompilerError> Errors = new();
         public List<CompilerWarning> Warnings = new();
 
-        protected Lexer<SourceType> _lexer;
+        protected ILexer<Token> _lexer;
         private Token _currentToken;
         private Stack<Token> _tokenStack = new();
 
-        public Parser(Lexer<SourceType> lexer) {
+        public Parser(ILexer<Token> lexer) {
             _lexer = lexer;
 
             Advance();

@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace OpenDreamShared.Compiler {
+
+    public interface ILexer<SourceType> {
+        public SourceType GetNextToken();
+    }
+
     [Virtual]
     public class Lexer<SourceType> {
         public Location CurrentLocation { get; protected set; }

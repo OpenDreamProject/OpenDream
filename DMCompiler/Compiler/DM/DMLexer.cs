@@ -5,7 +5,13 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMLexer : TokenLexer {
+    public interface IDMLexer : ILexer<Token> {
+        public int CurrentIndentation();
+        public int BracketNesting { get; set; }
+
+        public void ToggleDebug(bool state) { }
+    }
+    public partial class DMLexer : TokenLexer, IDMLexer {
         public static List<string> ValidEscapeSequences = new() {
             "icon",
             "Roman", "roman",
@@ -57,7 +63,9 @@ namespace DMCompiler.Compiler.DM {
             { "throw", TokenType.DM_Throw }
         };
 
-        public int BracketNesting = 0;
+        private int _bracketNesting = 0;
+
+        public int BracketNesting { get { return _bracketNesting; } set { _bracketNesting = value; } }
 
         private Stack<int> _indentationStack = new(new int[] { 0 });
 

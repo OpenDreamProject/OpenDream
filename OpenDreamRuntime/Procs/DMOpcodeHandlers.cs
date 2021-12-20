@@ -683,12 +683,12 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? BitShiftLeft(DMProcState state) {
             DreamValue second = state.PopDreamValue();
-            object first = state.Pop();
-            IDreamProcIdentifier firstIdentifier = first as IDreamProcIdentifier;
+            DreamValue first = state.Pop();
+            IDreamProcIdentifier firstIdentifier = first.Value as IDreamProcIdentifier;
 
             //Savefiles get special treatment
             //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-            if (first is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
+            if (first.Value is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
                 index.Assign(second);
                 state.Push(new DreamValue(0));
 

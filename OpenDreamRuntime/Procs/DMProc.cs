@@ -286,8 +286,12 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue PopDreamValue() {
             DreamValue value = Pop();
             if(value.Type == DreamValue.DreamValueType.Reference){
-                throw new Exception("Illegal accessing of a Reference type of DreamValue - Use PopIdentifier() or PopArguments()");
+                if(value.Value is IDreamProcIdentifier){
+                    return ((IDreamProcIdentifier)value.Value).GetValue();
+                }
+                throw new Exception("Last object on stack was not a dream value or identifier");
             }
+
             return value;
         }
 

@@ -730,7 +730,7 @@ namespace OpenDreamRuntime.Procs {
 
             //Savefiles get special treatment
             //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
-            if (state.Peek() is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
+            if (state.Peek().Value is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
                 state.Pop();
                 state.Push(new DreamValue(0));
 

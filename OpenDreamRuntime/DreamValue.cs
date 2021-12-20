@@ -15,7 +15,8 @@ namespace OpenDreamRuntime {
             DreamResource = 4,
             DreamObject = 8,
             DreamPath = 16,
-            DreamProc = 32
+            DreamProc = 32,
+            Reference = 64
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject)null);
@@ -74,7 +75,7 @@ namespace OpenDreamRuntime {
                 DreamObject => DreamValueType.DreamObject,
                 DreamPath => DreamValueType.DreamPath,
                 DreamProc => DreamValueType.DreamProc,
-                _ => throw new ArgumentException("Invalid DreamValue value (" + value + ", " + value.GetType() + ")")
+                _ => DreamValueType.Reference
             };
         }
 

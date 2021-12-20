@@ -725,8 +725,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
-            object second = state.Pop();
-            IDreamProcIdentifier secondIdentifier = second as IDreamProcIdentifier;
+            DreamValue second = state.Pop();
+            IDreamProcIdentifier secondIdentifier = second.Value as IDreamProcIdentifier;
 
             //Savefiles get special treatment
             //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
@@ -739,7 +739,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamValue first = state.PopDreamValue();
-            DreamValue secondValue = secondIdentifier?.GetValue() ?? (DreamValue)second;
+            DreamValue secondValue = secondIdentifier?.GetValue() ?? second;
 
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));

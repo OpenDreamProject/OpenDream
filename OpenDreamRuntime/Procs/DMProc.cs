@@ -283,7 +283,8 @@ namespace OpenDreamRuntime.Procs {
             return (IDreamProcIdentifier)(Pop().Value);
         }
 
-        public DreamValue PopDreamValue() {
+        //renamed from PopDreamValue to PopUnboxedValue to signify that Pop() gives you the raw DreamValue that may hold a reference, PopUnboxedValue will return a "formatted" version of it.
+        public DreamValue PopUnboxedValue() {
             DreamValue value = Pop();
             if(value.Type == DreamValue.DreamValueType.Reference){
                 if(value.Value is IDreamProcIdentifier){

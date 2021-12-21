@@ -45,7 +45,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
-        public string Name { get => _astDefinition.Name; }
+        public string Name { get => _astDefinition?.Name; }
         public string InternalName = null;
 
         public Dictionary<string, int> GlobalVariables = new();
@@ -81,6 +81,7 @@ namespace DMCompiler.DM {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
             if(!_waitFor) procDefinition.WaitFor = _waitFor; // Procs set this to true by default, so only serialize if false
             procDefinition.MaxStackSize = _maxStackSize;
+            procDefinition.Name = Name;
             procDefinition.InternalName = InternalName;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();

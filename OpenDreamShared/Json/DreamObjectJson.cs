@@ -19,6 +19,7 @@ namespace OpenDreamShared.Json {
     }
 
     public class ProcDefinitionJson {
+        public string Name { get; set; }
         public string InternalName { get; set; }
         public bool? WaitFor { get; set; }
         public int MaxStackSize { get; set; }

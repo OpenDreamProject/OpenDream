@@ -56,7 +56,7 @@ namespace OpenDreamRuntime {
             SetMetaObjects();
 
             foreach(var procJson in _compiledJson.GlobalProcs) {
-                GlobalProcs.Add(ObjectTree.LoadProcJson(procJson.InternalName, procJson));
+                GlobalProcs.Add(ObjectTree.LoadProcJson(procJson.Name, procJson));
             }
             foreach (var pair in _compiledJson.InternalNameToGlobalProcId) {
                 InternalNameToGlobalProcId[pair.Key] = pair.Value;

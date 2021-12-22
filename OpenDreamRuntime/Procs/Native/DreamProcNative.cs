@@ -36,18 +36,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         var methodI = t.GetMethod(memberI.Name);
                         DreamProc proc = null;
-                        try {
+                        if (methodI.GetCustomAttribute<AsyncStateMachineAttribute>() != null) {
+                            var func = methodI.CreateDelegate<AsyncNativeProc.HandlerFn>();
+                            proc = new AsyncNativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func.Invoke);
+                        } else {
                             var func = methodI.CreateDelegate<NativeProc.HandlerFn>();
                             proc = new NativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func);
-                        } catch { }
-
-                        try {
-                            var func2 = methodI.CreateDelegate<AsyncNativeProc.HandlerFn>();
-                            proc = new AsyncNativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func2.Invoke);
-                        } catch { }
-
-                        if (proc == null) {
-                            throw new System.Exception($"Cannot resolve signature for proc '{attr?.Name}' in DreamProcNativeRoot");
                         }
                         DreamProcNativeRoot.DreamManager.SetGlobalProc($"USRPROC$${attr?.Name}", proc);
                     }

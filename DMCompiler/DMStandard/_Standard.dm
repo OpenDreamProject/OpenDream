@@ -220,6 +220,10 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	CRASH("/walk_away() is not implemented")
 
 /proc/turn(Dir, Angle)
+	if (istype(Dir, /matrix))
+		var/matrix/copy = new(Dir)
+		return copy.Turn(Angle)
+
 	var/dirAngle = 0
 
 	switch (Dir)

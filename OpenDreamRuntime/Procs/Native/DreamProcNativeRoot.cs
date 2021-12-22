@@ -528,10 +528,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("html_decode")]
         [DreamProcParameter("HtmlText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_html_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "HtmlText").TryGetValueAsString(out var htmlText))
-            {
-                return new DreamValue("");
-            }
+            string htmlText = arguments.GetArgument(0, "HtmlText").Stringify();
 
             return new DreamValue(HttpUtility.HtmlDecode(htmlText));
         }

@@ -146,7 +146,7 @@ namespace DMCompiler.DM.Visitors {
                     }
                 }
 
-                if (procDefinition.IsVerb && dmObject.IsSubtypeOf(DreamPath.Atom) && !DMCompiler.Settings.NoStandard) {
+                if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
                     Expressions.Field field = new Expressions.Field(Location.Unknown, dmObject.GetVariable("verbs"));
                     DreamPath procPath = new DreamPath(".proc/" + procName);
                     Expressions.Append append = new Expressions.Append(Location.Unknown, field, new Expressions.Path(Location.Unknown, procPath));

@@ -15,15 +15,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            if (dmObject.HasProc(_identifier)) {
-                proc.GetProc(_identifier);
-                return ProcPushResult.Unconditional;
-            }
-            else if (DMObjectTree.TryGetNamedGlobalProcId(_identifier, out var gid)) {
-                proc.GetGlobalProc( gid );
-                return ProcPushResult.Unconditional;
-            }
-            throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            proc.GetProc(_identifier);
+            return ProcPushResult.Unconditional;
         }
 
         public DMProc GetProc(DMObject dmObject) {
@@ -33,11 +26,11 @@ namespace DMCompiler.DM.Expressions {
 
     class GlobalProc : DMExpression
     {
-        string _identifier;
+        int _gid;
 
-        public GlobalProc(Location loc, string identifier) : base(loc)
+        public GlobalProc(Location loc, int gid) : base(loc)
         {
-            _identifier = identifier;
+            _gid = gid;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc)
@@ -47,12 +40,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc)
         {
-            if (DMObjectTree.TryGetNamedGlobalProcId(_identifier, out var gid))
-            {
-                proc.GetGlobalProc(gid);
-                return ProcPushResult.Unconditional;
-            }
-            throw new CompileErrorException(Location, $"Global scope does not have a proc named `{_identifier}`");
+            proc.GetGlobalProc(_gid);
+            return ProcPushResult.Unconditional;
         }
     }
 

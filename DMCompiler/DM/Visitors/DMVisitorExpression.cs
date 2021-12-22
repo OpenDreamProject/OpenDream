@@ -148,13 +148,26 @@ namespace DMCompiler.DM.Visitors {
             }
             else
             {
-                Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
+                if (_dmObject.HasProc(procIdentifier.Identifier)) {
+                    Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
+                }
+                else if (DMObjectTree.TryGetNamedGlobalProcId(procIdentifier.Identifier, out var gid)) {
+                    Result = new Expressions.GlobalProc(procIdentifier.Location, gid);
+                }
+                else {
+                    throw new CompileErrorException(procIdentifier.Location, $"Type {_dmObject.Path} does not have a proc named \"{procIdentifier.Identifier}\"");
+                }
             }
         }
 
         public void VisitCallableGlobalProc(DMASTCallableGlobalProc globalProc)
         {
-            Result = new Expressions.GlobalProc(globalProc.Location, globalProc.Identifier);
+            if (DMObjectTree.TryGetNamedGlobalProcId(globalProc.Identifier, out var gid)) {
+                Result = new Expressions.GlobalProc(globalProc.Location, gid);
+            }
+            else {
+                throw new CompileErrorException(globalProc.Location, $"Type {_dmObject.Path} does not have a proc named \"{globalProc.Identifier}\"");
+            }
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {

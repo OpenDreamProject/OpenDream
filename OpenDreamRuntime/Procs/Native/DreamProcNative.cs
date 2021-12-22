@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
+using System.Runtime.CompilerServices;
 using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -12,42 +13,30 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamObjectDefinition root = objectTree.GetObjectDefinition(DreamPath.Root);
 
-            Assembly asm = Assembly.GetExecutingAssembly();
-            
-            var q = from t in Assembly.GetExecutingAssembly().GetTypes()
-                    where t.Name == "DreamProcNativeRoot" && t.IsClass && t.Namespace == "OpenDreamRuntime.Procs.Native"
-                    select t;
+            foreach (var methodI in typeof(DreamProcNativeRoot).GetMethods(BindingFlags.Public | BindingFlags.Static)) {
+                var attr = methodI.GetCustomAttribute<DreamProcAttribute>();
+                var args = methodI.GetCustomAttributes<DreamProcParameterAttribute>();
+                if (attr == null) { continue; }
 
-            foreach (var t in q)
-            {
-                foreach (var memberI in t.FindMembers(MemberTypes.Method, BindingFlags.Public | BindingFlags.Static, null, null)) {
-                    if (memberI.Name.StartsWith("NativeProc")) {
-                        var attr = memberI.GetCustomAttribute<DreamProcAttribute>();
-                        var args = memberI.GetCustomAttributes<DreamProcParameterAttribute>();
-
-                        var argumentNames = new List<string>();
-                        var defaultArgumentValues = new Dictionary<string, DreamValue>();
-                        foreach (var arg in args) {
-                            argumentNames.Add(arg.Name);
-                            if (arg.DefaultValue != null) {
-                                defaultArgumentValues.Add(arg.Name, new DreamValue(arg.DefaultValue));
-                            }
-                        }
-
-                        var methodI = t.GetMethod(memberI.Name);
-                        DreamProc proc = null;
-                        if (methodI.GetCustomAttribute<AsyncStateMachineAttribute>() != null) {
-                            var func = methodI.CreateDelegate<AsyncNativeProc.HandlerFn>();
-                            proc = new AsyncNativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func.Invoke);
-                        } else {
-                            var func = methodI.CreateDelegate<NativeProc.HandlerFn>();
-                            proc = new NativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func);
-                        }
-                        DreamProcNativeRoot.DreamManager.SetGlobalProc($"USRPROC$${attr?.Name}", proc);
+                var argumentNames = new List<string>();
+                var defaultArgumentValues = new Dictionary<string, DreamValue>();
+                foreach (var arg in args) {
+                    argumentNames.Add(arg.Name);
+                    if (arg.DefaultValue != null) {
+                        defaultArgumentValues.Add(arg.Name, new DreamValue(arg.DefaultValue));
                     }
                 }
-            }
 
+                DreamProc? proc = null;
+                if (methodI.GetCustomAttribute<AsyncStateMachineAttribute>() != null) {
+                    var func = methodI.CreateDelegate<AsyncNativeProc.HandlerFn>();
+                    proc = new AsyncNativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func.Invoke);
+                } else {
+                    var func = methodI.CreateDelegate<NativeProc.HandlerFn>();
+                    proc = new NativeProc(attr?.Name, null, argumentNames, null, defaultArgumentValues, func);
+                }
+                DreamProcNativeRoot.DreamManager.SetGlobalProc($"USRPROC$${attr?.Name}", proc);
+            }
             /* Just going to leave this here
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_abs);
             root.SetNativeProc(DreamProcNativeRoot.NativeProc_alert);

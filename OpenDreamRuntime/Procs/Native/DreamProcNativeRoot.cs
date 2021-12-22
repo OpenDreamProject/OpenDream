@@ -269,7 +269,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fdel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if(!arguments.GetArgument(0, "File").TryGetValueAsString(out var filePath))
             {
-                throw new CancellingRuntime("bad file");
+                throw new Exception("bad file");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();

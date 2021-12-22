@@ -245,7 +245,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!arguments.GetArgument(0, "Src").TryGetValueAsString(out var src) ||
                 !arguments.GetArgument(1, "Dst").TryGetValueAsString(out var dst))
             {
-                throw new CancellingRuntime("bad file");
+                throw new Exception("bad file");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();

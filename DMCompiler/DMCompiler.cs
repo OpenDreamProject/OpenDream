@@ -183,14 +183,22 @@ namespace DMCompiler {
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
-                compiledDream.Globals = new List<object>();
+                GlobalListJson globalListJson = new GlobalListJson();
+                globalListJson.GlobalCount = DMObjectTree.Globals.Count;
 
-                foreach (DMVariable global in DMObjectTree.Globals) {
+                // Approximate capacity (4/285 in tgstation, ~3%)
+                globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
+
+                for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
+                    DMVariable global = DMObjectTree.Globals[i];
                     if (!global.TryAsJsonRepresentation(out var globalJson))
                         throw new Exception($"Failed to serialize global {global.Name}");
 
-                    compiledDream.Globals.Add(globalJson);
+                    if (globalJson != null) {
+                        globalListJson.Globals.Add(i, globalJson);
+                    }
                 }
+                compiledDream.Globals = globalListJson;
             }
             if (DMObjectTree.GlobalProcs.Count > 0) {
                 compiledDream.GlobalProcs = new();

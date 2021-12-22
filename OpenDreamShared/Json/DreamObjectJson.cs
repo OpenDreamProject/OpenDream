@@ -18,6 +18,12 @@ namespace OpenDreamShared.Json {
         public List<int> Children { get; set; }
     }
 
+    public class GlobalListJson
+    {
+        public int GlobalCount { get; set; }
+        public Dictionary<int, object> Globals { get; set; }
+    }
+  
     public class ProcDefinitionJson {
         public string Name { get; set; }
         public string InternalName { get; set; }

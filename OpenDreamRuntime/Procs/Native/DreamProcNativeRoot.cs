@@ -412,7 +412,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string path = arguments.GetArgument(0, "Path").GetValueAsString();
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-            var listing = resourceManager.GetListing(path);
+            var listing = resourceManager.EnumerateListing(path);
             DreamList list = DreamList.Create(listing);
             return new DreamValue(list);
         }

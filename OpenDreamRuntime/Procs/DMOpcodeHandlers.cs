@@ -1294,7 +1294,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Throw(DMProcState state) {
-            throw new CancellingRuntime("'throw' thrown");
+            DreamValue value = state.PopDreamValue();
+
+            if (value.TryGetValueAsDreamObjectOfType(DreamPath.Exception, out DreamObject exception)) {
+                throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
+            }
+
+            throw new CancellingRuntime($"'throw' thrown ({value})");
         }
 
         public static ProcStatus? SwitchCase(DMProcState state) {

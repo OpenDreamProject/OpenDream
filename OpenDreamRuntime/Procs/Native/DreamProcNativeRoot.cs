@@ -1707,10 +1707,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
         [DreamProcParameter("format", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_url_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "PlainText").TryGetValueAsString(out var plainText))
-            {
-                return new DreamValue("");
-            }
+            string plainText = arguments.GetArgument(0, "PlainText").Stringify();
             int format = arguments.GetArgument(1, "format").GetValueAsInteger();
 
             return new DreamValue(HttpUtility.UrlEncode(plainText));

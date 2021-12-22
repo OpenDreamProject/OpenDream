@@ -1,8 +1,5 @@
-﻿using DMCompiler.DM.Visitors;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using System;
 using System.Collections.Generic;
 using OpenDreamShared.Compiler;
 
@@ -17,7 +14,7 @@ namespace DMCompiler.DM {
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
 
-        private static List<Expressions.Assignment> _globalInitProcAssigns = new();
+        private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
         private static Dictionary<string, int> _nameToGlobalProcId = new();
         private static Dictionary<string, int> _internalNameToGlobalProcId = new();
@@ -36,8 +33,6 @@ namespace DMCompiler.DM {
         }
 
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
-            if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
-
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             } else {
@@ -155,20 +150,29 @@ namespace DMCompiler.DM {
             GlobalProcs.Add(proc);
             return id;
         }
+        public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
+            if (!_globalInitAssigns.TryGetValue(owningType.Path, out var list)) {
+                list = new List<(int GlobalId, DMExpression Value)>();
 
-        public static void AddGlobalInitProcAssign(Expressions.Assignment assign) {
-            _globalInitProcAssigns.Add(assign);
+                _globalInitAssigns.Add(owningType.Path, list);
+            }
+
+            list.Add( (globalId, value) );
         }
 
         public static void CreateGlobalInitProc() {
-            if (_globalInitProcAssigns.Count == 0) return;
+            if (_globalInitAssigns.Count == 0) return;
 
             DMObject root = GetDMObject(DreamPath.Root);
-            foreach (Expressions.Assignment assign in _globalInitProcAssigns) {
-                try {
-                    assign.EmitPushValue(root, GlobalInitProc);
-                } catch (CompileErrorException e) {
-                    DMCompiler.Error(e.Error);
+            foreach (var globals in _globalInitAssigns.Values) {
+                foreach (var assign in globals) {
+                    try {
+                        GlobalInitProc.GetGlobal(assign.GlobalId);
+                        assign.Value.EmitPushValue(root, GlobalInitProc);
+                        GlobalInitProc.Assign();
+                    } catch (CompileErrorException e) {
+                        DMCompiler.Error(e.Error);
+                    }
                 }
             }
         }

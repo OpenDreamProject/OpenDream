@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -29,35 +26,13 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public Dereference(Location location, DMExpression expr, DMASTDereference astNode)
-            : base(location, null) // This gets filled in later
+        public Dereference(Location location, DreamPath? path, DMExpression expr, bool conditional, string propertyName)
+            : base(location, null)
         {
             _expr = expr;
-            _conditional = astNode.Conditional;
-            _propertyName = astNode.Property;
-
-            if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
-                if (DirectConvertable(expr, astNode)) {
-                    astNode.Type = DMASTDereference.DereferenceType.Search;
-                    return;
-                }
-                else if (expr.Path == null) {
-                    throw new CompileErrorException(astNode.Location,$"Invalid property \"{_propertyName}\"");
-                }
-
-                DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
-                if (dmObject == null) throw new CompileErrorException(Location, $"Type {expr.Path.Value} does not exist");
-
-                var current = dmObject.GetVariable(_propertyName);
-                if (current == null) current = dmObject.GetGlobalVariable(_propertyName);
-                if (current == null) throw new CompileErrorException(astNode.Location,$"Invalid property \"{_propertyName}\" on type {dmObject.Path}");
-
-                if ((current.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                    DMCompiler.Warning(new CompilerWarning(Location, $"{dmObject.Path}.{_propertyName} is not implemented and will have unexpected behavior"));
-                }
-
-                _path = current.Type;
-            }
+            _conditional = conditional;
+            _propertyName = propertyName;
+            _path = path;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -86,7 +61,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public void EmitPushInitial(DMObject dmObject, DMProc proc) {
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             proc.Initial(_propertyName);
         }

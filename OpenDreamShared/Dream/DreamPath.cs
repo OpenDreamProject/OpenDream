@@ -52,14 +52,17 @@ namespace OpenDreamShared.Dream {
             get {
                 if (_pathString != null) return _pathString;
 
-                StringBuilder pathStringBuilder = new StringBuilder();
-                if (Type == PathType.Absolute) pathStringBuilder.Append('/');
-                else if (Type == PathType.DownwardSearch) pathStringBuilder.Append(':');
-                else if (Type == PathType.UpwardSearch) pathStringBuilder.Append('.');
+                _pathString = Type switch
+                {
+                    PathType.Absolute => "/",
+                    PathType.DownwardSearch => ":",
+                    PathType.UpwardSearch => ".",
+                    _ => string.Empty
+                };
 
-                pathStringBuilder.AppendJoin('/', Elements);
+                // Elements is usually small enough for this to be faster than StringBuilder
+                _pathString += string.Join("/", Elements);
 
-                _pathString = pathStringBuilder.ToString();
                 return _pathString;
             }
             set => SetFromString(value);
@@ -122,11 +125,6 @@ namespace OpenDreamShared.Dream {
 
         public bool IsDescendantOf(DreamPath path) {
             if (path.Elements.Length > Elements.Length) return false;
-
-            if (path == List)
-            {
-                if (Elements.Length > 1 && Array.LastIndexOf(Elements, "list", Elements.Length - 2) != -1) return true;
-            }
 
             for (int i = 0; i < path.Elements.Length; i++) {
                 if (Elements[i] != path.Elements[i]) return false;

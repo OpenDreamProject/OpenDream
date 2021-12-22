@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamObjectTree(DreamCompiledJson json) {
             Strings = json.Strings;
-            
+
             LoadTypesFromJson(json.Types);
             List = GetTreeEntry(DreamPath.List);
         }
@@ -205,6 +205,15 @@ namespace OpenDreamRuntime.Objects {
                     definition.InitializionProc = initProc;
                 }
             }
+
+            //Fourth pass: Set atom's text
+            foreach (TreeEntry type in GetAllDescendants(DreamPath.Atom))
+            {
+                if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name))
+                {
+                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(String.IsNullOrEmpty(name) ? String.Empty : name[..1]));
+                }
+            }
         }
 
         private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamTypeJson jsonObject) {
@@ -235,7 +244,7 @@ namespace OpenDreamRuntime.Objects {
                     argumentTypes.Add(argument.Type);
                 }
             }
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor);
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
 
         }
 

@@ -2,6 +2,7 @@ using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMVisitorExpression : DMASTVisitor {
@@ -406,7 +407,36 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitDereference(DMASTDereference dereference) {
             var expr = DMExpression.Create(_dmObject, _proc, dereference.Expression, _inferredPath);
-            Result = new Expressions.Dereference(dereference.Location, expr, dereference);
+
+            if (dereference.Type == DMASTDereference.DereferenceType.Direct && !Dereference.DirectConvertable(expr, dereference)) {
+                if (expr.Path == null) {
+                    throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\"");
+                }
+
+                DMObject dmObject = DMObjectTree.GetDMObject(expr.Path.Value, false);
+                if (dmObject == null) throw new CompileErrorException(dereference.Location, $"Type {expr.Path.Value} does not exist");
+
+                var property = dmObject.GetVariable(dereference.Property);
+                if (property != null) {
+                    Result = new Expressions.Dereference(dereference.Location, property.Type, expr, dereference.Conditional, dereference.Property);
+                } else {
+                    var globalId = dmObject.GetGlobalVariableId(dereference.Property);
+                    if (globalId != null) {
+                        property = DMObjectTree.Globals[globalId.Value];
+                        Result = new Expressions.GlobalField(dereference.Location, property.Type, globalId.Value);
+                    }
+                }
+
+                if (property == null) {
+                    throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
+                }
+
+                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                    DMCompiler.Warning(new CompilerWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior"));
+                }
+            } else {
+                Result = new Expressions.Dereference(dereference.Location, null, expr, dereference.Conditional, dereference.Property);
+            }
         }
 
         public void VisitDereferenceProc(DMASTDereferenceProc dereferenceProc) {

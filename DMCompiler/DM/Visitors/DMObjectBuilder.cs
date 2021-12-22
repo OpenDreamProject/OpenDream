@@ -147,14 +147,12 @@ namespace DMCompiler.DM.Visitors {
                             DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst);
                             variable.Value = new Expressions.Null(varDeclaration.Location);
 
-                            Expressions.GlobalField field = new Expressions.GlobalField(varDeclaration.Location, variable.Type, proc.GetGlobalVariableId(varDeclaration.Name).Value);
                             if (varDeclaration.Value != null)
                             {
                                 DMVisitorExpression._scopeMode = "static";
                                 DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
                                 DMVisitorExpression._scopeMode = "normal";
-                                Expressions.Assignment assign = new Expressions.Assignment(varDeclaration.Location, field, expression);
-                                DMObjectTree.AddGlobalInitProcAssign(assign);
+                                DMObjectTree.AddGlobalInitAssign(dmObject, proc.GetGlobalVariableId(varDeclaration.Name).Value, expression);
                             }
                         }
                     }
@@ -254,10 +252,7 @@ namespace DMCompiler.DM.Visitors {
                 int? globalId = _currentObject.GetGlobalVariableId(variable.Name);
                 if (globalId == null) throw new Exception($"Invalid global {_currentObject.Path}.{variable.Name}");
 
-                Expressions.GlobalField field = new Expressions.GlobalField(Location.Unknown, variable.Type, globalId.Value);
-                Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
-
-                DMObjectTree.AddGlobalInitProcAssign(assign);
+                DMObjectTree.AddGlobalInitAssign(_currentObject, globalId.Value, expression);
             } else {
                 Expressions.Field field = new Expressions.Field(Location.Unknown, variable);
                 Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);

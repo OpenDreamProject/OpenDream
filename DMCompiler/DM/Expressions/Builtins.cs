@@ -390,15 +390,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            // TODO: Add EmitPushInitial to Base?
-
-            if (_expr is Field field) {
-                field.EmitPushInitial(proc);
-                return;
-            }
-
-            if (_expr is Dereference dereference) {
-                dereference.EmitPushInitial(dmObject, proc);
+            if (_expr is LValue lValue) {
+                lValue.EmitPushInitial(dmObject, proc);
                 return;
             }
 

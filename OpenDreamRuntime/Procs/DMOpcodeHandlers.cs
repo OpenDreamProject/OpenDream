@@ -1428,6 +1428,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue message = state.PopDreamValue();
             DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
 
+            if (receiver == state.DreamManager.WorldInstance) {
+                //Same as "world << ..."
+                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message);
+                return null;
+            }
+
             DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
                 client = receiver.GetVariable("client").GetValueAsDreamObject();

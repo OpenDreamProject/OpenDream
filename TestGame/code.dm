@@ -22,12 +22,6 @@
 		for (var/mob/viewer in viewers)
 			viewer << "[ckey] says: \"[message]\""
 
-	verb/test_range()
-		var/list/l1 = range(1,src)
-		var/list/l2 = range(src,1)
-		world << "[l1.len]"
-		world << "[l2.len]"
-
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud", "Hello!")
 		world << "[ckey] says loudly: \"[msg]\""

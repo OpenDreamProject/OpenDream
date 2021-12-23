@@ -29,21 +29,24 @@ namespace OpenDreamShared.Dream
             { "cyan", new Color(0, 255, 255) }
         };
 
-        public static bool TryParseColor(string color, out Color colorOut, string defaultAlpha = "ff") {
-            if (color.StartsWith("#")) {
-                if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
-                    string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : defaultAlpha;
+        public static bool TryParseColor(string color, out Color colorOut, string defaultAlpha = "ff")
+        {
+            if (Colors.TryGetValue(color.ToLower(), out colorOut)) return true;
 
-                    color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
-                } else if (color.Length == 7) { //Missing alpha
-                    color += "ff";
-                }
+            if (!color.StartsWith("#")) color = "#" + color;
 
-                colorOut = Color.FromHex(color, Color.White);
-                return true;
+            if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
+                string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : defaultAlpha;
+
+                color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
+            } else if (color.Length == 7) { //Missing alpha
+                color += "ff";
+            } else {
+                return false;
             }
 
-            return Colors.TryGetValue(color.ToLower(), out colorOut);
+            colorOut = Color.FromHex(color, Color.White);
+            return true;
         }
     }
 }

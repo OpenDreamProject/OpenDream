@@ -133,7 +133,7 @@ proc/block(var/atom/Start, var/atom/End)
 
 	return atoms
 
-// TODO: Investigate "for(var/turf/T in range(Dist, Center))"-style weirdness that BYOND does
+// TODO: Investigate "for(var/turf/T in range(Dist, Center))"-style weirdness that BYOND does. It's a center-out spiral and we need to replicate that.
 proc/range(Dist, Center)
 	. = list()
 

@@ -150,6 +150,9 @@ proc/range(Dist, Center)
 			TrueCenter = Center
 		if(isnull(TrueCenter))
 			return
+		if(TrueCenter != usr && !istype(Center, /atom))
+			. += Center
+			return
 		TrueDist = Dist
 	else
 		if(isnull(Center))
@@ -163,6 +166,10 @@ proc/range(Dist, Center)
 		if(isnull(TrueCenter))
 			return
 		TrueDist = Center
+
+	if(!istype(TrueCenter, /atom))
+		. += TrueCenter
+		return
 
 	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
 		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)
@@ -201,6 +208,10 @@ proc/orange(Dist, Center)
 		if(isnull(TrueCenter))
 			return
 		TrueDist = Center
+
+	if(!istype(TrueCenter, /atom))
+		. += TrueCenter
+		return
 
 	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
 		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)

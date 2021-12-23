@@ -70,7 +70,6 @@
 	verb/test_output()
 		usr << output("help sec griffing me", "honk.browser:foo")
 
-
 /mob/Stat()
 	statpanel("Status", "CPU: [world.cpu]")
 	stat("time", world.time)

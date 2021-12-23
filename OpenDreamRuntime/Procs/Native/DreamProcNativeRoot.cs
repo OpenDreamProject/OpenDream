@@ -1261,6 +1261,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 //Insert the replacement after each char except the last char
+                //TODO: Properly support non-default start/end values
                 StringBuilder result = new StringBuilder();
                 var pos = 0;
                 while (pos + 1 <= text.Length)
@@ -1357,6 +1358,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 //Insert the replacement after each char except the last char
+                //TODO: Properly support non-default start/end values
                 StringBuilder result = new StringBuilder();
                 var pos = 0;
                 while (pos + 1 <= text.Length)

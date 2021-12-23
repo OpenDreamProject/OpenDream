@@ -1266,7 +1266,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_rgb2num(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if(!arguments.GetArgument(0, "color").TryGetValueAsString(out var color))
             {
-                throw new CancellingRuntime("bad color");
+                throw new Exception("bad color");
             }
             int space = arguments.GetArgument(1, "space").GetValueAsInteger();
 

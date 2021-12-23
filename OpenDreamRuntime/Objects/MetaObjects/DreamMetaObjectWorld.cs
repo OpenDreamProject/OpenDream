@@ -25,7 +25,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
-            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
+            DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
+            dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
             if (fps.Value != null) {
@@ -48,6 +49,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
                 case "maxz":
                     _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
+                case "log":
+                    _dreamManager.WorldLog = new LogOutputResource(GetLogPath(variableValue));
+                    break;
             }
         }
 
@@ -103,6 +107,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             return new DreamValue(0);
+        }
+
+        string? GetLogPath(DreamValue value)
+        {
+            return value.Type switch
+            {
+                DreamValue.DreamValueType.String => value.GetValueAsString(),
+                DreamValue.DreamValueType.DreamResource => value.GetValueAsDreamResource().ResourcePath,
+                _ => null
+            };
         }
     }
 }

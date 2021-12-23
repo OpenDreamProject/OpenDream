@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Resources;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
+        public LogOutputResource WorldLog { get; set; }
         public int DMExceptionCount { get; set; }
 
         public List<DreamValue> Globals { get; set; }

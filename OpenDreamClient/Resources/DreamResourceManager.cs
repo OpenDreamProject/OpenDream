@@ -35,6 +35,7 @@ namespace OpenDreamClient.Resources
         private ResourcePath _cacheDirectory;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.res");
+        private ISawmill _worldLogSawmill = Logger.GetSawmill("world.log");
 
         public void Initialize()
         {

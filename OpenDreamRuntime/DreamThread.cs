@@ -238,8 +238,10 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception) {
-            IoCManager.Resolve<IDreamManager>().DMExceptionCount += 1;
+        public void HandleException(Exception exception)
+        {
+            var dreamMan = IoCManager.Resolve<IDreamManager>();
+            dreamMan.DMExceptionCount += 1;
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception Occured: {exception.Message}");
@@ -251,8 +253,8 @@ namespace OpenDreamRuntime {
             builder.AppendLine("=C# StackTrace=");
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
-
-            Logger.Error(builder.ToString());
+            
+            dreamMan.WorldLog.WriteLog(LogLevel.Error, builder.ToString());
         }
     }
 }

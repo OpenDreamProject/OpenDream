@@ -28,6 +28,7 @@ namespace OpenDreamRuntime {
 
         public DreamObjectTree ObjectTree { get; private set; }
         public DreamObject WorldInstance { get; private set; }
+        public LogOutputResource WorldLog { get; set; }
         public int DMExceptionCount { get; set; }
 
         // Global state that may not really (really really) belong here

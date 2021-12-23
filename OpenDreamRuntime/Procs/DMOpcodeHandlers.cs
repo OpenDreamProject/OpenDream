@@ -699,7 +699,14 @@ namespace OpenDreamRuntime.Procs {
 
             switch (firstValue.Type) {
                 case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (firstValue == DreamValue.Null) {
+                    if (firstValue == DreamValue.Null)
+                    {
+                        if(firstIdentifier is DreamProcIdentifierVariable identVar && identVar.IdentifierName == "log" && identVar.Instance.IsSubtypeOf(DreamPath.World))
+                        {
+                            IoCManager.Resolve<IDreamManager>().WorldLog.Output(second);
+                            state.Push(DreamValue.Null);
+                            break;
+                        }
                         state.Push(new DreamValue(0));
                     } else {
                         IDreamMetaObject metaObject = firstValue.GetValueAsDreamObject().ObjectDefinition.MetaObject;
@@ -717,6 +724,14 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(firstValue.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
+                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                    if(firstIdentifier is DreamProcIdentifierVariable stringVar && stringVar.IdentifierName == "log" && stringVar.Instance.IsSubtypeOf(DreamPath.World))
+                    {
+                        IoCManager.Resolve<IDreamManager>().WorldLog.Output(second);
+                        state.Push(DreamValue.Null);
+                        break;
+                    }
+                    throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
                 default:
                     throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
             }

@@ -22,7 +22,7 @@ There's 3 main parts: Compiler, Server, and Client
 
 ## Running
 
-**Compiler:** First, the `DMStandard` folder needs to be copied from `DMCompiler` to the directory your `DMCompiler.exe` is in. The `copy_standard.bat`/`copy_standard.sh` script should move it to the correct place, and we *strongly* encourage having your IDE automatically run the script as a precompile step whenever you build `DMCompiler`. 
+**Compiler:** First, the `DMStandard` folder needs to be copied from `DMCompiler` to the directory your `DMCompiler.exe` is in. The `copy_standard.bat`/`copy_standard.sh` script should move it to the correct place, and we *strongly* encourage having your IDE automatically run the script as a precompile step whenever you build `DMCompiler`. This is because you need to copy it over again whenever the DMStandard is edited.
 
 Finally, run `DMCompiler.exe` and pass any number of .dm or .dme files to compile as arguments. Optional arguments can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Compiler-Options).
 

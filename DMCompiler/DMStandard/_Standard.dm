@@ -133,29 +133,79 @@ proc/block(var/atom/Start, var/atom/End)
 
 	return atoms
 
-proc/range(Dist, atom/Center = usr)
+proc/range(Dist, Center)
 	. = list()
 
-	if (isnull(Center)) return
+	var/TrueDist
+	var/atom/TrueCenter
 
-	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
-		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
-			var/turf/t = locate(x, y, Center.z)
+	if(isnum(Dist))
+		if(isnum(Center))
+			. += Center
+			return
+		if(isnull(Center))
+			TrueCenter = usr
+		else
+			TrueCenter = Center
+		if(isnull(TrueCenter))
+			return
+		TrueDist = Dist
+	else
+		if(isnull(Center))
+			return
+		if(isnull(Dist))
+			TrueCenter = usr
+		else
+			TrueCenter = Dist
+		if(isnull(TrueCenter))
+			return
+		if(!isnum(Center))
+			CRASH("invalid view size")
+		TrueDist = Center
+
+	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
+		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)
+			var/turf/t = locate(x, y, TrueCenter.z)
 
 			if (t != null)
 				. += t
 				. += t.contents
 
-proc/orange(Dist = 5, var/atom/Center = usr)
+proc/orange(Dist, Center)
 	. = list()
 
-	if (isnull(Center)) return
+	var/TrueDist
+	var/atom/TrueCenter
 
-	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
-		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
-			if (x == Center.x && y == Center.y) continue
+	if(isnum(Dist))
+		if(isnum(Center))
+			. += Center
+			return
+		if(isnull(Center))
+			TrueCenter = usr
+		else
+			TrueCenter = Center
+		if(isnull(TrueCenter))
+			return
+		TrueDist = Dist
+	else
+		if(isnull(Center))
+			return
+		if(isnull(Dist))
+			TrueCenter = usr
+		else
+			TrueCenter = Dist
+		if(isnull(TrueCenter))
+			return
+		if(!isnum(Center))
+			CRASH("invalid view size")
+		TrueDist = Center
 
-			var/turf/t = locate(x, y, Center.z)
+	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
+		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)
+			if (x == TrueCenter.x && y == TrueCenter.y) continue
+
+			var/turf/t = locate(x, y, TrueCenter.z)
 			if (t != null)
 				. += t
 				. += t.contents

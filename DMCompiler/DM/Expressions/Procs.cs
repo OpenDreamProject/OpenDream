@@ -24,24 +24,24 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class GlobalProc : DMExpression
-    {
+    class GlobalProc : DMExpression {
         int _gid;
 
-        public GlobalProc(Location loc, int gid) : base(loc)
-        {
+        public GlobalProc(Location loc, int gid) : base(loc) {
             _gid = gid;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc)
-        {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc)
-        {
+        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
             proc.GetGlobalProc(_gid);
             return ProcPushResult.Unconditional;
+        }
+
+        public DMProc GetProc() {
+            return DMObjectTree.GetGlobalProc(_gid);
         }
     }
 
@@ -89,6 +89,7 @@ namespace DMCompiler.DM.Expressions {
         public (DMObject ProcOwner, DMProc Proc) GetTargetProc(DMObject dmObject) {
             return _target switch {
                 Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
+                GlobalProc procTarget => (null, procTarget.GetProc()),
                 DereferenceProc derefTarget => derefTarget.GetProc(),
                 _ => (null, null)
             };

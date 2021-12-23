@@ -39,7 +39,6 @@ namespace OpenDreamRuntime.Resources
             if (ResourcePath != null)
             {
                 base.Output(new DreamValue(message));
-                Logger.LogS(level, "world.log", message);
                 return;
             }
 

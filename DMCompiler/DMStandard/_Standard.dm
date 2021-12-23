@@ -151,6 +151,8 @@ proc/range(Dist, Center)
 			return
 		TrueDist = Dist
 	else
+		if(!isnum(Center))
+			CRASH("invalid view size")
 		if(isnull(Center))
 			return
 		if(isnull(Dist))
@@ -159,8 +161,6 @@ proc/range(Dist, Center)
 			TrueCenter = Dist
 		if(isnull(TrueCenter))
 			return
-		if(!isnum(Center))
-			CRASH("invalid view size")
 		TrueDist = Center
 
 	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
@@ -189,6 +189,8 @@ proc/orange(Dist, Center)
 			return
 		TrueDist = Dist
 	else
+		if(!isnum(Center))
+			CRASH("invalid view size")
 		if(isnull(Center))
 			return
 		if(isnull(Dist))
@@ -197,8 +199,6 @@ proc/orange(Dist, Center)
 			TrueCenter = Dist
 		if(isnull(TrueCenter))
 			return
-		if(!isnum(Center))
-			CRASH("invalid view size")
 		TrueDist = Center
 
 	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)

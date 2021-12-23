@@ -151,10 +151,10 @@ proc/range(Dist, Center)
 			return
 		TrueDist = Dist
 	else
-		if(!isnum(Center))
-			CRASH("invalid view size")
 		if(isnull(Center))
 			return
+		if(!isnum(Center))
+			CRASH("invalid view size")
 		if(isnull(Dist))
 			TrueCenter = usr
 		else
@@ -189,10 +189,10 @@ proc/orange(Dist, Center)
 			return
 		TrueDist = Dist
 	else
-		if(!isnum(Center))
-			CRASH("invalid view size")
 		if(isnull(Center))
 			return
+		if(!isnum(Center))
+			CRASH("invalid view size")
 		if(isnull(Dist))
 			TrueCenter = usr
 		else

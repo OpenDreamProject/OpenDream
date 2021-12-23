@@ -22,7 +22,9 @@ There's 3 main parts: Compiler, Server, and Client
 
 ## Running
 
-**Compiler:** Run `DMCompiler.exe`, and pass any number of .dm or .dme files to compile as arguments. Optional arguments can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Compiler-Options).
+**Compiler:** First, the `DMStandard` folder needs to be copied from `DMCompiler` to the directory your `DMCompiler.exe` is in. The `copy_standard.bat`/`copy_standard.sh` script should move it to the correct place, and we *strongly* encourage having your IDE automatically run the script as a precompile step whenever you build `DMCompiler`. 
+
+Finally, run `DMCompiler.exe` and pass any number of .dm or .dme files to compile as arguments. Optional arguments can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Compiler-Options).
 
 **Server:** Run `OpenDreamServer.exe` and pass the compiled JSON file you got as a result of running the compiler above as an argument like this: `--cvar opendream.json_path=C:/path/to/compiler/output.json`
 

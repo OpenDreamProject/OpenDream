@@ -536,10 +536,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("html_encode")]
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_html_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "PlainText").TryGetValueAsString(out var plainText))
-            {
-                return new DreamValue("");
-            }
+            string plainText = arguments.GetArgument(0, "PlainText").Stringify();
 
             return new DreamValue(HttpUtility.HtmlEncode(plainText));
         }

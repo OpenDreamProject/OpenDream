@@ -133,21 +133,8 @@ proc/block(var/atom/Start, var/atom/End)
 
 	return atoms
 
-proc/range(arg1, arg2 = usr)
+proc/range(Dist, atom/Center = usr)
 	. = list()
-
-	var/Dist
-	var/atom/Center
-
-	if(istype(arg2,/atom))
-		Center = arg2
-		Dist = arg1
-	else
-		if(!istype(arg1,/atom))
-			return
-		Center = arg1
-		Dist = arg2
-
 
 	if (isnull(Center)) return
 
@@ -159,19 +146,8 @@ proc/range(arg1, arg2 = usr)
 				. += t
 				. += t.contents
 
-proc/orange(arg1 = 5, arg2 = usr)
+proc/orange(Dist = 5, var/atom/Center = usr)
 	. = list()
-	var/Dist
-	var/atom/Center
-
-	if(istype(arg2,/atom))
-		Center = arg2
-		Dist = arg1
-	else
-		if(!istype(arg1,/atom))
-			return
-		Center = arg1
-		Dist = arg2
 
 	if (isnull(Center)) return
 

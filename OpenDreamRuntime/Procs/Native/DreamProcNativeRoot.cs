@@ -793,7 +793,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_json_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (!arguments.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString))
             {
-                throw new CancellingRuntime("Unknown value:");
+                throw new Exception("Unknown value");
             }
             JsonElement jsonRoot = JsonSerializer.Deserialize<JsonElement>(jsonString);
 

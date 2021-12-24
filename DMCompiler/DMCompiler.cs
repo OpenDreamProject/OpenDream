@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace DMCompiler {
     //TODO: Make this not a static class
@@ -48,7 +49,7 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {output}");
             }
 
-            bool successfulCompile = Compile(preprocessor.GetResult());
+            bool successfulCompile = preprocessor is not null && Compile(preprocessor.GetResult());
 
             if (successfulCompile) {
                 Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
@@ -68,12 +69,18 @@ namespace DMCompiler {
             return successfulCompile;
         }
 
+        [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files) {
             DMPreprocessor preprocessor = new DMPreprocessor(true, !Settings.SuppressUnimplementedWarnings);
 
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+                if (!File.Exists(Path.Combine(dmStandardDirectory, "_Standard.dm")))
+                {
+                    Error(new CompilerError(Location.Unknown, "DMStandard not found."));
+                    return null;
+                }
                 preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
 

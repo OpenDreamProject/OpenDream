@@ -276,7 +276,18 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public IDreamProcIdentifier PeekIdentifier() {
-            return (IDreamProcIdentifier)Peek();
+
+            var peek = Peek();
+            if (peek is IDreamProcIdentifier) return (IDreamProcIdentifier) peek;
+
+            // TODO: This is an awful hack to bandaid setting src
+            var val = (DreamValue)peek;
+            if (!val.TryGetValueAsDreamObject(out var obj) || !obj.IsSubtypeOf(Instance.ObjectDefinition.Type))
+            {
+                throw new Exception("Tried to peek something that is not an identifier or src");
+            }
+
+            return (IDreamProcIdentifier)_stack[_stackIndex];
         }
 
         public IDreamProcIdentifier PopIdentifier() {

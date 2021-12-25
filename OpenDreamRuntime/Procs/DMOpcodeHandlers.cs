@@ -467,7 +467,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushSrc(DMProcState state) {
-            state.Push(new DreamValue(state.Instance));
+            state.Push(new DreamProcIdentifierSrc(state));
             return null;
         }
 

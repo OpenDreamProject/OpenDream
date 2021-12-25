@@ -135,7 +135,7 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public readonly DreamObject Instance;
+        public DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
         public readonly DreamValue[] LocalVariables;
@@ -276,18 +276,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public IDreamProcIdentifier PeekIdentifier() {
-
-            var peek = Peek();
-            if (peek is IDreamProcIdentifier) return (IDreamProcIdentifier) peek;
-
-            // TODO: This is an awful hack to bandaid setting src
-            var val = (DreamValue)peek;
-            if (!val.TryGetValueAsDreamObject(out var obj) || !obj.IsSubtypeOf(Instance.ObjectDefinition.Type))
-            {
-                throw new Exception("Tried to peek something that is not an identifier or src");
-            }
-
-            return (IDreamProcIdentifier)_stack[_stackIndex];
+            return (IDreamProcIdentifier)Peek();
         }
 
         public IDreamProcIdentifier PopIdentifier() {

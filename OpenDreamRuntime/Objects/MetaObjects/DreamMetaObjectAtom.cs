@@ -71,9 +71,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "invisibility":
+                    var vis = variableValue.TryGetValueAsFloat(out var val) ? Convert.ToInt32(Math.Floor(val)) : 0;
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.Invisibility = variableValue.GetValueAsInteger();
+                        appearance.Invisibility = vis;
                     });
+                    dreamObject.SetVariableValue("invisibility", new DreamValue(vis));
                     break;
                 case "mouse_opacity":
                     UpdateAppearance(dreamObject, appearance => {

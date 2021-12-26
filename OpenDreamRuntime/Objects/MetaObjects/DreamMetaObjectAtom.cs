@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "invisibility":
-                    var vis = variableValue.TryGetValueAsFloat(out var val) ? Convert.ToInt32(Math.Floor(val)) : 0;
+                    variableValue.TryGetValueAsInteger(out int vis);
                     UpdateAppearance(dreamObject, appearance => {
                         appearance.Invisibility = vis;
                     });

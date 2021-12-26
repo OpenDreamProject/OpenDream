@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -1352,7 +1352,11 @@ namespace OpenDreamRuntime.Procs {
                 // Does the value of the delay mean anything?
             } else {
                 new Task(async () => {
-                    await Task.Delay(delayMilliseconds);
+                    if (delayMilliseconds != 0) {
+                        await Task.Delay(delayMilliseconds);
+                    } else {
+                        await Task.Yield();
+                    }
                     newContext.Resume();
                 }).Start(TaskScheduler.FromCurrentSynchronizationContext());
             }

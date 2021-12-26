@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -15,7 +16,8 @@ namespace OpenDreamRuntime {
             DreamResource = 4,
             DreamObject = 8,
             DreamPath = 16,
-            DreamProc = 32
+            DreamProc = 32,
+            Reference = 64
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject)null);
@@ -74,6 +76,8 @@ namespace OpenDreamRuntime {
                 DreamObject => DreamValueType.DreamObject,
                 DreamPath => DreamValueType.DreamPath,
                 DreamProc => DreamValueType.DreamProc,
+                IDreamProcIdentifier => DreamValueType.Reference,
+                DreamProcArguments => DreamValueType.Reference,
                 _ => throw new ArgumentException("Invalid DreamValue value (" + value + ", " + value.GetType() + ")")
             };
         }

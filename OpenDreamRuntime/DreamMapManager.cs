@@ -145,15 +145,14 @@ namespace OpenDreamRuntime {
                 DreamObject turf;
                 if (cellDefinition.Turf != null) {
                     turf = CreateMapObject(cellDefinition.Turf);
-                    SetTurf(x, y, block.Z, turf);
-                    SetArea(x, y, block.Z, area);
-                    turf.InitSpawn(new DreamProcArguments(new() {DreamValue.Null}));
                 } else {
                     turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
-                    SetTurf(x, y, block.Z, turf);
-                    SetArea(x, y, block.Z, area);
-                    turf.InitSpawn(new DreamProcArguments(null));
                 }
+                
+                SetTurf(x, y, block.Z, turf);
+                SetArea(x, y, block.Z, area);
+                turf.InitSpawn(new DreamProcArguments(null));
+                    
 
                 foreach (MapObjectJson mapObject in cellDefinition.Objects) {
                     var obj = CreateMapObject(mapObject);

@@ -129,6 +129,29 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
+    struct DreamProcIdentifierSrc : IDreamProcIdentifier {
+        public DMProcState State;
+
+        public DreamProcIdentifierSrc(DMProcState state) {
+            State = state;
+        }
+
+        public DreamValue GetValue() {
+            return new DreamValue(State.Instance);
+        }
+
+        public void Assign(DreamValue value) {
+            if (value.TryGetValueAsDreamObject(out var obj))
+            {
+                State.Instance = obj;
+            }
+            else
+            {
+                throw new NotImplementedException("src can only be set to a DreamObject currently");
+            }
+        }
+    }
+
     struct DreamProcIdentifierNull : IDreamProcIdentifier {
         public DreamValue GetValue() {
             return DreamValue.Null;

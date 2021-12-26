@@ -412,7 +412,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             string path = arguments.GetArgument(0, "Path").GetValueAsString();
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-            var listing = resourceManager.GetListing(path);
+            var listing = resourceManager.EnumerateListing(path);
             DreamList list = DreamList.Create(listing);
             return new DreamValue(list);
         }
@@ -1271,12 +1271,14 @@ namespace OpenDreamRuntime.Procs.Native {
             float delay = state.Arguments.GetArgument(0, "Delay").GetValueAsFloat();
             int delayMilliseconds = (int)(delay * 100);
 
-            // TODO: This is obviously not the proper behaviour, see https://www.byond.com/docs/ref/#/proc/sleep
+            // TODO: This may not be the proper behaviour, see https://www.byond.com/docs/ref/#/proc/sleep
             // sleep(0) should sleep for the minimum amount of time possible, whereas
             // sleep called with a negative value should do a backlog check, meaning it only sleeps
             // when other events are backlogged
             if (delayMilliseconds > 0) {
                 await Task.Delay(delayMilliseconds);
+            } else {
+                await Task.Yield();
             }
             return DreamValue.Null;
         }

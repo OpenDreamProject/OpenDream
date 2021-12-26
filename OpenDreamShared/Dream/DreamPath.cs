@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 namespace OpenDreamShared.Dream {
     public struct DreamPath {
         public static readonly DreamPath Root = new DreamPath("/");
+        public static readonly DreamPath Exception = new DreamPath("/exception");
         public static readonly DreamPath List = new DreamPath("/list");
         public static readonly DreamPath Regex = new DreamPath("/regex");
         public static readonly DreamPath Savefile = new DreamPath("/savefile");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -467,7 +467,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushSrc(DMProcState state) {
-            state.Push(new DreamValue(state.Instance));
+            state.Push(new DreamProcIdentifierSrc(state));
             return null;
         }
 
@@ -1294,7 +1294,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Throw(DMProcState state) {
-            throw new CancellingRuntime("'throw' thrown");
+            DreamValue value = state.PopDreamValue();
+
+            if (value.TryGetValueAsDreamObjectOfType(DreamPath.Exception, out DreamObject exception)) {
+                throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
+            }
+
+            throw new CancellingRuntime($"'throw' thrown ({value})");
         }
 
         public static ProcStatus? SwitchCase(DMProcState state) {
@@ -1346,7 +1352,11 @@ namespace OpenDreamRuntime.Procs {
                 // Does the value of the delay mean anything?
             } else {
                 new Task(async () => {
-                    await Task.Delay(delayMilliseconds);
+                    if (delayMilliseconds != 0) {
+                        await Task.Delay(delayMilliseconds);
+                    } else {
+                        await Task.Yield();
+                    }
                     newContext.Resume();
                 }).Start(TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -1421,6 +1431,12 @@ namespace OpenDreamRuntime.Procs {
             string control = state.PopUnboxedValue().GetValueAsString();
             DreamValue message = state.PopUnboxedValue();
             DreamObject receiver = state.PopUnboxedValue().GetValueAsDreamObject();
+
+            if (receiver == state.DreamManager.WorldInstance) {
+                //Same as "world << ..."
+                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message);
+                return null;
+            }
 
             DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {

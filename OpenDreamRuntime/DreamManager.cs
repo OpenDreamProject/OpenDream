@@ -58,7 +58,11 @@ namespace OpenDreamRuntime {
             WorldInstance.InitSpawn(new DreamProcArguments(null));
 
             if (_compiledJson.Globals != null) {
-                foreach (object globalValue in _compiledJson.Globals) {
+                var jsonGlobals = _compiledJson.Globals;
+                Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+
+                for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
+                    object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);
                     Globals.Add(ObjectTree.GetDreamValueFromJsonElement(globalValue));
                 }
             }

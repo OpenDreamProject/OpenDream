@@ -135,7 +135,7 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public readonly DreamObject Instance;
+        public DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
         public readonly DreamValue[] LocalVariables;

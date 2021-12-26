@@ -95,11 +95,22 @@ namespace OpenDreamRuntime.Objects {
             return false;
         }
 
+        /// <summary>
+        /// Handles setting a variable, and special behavior by calling OnVariableSet()
+        /// </summary>
         public void SetVariable(string name, DreamValue value) {
-            DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
-
-            _variables[name] = value;
+            var oldValue = SetVariableValue(name, value);
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
+        }
+
+        /// <summary>
+        /// Directly sets a variable's value, bypassing any special behavior
+        /// </summary>
+        /// <returns>The OLD variable value</returns>
+        public DreamValue SetVariableValue(string name, DreamValue value) {
+            DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
+            _variables[name] = value;
+            return oldValue;
         }
 
         public DreamProc GetProc(string procName) {

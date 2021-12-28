@@ -253,7 +253,6 @@ namespace OpenDreamRuntime.Objects {
                 string procName = $"{objectDefinition.Type}/{jsonProc.Key}";
 
                 foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    var manager = IoCManager.Resolve<IDreamManager>();
                     objectDefinition.SetProcDefinition(jsonProc.Key, LoadProcJson(procName, procDefinition));
                 }
             }

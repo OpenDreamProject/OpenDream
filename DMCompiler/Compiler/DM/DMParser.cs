@@ -1782,7 +1782,7 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 while (Check(TokenType.DM_StarStar)) {
                     Whitespace();
-                    DMASTExpression b = ExpressionIn();
+                    DMASTExpression b = ExpressionUnary();
                     if (b == null) Error("Expected an expression");
                     a = new DMASTPower(loc, a, b);
                 }

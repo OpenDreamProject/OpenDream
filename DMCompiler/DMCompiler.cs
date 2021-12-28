@@ -206,7 +206,7 @@ namespace DMCompiler {
                     compiledDream.GlobalProcs.Add(proc.GetJsonRepresentation());
                 }
             }
-            compiledDream.InternalNameToGlobalProcId = DMObjectTree.GetInternalGlobalProcNameMapping().ToList();
+            compiledDream.InternalNameToGlobalProcId = DMObjectTree.GetInternalGlobalProcNameMapping();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

@@ -263,7 +263,7 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTObjectVarDefinition : DMASTStatement {
         public DreamPath ObjectPath { get => _varDecl.ObjectPath; }
-        public DreamPath? Type { get => _varDecl.TypePath; }
+        public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
         public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;
 
@@ -330,7 +330,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementVarDeclaration : DMASTProcStatement {
-        public DreamPath? Type { get => _varDecl.TypePath; }
+        public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
         public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;
         private ProcVarDeclInfo _varDecl;
@@ -1662,20 +1662,17 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTDefinitionParameter : DMASTNode {
-        public DreamPath? ObjectType;
-        public string Name;
+        public DreamPath? ObjectType { get => _paramDecl.IsList ? DreamPath.List : _paramDecl.TypePath; }
+        public string Name { get => _paramDecl.VarName; }
         public DMASTExpression Value;
         public DMValueType Type;
         public DMASTExpression PossibleValues;
 
+        private ProcParameterDeclInfo _paramDecl;
+
         public DMASTDefinitionParameter(Location location, DMASTPath astPath, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) : base(location) {
-            DreamPath path = astPath.Path;
+            _paramDecl = new ProcParameterDeclInfo(astPath.Path);
 
-            int varElementIndex = path.FindElement("var");
-            if (varElementIndex != -1) path = path.RemoveElement(varElementIndex);
-
-            ObjectType = (path.Elements.Length > 1) ? path.FromElements(0, -2) : null;
-            Name = path.LastElement;
             Value = value;
             Type = type;
             PossibleValues = possibleValues;

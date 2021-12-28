@@ -139,21 +139,24 @@ namespace OpenDreamRuntime {
                 DreamPath areaType = cellDefinition.Area != null ? _dreamManager.ObjectTree.Types[cellDefinition.Area.Type].Path : _defaultArea;
                 DreamObject area = GetArea(areaType);
 
+                int x = block.X + blockX - 1;
+                int y = block.Y + block.Height - blockY;
+
                 DreamObject turf;
                 if (cellDefinition.Turf != null) {
                     turf = CreateMapObject(cellDefinition.Turf);
                 } else {
                     turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
-                    turf.InitSpawn(new DreamProcArguments(null));
                 }
-
-                int x = block.X + blockX - 1;
-                int y = block.Y + block.Height - blockY;
-
+                
                 SetTurf(x, y, block.Z, turf);
                 SetArea(x, y, block.Z, area);
+                turf.InitSpawn(new DreamProcArguments(null));
+                    
+
                 foreach (MapObjectJson mapObject in cellDefinition.Objects) {
-                    CreateMapObject(mapObject, turf);
+                    var obj = CreateMapObject(mapObject);
+                    obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
                 }
 
                 blockX++;
@@ -164,7 +167,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        private DreamObject CreateMapObject(MapObjectJson mapObject, DreamObject loc = null) {
+        private DreamObject CreateMapObject(MapObjectJson mapObject) {
             DreamObjectDefinition definition = _dreamManager.ObjectTree.GetObjectDefinition(mapObject.Type);
             if (mapObject.VarOverrides?.Count > 0) {
                 definition = new DreamObjectDefinition(definition);
@@ -176,9 +179,7 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            var obj = new DreamObject(definition);
-            obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(loc) }));
-            return obj;
+            return new DreamObject(definition);
         }
     }
 }

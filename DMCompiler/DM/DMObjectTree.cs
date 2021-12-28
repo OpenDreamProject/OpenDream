@@ -30,8 +30,6 @@ namespace DMCompiler.DM {
         }
 
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
-            if (path.IsDescendantOf(DreamPath.List)) path = DreamPath.List;
-
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             } else {

@@ -506,6 +506,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementThrow(DMASTProcStatementThrow statement) {
             //TODO proper value handling and catching
 
+            DMExpression.Emit(_dmObject, _proc, statement.Value);
             _proc.Throw();
         }
     }

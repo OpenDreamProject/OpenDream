@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenDreamRuntime.Procs;
 using Robust.Shared.IoC;
@@ -43,9 +44,11 @@ namespace OpenDreamRuntime.Objects {
         public DreamList CreateCopy(int start = 1, int end = 0) {
             DreamList copy = Create();
 
-            if (end == 0 || end > _values.Count) end = _values.Count;
+            if (start == 0) ++start; //start being 0 and start being 1 are equivalent
+            if (end > _values.Count + 1) throw new Exception("list index out of bounds");
+            if (end == 0) end = _values.Count + 1;
 
-            for (int i = start; i <= end; i++) {
+            for (int i = start; i < end; i++) {
                 DreamValue value = _values[i - 1];
 
                 copy._values.Add(value);

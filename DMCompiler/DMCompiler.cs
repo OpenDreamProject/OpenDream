@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace DMCompiler {
     //TODO: Make this not a static class
@@ -48,7 +49,7 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {output}");
             }
 
-            bool successfulCompile = Compile(preprocessor.GetResult());
+            bool successfulCompile = preprocessor is not null && Compile(preprocessor.GetResult());
 
             if (successfulCompile) {
                 Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
@@ -68,12 +69,18 @@ namespace DMCompiler {
             return successfulCompile;
         }
 
+        [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files) {
             DMPreprocessor preprocessor = new DMPreprocessor(true, !Settings.SuppressUnimplementedWarnings);
 
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+                if (!File.Exists(Path.Combine(dmStandardDirectory, "_Standard.dm")))
+                {
+                    Error(new CompilerError(Location.Unknown, "DMStandard not found."));
+                    return null;
+                }
                 preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
 
@@ -182,14 +189,22 @@ namespace DMCompiler {
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
-                compiledDream.Globals = new List<object>();
+                GlobalListJson globalListJson = new GlobalListJson();
+                globalListJson.GlobalCount = DMObjectTree.Globals.Count;
 
-                foreach (DMVariable global in DMObjectTree.Globals) {
+                // Approximate capacity (4/285 in tgstation, ~3%)
+                globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
+
+                for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
+                    DMVariable global = DMObjectTree.Globals[i];
                     if (!global.TryAsJsonRepresentation(out var globalJson))
                         throw new Exception($"Failed to serialize global {global.Name}");
 
-                    compiledDream.Globals.Add(globalJson);
+                    if (globalJson != null) {
+                        globalListJson.Globals.Add(i, globalJson);
+                    }
                 }
+                compiledDream.Globals = globalListJson;
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {

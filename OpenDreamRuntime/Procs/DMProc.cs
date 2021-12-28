@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs {
 
         // TODO: These pools are not returned to if the proc runtimes
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
-        private static ArrayPool<object> _stackPool = ArrayPool<object>.Shared;
+        private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
 
         #region Opcode Handlers
         //In the same order as the DreamProcOpcode enum
@@ -135,7 +135,7 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public readonly DreamObject Instance;
+        public DreamObject Instance;
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
         public readonly DreamValue[] LocalVariables;
@@ -247,7 +247,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         #region Stack
-        private object[] _stack;
+        private DreamValue[] _stack;
         private int _stackIndex = 0;
 
         public void Push(DreamValue value) {
@@ -255,11 +255,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void Push(IDreamProcIdentifier value) {
-            _stack[_stackIndex++] = value;
+            _stack[_stackIndex++] = new DreamValue(value);
         }
 
         public void Push(DreamProcArguments value) {
-            _stack[_stackIndex++] = value;
+            _stack[_stackIndex++] = new DreamValue(value);
         }
 
         public void PushCopy() {
@@ -267,34 +267,37 @@ namespace OpenDreamRuntime.Procs {
             _stackIndex++;
         }
 
-        public object Pop() {
+        public DreamValue Pop() {
             return _stack[--_stackIndex];
         }
 
-        public object Peek() {
+        public DreamValue Peek() {
             return _stack[_stackIndex - 1];
         }
 
         public IDreamProcIdentifier PeekIdentifier() {
-            return (IDreamProcIdentifier)Peek();
+            return (IDreamProcIdentifier)(Peek().Value);
         }
 
         public IDreamProcIdentifier PopIdentifier() {
-            return (IDreamProcIdentifier)Pop();
+            return (IDreamProcIdentifier)(Pop().Value);
         }
 
-        public DreamValue PopDreamValue() {
-            object value = Pop();
+        //renamed from PopDreamValue to PopUnboxedValue to signify that Pop() gives you the raw DreamValue that may hold a reference, PopUnboxedValue will return a "formatted" version of it.
+        public DreamValue PopUnboxedValue() {
+            DreamValue value = Pop();
+            if(value.Type == DreamValue.DreamValueType.Reference){
+                if(value.Value is IDreamProcIdentifier){
+                    return ((IDreamProcIdentifier)value.Value).GetValue();
+                }
+                throw new Exception("Last object on stack was not a dream value or identifier");
+            }
 
-            return value switch {
-                IDreamProcIdentifier identifier => identifier.GetValue(),
-                DreamValue dreamValue => dreamValue,
-                _ => throw new Exception("Last object on stack was not a dream value or identifier")
-            };
+            return value;
         }
 
         public DreamProcArguments PopArguments() {
-            return (DreamProcArguments)Pop();
+            return (DreamProcArguments)(Pop().Value);
         }
         #endregion
 

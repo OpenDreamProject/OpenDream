@@ -148,7 +148,7 @@ namespace DMCompiler.Compiler.Experimental {
         public DMMacroFile() : base(null, null) { }
 
         public override List<PreprocessorToken> Expand(PreprocessorToken replacing, List<List<PreprocessorToken>> parameters) {
-            string path = replacing.Location.Source.FullPath;
+            string path = replacing.Location.Source.IncludePath;
             return new() {
                 new PreprocessorToken(TokenType.String, path, loc: replacing.Location)
             };
@@ -170,6 +170,7 @@ namespace DMCompiler.Compiler.Experimental {
             else {
                 result = "0";
             }
+            //Console.WriteLine(defined_ident + " | " + result);
             return new List<PreprocessorToken> { new PreprocessorToken(TokenType.Numeric, result, loc: replacing.Location) };
         }
     }

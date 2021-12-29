@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
+using Experimental = DMCompiler.Compiler.Experimental;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
 using System;
@@ -257,6 +258,7 @@ namespace DMCompiler {
 
     public struct DMCompilerSettings {
         public List<string> Files;
+        public bool ExperimentalPreproc;
         public bool SuppressUnimplementedWarnings;
         public bool DumpPreprocessor;
         public bool NoStandard;

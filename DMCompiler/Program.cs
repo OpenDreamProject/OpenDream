@@ -23,6 +23,7 @@ namespace DMCompiler {
 
             foreach (string arg in args) {
                 switch (arg) {
+                    case "--experimental-preproc": settings.ExperimentalPreproc = true; break;
                     case "--suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
                     case "--dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "--no-standard": settings.NoStandard = true; break;

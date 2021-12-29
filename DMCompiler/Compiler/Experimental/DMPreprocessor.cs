@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using Original = DMCompiler.Compiler;
 using DMCompiler.DM.Visitors;
 using System.IO;
 
@@ -369,16 +370,22 @@ namespace DMCompiler.Compiler.Experimental {
 
         int ProcessIfDirective() {
             List<PreprocessorToken> ifTokens = ReadLine();
+            //Console.WriteLine(PreprocessorToken.PrintTokens(ifTokens));
+
             _defines["defined"] = new DMDefinedMacro(_defines);
             ifTokens = FullExpand(ifTokens);
             _defines.Remove("defined");
             ifTokens.Add(new PreprocessorToken(TokenType.Newline, loc: ifTokens[ifTokens.Count - 1].Location));
+
             var converter = new PreprocessorTokenConvert(ifTokens.GetEnumerator());
-            //Console.WriteLine(PreprocessorToken.PrintTokens(ifTokens));
             DM.DMParser parser = new DM.DMParser(converter, true);
             DM.DMASTExpression expr = parser.Expression();
+            //new Original.DM.DMAST.DMASTNodePrinter().Print(expr, Console.Out);
+
             DMASTSimplifier simplify = new();
             simplify.SimplifyExpression(ref expr);
+            //new Original.DM.DMAST.DMASTNodePrinter().Print(expr, Console.Out);
+
             var intexpr = expr as DM.DMASTConstantInteger;
             if (intexpr == null) {
                 throw new Exception("Expected integer result in #if macro evaluation");
@@ -395,7 +402,7 @@ namespace DMCompiler.Compiler.Experimental {
         }
 
         bool ElifEligible() {
-            if (ifStack.Count > 0 && ifStack.Peek() == 0) {
+            if (ifStack.Count > 0 && ifStack.Peek() == 1) {
                 return false;
             }
             return true;

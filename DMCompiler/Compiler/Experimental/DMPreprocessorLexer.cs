@@ -274,6 +274,10 @@ namespace DMCompiler.Compiler.Experimental {
                     error = "Invalid # modifier in numeric literal";
                     break;
                 }
+                if (c == 'x' || c == 'X') {
+                    n += 1;
+                    continue;
+                }
                 if (c == 'e' || c == 'E') {
                     c = _tp.Peek(n + 1);
                     if (c == '-' || c == '+') {

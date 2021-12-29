@@ -2001,7 +2001,16 @@ namespace DMCompiler.Compiler.DM {
             return primary;
         }
 
+        static bool ExperimentalParser = false;
         public DMASTExpression Constant() {
+            if (ExperimentalParser) {
+                return ExperimentalConstant();
+            }
+            else {
+                return StandardConstant();
+            }
+        }
+        public DMASTExpression StandardConstant() {
             Token constantToken = Current();
 
             switch (constantToken.Type) {

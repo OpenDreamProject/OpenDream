@@ -243,52 +243,82 @@ namespace DMCompiler.Compiler.Experimental {
             return found_token;
         }
 
-        public string EscapeString(string s) {
+        public bool match(string main, int start, string substr) {
+            if (start + substr.Length > main.Length) { return false; }
+            var end = start + substr.Length;
+            var subi = 0;
+            for (var i = start; i < end; i++, subi++) {
+                if (main[i] != substr[subi]) { return false; }
+            }
+            return true;
+        }
+
+        static string[] ignored_escapes = new string[] { "improper", "proper", "The", "the", "th", "an", "black", "red", "blue", "green", "Roman", "roman", "he", "she", "himself", "herself", "He", "She", "him", "her", "his", "hers", "icon", "bold", "italic", "s", "a", "A" };
+        string EscapeString(string s) {
             if (s == null) { return s; }
 
-            int write_pos = 0;
             int read_pos = 0;
-            char[] cs = s.ToCharArray();
+            string new_s = "";
             for (read_pos = 0; read_pos < s.Length;) {
                 char c = s[read_pos++];
                 if (c == '\\') {
-                    if (read_pos >= s.Length) {
-                        break;
+                    var found_ignored = false;
+                    foreach (var ig in ignored_escapes) {
+                        if (match(s, read_pos, ig)) {
+                            new_s += '\\';
+                            new_s += ig;
+                            read_pos += ig.Length;
+                            found_ignored = true;
+                            break;
+                        }
                     }
+                    if (found_ignored) { continue; }
                     char c2 = s[read_pos++];
-                    // TODO b here is a bug in the \black escape
                     if (c2 == 'n') {
-                        cs[write_pos++] = '\n';
+                        new_s += '\n';
                     }
                     else if (c2 == 't') {
-                        cs[write_pos++] = '\t';
+                        new_s += '\t';
+                    }
+                    else if (c2 == 'b') {
+                        new_s += '\b';
                     }
                     else if (c2 == '\\') {
-                        cs[write_pos++] = '\\';
+                        new_s += '\\';
                     }
                     else if (c2 == '"') {
-                        cs[write_pos++] = '\"';
+                        new_s += '"';
                     }
                     else if (c2 == '\'') {
-                        cs[write_pos++] = '\'';
+                        new_s += '\'';
                     }
                     else if (c2 == '[') {
-                        cs[write_pos++] = '[';
+                        new_s += '[';
                     }
                     else if (c2 == ']') {
-                        cs[write_pos++] = ']';
+                        new_s += ']';
+                    }
+                    else if (c2 == '<') {
+                        new_s += '<';
+                    }
+                    else if (c2 == '>') {
+                        new_s += '>';
+                    }
+                    else if (c2 == ' ') {
+                        new_s += ' ';
                     }
                     else {
-                        cs[write_pos++] = c;
-                        cs[write_pos++] = c2;
+                        // TODO commenting this out is kinda dodgy rn
+                        // throw new Exception("unknown string escape " + s + " : " + (int)c2);
                     }
                 }
                 else {
-                    cs[write_pos++] = c;
+                    new_s += c;
                 }
             }
-            return new string(cs.Take<char>(write_pos).ToArray());
+            return new_s;
         }
+
         public static Dictionary<string, OTT> simpleSymbolMap = new() {
             { "(", OTT.DM_LeftParenthesis },
             { ")", OTT.DM_RightParenthesis },

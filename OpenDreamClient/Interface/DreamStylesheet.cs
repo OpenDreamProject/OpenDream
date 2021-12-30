@@ -69,35 +69,35 @@ namespace OpenDreamClient.Interface {
                     .Prop(ScrollBar.StylePropertyGrabber, scrollBarGrabbed),
 
                 // Window background default color.
-                Element().Class(SS14Window.StyleClassWindowPanel)
+                Element().Class(DefaultWindow.StyleClassWindowPanel)
                     .Prop("panel", new StyleBoxFlat { BackgroundColor = Color.FromHex("#4A4A4A") }),
 
                 // Window title properties
-                Element().Class(SS14Window.StyleClassWindowTitle)
+                Element().Class(DefaultWindow.StyleClassWindowTitle)
                     // Color
                     .Prop(Label.StylePropertyFontColor, Color.FromHex("#000000"))
                     // Font
                     .Prop(Label.StylePropertyFont, notoSansBoldFont14),
 
                 // Window header color.
-                Element().Class(SS14Window.StyleClassWindowHeader)
+                Element().Class(DefaultWindow.StyleClassWindowHeader)
                     .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
                         BackgroundColor = Color.FromHex("#636396"), Padding = new Thickness(1, 1)
                     }),
 
                 // Window close button
-                Element().Class(SS14Window.StyleClassWindowCloseButton)
+                Element().Class(DefaultWindow.StyleClassWindowCloseButton)
                     // Button texture
                     .Prop(TextureButton.StylePropertyTexture, textureCloseButton)
                     // Normal button color
                     .Prop(Control.StylePropertyModulateSelf, Color.FromHex("#000000")),
 
                 // Window close button hover color
-                Element().Class(SS14Window.StyleClassWindowCloseButton).Pseudo(TextureButton.StylePseudoClassHover)
+                Element().Class(DefaultWindow.StyleClassWindowCloseButton).Pseudo(TextureButton.StylePseudoClassHover)
                     .Prop(Control.StylePropertyModulateSelf, Color.FromHex("#505050")),
 
                 // Window close button pressed color
-                Element().Class(SS14Window.StyleClassWindowCloseButton).Pseudo(TextureButton.StylePseudoClassPressed)
+                Element().Class(DefaultWindow.StyleClassWindowCloseButton).Pseudo(TextureButton.StylePseudoClassPressed)
                     .Prop(Control.StylePropertyModulateSelf, Color.FromHex("#808080")),
 
                 // Button style normal

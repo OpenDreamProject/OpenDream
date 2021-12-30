@@ -41,6 +41,24 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             switch (variableName)
             {
+                case "name": {
+                    variableValue.TryGetValueAsString(out string name);
+                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
+                    if (!_entityManager.TryGetComponent(entity, out MetaDataComponent metaData))
+                        break;
+
+                    metaData.EntityName = name;
+                    break;
+                }
+                case "desc": {
+                    variableValue.TryGetValueAsString(out string desc);
+                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
+                    if (!_entityManager.TryGetComponent(entity, out MetaDataComponent metaData))
+                        break;
+
+                    metaData.EntityDescription = desc;
+                    break;
+                }
                 case "icon":
                     UpdateAppearance(dreamObject, appearance => {
                         if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {

@@ -22,9 +22,15 @@ namespace OpenDreamRuntime {
         public EntityUid CreateAtomEntity(DreamObject atom) {
             EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
-
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
             sprite.Appearance = CreateAppearanceFromAtom(atom);
+
+            if (_entityManager.TryGetComponent(entity, out MetaDataComponent metaData)) {
+                atom.GetVariable("name").TryGetValueAsString(out string name);
+                atom.GetVariable("desc").TryGetValueAsString(out string desc);
+                metaData.EntityName = name;
+                metaData.EntityDescription = desc;
+            }
 
             _atomToEntity.Add(atom, entity);
             _entityToAtom.Add(entity, atom);

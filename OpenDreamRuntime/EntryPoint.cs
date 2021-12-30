@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
+using Robust.Server.ServerStatus;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
@@ -13,6 +14,9 @@ namespace OpenDreamRuntime {
         private DreamCommandSystem _commandSystem;
 
         public override void Init() {
+            IoCManager.Resolve<IStatusHost>().SetAczInfo(
+                "Content.Client", new []{"OpenDreamClient", "OpenDreamShared"});
+
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 

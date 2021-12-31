@@ -24,6 +24,8 @@ namespace OpenDreamClient {
         private readonly IDreamResourceManager _dreamResource = default!;
 
         public override void Init() {
+            IoCManager.Resolve<IConfigurationManager>().SetCVar(CVars.NetPredict, false);
+
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 

@@ -443,7 +443,10 @@ namespace DMCompiler.Compiler.Experimental {
         List<PreprocessorToken> ReadLine() {
             List<PreprocessorToken> tokens = new();
             while (_state.current.Type != TokenType.Newline && _state.current.Type != TokenType.EndOfFile) {
-                if (PeekNestedDirective() == null) {
+                var peeked_tokens = PeekNestedDirective();
+                if (peeked_tokens != null) {
+                    tokens.AddRange(peeked_tokens);
+                } else {
                     return tokens;
                 }
                 tokens.Add(_state.current);

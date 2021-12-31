@@ -326,15 +326,13 @@ namespace DMCompiler.Compiler.Experimental {
         }
         public void SkipMultiComment() {
             int n = 0;
+            int nestedComments = 0;
             while (true) {
                 char? c = _tp.Peek(n);
-                bool isStar = c == '*';
-
-                if (isStar && _tp.Peek(n + 1) == '/') {
+                if (c == '/' && _tp.Peek(n + 1) == '*') { n += 2; nestedComments++; } else if (c == '*' && _tp.Peek(n + 1) == '/') {
                     n += 2;
-                    break;
-                }
-                else if (c == null) throw new Exception("Expected \"*/\" to end multiline comment");
+                    if (nestedComments > 0) { nestedComments--; } else { break; }
+                } else if (c == null) throw new Exception("Expected \"*/\" to end multiline comment");
                 else { n += 1; }
             }
             _tp.Advance(n);

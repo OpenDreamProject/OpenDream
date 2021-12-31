@@ -20,7 +20,7 @@
 #define OBJ_LAYER 3
 #define MOB_LAYER 4
 #define FLY_LAYER 5
-#define EFFECTS_LAYER 19999
+#define EFFECTS_LAYER 5000
 #define BACKGROUND_LAYER 20000
 
 #define FLOAT_PLANE -32767
@@ -127,37 +127,37 @@
 #define TILE_MOVER		(1<<11)
 
 //animate() easing arg
-#define LINEAR_EASING	1
-#define SINE_EASING		2
-#define CIRCULAR_EASING	3
-#define QUAD_EASING		4
-#define CUBIC_EASING	5
-#define BOUNCE_EASING	6
-#define ELASTIC_EASING	7
-#define BACK_EASING		8
-#define JUMP_EASING		9
+#define LINEAR_EASING	0
+#define SINE_EASING		1
+#define CIRCULAR_EASING	2
+#define QUAD_EASING		7
+#define CUBIC_EASING	3
+#define BOUNCE_EASING	4
+#define ELASTIC_EASING	5
+#define BACK_EASING		6
+#define JUMP_EASING		8
 
 //undocumented matrix defines?
-#define MATRIX_TRANSLATE	(1<<0)
-#define MATRIX_ROTATE		(1<<1)
-#define MATRIX_SCALE		(1<<2)
-#define MATRIX_MODIFY		(1<<3)
+#define MATRIX_TRANSLATE	7
+#define MATRIX_ROTATE		5
+#define MATRIX_SCALE		6
+#define MATRIX_MODIFY		128
 
 //world/Profile() arg
-#define PROFILE_STOP	1
-#define PROFILE_CLEAR	2
-#define PROFILE_AVERAGE 3
-#define PROFILE_START	4
-#define PROFILE_REFRESH	5
-#define PROFILE_RESTART	6
+#define PROFILE_START		0
+#define PROFILE_REFRESH		0
+#define PROFILE_STOP		1
+#define PROFILE_RESTART		2
+#define PROFILE_CLEAR		2
+#define PROFILE_AVERAGE		4
 
 //filter(type="alpha", ...) flags arg
 #define MASK_INVERSE	(1<<0)
 #define MASK_SWAP		(1<<1)
 
 //filter(type="layer", ...) flags arg
-#define FILTER_OVERLAY	0
-#define FILTER_UNDERLAY	1
+#define FILTER_OVERLAY	1
+#define FILTER_UNDERLAY	2
 
 //filter(type="outline", ...) flags arg
 #define OUTLINE_SHARP	(1<<0)

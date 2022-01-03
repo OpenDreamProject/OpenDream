@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -233,7 +233,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     appearance.SetColor("white");
                 }
 
-                appearance.IconState = mutableAppearance.GetVariable("icon_state").GetValueAsString();
+                appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
                 appearance.Layer = mutableAppearance.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelOffset.X = mutableAppearance.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelOffset.Y = mutableAppearance.GetVariable("pixel_y").GetValueAsInteger();
@@ -244,11 +244,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 if (icon.TryGetValueAsDreamResource(out DreamResource iconResource)) {
                     appearance.Icon = iconResource.ResourcePath;
                 } else {
-                    appearance.Icon = icon.GetValueAsString();
+                    appearance.Icon = icon.TryGetValueAsString(out var iconString) ? iconString : null;
                 }
 
                 if (iconState.TryGetValueAsString(out string iconStateString)) appearance.IconState = iconStateString;
-                appearance.SetColor(image.GetVariable("color").GetValueAsString());
+                var color = image.GetVariable("color").TryGetValueAsString(out var colorString)
+                    ? colorString
+                    : "#FFFFFF"; // Defaults to white
+                appearance.SetColor(color);
                 appearance.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
                 appearance.Layer = image.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelOffset.X = image.GetVariable("pixel_x").GetValueAsInteger();

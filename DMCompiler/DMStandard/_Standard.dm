@@ -203,10 +203,10 @@ proc/orange(Dist, Center)
 			CRASH("invalid view size")
 		if(isnull(Dist))
 			TrueCenter = usr
+			if(isnull(TrueCenter))
+				return
 		else
 			TrueCenter = Dist
-		if(isnull(TrueCenter))
-			return
 		TrueDist = Center
 
 	if(!istype(TrueCenter, /atom))

@@ -146,10 +146,10 @@ proc/range(Dist, Center)
 			return
 		if(isnull(Center))
 			TrueCenter = usr
+			if(isnull(TrueCenter))
+				return
 		else
 			TrueCenter = Center
-		if(isnull(TrueCenter))
-			return
 		if(TrueCenter != usr && !istype(Center, /atom))
 			. += Center
 			return

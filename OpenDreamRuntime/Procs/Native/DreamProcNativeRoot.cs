@@ -515,7 +515,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if(!arguments.GetArgument(0, "Path").TryGetValueAsString(out var path))
             {
-                path = Path.GetDirectoryName(IoCManager.Resolve<IConfigurationManager>().GetCVar(OpenDreamCVars.JsonPath)) + Path.DirectorySeparatorChar;
+                path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
             }
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             var listing = resourceManager.EnumerateListing(path);

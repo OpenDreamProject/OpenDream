@@ -1499,7 +1499,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Locate(DMProcState state) {
-            DreamObject container = state.PopUnboxedValue().GetValueAsDreamObject();
+            if (!state.PopUnboxedValue().TryGetValueAsDreamObject(out var container))
+            {
+                state.Push(DreamValue.Null);
+                return null;
+            }
+
             DreamValue value = state.PopUnboxedValue();
 
             DreamList containerList;

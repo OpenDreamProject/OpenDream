@@ -7,7 +7,7 @@
 	var/statpanel
 	
 	var/tag
-	var/type = "/client"
+	var/type = /client
 
 	var/mob/mob
 	var/atom/eye

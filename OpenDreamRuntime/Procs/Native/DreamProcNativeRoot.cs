@@ -1254,7 +1254,6 @@ namespace OpenDreamRuntime.Procs.Native {
             var arg3 = arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
 
             //TODO: Regex support
-            //TODO: Regex support
             if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 if (!arg3)

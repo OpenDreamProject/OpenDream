@@ -150,29 +150,33 @@ proc/range(Dist, Center)
 				return
 		else
 			TrueCenter = Center
-		if(TrueCenter != usr && !istype(Center, /atom))
-			. += Center
-			return
 		TrueDist = Dist
 	else
 		if(isnull(Center))
-			return
-		if(!isnum(Center))
-			CRASH("invalid view size")
-		if(isnull(Dist))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
+			var/atom/A = Dist
+			if(istype(A))
+				//TODO change this once spiralling is implemented
+				TrueCenter = locate(1, 1, A.z)
+				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
+			else
 				return
 		else
-			TrueCenter = Dist
-		TrueDist = Center
+			if(!isnum(Center))
+				CRASH("invalid view size")
+			if(isnull(Dist))
+				TrueCenter = usr
+				if(isnull(TrueCenter))
+					return
+			else
+				TrueCenter = Dist
+			TrueDist = Center
 
 	if(!istype(TrueCenter, /atom))
 		. += TrueCenter
 		return
 
-	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
-		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)
+	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
+		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
 			var/turf/t = locate(x, y, TrueCenter.z)
 
 			if (t != null)
@@ -198,23 +202,30 @@ proc/orange(Dist, Center)
 		TrueDist = Dist
 	else
 		if(isnull(Center))
-			return
-		if(!isnum(Center))
-			CRASH("invalid view size")
-		if(isnull(Dist))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
+			var/atom/A = Dist
+			if(istype(A))
+				//TODO change this once spiralling is implemented
+				TrueCenter = locate(1, 1, A.z)
+				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
+			else
 				return
 		else
-			TrueCenter = Dist
-		TrueDist = Center
+			if(!isnum(Center))
+				CRASH("invalid view size")
+			if(isnull(Dist))
+				TrueCenter = usr
+				if(isnull(TrueCenter))
+					return
+			else
+				TrueCenter = Dist
+			TrueDist = Center
 
 	if(!istype(TrueCenter, /atom))
 		. += TrueCenter
 		return
 
-	for (var/x = TrueCenter.x - TrueDist; x <= TrueCenter.x + TrueDist; x++)
-		for (var/y = TrueCenter.y - TrueDist; y <= TrueCenter.y + TrueDist; y++)
+	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
+		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
 			if (x == TrueCenter.x && y == TrueCenter.y) continue
 
 			var/turf/t = locate(x, y, TrueCenter.z)

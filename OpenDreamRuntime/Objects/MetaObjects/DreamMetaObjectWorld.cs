@@ -109,7 +109,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return new DreamValue(0);
         }
 
-        string? GetLogPath(DreamValue value)
+        private string? GetLogPath(DreamValue value)
         {
             return value.Type switch
             {

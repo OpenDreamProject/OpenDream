@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -92,7 +93,12 @@ namespace DMCompiler.DM.Expressions {
             if (_container != null) {
                 _container.EmitPushValue(dmObject, proc);
             } else {
-                proc.GetIdentifier("world");
+                if (DMCompiler.Settings.NoStandard) {
+                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                }
+
+                DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
+                proc.PushReferenceValue(world);
             }
 
             proc.Locate();
@@ -115,7 +121,12 @@ namespace DMCompiler.DM.Expressions {
             if (_container != null) {
                 _container.EmitPushValue(dmObject, proc);
             } else {
-                proc.GetIdentifier("world");
+                if (DMCompiler.Settings.NoStandard) {
+                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                }
+
+                DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
+                proc.PushReferenceValue(world);
             }
 
             proc.Locate();

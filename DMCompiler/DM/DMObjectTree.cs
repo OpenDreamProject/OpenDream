@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
@@ -130,9 +131,8 @@ namespace DMCompiler.DM {
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
-                        GlobalInitProc.GetGlobal(assign.GlobalId);
                         assign.Value.EmitPushValue(root, GlobalInitProc);
-                        GlobalInitProc.Assign();
+                        GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {
                         DMCompiler.Error(e.Error);
                     }

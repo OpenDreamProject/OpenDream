@@ -1,4 +1,5 @@
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -13,13 +14,12 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             if (!dmObject.HasProc(_identifier)) {
                 throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             }
 
-            proc.GetProc(_identifier);
-            return ProcPushResult.Unconditional;
+            return (DMReference.CreateSrcProc(_identifier), false);
         }
 
         public DMProc GetProc(DMObject dmObject) {
@@ -34,13 +34,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, null)
         {}
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushSelf();
-        }
-
-        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            proc.PushSelf();
-            return ProcPushResult.Unconditional;
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.Self, false);
         }
     }
 
@@ -52,9 +47,8 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            proc.PushSuperProc();
-            return ProcPushResult.Unconditional;
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.SuperProc, false);
         }
     }
 
@@ -82,35 +76,25 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner.Path}.{targetProc.Name}() is not implemented"));
             }
 
-            var _procResult = _target.EmitPushProc(dmObject, proc);
+            (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
 
-            switch (_procResult) {
-                case ProcPushResult.Unconditional:
-                    if (_arguments.Length == 0 && _target is ProcSuper) {
-                        proc.PushProcArguments();
-                    } else {
-                        _arguments.EmitPushArguments(dmObject, proc);
-                    }
-                    proc.Call();
-                    break;
-
-                case ProcPushResult.Conditional: {
-                    var skipLabel = proc.NewLabelName();
-                    var endLabel = proc.NewLabelName();
-                    proc.JumpIfNullIdentifier(skipLabel);
-                    if (_arguments.Length == 0 && _target is ProcSuper) {
-                        proc.PushProcArguments();
-                    } else {
-                        _arguments.EmitPushArguments(dmObject, proc);
-                    }
-                    proc.Call();
-                    proc.Jump(endLabel);
-                    proc.AddLabel(skipLabel);
-                    proc.Pop();
-                    proc.PushNull();
-                    proc.AddLabel(endLabel);
-                    break;
+            if (conditional) {
+                var skipLabel = proc.NewLabelName();
+                proc.JumpIfNullDereference(procRef, skipLabel);
+                if (_arguments.Length == 0 && _target is ProcSuper) {
+                    proc.PushProcArguments();
+                } else {
+                    _arguments.EmitPushArguments(dmObject, proc);
                 }
+                proc.Call(procRef);
+                proc.AddLabel(skipLabel);
+            } else {
+                if (_arguments.Length == 0 && _target is ProcSuper) {
+                    proc.PushProcArguments();
+                } else {
+                    _arguments.EmitPushArguments(dmObject, proc);
+                }
+                proc.Call(procRef);
             }
         }
     }

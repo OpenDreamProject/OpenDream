@@ -38,16 +38,16 @@ namespace OpenDreamRuntime.Procs {
         private static readonly OpcodeHandler[] _opcodeHandlers = {
             null, //0x0
             DMOpcodeHandlers.BitShiftLeft,
-            DMOpcodeHandlers.GetIdentifier,
+            DMOpcodeHandlers.PushType,
             DMOpcodeHandlers.PushString,
             DMOpcodeHandlers.FormatString,
             DMOpcodeHandlers.SwitchCaseRange,
-            DMOpcodeHandlers.SetLocalVariable,
+            DMOpcodeHandlers.PushReferenceValue,
             DMOpcodeHandlers.PushPath,
             DMOpcodeHandlers.Add,
             DMOpcodeHandlers.Assign,
             DMOpcodeHandlers.Call,
-            DMOpcodeHandlers.Dereference,
+            DMOpcodeHandlers.MultiplyReference,
             DMOpcodeHandlers.JumpIfFalse,
             DMOpcodeHandlers.JumpIfTrue,
             DMOpcodeHandlers.Jump,
@@ -59,14 +59,14 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareGreaterThan,
             DMOpcodeHandlers.BooleanAnd,
             DMOpcodeHandlers.BooleanNot,
-            DMOpcodeHandlers.PushSuperProc,
+            DMOpcodeHandlers.DivideReference,
             DMOpcodeHandlers.Negate,
             DMOpcodeHandlers.Modulus,
             DMOpcodeHandlers.Append,
             DMOpcodeHandlers.CreateRangeEnumerator,
-            DMOpcodeHandlers.PushUsr,
+            null, //0x1C
             DMOpcodeHandlers.CompareLessThanOrEqual,
-            DMOpcodeHandlers.IndexList,
+            null, //0x1E
             DMOpcodeHandlers.Remove,
             DMOpcodeHandlers.DeleteObject,
             DMOpcodeHandlers.PushResource,
@@ -77,7 +77,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.ListAppend,
             DMOpcodeHandlers.Divide,
             DMOpcodeHandlers.Multiply,
-            DMOpcodeHandlers.PushSelf,
+            DMOpcodeHandlers.BitXorReference,
             DMOpcodeHandlers.BitXor,
             DMOpcodeHandlers.BitOr,
             DMOpcodeHandlers.BitNot,
@@ -93,7 +93,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.IsInList,
             DMOpcodeHandlers.PushArguments,
             DMOpcodeHandlers.PushFloat,
-            DMOpcodeHandlers.PushSrc,
+            DMOpcodeHandlers.ModulusReference,
             DMOpcodeHandlers.CreateListEnumerator,
             DMOpcodeHandlers.Enumerate,
             DMOpcodeHandlers.DestroyEnumerator,
@@ -101,24 +101,24 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BrowseResource,
             DMOpcodeHandlers.OutputControl,
             DMOpcodeHandlers.BitShiftRight,
-            DMOpcodeHandlers.PushLocalVariable,
+            null, //0x41
             DMOpcodeHandlers.Power,
-            DMOpcodeHandlers.DereferenceProc,
-            DMOpcodeHandlers.GetProc,
+            null, //0x43
+            null, //0x44
             DMOpcodeHandlers.Prompt,
             DMOpcodeHandlers.PushProcArguments,
             DMOpcodeHandlers.Initial,
-            DMOpcodeHandlers.CallSelf,
+            null, //0x48
             DMOpcodeHandlers.IsType,
             DMOpcodeHandlers.LocateCoord,
             DMOpcodeHandlers.Locate,
             DMOpcodeHandlers.IsNull,
             DMOpcodeHandlers.Spawn,
-            DMOpcodeHandlers.DereferenceConditional,
-            DMOpcodeHandlers.DereferenceProcConditional,
-            DMOpcodeHandlers.JumpIfNullIdentifier,
+            null, //0x4E
+            null, //0x4F
+            DMOpcodeHandlers.JumpIfNullDereference,
             DMOpcodeHandlers.Pop,
-            DMOpcodeHandlers.PushCopy,
+            null, //0x52
             DMOpcodeHandlers.IsSaved,
             DMOpcodeHandlers.PickUnweighted,
             DMOpcodeHandlers.PickWeighted,
@@ -127,10 +127,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareEquivalent,
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
-            DMOpcodeHandlers.IsInRange,
-            DMOpcodeHandlers.GetGlobal,
-            DMOpcodeHandlers.IndexListConditional,
-            DMOpcodeHandlers.PushType
+            DMOpcodeHandlers.IsInRange
         };
         #endregion
 
@@ -254,17 +251,8 @@ namespace OpenDreamRuntime.Procs {
             _stack[_stackIndex++] = value;
         }
 
-        public void Push(IDreamProcIdentifier value) {
-            _stack[_stackIndex++] = new DreamValue(value);
-        }
-
         public void Push(DreamProcArguments value) {
             _stack[_stackIndex++] = new DreamValue(value);
-        }
-
-        public void PushCopy() {
-            _stack[_stackIndex] = Peek();
-            _stackIndex++;
         }
 
         public DreamValue Pop() {
@@ -273,27 +261,6 @@ namespace OpenDreamRuntime.Procs {
 
         public DreamValue Peek() {
             return _stack[_stackIndex - 1];
-        }
-
-        public IDreamProcIdentifier PeekIdentifier() {
-            return (IDreamProcIdentifier)(Peek().Value);
-        }
-
-        public IDreamProcIdentifier PopIdentifier() {
-            return (IDreamProcIdentifier)(Pop().Value);
-        }
-
-        //renamed from PopDreamValue to PopUnboxedValue to signify that Pop() gives you the raw DreamValue that may hold a reference, PopUnboxedValue will return a "formatted" version of it.
-        public DreamValue PopUnboxedValue() {
-            DreamValue value = Pop();
-            if(value.Type == DreamValue.DreamValueType.Reference){
-                if(value.Value is IDreamProcIdentifier){
-                    return ((IDreamProcIdentifier)value.Value).GetValue();
-                }
-                throw new Exception("Last object on stack was not a dream value or identifier");
-            }
-
-            return value;
         }
 
         public DreamProcArguments PopArguments() {
@@ -325,6 +292,160 @@ namespace OpenDreamRuntime.Procs {
 
             return DreamManager.ObjectTree.Strings[stringID];
         }
+
+        public DMReference ReadReference() {
+            DMReference.Type refType = (DMReference.Type)ReadByte();
+
+            switch (refType) {
+                case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
+                case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
+                case DMReference.Type.Field: return DMReference.CreateField(ReadString());
+                case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
+                case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
+                case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
+                case DMReference.Type.Src: return DMReference.Src;
+                case DMReference.Type.Self: return DMReference.Self;
+                case DMReference.Type.Usr: return DMReference.Usr;
+                case DMReference.Type.Args: return DMReference.Args;
+                case DMReference.Type.SuperProc: return DMReference.SuperProc;
+                case DMReference.Type.ListIndex: return DMReference.ListIndex;
+                default: throw new Exception($"Invalid reference type {refType}");
+            }
+        }
         #endregion
+
+        #region References
+        public bool IsNullDereference(DMReference reference) {
+            switch (reference.RefType) {
+                case DMReference.Type.Field: {
+                    if (Peek() == DreamValue.Null) {
+                        Pop();
+                        return true;
+                    }
+
+                    return false;
+                }
+                case DMReference.Type.ListIndex: {
+                    DreamValue list = _stack[_stackIndex - 2];
+                    if (list == DreamValue.Null) {
+                        Pop();
+                        Pop();
+                        return true;
+                    }
+
+                    return false;
+                }
+                default: throw new Exception($"Invalid dereference type {reference.RefType}");
+            }
+        }
+
+        public void AssignReference(DMReference reference, DreamValue value) {
+            switch (reference.RefType) {
+                case DMReference.Type.Self: Result = value; break;
+                case DMReference.Type.Local: LocalVariables[reference.LocalId] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(reference.FieldName, value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.GlobalId] = value; break;
+                case DMReference.Type.Field: {
+                    DreamValue owner = Pop();
+                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                        throw new Exception($"Cannot assign field \"{reference.FieldName}\" on {owner}");
+
+                    ownerObj.SetVariable(reference.FieldName, value);
+                    break;
+                }
+                case DMReference.Type.ListIndex: {
+                    DreamValue index = Pop();
+                    DreamValue list = Pop();
+                    if (!list.TryGetValueAsDreamList(out var listObj))
+                        throw new Exception($"Cannot assign to index {index} of {list}");
+
+                    listObj.SetValue(index, value);
+                    break;
+                }
+                default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
+            }
+        }
+
+        public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
+            switch (reference.RefType) {
+                case DMReference.Type.Src: return new(Instance);
+                case DMReference.Type.Usr: return new(Usr);
+                case DMReference.Type.Self: return Result;
+                case DMReference.Type.Global: return DreamManager.Globals[reference.GlobalId];
+                case DMReference.Type.Local: return LocalVariables[reference.LocalId];
+                case DMReference.Type.Args: {
+                    DreamList argsList = Arguments.CreateDreamList();
+
+                    argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
+                        switch (key.Type) {
+                            case DreamValue.DreamValueType.String: {
+                                string argumentName = key.GetValueAsString();
+
+                                Arguments.NamedArguments[argumentName] = value;
+                                LocalVariables[Proc.ArgumentNames.IndexOf(argumentName)] = value;
+                                break;
+                            }
+                            case DreamValue.DreamValueType.Float: {
+                                int argumentIndex = key.GetValueAsInteger() - 1;
+
+                                Arguments.OrderedArguments[argumentIndex] = value;
+                                LocalVariables[argumentIndex] = value;
+                                break;
+                            }
+                            default:
+                                throw new Exception("Invalid key used on an args list");
+                        }
+                    };
+
+                    return new(argsList);
+                }
+                case DMReference.Type.Field: {
+                    DreamValue owner = peek ? Peek() : Pop();
+                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                        throw new Exception($"Cannot get field \"{reference.FieldName}\" from {owner}");
+                    if (!ownerObj.TryGetVariable(reference.FieldName, out var fieldValue))
+                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+
+                    return fieldValue;
+                }
+                case DMReference.Type.SrcField: {
+                    if (!Instance.TryGetVariable(reference.FieldName, out var fieldValue))
+                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+
+                    return fieldValue;
+                }
+                case DMReference.Type.ListIndex: {
+                    DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
+                    DreamValue list = peek ? _stack[_stackIndex - 2] : Pop();
+                    if (!list.TryGetValueAsDreamList(out var listObj))
+                        throw new Exception($"Cannot get index {index} of {list}");
+
+                    return listObj.GetValue(index);
+                }
+                default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
+            }
+        }
+
+        public void PopReference(DMReference reference) {
+            switch (reference.RefType) {
+                case DMReference.Type.Src:
+                case DMReference.Type.Usr:
+                case DMReference.Type.Self:
+                case DMReference.Type.Global:
+                case DMReference.Type.Local:
+                case DMReference.Type.Args:
+                case DMReference.Type.SrcField:
+                    return;
+                case DMReference.Type.Field:
+                    Pop();
+                    return;
+                case DMReference.Type.ListIndex:
+                    Pop();
+                    Pop();
+                    return;
+                default: throw new Exception($"Cannot pop stack values of reference type {reference.RefType}");
+            }
+        }
+        #endregion References
     }
 }

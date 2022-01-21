@@ -2018,32 +2018,45 @@ namespace DMCompiler.Compiler.DM {
                         } else if (c == '\\' && bracketNesting == 0) {
                             string escapeSequence = String.Empty;
 
-                            do {
-                                c = tokenValue[++i];
-                                escapeSequence += c;
+                            if (i == tokenValue.Length) {
+                                Error("Invalid escape sequence");
+                            }
+                            c = tokenValue[++i];
 
-                                if (escapeSequence == "[" || escapeSequence == "]") {
+                            if (char.IsLetter(c)) {
+                                while (i < tokenValue.Length && char.IsLetter(tokenValue[i])) {
+                                    escapeSequence += tokenValue[i++];
+                                }
+                                i--;
+                                if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                    stringBuilder.Append('\\');
                                     stringBuilder.Append(escapeSequence);
-                                    break;
-                                } else if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "'") {
-                                    stringBuilder.Append(escapeSequence);
-                                    break;
-                                } else if (escapeSequence == "n") {
+                                } else if (escapeSequence.StartsWith("n")) {
                                     stringBuilder.Append('\n');
-                                    break;
-                                } else if (escapeSequence == "t") {
+                                    stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                } else if (escapeSequence.StartsWith("t")) {
                                     stringBuilder.Append('\t');
-                                    break;
+                                    stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                 } else if (escapeSequence == "ref") {
                                     currentInterpolationType = StringFormatTypes.Ref;
-                                    break;
-                                } else if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { //Unimplemented escape sequence
-                                    break;
+                                } else {
+                                    Console.WriteLine("Invalid letter escape sequence \"\\" + escapeSequence + "\"");
+                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
-                            } while (c != ' ' && i < tokenValue.Length - 1);
-
-                            if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
-                                Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                            } else {
+                                escapeSequence += c;
+                                if (escapeSequence == "[" || escapeSequence == "]") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == "<" || escapeSequence == ">") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == "\"" || escapeSequence == "'" || escapeSequence == "\\") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == " ") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else { //Unimplemented escape sequence
+                                    Console.WriteLine("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                }
                             }
                         } else if (bracketNesting == 0) {
                             stringBuilder.Append(c);

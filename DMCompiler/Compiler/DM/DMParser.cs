@@ -2040,7 +2040,6 @@ namespace DMCompiler.Compiler.DM {
                                 } else if (escapeSequence == "ref") {
                                     currentInterpolationType = StringFormatTypes.Ref;
                                 } else {
-                                    Console.WriteLine("Invalid letter escape sequence \"\\" + escapeSequence + "\"");
                                     Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
                             } else {
@@ -2054,7 +2053,6 @@ namespace DMCompiler.Compiler.DM {
                                 } else if (escapeSequence == " ") {
                                     stringBuilder.Append(escapeSequence);
                                 } else { //Unimplemented escape sequence
-                                    Console.WriteLine("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                     Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
                             }

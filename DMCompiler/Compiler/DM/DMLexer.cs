@@ -210,7 +210,7 @@ namespace DMCompiler.Compiler.DM {
                                 case ">>": token = CreateToken(TokenType.DM_RightShift, c); break;
                                 case ">=": token = CreateToken(TokenType.DM_GreaterThanEquals, c); break;
                                 case ">>=": token = CreateToken(TokenType.DM_RightShiftEquals, c); break;
-                                default: throw new Exception("Invalid punctuator token '" + c + "'");
+                                default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                             }
 
                             break;
@@ -269,7 +269,9 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Preproc_Identifier: {
                             StringBuilder identifierTextBuilder = new StringBuilder();
 
-                            do { //Preprocessor macros might end up making one identifier out of multiple tokens
+                            //An identifier can end up making being made out of multiple tokens
+                            //This is caused by preprocessor macros and escaped identifiers
+                            do {
                                 identifierTextBuilder.Append(GetCurrent().Text);
                             } while (Advance().Type == TokenType.DM_Preproc_Identifier && !AtEndOfSource);
 

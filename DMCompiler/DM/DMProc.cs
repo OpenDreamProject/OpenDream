@@ -46,6 +46,7 @@ namespace DMCompiler.DM {
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
         public string Name { get => _astDefinition.Name; }
+        public bool IsOverride = false;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -62,6 +63,7 @@ namespace DMCompiler.DM {
 
         public DMProc(DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
+            IsOverride = _astDefinition.IsOverride;
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());

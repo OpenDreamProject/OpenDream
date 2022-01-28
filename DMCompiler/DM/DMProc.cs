@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
@@ -61,9 +62,9 @@ namespace DMCompiler.DM {
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
 
-        public DMProc(DMASTProcDefinition astDefinition) {
+        public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
-            IsOverride = _astDefinition.IsOverride;
+            IsOverride = _astDefinition?.IsOverride ?? false; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());

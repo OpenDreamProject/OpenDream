@@ -48,6 +48,10 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            if (!proc.IsOverride)
+            {
+                throw new CompileErrorException(Location, "Cannot call parents via ..() in a proc definition");
+            }
             return (DMReference.SuperProc, false);
         }
     }

@@ -9,15 +9,13 @@ namespace DMCompiler.DM {
 
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
-        public static List<DMProc> GlobalProcs = new();
+        public static Dictionary<string, DMProc> GlobalProcs = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
-        private static Dictionary<string, int> _nameToGlobalProcId = new();
-        private static Dictionary<string, int> _internalNameToGlobalProcId = new();
         private static Dictionary<DreamPath, int> _pathToTypeId = new();
         private static int _dmObjectIdCounter = 0;
 
@@ -63,14 +61,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static DMProc GetGlobalProc(int id) {
-            return GlobalProcs[id];
+        public static bool TryGetGlobalProc(string name, out DMProc proc) {
+            return GlobalProcs.TryGetValue(name, out proc);
         }
 
-        public static bool TryGetNamedGlobalProcId(string name, out int id)
-        {
-            return _nameToGlobalProcId.TryGetValue(name, out id);
-        }
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
             return _pathToTypeId.TryGetValue(path, out typeId);
         }
@@ -124,32 +118,10 @@ namespace DMCompiler.DM {
             return id;
         }
 
-        public static bool HasNamedGlobalProc(string name)
-        {
-            return _nameToGlobalProcId.ContainsKey(name);
+        public static void AddGlobalProc(string name, DMProc proc) {
+            GlobalProcs.Add(name, proc);
         }
-        public static int CreateNamedGlobalProc(string name, DMProc proc)
-        {
-            int id = GlobalProcs.Count;
-            _nameToGlobalProcId[name] = id;
-            GlobalProcs.Add(proc);
-            return id;
-        }
-        public static void SetGlobalProcInternalName(string name, int id)
-        {
-            _internalNameToGlobalProcId[name] = id;
-        }
-
-        public static Dictionary<string, int> GetInternalGlobalProcNameMapping() 
-        {
-            return _internalNameToGlobalProcId;
-        }
-        public static int CreateGlobalProc(DMProc proc)
-        {
-            int id = GlobalProcs.Count;
-            GlobalProcs.Add(proc);
-            return id;
-        }
+        
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
             if (!_globalInitAssigns.TryGetValue(owningType.Path, out var list)) {
                 list = new List<(int GlobalId, DMExpression Value)>();

@@ -200,13 +200,17 @@ namespace DMCompiler {
                 }
                 compiledDream.Globals = globalListJson;
             }
+
             if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = new();
-                foreach (DMProc proc in DMObjectTree.GlobalProcs) {
-                    compiledDream.GlobalProcs.Add(proc.GetJsonRepresentation());
+                compiledDream.GlobalProcs = new(DMObjectTree.GlobalProcs.Count);
+
+                foreach (KeyValuePair<string, DMProc> globalProc in DMObjectTree.GlobalProcs) {
+                    string name = globalProc.Key;
+                    DMProc proc = globalProc.Value;
+
+                    compiledDream.GlobalProcs[name] = proc.GetJsonRepresentation();
                 }
             }
-            compiledDream.InternalNameToGlobalProcId = DMObjectTree.GetInternalGlobalProcNameMapping();
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

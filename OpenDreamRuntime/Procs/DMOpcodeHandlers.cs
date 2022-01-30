@@ -258,10 +258,10 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? GetGlobalProc(DMProcState state)
-        {
-            int id = state.ReadInt();
-            state.Push(new DreamProcIdentifierProc(state.DreamManager.GlobalProcs[id], null));
+        public static ProcStatus? GetGlobalProc(DMProcState state) {
+            string name = state.ReadString();
+
+            state.Push(new DreamProcIdentifierProc(state.DreamManager.GlobalProcs[name], null));
             return null;
         }
 
@@ -1194,9 +1194,10 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DreamValue.DreamValueType.DreamPath: {
                     DreamPath fullProcPath = source.GetValueAsPath();
-                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
+                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
+                        throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
                     string procName = fullProcPath.LastElement;
-                    DreamProc proc = state.Instance.GetProc(procName);
+                    DreamProc proc = state.DreamManager.GlobalProcs[procName];
 
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;

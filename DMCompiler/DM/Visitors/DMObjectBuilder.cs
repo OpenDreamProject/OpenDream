@@ -16,9 +16,12 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CompileProcs();
             }
-            foreach (DMProc gProc in DMObjectTree.GlobalProcs) {
-                gProc.Compile( DMObjectTree.GetDMObject(DreamPath.Root) );
+
+            DMObject root = DMObjectTree.GetDMObject(DreamPath.Root);
+            foreach (DMProc gProc in DMObjectTree.GlobalProcs.Values) {
+                gProc.Compile(root);
             }
+
             DMObjectTree.CreateGlobalInitProc();
         }
 
@@ -114,41 +117,35 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             DMObject dmObject = _currentObject;
 
-            try
-            {
+            try {
                 if (procDefinition.ObjectPath.HasValue) {
                     dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
-                } 
+                }
 
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName))
-                {
-                    throw new CompileErrorException(procDefinition.Location, "Type " + dmObject.Path + " already has a proc named \"" + procName + "\"");
+                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
+                    throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
                 }
 
                 DMProc proc = new DMProc(procDefinition);
 
                 if (procDefinition.ObjectPath == null) {
-                    if (DMObjectTree.HasNamedGlobalProc(procDefinition.Name)) {
-                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"{procDefinition.Name} is already defined in global scope"));
+                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
+                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
                     }
-                    int gproc_id = DMObjectTree.CreateNamedGlobalProc(procDefinition.Name, proc);
-                    string gproc_internal = $"USRPROC${procDefinition.ObjectPath}${proc.Name}";
-                    proc.InternalName = gproc_internal;
-                    DMObjectTree.SetGlobalProcInternalName(gproc_internal, gproc_id);
-                }
-                else { 
+
+                    DMObjectTree.AddGlobalProc(procDefinition.Name, proc);
+                } else {
                     dmObject.AddProc(procName, proc);
                 }
+
                 if (procDefinition.Body != null) {
                     foreach (var stmt in GetStatements(procDefinition.Body)) {
                         // TODO multiple var definitions.
-                        if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal)
-                        {
+                        if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
                             DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst);
                             variable.Value = new Expressions.Null(varDeclaration.Location);
 
-                            if (varDeclaration.Value != null)
-                            {
+                            if (varDeclaration.Value != null) {
                                 DMVisitorExpression._scopeMode = "static";
                                 DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
                                 DMVisitorExpression._scopeMode = "normal";
@@ -171,14 +168,11 @@ namespace DMCompiler.DM.Visitors {
         }
 
         // TODO Move this to an appropriate location
-        static public IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block)
-        {
-            foreach (var stmt in block.Statements)
-            {
+        static public IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
+            foreach (var stmt in block.Statements) {
                 yield return stmt;
                 List<DMASTProcBlockInner> recurse;
-                switch (stmt)
-                {
+                switch (stmt) {
                     case DMASTProcStatementSpawn ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementIf ps: recurse = new() { ps.Body, ps.ElseBody }; break;
                     case DMASTProcStatementFor ps: recurse = new() { ps.Body }; break;
@@ -187,23 +181,19 @@ namespace DMCompiler.DM.Visitors {
                     case DMASTProcStatementDoWhile ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementInfLoop ps: recurse = new() { ps.Body }; break;
                     // TODO Good luck if you declare a static var inside a switch
-                    case DMASTProcStatementSwitch ps:
-                        {
-                            recurse = new();
-                            foreach (var swcase in ps.Cases)
-                            {
-                                recurse.Add(swcase.Body);
-                            }
-                            break;
+                    case DMASTProcStatementSwitch ps: {
+                        recurse = new();
+                        foreach (var swcase in ps.Cases) {
+                            recurse.Add(swcase.Body);
                         }
+                        break;
+                    }
                     case DMASTProcStatementTryCatch ps: recurse = new() { ps.TryBody, ps.CatchBody }; break;
                     default: recurse = new(); break;
                 }
-                foreach (var subblock in recurse)
-                {
+                foreach (var subblock in recurse) {
                     if (subblock == null) { continue; }
-                    foreach (var substmt in GetStatements(subblock))
-                    {
+                    foreach (var substmt in GetStatements(subblock)) {
                         yield return substmt;
                     }
                 }

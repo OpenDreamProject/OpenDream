@@ -25,10 +25,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     class GlobalProc : DMExpression {
-        int _gid;
+        string _name;
 
-        public GlobalProc(Location loc, int gid) : base(loc) {
-            _gid = gid;
+        public GlobalProc(Location location, string name) : base(location) {
+            _name = name;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -36,12 +36,16 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            proc.GetGlobalProc(_gid);
+            proc.GetGlobalProc(_name);
             return ProcPushResult.Unconditional;
         }
 
         public DMProc GetProc() {
-            return DMObjectTree.GetGlobalProc(_gid);
+            if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
+                throw new CompileErrorException(Location, $"No proc named \"{_name}\"");
+            }
+
+            return globalProc;
         }
     }
 

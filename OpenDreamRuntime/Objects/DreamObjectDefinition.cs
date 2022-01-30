@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
@@ -56,37 +55,17 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        private (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
-            List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
-            DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
-            if (procAttribute == null) throw new ArgumentException();
-
-            Dictionary<string, DreamValue> defaultArgumentValues = null;
-            var argumentNames = new List<string>();
-            List<Attribute> parameterAttributes = attributes.FindAll(attribute => attribute is DreamProcParameterAttribute);
-            foreach (Attribute attribute in parameterAttributes) {
-                DreamProcParameterAttribute parameterAttribute = (DreamProcParameterAttribute)attribute;
-
-                argumentNames.Add(parameterAttribute.Name);
-                if (parameterAttribute.DefaultValue != default) {
-                    if (defaultArgumentValues == null) defaultArgumentValues = new Dictionary<string, DreamValue>();
-
-                    defaultArgumentValues.Add(parameterAttribute.Name, new DreamValue(parameterAttribute.DefaultValue));
-                }
-            }
-
-            return (procAttribute.Name, defaultArgumentValues, argumentNames);
-        }
-
         public void SetNativeProc(NativeProc.HandlerFn func) {
-            var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+
             SetProcDefinition(name, proc);
         }
 
         public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
-            var (name, defaultArgumentValues, argumentNames) = GetNativeInfo(func);
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+
             SetProcDefinition(name, proc);
         }
 

@@ -232,20 +232,22 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamProc LoadProcJson(string procName, ProcDefinitionJson procDefinition)
-        {
+        public DreamProc LoadProcJson(string procName, ProcDefinitionJson procDefinition) {
             byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
             List<string> argumentNames = new();
             List<DMValueType> argumentTypes = new();
 
             if (procDefinition.Arguments != null) {
+                argumentNames.EnsureCapacity(procDefinition.Arguments.Count);
+                argumentTypes.EnsureCapacity(procDefinition.Arguments.Count);
+
                 foreach (ProcArgumentJson argument in procDefinition.Arguments) {
                     argumentNames.Add(argument.Name);
                     argumentTypes.Add(argument.Type);
                 }
             }
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
 
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
         }
 
         private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {

@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
@@ -28,20 +29,21 @@ namespace DMCompiler.DM.Visitors {
 
                 if (parameter.Value != null) { //Parameter has a default value
                     string afterDefaultValueCheck = _proc.NewLabelName();
+                    DMReference parameterRef = _proc.GetLocalVariableReference(parameterName);
 
                     //Don't set parameter to default if not null
-                    _proc.PushLocalVariable(parameterName);
+                    _proc.PushReferenceValue(parameterRef);
                     _proc.IsNull();
                     _proc.JumpIfFalse(afterDefaultValueCheck);
 
                     //Set default
-                    _proc.PushLocalVariable(parameterName);
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
                         DMCompiler.Error(e.Error);
                     }
-                    _proc.Assign();
+                    _proc.Assign(parameterRef);
+                    _proc.Pop();
 
                     _proc.AddLabel(afterDefaultValueCheck);
                 }
@@ -197,14 +199,15 @@ namespace DMCompiler.DM.Visitors {
             }
 
             value.EmitPushValue(_dmObject, _proc);
-            _proc.SetLocalVariable(varDeclaration.Name);
+            _proc.Assign(_proc.GetLocalVariableReference(varDeclaration.Name));
+            _proc.Pop();
         }
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
                 DMExpression.Emit(_dmObject, _proc, statement.Value);
             } else {
-                _proc.PushSelf(); //Default return value
+                _proc.PushReferenceValue(DMReference.Self); //Default return value
             }
 
             _proc.Return();
@@ -278,8 +281,9 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
-                    _proc.Enumerate();
+                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForList.Variable);
+                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
+                    _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
 
                     DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
@@ -325,8 +329,9 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression.Emit(_dmObject, _proc, statementForRange.Variable);
-                    _proc.Enumerate();
+                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForRange.Variable);
+                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
+                    _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
 
                     ProcessBlockInner(statementForRange.Body);
@@ -506,6 +511,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementThrow(DMASTProcStatementThrow statement) {
             //TODO proper value handling and catching
 
+            DMExpression.Emit(_dmObject, _proc, statement.Value);
             _proc.Throw();
         }
     }

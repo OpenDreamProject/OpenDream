@@ -15,7 +15,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             if (variableName == "len") {
                 DreamList list = (DreamList)dreamObject;
-                int newLen = variableValue.GetValueAsInteger();
+                variableValue.TryGetValueAsInteger(out var newLen);
 
                 list.Resize(newLen);
             }

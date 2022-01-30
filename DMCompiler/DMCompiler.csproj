@@ -10,9 +10,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="DMStandard\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <DMStandard Include="DMStandard\**"/>
   </ItemGroup>
+
+  <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
+    <Copy
+      SourceFiles="@(DMStandard)"
+      DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+  </Target>
+  <Target Name="CopyDMStandardOnPublish" AfterTargets="Publish">
+    <Copy
+      SourceFiles="@(DMStandard)"
+      DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
+    />
+  </Target>
+
 
 </Project>

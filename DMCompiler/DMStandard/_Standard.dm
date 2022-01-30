@@ -133,29 +133,102 @@ proc/block(var/atom/Start, var/atom/End)
 
 	return atoms
 
-proc/range(Dist, atom/Center = usr)
+// TODO: Investigate "for(var/turf/T in range(Dist, Center))"-style weirdness that BYOND does. It's a center-out spiral and we need to replicate that.
+proc/range(Dist, Center)
 	. = list()
 
-	if (isnull(Center)) return
+	var/TrueDist
+	var/atom/TrueCenter
 
-	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
-		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
-			var/turf/t = locate(x, y, Center.z)
+	if(isnum(Dist))
+		if(isnum(Center))
+			. += Center
+			return
+		if(isnull(Center))
+			TrueCenter = usr
+			if(isnull(TrueCenter))
+				return
+		else
+			TrueCenter = Center
+		TrueDist = Dist
+	else
+		if(isnull(Center))
+			var/atom/A = Dist
+			if(istype(A))
+				//TODO change this once spiralling is implemented
+				TrueCenter = locate(1, 1, A.z)
+				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
+			else
+				return
+		else
+			if(!isnum(Center))
+				CRASH("invalid view size")
+			if(isnull(Dist))
+				TrueCenter = usr
+				if(isnull(TrueCenter))
+					return
+			else
+				TrueCenter = Dist
+			TrueDist = Center
+
+	if(!istype(TrueCenter, /atom))
+		. += TrueCenter
+		return
+
+	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
+		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
+			var/turf/t = locate(x, y, TrueCenter.z)
 
 			if (t != null)
 				. += t
 				. += t.contents
 
-proc/orange(Dist = 5, var/atom/Center = usr)
+proc/orange(Dist, Center)
 	. = list()
 
-	if (isnull(Center)) return
+	var/TrueDist
+	var/atom/TrueCenter
 
-	for (var/x = Center.x - Dist; x <= Center.x + Dist; x++)
-		for (var/y = Center.y - Dist; y <= Center.y + Dist; y++)
-			if (x == Center.x && y == Center.y) continue
+	if(isnum(Dist))
+		if(isnum(Center))
+			. += Center
+			return
+		if(isnull(Center))
+			TrueCenter = usr
+			if(isnull(TrueCenter))
+				return
+		else
+			TrueCenter = Center
+		TrueDist = Dist
+	else
+		if(isnull(Center))
+			var/atom/A = Dist
+			if(istype(A))
+				//TODO change this once spiralling is implemented
+				TrueCenter = locate(1, 1, A.z)
+				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
+			else
+				return
+		else
+			if(!isnum(Center))
+				CRASH("invalid view size")
+			if(isnull(Dist))
+				TrueCenter = usr
+				if(isnull(TrueCenter))
+					return
+			else
+				TrueCenter = Dist
+			TrueDist = Center
 
-			var/turf/t = locate(x, y, Center.z)
+	if(!istype(TrueCenter, /atom))
+		. += TrueCenter
+		return
+
+	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
+		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
+			if (x == TrueCenter.x && y == TrueCenter.y) continue
+
+			var/turf/t = locate(x, y, TrueCenter.z)
 			if (t != null)
 				. += t
 				. += t.contents
@@ -220,6 +293,10 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 	CRASH("/walk_away() is not implemented")
 
 /proc/turn(Dir, Angle)
+	if (istype(Dir, /matrix))
+		var/matrix/copy = new(Dir)
+		return copy.Turn(Angle)
+
 	var/dirAngle = 0
 
 	switch (Dir)

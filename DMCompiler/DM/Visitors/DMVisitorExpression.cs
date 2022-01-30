@@ -91,7 +91,7 @@ namespace DMCompiler.DM.Visitors {
             } else {
                 DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
                 if (localVar != null && _scopeMode == "normal") {
-                    Result = new Expressions.Local(identifier.Location, localVar, name);
+                    Result = new Expressions.Local(identifier.Location, localVar);
                     return;
                 }
 

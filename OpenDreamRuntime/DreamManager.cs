@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
@@ -32,6 +33,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public Dictionary<string, DreamProc> GlobalProcs { get; set; } = new();
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -51,6 +53,13 @@ namespace OpenDreamRuntime {
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
+
+            if (_compiledJson.GlobalProcs != null) {
+                foreach (var procJson in _compiledJson.GlobalProcs) {
+                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
+                }
+            }
+
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
             _dreamMapManager.Initialize();
@@ -113,6 +122,20 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
+        }
+
+        public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+
+            GlobalProcs[name] = proc;
+        }
+
+        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+
+            GlobalProcs[name] = proc;
         }
     }
 }

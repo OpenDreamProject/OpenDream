@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamShared.Json {
     public enum JsonVariableType {
@@ -18,21 +17,8 @@ namespace OpenDreamShared.Json {
         public List<int> Children { get; set; }
     }
 
-    public class GlobalListJson
-    {
+    public class GlobalListJson {
         public int GlobalCount { get; set; }
         public Dictionary<int, object> Globals { get; set; }
-    }
-
-    public class ProcDefinitionJson {
-        public bool? WaitFor { get; set; }
-        public int MaxStackSize { get; set; }
-        public List<ProcArgumentJson> Arguments { get; set; }
-        public byte[] Bytecode { get; set; }
-    }
-
-    public class ProcArgumentJson {
-        public string Name { get; set; }
-        public DMValueType Type { get; set; }
     }
 }

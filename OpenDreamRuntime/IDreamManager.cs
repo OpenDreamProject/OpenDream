@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime {
@@ -10,6 +12,7 @@ namespace OpenDreamRuntime {
         public int DMExceptionCount { get; set; }
 
         public List<DreamValue> Globals { get; set; }
+        public Dictionary<string, DreamProc> GlobalProcs { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
@@ -23,7 +26,10 @@ namespace OpenDreamRuntime {
         public DreamObject GetClientFromMob(DreamObject mob);
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);
-        void Update();
+        public void Update();
+
+        public void SetGlobalNativeProc(NativeProc.HandlerFn func);
+        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
 
         IEnumerable<DreamConnection> Connections { get; }
     }

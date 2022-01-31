@@ -7,6 +7,9 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public class AsyncNativeProc : DreamProc {
+
+        public delegate Task<DreamValue> HandlerFn(State s);
+
         public class State : ProcState
         {
             public DreamObject Src;

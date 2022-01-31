@@ -15,15 +15,46 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            if (!dmObject.HasProc(_identifier)) {
-                throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            if (dmObject.HasProc(_identifier)) {
+                return (DMReference.CreateSrcProc(_identifier), false);
+            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out _)) {
+                return (DMReference.CreateGlobalProc(_identifier), false);
             }
 
-            return (DMReference.CreateSrcProc(_identifier), false);
+            throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
         }
 
         public DMProc GetProc(DMObject dmObject) {
             return dmObject.GetProcs(_identifier)?[^1];
+        }
+    }
+
+    class GlobalProc : DMExpression {
+        string _name;
+
+        public GlobalProc(Location location, string name) : base(location) {
+            _name = name;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            throw new CompileErrorException(Location, "attempt to use proc as value");
+        }
+
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            if (!DMObjectTree.TryGetGlobalProc(_name, out _)) {
+                throw new CompileErrorException(Location, $"There is no global proc named \"{_name}\"");
+                
+            }
+
+            return (DMReference.CreateGlobalProc(_name), false);
+        }
+
+        public DMProc GetProc() {
+            if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
+                throw new CompileErrorException(Location, $"No proc named \"{_name}\"");
+            }
+
+            return globalProc;
         }
     }
 
@@ -69,6 +100,7 @@ namespace DMCompiler.DM.Expressions {
         public (DMObject ProcOwner, DMProc Proc) GetTargetProc(DMObject dmObject) {
             return _target switch {
                 Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
+                GlobalProc procTarget => (null, procTarget.GetProc()),
                 DereferenceProc derefTarget => derefTarget.GetProc(),
                 _ => (null, null)
             };

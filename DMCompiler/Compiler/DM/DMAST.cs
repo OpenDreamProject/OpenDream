@@ -118,6 +118,8 @@ namespace DMCompiler.Compiler.DM {
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) { throw new NotImplementedException(); }
         public void VisitCallableSuper(DMASTCallableSuper super) { throw new NotImplementedException(); }
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
+        public void VisitCallableGlobalProc(DMASTCallableGlobalProc globalIdentifier) { throw new NotImplementedException(); }
+
     }
 
     public abstract class DMASTNode : ASTNode<DMASTVisitor> {
@@ -1737,6 +1739,20 @@ namespace DMCompiler.Compiler.DM {
         public DMASTCallableSelf(Location location) : base(location){}
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableSelf(this);
+        }
+    }
+
+    public class DMASTCallableGlobalProc : DMASTExpression, DMASTCallable {
+        public string Identifier;
+
+        public DMASTCallableGlobalProc(Location location, string identifier) : base(location)
+        {
+            Identifier = identifier;
+        }
+
+        public override void Visit(DMASTVisitor visitor)
+        {
+            visitor.VisitCallableGlobalProc(this);
         }
     }
 }

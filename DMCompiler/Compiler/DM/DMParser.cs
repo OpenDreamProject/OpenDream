@@ -2163,7 +2163,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression ParseProcCall(DMASTExpression expression) {
-            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTDereference)) return expression;
+            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTDereference or DMASTGlobalIdentifier)) return expression;
 
             Whitespace();
 
@@ -2179,11 +2179,15 @@ namespace DMCompiler.Compiler.DM {
 
             DMASTCallParameter[] callParameters = ProcCall();
             if (callParameters != null) {
-                if (expression is DMASTDereference deref) {
+                if (expression is DMASTGlobalIdentifier gid) {
+                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier);
+                    return new DMASTProcCall(gid.Location, globalProc, callParameters);
+                }
+                else if (expression is DMASTDereference deref) {
                     DMASTDereferenceProc derefProc = new DMASTDereferenceProc(deref.Location, deref.Expression, deref.Property, deref.Type, deref.Conditional);
-
                     return new DMASTProcCall(expression.Location, derefProc, callParameters);
-                } else if (expression is DMASTCallable callable) {
+                }
+                else if (expression is DMASTCallable callable) {
                     return new DMASTProcCall(expression.Location, callable, callParameters);
                 }
 

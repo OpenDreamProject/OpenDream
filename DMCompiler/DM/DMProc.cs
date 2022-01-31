@@ -46,7 +46,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
-        public string Name { get => _astDefinition.Name; }
+        public string Name { get => _astDefinition?.Name; }
         public bool IsOverride = false;
         public Dictionary<string, int> GlobalVariables = new();
 
@@ -756,6 +756,7 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;
                 case DMReference.Type.SrcField: WriteString(reference.FieldName); break;
                 case DMReference.Type.Proc: WriteString(reference.ProcName); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.GlobalProc: WriteString(reference.ProcName); break;
                 case DMReference.Type.SrcProc: WriteString(reference.ProcName); break;
                 case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
                 case DMReference.Type.SuperProc:

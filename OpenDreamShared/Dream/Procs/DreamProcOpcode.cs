@@ -145,6 +145,7 @@ namespace OpenDreamShared.Dream.Procs {
             Field,
             SrcField,
             Proc,
+            GlobalProc,
             SrcProc,
             SuperProc
         }
@@ -164,7 +165,7 @@ namespace OpenDreamShared.Dream.Procs {
         [FieldOffset(8)]
         public string FieldName;
 
-        //Proc, SrcProc
+        //Proc, GlobalProc, SrcProc
         [FieldOffset(8)]
         public string ProcName;
 
@@ -188,6 +189,10 @@ namespace OpenDreamShared.Dream.Procs {
 
         public static DMReference CreateProc(string procName) {
             return new DMReference() { RefType = Type.Proc, ProcName = procName };
+        }
+
+        public static DMReference CreateGlobalProc(string procName) {
+            return new DMReference() { RefType = Type.GlobalProc, ProcName = procName };
         }
 
         public static DMReference CreateSrcProc(string procName) {

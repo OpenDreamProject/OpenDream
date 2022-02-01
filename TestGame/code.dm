@@ -71,8 +71,9 @@
 		usr << output("help sec griffing me", "honk.browser:foo")
 
 /mob/Stat()
-	statpanel("Status", "CPU: [world.cpu]")
-	stat("time", world.time)
+	if (statpanel("Status"))
+		stat("tick_usage", world.tick_usage)
+		stat("time", world.time)
 
 /world/New()
 	..()

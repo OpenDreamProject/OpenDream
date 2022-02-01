@@ -126,6 +126,10 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
+            VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
+        }
+
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
             string name = globalIdentifier.Identifier;
 

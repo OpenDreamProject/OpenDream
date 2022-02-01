@@ -18,6 +18,8 @@ namespace DMCompiler.Compiler.DM {
 
         private bool _unimplementedWarnings;
 
+        private bool _allowVarDeclExpression = false;
+
         public DMParser(DMLexer lexer, bool unimplementedWarnings) : base(lexer) {
             _unimplementedWarnings = unimplementedWarnings;
         }
@@ -101,6 +103,12 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Null,
             TokenType.DM_Switch,
             TokenType.DM_Spawn
+        };
+
+        private static readonly TokenType[] ForSeparatorTypes =
+        {
+            TokenType.DM_Semicolon,
+            TokenType.DM_Comma
         };
 
         public DMASTFile File() {
@@ -539,7 +547,10 @@ namespace DMCompiler.Compiler.DM {
             var loc = Current().Location;
             var leadingColon = Check(TokenType.DM_Colon);
 
-            DMASTExpression expression = Expression();
+            DMASTExpression expression = null;
+            if (Current().Type != TokenType.DM_Var) {
+                expression = Expression();
+            }
 
             if (leadingColon && expression is not DMASTIdentifier)
             {
@@ -900,131 +911,82 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatement For() {
             if (Check(TokenType.DM_For)) {
                 Whitespace();
+
+                var loc = Current().Location;
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
-                DMASTProcStatement initializer = null;
-                DMASTIdentifier variable;
 
-                DMASTProcStatementVarDeclaration variableDeclaration = ProcVarDeclaration(allowMultiple: false) as DMASTProcStatementVarDeclaration;
-                if (variableDeclaration != null) {
-                    initializer = variableDeclaration;
-                    variable = new DMASTIdentifier(variableDeclaration.Location, variableDeclaration.Name);
-                } else {
-                    variable = Identifier();
-                    if (variable != null) {
-                        Whitespace();
-                        if (Check(TokenType.DM_Equals)) {
-                            Whitespace();
-                            DMASTExpression value = Expression();
-                            if (value == null) Error("Expected an expression");
-
-                            initializer = new DMASTProcStatementExpression(variable.Location, new DMASTAssign(variable.Location, variable, value));
-                        }
-                    } else if(Current().Type != TokenType.DM_Comma && Current().Type != TokenType.DM_Semicolon) {
-                        ConsumeRightParenthesis();
-                        Check(TokenType.DM_Semicolon);
-                        Whitespace();
-                        Newline();
-                        return new DMASTProcStatementInfLoop(Current().Location,GetForBody());
-                    }
-                }
-
+                _allowVarDeclExpression = true;
+                DMASTExpression expr1 = Expression();
                 Whitespace();
                 AsTypes(); //TODO: Correctly handle
                 Whitespace();
-
-                if (Check(TokenType.DM_In)) {
-                    Whitespace();
-                    var loc = Current().Location;
-                    DMASTExpression enumerateValue = Expression();
-                    DMASTExpression toValue = null;
-                    DMASTExpression step = new DMASTConstantInteger(loc, 1);
-
-                    if (Check(TokenType.DM_To)) {
-                        Whitespace();
-
-                        toValue = Expression();
-                        if (toValue == null) Error("Expected an end to the range");
-
-                        if (Check(TokenType.DM_Step)) {
-                            Whitespace();
-
-                            step = Expression();
-                            if (step == null) Error("Expected a step value");
-                        }
-                    }
-
-                    ConsumeRightParenthesis();
-                    Check(TokenType.DM_Semicolon);
-                    Whitespace();
-                    Newline();
-
-                    DMASTProcBlockInner body = ProcBlock();
-                    if (body == null) {
-                        DMASTProcStatement statement = ProcStatement();
-
-                        //Loops without a body are valid DM
-                        if (statement == null) statement = new DMASTProcStatementContinue(loc);
-                        body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
-                    }
-
-                    if (toValue == null) {
-                        return new DMASTProcStatementForList(loc, initializer, variable, enumerateValue, body);
+                _allowVarDeclExpression = false;
+                if (expr1 == null) {
+                    if (ForSeparatorTypes.Contains(Current().Type)) {
+                        expr1 = new DMASTConstantNull(loc);
                     } else {
-                        return new DMASTProcStatementForRange(loc, initializer, variable, enumerateValue, toValue, step, body);
+                        Error("Expected 1st expression in for");
                     }
-                } else if (Check(new TokenType[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
-                    var loc = Current().Location;
-                    Whitespace();
-                    DMASTExpression comparator = Expression();
-                    DMASTExpression incrementor = null;
-                    if (Check(new[] { TokenType.DM_Comma, TokenType.DM_Semicolon })) {
-                        Whitespace();
-                        incrementor = Expression();
-                    }
-                    Whitespace();
-                    ConsumeRightParenthesis();
-                    Check(TokenType.DM_Semicolon);
-                    Whitespace();
-                    Newline();
-
-                    return new DMASTProcStatementForStandard(loc, initializer, comparator, incrementor, GetForBody());
-                } else if (variableDeclaration != null) {
-                    var loc = Current().Location;
-                    DMASTExpression rangeBegin = variableDeclaration.Value;
-                    Whitespace();
-                    if (variableDeclaration.Value is not null) {
-                        Consume(TokenType.DM_To, "Expected 'to'");
-                    }
-
-                    Whitespace();
-                    DMASTExpression rangeEnd = Expression();
-                    if (variableDeclaration.Value is not null && rangeEnd == null) Error("Expected an expression");
-                    DMASTExpression step = new DMASTConstantInteger(loc, 1);
-
-                    var defaultStep = true;
-
-                    if (Check(TokenType.DM_Step)) {
-                        Whitespace();
-
-                        step = Expression();
-                        if (step == null) Error("Expected a step value");
-                        defaultStep = false;
-                    }
-
-                    ConsumeRightParenthesis();
-                    Check(TokenType.DM_Semicolon);
-                    Whitespace();
-                    Newline();
-
-                    if (variableDeclaration.Value is null && rangeEnd is null && defaultStep) {
-                        return new DMASTProcStatementForType(loc, initializer, variable, GetForBody());
-                    }
-
-                    return new DMASTProcStatementForRange(loc, initializer, variable, rangeBegin, rangeEnd, step, GetForBody());
-                } else {
-                    Error("Expected 'in'");
                 }
+                if (Check(TokenType.DM_To)) {
+                    if (expr1 is DMASTAssign assign) {
+                        DMASTExpression endRange = null, step = null;
+                        ExpressionTo(ref endRange, ref step);
+                        Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
+                        Whitespace();
+                        Newline();
+                        return new DMASTProcStatementForRaw(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, GetForBody());
+                    } else {
+                        Error("Expected = before to in for");
+                    }
+                }
+                if (!Check(ForSeparatorTypes)) {
+                    Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
+                    Whitespace();
+                    Newline();
+                    return new DMASTProcStatementForRaw(loc, expr1, null, null, GetForBody());
+                }
+                if (Check(TokenType.DM_RightParenthesis)) {
+                    Whitespace();
+                    Newline();
+                    return new DMASTProcStatementForRaw(loc, expr1, null, null, GetForBody());
+                }
+                Whitespace();
+                DMASTExpression expr2 = Expression();
+                Whitespace();
+                if (expr2 == null) {
+                    if (ForSeparatorTypes.Contains(Current().Type)) {
+                        expr2 = new DMASTConstantInteger(loc, 1);
+                    } else {
+                        Error("Expected 2nd expression in for");
+                    }
+                }
+                if (!Check(ForSeparatorTypes)) {
+                    Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
+                    Whitespace();
+                    Newline();
+                    return new DMASTProcStatementForRaw(loc, expr1, expr2, null, GetForBody());
+                }
+                if (Check(TokenType.DM_RightParenthesis)) {
+                    Whitespace();
+                    Newline();
+                    return new DMASTProcStatementForRaw(loc, expr1, expr2, null, GetForBody());
+                }
+                Whitespace();
+                DMASTExpression expr3 = Expression();
+                Whitespace();
+                if (expr3 == null) {
+                    if (Current().Type == TokenType.DM_RightParenthesis) {
+                        expr3 = new DMASTConstantNull(loc);
+                    } else {
+                        Error("Expected 3nd expression in for");
+                    }
+                }
+                Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
+                Whitespace();
+                Newline();
+                return new DMASTProcStatementForRaw(loc, expr1, expr2, expr3, GetForBody());
             }
 
             return null;
@@ -1508,11 +1470,45 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression Expression() {
-            return ExpressionAssign();
+            return ExpressionIn();
         }
 
+        public void ExpressionTo(ref DMASTExpression endRange, ref DMASTExpression step) {
+            Whitespace();
+            endRange = ExpressionAssign();
+            Whitespace();
+            if (endRange is null) {
+                Error("Missing end range");
+            }
+            if (Check(TokenType.DM_Step)) {
+                Whitespace();
+                step = ExpressionAssign();
+                Whitespace();
+                if (step is null) { Error("Missing step value"); }
+            }
+        }
+
+        public DMASTExpression ExpressionIn() {
+            DMASTExpression value = ExpressionAssign();
+
+            if (value != null && Check(TokenType.DM_In)) {
+                var loc = Current().Location;
+                Whitespace();
+                DMASTExpression list = ExpressionAssign();
+                Whitespace();
+                if (Check(TokenType.DM_To)) {
+                    DMASTExpression endRange = null, step = null;
+                    ExpressionTo(ref endRange, ref step);
+                    return new DMASTExpressionInRange(loc, value, list, endRange, step);
+                }
+
+                return new DMASTExpressionIn(loc, value, list);
+            }
+
+            return value;
+        }
         public DMASTExpression ExpressionAssign() {
-            DMASTExpression expression = ExpressionIn();
+            DMASTExpression expression = ExpressionTernary();
 
             if (expression != null) {
                 Token token = Current();
@@ -1545,34 +1541,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        public DMASTExpression ExpressionIn() {
-            DMASTExpression value = ExpressionTernary();
 
-            if (value != null && Check(TokenType.DM_In)) {
-                var loc = Current().Location;
-                Whitespace();
-                DMASTExpression list = ExpressionIn();
-
-                Whitespace();
-                if (Check(TokenType.DM_To))
-                {
-                    Whitespace();
-                    DMASTExpression endRange = ExpressionIn();
-                    if (endRange is null)
-                    {
-                        Error("Missing end range");
-                    }
-                    else
-                    {
-                        return new DMASTExpressionInRange(loc, value, list, endRange);
-                    }
-                }
-
-                return new DMASTExpressionIn(loc, value, list);
-            }
-
-            return value;
-        }
 
         public DMASTExpression ExpressionTernary() {
             DMASTExpression a = ExpressionOr();
@@ -1951,8 +1920,11 @@ namespace DMCompiler.Compiler.DM {
                 return inner;
             }
 
-            DMASTExpression primary = Constant();
             var loc = Current().Location;
+            if (Current().Type == TokenType.DM_Var && _allowVarDeclExpression) {
+                return new DMASTVarDeclExpression( loc, Path() );
+            }
+            DMASTExpression primary = Constant();
             if (primary == null) {
                 DMASTPath path = Path(true);
 

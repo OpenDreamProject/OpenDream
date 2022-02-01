@@ -103,6 +103,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
                 case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
                 case DMASTProcStatementIf statementIf: ProcessStatementIf(statementIf); break;
+                case DMASTProcStatementForRaw statementForRaw: ProcessStatementForRaw(statementForRaw); break;
                 case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
                 case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
                 case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
@@ -364,6 +365,75 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void ProcessStatementForRaw(DMASTProcStatementForRaw statementForRaw) {
+            _proc.StartScope();
+            {
+                foreach (var decl in FindVarDecls(statementForRaw.Expression1)) {
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementForRaw.Location, decl.DeclPath, null));
+                }
+                if (statementForRaw.Expression2 != null || statementForRaw.Expression3 != null) {
+                    ProcessStatementForStandard(new DMASTProcStatementForStandard(statementForRaw.Location,
+                        new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
+                        statementForRaw.Expression2, statementForRaw.Expression3, statementForRaw.Body) );
+                }
+                else {
+                    if (statementForRaw.Expression1 is DMASTAssign assign && assign.Expression is DMASTVarDeclExpression && assign.Value is DMASTExpressionInRange) {
+                        string variableIdent = null;
+                        var exprIn = assign.Value as DMASTExpressionInRange;
+                        if (assign.Expression is DMASTVarDeclExpression decl) {
+                            variableIdent = decl.DeclPath.Path.LastElement;
+                        }
+                        if (exprIn.Step == null) {
+                            exprIn.Step = new DMASTConstantInteger(exprIn.Location, 1);
+                        }
+                        ProcessStatementForRange(new DMASTProcStatementForRange(statementForRaw.Location,
+                            new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
+                            new DMASTIdentifier(exprIn.Value.Location, variableIdent), exprIn.StartRange, exprIn.EndRange, exprIn.Step, statementForRaw.Body));
+                    }
+                    if (statementForRaw.Expression1 is DMASTVarDeclExpression) {
+                        string variableIdent = null;
+                        if (statementForRaw.Expression1 is DMASTVarDeclExpression decl) {
+                            variableIdent = decl.DeclPath.Path.LastElement;
+                        }
+                        ProcessStatementForList(new DMASTProcStatementForList(statementForRaw.Location, null,
+                            new DMASTIdentifier(statementForRaw.Location, variableIdent), new DMASTIdentifier(statementForRaw.Location, "world"),
+                            statementForRaw.Body));
+                    }
+                    if (statementForRaw.Expression1 is DMASTExpressionInRange) {
+                        DMASTExpression reference = null;
+                        var exprIn = statementForRaw.Expression1 as DMASTExpressionInRange;
+                        if (exprIn.Value is DMASTAssign assign2) {
+                            exprIn.Value = assign2.Expression;
+                        }
+                        if (exprIn.Value is DMASTVarDeclExpression decl) {
+                            reference = new DMASTIdentifier(exprIn.Value.Location, decl.DeclPath.Path.LastElement);
+                        }
+                        else {
+                            reference = exprIn.Value;
+                        }
+                        if (exprIn.Step == null) {
+                            exprIn.Step = new DMASTConstantInteger(exprIn.Location, 1);
+                        }
+                        ProcessStatementForRange( new DMASTProcStatementForRange(statementForRaw.Location,
+                            new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
+                            reference, exprIn.StartRange, exprIn.EndRange, exprIn.Step, statementForRaw.Body));
+                    }
+                }
+            }
+            _proc.EndScope();
+
+            IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression expr) {
+                if (expr is DMASTVarDeclExpression p) {
+                    yield return p;
+                }
+                foreach (var leaf in expr.Leaves()) {
+                    foreach(var decl in FindVarDecls(leaf)) {
+                        yield return decl;
+                    }
+                }
+            }
+
+        }
         public void ProcessStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             _proc.StartScope();
             {
@@ -487,7 +557,7 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForRange.Variable);
+                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForRange.Reference);
                     (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
                     _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();

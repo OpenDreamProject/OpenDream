@@ -39,15 +39,29 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? CreateListEnumerator(DMProcState state) {
+        public static ProcStatus? CreateListEnumerator(DMProcState state)
+        {
+            state.Pop().TryGetValueAsPath(out var type);
             DreamObject listObject = state.Pop().GetValueAsDreamObject();
             DreamList list = listObject as DreamList;
 
             if (list == null) {
                 if (listObject == null) {
                     list = null;
-                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
+                } else if (listObject.IsSubtypeOf(DreamPath.Atom))
+                {
                     list = listObject.GetVariable("contents").GetValueAsDreamList();
+                }
+                else if (listObject.IsSubtypeOf(DreamPath.World)) {
+                    if (type == DreamPath.Client)
+                    {
+                        list = DreamList.Create(state.DreamManager.Clients);
+                    }
+                    else
+                    {
+                        list = listObject.GetVariable("contents").GetValueAsDreamList();
+                    }
+
                 } else {
                     throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);
                 }
@@ -1008,7 +1022,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
             }
-            
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }

@@ -187,7 +187,7 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
                     return;
                 }
-                    
+
                 successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
                 successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);
@@ -271,6 +271,15 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
             DMExpression.Emit(_dmObject, _proc, statementForList.List);
+            DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
+            if (varDeclaration != null && varDeclaration.Type != null)
+            {
+                _proc.PushPath(varDeclaration.Type.Value);
+            }
+            else
+            {
+                _proc.PushNull();
+            }
             _proc.CreateListEnumerator();
             _proc.StartScope();
             {
@@ -286,15 +295,14 @@ namespace DMCompiler.DM.Visitors {
                     _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
 
-                    DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null)
                     {
                         //This is terrible but temporary
                         //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
                         var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
-                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
+                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom) && !obj.IsSubtypeOf(DreamPath.Client))
                         {
-                            var warn = new CompilerWarning(statementForList.Location, "Cannot currently loop 'in world' for non-ATOM types");
+                            var warn = new CompilerWarning(statementForList.Location, "Cannot currently loop 'in world' for datum types");
                             DMCompiler.Warning(warn);
                         }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);

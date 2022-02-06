@@ -297,14 +297,6 @@ namespace DMCompiler.DM.Visitors {
 
                     if (varDeclaration != null && varDeclaration.Type != null)
                     {
-                        //This is terrible but temporary
-                        //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
-                        var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
-                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom) && !obj.IsSubtypeOf(DreamPath.Client))
-                        {
-                            var warn = new CompilerWarning(statementForList.Location, "Cannot currently loop 'in world' for datum types");
-                            DMCompiler.Warning(warn);
-                        }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
                         _proc.PushPath(varDeclaration.Type.Value);
                         _proc.IsType();

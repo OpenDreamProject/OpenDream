@@ -57,10 +57,19 @@ namespace OpenDreamRuntime.Procs {
                     {
                         list = DreamList.Create(state.DreamManager.Clients);
                     }
-                    else
+                    else if (type.IsDescendantOf(DreamPath.Atom))
                     {
                         list = listObject.GetVariable("contents").GetValueAsDreamList();
                     }
+                    else if (type.IsDescendantOf(DreamPath.Datum))
+                    {
+                        list = DreamList.Create(state.DreamManager.Datums);
+                    }
+                    else
+                    {
+                        throw new Exception($"List enumeration of {type.ToString()} is not supported");
+                    }
+
 
                 } else {
                     throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);

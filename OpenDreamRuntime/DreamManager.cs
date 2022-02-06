@@ -39,6 +39,7 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
         public List<DreamObject> Clients { get; set; } = new();
+        public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
 
         public void Initialize() {

@@ -16,8 +16,9 @@ namespace OpenDreamRuntime {
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
-        List<DreamObject> Mobs { get; set; }
-        List<DreamObject> Clients { get; set; }
+        public List<DreamObject> Mobs { get; set; }
+        public List<DreamObject> Clients { get; set; }
+        public List<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
 
         public void Initialize();

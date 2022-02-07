@@ -1,11 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Resources {
     public class DreamResource {
-        public string? ResourcePath;
+        public string ResourcePath;
         public byte[] ResourceData {
             get {
                 if (_resourceData == null && File.Exists(_filePath)) {
@@ -16,10 +14,10 @@ namespace OpenDreamRuntime.Resources {
             }
         }
 
-        private string? _filePath;
+        private string _filePath;
         private byte[] _resourceData = null;
 
-        public DreamResource(string? filePath, string? resourcePath) {
+        public DreamResource(string filePath, string resourcePath) {
             _filePath = filePath;
             ResourcePath = resourcePath;
         }

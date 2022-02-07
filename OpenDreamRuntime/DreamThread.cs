@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
@@ -253,8 +249,8 @@ namespace OpenDreamRuntime {
             builder.AppendLine("=C# StackTrace=");
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
-            
-            dreamMan.WorldLog.WriteLog(LogLevel.Error, builder.ToString());
+
+           dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
         }
     }
 }

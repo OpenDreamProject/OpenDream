@@ -35,7 +35,7 @@ namespace OpenDreamRuntime.Resources
         }
 
         public DreamResource LoadResource(string resourcePath) {
-            if (resourcePath == "") return new LogOutputResource(null); //An empty resource path is the console
+            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
 
             if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource)) {
                 resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);

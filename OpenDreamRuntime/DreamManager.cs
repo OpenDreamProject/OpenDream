@@ -29,7 +29,6 @@ namespace OpenDreamRuntime {
 
         public DreamObjectTree ObjectTree { get; private set; }
         public DreamObject WorldInstance { get; private set; }
-        public LogOutputResource WorldLog { get; set; }
         public int DMExceptionCount { get; set; }
 
         // Global state that may not really (really really) belong here
@@ -137,6 +136,23 @@ namespace OpenDreamRuntime {
             var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
 
             GlobalProcs[name] = proc;
+        }
+
+        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info)
+        {
+            if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
+            {
+                WorldInstance.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
+            }
+
+            if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
+            {
+                Logger.LogS(level, "world.log", message);
+            }
+            else
+            {
+                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+            }
         }
     }
 }

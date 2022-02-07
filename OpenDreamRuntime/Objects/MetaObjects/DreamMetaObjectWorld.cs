@@ -1,15 +1,14 @@
-﻿using System;
-using OpenDreamRuntime.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
+        [Dependency] private DreamResourceManager _dreamRscMan = null;
         [Dependency] private IDreamMapManager _dreamMapManager = null;
         [Dependency] private IGameTiming _gameTiming = null;
         [Dependency] private IConfigurationManager _cfg = null;
@@ -50,7 +49,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "maxz":
                     _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
                 case "log":
-                    _dreamManager.WorldLog = new LogOutputResource(GetLogPath(variableValue));
+                    if (variableValue.TryGetValueAsString(out var logStr))
+                    {
+                        dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
+                    }
+                    else if (variableValue.TryGetValueAsDreamResource(out var logRsc))
+                    {
+                        dreamObject.SetVariableValue("log", new DreamValue(logRsc));
+                    }
+                    else
+                    {
+                        dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
+                    }
                     break;
             }
         }
@@ -71,6 +81,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     //TODO: This can only go up to 100%, tick_usage should be able to go higher
                     float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
                     return new DreamValue(tickUsage * 100);
+                }
+                case "log":
+                {
+                    var baseLog = base.OnVariableGet(dreamObject, variableName, variableValue);
+                    if (baseLog.TryGetValueAsDreamResource(out var logRsc)) return new DreamValue(logRsc);
+                    logRsc = new ConsoleOutputResource();
+                    dreamObject.SetVariableValue("log", new DreamValue(logRsc));
+                    return new DreamValue(logRsc);
                 }
                 case "maxx":
                     return new DreamValue(_dreamMapManager.Size.X);
@@ -107,16 +125,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             return new DreamValue(0);
-        }
-
-        private string? GetLogPath(DreamValue value)
-        {
-            return value.Type switch
-            {
-                DreamValue.DreamValueType.String => value.GetValueAsString(),
-                DreamValue.DreamValueType.DreamResource => value.GetValueAsDreamResource().ResourcePath,
-                _ => null
-            };
         }
     }
 }

@@ -539,13 +539,7 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    if(firstIdentifier is DreamProcIdentifierVariable stringVar && stringVar.IdentifierName == "log" && stringVar.Instance.IsSubtypeOf(DreamPath.World))
-                    {
-                        IoCManager.Resolve<IDreamManager>().WorldLog.Output(second);
-                        state.Push(DreamValue.Null);
-                        break;
-                    }
-                    throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
+                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
                 default:
                     throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
             }
@@ -1016,7 +1010,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
             }
-            
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }

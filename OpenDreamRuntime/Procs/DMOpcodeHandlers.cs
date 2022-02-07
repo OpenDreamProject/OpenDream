@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -16,11 +16,19 @@ using Robust.Shared.IoC;
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
         #region Values
-        public static ProcStatus? Assign(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PeekIdentifier();
+        public static ProcStatus? PushReferenceValue(DMProcState state) {
+            DMReference reference = state.ReadReference();
 
-            identifier.Assign(value);
+            state.Push(state.GetReferenceValue(reference));
+            return null;
+        }
+
+        public static ProcStatus? Assign(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.Pop();
+
+            state.AssignReference(reference, value);
+            state.Push(value);
             return null;
         }
 
@@ -32,7 +40,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            DreamObject listObject = state.PopDreamValue().GetValueAsDreamObject();
+            DreamObject listObject = state.Pop().GetValueAsDreamObject();
             DreamList list = listObject as DreamList;
 
             if (list == null) {
@@ -59,9 +67,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {
-            float step = state.PopDreamValue().GetValueAsFloat();
-            float rangeEnd = state.PopDreamValue().GetValueAsFloat();
-            float rangeStart = state.PopDreamValue().GetValueAsFloat();
+            float step = state.Pop().GetValueAsFloat();
+            float rangeEnd = state.Pop().GetValueAsFloat();
+            float rangeStart = state.Pop().GetValueAsFloat();
 
             state.EnumeratorStack.Push(new DreamProcRangeEnumerator(rangeStart, rangeEnd, step));
             return null;
@@ -69,7 +77,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateObject(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
-            var val = state.PopDreamValue();
+            var val = state.Pop();
             if (!val.TryGetValueAsPath(out var objectPath))
             {
                 if (val.TryGetValueAsString(out var pathString))
@@ -92,62 +100,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
-        public static ProcStatus? Dereference(DMProcState state) {
-            DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
-            string identifierName = state.ReadString();
-
-            if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
-            state.Push(new DreamProcIdentifierVariable(dreamObject, identifierName));
-            return null;
-        }
-
-        public static ProcStatus? DereferenceConditional(DMProcState state) {
-            DreamValue operand = state.PopDreamValue();
-            string identifierName = state.ReadString();
-
-            if (operand == DreamValue.Null) {
-                state.Push(new DreamProcIdentifierNull());
-                return null;
-            }
-
-            DreamObject dreamObject = operand.GetValueAsDreamObject();
-            state.Push(new DreamProcIdentifierVariable(dreamObject, identifierName));
-            return null;
-        }
-
-        public static ProcStatus? DereferenceProc(DMProcState state) {
-            DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
-            string identifierName = state.ReadString();
-
-            if (dreamObject == null) throw new Exception("Cannot dereference '" + identifierName + "' on a null object");
-
-            if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
-                state.Push(new DreamProcIdentifierProc(proc, dreamObject));
-            } else {
-                throw new Exception("Proc '" + identifierName + "' doesn't exist");
-            }
-            return null;
-        }
-
-        public static ProcStatus? DereferenceProcConditional(DMProcState state) {
-            DreamValue operand = state.PopDreamValue();
-            string identifierName = state.ReadString();
-
-            if (operand == DreamValue.Null) {
-                state.Push(new DreamProcIdentifierNull());
-                return null;
-            }
-
-            DreamObject dreamObject = operand.GetValueAsDreamObject();
-
-            if (dreamObject.TryGetProc(identifierName, out DreamProc proc)) {
-                state.Push(new DreamProcIdentifierProc(proc, dreamObject));
-            } else {
-                throw new Exception("Proc '" + identifierName + "' doesn't exist");
-            }
-            return null;
-        }
-
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
             state.EnumeratorStack.Pop();
             return null;
@@ -155,13 +107,11 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Enumerate(DMProcState state) {
             IEnumerator<DreamValue> enumerator = state.EnumeratorStack.Peek();
-            IDreamProcIdentifier identifier = state.PopIdentifier();
+            DMReference reference = state.ReadReference();
             bool successfulEnumeration = enumerator.MoveNext();
 
+            state.AssignReference(reference, enumerator.Current);
             state.Push(new DreamValue(successfulEnumeration ? 1 : 0));
-            if (successfulEnumeration) {
-                identifier.Assign(enumerator.Current);
-            }
             return null;
         }
 
@@ -177,13 +127,13 @@ namespace OpenDreamRuntime.Procs {
 
                     switch ((StringFormatTypes)c) {
                         case StringFormatTypes.Stringify: {
-                            DreamValue value = state.PopDreamValue();
+                            DreamValue value = state.Pop();
 
                             formattedString.Append(value.Stringify());
                             break;
                         }
                         case StringFormatTypes.Ref: {
-                            DreamObject refObject = state.PopDreamValue().GetValueAsDreamObject();
+                            DreamObject refObject = state.Pop().GetValueAsDreamObject();
 
                             formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
@@ -199,100 +149,8 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? GetIdentifier(DMProcState state) {
-            string identifierName = state.ReadString();
-
-            if (identifierName == "args") {
-                DreamList argsList = state.Arguments.CreateDreamList();
-
-                argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
-                    switch (key.Type) {
-                        case DreamValue.DreamValueType.String: {
-                            string argumentName = key.GetValueAsString();
-
-                            state.Arguments.NamedArguments[argumentName] = value;
-                            state.LocalVariables[state.Proc.ArgumentNames.IndexOf(argumentName)] = value;
-                            break;
-                        }
-                        case DreamValue.DreamValueType.Float: {
-                            int argumentIndex = key.GetValueAsInteger() - 1;
-
-                            state.Arguments.OrderedArguments[argumentIndex] = value;
-                            state.LocalVariables[argumentIndex] = value;
-                            break;
-                        }
-                        default:
-                            throw new Exception("Invalid key used on an args list");
-                    }
-                };
-
-                state.Push(new DreamValue(argsList));
-            } else {
-                state.Push(new DreamProcIdentifierVariable(state.Instance, identifierName));
-            }
-            return null;
-        }
-
-        public static ProcStatus? GetGlobal(DMProcState state) {
-            int globalId = state.ReadInt();
-
-            state.Push(new DreamProcIdentifierGlobal(state.DreamManager.Globals, globalId));
-            return null;
-        }
-
-        public static ProcStatus? PushLocalVariable(DMProcState state) {
-            int localVariableId = state.ReadByte();
-
-            state.Push(new DreamProcIdentifierLocalVariable(state.LocalVariables, localVariableId));
-            return null;
-        }
-
-        public static ProcStatus? GetProc(DMProcState state) {
-            string identifierName = state.ReadString();
-
-            if (state.Instance.TryGetProc(identifierName, out DreamProc proc)) {
-                state.Push(new DreamProcIdentifierProc(proc, state.Instance));
-            } else {
-                throw new Exception("Proc '" + identifierName + "' doesn't exist");
-            }
-            return null;
-        }
-
-        private static void Index(DMProcState state, DreamValue index, DreamValue indexing) {
-            if (indexing.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                state.Push(new DreamProcIdentifierIndex(dreamObject, index));
-            } else if (indexing.TryGetValueAsString(out string text)) {
-                char c = text[index.GetValueAsInteger() - 1];
-
-                state.Push(new DreamValue(Convert.ToString(c)));
-            } else {
-                throw new Exception("Cannot index " + indexing);
-            }
-        }
-
-        public static ProcStatus? IndexList(DMProcState state) {
-            DreamValue index = state.PopDreamValue();
-            DreamValue indexing = state.PopDreamValue();
-
-            Index(state, index, indexing);
-            return null;
-        }
-
-        public static ProcStatus? IndexListConditional(DMProcState state) {
-            DreamValue index = state.PopDreamValue();
-            DreamValue indexing = state.PopDreamValue();
-
-            if (indexing == DreamValue.Null) {
-                state.Push(DreamValue.Null);
-            } else {
-                Index(state, index, indexing);
-            }
-
-            return null;
-        }
-
         public static ProcStatus? Initial(DMProcState state) {
-            DreamValue owner = state.PopDreamValue();
+            DreamValue owner = state.Pop();
             string property = state.ReadString();
 
             DreamObjectDefinition objectDefinition;
@@ -309,15 +167,15 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsNull(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             state.Push(new DreamValue((value == DreamValue.Null) ? 1 : 0));
             return null;
         }
 
         public static ProcStatus? IsInList(DMProcState state) {
-            DreamValue listValue = state.PopDreamValue();
-            DreamValue value = state.PopDreamValue();
+            DreamValue listValue = state.Pop();
+            DreamValue value = state.Pop();
 
             if (listValue.Value != null) {
                 DreamObject listObject = listValue.GetValueAsDreamObject();
@@ -340,8 +198,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? ListAppend(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
-            DreamList list = state.PopDreamValue().GetValueAsDreamList();
+            DreamValue value = state.Pop();
+            DreamList list = state.Pop().GetValueAsDreamList();
 
             list.AddValue(value);
             state.Push(new DreamValue(list));
@@ -349,9 +207,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? ListAppendAssociated(DMProcState state) {
-            DreamValue index = state.PopDreamValue();
-            DreamValue value = state.PopDreamValue();
-            DreamList list = state.PopDreamValue().GetValueAsDreamList();
+            DreamValue index = state.Pop();
+            DreamValue value = state.Pop();
+            DreamList list = state.Pop().GetValueAsDreamList();
 
             list.SetValue(index, value);
             state.Push(new DreamValue(list));
@@ -363,14 +221,9 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushCopy(DMProcState state) {
-            state.PushCopy();
-            return null;
-        }
-
         public static ProcStatus? PushArgumentList(DMProcState state) {
             DreamProcArguments arguments = new DreamProcArguments(new(), new());
-            DreamList argList = state.PopDreamValue().GetValueAsDreamList();
+            DreamList argList = state.Pop().GetValueAsDreamList();
 
             if (argList != null)
             {
@@ -397,7 +250,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue[] argumentValues = new DreamValue[argumentCount];
 
             for (int i = argumentCount - 1; i >= 0; i--) {
-                argumentValues[i] = state.PopDreamValue();
+                argumentValues[i] = state.Pop();
             }
 
             for (int i = 0; i < argumentCount; i++) {
@@ -461,44 +314,16 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushSelf(DMProcState state) {
-            state.Push(new DreamProcIdentifierSelfProc(state));
-            return null;
-        }
-
-        public static ProcStatus? PushSrc(DMProcState state) {
-            state.Push(new DreamValue(state.Instance));
-            return null;
-        }
-
-        public static ProcStatus? PushUsr(DMProcState state) {
-            state.Push(new DreamValue(state.Usr));
-            return null;
-        }
-
         public static ProcStatus? PushString(DMProcState state) {
             state.Push(new DreamValue(state.ReadString()));
-            return null;
-        }
-
-        public static ProcStatus? PushSuperProc(DMProcState state) {
-            state.Push(new DreamProcIdentifierProc(state.Proc.SuperProc, state.Instance));
-            return null;
-        }
-
-        public static ProcStatus? SetLocalVariable(DMProcState state) {
-            int variableId = state.ReadByte();
-            DreamValue value = state.PopDreamValue();
-
-            state.LocalVariables[variableId] = value;
             return null;
         }
         #endregion Values
 
         #region Math
         public static ProcStatus? Add(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
             DreamValue? output = null;
 
             if (second.Value == null) {
@@ -536,74 +361,79 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Append(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PeekIdentifier();
-            DreamValue first = identifier.GetValue();
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                if (first.Value != null) {
-                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+            DreamValue result;
+            if (first.TryGetValueAsDreamObject(out var firstObj)) {
+                if (firstObj != null) {
+                    IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Pop();
+                        state.PopReference(reference);
                         state.Push(metaObject.OperatorAppend(first, second));
+
+                        return null;
                     } else {
                         throw new Exception("Invalid append operation on " + first + " and " + second);
                     }
                 } else {
-                    identifier.Assign(second);
+                    result = second;
                 }
             } else if (second.Value != null) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                        identifier.Assign(new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat()));
+                        result = new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat());
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                        identifier.Assign(new DreamValue(first.GetValueAsString() + second.GetValueAsString()));
+                        result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
                 }
+            } else {
+                result = first;
             }
 
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Increment(DMProcState state) {
-            IDreamProcIdentifier identifier = state.PopIdentifier();
-            DreamValue value = identifier.GetValue();
-
-            state.Push(value);
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             if (value.TryGetValueAsInteger(out int intValue)) {
-                identifier.Assign(new DreamValue(intValue + 1));
+                state.AssignReference(reference, new(intValue + 1));
             } else {
                 //If it's not a number, it turns into 1
-                identifier.Assign(new DreamValue(1));
+                state.AssignReference(reference, new(1));
             }
 
+            state.Push(value);
             return null;
         }
 
         public static ProcStatus? Decrement(DMProcState state) {
-            IDreamProcIdentifier identifier = state.PopIdentifier();
-            DreamValue value = identifier.GetValue();
-
-            state.Push(value);
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             if (value.TryGetValueAsInteger(out int intValue)) {
-                identifier.Assign(new DreamValue(intValue - 1));
+                state.AssignReference(reference, new(intValue - 1));
             } else {
                 //If it's not a number, it turns into -1
-                identifier.Assign(new DreamValue(-1));
+                state.AssignReference(reference, new(-1));
             }
 
+            state.Push(value);
             return null;
         }
 
         public static ProcStatus? BitAnd(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = DreamList.Create();
@@ -647,15 +477,15 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BitNot(DMProcState state) {
-            int value = state.PopDreamValue().GetValueAsInteger();
+            int value = state.Pop().GetValueAsInteger();
 
             state.Push(new DreamValue((~value) & 0xFFFFFF));
             return null;
         }
 
         public static ProcStatus? BitOr(DMProcState state) {                        // x | y
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             if (first.Type == DreamValue.DreamValueType.DreamObject) {              // Object | y
                 if (first.Value != null) {
@@ -682,47 +512,31 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BitShiftLeft(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            object first = state.Pop();
-            IDreamProcIdentifier firstIdentifier = first as IDreamProcIdentifier;
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
-            //Savefiles get special treatment
+            //TODO: Savefiles get special treatment
             //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-            if (first is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
-                index.Assign(second);
-                state.Push(new DreamValue(0));
 
-                return null;
-            }
-
-            DreamValue firstValue = firstIdentifier?.GetValue() ?? (DreamValue)first;
-
-            switch (firstValue.Type) {
+            switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (firstValue == DreamValue.Null)
-                    {
-                        if(firstIdentifier is DreamProcIdentifierVariable identVar && identVar.IdentifierName == "log" && identVar.Instance.IsSubtypeOf(DreamPath.World))
-                        {
-                            IoCManager.Resolve<IDreamManager>().WorldLog.Output(second);
-                            state.Push(DreamValue.Null);
-                            break;
-                        }
+                    if (first == DreamValue.Null) {
                         state.Push(new DreamValue(0));
                     } else {
-                        IDreamMetaObject metaObject = firstValue.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+                        IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
-                        state.Push(metaObject?.OperatorOutput(firstValue, second) ?? DreamValue.Null);
+                        state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
                     }
 
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:
-                    firstValue.GetValueAsDreamResource().Output(second);
+                    first.GetValueAsDreamResource().Output(second);
 
                     state.Push(DreamValue.Null);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    state.Push(new DreamValue(firstValue.GetValueAsInteger() << second.GetValueAsInteger()));
+                    state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     if(firstIdentifier is DreamProcIdentifierVariable stringVar && stringVar.IdentifierName == "log" && stringVar.Instance.IsSubtypeOf(DreamPath.World))
@@ -733,76 +547,51 @@ namespace OpenDreamRuntime.Procs {
                     }
                     throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
                 default:
-                    throw new Exception("Invalid bit shift left operation on " + firstValue + " and " + second);
+                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
             }
 
             return null;
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
-            object second = state.Pop();
-            IDreamProcIdentifier secondIdentifier = second as IDreamProcIdentifier;
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
-            //Savefiles get special treatment
+            //TODO: Savefiles get special treatment
             //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
-            if (state.Peek() is DreamProcIdentifierIndex index && index.Object.IsSubtypeOf(DreamPath.Savefile)) {
-                state.Pop();
-                state.Push(new DreamValue(0));
-
-                secondIdentifier.Assign(index.GetValue());
-                return null;
-            }
-
-            DreamValue first = state.PopDreamValue();
-            DreamValue secondValue = secondIdentifier?.GetValue() ?? (DreamValue)second;
 
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Float && secondValue.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() >> secondValue.GetValueAsInteger()));
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                state.Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
             } else {
-                throw new Exception("Invalid bit shift right operation on " + first + " and " + secondValue);
+                throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
             }
 
             return null;
         }
 
         public static ProcStatus? BitXor(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
-                List<DreamValue> values;
+            state.Push(BitXorValues(first, second));
+            return null;
+        }
 
-                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
-                    values = secondList.GetValues();
-                } else {
-                    values = new List<DreamValue>() { second };
-                }
+        public static ProcStatus? BitXorReference(DMProcState state) {
+            DreamValue second = state.Pop();
+            DMReference reference = state.ReadReference();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = BitXorValues(first, second);
 
-                foreach (DreamValue value in values) {
-                    bool inFirstList = list.ContainsValue(value);
-                    bool inSecondList = secondList.ContainsValue(value);
-
-                    if (inFirstList ^ inSecondList) {
-                        newList.AddValue(value);
-
-                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
-                    }
-                }
-
-                state.Push(new DreamValue(newList));
-            } else {
-                state.Push(new DreamValue(first.GetValueAsInteger() ^ second.GetValueAsInteger()));
-            }
-
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? BooleanAnd(DMProcState state) {
-            DreamValue a = state.PopDreamValue();
+            DreamValue a = state.Pop();
             int jumpPosition = state.ReadInt();
 
             if (!a.IsTruthy()) {
@@ -814,14 +603,14 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BooleanNot(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             state.Push(new DreamValue(value.IsTruthy() ? 0 : 1));
             return null;
         }
 
         public static ProcStatus? BooleanOr(DMProcState state) {
-            DreamValue a = state.PopDreamValue();
+            DreamValue a = state.Pop();
             int jumpPosition = state.ReadInt();
 
             if (a.IsTruthy()) {
@@ -832,84 +621,100 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Combine(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PeekIdentifier();
-            DreamValue first = identifier.GetValue();
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject) {
-                if (first.Value != null) {
-                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+            DreamValue result;
+            if (first.TryGetValueAsDreamObject(out var firstObj)) {
+                if (firstObj != null) {
+                    IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Pop();
+                        state.PopReference(reference);
                         state.Push(metaObject.OperatorCombine(first, second));
+
+                        return null;
                     } else {
                         throw new Exception("Invalid combine operation on " + first + " and " + second);
                     }
                 } else {
-                    identifier.Assign(second);
+                    result = second;
                 }
             } else if (second.Value != null) {
                 if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
+                    result = new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger());
                 } else if (first.Value == null) {
-                    identifier.Assign(second);
+                    result = second;
                 } else {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
+            } else {
+                throw new Exception("Invalid combine operation on " + first + " and " + second);
             }
 
+
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Divide(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
-            if (first.Value == null) {
-                state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsFloat() / second.GetValueAsFloat()));
-            } else {
-                throw new Exception("Invalid divide operation on " + first + " and " + second);
-            }
+            state.Push(DivideValues(first, second));
+            return null;
+        }
 
+        public static ProcStatus? DivideReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = DivideValues(first, second);
+
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Mask(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PeekIdentifier();
-            DreamValue first = identifier.GetValue();
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
 
+            DreamValue result;
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject when first.Value != null: {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Pop();
+                        state.PopReference(reference);
                         state.Push(metaObject.OperatorMask(first, second));
+
+                        return null;
                     } else {
                         throw new Exception("Invalid mask operation on " + first + " and " + second);
                     }
-                    break;
                 }
                 case DreamValue.DreamValueType.DreamObject:
-                    identifier.Assign(new DreamValue(0));
+                    result = new DreamValue(0);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    identifier.Assign(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
+                    result = new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger());
                     break;
                 default:
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
             }
 
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Modulus(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
@@ -920,30 +725,38 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? ModulusReference(DMProcState state) {
+            DreamValue second = state.Pop();
+            DMReference reference = state.ReadReference();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = ModulusValues(first, second);
+
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
         public static ProcStatus? Multiply(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
-            if (first.Value == null) {
-                state.Push(new DreamValue(0));
-            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                if (firstObject.ObjectDefinition.MetaObject == null)
-                    throw new Exception("Invalid multiply operation on " + first + " and " + second);
+            state.Push(MultiplyValues(first, second));
+            return null;
+        }
 
-                state.Push(firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second));
-            } else if (second == DreamValue.Null) {
-                state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsFloat() * second.GetValueAsFloat()));
-            } else {
-                throw new Exception("Invalid multiply operation on " + first + " and " + second);
-            }
+        public static ProcStatus? MultiplyReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = MultiplyValues(first, second);
 
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Negate(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             switch (value.Type) {
                 case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
@@ -954,8 +767,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Power(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
@@ -967,40 +780,42 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Remove(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            IDreamProcIdentifier identifier = state.PeekIdentifier();
-            DreamValue first = identifier.GetValue();
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
 
+            DreamValue result;
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject when first.Value != null: {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Pop();
+                        state.PopReference(reference);
                         state.Push(metaObject.OperatorRemove(first, second));
+
+                        return null;
                     } else {
                         throw new Exception("Invalid remove operation on " + first + " and " + second);
                     }
-                    break;
                 }
                 case DreamValue.DreamValueType.DreamObject when second.Type == DreamValue.DreamValueType.Float:
-                    identifier.Assign(new DreamValue(-second.GetValueAsFloat()));
+                    result = new DreamValue(-second.GetValueAsFloat());
                     break;
-                case DreamValue.DreamValueType.DreamObject:
-                    throw new Exception("Invalid remove operation on " + first + " and " + second);
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    identifier.Assign(new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat()));
+                    result = new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat());
                     break;
                 default:
                     throw new Exception("Invalid remove operation on " + first + " and " + second);
             }
 
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
         public static ProcStatus? Subtract(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
             DreamValue? output = null;
 
             if (second.Value == null) {
@@ -1039,32 +854,32 @@ namespace OpenDreamRuntime.Procs {
 
         #region Comparisons
         public static ProcStatus? CompareEquals(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsEqual(first, second) ? 1 : 0));
             return null;
         }
 
         public static ProcStatus? CompareEquivalent(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsEquivalent(first, second) ? 1 : 0));
             return null;
         }
 
         public static ProcStatus? CompareGreaterThan(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsGreaterThan(first, second) ? 1 : 0));
             return null;
         }
 
         public static ProcStatus? CompareGreaterThanOrEqual(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
             DreamValue result;
 
             if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
@@ -1076,16 +891,16 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CompareLessThan(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsLessThan(first, second) ? 1 : 0));
             return null;
         }
 
         public static ProcStatus? CompareLessThanOrEqual(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
             DreamValue result;
 
             if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
@@ -1097,16 +912,16 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CompareNotEquals(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsEqual(first, second) ? 0 : 1));
             return null;
         }
 
         public static ProcStatus? CompareNotEquivalent(DMProcState state) {
-            DreamValue second = state.PopDreamValue();
-            DreamValue first = state.PopDreamValue();
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
 
             state.Push(new DreamValue(IsEquivalent(first, second) ? 0 : 1));
             return null;
@@ -1114,9 +929,9 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? IsInRange(DMProcState state)
         {
-            DreamValue end = state.PopDreamValue();
-            DreamValue start = state.PopDreamValue();
-            DreamValue var = state.PopDreamValue();
+            DreamValue end = state.Pop();
+            DreamValue start = state.Pop();
+            DreamValue var = state.Pop();
             if (var.Type != DreamValue.DreamValueType.Float) var = new DreamValue(0f);
             if (start.Type != DreamValue.DreamValueType.Float) start = new DreamValue(0f);
             if (end.Type != DreamValue.DreamValueType.Float) end = new DreamValue(0f);
@@ -1126,8 +941,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsType(DMProcState state) {
-            DreamValue typeValue = state.PopDreamValue();
-            DreamValue value = state.PopDreamValue();
+            DreamValue typeValue = state.Pop();
+            DreamValue value = state.Pop();
             DreamPath type;
 
             if (typeValue.TryGetValueAsDreamObject(out DreamObject typeObject)) {
@@ -1153,27 +968,67 @@ namespace OpenDreamRuntime.Procs {
 
         #region Flow
         public static ProcStatus? Call(DMProcState state) {
-            DreamProcArguments arguments = state.PopArguments();
-            DreamProcIdentifierProc procIdentifier = (DreamProcIdentifierProc)state.PopIdentifier();
-            state.Call(procIdentifier.Proc, procIdentifier.Instance, arguments);
-            return ProcStatus.Called;
-        }
-
-        public static ProcStatus? CallSelf(DMProcState state) {
+            DMReference procRef = state.ReadReference();
             DreamProcArguments arguments = state.PopArguments();
 
-            state.Call(state.Proc, state.Instance, arguments);
+            DreamObject instance;
+            DreamProc proc;
+            switch (procRef.RefType) {
+                case DMReference.Type.Self: {
+                    instance = state.Instance;
+                    proc = state.Proc;
+                    break;
+                }
+                case DMReference.Type.SuperProc: {
+                    instance = state.Instance;
+                    proc = state.Proc.SuperProc;
+
+                    if (proc == null) {
+                        //Attempting to call a super proc where there is none will just return null
+                        //TODO: Make this a compiler error
+                        state.Push(DreamValue.Null);
+                        return null;
+                    }
+
+                    break;
+                }
+                case DMReference.Type.Proc: {
+                    DreamValue owner = state.Pop();
+                    if (!owner.TryGetValueAsDreamObject(out instance) || instance == null)
+                        throw new Exception($"Cannot dereference proc \"{procRef.ProcName}\" from {owner}");
+                    if (!instance.TryGetProc(procRef.ProcName, out proc))
+                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.ProcName}\"");
+
+                    break;
+                }
+                case DMReference.Type.GlobalProc: {
+                    instance = null;
+                    proc = state.DreamManager.GlobalProcs[procRef.ProcName];
+
+                    break;
+                }
+                case DMReference.Type.SrcProc: {
+                    instance = state.Instance;
+                    if (!instance.TryGetProc(procRef.ProcName, out proc))
+                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.ProcName}\"");
+
+                    break;
+                }
+                default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
+            }
+            
+            state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }
 
         public static ProcStatus? CallStatement(DMProcState state) {
             DreamProcArguments arguments = state.PopArguments();
-            DreamValue source = state.PopDreamValue();
+            DreamValue source = state.Pop();
 
             switch (source.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
                     DreamObject dreamObject = source.GetValueAsDreamObject();
-                    DreamValue procId = state.PopDreamValue();
+                    DreamValue procId = state.Pop();
                     DreamProc proc = null;
 
                     switch (procId.Type) {
@@ -1202,9 +1057,10 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DreamValue.DreamValueType.DreamPath: {
                     DreamPath fullProcPath = source.GetValueAsPath();
-                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) throw new Exception("Invalid call() proc \"" + fullProcPath + "\"");
+                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
+                        throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
                     string procName = fullProcPath.LastElement;
-                    DreamProc proc = state.Instance.GetProc(procName);
+                    DreamProc proc = state.DreamManager.GlobalProcs[procName];
 
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
@@ -1213,7 +1069,7 @@ namespace OpenDreamRuntime.Procs {
                     unsafe
                     {
                         var dllName = source.GetValueAsString();
-                        var procName = state.PopDreamValue().GetValueAsString();
+                        var procName = state.Pop().GetValueAsString();
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
 
@@ -1272,7 +1128,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? JumpIfFalse(DMProcState state) {
             int position = state.ReadInt();
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             if (!value.IsTruthy()) {
                 state.Jump(position);
@@ -1283,7 +1139,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? JumpIfTrue(DMProcState state) {
             int position = state.ReadInt();
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             if (value.IsTruthy()) {
                 state.Jump(position);
@@ -1292,11 +1148,12 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? JumpIfNullIdentifier(DMProcState state) {
+        public static ProcStatus? JumpIfNullDereference(DMProcState state) {
+            DMReference reference = state.ReadReference();
             int position = state.ReadInt();
 
-            var proc = state.PeekIdentifier();
-            if (proc is DreamProcIdentifierNull) {
+            if (state.IsNullDereference(reference)) {
+                state.Push(DreamValue.Null);
                 state.Jump(position);
             }
 
@@ -1304,12 +1161,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Return(DMProcState state) {
-            state.SetReturn(state.PopDreamValue());
+            state.SetReturn(state.Pop());
             return ProcStatus.Returned;
         }
 
         public static ProcStatus? Throw(DMProcState state) {
-            DreamValue value = state.PopDreamValue();
+            DreamValue value = state.Pop();
 
             if (value.TryGetValueAsDreamObjectOfType(DreamPath.Exception, out DreamObject exception)) {
                 throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
@@ -1320,8 +1177,8 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? SwitchCase(DMProcState state) {
             int casePosition = state.ReadInt();
-            DreamValue testValue = state.PopDreamValue();
-            DreamValue value = state.PopDreamValue();
+            DreamValue testValue = state.Pop();
+            DreamValue value = state.Pop();
 
             if (IsEqual(value, testValue)) {
                 state.Jump(casePosition);
@@ -1334,9 +1191,9 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? SwitchCaseRange(DMProcState state) {
             int casePosition = state.ReadInt();
-            DreamValue rangeUpper = state.PopDreamValue();
-            DreamValue rangeLower = state.PopDreamValue();
-            DreamValue value = state.PopDreamValue();
+            DreamValue rangeUpper = state.Pop();
+            DreamValue rangeLower = state.Pop();
+            DreamValue value = state.Pop();
 
             bool matchesLower = IsGreaterThan(value, rangeLower) || IsEqual(value, rangeLower);
             bool matchesUpper = IsLessThan(value, rangeUpper) || IsEqual(value, rangeUpper);
@@ -1353,7 +1210,7 @@ namespace OpenDreamRuntime.Procs {
         //Jump the current thread to after the spawn's code
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
-            float delay = state.PopDreamValue().GetValueAsFloat();
+            float delay = state.Pop().GetValueAsFloat();
             int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
@@ -1367,7 +1224,11 @@ namespace OpenDreamRuntime.Procs {
                 // Does the value of the delay mean anything?
             } else {
                 new Task(async () => {
-                    await Task.Delay(delayMilliseconds);
+                    if (delayMilliseconds != 0) {
+                        await Task.Delay(delayMilliseconds);
+                    } else {
+                        await Task.Yield();
+                    }
                     newContext.Resume();
                 }).Start(TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -1379,9 +1240,9 @@ namespace OpenDreamRuntime.Procs {
 
         #region Others
         public static ProcStatus? Browse(DMProcState state) {
-            string options = state.PopDreamValue().GetValueAsString();
-            DreamValue body = state.PopDreamValue();
-            DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
+            string options = state.Pop().GetValueAsString();
+            DreamValue body = state.Pop();
+            DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
@@ -1409,9 +1270,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? BrowseResource(DMProcState state) {
-            DreamValue filename = state.PopDreamValue();
-            DreamResource file = state.PopDreamValue().GetValueAsDreamResource();
-            DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
+            DreamValue filename = state.Pop();
+            DreamResource file = state.Pop().GetValueAsDreamResource();
+            DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             DreamObject client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
@@ -1432,16 +1293,16 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? DeleteObject(DMProcState state) {
-            DreamObject dreamObject = state.PopDreamValue().GetValueAsDreamObject();
+            DreamObject dreamObject = state.Pop().GetValueAsDreamObject();
 
             dreamObject?.Delete(state.DreamManager);
             return null;
         }
 
         public static ProcStatus? OutputControl(DMProcState state) {
-            string control = state.PopDreamValue().GetValueAsString();
-            DreamValue message = state.PopDreamValue();
-            DreamObject receiver = state.PopDreamValue().GetValueAsDreamObject();
+            string control = state.Pop().GetValueAsString();
+            DreamValue message = state.Pop();
+            DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             if (receiver == state.DreamManager.WorldInstance) {
                 //Same as "world << ..."
@@ -1473,17 +1334,17 @@ namespace OpenDreamRuntime.Procs {
             DreamObject recipientMob;
             DreamValue title, message, defaultValue;
 
-            DreamValue firstArg = state.PopDreamValue();
+            DreamValue firstArg = state.Pop();
             if (firstArg.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out recipientMob)) {
-                message = state.PopDreamValue();
-                title = state.PopDreamValue();
-                defaultValue = state.PopDreamValue();
+                message = state.Pop();
+                title = state.Pop();
+                defaultValue = state.Pop();
             } else {
                 recipientMob = state.Usr;
                 message = firstArg;
-                title = state.PopDreamValue();
-                defaultValue = state.PopDreamValue();
-                state.PopDreamValue(); //Fourth argument, should be null
+                title = state.Pop();
+                defaultValue = state.Pop();
+                state.Pop(); //Fourth argument, should be null
             }
 
             DreamObject clientObject;
@@ -1501,17 +1362,22 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? LocateCoord(DMProcState state) {
-            int z = state.PopDreamValue().GetValueAsInteger();
-            int y = state.PopDreamValue().GetValueAsInteger();
-            int x = state.PopDreamValue().GetValueAsInteger();
+            int z = state.Pop().GetValueAsInteger();
+            int y = state.Pop().GetValueAsInteger();
+            int x = state.Pop().GetValueAsInteger();
 
             state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }
 
         public static ProcStatus? Locate(DMProcState state) {
-            DreamObject container = state.PopDreamValue().GetValueAsDreamObject();
-            DreamValue value = state.PopDreamValue();
+            if (!state.Pop().TryGetValueAsDreamObject(out var container))
+            {
+                state.Push(DreamValue.Null);
+                return null;
+            }
+
+            DreamValue value = state.Pop();
 
             DreamList containerList;
             if (container != null && container.IsSubtypeOf(DreamPath.Atom)) {
@@ -1569,8 +1435,8 @@ namespace OpenDreamRuntime.Procs {
             (DreamValue Value, float CumulativeWeight)[] values = new (DreamValue, float)[count];
             float totalWeight = 0;
             for (int i = 0; i < count; i++) {
-                DreamValue value = state.PopDreamValue();
-                float weight = state.PopDreamValue().GetValueAsFloat();
+                DreamValue value = state.Pop();
+                float weight = state.Pop().GetValueAsFloat();
 
                 totalWeight += weight;
                 values[i] = (value, totalWeight);
@@ -1592,7 +1458,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue[] values;
             if (count == 1) {
-                DreamValue value = state.PopDreamValue();
+                DreamValue value = state.Pop();
 
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
                     values = list.GetValues().ToArray();
@@ -1603,7 +1469,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 values = new DreamValue[count];
                 for (int i = 0; i < count; i++) {
-                    values[i] = state.PopDreamValue();
+                    values[i] = state.Pop();
                 }
             }
 
@@ -1612,7 +1478,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsSaved(DMProcState state) {
-            DreamValue owner = state.PopDreamValue();
+            DreamValue owner = state.Pop();
             string property = state.ReadString();
 
             DreamObjectDefinition objectDefinition;
@@ -1638,7 +1504,6 @@ namespace OpenDreamRuntime.Procs {
         #endregion Others
 
         #region Helpers
-
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
@@ -1745,6 +1610,68 @@ namespace OpenDreamRuntime.Procs {
                     }
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }
+            }
+        }
+
+        private static DreamValue MultiplyValues(DreamValue first, DreamValue second) {
+            if (first == DreamValue.Null || second == DreamValue.Null) {
+                return new(0);
+            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
+                if (firstObject.ObjectDefinition.MetaObject == null)
+                    throw new Exception("Invalid multiply operation on " + first + " and " + second);
+
+                return firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second);
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                return new(first.GetValueAsFloat() * second.GetValueAsFloat());
+            } else {
+                throw new Exception("Invalid multiply operation on " + first + " and " + second);
+            }
+        }
+
+        private static DreamValue DivideValues(DreamValue first, DreamValue second) {
+            if (first.Value == null) {
+                return new(0);
+            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                return new(first.GetValueAsFloat() / second.GetValueAsFloat());
+            } else {
+                throw new Exception("Invalid divide operation on " + first + " and " + second);
+            }
+        }
+
+        private static DreamValue BitXorValues(DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsDreamList(out DreamList list)) {
+                DreamList newList = DreamList.Create();
+                List<DreamValue> values;
+
+                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
+                    values = secondList.GetValues();
+                } else {
+                    values = new List<DreamValue>() { second };
+                }
+
+                foreach (DreamValue value in values) {
+                    bool inFirstList = list.ContainsValue(value);
+                    bool inSecondList = secondList.ContainsValue(value);
+
+                    if (inFirstList ^ inSecondList) {
+                        newList.AddValue(value);
+
+                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
+                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
+                    }
+                }
+
+                return new DreamValue(newList);
+            } else {
+                return new DreamValue(first.GetValueAsInteger() ^ second.GetValueAsInteger());
+            }
+        }
+
+        private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                return new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger());
+            } else {
+                throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }
         }
         #endregion Helpers

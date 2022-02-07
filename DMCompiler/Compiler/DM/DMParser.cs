@@ -1782,7 +1782,7 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 while (Check(TokenType.DM_StarStar)) {
                     Whitespace();
-                    DMASTExpression b = ExpressionIn();
+                    DMASTExpression b = ExpressionUnary();
                     if (b == null) Error("Expected an expression");
                     a = new DMASTPower(loc, a, b);
                 }
@@ -2018,32 +2018,43 @@ namespace DMCompiler.Compiler.DM {
                         } else if (c == '\\' && bracketNesting == 0) {
                             string escapeSequence = String.Empty;
 
-                            do {
-                                c = tokenValue[++i];
-                                escapeSequence += c;
+                            if (i == tokenValue.Length) {
+                                Error("Invalid escape sequence");
+                            }
+                            c = tokenValue[++i];
 
-                                if (escapeSequence == "[" || escapeSequence == "]") {
+                            if (char.IsLetter(c)) {
+                                while (i < tokenValue.Length && char.IsLetter(tokenValue[i])) {
+                                    escapeSequence += tokenValue[i++];
+                                }
+                                i--;
+                                if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                    stringBuilder.Append('\\');
                                     stringBuilder.Append(escapeSequence);
-                                    break;
-                                } else if (escapeSequence == "\"" || escapeSequence == "\\" || escapeSequence == "'") {
-                                    stringBuilder.Append(escapeSequence);
-                                    break;
-                                } else if (escapeSequence == "n") {
+                                } else if (escapeSequence.StartsWith("n")) {
                                     stringBuilder.Append('\n');
-                                    break;
-                                } else if (escapeSequence == "t") {
+                                    stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                } else if (escapeSequence.StartsWith("t")) {
                                     stringBuilder.Append('\t');
-                                    break;
+                                    stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                 } else if (escapeSequence == "ref") {
                                     currentInterpolationType = StringFormatTypes.Ref;
-                                    break;
-                                } else if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { //Unimplemented escape sequence
-                                    break;
+                                } else {
+                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
-                            } while (c != ' ' && i < tokenValue.Length - 1);
-
-                            if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
-                                Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                            } else {
+                                escapeSequence += c;
+                                if (escapeSequence == "[" || escapeSequence == "]") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == "<" || escapeSequence == ">") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == "\"" || escapeSequence == "'" || escapeSequence == "\\") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else if (escapeSequence == " ") {
+                                    stringBuilder.Append(escapeSequence);
+                                } else { //Unimplemented escape sequence
+                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                }
                             }
                         } else if (bracketNesting == 0) {
                             stringBuilder.Append(c);
@@ -2152,7 +2163,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression ParseProcCall(DMASTExpression expression) {
-            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTDereference)) return expression;
+            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTDereference or DMASTGlobalIdentifier)) return expression;
 
             Whitespace();
 
@@ -2168,11 +2179,15 @@ namespace DMCompiler.Compiler.DM {
 
             DMASTCallParameter[] callParameters = ProcCall();
             if (callParameters != null) {
-                if (expression is DMASTDereference deref) {
+                if (expression is DMASTGlobalIdentifier gid) {
+                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier);
+                    return new DMASTProcCall(gid.Location, globalProc, callParameters);
+                }
+                else if (expression is DMASTDereference deref) {
                     DMASTDereferenceProc derefProc = new DMASTDereferenceProc(deref.Location, deref.Expression, deref.Property, deref.Type, deref.Conditional);
-
                     return new DMASTProcCall(expression.Location, derefProc, callParameters);
-                } else if (expression is DMASTCallable callable) {
+                }
+                else if (expression is DMASTCallable callable) {
                     return new DMASTProcCall(expression.Location, callable, callParameters);
                 }
 

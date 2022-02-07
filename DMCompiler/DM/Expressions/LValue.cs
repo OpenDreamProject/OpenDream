@@ -1,5 +1,6 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {
@@ -10,10 +11,18 @@ namespace DMCompiler.DM.Expressions {
             _path = path;
         }
 
-        // At the moment this generally always matches EmitPushValue for any modifiable type
-        public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
-            EmitPushValue(dmObject, proc);
-            return IdentifierPushResult.Unconditional;
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            (DMReference reference, bool conditional) = EmitReference(dmObject, proc);
+
+            if (conditional) {
+                string skipLabel = proc.NewLabelName();
+
+                proc.JumpIfNullDereference(reference, skipLabel);
+                proc.PushReferenceValue(reference);
+                proc.AddLabel(skipLabel);
+            } else {
+                proc.PushReferenceValue(reference);
+            }
         }
 
         public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
@@ -27,8 +36,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, path)
         {}
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushSrc();
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.Src, false);
         }
     }
 
@@ -38,8 +47,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.Mob)
         {}
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushUsr();
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.Usr, false);
         }
     }
 
@@ -49,24 +58,22 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.List)
         {}
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.GetIdentifier("args");
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.Args, false);
         }
     }
 
     // Identifier of local variable
     class Local : LValue {
-        string Name { get; }
         DMProc.LocalVariable LocalVar { get; }
 
-        public Local(Location location, DMProc.LocalVariable localVar, string name)
+        public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
-            Name = name;
             LocalVar = localVar;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushLocalVariable(Name);
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.CreateLocal(LocalVar.Id), false);
         }
 
         public override bool TryAsConstant(out Constant constant) {
@@ -89,18 +96,18 @@ namespace DMCompiler.DM.Expressions {
             Variable = variable;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.GetIdentifier(Variable.Name);
-        }
-
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            proc.PushSrc();
+            proc.PushReferenceValue(DMReference.Src);
             proc.Initial(Variable.Name);
         }
 
         public void EmitPushIsSaved(DMProc proc) {
-            proc.PushSrc();
+            proc.PushReferenceValue(DMReference.Src);
             proc.IsSaved(Variable.Name);
+        }
+
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.CreateSrcField(Variable.Name), false);
         }
 
         public override bool TryAsConstant(out Constant constant) {
@@ -122,12 +129,12 @@ namespace DMCompiler.DM.Expressions {
             Id = id;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.GetGlobal(Id);
-        }
-
         public void EmitPushIsSaved(DMProc proc) {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
+        }
+
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            return (DMReference.CreateGlobal(Id), false);
         }
 
         public override bool TryAsConstant(out Constant constant) {

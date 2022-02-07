@@ -91,7 +91,7 @@ namespace DMCompiler.DM.Visitors {
             } else {
                 DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
                 if (localVar != null && _scopeMode == "normal") {
-                    Result = new Expressions.Local(identifier.Location, localVar, name);
+                    Result = new Expressions.Local(identifier.Location, localVar);
                     return;
                 }
 
@@ -139,19 +139,21 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
-            if (_scopeMode == "static")
-            {
-                if (!DMObjectTree.GetDMObject(DreamPath.Root).HasProc(procIdentifier.Identifier))
-                {
-                    throw new CompileErrorException(new CompilerError(procIdentifier.Location, $"Global proc {procIdentifier.Identifier} does not exist"));
+            if (_scopeMode == "static") {
+                Result = new Expressions.GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
+            } else {
+                if (_dmObject.HasProc(procIdentifier.Identifier)) {
+                    Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
+                } else if (DMObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out _)) {
+                    Result = new Expressions.GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
+                } else {
+                    throw new CompileErrorException(procIdentifier.Location, $"Type {_dmObject.Path} does not have a proc named \"{procIdentifier.Identifier}\"");
                 }
-                // TODO: substitute this to global.proc()
-                Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
             }
-            else
-            {
-                Result = new Expressions.Proc(procIdentifier.Location, procIdentifier.Identifier);
-            }
+        }
+
+        public void VisitCallableGlobalProc(DMASTCallableGlobalProc globalProc) {
+            Result = new Expressions.GlobalProc(globalProc.Location, globalProc.Identifier);
         }
 
         public void VisitProcCall(DMASTProcCall procCall) {

@@ -1,6 +1,7 @@
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -35,32 +36,6 @@ namespace DMCompiler.DM.Expressions {
             _path = path;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-
-            if (_conditional) {
-                proc.DereferenceConditional(_propertyName);
-            } else {
-                proc.Dereference(_propertyName);
-            }
-        }
-
-        public override IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-
-            if (_conditional) {
-                proc.DereferenceConditional(_propertyName);
-            } else {
-                proc.Dereference(_propertyName);
-            }
-
-            if (_conditional) {
-                return IdentifierPushResult.Conditional;
-            } else {
-                return IdentifierPushResult.Unconditional;
-            }
-        }
-
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             proc.Initial(_propertyName);
@@ -69,6 +44,11 @@ namespace DMCompiler.DM.Expressions {
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             proc.IsSaved(_propertyName);
+        }
+
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            _expr.EmitPushValue(dmObject, proc);
+            return (DMReference.CreateField(_propertyName), _conditional);
         }
     }
 
@@ -103,16 +83,9 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-
-            if (_conditional) {
-                proc.DereferenceProcConditional(_field);
-                return ProcPushResult.Conditional;
-            } else {
-                proc.DereferenceProc(_field);
-                return ProcPushResult.Unconditional;
-            }
+            return (DMReference.CreateProc(_field), _conditional);
         }
 
         public (DMObject ProcOwner, DMProc Proc) GetProc() {
@@ -137,15 +110,11 @@ namespace DMCompiler.DM.Expressions {
             _conditional = conditional;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             _index.EmitPushValue(dmObject, proc);
 
-            if (_conditional) {
-                proc.IndexListConditional();
-            } else {
-                proc.IndexList();
-            }
+            return (DMReference.ListIndex, _conditional);
         }
     }
 }

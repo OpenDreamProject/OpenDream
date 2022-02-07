@@ -10,7 +10,7 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IInputManager _inputManager = default!;
 
         public override void Initialize() {
-            CommandBinds.Builder.Bind(EngineKeyFunctions.Use, new PointerInputCmdHandler(OnUse)).Register<MouseInputSystem>();
+            CommandBinds.Builder.Bind(EngineKeyFunctions.Use, new PointerInputCmdHandler(OnUse, outsidePrediction: true)).Register<MouseInputSystem>();
         }
 
         private bool OnUse(in PointerInputCmdHandler.PointerInputCmdArgs args) {

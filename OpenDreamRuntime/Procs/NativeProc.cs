@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
@@ -7,6 +8,28 @@ using OpenDreamShared.Dream.Procs;
 namespace OpenDreamRuntime.Procs {
     public class NativeProc : DreamProc {
         public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
+
+        public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
+            List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
+            DreamProcAttribute procAttribute = (DreamProcAttribute)attributes.Find(attribute => attribute is DreamProcAttribute);
+            if (procAttribute == null) throw new ArgumentException();
+
+            Dictionary<string, DreamValue> defaultArgumentValues = null;
+            var argumentNames = new List<string>();
+            List<Attribute> parameterAttributes = attributes.FindAll(attribute => attribute is DreamProcParameterAttribute);
+            foreach (Attribute attribute in parameterAttributes) {
+                DreamProcParameterAttribute parameterAttribute = (DreamProcParameterAttribute)attribute;
+
+                argumentNames.Add(parameterAttribute.Name);
+                if (parameterAttribute.DefaultValue != default) {
+                    if (defaultArgumentValues == null) defaultArgumentValues = new Dictionary<string, DreamValue>();
+
+                    defaultArgumentValues.Add(parameterAttribute.Name, new DreamValue(parameterAttribute.DefaultValue));
+                }
+            }
+
+            return (procAttribute.Name, defaultArgumentValues, argumentNames);
+        }
 
         public class State : ProcState
         {

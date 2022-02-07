@@ -106,15 +106,8 @@ namespace DMCompiler.DM {
             if (InitializationProc == null) {
                 InitializationProc = new DMProc(null);
 
-                InitializationProc.PushSuperProc();
-                InitializationProc.JumpIfFalse("no_super");
-
-                InitializationProc.PushSuperProc();
                 InitializationProc.PushArguments(0);
-                InitializationProc.Call();
-
-                InitializationProc.AddLabel("no_super");
-                InitializationProc.ResolveLabels();
+                InitializationProc.Call(DMReference.SuperProc);
             }
         }
 

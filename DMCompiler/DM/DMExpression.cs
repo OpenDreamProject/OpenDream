@@ -64,14 +64,10 @@ namespace DMCompiler.DM {
         // May throw if this expression is unable to be pushed to the stack
         public abstract void EmitPushValue(DMObject dmObject, DMProc proc);
 
-        // Emits code that pushes the identifier of this expression to the proc's stack
-        // May throw if this expression is unable to be written
-        public virtual IdentifierPushResult EmitIdentifier(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to assign to r-value");
-        }
-
-        public virtual ProcPushResult EmitPushProc(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use non-proc expression as proc");
+        // Emits a reference that is to be used in an opcode that assigns/gets a value
+        // May throw if this expression is unable to be referenced
+        public virtual (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
         public virtual DreamPath? Path => null;

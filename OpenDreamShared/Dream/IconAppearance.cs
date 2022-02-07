@@ -1,24 +1,25 @@
 ﻿using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
+using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public class IconAppearance : IEquatable<IconAppearance> {
-        public string Icon;
-        public string IconState;
-        public AtomDirection Direction;
-        public Vector2i PixelOffset;
-        public Color Color = Color.White;
-        public float Layer;
-        public int Invisibility;
-        public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-        public List<uint> Overlays = new();
-        public List<uint> Underlays = new();
-        public float[] Transform = new float[6] {   1, 0,
-                                                    0, 1,
-                                                    0, 0 };
+        [ViewVariables] public string Icon;
+        [ViewVariables] public string IconState;
+        [ViewVariables] public AtomDirection Direction;
+        [ViewVariables] public Vector2i PixelOffset;
+        [ViewVariables] public Color Color = Color.White;
+        [ViewVariables] public float Layer;
+        [ViewVariables] public int Invisibility;
+        [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
+        [ViewVariables] public List<uint> Overlays = new();
+        [ViewVariables] public List<uint> Underlays = new();
+        [ViewVariables] public float[] Transform = new float[6] {   1, 0,
+                                                                    0, 1,
+                                                                    0, 0 };
 
         public IconAppearance() { }
 

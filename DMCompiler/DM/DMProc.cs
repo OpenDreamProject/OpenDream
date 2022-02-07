@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
@@ -45,7 +46,8 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
-        public string Name { get => _astDefinition.Name; }
+        public string Name { get => _astDefinition?.Name; }
+        public bool IsOverride = false;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -60,8 +62,9 @@ namespace DMCompiler.DM {
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
 
-        public DMProc(DMASTProcDefinition astDefinition) {
+        public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
+            IsOverride = _astDefinition?.IsOverride ?? false; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
@@ -178,46 +181,34 @@ namespace DMCompiler.DM {
             return null;
         }
 
+        public DMReference GetLocalVariableReference(string name) {
+            return DMReference.CreateLocal(GetLocalVariable(name).Id);
+        }
+
         public void Error() {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
-        public void GetIdentifier(string identifier) {
+        public void PushReferenceValue(DMReference reference) {
             GrowStack(1);
-            WriteOpcode(DreamProcOpcode.GetIdentifier);
-            WriteString(identifier);
-        }
-
-        public void GetGlobal(int id) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.GetGlobal);
-            WriteInt(id);
-        }
-
-        public void PushLocalVariable(string name) {
-            LocalVariable localVar = GetLocalVariable(name);
-
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushLocalVariable);
-            WriteByte((byte)localVar.Id);
-        }
-
-        public void GetProc(string identifier) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.GetProc);
-            WriteString(identifier);
+            WriteOpcode(DreamProcOpcode.PushReferenceValue);
+            WriteReference(reference);
         }
 
         public void CreateListEnumerator() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
         public void CreateRangeEnumerator() {
+            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
-        public void Enumerate() {
+        public void Enumerate(DMReference output) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Enumerate);
+            WriteReference(output);
         }
 
         public void DestroyEnumerator() {
@@ -346,11 +337,6 @@ namespace DMCompiler.DM {
             Jump(label + "_codelabel");
         }
 
-        public void PushCopy() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushCopy);
-        }
-
         public void Pop()
         {
             ShrinkStack(1);
@@ -390,13 +376,13 @@ namespace DMCompiler.DM {
         }
 
         public void BooleanOr(string endLabel) {
-            //Either shrinks the stack 1 or 0. Assume 0.
+            ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanOr);
             WriteLabel(endLabel);
         }
 
         public void BooleanAnd(string endLabel) {
-            //Either shrinks the stack 1 or 0. Assume 0.
+            ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanAnd);
             WriteLabel(endLabel);
         }
@@ -427,19 +413,17 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
-        public void JumpIfNullIdentifier(string label) {
-            WriteOpcode(DreamProcOpcode.JumpIfNullIdentifier);
+        //Jumps to the label and pushes null if the reference is dereferencing null
+        public void JumpIfNullDereference(DMReference reference, string label) {
+            //Either grows the stack by 0 or 1. Assume 0.
+            WriteOpcode(DreamProcOpcode.JumpIfNullDereference);
+            WriteReference(reference, affectStack: false);
             WriteLabel(label);
         }
 
-        public void Call() {
-            ShrinkStack(1);
+        public void Call(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Call);
-        }
-
-        public void CallSelf() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.CallSelf);
+            WriteReference(reference);
         }
 
         public void CallStatement() {
@@ -467,35 +451,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Throw);
         }
 
-        public void Assign() {
-            ShrinkStack(1);
+        public void Assign(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Assign);
-        }
-
-        public void SetLocalVariable(string name) {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.SetLocalVariable);
-            WriteByte((byte)GetLocalVariable(name).Id);
-        }
-
-        public void Dereference(string identifier) {
-            WriteOpcode(DreamProcOpcode.Dereference);
-            WriteString(identifier);
-        }
-
-        public void DereferenceConditional(string identifier) {
-            WriteOpcode(DreamProcOpcode.DereferenceConditional);
-            WriteString(identifier);
-        }
-
-        public void DereferenceProc(string identifier) {
-            WriteOpcode(DreamProcOpcode.DereferenceProc);
-            WriteString(identifier);
-        }
-
-        public void DereferenceProcConditional(string identifier) {
-            WriteOpcode(DreamProcOpcode.DereferenceProcConditional);
-            WriteString(identifier);
+            WriteReference(reference);
         }
 
         public void CreateObject() {
@@ -531,9 +489,19 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Multiply);
         }
 
+        public void MultiplyReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.MultiplyReference);
+            WriteReference(reference);
+        }
+
         public void Divide() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Divide);
+        }
+
+        public void DivideReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.DivideReference);
+            WriteReference(reference);
         }
 
         public void Modulus() {
@@ -541,37 +509,46 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
+        public void ModulusReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.ModulusReference);
+            WriteReference(reference);
+        }
+
         public void Power() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Power);
         }
 
-        public void Append() {
-            ShrinkStack(1);
+        public void Append(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Append);
+            WriteReference(reference);
         }
 
-        public void Increment() {
+        public void Increment(DMReference reference) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Increment);
+            WriteReference(reference);
         }
 
-        public void Decrement() {
+        public void Decrement(DMReference reference) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Decrement);
+            WriteReference(reference);
         }
 
-        public void Remove() {
-            ShrinkStack(1);
+        public void Remove(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Remove);
+            WriteReference(reference);
         }
 
-        public void Combine() {
-            ShrinkStack(1);
+        public void Combine(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Combine);
+            WriteReference(reference);
         }
 
-        public void Mask() {
-            ShrinkStack(1);
+        public void Mask(DMReference reference) {
             WriteOpcode(DreamProcOpcode.Mask);
+            WriteReference(reference);
         }
 
         public void BitShiftLeft() {
@@ -596,6 +573,11 @@ namespace DMCompiler.DM {
         public void BinaryXor() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitXor);
+        }
+
+        public void BinaryXorReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.BitXorReference);
+            WriteReference(reference);
         }
 
         public void BinaryOr() {
@@ -643,26 +625,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
         }
 
-        public void PushSuperProc() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushSuperProc);
-        }
-
-        public void PushSelf() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushSelf);
-        }
-
-        public void PushSrc() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushSrc);
-        }
-
-        public void PushUsr() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushUsr);
-        }
-
         public void PushFloat(float value) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushFloat);
@@ -703,16 +665,6 @@ namespace DMCompiler.DM {
             ShrinkStack(value.Count((char c) => c == 0xFF) - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
-        }
-
-        public void IndexList() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.IndexList);
-        }
-
-        public void IndexListConditional() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.IndexListConditional);
         }
 
         public void IsInList() {
@@ -793,6 +745,28 @@ namespace DMCompiler.DM {
         private void WriteLabel(string labelName) {
             _unresolvedLabels.Add((Bytecode.Position, labelName));
             WriteInt(0); //Resolved later
+        }
+
+        private void WriteReference(DMReference reference, bool affectStack = true) {
+            WriteByte((byte)reference.RefType);
+
+            switch (reference.RefType) {
+                case DMReference.Type.Local: WriteByte(reference.LocalId); break;
+                case DMReference.Type.Global: WriteInt(reference.GlobalId); break;
+                case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.SrcField: WriteString(reference.FieldName); break;
+                case DMReference.Type.Proc: WriteString(reference.ProcName); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.GlobalProc: WriteString(reference.ProcName); break;
+                case DMReference.Type.SrcProc: WriteString(reference.ProcName); break;
+                case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+                case DMReference.Type.SuperProc:
+                case DMReference.Type.Src:
+                case DMReference.Type.Self:
+                case DMReference.Type.Args:
+                case DMReference.Type.Usr:
+                    break;
+                default: throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
+            }
         }
 
         private void GrowStack(int size) {

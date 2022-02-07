@@ -23,7 +23,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 switch (c) {
                     case ' ':
                     case '\t': token = CreateToken(TokenType.DM_Preproc_Whitespace, c); Advance(); break;
-                    case '\\':
                     case '}':
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
@@ -34,6 +33,14 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
+                    case '\\': {
+                        //An escaped identifier.
+                        //The next character turns into an identifier.
+                        token = CreateToken(TokenType.DM_Preproc_Identifier, Advance());
+
+                        Advance();
+                        break;
+                    }
                     case '>': {
                         switch (Advance()) {
                             case '>': {

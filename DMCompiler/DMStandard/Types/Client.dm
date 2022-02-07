@@ -5,6 +5,9 @@
 
 	var/atom/statobj
 	var/statpanel
+	
+	var/tag
+	var/type = /client
 
 	var/mob/mob
 	var/atom/eye

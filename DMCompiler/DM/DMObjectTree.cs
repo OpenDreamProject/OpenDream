@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
@@ -9,6 +10,7 @@ namespace DMCompiler.DM {
 
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
+        public static Dictionary<string, DMProc> GlobalProcs = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc = new DMProc(null);
@@ -58,6 +60,10 @@ namespace DMCompiler.DM {
                 _pathToTypeId[path] = dmObject.Id;
                 return dmObject;
             }
+        }
+
+        public static bool TryGetGlobalProc(string name, out DMProc proc) {
+            return GlobalProcs.TryGetValue(name, out proc);
         }
 
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
@@ -113,6 +119,10 @@ namespace DMCompiler.DM {
             return id;
         }
 
+        public static void AddGlobalProc(string name, DMProc proc) {
+            GlobalProcs.Add(name, proc);
+        }
+        
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
             if (!_globalInitAssigns.TryGetValue(owningType.Path, out var list)) {
                 list = new List<(int GlobalId, DMExpression Value)>();
@@ -130,9 +140,8 @@ namespace DMCompiler.DM {
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
-                        GlobalInitProc.GetGlobal(assign.GlobalId);
                         assign.Value.EmitPushValue(root, GlobalInitProc);
-                        GlobalInitProc.Assign();
+                        GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {
                         DMCompiler.Error(e.Error);
                     }

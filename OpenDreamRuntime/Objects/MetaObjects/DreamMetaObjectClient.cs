@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
@@ -62,6 +62,21 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     screenList.ValueAssigned += ScreenValueAssigned;
                     screenList.BeforeValueRemoved += ScreenBeforeValueRemoved;
                     _screenListToClient[screenList] = dreamObject;
+                    break;
+                }
+                case "images":
+                {
+                    //TODO properly implement this var
+                    if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                        oldList.Cut();
+                    }
+
+                    DreamList imageList;
+                    if (!variableValue.TryGetValueAsDreamList(out imageList)) {
+                        imageList = DreamList.Create();
+                    }
+
+                    dreamObject.SetVariableValue(variableName, new DreamValue(imageList));
                     break;
                 }
                 case "statpanel": {

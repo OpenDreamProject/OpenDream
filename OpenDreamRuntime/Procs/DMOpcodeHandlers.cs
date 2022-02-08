@@ -538,8 +538,6 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
-                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
                 default:
                     throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
             }

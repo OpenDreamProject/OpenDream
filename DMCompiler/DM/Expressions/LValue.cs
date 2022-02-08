@@ -85,6 +85,12 @@ namespace DMCompiler.DM.Expressions {
             constant = null;
             return false;
         }
+
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            // This happens silently in BYOND
+            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a local variable returns the current value"));
+            EmitPushValue(dmObject, proc);
+        }
     }
 
     // Identifier of field

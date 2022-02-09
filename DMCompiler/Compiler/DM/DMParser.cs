@@ -186,24 +186,8 @@ namespace DMCompiler.Compiler.DM {
                             Whitespace();
 
                             DMASTExpression value = null;
-                            if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
-                            {
-                                //Type information
-                                if (!varPath.IsDescendantOf(DreamPath.List)) {
-                                    var elements = varPath.Elements.ToList();
-                                    elements.Insert(elements.IndexOf("var") + 1, "list");
-                                    varPath = new DreamPath("/" + String.Join("/", elements));
-                                }
+                            PathArray(ref varPath, out value);
 
-                                DMASTExpression size = Expression();
-                                ConsumeRightBracket();
-                                Whitespace();
-
-                                if (size is not null) {
-                                    value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
-                                        new[] { new DMASTCallParameter(loc, size) });
-                                }
-                            }
                             if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
                                 value = Expression();
@@ -317,6 +301,32 @@ namespace DMCompiler.Compiler.DM {
             } else {
                 return null;
             }
+        }
+
+        public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
+            //TODO: Multidimensional lists
+            implied_value = null;
+            if (Check(TokenType.DM_LeftBracket)) 
+            {
+                var loc = Current().Location;
+                if (!path.IsDescendantOf(DreamPath.List)) {
+                    var elements = path.Elements.ToList();
+                    elements.Insert(elements.IndexOf("var") + 1, "list");
+                    path = new DreamPath("/" + String.Join("/", elements));
+                }
+
+                Whitespace();
+                DMASTExpression size = Expression();
+                ConsumeRightBracket();
+                Whitespace();
+
+                if (size is not null) {
+                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
+                        new[] { new DMASTCallParameter(loc, size) });
+                }
+                return true;
+            }
+            return false;
         }
 
         public DMASTCallable Callable() {
@@ -643,25 +653,7 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression value = null;
                 Whitespace();
 
-                //TODO: Multidimensional lists
-                if (Check(TokenType.DM_LeftBracket)) {
-                    //Type information
-                    if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                        var elements = varPath.Path.Elements.ToList();
-                        elements.Insert(elements.IndexOf("var") + 1, "list");
-                        varPath = new DMASTPath(loc, new DreamPath("/" + String.Join("/", elements)));
-                    }
-
-                    Whitespace();
-                    DMASTExpression size = Expression();
-                    ConsumeRightBracket();
-                    Whitespace();
-
-                    if (size is not null) {
-                        value = new DMASTNewPath(loc, new DMASTPath(loc,DreamPath.List),
-                            new[] { new DMASTCallParameter(loc, size) });
-                    }
-                }
+                PathArray(ref varPath.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
                     if (value != null) Warning("List doubly initialized");
@@ -1431,17 +1423,12 @@ namespace DMCompiler.Compiler.DM {
             if (path != null) {
                 var loc = Current().Location;
                 Whitespace();
-                if (Check(TokenType.DM_LeftBracket)) {
-                    Whitespace();
-                    DMASTExpression expression = Expression();
-                    if (expression != null && expression is not DMASTExpressionConstant) Error("Expected a constant expression");
-                    Whitespace();
-                    ConsumeRightBracket();
-                }
 
                 DMASTExpression value = null;
                 DMValueType type;
                 DMASTExpression possibleValues = null;
+
+                PathArray(ref path.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
                     Whitespace();

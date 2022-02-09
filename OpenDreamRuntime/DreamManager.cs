@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
@@ -15,8 +13,6 @@ using Robust.Server;
 using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     partial class DreamManager : IDreamManager {
@@ -142,7 +138,9 @@ namespace OpenDreamRuntime {
         {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
             {
-                WorldInstance.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
+                logRsc = new ConsoleOutputResource();
+                WorldInstance.SetVariableValue("log", new DreamValue(logRsc));
+                Logger.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
             }
 
             if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info

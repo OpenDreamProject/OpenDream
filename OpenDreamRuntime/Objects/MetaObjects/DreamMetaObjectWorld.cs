@@ -53,7 +53,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
                     }
-                    else
+                    else if(!variableValue.TryGetValueAsDreamResource(out _))
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
                     }
@@ -77,14 +77,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     //TODO: This can only go up to 100%, tick_usage should be able to go higher
                     float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
                     return new DreamValue(tickUsage * 100);
-                }
-                case "log":
-                {
-                    var baseLog = base.OnVariableGet(dreamObject, variableName, variableValue);
-                    if (baseLog.TryGetValueAsDreamResource(out var logRsc)) return new DreamValue(logRsc);
-                    logRsc = new ConsoleOutputResource();
-                    dreamObject.SetVariableValue("log", new DreamValue(logRsc));
-                    return new DreamValue(logRsc);
                 }
                 case "maxx":
                     return new DreamValue(_dreamMapManager.Size.X);

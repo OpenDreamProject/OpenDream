@@ -53,10 +53,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
                     }
-                    else if (variableValue.TryGetValueAsDreamResource(out var logRsc))
-                    {
-                        dreamObject.SetVariableValue("log", new DreamValue(logRsc));
-                    }
                     else
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));

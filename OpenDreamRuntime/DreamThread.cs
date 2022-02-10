@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
@@ -238,8 +234,10 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception) {
-            IoCManager.Resolve<IDreamManager>().DMExceptionCount += 1;
+        public void HandleException(Exception exception)
+        {
+            var dreamMan = IoCManager.Resolve<IDreamManager>();
+            dreamMan.DMExceptionCount += 1;
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception Occured: {exception.Message}");
@@ -252,7 +250,7 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-            Logger.Error(builder.ToString());
+           dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Robust.Shared.Log;
+using Robust.Shared.Log;
 
 namespace OpenDreamRuntime.Resources
 {
@@ -14,7 +14,7 @@ namespace OpenDreamRuntime.Resources
         }
 
         public override void Output(DreamValue value) {
-            Logger.Info(value.Stringify());
+            Logger.LogS(LogLevel.Info, "world.log", value.Stringify());
         }
     }
 }

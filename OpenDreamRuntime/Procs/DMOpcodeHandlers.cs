@@ -1008,7 +1008,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
             }
-            
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }

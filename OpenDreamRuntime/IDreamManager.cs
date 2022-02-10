@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Resources;
 using Robust.Server.Player;
+using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
@@ -30,6 +32,7 @@ namespace OpenDreamRuntime {
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func);
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
+        public void WriteWorldLog(string message, LogLevel level);
 
         IEnumerable<DreamConnection> Connections { get; }
     }

@@ -185,3 +185,9 @@
 #define ISOMETRIC_MAP 1
 #define SIDE_MAP 2
 #define TILED_ICON_MAP 32768
+
+//generator() distributions
+#define UNIFORM_RAND 0
+#define NORMAL_RAND 1
+#define LINEAR_RAND 2
+#define SQUARE_RAND 3

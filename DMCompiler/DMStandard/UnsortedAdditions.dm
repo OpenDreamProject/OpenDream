@@ -1,5 +1,5 @@
 ﻿
-/proc/addtext(...) 
+/proc/addtext(...)
 		set opendream_unimplemented = TRUE
 /proc/bounds(Ref=src, Dist=0)
 		set opendream_unimplemented = TRUE
@@ -53,7 +53,7 @@
 	proc/Columns(column)
 	Error()
 	ErrorMsg()
-	proc/Execute(database) 
+	proc/Execute(database)
 	proc/GetColumn(column)
 	proc/GetRowData()
 	New(text, ...)
@@ -84,4 +84,7 @@
 /proc/_dm_db_error_msg()
 	set opendream_unimplemented = TRUE
 /proc/_dm_db_columns()
+	set opendream_unimplemented = TRUE
+
+/proc/generator(type, A, B, rand)
 	set opendream_unimplemented = TRUE

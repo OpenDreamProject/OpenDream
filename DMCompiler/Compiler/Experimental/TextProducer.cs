@@ -40,6 +40,10 @@ namespace DMCompiler.Compiler.Experimental {
         public int Position;
         public int Line;
         public int Column;
+
+        public override string ToString() {
+            return $"{Source.IncludePath}:{Line}:{Column}";
+        }
     }
     public class TextProducer {
         // state

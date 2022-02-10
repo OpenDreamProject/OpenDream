@@ -52,7 +52,12 @@ namespace DMCompiler.Compiler.Experimental {
         public IEnumerator<PreprocessorToken> GetEnumerator() {
             PreprocessorToken t;
             do {
-                t = ProducerNext();
+                try {
+                    t = ProducerNext();
+                } catch (Exception) {
+                    Console.WriteLine("Location:" + _state.current.Location.ToString());
+                    throw;
+                }
                 yield return t;
             } while (t != null);
         }
@@ -281,9 +286,11 @@ namespace DMCompiler.Compiler.Experimental {
                                 lexer.ReadLine();
                                 continue;
                             }
+
+                            ifStack.Pop(); 
                             ConsumerNext(); SkipWhitespace();
                             int result = ProcessIfDirective();
-                            ifStack.Push(result); elseStack.Push(elseStack.Peek());
+                            ifStack.Push(result);
                         }
                         else if (_state.current.Text == "else") {
                             if (!ElseEligible()) {
@@ -372,25 +379,30 @@ namespace DMCompiler.Compiler.Experimental {
         }
 
         int ProcessIfDirective() {
+            //Console.WriteLine("---");
             List<PreprocessorToken> ifTokens = ReadLine();
+
             //Console.WriteLine(PreprocessorToken.PrintTokens(ifTokens));
 
             _defines["defined"] = new DMDefinedMacro(_defines);
             ifTokens = FullExpand(ifTokens);
             _defines.Remove("defined");
-            ifTokens.Add(new PreprocessorToken(TokenType.Newline, loc: ifTokens[ifTokens.Count - 1].Location));
+            ifTokens.Add(new PreprocessorToken(TokenType.Newline, loc: _state.current.Location));
+
+            //Console.WriteLine(PreprocessorToken.PrintTokens(ifTokens));
 
             var converter = new PreprocessorTokenConvert(ifTokens.GetEnumerator());
             DM.DMParser parser = new DM.DMParser(converter, true);
             DM.DMASTExpression expr = parser.Expression();
+
             //new Original.DM.DMAST.DMASTNodePrinter().Print(expr, Console.Out);
 
             DMASTSimplifier simplify = new();
             simplify.SimplifyExpression(ref expr);
-            //new Original.DM.DMAST.DMASTNodePrinter().Print(expr, Console.Out);
 
             var intexpr = expr as DM.DMASTConstantInteger;
             if (intexpr == null) {
+                new Original.DM.DMAST.DMASTNodePrinter().Print(expr, Console.Out);
                 throw new Exception("Expected integer result in #if macro evaluation");
             }
             //Console.WriteLine(intexpr.Value);
@@ -475,7 +487,7 @@ namespace DMCompiler.Compiler.Experimental {
                 //                    did_expand = true;
                 //                }
             }
-            //enable_expand_debug = true;
+            enable_expand_debug = false;
             if (enable_expand_debug) {
                 Console.WriteLine($"FullExpand result1----------------------------- \n{PreprocessorToken.PrintTokens(tokens)}");
             }
@@ -484,6 +496,7 @@ namespace DMCompiler.Compiler.Experimental {
             PreprocessorToken pt = null;
             do {
                 pt = ProducerNext(sourceRestricted: true);
+                //Console.Write("dr " + pt + " | ");
                 if (pt != null) {
                     directiveResult.Add(pt);
                 }
@@ -579,7 +592,7 @@ namespace DMCompiler.Compiler.Experimental {
             PreprocessorToken has_whitespace = null;
             while (ctok < tokens.Count) {
                 PreprocessorToken current_token = tokens[ctok];
-                //Console.Write(ctok + " ");
+                //Console.Write("cca" + ctok + " | ");
                 if (tokens[ctok].IsSymbol("##")) {
                     // TODO This may need an extra scan where unjoined ##'s are cleared 
                     if (previous_token == null) {
@@ -672,19 +685,23 @@ namespace DMCompiler.Compiler.Experimental {
                 if (macro.HasParameters()) {
                     parameters = GetMacroApplyParameters();
                 }
-                List<List<PreprocessorToken>> expanded_parameters = new();
-                if (parameters != null) {
-                    foreach (var parameter in parameters) {
-                        if (enable_expand_debug) {
-                            expanded_parameters.Add(FullExpand(parameter));
-                            enable_expand_debug = true;
-                        }
-                        else {
-                            expanded_parameters.Add(FullExpand(parameter));
+
+                if (macro is DMDefinedMacro) {
+                    result = macro.Expand(defined_token, parameters);
+                } else {
+                    List<List<PreprocessorToken>> expanded_parameters = new();
+                    if (parameters != null) {
+                        foreach (var parameter in parameters) {
+                            if (enable_expand_debug) {
+                                expanded_parameters.Add(FullExpand(parameter));
+                                enable_expand_debug = true;
+                            } else {
+                                expanded_parameters.Add(FullExpand(parameter));
+                            }
                         }
                     }
+                    result = macro.Expand(defined_token, expanded_parameters);
                 }
-                result = macro.Expand(defined_token, expanded_parameters);
                 //Console.WriteLine($"id result------------------------------ \n{PreprocessorToken.PrintTokens(result)}");
                 return result;
             }

@@ -26,6 +26,9 @@ namespace DMCompiler {
 
         private static DateTime _compileStartTime;
 
+        public static List<string> IncludedMaps;
+        public static string IncludedInterface;
+
         public static bool Compile(DMCompilerSettings settings) {
             ErrorCount = 0;
             WarningCount = 0;
@@ -41,14 +44,20 @@ namespace DMCompiler {
                 Warning(new CompilerWarning(Location.Internal, "Unimplemented proc & var warnings are currently suppressed"));
             }
 
+            bool successfulCompile = false;
+            if (settings.ExperimentalPreproc) {
+                DMASTFile ast = GetAST(settings.Files);
+                successfulCompile = CompileAST(ast) == 0;
+            } else {
             DMPreprocessor preprocessor = Preprocess(settings.Files);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
+            }
             if (successfulCompile)
             {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
-                List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
+                List<DreamMapJson> maps = ConvertMaps(IncludedMaps);
 
                 if (ErrorCount > 0)
                 {

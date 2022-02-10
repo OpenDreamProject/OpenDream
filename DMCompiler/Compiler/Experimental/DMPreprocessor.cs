@@ -24,6 +24,9 @@ namespace DMCompiler.Compiler.Experimental {
         Stack<SourceText> inner_sources = new();
         SourceText current_source = null;
 
+        public List<string> IncludedMaps = new();
+        public string IncludedInterface;
+
         class TokenSource {
             public IEnumerator<PreprocessorToken> tokens;
             public Queue<PreprocessorToken> unprocessedTokens;
@@ -173,11 +176,11 @@ namespace DMCompiler.Compiler.Experimental {
                                 var source_text = new SourceText(current_source.RootDir, includeParameter.Text);
                                 switch (Path.GetExtension(source_text.FullPath)) {
                                     case ".dmm": {
-                                            // TODO IncludedMaps
+                                            IncludedMaps.Add(source_text.IncludePath);
                                             continue;
                                         }
                                     case ".dmf": {
-                                            // TODO IncludedInterface
+                                            IncludedInterface = source_text.IncludePath;
                                             continue;
                                         }
                                     case ".dms": {

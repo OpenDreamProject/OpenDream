@@ -64,8 +64,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {
-                    //TODO: This can only go up to 100%, tick_usage should be able to go higher
-                    float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
+                    var tickUsage = (_gameTiming.RealTime - _gameTiming.LastTick) / _gameTiming.TickPeriod;
                     return new DreamValue(tickUsage * 100);
                 }
                 case "maxx":

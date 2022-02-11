@@ -33,8 +33,41 @@ namespace OpenDreamRuntime {
             _mapManager.CreateNewMapEntity(MapId.Nullspace);
 
             DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinition(DreamPath.World);
-            _defaultArea = worldDefinition.Variables["area"].GetValueAsPath();
-            _defaultTurf = worldDefinition.Variables["turf"].GetValueAsPath();
+
+            // Default area
+            if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area))
+            {
+                if(!area.IsDescendantOf(DreamPath.Area)) throw new Exception("bad area");
+                _defaultArea = area;
+
+            }
+            else if (worldDefinition.Variables["area"] == DreamValue.Null ||
+                     worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0)
+            {
+                //TODO: Properly handle disabling default area
+                _defaultArea = new DreamPath("/area");
+            }
+            else
+            {
+                throw new Exception("bad area");
+            }
+
+            //Default turf
+            if (worldDefinition.Variables["turf"].TryGetValueAsPath(out var turf))
+            {
+                if(!turf.IsDescendantOf(DreamPath.Turf)) throw new Exception("bad turf");
+                _defaultTurf = turf;
+            }
+            else if (worldDefinition.Variables["turf"] == DreamValue.Null ||
+                     worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0)
+            {
+                //TODO: Properly handle disabling default turf
+                _defaultTurf = new DreamPath("/turf");
+            }
+            else
+            {
+                throw new Exception("bad turf");
+            }
         }
 
         public void LoadMaps(List<DreamMapJson> maps) {
@@ -148,11 +181,11 @@ namespace OpenDreamRuntime {
                 } else {
                     turf = _dreamManager.ObjectTree.CreateObject(_defaultTurf);
                 }
-                
+
                 SetTurf(x, y, block.Z, turf);
                 SetArea(x, y, block.Z, area);
                 turf.InitSpawn(new DreamProcArguments(null));
-                    
+
 
                 foreach (MapObjectJson mapObject in cellDefinition.Objects) {
                     var obj = CreateMapObject(mapObject);

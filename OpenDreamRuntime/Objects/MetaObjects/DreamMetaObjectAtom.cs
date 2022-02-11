@@ -75,21 +75,28 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "pixel_x":
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.PixelOffset.X = variableValue.GetValueAsInteger();
+                        appearance.PixelOffset.X = variableValue.TryGetValueAsInteger(out var pixelX) ? pixelX : 0;
                     });
                     break;
                 case "pixel_y":
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.PixelOffset.Y = variableValue.GetValueAsInteger();
+                        appearance.PixelOffset.Y = variableValue.TryGetValueAsInteger(out var pixelY) ? pixelY : 0;
                     });
                     break;
                 case "layer":
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.Layer = variableValue.GetValueAsFloat();
+                        appearance.Layer = variableValue.TryGetValueAsFloat(out var layer) ? layer : 0;
                     });
                     break;
                 case "invisibility":
-                    variableValue.TryGetValueAsInteger(out int vis);
+                    if (!variableValue.TryGetValueAsInteger(out int vis))
+                    {
+                        vis = 0;
+                    }
+                    else
+                    {
+                        Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
+                    }
                     UpdateAppearance(dreamObject, appearance => {
                         appearance.Invisibility = vis;
                     });
@@ -97,7 +104,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "mouse_opacity":
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                        //TODO figure out the weird inconsistencies with this being internally clamped
+                        if (!variableValue.TryGetValueAsInteger(out var opacity))
+                        {
+                            opacity = 0;
+                        }
+                        appearance.MouseOpacity = (MouseOpacity)opacity;
                     });
                     break;
                 case "color":
@@ -109,7 +121,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "dir":
                     UpdateAppearance(dreamObject, appearance => {
-                        appearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                        //TODO figure out the weird inconsistencies with this being internally clamped
+                        if (!variableValue.TryGetValueAsInteger(out var dir))
+                        {
+                            dir = 2; // SOUTH
+                        }
+                        appearance.Direction = (AtomDirection)dir;
                     });
                     break;
                 case "transform":

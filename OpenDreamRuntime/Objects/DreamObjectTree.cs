@@ -210,7 +210,7 @@ namespace OpenDreamRuntime.Objects {
                     type.ParentEntry.Path.numChildren++;
                 type.Path.numChildren = (uint)type.InheritingTypes.Count;
                 class_num++;
-                Logger.LogS(LogLevel.Info, "ZEWAKA", $"{type.Path.PathString} | #:{type.Path.typeIndex} | c: {type.Path.numChildren}");
+                //Logger.LogS(LogLevel.Info, "ZEWAKA", $"{type.Path.PathString} | #:{type.Path.typeIndex} | c: {type.Path.numChildren}");
 
             }
 

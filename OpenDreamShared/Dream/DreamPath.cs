@@ -131,10 +131,10 @@ namespace OpenDreamShared.Dream {
             Normalize(false);
         }
 
-        public bool IsDerivedFrom(DreamPath ancestor)
-        {
-            return (typeIndex - ancestor.typeIndex) < ancestor.numChildren;
-        }
+        // public bool IsDescendantOf(DreamPath ancestor)
+        // {
+        //     return (typeIndex - ancestor.typeIndex) <= ancestor.numChildren;
+        // }
 
         public bool IsDescendantOf(DreamPath path) {
             if (path.Elements.Length > Elements.Length) return false;

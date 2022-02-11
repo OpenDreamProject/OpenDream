@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
@@ -59,6 +61,11 @@ namespace OpenDreamRuntime.Objects {
             return GetTreeEntry(typeId).ObjectDefinition;
         }
 
+        /// <summary>
+        /// BFS traversal of all a given DreamPath's descendants
+        /// </summary>
+        /// <param name="path">Given path</param>
+        /// <returns>IEnumerable of tree entries</returns>
         public IEnumerable<TreeEntry> GetAllDescendants(DreamPath path) {
             TreeEntry treeEntry = GetTreeEntry(path);
 
@@ -177,6 +184,38 @@ namespace OpenDreamRuntime.Objects {
                     type.ParentEntry = parent;
                 }
             }
+
+            List<TreeEntry> dfs_sorted_types = new();
+            Stack<TreeEntry> dfs_sort_stack = new();
+            {
+                dfs_sort_stack.Push(Types[0]); // Always the root ('/')
+                while (dfs_sort_stack.Count != 0) {
+                    TreeEntry current = dfs_sort_stack.Pop();
+                    dfs_sorted_types.Add(current);
+
+                    // Because stacks pop the elements out LIFO, push in reverse
+                    // to traverse the returned list in the same order as was returned to us
+                    List<int> rev_children = new(current.InheritingTypes);
+                    rev_children.Reverse();
+
+                    foreach (int childTypeId in current.InheritingTypes) {
+                        dfs_sort_stack.Push(Types[childTypeId]);
+                    }
+                }
+            }
+            uint class_num = 0;
+            foreach (TreeEntry type in dfs_sorted_types) {
+                type.Path.typeIndex = class_num;
+                if (type.ParentEntry != null)
+                    type.ParentEntry.Path.numChildren++;
+                type.Path.numChildren = (uint)type.InheritingTypes.Count;
+                class_num++;
+                Logger.LogS(LogLevel.Info, "ZEWAKA", $"{type.Path.PathString} | #:{type.Path.typeIndex} | c: {type.Path.numChildren}");
+
+            }
+
+            int xyz = 0;
+
 
             //Third pass: Load each type's vars and procs
             //This must happen top-down from the root of the object tree for inheritance to work

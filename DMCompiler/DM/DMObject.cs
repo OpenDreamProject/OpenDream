@@ -161,9 +161,7 @@ namespace DMCompiler.DM {
         }
 
         public bool IsSubtypeOf(DreamPath path) {
-            if (Path.IsDescendantOf(path)) return true;
-            if (Parent != null) return Parent.IsSubtypeOf(path);
-            return false;
+            return Path.IsDerivedFrom(path);
         }
     }
 }

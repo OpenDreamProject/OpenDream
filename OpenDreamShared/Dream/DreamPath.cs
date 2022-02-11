@@ -26,6 +26,18 @@ namespace OpenDreamShared.Dream {
         public static readonly DreamPath Obj = new DreamPath("/obj");
         public static readonly DreamPath Mob = new DreamPath("/mob");
 
+        public PathType Type;
+        private string[] _elements;
+        private string _pathString;
+        /// <summary>
+        /// Internal type ID used for performant subclass checking
+        /// </summary>
+        public uint typeIndex = 0;
+        /// <summary>
+        /// Number of children for performant subclass checking
+        /// </summary>
+        public uint numChildren = 0;
+
         public enum PathType {
             Absolute,
             Relative,
@@ -68,11 +80,6 @@ namespace OpenDreamShared.Dream {
             }
             set => SetFromString(value);
         }
-
-        public PathType Type;
-
-        private string[] _elements;
-        private string _pathString;
 
         public DreamPath(string path) {
             Type = PathType.Absolute;
@@ -122,6 +129,11 @@ namespace OpenDreamShared.Dream {
 
             Elements = tempElements;
             Normalize(false);
+        }
+
+        public bool IsDerivedFrom(DreamPath ancestor)
+        {
+            return (typeIndex - ancestor.typeIndex) < ancestor.numChildren;
         }
 
         public bool IsDescendantOf(DreamPath path) {

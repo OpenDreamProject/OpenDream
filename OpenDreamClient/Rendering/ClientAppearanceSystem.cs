@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
-using Robust.Shared.GameObjects;
 
-namespace OpenDreamClient {
-    class ClientAppearanceSystem : SharedAppearanceSystem {
+namespace OpenDreamClient.Rendering {
+    sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
+
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
             SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
+            SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         }
 
         public override void Shutdown() {
@@ -47,6 +47,15 @@ namespace OpenDreamClient {
             if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
                 foreach (var callback in callbacks) callback(e.Appearance);
             }
+        }
+
+        private void OnAnimation(AnimationEvent e) {
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(e.Entity, out var sprite))
+                return;
+
+            LoadAppearance(e.TargetAppearanceId, targetAppearance => {
+                sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
+            });
         }
     }
 }

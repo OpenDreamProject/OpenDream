@@ -1,18 +1,13 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.Graphics;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
-using Robust.Shared.ViewVariables;
-using System;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
     [ComponentReference(typeof(ILookupWorldBox2Component))]
-    class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
+    sealed class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 

@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamClient.Input;
+﻿using OpenDreamClient.Input;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Maths;
-using Robust.Shared.ViewVariables;
 
 namespace OpenDreamClient.Rendering {
-    class DreamIcon {
+    sealed class DreamIcon {
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();
@@ -37,7 +31,7 @@ namespace OpenDreamClient.Rendering {
 
         [ViewVariables]
         public IconAppearance Appearance {
-            get => _appearance;
+            get => CalculateAnimatedAppearance();
             private set {
                 _appearance = value;
                 UpdateIcon();
@@ -51,6 +45,7 @@ namespace OpenDreamClient.Rendering {
 
         private int _animationFrame;
         private DateTime _animationFrameTime = DateTime.Now;
+        private AppearanceAnimation? _appearanceAnimation = null;
         private Box2? _cachedAABB = null;
 
         public DreamIcon() { }
@@ -60,6 +55,10 @@ namespace OpenDreamClient.Rendering {
         }
 
         public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
+            // End any animations that are currently happening
+            // Note that this isn't faithful to the original behavior
+            EndAppearanceAnimation();
+
             if (appearanceId == null) {
                 Appearance = null;
                 return;
@@ -76,6 +75,18 @@ namespace OpenDreamClient.Rendering {
 
                 Appearance = appearance;
             });
+        }
+
+        public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration) {
+            _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
+            _appearanceAnimation = new AppearanceAnimation(DateTime.Now, duration, endingAppearance);
+        }
+
+        public void EndAppearanceAnimation() {
+            if (_appearanceAnimation != null)
+                _appearance = _appearanceAnimation.Value.EndAppearance;
+
+            _appearanceAnimation = null;
         }
 
         public Box2 GetWorldAABB(Vector2? worldPos) {
@@ -179,6 +190,35 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
+        private IconAppearance CalculateAnimatedAppearance() {
+            if (_appearanceAnimation == null)
+                return _appearance;
+
+            AppearanceAnimation animation = _appearanceAnimation.Value;
+            IconAppearance appearance = new IconAppearance(_appearance);
+            float factor = (float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks;
+            IconAppearance endAppearance = animation.EndAppearance;
+
+            if (endAppearance.PixelOffset != _appearance.PixelOffset) {
+                Vector2 startingOffset = appearance.PixelOffset;
+                Vector2 newPixelOffset = Vector2.LerpClamped(in startingOffset, endAppearance.PixelOffset, factor);
+
+                appearance.PixelOffset = (Vector2i)newPixelOffset;
+            }
+
+            if (endAppearance.Direction != _appearance.Direction) {
+                appearance.Direction = endAppearance.Direction;
+            }
+
+            // TODO: Other animatable properties
+
+            if (factor >= 1f) {
+                EndAppearanceAnimation();
+            }
+
+            return appearance;
+        }
+
         private static int LayerSort(DreamIcon first, DreamIcon second) {
             float diff = first.Appearance.Layer - second.Appearance.Layer;
 
@@ -227,6 +267,18 @@ namespace OpenDreamClient.Rendering {
             if (aabb != _cachedAABB) {
                 _cachedAABB = aabb;
                 SizeChanged?.Invoke();
+            }
+        }
+
+        private struct AppearanceAnimation {
+            public DateTime Start;
+            public TimeSpan Duration;
+            public IconAppearance EndAppearance;
+
+            public AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
+                Start = start;
+                Duration = duration;
+                EndAppearance = endAppearance;
             }
         }
     }

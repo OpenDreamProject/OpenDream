@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using OpenDreamShared.Rendering;
+﻿using OpenDreamShared.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Rendering {
-    class ServerAppearanceSystem : SharedAppearanceSystem {
+    sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<IconAppearance, uint> _appearanceToId = new();
         private Dictionary<uint, IconAppearance> _idToAppearance = new();
         private uint _appearanceIdCounter = 0;
@@ -48,6 +46,12 @@ namespace OpenDreamRuntime.Rendering {
 
         public IconAppearance GetAppearance(uint appearanceId) {
             return _idToAppearance[appearanceId];
+        }
+
+        public void Animate(EntityUid entity, IconAppearance targetAppearance, TimeSpan duration) {
+            uint appearanceId = AddAppearance(targetAppearance);
+
+            RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));
         }
     }
 }

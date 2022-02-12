@@ -2,9 +2,6 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
@@ -60,7 +57,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "icon":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
                             appearance.Icon = resource.ResourcePath;
                         } else {
@@ -69,46 +66,46 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "icon_state":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         variableValue.TryGetValueAsString(out appearance.IconState);
                     });
                     break;
                 case "pixel_x":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.PixelOffset.X = variableValue.GetValueAsInteger();
                     });
                     break;
                 case "pixel_y":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.PixelOffset.Y = variableValue.GetValueAsInteger();
                     });
                     break;
                 case "layer":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.Layer = variableValue.GetValueAsFloat();
                     });
                     break;
                 case "invisibility":
                     variableValue.TryGetValueAsInteger(out int vis);
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.Invisibility = vis;
                     });
                     dreamObject.SetVariableValue("invisibility", new DreamValue(vis));
                     break;
                 case "mouse_opacity":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
                     });
                     break;
                 case "color":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         variableValue.TryGetValueAsString(out string color);
                         color ??= "white";
                         appearance.SetColor(color);
                     });
                     break;
                 case "dir":
-                    UpdateAppearance(dreamObject, appearance => {
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
                     });
                     break;
@@ -116,13 +113,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 {
                     DreamObject matrix = variableValue.GetValueAsDreamObjectOfType(DreamPath.Matrix);
 
-                    UpdateAppearance(dreamObject, appearance => {
-                        appearance.Transform[0] = matrix.GetVariable("a").GetValueAsFloat();
-                        appearance.Transform[1] = matrix.GetVariable("d").GetValueAsFloat();
-                        appearance.Transform[2] = matrix.GetVariable("b").GetValueAsFloat();
-                        appearance.Transform[3] = matrix.GetVariable("e").GetValueAsFloat();
-                        appearance.Transform[4] = matrix.GetVariable("c").GetValueAsFloat();
-                        appearance.Transform[5] = matrix.GetVariable("f").GetValueAsFloat();
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        appearance.Transform = DreamMetaObjectMatrix.MatrixToFloatArray(matrix);
                     });
                     break;
                 }
@@ -201,15 +193,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        private void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(_atomManager.GetAtomEntity(atom), out var sprite))
-                return;
-            IconAppearance appearance = new IconAppearance(sprite.Appearance);
-
-            update(appearance);
-            sprite.Appearance = appearance;
-        }
-
         private IconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
             IconAppearance appearance = new IconAppearance();
 
@@ -270,7 +253,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
 
-            UpdateAppearance(atom, appearance => {
+            _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance overlay = CreateOverlayAppearance(atom, value);
                 uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(overlay);
 
@@ -286,7 +269,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             uint? overlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(overlayAppearance);
             if (overlayAppearanceId == null) return;
 
-            UpdateAppearance(atom, appearance => {
+            _atomManager.UpdateAppearance(atom, appearance => {
                 appearance.Overlays.Remove(overlayAppearanceId.Value);
             });
         }
@@ -296,7 +279,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
 
-            UpdateAppearance(atom, appearance => {
+            _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance underlay = CreateOverlayAppearance(atom, value);
                 uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(underlay);
 
@@ -312,7 +295,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             uint? underlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(underlayAppearance);
             if (underlayAppearanceId == null) return;
 
-            UpdateAppearance(atom, appearance => {
+            _atomManager.UpdateAppearance(atom, appearance => {
                 appearance.Underlays.Remove(underlayAppearanceId.Value);
             });
         }

@@ -42,30 +42,49 @@
 	verb/move_down()
 		step(src, DOWN)
 
-/obj/a
-	name = "a"
+	verb/roll_dice(dice as text)
+		var/result = roll(dice)
+		usr << "The total shown on the dice is: [result]"
 
-/obj/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p
-	name = "p"
+	verb/test_alert()
+		alert(usr, "Prepare to die.")
+		usr << "prompt done"
+
+	verb/input_num()
+		var/v = input("A") as num
+		usr << "you entered [v]"
+
+	verb/test_browse()
+		usr << browse({"
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Foo</title>
+	<style>
+	body {
+		background: red;
+	}
+	</style>
+	<script>
+	function foo(v) {
+		document.getElementById("mark").innerHTML = v;
+	}
+	</script>
+</head>
+<body>
+	<marquee id="mark">Honk</marquee>
+	<a href="?honk=1">click me</a>
+</body>
+</html>"},"window=honk")
+
+	verb/test_output()
+		usr << output("help sec griffing me", "honk.browser:foo")
+
+/mob/Stat()
+	if (statpanel("Status"))
+		stat("tick_usage", world.tick_usage)
+		stat("time", world.time)
 
 /world/New()
 	..()
 	world.log << "World loaded!"
-
-	var/obj/a/ancestor = new()
-	var/obj/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/longancestor = new()
-	var/obj/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/longchild = new()
-
-	var/t1
-	var/const/loops = 7000000
-
-	var/time1 = world.timeofday
-	for(var/i in 1 to loops)
-		istypetest(longchild, ancestor, longancestor)
-	t1 = world.timeofday-time1
-	world.log << "TOTAL TIME FOR [loops] LOOPS: [t1]"
-
-/proc/istypetest(longchild, ancestor, longancestor)
-	var/x = istype(longchild, ancestor)
-	var/y = istype(longchild, longancestor)
-	var/z = istype(longchild, longchild)

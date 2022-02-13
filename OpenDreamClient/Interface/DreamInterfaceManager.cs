@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Web;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
@@ -14,8 +12,6 @@ using OpenDreamShared.Compiler.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
@@ -23,7 +19,7 @@ using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
 
 namespace OpenDreamClient.Interface {
-    class DreamInterfaceManager : IDreamInterfaceManager {
+    sealed class DreamInterfaceManager : IDreamInterfaceManager {
         [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;

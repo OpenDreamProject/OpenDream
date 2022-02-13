@@ -1,14 +1,11 @@
-﻿using System;
-using OpenDreamShared.Interface;
+﻿using OpenDreamShared.Interface;
 using OpenDreamClient.Interface.Controls;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.IoC;
-using Robust.Shared.Maths;
 
 namespace OpenDreamClient.Interface
 {
-    class BrowsePopup {
+    sealed class BrowsePopup {
         public event Action Closed;
 
         public ControlBrowser Browser;

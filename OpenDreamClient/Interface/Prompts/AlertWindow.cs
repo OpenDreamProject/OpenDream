@@ -1,8 +1,6 @@
-﻿using System;
-using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream.Procs;
 using JetBrains.Annotations;
 using Robust.Shared.Console;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Prompts
 {

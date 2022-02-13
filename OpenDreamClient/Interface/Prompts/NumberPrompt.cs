@@ -1,8 +1,6 @@
-﻿using System;
-using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream.Procs;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.Log;
 
 namespace OpenDreamClient.Interface.Prompts
 {

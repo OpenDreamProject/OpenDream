@@ -6,6 +6,7 @@ using Robust.Shared.Log;
 
 namespace OpenDreamClient.Interface.Prompts
 {
+    [Virtual]
     class NumberPrompt : InputWindow {
         public NumberPrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message, defaultValue, canCancel) { }
 

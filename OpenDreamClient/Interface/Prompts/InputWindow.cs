@@ -4,6 +4,7 @@ using Robust.Client.UserInterface;
 
 namespace OpenDreamClient.Interface.Prompts
 {
+    [Virtual]
     class InputWindow : PromptWindow {
         protected Control _inputControl;
 

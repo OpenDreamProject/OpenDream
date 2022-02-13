@@ -104,10 +104,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(DreamPath path) {
-            // return Type.IsDescendantOf(path);
-            if (Type.IsDescendantOf(path)) return true;
-            else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);
-            else return false;
+            return Type.IsDescendantOf(path);
         }
     }
 }

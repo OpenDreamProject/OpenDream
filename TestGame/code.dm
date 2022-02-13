@@ -57,7 +57,7 @@
 	var/obj/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/longchild = new()
 
 	var/t1
-	var/const/loops = 4000000
+	var/const/loops = 7000000
 
 	var/time1 = world.timeofday
 	for(var/i in 1 to loops)
@@ -68,3 +68,4 @@
 /proc/istypetest(longchild, ancestor, longancestor)
 	var/x = istype(longchild, ancestor)
 	var/y = istype(longchild, longancestor)
+	var/z = istype(longchild, longchild)

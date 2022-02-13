@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
@@ -12,11 +13,11 @@ using OpenDreamShared.Json;
 using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
-    public class DreamObjectTree {
-        public class TreeEntry {
+    public sealed class DreamObjectTree {
+        public sealed class TreeEntry {
             public DreamPath Path;
-            public DreamObjectDefinition ObjectDefinition;
-            public TreeEntry ParentEntry;
+             public DreamObjectDefinition ObjectDefinition;
+            public TreeEntry? ParentEntry;
             public List<int> InheritingTypes = new();
 
             public TreeEntry(DreamPath path) {
@@ -77,6 +78,32 @@ namespace OpenDreamRuntime.Objects {
 
                 while (typeChildren.MoveNext()) yield return typeChildren.Current;
             }
+        }
+
+        /// <summary>
+        /// Returns a list of the TreeEntry's Types sorted in DFS traversal order
+        /// </summary>
+        /// <returns>IEnumerable of sorted TreeEntries</returns>
+        /// <seealso cref="DreamPath.IsDescendantOf">IsDescendantOf</seealso>
+        private IEnumerable<TreeEntry> GetDFSSortedList() {
+            List<TreeEntry> dfs_sorted_types = new();
+            Stack<TreeEntry> dfs_sort_stack = new();
+
+            dfs_sort_stack.Push(Types[0]); // Always the root ('/')
+            while (dfs_sort_stack.Count != 0) {
+                TreeEntry current = dfs_sort_stack.Pop();
+                dfs_sorted_types.Add(current);
+
+                // Because stacks pop the elements out LIFO, push in reverse
+                // to traverse the returned list in the same order as was returned to us
+                List<int> rev_children = new(current.InheritingTypes);
+                rev_children.Reverse();
+
+                foreach (int childTypeId in current.InheritingTypes) {
+                    dfs_sort_stack.Push(Types[childTypeId]);
+                }
+            }
+            return dfs_sorted_types;
         }
 
         // It is the job of whatever calls this function to then initialize the object
@@ -185,24 +212,9 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            List<TreeEntry> dfs_sorted_types = new();
-            Stack<TreeEntry> dfs_sort_stack = new();
-            {
-                dfs_sort_stack.Push(Types[0]); // Always the root ('/')
-                while (dfs_sort_stack.Count != 0) {
-                    TreeEntry current = dfs_sort_stack.Pop();
-                    dfs_sorted_types.Add(current);
-
-                    // Because stacks pop the elements out LIFO, push in reverse
-                    // to traverse the returned list in the same order as was returned to us
-                    List<int> rev_children = new(current.InheritingTypes);
-                    rev_children.Reverse();
-
-                    foreach (int childTypeId in current.InheritingTypes) {
-                        dfs_sort_stack.Push(Types[childTypeId]);
-                    }
-                }
-            }
+            //Third pass: Create a DFS list of types so that all children of a parent type have contiguous indices,
+            //so we can type-check by just checking in a range. See: DreamPath.IsDescendantOf
+            IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedList();
             uint class_num = 0;
             foreach (TreeEntry type in dfs_sorted_types) {
                 type.Path.typeIndex = class_num;
@@ -210,14 +222,9 @@ namespace OpenDreamRuntime.Objects {
                     type.ParentEntry.Path.numChildren++;
                 type.Path.numChildren = (uint)type.InheritingTypes.Count;
                 class_num++;
-                //Logger.LogS(LogLevel.Info, "ZEWAKA", $"{type.Path.PathString} | #:{type.Path.typeIndex} | c: {type.Path.numChildren}");
-
             }
 
-            int xyz = 0;
-
-
-            //Third pass: Load each type's vars and procs
+            //Fourth pass: Load each type's vars and procs
             //This must happen top-down from the root of the object tree for inheritance to work
             //Thus, the enumeration of GetAllDescendants()
             foreach (TreeEntry type in GetAllDescendants(DreamPath.Root)) {
@@ -245,7 +252,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            //Fourth pass: Set atom's text
+            //Fifth pass: Set atom's text
             foreach (TreeEntry type in GetAllDescendants(DreamPath.Atom))
             {
                 if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name))

@@ -1,14 +1,13 @@
-using System;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
 using Robust.Shared.Audio;
-using Robust.Shared.IoC;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Audio
 {
-    public class DreamSoundEngine : IDreamSoundEngine
+    public sealed class DreamSoundEngine : IDreamSoundEngine
     {
         private const int SoundChannelLimit = 1024;
 
@@ -45,7 +44,8 @@ namespace OpenDreamClient.Audio
 
             StopChannel(channel);
 
-            var source = sound.Play(AudioParams.Default.WithVolume(20 * MathF.Log10(volume))); // convert from DM volume (0-100) to OpenAL volume (db)
+            // convert from DM volume (0-100) to OpenAL volume (db)
+            IClydeAudioSource source = sound.Play(AudioParams.Default.WithVolume(20 * MathF.Log10(volume)));
             _channels[channel - 1] = new DreamSoundChannel(source);
         }
 
@@ -54,7 +54,7 @@ namespace OpenDreamClient.Audio
         {
             if (_channels[channel - 1] != null)
             {
-                ref var ch = ref _channels[channel - 1];
+                ref DreamSoundChannel ch = ref _channels[channel - 1];
                 ch.Dispose();
                 // This will null the corresponding index in the array.
                 ch = null;
@@ -74,7 +74,7 @@ namespace OpenDreamClient.Audio
             if (!string.IsNullOrEmpty(msg.File))
             {
                 _resourceManager.LoadResourceAsync<ResourceSound>(msg.File,
-                    sound => { PlaySound(msg.Channel, sound, msg.Volume / 100.0f); });
+                    sound => PlaySound(msg.Channel, sound, msg.Volume / 100.0f));
             }
             else
             {

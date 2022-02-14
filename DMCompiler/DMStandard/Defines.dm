@@ -60,7 +60,7 @@
 #define SEE_OBJS		(1<<3) // can see all objs, no matter what
 #define SEEOBJS			(1<<3) // undocumented, identical to SEE_OBJS
 #define SEE_TURFS		(1<<4) // can see all turfs (and areas), no matter what
-#define SEE_PIXELs		(1<<8) // if an object is located on an unlit area, but some of its pixels are in a lit area (via pixel_x,y or smooth movement), can see those pixels
+#define SEE_PIXELS		(1<<8) // if an object is located on an unlit area, but some of its pixels are in a lit area (via pixel_x,y or smooth movement), can see those pixels
 #define SEE_THRU		(1<<9) // can see through opaque objects
 #define SEE_BLACKNESS	(1<<10) // render dark tiles as blackness
 #define BLIND			(1<<0) // can't see anything

@@ -119,7 +119,7 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Turf.dm"
 #include "UnsortedAdditions.dm"
 
-proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
+proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplented = TRUE
 	return Haystack
 

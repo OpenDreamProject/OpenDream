@@ -144,11 +144,11 @@ namespace OpenDreamRuntime.Procs {
         private Func<State, Task<DreamValue>> _taskFunc;
 
         private AsyncNativeProc()
-            : base("<anonymous async proc>", null, false, null, null)
+            : base("<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null)
         {}
 
         public AsyncNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(name, superProc, true, argumentNames, argumentTypes)
+            : base(name, superProc, ProcAttributes.None, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;

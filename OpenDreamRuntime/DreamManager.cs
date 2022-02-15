@@ -8,6 +8,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
@@ -76,7 +77,7 @@ namespace OpenDreamRuntime {
             Globals[0] = new DreamValue(WorldInstance);
 
             if (json.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, true);
+                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes ?? ProcAttributes.None);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 

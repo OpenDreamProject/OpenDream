@@ -199,7 +199,7 @@ namespace OpenDreamRuntime.Objects {
                 }
 
                 if (jsonType.InitProc != null) {
-                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, true);
+                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, jsonType.InitProc.Attributes);
 
                     initProc.SuperProc = definition.InitializionProc;
                     definition.InitializionProc = initProc;
@@ -247,7 +247,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes);
         }
 
         private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {

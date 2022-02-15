@@ -12,8 +12,8 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, bool waitFor)
-            : base(name, superProc, waitFor, argumentNames, argumentTypes)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes)
+            : base(name, superProc, attributes, argumentNames, argumentTypes)
         {
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;

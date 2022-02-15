@@ -129,25 +129,57 @@ namespace DMCompiler.DM.Visitors {
             _proc.Break(statementBreak.Label);
         }
 
-        public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
-            //TODO: Proc attributes
+        public void ProcessStatementSet(DMASTProcStatementSet statementSet)
+        {
+            var attribute = statementSet.Attribute.ToLower();
+            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
+                throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+            }
+
             switch (statementSet.Attribute.ToLower()) {
                 case "waitfor": {
-                    if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
-                        throw new CompileErrorException(statementSet.Location, $"waitfor attribute should be a constant");
+                    if (constant.IsTruthy())
+                    {
+                        // "waitfor" defaults to enabled
+                        _proc.Attributes &= ~ProcAttributes.DisableWaitfor;
                     }
-
-                    _proc.WaitFor(constant.IsTruthy());
+                    else
+                    {
+                        _proc.Attributes |= ProcAttributes.DisableWaitfor;
+                    }
                     break;
                 }
                 case "opendream_unimplemented": {
-                    if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
-                        throw new CompileErrorException(statementSet.Location, $"opendream_unimplemented attribute should be a constant");
+                    if (constant.IsTruthy())
+                    {
+                        _proc.Attributes |= ProcAttributes.Unimplemented;
                     }
-
-                    _proc.Unimplemented = constant.IsTruthy();
+                    else
+                    {
+                        _proc.Attributes &= ~ProcAttributes.Unimplemented;
+                    }
                     break;
                 }
+                case "hidden":
+                    if (constant.IsTruthy())
+                    {
+                        _proc.Attributes |= ProcAttributes.Hidden;
+                    }
+                    else
+                    {
+                        _proc.Attributes &= ~ProcAttributes.Hidden;
+                    }
+                    break;
+                case "popup_menu":
+                    if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
+                    {
+                        _proc.Attributes &= ~ProcAttributes.HidePopupMenu;
+                    }
+                    else
+                    {
+                        _proc.Attributes |= ProcAttributes.HidePopupMenu;
+                    }
+                    break;
             }
         }
 
@@ -187,7 +219,7 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
                     return;
                 }
-                    
+
                 successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
                 successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);

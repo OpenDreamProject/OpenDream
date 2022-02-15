@@ -222,6 +222,8 @@ namespace OpenDreamClient.Interface.Controls
             {
                 var menu = new MenuBar.Menu();
                 menu.Title = categoryPair.Key;
+                if (menu.Title?.StartsWith("&") ?? false)
+                    menu.Title = menu.Title[1..]; //TODO: First character in name becomes a selection shortcut
 
                 _menu.Menus.Add(menu);
                 foreach (MenuElementDescriptor elementDescriptor in categoryPair.Value)
@@ -244,7 +246,7 @@ namespace OpenDreamClient.Interface.Controls
         private MenuBar.MenuEntry CreateMenuItem(string name, string command, bool isCheckable)
         {
             if (name.StartsWith("&"))
-                name = name.Substring(1); //TODO: First character in name becomes a selection shortcut
+                name = name[1..]; //TODO: First character in name becomes a selection shortcut
 
             MenuBar.MenuButton item = new MenuBar.MenuButton()
             {

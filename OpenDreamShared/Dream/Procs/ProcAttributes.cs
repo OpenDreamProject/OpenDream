@@ -5,7 +5,7 @@ namespace OpenDreamShared.Dream.Procs;
 
 [Flags]
 [DefaultValue(None)]
-public enum ProcAttributes : byte
+public enum ProcAttributes
 {
     None = 1 << 0, // Internal
     IsOverride = 1 << 1, // Internal

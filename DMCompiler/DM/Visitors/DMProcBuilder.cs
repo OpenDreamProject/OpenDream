@@ -180,6 +180,26 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
                     break;
+                case "instant":
+                    if (constant.IsTruthy())
+                    {
+                        _proc.Attributes |= ProcAttributes.Instant;
+                    }
+                    else
+                    {
+                        _proc.Attributes &= ~ProcAttributes.Instant;
+                    }
+                    break;
+                case "background":
+                    if (constant.IsTruthy())
+                    {
+                        _proc.Attributes |= ProcAttributes.Background;
+                    }
+                    else
+                    {
+                        _proc.Attributes &= ~ProcAttributes.Background;
+                    }
+                    break;
             }
         }
 

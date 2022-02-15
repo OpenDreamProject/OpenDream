@@ -12,5 +12,7 @@ public enum ProcAttributes : byte
     Unimplemented = 1 << 2,
     Hidden = 1 << 3,
     HidePopupMenu = 1 << 4,
-    DisableWaitfor = 1 << 5
+    DisableWaitfor = 1 << 5,
+    Instant = 1 << 6,
+    Background = 1 << 7
 }

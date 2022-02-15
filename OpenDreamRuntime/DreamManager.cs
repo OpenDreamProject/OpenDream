@@ -77,7 +77,7 @@ namespace OpenDreamRuntime {
             Globals[0] = new DreamValue(WorldInstance);
 
             if (json.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes ?? ProcAttributes.None);
+                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 

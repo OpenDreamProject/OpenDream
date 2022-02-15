@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {

@@ -1,14 +1,12 @@
-using System;
 using System.IO;
 using Robust.Client.Audio;
 using Robust.Client.Graphics;
 using Robust.Shared.Audio;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 
 namespace OpenDreamClient.Resources.ResourceTypes
 {
-    public class ResourceSound : DreamResource {
+    // ReSharper disable once ClassNeverInstantiated.Global
+    public sealed class ResourceSound : DreamResource {
         private readonly AudioStream _stream;
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {

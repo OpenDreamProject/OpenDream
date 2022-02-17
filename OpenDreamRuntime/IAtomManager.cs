@@ -1,7 +1,5 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime {
     interface IAtomManager {
@@ -13,6 +11,8 @@ namespace OpenDreamRuntime {
         public DreamObject GetAtomFromEntity(EntityUid entity);
         public void DeleteAtomEntity(DreamObject atom);
         public IconAppearance? GetAppearance(DreamObject atom);
+        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
+        public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
     }
 }

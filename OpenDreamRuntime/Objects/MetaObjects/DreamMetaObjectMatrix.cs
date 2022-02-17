@@ -1,14 +1,22 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Rendering;
-using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Map;
-using Robust.Shared.Maths;
+﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectMatrix : DreamMetaObjectDatum {
+    sealed class DreamMetaObjectMatrix : DreamMetaObjectDatum {
         private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+
+        public static float[] MatrixToFloatArray(DreamObject matrix) {
+            if (!matrix.IsSubtypeOf(DreamPath.Matrix))
+                throw new ArgumentException($"Invalid matrix {matrix}");
+
+            float[] array = new float[6];
+            array[0] = matrix.GetVariable("a").GetValueAsFloat();
+            array[1] = matrix.GetVariable("d").GetValueAsFloat();
+            array[2] = matrix.GetVariable("b").GetValueAsFloat();
+            array[3] = matrix.GetVariable("e").GetValueAsFloat();
+            array[4] = matrix.GetVariable("c").GetValueAsFloat();
+            array[5] = matrix.GetVariable("f").GetValueAsFloat();
+            return array;
+        }
 
         public override DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
             DreamObject left = a.GetValueAsDreamObjectOfType(DreamPath.Matrix);

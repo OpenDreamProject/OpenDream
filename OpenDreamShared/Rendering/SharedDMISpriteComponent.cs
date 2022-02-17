@@ -6,11 +6,9 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Rendering {
     [NetworkedComponent]
-    public class SharedDMISpriteComponent : Component {
-        public override string Name => "DMISprite";
-
+    public abstract class SharedDMISpriteComponent : Component {
         [Serializable, NetSerializable]
-        protected class DMISpriteComponentState : ComponentState {
+        protected sealed class DMISpriteComponentState : ComponentState {
             public readonly uint? AppearanceId;
             public readonly ScreenLocation ScreenLocation;
 

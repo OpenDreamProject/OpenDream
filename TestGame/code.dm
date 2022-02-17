@@ -13,6 +13,16 @@
 		..()
 		loc = locate(5, 5, 1)
 
+	verb/shake()
+		animate(src, pixel_x = -4, time = 2)
+		sleep(2)
+		for (var/i in 1 to 3)
+			animate(src, pixel_x = 4, time = 4)
+			sleep(4)
+			animate(src, pixel_x = -4, time = 4)
+			sleep(4)
+		animate(src, pixel_x = 0, time = 2)
+
 	verb/tell_location()
 		usr << "You are at ([x], [y], [z])"
 

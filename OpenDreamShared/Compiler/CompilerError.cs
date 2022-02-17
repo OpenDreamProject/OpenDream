@@ -1,4 +1,5 @@
 ﻿using System;
+using Robust.Shared.Analyzers;
 
 namespace OpenDreamShared.Compiler {
     public struct CompilerError {
@@ -39,20 +40,25 @@ namespace OpenDreamShared.Compiler {
         }
     }
 
+    [Virtual]
     public class CompileErrorException : Exception {
         public CompilerError Error;
-
         public CompileErrorException(CompilerError error) : base(error.Message)
         {
             Error = error;
         }
-
-        public CompileErrorException(Token token, string message) : base(message) {
-            Error = new CompilerError(token, message);
-        }
-
         public CompileErrorException(Location location, string message) : base(message) {
             Error = new CompilerError(location, message);
         }
+    }
+
+
+    /// <summary>
+    /// Represents an internal compiler error that should cause parsing for a particular block to cease.
+    /// </summary>
+    public sealed class CompileAbortException : CompileErrorException
+    {
+        public CompileAbortException(CompilerError error) : base(error) {}
+        public CompileAbortException(Location location, string message) : base(location, message) {}
     }
 }

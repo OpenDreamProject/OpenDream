@@ -55,9 +55,18 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
             foreach (DMASTProcStatement statement in block.Statements) {
-                try {
+                try
+                {
                     ProcessStatement(statement);
-                } catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                }
+                catch (CompileAbortException e)
+                {
+                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                    e.Error.Location = statement.Location;
+                    DMCompiler.Error(e.Error);
+                    return; // Don't spam the error that will continue to exist
+                }
+                catch (CompileErrorException e) { //Retreat from the statement when there's an error
                     DMCompiler.Error(e.Error);
                 }
             }
@@ -187,7 +196,7 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
                     return;
                 }
-                    
+
                 successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
                 successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);

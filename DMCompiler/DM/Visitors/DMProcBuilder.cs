@@ -138,15 +138,7 @@ namespace DMCompiler.DM.Visitors {
 
             switch (statementSet.Attribute.ToLower()) {
                 case "waitfor": {
-                    if (constant.IsTruthy())
-                    {
-                        // "waitfor" defaults to enabled
-                        _proc.Attributes &= ~ProcAttributes.DisableWaitfor;
-                    }
-                    else
-                    {
-                        _proc.Attributes |= ProcAttributes.DisableWaitfor;
-                    }
+                    _proc.WaitFor(constant.IsTruthy());
                     break;
                 }
                 case "opendream_unimplemented": {

@@ -161,6 +161,11 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
                     }
+                    
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "hidden is not implemented"));
+                    }
+                    
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
@@ -171,6 +176,11 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
+                    
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "popup_menu is not implemented"));
+                    }
+                    
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -181,6 +191,10 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Instant;
                     }
+                    
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "instant is not implemented"));
+                    }
                     break;
                 case "background":
                     if (constant.IsTruthy())
@@ -190,6 +204,10 @@ namespace DMCompiler.DM.Visitors {
                     else
                     {
                         _proc.Attributes &= ~ProcAttributes.Background;
+                    }
+                    
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "background is not implemented"));
                     }
                     break;
             }

@@ -25,6 +25,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public ProcState InitProc(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
+            if(Deleted){
+                throw new Exception("Cannot init proc on a deleted object");
+            }
             return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
@@ -37,6 +40,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public int CreateReferenceID(IDreamManager manager) {
+            if(Deleted){
+                throw new Exception("Cannot create reference ID for an object that is deleted"); // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
+            }
             int referenceID;
 
             if (!manager.ReferenceIDs.TryGetValue(this, out referenceID)) {
@@ -50,10 +56,13 @@ namespace OpenDreamRuntime.Objects {
 
         public void Delete(IDreamManager manager) {
             if (Deleted) return;
+            Deleted = true;
             ObjectDefinition.MetaObject?.OnObjectDeleted(this);
+            //we release all relevant information, making this a very tiny object
+            _variables = null;
+            ObjectDefinition = null;
 
             manager.ReferenceIDs.Remove(this);
-            Deleted = true;
         }
 
         public void CopyFrom(DreamObject from) {
@@ -66,10 +75,16 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool HasVariable(string name) {
+            if(Deleted){
+                return false;
+            }
             return ObjectDefinition.HasVariable(name);
         }
 
         public DreamValue GetVariable(string name) {
+            if(Deleted){
+                throw new Exception("Cannot read " + name + " on a deleted object");
+            }
             if (TryGetVariable(name, out DreamValue variableValue)) {
                 return variableValue;
             } else {
@@ -78,6 +93,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public List<DreamValue> GetVariableNames() {
+            if(Deleted){
+                throw new Exception("Cannot get variable names of a deleted object");
+            }
             List<DreamValue> list = new(_variables.Count);
             foreach (String key in _variables.Keys) {
                 list.Add(new(key));
@@ -86,6 +104,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool TryGetVariable(string name, out DreamValue variableValue) {
+            if(Deleted){
+                throw new Exception("Cannot try to get variable on a deleted object");
+            }
             if (_variables.TryGetValue(name, out variableValue) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
 
@@ -99,6 +120,9 @@ namespace OpenDreamRuntime.Objects {
         /// Handles setting a variable, and special behavior by calling OnVariableSet()
         /// </summary>
         public void SetVariable(string name, DreamValue value) {
+            if(Deleted){
+                throw new Exception("Cannot set variable on a deleted object!");
+            }
             var oldValue = SetVariableValue(name, value);
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
         }
@@ -108,20 +132,32 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         /// <returns>The OLD variable value</returns>
         public DreamValue SetVariableValue(string name, DreamValue value) {
+            if(Deleted){
+                throw new Exception("Cannot set variable on a deleted object");
+            }
             DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
             _variables[name] = value;
             return oldValue;
         }
 
         public DreamProc GetProc(string procName) {
+            if(Deleted){
+                throw new Exception("Cannot get proc on a deleted object");
+            }
             return ObjectDefinition.GetProc(procName);
         }
 
         public bool TryGetProc(string procName, out DreamProc proc) {
+            if(Deleted){
+                throw new Exception("Cannot try to get proc on a deleted object");
+            }
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
         public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
+            if(Deleted){
+                throw new Exception("Cannot spawn proc on a deleted object");
+            }
             var proc = GetProc(procName);
             return DreamThread.Run(proc, this, usr, arguments);
         }
@@ -131,6 +167,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override string ToString() {
+            if(Deleted){
+                return "DreamObject(DELETED)";
+            }
             return "DreamObject(" + ObjectDefinition.Type + ")";
         }
     }

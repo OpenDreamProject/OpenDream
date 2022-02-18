@@ -977,7 +977,6 @@ namespace OpenDreamRuntime.Procs {
 
                     if (proc == null) {
                         //Attempting to call a super proc where there is none will just return null
-                        //TODO: Make this a compiler error
                         state.Push(DreamValue.Null);
                         return null;
                     }

@@ -220,7 +220,7 @@ namespace DMCompiler {
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
             });
 
             File.WriteAllText(outputFile, json);

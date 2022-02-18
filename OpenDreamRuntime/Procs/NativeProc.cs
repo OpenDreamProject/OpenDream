@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
         public HandlerFn Handler { get; }
 
         public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler)
-            : base(name, superProc, true, argumentNames, argumentTypes)
+            : base(name, superProc, ProcAttributes.None, argumentNames, argumentTypes)
         {
             _defaultArgumentValues = defaultArgumentValues;
             Handler = handler;

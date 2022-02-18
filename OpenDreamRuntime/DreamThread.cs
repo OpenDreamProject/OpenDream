@@ -18,16 +18,15 @@ namespace OpenDreamRuntime {
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc SuperProc { set; get; }
 
-        // If false, this proc will immediately return on the current thread during Resume instead of deferring.
-        public bool WaitFor { get; }
+        public ProcAttributes Attributes { get; }
 
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected DreamProc(string name, DreamProc superProc, bool waitFor, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        protected DreamProc(string name, DreamProc superProc, ProcAttributes attributes, List<String> argumentNames, List<DMValueType> argumentTypes) {
             Name = name;
             SuperProc = superProc;
-            WaitFor = waitFor;
+            Attributes = attributes;
             ArgumentNames = argumentNames ?? new();
             ArgumentTypes = argumentTypes ?? new();
         }
@@ -59,7 +58,7 @@ namespace OpenDreamRuntime {
         public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
 
-        public bool WaitFor => Proc != null ? Proc.WaitFor : true;
+        public bool WaitFor => Proc != null ? (Proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
 
         public ProcState(DreamThread thread) {
             Thread = thread;

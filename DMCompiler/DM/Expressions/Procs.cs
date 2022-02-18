@@ -43,7 +43,7 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             if (!DMObjectTree.TryGetGlobalProc(_name, out _)) {
                 throw new CompileErrorException(Location, $"There is no global proc named \"{_name}\"");
-                
+
             }
 
             return (DMReference.CreateGlobalProc(_name), false);
@@ -79,7 +79,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            if (!proc.IsOverride)
+            if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
             {
                 DMCompiler.Warning(new CompilerWarning(Location, "Calling parents via ..() in a proc definition does nothing"));
             }
@@ -108,7 +108,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && targetProc?.Unimplemented == true) {
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
                 DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner.Path}.{targetProc.Name}() is not implemented"));
             }
 

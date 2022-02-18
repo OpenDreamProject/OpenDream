@@ -44,10 +44,9 @@ namespace DMCompiler.DM {
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
-        public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
+        public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
-        public bool IsOverride = false;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -57,14 +56,13 @@ namespace DMCompiler.DM {
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
         private int _localVariableIdCounter = 0;
-        private bool _waitFor = true;
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
 
         public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
-            IsOverride = _astDefinition?.IsOverride ?? false; // init procs don't have AST definitions
+            if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
@@ -80,7 +78,12 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
-            if(!_waitFor) procDefinition.WaitFor = _waitFor; // Procs set this to true by default, so only serialize if false
+
+            if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
+            {
+                procDefinition.Attributes = Attributes;
+            }
+
             procDefinition.MaxStackSize = _maxStackSize;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
@@ -102,7 +105,15 @@ namespace DMCompiler.DM {
         }
 
         public void WaitFor(bool waitFor) {
-            _waitFor = waitFor;
+            if (waitFor)
+            {
+                // "waitfor" is true by default
+                Attributes &= ~ProcAttributes.DisableWaitfor;
+            }
+            else
+            {
+                Attributes |= ProcAttributes.DisableWaitfor;
+            }
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst)

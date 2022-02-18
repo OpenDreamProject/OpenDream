@@ -4,7 +4,6 @@ using System.ComponentModel;
 namespace OpenDreamShared.Dream.Procs;
 
 [Flags]
-[DefaultValue(None)]
 public enum ProcAttributes
 {
     None = 1 << 0, // Internal

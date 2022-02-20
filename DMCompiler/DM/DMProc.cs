@@ -788,7 +788,9 @@ namespace DMCompiler.DM {
         private void ShrinkStack(int size) {
             _currentStackSize -= size;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-            if (_currentStackSize < 0) throw new Exception($"Negative stack size {Location}");
+            if (_currentStackSize < 0) {
+                throw new CompileAbortException(Location, $"Negative stack size in proc {_astDefinition.ObjectPath}.{Name}()");
+            }
         }
     }
 }

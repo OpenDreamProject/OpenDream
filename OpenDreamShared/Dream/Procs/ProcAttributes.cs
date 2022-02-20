@@ -6,7 +6,7 @@ namespace OpenDreamShared.Dream.Procs;
 [Flags]
 public enum ProcAttributes
 {
-    None = 1 << 0, // Internal
+    None = 0, // Internal
     IsOverride = 1 << 1, // Internal
     Unimplemented = 1 << 2,
     Hidden = 1 << 3,

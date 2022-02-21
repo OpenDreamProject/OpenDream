@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
@@ -170,11 +170,11 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
                     }
-                    
+
                     if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "hidden is not implemented"));
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set hidden is not implemented"));
                     }
-                    
+
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
@@ -185,11 +185,11 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
-                    
+
                     if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "popup_menu is not implemented"));
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set popup_menu is not implemented"));
                     }
-                    
+
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -200,9 +200,9 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Instant;
                     }
-                    
+
                     if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "instant is not implemented"));
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set instant is not implemented"));
                     }
                     break;
                 case "background":
@@ -214,9 +214,61 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Background;
                     }
-                    
+
                     if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "background is not implemented"));
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set background is not implemented"));
+                    }
+                    break;
+                case "name":
+                    DMASTConstantString name = statementSet.Value as DMASTConstantString;
+                    if (name is null) throw new CompileErrorException(statementSet.Location, "bad text");
+                    _proc.VerbName = name.Value;
+
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set name is not implemented"));
+                    }
+
+                    break;
+                case "category":
+                    DMASTConstantString category = statementSet.Value as DMASTConstantString;
+                    if (category is null) throw new CompileErrorException(statementSet.Location, "bad text");
+                    _proc.VerbCategory = category.Value;
+
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set category is not implemented"));
+                    }
+                    break;
+                case "desc":
+                    DMASTConstantString desc = statementSet.Value as DMASTConstantString;
+                    if (desc is null) throw new CompileErrorException(statementSet.Location, "bad text");
+                    _proc.VerbDesc = desc.Value;
+
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set desc is not implemented"));
+                    }
+                    break;
+                case "invisibility":
+                    // The ref says 0-101 for atoms and 0-100 for verbs
+                    // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
+                    DMASTConstantFloat invisFloat = statementSet.Value as DMASTConstantFloat;
+                    if (invisFloat is null)
+                    {
+                        DMASTConstantInteger invisInt = statementSet.Value as DMASTConstantInteger;
+                        if(invisInt is null) throw new CompileErrorException(statementSet.Location, "bad num");
+                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(invisInt.Value, 0, 100));
+                    }
+                    else
+                    {
+                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisFloat.Value), 0, 100));
+                    }
+
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set invisibility is not implemented"));
+                    }
+                    break;
+                case "src":
+                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
+                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set src is not implemented"));
                     }
                     break;
             }

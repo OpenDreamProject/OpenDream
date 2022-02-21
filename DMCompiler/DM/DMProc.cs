@@ -60,6 +60,12 @@ namespace DMCompiler.DM {
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
 
+        [CanBeNull] public string VerbName;
+        [CanBeNull] public string VerbCategory;
+        [CanBeNull] public string VerbDesc;
+        public sbyte? Invisibility;
+
+
         public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
@@ -83,6 +89,11 @@ namespace DMCompiler.DM {
             {
                 procDefinition.Attributes = Attributes;
             }
+
+            procDefinition.VerbName = VerbName;
+            procDefinition.VerbCategory = VerbCategory;
+            procDefinition.VerbDesc = VerbDesc;
+            procDefinition.Invisibility = Invisibility;
 
             procDefinition.MaxStackSize = _maxStackSize;
 

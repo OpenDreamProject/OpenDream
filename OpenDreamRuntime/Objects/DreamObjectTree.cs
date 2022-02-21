@@ -199,7 +199,7 @@ namespace OpenDreamRuntime.Objects {
                 }
 
                 if (jsonType.InitProc != null) {
-                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, jsonType.InitProc.Attributes);
+                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, jsonType.InitProc.Attributes, jsonType.InitProc.VerbName, jsonType.InitProc.VerbCategory, jsonType.InitProc.VerbDesc, jsonType.InitProc.Invisibility);
 
                     initProc.SuperProc = definition.InitializionProc;
                     definition.InitializionProc = initProc;
@@ -237,6 +237,8 @@ namespace OpenDreamRuntime.Objects {
             List<string> argumentNames = new();
             List<DMValueType> argumentTypes = new();
 
+
+
             if (procDefinition.Arguments != null) {
                 argumentNames.EnsureCapacity(procDefinition.Arguments.Count);
                 argumentTypes.EnsureCapacity(procDefinition.Arguments.Count);
@@ -247,7 +249,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes);
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
         private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {

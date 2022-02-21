@@ -23,12 +23,22 @@ namespace OpenDreamRuntime {
         public List<String> ArgumentNames { get; }
         public List<DMValueType> ArgumentTypes { get; }
 
-        protected DreamProc(string name, DreamProc superProc, ProcAttributes attributes, List<String> argumentNames, List<DMValueType> argumentTypes) {
+        public string? VerbName { get; }
+        public string? VerbCategory { get; }
+        public string? VerbDesc { get; }
+        public sbyte? Invisibility { get; }
+
+        protected DreamProc(string name, DreamProc superProc, ProcAttributes attributes, List<String> argumentNames, List<DMValueType> argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
             Name = name;
             SuperProc = superProc;
             Attributes = attributes;
             ArgumentNames = argumentNames ?? new();
             ArgumentTypes = argumentTypes ?? new();
+
+            VerbName = verbName;
+            VerbCategory = verbCategory;
+            VerbDesc = verbDesc;
+            Invisibility = invisibility;
         }
 
         public abstract ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments);

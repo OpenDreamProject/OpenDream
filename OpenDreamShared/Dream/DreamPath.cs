@@ -133,6 +133,7 @@ namespace OpenDreamShared.Dream {
 
         public bool IsDescendantOf(DreamPath ancestor)
         {
+            // Unsigned overflow is desired, see: Doom3/unity's impl
             return (typeIndex - ancestor.typeIndex) <= ancestor.numChildren;
         }
 

@@ -86,14 +86,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "invisibility":
-                    if (!variableValue.TryGetValueAsInteger(out int vis))
-                    {
-                        vis = 0;
-                    }
-                    else
-                    {
-                        Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                    }
+                    variableValue.TryGetValueAsInteger(out int vis);
+                    vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.Invisibility = vis;
                     });

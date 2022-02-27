@@ -96,10 +96,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "mouse_opacity":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         //TODO figure out the weird inconsistencies with this being internally clamped
-                        if (!variableValue.TryGetValueAsInteger(out var opacity))
-                        {
-                            opacity = 0;
-                        }
+                        variableValue.TryGetValueAsInteger(out var opacity);
                         appearance.MouseOpacity = (MouseOpacity)opacity;
                     });
                     break;

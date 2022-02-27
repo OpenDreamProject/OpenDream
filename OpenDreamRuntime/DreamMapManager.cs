@@ -45,7 +45,7 @@ namespace OpenDreamRuntime {
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0)
             {
                 //TODO: Properly handle disabling default area
-                _defaultArea = new DreamPath("/area");
+                _defaultArea = DreamPath.Area;
             }
             else
             {

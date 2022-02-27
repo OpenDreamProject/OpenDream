@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "pixel_x":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.PixelOffset.X = variableValue.TryGetValueAsInteger(out var pixelX) ? pixelX : 0;
+                        variableValue.TryGetValueAsInteger(out appearance.PixelOffset.X);
                     });
                     break;
                 case "pixel_y":

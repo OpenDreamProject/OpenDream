@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "layer":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.Layer = variableValue.TryGetValueAsFloat(out var layer) ? layer : 0;
+                        variableValue.TryGetValueAsFloat(out appearance.Layer);
                     });
                     break;
                 case "invisibility":

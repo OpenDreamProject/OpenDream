@@ -62,7 +62,7 @@ namespace OpenDreamRuntime {
                      worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0)
             {
                 //TODO: Properly handle disabling default turf
-                _defaultTurf = new DreamPath("/turf");
+                _defaultTurf = DreamPath.Turf;
             }
             else
             {

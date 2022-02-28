@@ -170,11 +170,6 @@ namespace DMCompiler.DM.Visitors {
                     {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
                     }
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set hidden is not implemented"));
-                    }
-
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
@@ -223,20 +218,22 @@ namespace DMCompiler.DM.Visitors {
                     DMASTConstantString name = statementSet.Value as DMASTConstantString;
                     if (name is null) throw new CompileErrorException(statementSet.Location, "bad text");
                     _proc.VerbName = name.Value;
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set name is not implemented"));
-                    }
-
                     break;
                 case "category":
-                    DMASTConstantString category = statementSet.Value as DMASTConstantString;
-                    if (category is null) throw new CompileErrorException(statementSet.Location, "bad text");
-                    _proc.VerbCategory = category.Value;
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set category is not implemented"));
+                    switch (statementSet.Value)
+                    {
+                        case DMASTConstantString category:
+                        {
+                            _proc.VerbCategory = category.Value;
+                            break;
+                        }
+                        case DMASTConstantNull:
+                            _proc.VerbCategory = null;
+                            break;
+                        default:
+                            throw new CompileErrorException(statementSet.Location, "bad text");
                     }
+
                     break;
                 case "desc":
                     DMASTConstantString desc = statementSet.Value as DMASTConstantString;

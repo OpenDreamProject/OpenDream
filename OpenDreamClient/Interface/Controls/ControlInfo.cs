@@ -13,6 +13,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamClient.Interface.Controls
 {
+    [Virtual]
     class InfoPanel : Control
     {
         public string PanelName { get; private set; }
@@ -24,7 +25,7 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class StatPanel : InfoPanel
+    sealed class StatPanel : InfoPanel
     {
         private Label _textBlock;
 
@@ -57,7 +58,7 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class VerbPanel : InfoPanel
+    sealed class VerbPanel : InfoPanel
     {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         private readonly GridContainer _grid;
@@ -73,21 +74,23 @@ namespace OpenDreamClient.Interface.Controls
         {
             _grid.Children.Clear();
 
-            foreach (string verbName in _dreamInterface.AvailableVerbs)
+            foreach ((string verbType, string verbName, string verbCategory) in _dreamInterface.AvailableVerbs)
             {
+                if (verbCategory != PanelName)
+                    continue;
                 Button verbButton = new Button()
                 {
                     Margin = new Thickness(2),
                     MinWidth = 100,
                     Children =
                     {
-                        new Label { Text = verbName, Margin = new Thickness(6, 0, 6, 2) }
+                        new Label { Text = verbName == string.Empty ? verbType : verbName, Margin = new Thickness(6, 0, 6, 2) }
                     }
                 };
 
                 verbButton.OnPressed += _ =>
                 {
-                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbName);
+                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbType);
                 };
 
                 _grid.Children.Add(verbButton);
@@ -95,13 +98,13 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class ControlInfo : InterfaceControl
+    sealed class ControlInfo : InterfaceControl
     {
         [Dependency] private readonly IClientNetManager _netManager = default!;
 
         private TabContainer _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
-        private VerbPanel _verbPanel;
+        private Dictionary<string, VerbPanel> _verbPanels = new(1);
 
         public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
         {
@@ -117,9 +120,6 @@ namespace OpenDreamClient.Interface.Controls
             };
             _tabControl.OnTabChanged += OnSelectionChanged;
 
-            _verbPanel = new VerbPanel("Verbs");
-            _tabControl.AddChild(_verbPanel);
-
             RefreshVerbs();
 
             return _tabControl;
@@ -127,7 +127,10 @@ namespace OpenDreamClient.Interface.Controls
 
         public void RefreshVerbs()
         {
-            _verbPanel.RefreshVerbs();
+            foreach (var panel in _verbPanels)
+            {
+                _verbPanels[panel.Key].RefreshVerbs();
+            }
         }
 
         public void SelectStatPanel(string statPanelName)
@@ -154,14 +157,32 @@ namespace OpenDreamClient.Interface.Controls
 
                 if (!_statPanels.TryGetValue(updatingPanel.Key, out panel))
                 {
-                    panel = new StatPanel(updatingPanel.Key);
-
-                    _tabControl.AddChild(panel);
-                    _statPanels.Add(updatingPanel.Key, panel);
+                    panel = CreateStatPanel(updatingPanel.Key);
                 }
 
                 panel.UpdateLines(updatingPanel.Value);
             }
+        }
+
+        public bool HasVerbPanel(string name)
+        {
+            return _verbPanels.ContainsKey(name);
+        }
+
+        public VerbPanel CreateVerbPanel(string name)
+        {
+            var panel = new VerbPanel(name);
+            _tabControl.AddChild(panel);
+            _verbPanels.Add(name, panel);
+            return panel;
+        }
+
+        public StatPanel CreateStatPanel(string name)
+        {
+            var panel = new StatPanel(name);
+            _tabControl.AddChild(panel);
+            _statPanels.Add(name, panel);
+            return panel;
         }
 
         private void OnSelectionChanged(int tabIndex)

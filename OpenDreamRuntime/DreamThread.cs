@@ -24,7 +24,7 @@ namespace OpenDreamRuntime {
         public List<DMValueType> ArgumentTypes { get; }
 
         public string? VerbName { get; }
-        public string? VerbCategory { get; }
+        public string? VerbCategory { get; } = string.Empty;
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
@@ -36,7 +36,13 @@ namespace OpenDreamRuntime {
             ArgumentTypes = argumentTypes ?? new();
 
             VerbName = verbName;
-            VerbCategory = verbCategory;
+            if (verbCategory is not null)
+            {
+                // (de)serialization meme to reduce JSON size
+                // It's string.Empty by default but we invert it to null to prevent serialization
+                // Explicit null becomes treated as string.Empty
+                VerbCategory = verbCategory == string.Empty ? null : verbCategory;
+            }
             VerbDesc = verbDesc;
             Invisibility = invisibility;
         }

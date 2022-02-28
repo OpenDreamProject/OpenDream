@@ -193,15 +193,22 @@ namespace OpenDreamRuntime.Objects {
             return _dreamObject.GetVariableNames();
         }
 
-        public override DreamValue GetValue(DreamValue key) {
-            return _dreamObject.GetVariable(key.GetValueAsString());
+        public override DreamValue GetValue(DreamValue key)
+        {
+            if (!key.TryGetValueAsString(out var val))
+            {
+                throw new Exception("Tried to get invalid key");
+            }
+            return _dreamObject.GetVariable(val);
         }
 
         public override void SetValue(DreamValue key, DreamValue value) {
-            string varName = key.GetValueAsString();
-
-            if (_dreamObject.HasVariable(varName)) {
+            if (key.TryGetValueAsString(out var varName) && _dreamObject.HasVariable(varName)) {
                 _dreamObject.SetVariable(varName, value);
+            }
+            else
+            {
+                throw new Exception("Tried to set invalid key");
             }
         }
     }

@@ -37,7 +37,8 @@ namespace OpenDreamRuntime {
             // Default area
             if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area))
             {
-                if(!area.IsDescendantOf(DreamPath.Area)) throw new Exception("bad area");
+
+                if(!_dreamManager.ObjectTree.GetObjectDefinition(area).IsSubtypeOf(DreamPath.Area)) throw new Exception("bad area");
                 _defaultArea = area;
 
             }
@@ -55,7 +56,7 @@ namespace OpenDreamRuntime {
             //Default turf
             if (worldDefinition.Variables["turf"].TryGetValueAsPath(out var turf))
             {
-                if(!turf.IsDescendantOf(DreamPath.Turf)) throw new Exception("bad turf");
+                if(!_dreamManager.ObjectTree.GetObjectDefinition(turf).IsSubtypeOf(DreamPath.Turf)) throw new Exception("bad turf");
                 _defaultTurf = turf;
             }
             else if (worldDefinition.Variables["turf"] == DreamValue.Null ||

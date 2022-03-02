@@ -139,11 +139,6 @@ namespace OpenDreamClient.Interface.Controls
                 _tabControl.CurrentTab = panel.GetPositionInParent();
         }
 
-        public string GetCurrentPanelName()
-        {
-            return _tabControl.GetActualTabTitle(_tabControl.CurrentTab);
-        }
-
         public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels)
         {
             //Remove any panels the packet doesn't contain

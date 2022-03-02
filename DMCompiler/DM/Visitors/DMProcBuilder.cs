@@ -141,6 +141,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSet(DMASTProcStatementSet statementSet)
         {
             var attribute = statementSet.Attribute.ToLower();
+            // TODO deal with "src"
             if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant) && attribute != "src") {
                 throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
             }

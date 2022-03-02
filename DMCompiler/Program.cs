@@ -30,8 +30,7 @@ namespace DMCompiler {
                             settings.Files.Add(arg);
                             Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                         } else {
-                            Console.WriteLine($"Invalid arg '{arg}'");
-                            return false;
+                           DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"Invalid compiler arg '{arg}', skipping"));
                         }
 
                         break;

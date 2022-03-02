@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using OpenDreamShared.Interface;
@@ -75,14 +75,11 @@ namespace OpenDreamClient.Interface.Controls
 
             foreach (string verbName in _dreamInterface.AvailableVerbs)
             {
-                Button verbButton = new Button()
+                InterfaceButton verbButton = new InterfaceButton()
                 {
                     Margin = new Thickness(2),
                     MinWidth = 100,
-                    Children =
-                    {
-                        new Label { Text = verbName, Margin = new Thickness(6, 0, 6, 2) }
-                    }
+                    Text = verbName == string.Empty ? verbType : verbName
                 };
 
                 verbButton.OnPressed += _ =>

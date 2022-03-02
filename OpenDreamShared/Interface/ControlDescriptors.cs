@@ -67,6 +67,7 @@ namespace OpenDreamShared.Interface {
         public string Text = null;
         [DataField("command")]
         public string Command = null;
+
     }
 
     public class ControlDescriptorOutput : ControlDescriptor {

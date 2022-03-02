@@ -6,15 +6,24 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlButton : InterfaceControl
+    sealed class InterfaceButton : Button
+    {
+        public InterfaceButton()
+        {
+            Label.Margin = new Thickness(6, 0, 6, 2);
+        }
+    }
+    sealed class ControlButton : InterfaceControl
     {
         private Button _button;
 
         public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override Control CreateUIElement() {
-            _button = new Button();
+            _button = new InterfaceButton();
             _button.OnPressed += OnButtonClick;
+            _button.ClipText = true;
+            _button.Label.AddStyleClass("DMFbutton");
 
             return _button;
         }
@@ -23,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls {
             base.UpdateElementDescriptor();
 
             ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+
             _button.Text = controlDescriptor.Text;
         }
 

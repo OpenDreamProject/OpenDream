@@ -1,3 +1,4 @@
+using OpenDreamClient.Interface.Controls;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
@@ -12,6 +13,7 @@ namespace OpenDreamClient.Interface {
             var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
             var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
             var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
+            var notoSansFont10 = new VectorFont(notoSansFont, 10);
             var notoSansFont12 = new VectorFont(notoSansFont, 12);
             var notoSansBoldFont14 = new VectorFont(notoSansBoldFont, 14);
 
@@ -114,6 +116,11 @@ namespace OpenDreamClient.Interface {
                 Element<ContainerButton>().Class(ContainerButton.StyleClassButton).Pseudo(ContainerButton.StylePseudoClassDisabled)
                     .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#FAFAFA"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070")}),
 
+                // DMF ControlButton
+                Element<Label>().Class(ContainerButton.StyleClassButtonDMF)
+                    .Prop(Label.StylePropertyAlignMode, Label.AlignMode.Center)
+                    .Prop(Label.StylePropertyFont, notoSansFont10),
+
                 // CheckBox unchecked
                 Element<TextureRect>().Class(CheckBox.StyleClassCheckBox)
                     .Prop(TextureRect.StylePropertyTexture, Texture.Black), // TODO: Add actual texture instead of this.
@@ -144,12 +151,14 @@ namespace OpenDreamClient.Interface {
                     .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
                     // Active tab style
                     .Prop(TabContainer.StylePropertyTabStyleBox, new StyleBoxFlat {
-                        BackgroundColor = Color.FromHex("#707070"), PaddingLeft = 1, PaddingRight = 1
+                        BackgroundColor = Color.FromHex("#707070"), PaddingLeft = 1, PaddingRight = 1, ContentMarginLeftOverride = 5, ContentMarginRightOverride = 5
                     })
                     // Inactive tab style
                     .Prop(TabContainer.StylePropertyTabStyleBoxInactive, new StyleBoxFlat {
-                        BackgroundColor = Color.FromHex("#D0D0D0"), PaddingLeft = 1, PaddingRight = 1
+                        BackgroundColor = Color.FromHex("#D0D0D0"), PaddingLeft = 1, PaddingRight = 1, ContentMarginLeftOverride = 5, ContentMarginRightOverride = 5
                     })
+                    .Prop("font", notoSansFont10),
+
             });
         }
     }

@@ -117,7 +117,7 @@ namespace OpenDreamClient.Interface {
                     .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat { BackgroundColor = Color.FromHex("#FAFAFA"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#707070")}),
 
                 // DMF ControlButton
-                Element<Label>().Class(ContainerButton.StyleClassButtonDMF)
+                Element<Label>().Class(ControlButton.StyleClassDMFButton)
                     .Prop(Label.StylePropertyAlignMode, Label.AlignMode.Center)
                     .Prop(Label.StylePropertyFont, notoSansFont10),
 

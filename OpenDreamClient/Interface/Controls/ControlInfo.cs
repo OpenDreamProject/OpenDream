@@ -79,7 +79,7 @@ namespace OpenDreamClient.Interface.Controls
                 {
                     Margin = new Thickness(2),
                     MinWidth = 100,
-                    Text = verbName == string.Empty ? verbType : verbName
+                    Text = verbName
                 };
 
                 verbButton.OnPressed += _ =>

@@ -15,6 +15,8 @@ namespace OpenDreamClient.Interface.Controls {
     }
     sealed class ControlButton : InterfaceControl
     {
+        public const string StyleClassDMFButton = "DMFbutton";
+
         private Button _button;
 
         public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }

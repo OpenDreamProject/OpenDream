@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
@@ -101,7 +102,9 @@ namespace OpenDreamClient.Interface.Controls
 
         private TabContainer _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
-        private Dictionary<string, VerbPanel> _verbPanels = new(1);
+        private SortedDictionary<string, VerbPanel> _verbPanels = new();
+
+        private bool _defaultPanelSent = false;
 
         public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
         {
@@ -136,6 +139,11 @@ namespace OpenDreamClient.Interface.Controls
                 _tabControl.CurrentTab = panel.GetPositionInParent();
         }
 
+        public string GetCurrentPanelName()
+        {
+            return _tabControl.GetActualTabTitle(_tabControl.CurrentTab);
+        }
+
         public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels)
         {
             //Remove any panels the packet doesn't contain
@@ -159,6 +167,16 @@ namespace OpenDreamClient.Interface.Controls
 
                 panel.UpdateLines(updatingPanel.Value);
             }
+
+            // Tell the server we're ready to receive data
+            if (!_defaultPanelSent && _tabControl.ChildCount > 0)
+            {
+                var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
+                msg.StatPanel = _tabControl.GetActualTabTitle(0);
+                _netManager.ClientSendMessage(msg);
+                _defaultPanelSent = true;
+            }
+
         }
 
         public bool HasVerbPanel(string name)
@@ -169,17 +187,33 @@ namespace OpenDreamClient.Interface.Controls
         public VerbPanel CreateVerbPanel(string name)
         {
             var panel = new VerbPanel(name);
-            _tabControl.AddChild(panel);
             _verbPanels.Add(name, panel);
+            SortPanels();
+
             return panel;
         }
 
         public StatPanel CreateStatPanel(string name)
         {
             var panel = new StatPanel(name);
-            _tabControl.AddChild(panel);
+            panel.Margin = new Thickness(20, 2);
             _statPanels.Add(name, panel);
+            SortPanels();
             return panel;
+        }
+
+        private void SortPanels()
+        {
+            _tabControl.Children.Clear();
+            foreach(var (_, statPanel) in _statPanels)
+            {
+                _tabControl.AddChild(statPanel);
+            }
+
+            foreach(var (_, verbPanel) in _verbPanels)
+            {
+                _tabControl.AddChild(verbPanel);
+            }
         }
 
         private void OnSelectionChanged(int tabIndex)

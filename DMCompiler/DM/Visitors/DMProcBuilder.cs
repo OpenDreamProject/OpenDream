@@ -57,6 +57,14 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMASTProcStatement statement in block.Statements) {
                 try
                 {
+                    // ProcessStatementSet() needs to be before any loops
+                    var set = statement as DMASTProcStatementSet;
+                    if (set != null)
+                    {
+                        ProcessStatementSet(set);
+                        continue;
+                    }
+
                     ProcessStatement(statement);
                 }
                 catch (CompileAbortException e)
@@ -79,7 +87,6 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementGoto statementGoto: ProcessStatementGoto(statementGoto); break;
                 case DMASTProcStatementLabel statementLabel: ProcessStatementLabel(statementLabel); break;
                 case DMASTProcStatementBreak statementBreak: ProcessStatementBreak(statementBreak); break;
-                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
                 case DMASTProcStatementDel statementDel: ProcessStatementDel(statementDel); break;
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
                 case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
@@ -214,10 +221,6 @@ namespace DMCompiler.DM.Visitors {
                     else
                     {
                         _proc.Attributes &= ~ProcAttributes.Background;
-                    }
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set background is not implemented"));
                     }
                     break;
                 case "name":

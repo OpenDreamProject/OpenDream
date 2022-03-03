@@ -6,7 +6,7 @@ namespace OpenDreamShared.Json {
     public class ProcDefinitionJson {
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }
-        public ProcAttributes Attributes { get; set; }
+        public ProcAttributes Attributes { get; set; } = ProcAttributes.None;
         public byte[] Bytecode { get; set; }
 
         [CanBeNull] public string VerbName { get; set; }

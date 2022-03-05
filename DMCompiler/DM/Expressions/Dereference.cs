@@ -116,5 +116,11 @@ namespace DMCompiler.DM.Expressions {
 
             return (DMReference.ListIndex, _conditional);
         }
+
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            // This happens silently in BYOND
+            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+            EmitPushValue(dmObject, proc);
+        }
     }
 }

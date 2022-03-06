@@ -1,3 +1,4 @@
+using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
@@ -256,12 +257,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
             var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, lhs.Path ?? _inferredPath);
             Result = new Expressions.LogicalAndAssign(land.Location, lhs, rhs);
         }
         public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
             var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.Path ?? _inferredPath);
             Result = new Expressions.LogicalOrAssign(lor.Location, lhs, rhs);
         }
 
@@ -494,7 +495,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (locate.Expression == null) {
                 if (_inferredPath == null) {
-                    throw new CompileErrorException(locate.Location, "inferred lcoate requires a type");
+                    throw new CompileErrorException(locate.Location, "inferred locate requires a type");
                 }
                 Result = new Expressions.LocateInferred(locate.Location, _inferredPath.Value, container);
                 return;

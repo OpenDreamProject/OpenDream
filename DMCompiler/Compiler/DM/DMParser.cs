@@ -306,7 +306,7 @@ namespace DMCompiler.Compiler.DM {
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
             //TODO: Multidimensional lists
             implied_value = null;
-            if (Check(TokenType.DM_LeftBracket)) 
+            if (Check(TokenType.DM_LeftBracket))
             {
                 var loc = Current().Location;
                 if (!path.IsDescendantOf(DreamPath.List)) {
@@ -508,34 +508,41 @@ namespace DMCompiler.Compiler.DM {
                 Error("Expected a label identifier");
             }
 
-            if (expression != null) {
-                if (expression is DMASTIdentifier) {
-                    Check(TokenType.DM_Colon);
-                    return Label((DMASTIdentifier)expression);
-                } else if (expression is DMASTLeftShift) {
-                    DMASTLeftShift leftShift = (DMASTLeftShift)expression;
-                    DMASTProcCall procCall = leftShift.B as DMASTProcCall;
+            if (expression != null)
+            {
+                switch (expression)
+                {
+                    case DMASTIdentifier identifier:
+                        Check(TokenType.DM_Colon);
+                        return Label(identifier);
+                    case DMASTLeftShift shift:
+                    {
+                        DMASTLeftShift leftShift = shift;
+                        DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
-                    if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
-                        if (identifier.Identifier == "browse") {
-                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
+                        if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
+                            if (identifier.Identifier == "browse") {
+                                if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
 
-                            DMASTExpression body = procCall.Parameters[0].Value;
-                            DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                            return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                        } else if (identifier.Identifier == "browse_rsc") {
-                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
+                                DMASTExpression body = procCall.Parameters[0].Value;
+                                DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
+                                return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
+                            } else if (identifier.Identifier == "browse_rsc") {
+                                if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
 
-                            DMASTExpression file = procCall.Parameters[0].Value;
-                            DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                            return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                        } else if (identifier.Identifier == "output") {
-                            if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
+                                DMASTExpression file = procCall.Parameters[0].Value;
+                                DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
+                                return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
+                            } else if (identifier.Identifier == "output") {
+                                if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
 
-                            DMASTExpression msg = procCall.Parameters[0].Value;
-                            DMASTExpression control = procCall.Parameters[1].Value;
-                            return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                                DMASTExpression msg = procCall.Parameters[0].Value;
+                                DMASTExpression control = procCall.Parameters[1].Value;
+                                return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                            }
                         }
+
+                        break;
                     }
                 }
 

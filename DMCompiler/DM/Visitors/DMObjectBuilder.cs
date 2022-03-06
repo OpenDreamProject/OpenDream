@@ -229,7 +229,7 @@ namespace DMCompiler.DM.Visitors {
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;
-
+                case Expressions.GlobalField: // Global set to another global
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:
                     if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");

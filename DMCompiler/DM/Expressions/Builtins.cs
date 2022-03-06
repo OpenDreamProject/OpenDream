@@ -211,23 +211,25 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_expr is Field field) {
-                field.EmitPushIsSaved(proc);
-                return;
-            }
-
-            if (_expr is Dereference dereference) {
-                dereference.EmitPushIsSaved(dmObject, proc);
-                return;
-            }
-
-            if (_expr is Local)
+            switch (_expr)
             {
-                proc.PushFloat(0);
-                return;
+                case Field field:
+                    field.EmitPushIsSaved(proc);
+                    return;
+                case Dereference dereference:
+                    dereference.EmitPushIsSaved(dmObject, proc);
+                    return;
+                case Local:
+                    proc.PushFloat(0);
+                    return;
+                case ListIndex:
+                    proc.PushFloat(0);
+                    // Silent in BYOND
+                    DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
+                    return;
+                default:
+                    throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
             }
-
-            throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
         }
     }
 

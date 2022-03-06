@@ -61,7 +61,7 @@ namespace DMCompiler.DM {
         private int _currentStackSize = 0;
 
         [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory;
+        [CanBeNull] public string VerbCategory = string.Empty;
         [CanBeNull] public string VerbDesc;
         public sbyte? Invisibility;
 
@@ -91,6 +91,13 @@ namespace DMCompiler.DM {
             }
 
             procDefinition.VerbName = VerbName;
+            // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+            VerbCategory = VerbCategory switch
+            {
+                "" => null,
+                null => string.Empty,
+                _ => VerbCategory
+            };
             procDefinition.VerbCategory = VerbCategory;
             procDefinition.VerbDesc = VerbDesc;
             procDefinition.Invisibility = Invisibility;

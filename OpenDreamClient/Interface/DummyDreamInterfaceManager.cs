@@ -9,7 +9,7 @@ namespace OpenDreamClient.Interface
     /// </summary>
     public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager
     {
-        public string[] AvailableVerbs { get; }
+        public (string, string, string)[] AvailableVerbs { get; }
         public Dictionary<string, ControlWindow> Windows { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 

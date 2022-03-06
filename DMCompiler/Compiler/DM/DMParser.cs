@@ -306,7 +306,7 @@ namespace DMCompiler.Compiler.DM {
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
             //TODO: Multidimensional lists
             implied_value = null;
-            if (Check(TokenType.DM_LeftBracket)) 
+            if (Check(TokenType.DM_LeftBracket))
             {
                 var loc = Current().Location;
                 if (!path.IsDescendantOf(DreamPath.List)) {
@@ -2029,18 +2029,25 @@ namespace DMCompiler.Compiler.DM {
                                 } else {
                                     Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
-                            } else {
+                            } else
+                            {
                                 escapeSequence += c;
-                                if (escapeSequence == "[" || escapeSequence == "]") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == "<" || escapeSequence == ">") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == "\"" || escapeSequence == "'" || escapeSequence == "\\") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == " ") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else { //Unimplemented escape sequence
-                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                switch (escapeSequence)
+                                {
+                                    case "[":
+                                    case "]":
+                                    case "<":
+                                    case ">":
+                                    case "\"":
+                                    case "'":
+                                    case "\\":
+                                    case " ":
+                                    case ".":
+                                        stringBuilder.Append(escapeSequence);
+                                        break;
+                                    default: //Unimplemented escape sequence
+                                        Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                        break;
                                 }
                             }
                         } else if (bracketNesting == 0) {

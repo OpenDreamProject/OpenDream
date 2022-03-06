@@ -360,6 +360,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
+            {
+                DMCompiler.Warning(new CompilerWarning(Location, $"DMM overrides for expression {GetType()} are not implemented"));
+            }
             return true; //TODO
         }
     }

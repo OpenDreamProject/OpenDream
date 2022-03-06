@@ -53,11 +53,14 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsConstant(out Constant constant)
         {
-            var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
-            var variable = obj.GetVariable(_propertyName);
-            if (variable.IsConst)
+            if(_expr.Path is not null)
             {
-                return variable.Value.TryAsConstant(out constant);
+                var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
+                var variable = obj.GetVariable(_propertyName);
+                if (variable.IsConst)
+                {
+                    return variable.Value.TryAsConstant(out constant);
+                }
             }
 
             constant = null;

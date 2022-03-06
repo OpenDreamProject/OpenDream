@@ -500,7 +500,7 @@ namespace DMCompiler.DM.Expressions {
             string skipLabel = proc.NewLabelName();
             string endLabel = proc.NewLabelName();
 
-            proc.PushReferenceValue(reference);
+            proc.PushReferenceValue(reference, false);
             proc.JumpIfFalse(skipLabel);
 
             RHS.EmitPushValue(dmObject, proc);
@@ -521,7 +521,7 @@ namespace DMCompiler.DM.Expressions {
             string skipLabel = proc.NewLabelName();
             string endLabel = proc.NewLabelName();
 
-            proc.PushReferenceValue(reference);
+            proc.PushReferenceValue(reference, false);
             proc.JumpIfTrue(skipLabel);
 
             RHS.EmitPushValue(dmObject, proc);

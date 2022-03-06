@@ -211,10 +211,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
-        public void PushReferenceValue(DMReference reference) {
+        public void PushReferenceValue(DMReference reference, bool affectStack = true) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushReferenceValue);
-            WriteReference(reference);
+            WriteReference(reference, affectStack);
         }
 
         public void CreateListEnumerator() {

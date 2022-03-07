@@ -1,22 +1,25 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using OpenDreamRuntime.Procs;
-using Robust.Shared.IoC;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
     delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 
-    public class DreamList : DreamObject {
-        internal event DreamListValueAssignedEventHandler ValueAssigned;
-        internal event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
+    [Virtual]
+    public class DreamList : DreamObject
+    {
+        private static DreamObjectDefinition? _listDef;
+
+        internal event DreamListValueAssignedEventHandler? ValueAssigned;
+        internal event DreamListBeforeValueRemovedEventHandler? BeforeValueRemoved;
 
         private List<DreamValue> _values = new();
         private Dictionary<DreamValue, DreamValue> _associativeValues = null;
 
-        protected DreamList() : base(null) {
-            ObjectDefinition = IoCManager.Resolve<IDreamManager>().ObjectTree.List.ObjectDefinition;
+        protected DreamList() : base(null)
+        {
+            ObjectDefinition = _listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List);
         }
 
         public static DreamList CreateUninitialized() {
@@ -176,7 +179,7 @@ namespace OpenDreamRuntime.Objects {
     }
 
     // /datum.vars list
-    class DreamListVars : DreamList {
+    sealed class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 
         private DreamListVars(DreamObject dreamObject) : base() {

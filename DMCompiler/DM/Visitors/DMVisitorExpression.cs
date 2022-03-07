@@ -5,14 +5,14 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
-    class DMVisitorExpression : DMASTVisitor {
+    sealed class DMVisitorExpression : DMASTVisitor {
         DMObject _dmObject { get; }
         DMProc _proc { get; }
         DreamPath? _inferredPath { get; }
         internal DMExpression Result { get; private set; }
 
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
-        static public string _scopeMode;
+        public static string _scopeMode;
 
         internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath)
         {

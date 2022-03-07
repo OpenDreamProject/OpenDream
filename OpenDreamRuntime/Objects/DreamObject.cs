@@ -4,13 +4,14 @@ using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
+    [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition ObjectDefinition { get; protected set; }
+        public DreamObjectDefinition? ObjectDefinition { get; protected set; }
         public bool Deleted = false;
 
         private Dictionary<string, DreamValue> _variables = new();
 
-        public DreamObject(DreamObjectDefinition objectDefinition) {
+        public DreamObject(DreamObjectDefinition? objectDefinition) {
             ObjectDefinition = objectDefinition;
         }
 

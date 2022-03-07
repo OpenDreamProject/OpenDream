@@ -47,19 +47,16 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
-            if (constant.Value.Path.Type == DreamPath.PathType.UpwardSearch)
+            if (_proc is not null && constant.Value.Path.Type == DreamPath.PathType.UpwardSearch)
             {
                 var truePath = new DreamPath(_dmObject.Path + "/" + constant.Value.Path.PathString[1..]);
-                // Check that the type exists
+                // Check that it exists
                 if (DMObjectTree.TryGetTypeId(truePath, out var _))
                 {
                     Result = new Expressions.Path(constant.Location, truePath);
                     return;
                 }
-                else
-                {
-                    DMCompiler.Error(new CompilerError(constant.Location, $"{constant.Value.Path.PathString}: undefined type path"));
-                }
+                DMCompiler.Error(new CompilerError(constant.Location, $"{constant.Value.Path.PathString}: undefined type path"));
             }
             Result = new Expressions.Path(constant.Location, constant.Value.Path);
         }

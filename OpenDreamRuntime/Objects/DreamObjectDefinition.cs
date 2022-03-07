@@ -103,6 +103,16 @@ namespace OpenDreamRuntime.Objects {
             return Variables.ContainsKey(variableName);
         }
 
+        public bool TryGetVariable(string varName, out DreamValue value) {
+            if (Variables.TryGetValue(varName, out value)) {
+                return true;
+            } else if (_parentObjectDefinition != null) {
+                return _parentObjectDefinition.TryGetVariable(varName, out value);
+            } else {
+                return false;
+            }
+        }
+
         public bool IsSubtypeOf(DreamPath path) {
             if (Type.IsDescendantOf(path)) return true;
             else if (_parentObjectDefinition != null) return _parentObjectDefinition.IsSubtypeOf(path);

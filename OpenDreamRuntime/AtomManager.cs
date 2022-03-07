@@ -120,5 +120,45 @@ namespace OpenDreamRuntime {
 
             return appearance;
         }
+
+        public IconAppearance CreateAppearanceFromAtom(DreamObjectDefinition def) {
+            IconAppearance appearance = new IconAppearance();
+
+            if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {
+                appearance.Icon = icon.ResourcePath;
+            }
+
+            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out string iconState)) {
+                appearance.IconState = iconState;
+            }
+
+            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out string color)) {
+                appearance.SetColor(color);
+            }
+
+            if (def.TryGetVariable("dir", out var dirVar) && dirVar.TryGetValueAsInteger(out int dir)) {
+                appearance.Direction = (AtomDirection)dir;
+            }
+
+            if (def.TryGetVariable("invisibility", out var invisVar) && invisVar.TryGetValueAsInteger(out int invisibility)) {
+                appearance.Invisibility = invisibility;
+            }
+
+            if (def.TryGetVariable("mouse_opacity", out var mouseVar) && mouseVar.TryGetValueAsInteger(out int mouseOpacity)) {
+                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
+            }
+
+            def.TryGetVariable("pixel_x", out var xVar);
+            xVar.TryGetValueAsInteger(out int pixelX);
+            def.TryGetVariable("pixel_y", out var yVar);
+            yVar.TryGetValueAsInteger(out int pixelY);
+            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
+
+            if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
+                appearance.Layer = layer;
+            }
+
+            return appearance;
+        }
     }
 }

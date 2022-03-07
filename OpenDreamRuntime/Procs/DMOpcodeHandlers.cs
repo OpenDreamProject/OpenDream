@@ -245,9 +245,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArguments(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
             int argumentCount = state.ReadInt();
-            DreamValue[] argumentValues = new DreamValue[argumentCount];
+            int namedCount = state.ReadInt();
+            int unnamedCount = argumentCount - namedCount;
+            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(argumentCount - namedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
+            DreamValue[]? argumentValues = argumentCount > 0 ? new DreamValue[argumentCount] : null;
 
             for (int i = argumentCount - 1; i >= 0; i--) {
                 argumentValues[i] = state.Pop();

@@ -382,9 +382,10 @@ namespace DMCompiler.DM {
         }
 
         public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
-            ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
+            ShrinkStack(argumentCount - 2); //Pops argumentCount & parameterNames.Length, pushes 1
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
+            WriteInt(parameterNames?.Length ?? 0);
 
             if (argumentCount > 0) {
                 if (parameterTypes == null || parameterTypes.Length != argumentCount) {

@@ -23,7 +23,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry[] Types;
-        public TreeEntry List;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
@@ -32,7 +31,6 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
 
             LoadTypesFromJson(json.Types);
-            List = GetTreeEntry(DreamPath.List);
         }
 
         public bool HasTreeEntry(DreamPath path) {

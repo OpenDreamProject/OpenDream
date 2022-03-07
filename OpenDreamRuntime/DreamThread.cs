@@ -251,6 +251,10 @@ namespace OpenDreamRuntime {
 
         public void HandleException(Exception exception)
         {
+            if(_current is DMProcState state)
+            {
+                state.ReturnPools();
+            }
             var dreamMan = IoCManager.Resolve<IDreamManager>();
             dreamMan.DMExceptionCount += 1;
 

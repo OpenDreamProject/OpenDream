@@ -51,11 +51,14 @@ namespace DMCompiler.DM.Visitors {
             {
                 var truePath = new DreamPath(_dmObject.Path + "/" + constant.Value.Path.PathString[1..]);
                 // Check that the type exists
-                // TODO Does this match BYOND?
                 if (DMObjectTree.TryGetTypeId(truePath, out var _))
                 {
                     Result = new Expressions.Path(constant.Location, truePath);
                     return;
+                }
+                else
+                {
+                    DMCompiler.Error(new CompilerError(constant.Location, $"{constant.Value.Path.PathString}: undefined type path"));
                 }
             }
             Result = new Expressions.Path(constant.Location, constant.Value.Path);

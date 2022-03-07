@@ -47,6 +47,17 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
+            if (constant.Value.Path.Type == DreamPath.PathType.UpwardSearch)
+            {
+                var truePath = new DreamPath(_dmObject.Path + "/" + constant.Value.Path.PathString[1..]);
+                // Check that the type exists
+                // TODO Does this match BYOND?
+                if (DMObjectTree.TryGetTypeId(truePath, out var _))
+                {
+                    Result = new Expressions.Path(constant.Location, truePath);
+                    return;
+                }
+            }
             Result = new Expressions.Path(constant.Location, constant.Value.Path);
         }
 

@@ -57,8 +57,8 @@ namespace DMCompiler.DM.Visitors {
                     Result = new Expressions.Path(constant.Location, truePath);
                     return;
                 }
-                // Skip procs
-                if (truePath.FindElement("proc") == -1)
+                // Skip procs and verbs
+                if (truePath.FindElement("proc") == -1 && truePath.FindElement("verb") == -1)
                 {
                     DMCompiler.Error(new CompilerError(constant.Location, $"{constant.Value.Path.PathString}: undefined type path"));
                 }

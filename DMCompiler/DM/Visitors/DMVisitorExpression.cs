@@ -262,7 +262,7 @@ namespace DMCompiler.DM.Visitors {
         }
         public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
             var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.Path ?? _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.Path);
             Result = new Expressions.LogicalOrAssign(lor.Location, lhs, rhs);
         }
 

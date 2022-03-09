@@ -515,9 +515,8 @@ namespace DMCompiler.Compiler.DM {
                     case DMASTIdentifier identifier:
                         Check(TokenType.DM_Colon);
                         return Label(identifier);
-                    case DMASTLeftShift shift:
+                    case DMASTLeftShift leftShift:
                     {
-                        DMASTLeftShift leftShift = shift;
                         DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
                         if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {

@@ -271,11 +271,13 @@ namespace DMCompiler.DM {
         {
             // TODO This seems like a bad way to handle background, doesn't it?
 
-            if ((Attributes & ProcAttributes.Background) != ProcAttributes.Background) return;
-            PushFloat(-1);
-            DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
-            PushArguments(1, arr, null);
-            Call(DMReference.CreateGlobalProc("sleep"));
+            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
+            {
+                PushFloat(-1);
+                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
+                PushArguments(1, arr, null);
+                Call(DMReference.CreateGlobalProc("sleep"));
+            }
         }
 
         public void LoopJumpToStart(string loopLabel)

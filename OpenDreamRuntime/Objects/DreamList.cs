@@ -31,8 +31,8 @@ namespace OpenDreamRuntime.Objects {
             return new DreamList(size);
         }
 
-        public static DreamList Create(IEnumerable<object> collection) {
-            var list = new DreamList();
+        public static DreamList Create(string[] collection) {
+            var list = new DreamList(collection.Length);
 
             foreach (object value in collection) {
                 list._values.Add(new DreamValue(value));

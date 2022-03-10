@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Objects {
             for (int i = start; i < end; i++) {
                 DreamValue value = _values[i - 1];
 
-                copy._values[i - 1] = value;
+                copy._values.Add(value);
                 if (ContainsKey(value)) {
                     copy.SetValue(value, _associativeValues[value]);
                 }

@@ -54,17 +54,35 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
+            // TODO ProcessStatementSet() needs to be before any loops but this is nasty
+            foreach (var stmt in block.Statements)
+            {
+                if (stmt is DMASTProcStatementSet set)
+                {
+                    try
+                    {
+                        ProcessStatementSet(set);
+                    }
+                    catch (CompileAbortException e)
+                    {
+                        // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                        e.Error.Location = set.Location;
+                        DMCompiler.Error(e.Error);
+                        return; // Don't spam the error that will continue to exist
+                    }
+                    catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                        DMCompiler.Error(e.Error);
+                    }
+                }
+            }
             foreach (DMASTProcStatement statement in block.Statements) {
                 try
                 {
-                    // ProcessStatementSet() needs to be before any loops
-                    var set = statement as DMASTProcStatementSet;
-                    if (set != null)
+                    // see above
+                    if (statement is DMASTProcStatementSet)
                     {
-                        ProcessStatementSet(set);
                         continue;
                     }
-
                     ProcessStatement(statement);
                 }
                 catch (CompileAbortException e)

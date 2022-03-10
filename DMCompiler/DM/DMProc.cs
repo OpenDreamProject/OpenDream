@@ -356,10 +356,12 @@ namespace DMCompiler.DM {
                         break;
                     }
                 }
+                BackgroundSleep();
                 Jump(continueLabel);
             }
             else
             {
+                BackgroundSleep();
                 Jump(_loopStack.Peek() + "_continue");
             }
         }

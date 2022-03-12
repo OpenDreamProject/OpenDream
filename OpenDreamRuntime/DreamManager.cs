@@ -37,16 +37,17 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Mobs { get; set; } = new();
         public Random Random { get; set; } = new();
 
-        public void Initialize() {
+        //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
+        public void Initialize(string? testingJson) {
             InitializeConnectionManager();
 
-            DreamCompiledJson json = LoadJson();
+            DreamCompiledJson json = LoadJson(testingJson);
             if (json == null)
                 return;
 
             _compiledJson = json;
 
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.Initialize(testingJson);
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
@@ -81,7 +82,11 @@ namespace OpenDreamRuntime {
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
-            _dreamMapManager.LoadMaps(json.Maps);
+            //TODO figure out why this json doesn't work
+            if (testingJson is null)
+            {
+                _dreamMapManager.LoadMaps(json.Maps);
+            }
             WorldInstance.SpawnProc("New");
         }
 
@@ -94,8 +99,9 @@ namespace OpenDreamRuntime {
             UpdateStat();
         }
 
-        private DreamCompiledJson LoadJson() {
-            string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
+        private DreamCompiledJson LoadJson(string? testingJson)
+        {
+            string jsonPath = testingJson ?? _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
                 Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });

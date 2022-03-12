@@ -40,7 +40,7 @@ namespace OpenDreamRuntime {
 
         public override void PostInit() {
             _commandSystem = EntitySystem.Get<DreamCommandSystem>();
-            _dreamManager.Initialize();
+            _dreamManager.Initialize(null);
         }
 
         protected override void Dispose(bool disposing) {

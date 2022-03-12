@@ -19,9 +19,10 @@ namespace OpenDreamRuntime.Resources
 
         private readonly Dictionary<string, DreamResource> _resourceCache = new();
 
-        public void Initialize()
+        // Terrible and temporary, see DreamManager
+        public void Initialize(string? testingJson)
         {
-            var fullPath = Path.GetFullPath(_cfg.GetCVar(OpenDreamCVars.JsonPath));
+            var fullPath = testingJson ?? Path.GetFullPath(_cfg.GetCVar(OpenDreamCVars.JsonPath));
             RootPath = Path.GetDirectoryName(fullPath);
 
             Logger.DebugS("opendream.res", $"Resource root path is {RootPath}");

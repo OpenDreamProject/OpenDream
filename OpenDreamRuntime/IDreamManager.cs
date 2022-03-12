@@ -21,7 +21,7 @@ namespace OpenDreamRuntime {
         List<DreamObject> Mobs { get; set; }
         public Random Random { get; set; }
 
-        public void Initialize();
+        public void Initialize(string? testingJson);
         public void Shutdown();
         public IPlayerSession GetSessionFromClient(DreamObject client);
         DreamConnection GetConnectionFromClient(DreamObject client);

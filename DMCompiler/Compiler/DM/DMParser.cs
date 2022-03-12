@@ -517,9 +517,14 @@ namespace DMCompiler.Compiler.DM {
                         return Label(identifier);
                     case DMASTLeftShift leftShift:
                     {
-                        DMASTProcCall procCall = leftShift.B as DMASTProcCall;
+                        if (leftShift.A is DMASTConstantInteger or DMASTConstantFloat &&
+                            leftShift.B is DMASTConstantInteger or DMASTConstantFloat)
+                        {
+                            return new DMASTProcStatementExpression(loc, expression);
+                        }
 
-                        if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
+                        DMASTProcCall procCall = leftShift.B as DMASTProcCall;
+                        if (procCall?.Callable is DMASTCallableProcIdentifier identifier) {
                             if (identifier.Identifier == "browse") {
                                 if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
 
@@ -541,7 +546,16 @@ namespace DMCompiler.Compiler.DM {
                             }
                         }
 
-                        break;
+                        return new DMASTProcStatementOutput(loc, leftShift.A, leftShift.B);
+                    }
+                    case DMASTRightShift rightShift:
+                    {
+                        if (rightShift.A is DMASTConstantInteger or DMASTConstantFloat &&
+                            rightShift.B is DMASTConstantInteger or DMASTConstantFloat)
+                        {
+                            return new DMASTProcStatementExpression(loc, expression);
+                        }
+                        return new DMASTProcStatementInput(loc, rightShift.A, rightShift.B);
                     }
                 }
 

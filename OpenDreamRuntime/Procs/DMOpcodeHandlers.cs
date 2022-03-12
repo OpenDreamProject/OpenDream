@@ -515,26 +515,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (first == DreamValue.Null) {
-                        state.Push(new DreamValue(0));
-                    } else {
-                        IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
-
-                        state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
-                    }
-
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamResource:
-                    first.GetValueAsDreamResource().Output(second);
-
-                    state.Push(DreamValue.Null);
-                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
@@ -545,12 +526,66 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? Output(DMProcState state)
+        {
+            var meep = 5;
+            state.Pop();
+            var right = state.ReadReference();
+            var left = state.ReadReference();
+            DreamValue leftObj = state.Pop();
+
+            DreamValue first = state.GetReferenceValue(left);
+            DreamValue second = state.GetReferenceValue(right);
+
+            //TODO: Savefiles get special treatment
+            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
+
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject: { //Output operation
+                    if (first == DreamValue.Null) {
+                        state.Push(new DreamValue(0));
+                    } else
+                    {
+                        if (first.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
+                        {
+                            IDreamMetaObject saveObj = savefile.ObjectDefinition.MetaObject;
+                            saveObj.OperatorIndexAssign(savefile, state.Pop(), second);
+                            state.Push(DreamValue.Null);
+                        }
+                        else
+                        {
+                            first.TryGetValueAsDreamObject(out var obj);
+                            IDreamMetaObject metaObject = obj.ObjectDefinition.MetaObject;
+
+                            state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
+                        }
+
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamResource:
+                    first.TryGetValueAsDreamResource(out var rsc);
+                    rsc.Output(second);
+
+                    state.Push(DreamValue.Null);
+                    break;
+
+                default:
+                    throw new Exception("Invalid bit output on " + first + " and " + second);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Input(DMProcState state)
+        {
+            return null;
+        }
+
         public static ProcStatus? BitShiftRight(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
 
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));

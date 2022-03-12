@@ -36,6 +36,8 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
+        public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) { throw new NotImplementedException(); }
+        public void VisitProcStatementInput(DMASTProcStatementInput statementInput) { throw new NotImplementedException(); }
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
@@ -677,6 +679,36 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementOutputControl(this);
+        }
+    }
+
+    public class DMASTProcStatementOutput : DMASTProcStatement {
+        public DMASTExpression Left;
+        public DMASTExpression Right;
+        public bool LeftShift;
+
+        public DMASTProcStatementOutput(Location location, DMASTExpression left, DMASTExpression right) : base(location) {
+            Left = left;
+            Right = right;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementOutput(this);
+        }
+    }
+
+    public class DMASTProcStatementInput : DMASTProcStatement {
+        public DMASTExpression Left;
+        public DMASTExpression Right;
+        public bool LeftShift;
+
+        public DMASTProcStatementInput(Location location, DMASTExpression left, DMASTExpression right) : base(location) {
+            Left = left;
+            Right = right;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementInput(this);
         }
     }
 

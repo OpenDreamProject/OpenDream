@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.IoC;
 
@@ -127,7 +128,9 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareEquivalent,
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
-            DMOpcodeHandlers.IsInRange
+            DMOpcodeHandlers.IsInRange,
+            DMOpcodeHandlers.Output,
+            DMOpcodeHandlers.Input
         };
         #endregion
 
@@ -424,7 +427,15 @@ namespace OpenDreamRuntime.Procs {
                     DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
                     DreamValue list = peek ? _stack[_stackIndex - 2] : Pop();
                     if (!list.TryGetValueAsDreamList(out var listObj))
+                    {
+                        if (list.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var save))
+                        {
+                            //Push(index);
+                            return DreamValue.Null;
+                        }
+
                         throw new Exception($"Cannot get index {index} of {list}");
+                    }
 
                     return listObj.GetValue(index);
                 }

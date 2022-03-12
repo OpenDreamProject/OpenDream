@@ -94,6 +94,8 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
+                case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
@@ -598,6 +600,25 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementOutput.Left);
+            left.EmitReference(_dmObject, _proc);
+            //_proc.PushReferenceValue(leftRef);
+            DMExpression.Emit(_dmObject, _proc, statementOutput.Right);
+            _proc.Output();
+        }
+
+        public void ProcessStatementInput(DMASTProcStatementInput statementInput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementInput.Left);
+            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+            _proc.PushReferenceValue(leftRef);
+
+            DMExpression right = DMExpression.Create(_dmObject, _proc, statementInput.Right);
+            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
+            _proc.PushReferenceValue(rightRef);
+            _proc.Input();
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

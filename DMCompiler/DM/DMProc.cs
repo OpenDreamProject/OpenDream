@@ -310,6 +310,17 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void Output() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Output);
+        }
+
+        public void Input()
+        {
+            ShrinkStack(2);
+            WriteOpcode(DreamProcOpcode.Input);
+        }
+
         public void Spawn(string jumpTo) {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Spawn);

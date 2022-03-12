@@ -167,6 +167,17 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementOutputControl.Control);
         }
 
+        public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) {
+
+            SimplifyExpression(ref statementOutput.Left);
+            SimplifyExpression(ref statementOutput.Right);
+        }
+
+        public void VisitProcStatementInput(DMASTProcStatementInput statementInput) {
+            SimplifyExpression(ref statementInput.Left);
+            SimplifyExpression(ref statementInput.Right);
+        }
+
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             SimplifyExpression(ref varDeclaration.Value);
         }

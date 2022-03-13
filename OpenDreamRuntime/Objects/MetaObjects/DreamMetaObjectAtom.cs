@@ -253,7 +253,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (value.TryGetValueAsPath(out DreamPath path))
             {
                 var def = _dreamManager.ObjectTree.GetObjectDefinition(path);
-                appearance = _atomManager.CreateAppearanceFromAtom(def);
+                appearance = _atomManager.CreateAppearanceFromDefinition(def);
             }
             else {
                 throw new Exception($"Invalid overlay {value}");

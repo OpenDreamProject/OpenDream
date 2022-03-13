@@ -699,7 +699,6 @@ namespace DMCompiler.Compiler.DM {
     public class DMASTProcStatementInput : DMASTProcStatement {
         public DMASTExpression Left;
         public DMASTExpression Right;
-        public bool LeftShift;
 
         public DMASTProcStatementInput(Location location, DMASTExpression left, DMASTExpression right) : base(location) {
             Left = left;

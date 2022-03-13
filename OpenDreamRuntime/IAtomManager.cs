@@ -14,6 +14,6 @@ namespace OpenDreamRuntime {
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
-        public IconAppearance CreateAppearanceFromAtom(DreamObjectDefinition def);
+        public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
     }
 }

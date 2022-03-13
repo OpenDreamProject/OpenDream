@@ -121,7 +121,7 @@ namespace OpenDreamRuntime {
             return appearance;
         }
 
-        public IconAppearance CreateAppearanceFromAtom(DreamObjectDefinition def) {
+        public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def) {
             IconAppearance appearance = new IconAppearance();
 
             if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {

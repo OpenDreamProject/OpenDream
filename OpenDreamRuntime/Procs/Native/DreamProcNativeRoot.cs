@@ -588,7 +588,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
 
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys));
+            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]

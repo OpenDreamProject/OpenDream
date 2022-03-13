@@ -606,10 +606,8 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutput.Right);
             DMExpression left = DMExpression.Create(_dmObject, _proc, statementOutput.Left);
             (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
-            //_proc.PushReferenceValue(leftRef);
 
             _proc.Output(leftRef);
-
         }
 
         public void ProcessStatementInput(DMASTProcStatementInput statementInput) {

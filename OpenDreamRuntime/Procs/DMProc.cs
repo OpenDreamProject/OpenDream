@@ -441,7 +441,7 @@ namespace OpenDreamRuntime.Procs {
                     {
                         if (list.TryGetValueAsDreamObject(out _))
                         {
-                            Pop();
+                            if(peek) Pop(); // So the next thing we pop is the list
                             return index;
                         }
 

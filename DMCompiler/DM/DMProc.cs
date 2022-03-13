@@ -274,7 +274,22 @@ namespace DMCompiler.DM {
             AddLabel(loopLabel + "_continue");
         }
 
-        public void LoopJumpToStart(string loopLabel) {
+        public void BackgroundSleep()
+        {
+            // TODO This seems like a bad way to handle background, doesn't it?
+
+            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
+            {
+                PushFloat(-1);
+                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
+                PushArguments(1, arr, null);
+                Call(DMReference.CreateGlobalProc("sleep"));
+            }
+        }
+
+        public void LoopJumpToStart(string loopLabel)
+        {
+            BackgroundSleep();
             Jump(loopLabel + "_start");
         }
 
@@ -350,10 +365,12 @@ namespace DMCompiler.DM {
                         break;
                     }
                 }
+                BackgroundSleep();
                 Jump(continueLabel);
             }
             else
             {
+                BackgroundSleep();
                 Jump(_loopStack.Peek() + "_continue");
             }
         }

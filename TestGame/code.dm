@@ -24,10 +24,8 @@
 		animate(src, pixel_x = 0, time = 2)
 
 	verb/tell_location()
-		//set name = "Tell Location"
-
-		var/savefile/S = new/savefile("testsave",-1)
-		S["memes"] << "yay"
+		set name = "Tell Location"
+		usr << "You are at ([x], [y], [z])"
 
 	verb/say(message as text)
 		var/list/viewers = viewers()

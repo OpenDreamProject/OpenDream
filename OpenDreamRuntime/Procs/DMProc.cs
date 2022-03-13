@@ -191,6 +191,17 @@ namespace OpenDreamRuntime.Procs {
             Array.Copy(other.LocalVariables, LocalVariables, 256);
         }
 
+        public string?[] HumanizeBytecode()
+        {
+            string?[] output = new string?[_proc.Bytecode.Length];
+            for (int i = 0; i < _proc.Bytecode.Length; i++)
+            {
+                output[i] = Enum.GetName(typeof(DreamProcOpcode), _proc.Bytecode[i]);
+            }
+
+            return output;
+        }
+
         protected override ProcStatus InternalResume()
         {
             while (_pc < _proc.Bytecode.Length) {
@@ -428,10 +439,10 @@ namespace OpenDreamRuntime.Procs {
                     DreamValue list = peek ? _stack[_stackIndex - 2] : Pop();
                     if (!list.TryGetValueAsDreamList(out var listObj))
                     {
-                        if (list.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var save))
+                        if (list.TryGetValueAsDreamObject(out _))
                         {
-                            //Push(index);
-                            return DreamValue.Null;
+                            Pop();
+                            return index;
                         }
 
                         throw new Exception($"Cannot get index {index} of {list}");

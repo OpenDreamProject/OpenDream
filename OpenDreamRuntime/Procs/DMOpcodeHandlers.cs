@@ -528,36 +528,43 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Output(DMProcState state)
         {
-            var meep = 5;
-            state.Pop();
-            var right = state.ReadReference();
-            var left = state.ReadReference();
-            DreamValue leftObj = state.Pop();
+            var reference = state.ReadReference();
 
-            DreamValue first = state.GetReferenceValue(left);
-            DreamValue second = state.GetReferenceValue(right);
+            DreamValue left;
+            DreamValue idx = DreamValue.Null;
+
+            if (reference.RefType == DMReference.Type.ListIndex)
+            {
+                idx = state.GetReferenceValue(reference, true);
+                left = state.Pop();
+            }
+            else
+            {
+                left = state.GetReferenceValue(reference);
+            }
+            DreamValue right = state.Pop();
 
             //TODO: Savefiles get special treatment
             //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
 
-            switch (first.Type) {
+            switch (left.Type) {
                 case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (first == DreamValue.Null) {
+                    if (left == DreamValue.Null) {
                         state.Push(new DreamValue(0));
                     } else
                     {
-                        if (first.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
+                        if (left.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
                         {
                             IDreamMetaObject saveObj = savefile.ObjectDefinition.MetaObject;
-                            saveObj.OperatorIndexAssign(savefile, state.Pop(), second);
+                            saveObj.OperatorIndexAssign(savefile, idx, right);
                             state.Push(DreamValue.Null);
                         }
                         else
                         {
-                            first.TryGetValueAsDreamObject(out var obj);
+                            left.TryGetValueAsDreamObject(out var obj);
                             IDreamMetaObject metaObject = obj.ObjectDefinition.MetaObject;
 
-                            state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
+                            state.Push(metaObject?.OperatorOutput(left, right) ?? DreamValue.Null);
                         }
 
                     }
@@ -565,14 +572,14 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource:
-                    first.TryGetValueAsDreamResource(out var rsc);
-                    rsc.Output(second);
+                    left.TryGetValueAsDreamResource(out var rsc);
+                    rsc.Output(right);
 
                     state.Push(DreamValue.Null);
                     break;
 
                 default:
-                    throw new Exception("Invalid bit output on " + first + " and " + second);
+                    throw new Exception("Invalid bit output on " + left + " and " + right);
             }
 
             return null;
@@ -580,6 +587,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Input(DMProcState state)
         {
+            //TODO
             return null;
         }
 

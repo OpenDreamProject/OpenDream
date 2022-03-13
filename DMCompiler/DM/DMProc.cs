@@ -310,9 +310,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
-        public void Output() {
+        public void Output(DMReference leftRef) {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Output);
+            WriteReference(leftRef);
         }
 
         public void Input()

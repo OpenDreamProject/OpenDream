@@ -248,7 +248,7 @@ namespace OpenDreamRuntime.Procs {
             int argumentCount = state.ReadInt();
             int namedCount = state.ReadInt();
             int unnamedCount = argumentCount - namedCount;
-            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(argumentCount - namedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
+            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
             DreamValue[]? argumentValues = argumentCount > 0 ? new DreamValue[argumentCount] : null;
 
             for (int i = argumentCount - 1; i >= 0; i--) {

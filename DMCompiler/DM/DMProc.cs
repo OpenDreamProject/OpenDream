@@ -317,7 +317,7 @@ namespace DMCompiler.DM {
 
         public void Input()
         {
-            ShrinkStack(2);
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Input);
         }
 

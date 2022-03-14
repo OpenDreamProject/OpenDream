@@ -191,17 +191,6 @@ namespace OpenDreamRuntime.Procs {
             Array.Copy(other.LocalVariables, LocalVariables, 256);
         }
 
-        public string?[] HumanizeBytecode()
-        {
-            string?[] output = new string?[_proc.Bytecode.Length];
-            for (int i = 0; i < _proc.Bytecode.Length; i++)
-            {
-                output[i] = Enum.GetName(typeof(DreamProcOpcode), _proc.Bytecode[i]);
-            }
-
-            return output;
-        }
-
         protected override ProcStatus InternalResume()
         {
             while (_pc < _proc.Bytecode.Length) {

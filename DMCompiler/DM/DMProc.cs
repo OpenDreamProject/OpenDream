@@ -311,14 +311,16 @@ namespace DMCompiler.DM {
         }
 
         public void Output(DMReference leftRef) {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Output);
             WriteReference(leftRef);
         }
 
-        public void Input()
+        public void Input(DMReference leftRef, DMReference rightRef)
         {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Input);
+            WriteReference(rightRef);
+            WriteReference(leftRef);
         }
 
         public void Spawn(string jumpTo) {

@@ -450,6 +450,10 @@ namespace OpenDreamRuntime.Procs {
 
                     return listObj.GetValue(index);
                 }
+                case DMReference.Type.GlobalProc:
+                {
+                    return new DreamValue(reference.ProcName);
+                }
                 default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
             }
         }

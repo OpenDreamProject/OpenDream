@@ -533,14 +533,28 @@ namespace OpenDreamRuntime.Procs {
             DreamValue left;
             DreamValue idx = DreamValue.Null;
 
-            if (reference.RefType == DMReference.Type.ListIndex)
+            switch (reference.RefType)
             {
-                idx = state.GetReferenceValue(reference, true);
-                left = state.Pop();
-            }
-            else
-            {
-                left = state.GetReferenceValue(reference);
+                case DMReference.Type.ListIndex:
+                    idx = state.GetReferenceValue(reference, true);
+                    left = state.Pop();
+                    break;
+                case DMReference.Type.GlobalProc:
+                {
+                    state.GetReferenceValue(reference, true).TryGetValueAsString(out var proc);
+                    var args = state.PopArguments();
+                    var dreamMan = IoCManager.Resolve<IDreamManager>();
+
+                    left = DreamThread.Run(async (innerState) =>
+                    {
+                        var file = await innerState.Call(dreamMan.GlobalProcs[proc], state.Usr, state.Instance, args);
+                        return file;
+                    });
+                    break;
+                }
+                default:
+                    left = state.GetReferenceValue(reference);
+                    break;
             }
             DreamValue right = state.Pop();
 
@@ -550,23 +564,20 @@ namespace OpenDreamRuntime.Procs {
             switch (left.Type) {
                 case DreamValue.DreamValueType.DreamObject: { //Output operation
                     if (left == DreamValue.Null) {
-                        state.Push(new DreamValue(0));
-                    } else
+                        break;
+                    }
+
+                    if (left.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
                     {
-                        if (left.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
-                        {
-                            IDreamMetaObject saveObj = savefile.ObjectDefinition.MetaObject;
-                            saveObj.OperatorIndexAssign(savefile, idx, right);
-                            state.Push(DreamValue.Null);
-                        }
-                        else
-                        {
-                            left.TryGetValueAsDreamObject(out var obj);
-                            IDreamMetaObject metaObject = obj.ObjectDefinition.MetaObject;
+                        IDreamMetaObject saveObj = savefile.ObjectDefinition.MetaObject;
+                        saveObj.OperatorIndexAssign(savefile, idx, right);
+                    }
+                    else
+                    {
+                        left.TryGetValueAsDreamObject(out var obj);
+                        IDreamMetaObject metaObject = obj.ObjectDefinition.MetaObject;
 
-                            state.Push(metaObject?.OperatorOutput(left, right) ?? DreamValue.Null);
-                        }
-
+                        metaObject?.OperatorOutput(left, right);
                     }
 
                     break;
@@ -575,7 +586,6 @@ namespace OpenDreamRuntime.Procs {
                     left.TryGetValueAsDreamResource(out var rsc);
                     rsc.Output(right);
 
-                    state.Push(DreamValue.Null);
                     break;
 
                 default:
@@ -587,7 +597,67 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Input(DMProcState state)
         {
-            //TODO
+            var refRight = state.ReadReference();
+            var refLeft = state.ReadReference();
+
+            DreamValue left;
+            DreamValue idx = DreamValue.Null;
+
+            DreamValue assignValue = DreamValue.Null;
+
+            switch (refLeft.RefType)
+            {
+                case DMReference.Type.ListIndex:
+                    idx = state.GetReferenceValue(refLeft, true);
+                    left = state.Pop();
+                    break;
+                case DMReference.Type.GlobalProc:
+                {
+                    state.GetReferenceValue(refLeft, true).TryGetValueAsString(out var proc);
+                    var args = state.PopArguments();
+                    var dreamMan = IoCManager.Resolve<IDreamManager>();
+
+                    left = DreamThread.Run(async (innerState) =>
+                    {
+                        var file = await innerState.Call(dreamMan.GlobalProcs[proc], state.Usr, state.Instance, args);
+                        return file;
+                    });
+                    break;
+                }
+                default:
+                    left = state.GetReferenceValue(refLeft);
+                    break;
+            }
+
+            switch (left.Type) {
+                case DreamValue.DreamValueType.DreamObject: { //Input operation
+                    if (left == DreamValue.Null) {
+                        break;
+                    }
+
+                    if (left.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile))
+                    {
+                        IDreamMetaObject saveObj = savefile.ObjectDefinition.MetaObject;
+                        assignValue = saveObj.OperatorIndex(savefile, idx);
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid bit input on " + left + " and " + state.GetReferenceValue(refRight));
+                    }
+
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamResource:
+                    left.TryGetValueAsDreamResource(out var rsc);
+                    assignValue = new DreamValue(rsc.ReadAsString());
+
+                    break;
+
+                default:
+                    throw new Exception("Invalid bit input on " + left + " and " + state.GetReferenceValue(refRight));
+            }
+
+            state.AssignReference(refRight, assignValue);
             return null;
         }
 

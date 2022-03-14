@@ -611,15 +611,13 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementInput(DMASTProcStatementInput statementInput) {
-            // IGNORE THIS, OLD COPYPASTA
-            /*DMExpression left = DMExpression.Create(_dmObject, _proc, statementInput.Left);
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementInput.Left);
             (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
-            _proc.PushReferenceValue(leftRef);
 
             DMExpression right = DMExpression.Create(_dmObject, _proc, statementInput.Right);
             (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
-            _proc.PushReferenceValue(rightRef);
-            _proc.Input();*/
+
+            _proc.Input(leftRef, rightRef);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

@@ -133,5 +133,18 @@ namespace DMCompiler.DM.Expressions {
                 proc.Call(procRef);
             }
         }
+
+        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+            _arguments.EmitPushArguments(dmObject, proc);
+            (DMObject _, DMProc targetProc) = GetTargetProc(dmObject);
+            if (dmObject.HasProc(targetProc.Name)) {
+                return (DMReference.CreateSrcProc(targetProc.Name), false);
+            } else if (DMObjectTree.TryGetGlobalProc(targetProc.Name, out _)) {
+                return (DMReference.CreateGlobalProc(targetProc.Name), false);
+            }
+
+            throw new CompileErrorException(Location,
+                $"Type {dmObject.Path} does not have a proc named \"{targetProc.Name}\"");
+        }
     }
 }

@@ -142,6 +142,12 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             return (DMReference.CreateGlobal(Id), false);
         }
+        
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            // This happens silently in BYOND
+            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a global returns the current value"));
+            EmitPushValue(dmObject, proc);
+        }
 
         public override bool TryAsConstant(out Constant constant) {
             DMVariable global = DMObjectTree.Globals[Id];

@@ -229,6 +229,14 @@ namespace DMCompiler.DM.Visitors {
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "matrix":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "icon":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
                 case Expressions.GlobalField: // Global set to another global
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:

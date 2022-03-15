@@ -95,7 +95,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void RemoveValue(DreamValue value) {
-            int valueIndex = _values.IndexOf(value);
+            int valueIndex = _values.LastIndexOf(value);
 
             if (valueIndex != -1) {
                 BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);

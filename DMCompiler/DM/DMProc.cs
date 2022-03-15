@@ -402,6 +402,7 @@ namespace DMCompiler.DM {
             ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
+            WriteInt(parameterNames?.Length ?? 0);
 
             if (argumentCount > 0) {
                 if (parameterTypes == null || parameterTypes.Length != argumentCount) {

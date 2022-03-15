@@ -35,5 +35,15 @@ namespace OpenDreamRuntime {
         public void WriteWorldLog(string message, LogLevel level);
 
         IEnumerable<DreamConnection> Connections { get; }
+
+        public TrustLevel TrustLevel { get; }
+        private void LoadTrustLevel(){}
+    }
+
+    public enum TrustLevel : int
+    {
+        Ultrasafe = 0,
+        Safe = 1,
+        Trusted = 2
     }
 }

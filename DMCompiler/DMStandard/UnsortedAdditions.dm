@@ -18,10 +18,13 @@
 /proc/issaved(v)
 	set opendream_unimplemented = TRUE
 /proc/shell(command)
+	// YOU MUST IMPLEMENT A TRUST LEVEL CHECK WHEN YOU IMPLEMENT THIS!!!!
 	set opendream_unimplemented = TRUE
 /proc/run(File)
+	// YOU MUST IMPLEMENT A TRUST LEVEL CHECK WHEN YOU IMPLEMENT THIS!!!!
 	set opendream_unimplemented = TRUE
 /proc/ftp(File, Name)
+	// YOU MUST IMPLEMENT A TRUST LEVEL CHECK WHEN YOU IMPLEMENT THIS!!!!
 	set opendream_unimplemented = TRUE
 /proc/replacetext_char(Haystack,Needle,Replacement,Start=1,End=0)
 	set opendream_unimplemented = TRUE

@@ -20,10 +20,11 @@ using Robust.Shared.ViewVariables;
 
 namespace OpenDreamRuntime
 {
-    public class DreamConnection
+    public sealed class DreamConnection
     {
         [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamResourceManager _rscMan = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
         [ViewVariables] private Dictionary<string, DreamProc> _availableVerbs = new();
@@ -341,6 +342,12 @@ namespace OpenDreamRuntime
 
         public void BrowseResource(DreamResource resource, string filename)
         {
+            //TODO Is this necessary?
+            if (!_rscMan.SufficientTrustLevel(resource.ResourcePath))
+            {
+                throw new PropagatingRuntime("Safety violation");
+            }
+
             var msg = _netManager.CreateNetMessage<MsgBrowseResource>();
             msg.Filename = filename;
             msg.Data = resource.ResourceData;

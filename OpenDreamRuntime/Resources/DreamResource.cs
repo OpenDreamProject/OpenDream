@@ -2,7 +2,10 @@
 using System.Text;
 
 namespace OpenDreamRuntime.Resources {
-    public class DreamResource {
+    public class DreamResource
+    {
+        [Dependency] private readonly DreamResourceManager _rscMan = default!;
+
         public string ResourcePath;
         public byte[] ResourceData {
             get {
@@ -22,7 +25,10 @@ namespace OpenDreamRuntime.Resources {
             ResourcePath = resourcePath;
         }
 
-        public virtual string ReadAsString() {
+        public virtual string ReadAsString(bool ignoreTrustLevel = false)
+        {
+            if (!ignoreTrustLevel && !_rscMan.SufficientTrustLevel(_filePath)) return null;
+
             if (!File.Exists(_filePath)) return null;
 
             string resourceString = Encoding.ASCII.GetString(ResourceData);
@@ -38,7 +44,13 @@ namespace OpenDreamRuntime.Resources {
 
         public virtual void Output(DreamValue value) {
             if (value.TryGetValueAsString(out string text)) {
-                string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
+                string filePath = Path.Combine(_rscMan.RootPath, ResourcePath);
+
+                //TODO Is this necessary?
+                if (!_rscMan.SufficientTrustLevel(filePath))
+                {
+                    return;
+                }
 
                 CreateDirectory();
                 File.AppendAllText(filePath, text + "\r\n");
@@ -49,7 +61,13 @@ namespace OpenDreamRuntime.Resources {
         }
 
         private void CreateDirectory() {
-            Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
+            //TODO Is this necessary?
+            var path = Path.GetDirectoryName(_filePath);
+            if (!_rscMan.SufficientTrustLevel(path))
+            {
+                return;
+            }
+            Directory.CreateDirectory(path);
         }
     }
 }

@@ -7,6 +7,9 @@ namespace OpenDreamShared {
         public static readonly CVarDef<string> JsonPath =
             CVarDef.Create("opendream.json_path", String.Empty, CVar.SERVERONLY);
 
+        public static readonly CVarDef<int> TrustLevel =
+            CVarDef.Create("opendream.trust_level", 0, CVar.SERVERONLY);
+
 
         public static readonly CVarDef<int> DownloadTimeout =
             CVarDef.Create("opendream.download_timeout", 30, CVar.CLIENTONLY);

@@ -37,7 +37,11 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Mobs { get; set; } = new();
         public Random Random { get; set; } = new();
 
-        public void Initialize() {
+        public TrustLevel TrustLevel { get; private set; } = TrustLevel.Ultrasafe;
+
+        public void Initialize()
+        {
+            LoadTrustLevel();
             InitializeConnectionManager();
 
             DreamCompiledJson json = LoadJson();
@@ -87,6 +91,21 @@ namespace OpenDreamRuntime {
 
         public void Shutdown() {
 
+        }
+
+        private void LoadTrustLevel()
+        {
+            var trust = _configManager.GetCVar(OpenDreamCVars.TrustLevel);
+            if (!Enum.IsDefined(typeof(TrustLevel), trust))
+            {
+                // It's already ultrasafe by default so we don't need to set it
+                Logger.Error("Invalid trust level, defaulting to Ultrasafe.");
+            }
+            else
+            {
+                TrustLevel = (TrustLevel)trust;
+                Logger.Info($"Trust level set to {Enum.GetName(TrustLevel)}");
+            }
         }
 
         public void Update()

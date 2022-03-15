@@ -10,10 +10,11 @@ using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Resources
 {
-    public class DreamResourceManager
+    public sealed class DreamResourceManager
     {
         [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
 
         public string RootPath { get; private set; }
 
@@ -30,15 +31,53 @@ namespace OpenDreamRuntime.Resources
             _netManager.RegisterNetMessage<MsgResource>();
         }
 
-        public bool DoesFileExist(string resourcePath) {
-            return File.Exists(Path.Combine(RootPath, resourcePath));
+        public bool SufficientTrustLevel(string path, bool dllCheck = false)
+        {
+            // TODO safe/ultrasafe should prompt the user to allow/deny, then update these throws
+            switch (_dreamMan.TrustLevel)
+            {
+                case TrustLevel.Trusted: return true;
+                case TrustLevel.Ultrasafe:
+                {
+                    if(dllCheck) throw new PropagatingRuntime("Safety violation: Can't call DLLs outside of Trusted");
+                    throw new PropagatingRuntime("Safety violation: Can't access files");
+                }
+                case TrustLevel.Safe:
+                {
+                    if (dllCheck)
+                    {
+                        throw new PropagatingRuntime("Safety violation: Can't call DLLs outside of Trusted");
+                    }
+                    var relPath = Path.GetRelativePath(RootPath, path);
+                    if (!relPath.StartsWith('.') && !Path.IsPathRooted(relPath))
+                    {
+                        return true;
+                    }
+                    throw new PropagatingRuntime("Safety violation");
+                }
+                default:
+                    throw new PropagatingRuntime("Invalid trust level");
+            }
         }
 
-        public DreamResource LoadResource(string resourcePath) {
+        public bool DoesFileExist(string resourcePath)
+        {
+            var path = Path.Combine(RootPath, resourcePath);
+            if (!SufficientTrustLevel(path)) return false;
+            return File.Exists(path);
+        }
+
+        public DreamResource LoadResource(string resourcePath, bool ignoreTrustlevel = false) {
             if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
 
-            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource)) {
-                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
+            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource))
+            {
+                var path = Path.Combine(RootPath, resourcePath);
+                if (!ignoreTrustlevel && !SufficientTrustLevel(path))
+                {
+                    return null;
+                }
+                resource = new DreamResource(path, resourcePath);
                 _resourceCache.Add(resourcePath, resource);
             }
 
@@ -59,9 +98,15 @@ namespace OpenDreamRuntime.Resources
             }
         }
 
-        public bool DeleteFile(string filePath) {
+        public bool DeleteFile(string filePath)
+        {
+            var path = Path.Combine(RootPath, filePath);
+            if (!SufficientTrustLevel(path))
+            {
+                return false;
+            }
             try {
-                File.Delete(Path.Combine(RootPath, filePath));
+                File.Delete(path);
             } catch (Exception) {
                 return false;
             }
@@ -69,9 +114,15 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public bool DeleteDirectory(string directoryPath) {
+        public bool DeleteDirectory(string directoryPath)
+        {
+            var path = Path.Combine(RootPath, directoryPath);
+            if (!SufficientTrustLevel(path))
+            {
+                return false;
+            }
             try {
-                Directory.Delete(Path.Combine(RootPath, directoryPath), true);
+                Directory.Delete(path, true);
             } catch (Exception) {
                 return false;
             }
@@ -79,9 +130,15 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public bool SaveTextToFile(string filePath, string text) {
+        public bool SaveTextToFile(string filePath, string text)
+        {
+            var path = Path.Combine(RootPath, filePath);
+            if (!SufficientTrustLevel(path))
+            {
+                return false;
+            }
             try {
-                File.WriteAllText(Path.Combine(RootPath, filePath), text);
+                File.WriteAllText(path, text);
             } catch (Exception) {
                 return false;
             }
@@ -89,9 +146,16 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public bool CopyFile(string sourceFilePath, string destinationFilePath) {
+        public bool CopyFile(string sourceFilePath, string destinationFilePath)
+        {
+            var src = Path.Combine(RootPath, sourceFilePath);
+            var dest = Path.Combine(RootPath, destinationFilePath);
+            if (!SufficientTrustLevel(src) || !SufficientTrustLevel(dest))
+            {
+                return false;
+            }
             try {
-                File.Copy(Path.Combine(RootPath, sourceFilePath), Path.Combine(RootPath, destinationFilePath));
+                File.Copy(src, dest);
             } catch (Exception) {
                 return false;
             }
@@ -102,6 +166,10 @@ namespace OpenDreamRuntime.Resources
         public string[] EnumerateListing(string path)
         {
             string directory = Path.Combine(RootPath, Path.GetDirectoryName(path));
+            if (!SufficientTrustLevel(directory))
+            {
+                return Array.Empty<string>();
+            }
             string searchPattern = Path.GetFileName(path);
 
             var entries = Directory.GetFileSystemEntries(directory, searchPattern);

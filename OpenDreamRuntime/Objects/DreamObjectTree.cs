@@ -105,7 +105,8 @@ namespace OpenDreamRuntime.Objects {
                             switch (resourcePathElement.ValueKind) {
                                 case JsonValueKind.String: {
                                     var resM = IoCManager.Resolve<DreamResourceManager>();
-                                    DreamResource resource = resM.LoadResource(resourcePathElement.GetString());
+                                    //TODO Should this actually ignore trust level?
+                                    DreamResource resource = resM.LoadResource(resourcePathElement.GetString(), true);
 
                                     return new DreamValue(resource);
                                 }

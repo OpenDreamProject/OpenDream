@@ -42,6 +42,11 @@ welcomemsg = "Welcome to the server!"
 [opendream]
 # The path to DMCompiler's output
 json_path = ""
+# 0 = Ultrasafe, 1 = Safe, 2 = Trusted
+# Ultrasafe blocks DLL usage and any attempt to access files
+# Safe blocks DLL usage and any attempt to access files outside of the project directory
+# Trusted has no safeguards
+trust_level = 2
 
 # These are actually client cvars that, currently, have to be passed as program args.
 # Documented here in hopes that we'll have a client_config.toml without using the launcher one day

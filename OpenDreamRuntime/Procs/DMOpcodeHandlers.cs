@@ -1062,9 +1062,17 @@ namespace OpenDreamRuntime.Procs {
                     unsafe
                     {
                         var dllName = source.GetValueAsString();
+
+                        var _rscMan = IoCManager.Resolve<DreamResourceManager>();
+                        if (!_rscMan.SufficientTrustLevel(_rscMan.RootPath, true))
+                        {
+                            //TODO Update this when trust levels support prompts
+                            throw new PropagatingRuntime("Safety violation: Can't call DLLs outside of Trusted");
+                        }
+
                         var procName = state.Pop().GetValueAsString();
                         // DLL Invoke
-                        var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
+                        var entryPoint = DllHelper.ResolveDllTarget(_rscMan, dllName, procName);
 
                         Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
                         argV.Fill(0);
@@ -1251,6 +1259,7 @@ namespace OpenDreamRuntime.Procs {
 
                 string browseValue;
                 if (body.Type == DreamValue.DreamValueType.DreamResource) {
+                    // ReadAsString() checks trust level
                     browseValue = body.GetValueAsDreamResource().ReadAsString();
                 } else {
                     browseValue = (string)body.Value;

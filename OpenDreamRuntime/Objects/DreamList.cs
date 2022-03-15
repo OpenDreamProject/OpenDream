@@ -200,20 +200,26 @@ namespace OpenDreamRuntime.Objects {
 
         public override DreamValue GetValue(DreamValue key)
         {
-            if (!key.TryGetValueAsString(out var val))
-            {
-                throw new Exception("Tried to get invalid key");
+            if (!key.TryGetValueAsString(out var varName)) {
+                throw new Exception($"Invalid var index {key}");
             }
-            return _dreamObject.GetVariable(val);
+
+            if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
+                throw new Exception($"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+            }
+
+            return objectVar;
         }
 
         public override void SetValue(DreamValue key, DreamValue value) {
-            if (key.TryGetValueAsString(out var varName) && _dreamObject.HasVariable(varName)) {
+            if (key.TryGetValueAsString(out var varName)) {
+                if (!_dreamObject.HasVariable(varName)) {
+                    throw new Exception($"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                }
+
                 _dreamObject.SetVariable(varName, value);
-            }
-            else
-            {
-                throw new Exception("Tried to set invalid key");
+            } else {
+                throw new Exception($"Invalid var index {key}");
             }
         }
     }

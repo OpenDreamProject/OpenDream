@@ -50,7 +50,7 @@ CLIENT_CONTENT_ASSEMBLIES = [
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Packages the SS14 client.")
+        description="Packages the OpenDream client.")
 
     parser.add_argument("--skip-build",
                         action="store_true",

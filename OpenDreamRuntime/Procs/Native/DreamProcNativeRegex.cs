@@ -57,7 +57,6 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
-            if (!dreamRegex.IsGlobal) throw new NotImplementedException("Non-global regex replaces are not implemented");
 
             DreamValue haystack = arguments.GetArgument(0, "haystack");
             DreamValue replace = arguments.GetArgument(1, "replacement");

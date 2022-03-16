@@ -95,7 +95,7 @@ BIN_SKIP_FOLDERS = [
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Packages the SS14 content repo for release on all platforms.")
+        description="Packages the OpenDream repo for release on all platforms.")
     parser.add_argument("--platform",
                         "-p",
                         action="store",

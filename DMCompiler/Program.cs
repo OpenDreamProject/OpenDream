@@ -11,6 +11,42 @@ namespace DMCompiler {
                 //Compile errors, exit with an error code
                 Environment.Exit(1);
             }
+
+            if (!DMCompiler.Settings.QuitOnCompletion)
+            {
+                var msg = "Enter 'exit' to quit or '--help' for more options";
+                string input;
+                do
+                {
+                    Console.WriteLine(msg);
+                    input = Console.ReadLine();
+                    HandleCommand(input);
+                } while (input != "exit");
+                Environment.Exit(0);
+            }
+        }
+
+        private static void HandleCommand(string input)
+        {
+            switch (input)
+            {
+                case "--help":
+                {
+                    Console.WriteLine("Valid commands:");
+                    Console.WriteLine("\t--help - See this info");
+                    Console.WriteLine("\t--exit - Exit the program. 'exit' also works");
+                    break;
+                }
+                case "--exit":
+                case "exit":
+                {
+                    Environment.Exit(0);
+                    break;
+                }
+                default:
+                    Console.WriteLine($"Unknown command '{input}'");
+                    break;
+            }
         }
 
         private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
@@ -23,6 +59,12 @@ namespace DMCompiler {
                     case "--dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "--no-standard": settings.NoStandard = true; break;
                     case "--verbose": settings.Verbose = true; break;
+                    case "--incremental-dmm":
+                    {
+                        settings.IncrementalDMM = true;
+                        settings.QuitOnCompletion = false;
+                        break;
+                    }
                     default: {
                         string extension = Path.GetExtension(arg);
 

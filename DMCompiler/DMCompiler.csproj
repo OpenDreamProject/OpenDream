@@ -10,20 +10,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <DMStandard Include="DMStandard\**"/>
+    <DMStandard Include="DMStandard\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.Caching" Version="7.0.0-preview.2.22152.2" />
   </ItemGroup>
 
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CopyDMStandardOnPublish" AfterTargets="Publish">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
 

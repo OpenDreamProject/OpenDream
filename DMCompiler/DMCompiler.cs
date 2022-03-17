@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -22,12 +21,19 @@ namespace DMCompiler {
         public static int ErrorCount = 0;
         public static int WarningCount = 0;
         public static DMCompilerSettings Settings;
+        [CanBeNull] private static IncrementalDMM DMMWatcher;
 
         private static DateTime _compileStartTime;
+        public static DMPreprocessor Preprocessor;
 
         public static bool Compile(DMCompilerSettings settings) {
             Settings = settings;
             if (Settings.Files == null) return false;
+
+            if (Settings.IncrementalDMM)
+            {
+                DMMWatcher = new IncrementalDMM();
+            }
 
             //TODO: Only use InvariantCulture where necessary instead of it being the default
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -38,10 +44,10 @@ namespace DMCompiler {
                 Warning(new CompilerWarning(Location.Unknown, "Unimplemented proc & var warnings are currently suppressed"));
             }
 
-            DMPreprocessor preprocessor = Preprocess(settings.Files);
+            Preprocessor = Preprocess(settings.Files);
             if (settings.DumpPreprocessor) {
                 StringBuilder result = new();
-                foreach (Token t in preprocessor.GetResult()) {
+                foreach (Token t in Preprocessor.GetResult()) {
                     result.Append(t.Text);
                 }
 
@@ -50,16 +56,16 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {output}");
             }
 
-            bool successfulCompile = preprocessor is not null && Compile(preprocessor.GetResult());
+            bool successfulCompile = Preprocessor is not null && Compile(Preprocessor.GetResult());
 
             if (successfulCompile) {
                 Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
 
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
-                List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
+                List<DreamMapJson> maps = ConvertMaps(Preprocessor.IncludedMaps);
 
-                SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                SaveJson(maps, Preprocessor.IncludedInterface, outputFile);
             } else {
                 Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
             }
@@ -148,7 +154,7 @@ namespace DMCompiler {
             Console.WriteLine($"{duration.ToString(@"mm\:ss\.fffffff")}: {message}");
         }
 
-        private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
+        public static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
 
             foreach (string mapPath in mapPaths) {
@@ -181,7 +187,7 @@ namespace DMCompiler {
             return maps;
         }
 
-        private static void SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
+        public static void SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
@@ -234,5 +240,7 @@ namespace DMCompiler {
         public bool DumpPreprocessor;
         public bool NoStandard;
         public bool Verbose;
+        public bool QuitOnCompletion = true; // Set by other settings. Whether or not to exit when compilation finishes
+        public bool IncrementalDMM;
     }
 }

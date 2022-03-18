@@ -391,6 +391,11 @@ namespace OpenDreamRuntime.Procs {
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                         result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
                         break;
+                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
+                        // TODO icon += hexcolor is the same as Blend()
+                        Logger.Warning("Appending colors to DMIs is not implemented");
+                        result = first;
+                        break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
                 }

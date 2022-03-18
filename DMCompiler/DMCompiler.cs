@@ -58,15 +58,22 @@ namespace DMCompiler {
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
-                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
                 if (ErrorCount > 0)
                 {
                     successfulCompile = false;
                 }
                 else
                 {
-                    Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
-                    Console.WriteLine(output);
+                    var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                    if (ErrorCount > 0)
+                    {
+                        successfulCompile = false;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
+                        Console.WriteLine(output);
+                    }
                 }
             }
             if (!successfulCompile) {

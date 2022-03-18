@@ -199,7 +199,6 @@ namespace DMCompiler {
 
         private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile)
         {
-            var beforeErrorCount = DMCompiler.ErrorCount;
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;

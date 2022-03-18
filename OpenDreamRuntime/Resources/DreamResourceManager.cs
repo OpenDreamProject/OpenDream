@@ -99,14 +99,18 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public IEnumerable<string> EnumerateListing(string path) {
+        public string[] EnumerateListing(string path)
+        {
             string directory = Path.Combine(RootPath, Path.GetDirectoryName(path));
             string searchPattern = Path.GetFileName(path);
 
-            var entries = Directory.EnumerateFileSystemEntries(directory, searchPattern);
-            foreach (string entry in entries) {
-                yield return Path.GetRelativePath(directory, entry);
+            var entries = Directory.GetFileSystemEntries(directory, searchPattern);
+            for (var i = 0; i < entries.Length; i++) {
+                var relPath = Path.GetRelativePath(directory, entries[i]);
+                if (Directory.Exists(entries[i])) relPath += "/";
+                entries[i] = relPath;
             }
+            return entries;
         }
     }
 }

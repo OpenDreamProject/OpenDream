@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 instance.SetVariable("index", new DreamValue(match.Index + 1));
                 instance.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamList.Create();
+                    DreamList groupList = DreamList.Create(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));

@@ -54,9 +54,35 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
+            // TODO ProcessStatementSet() needs to be before any loops but this is nasty
+            foreach (var stmt in block.Statements)
+            {
+                if (stmt is DMASTProcStatementSet set)
+                {
+                    try
+                    {
+                        ProcessStatementSet(set);
+                    }
+                    catch (CompileAbortException e)
+                    {
+                        // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                        e.Error.Location = set.Location;
+                        DMCompiler.Error(e.Error);
+                        return; // Don't spam the error that will continue to exist
+                    }
+                    catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                        DMCompiler.Error(e.Error);
+                    }
+                }
+            }
             foreach (DMASTProcStatement statement in block.Statements) {
                 try
                 {
+                    // see above
+                    if (statement is DMASTProcStatementSet)
+                    {
+                        continue;
+                    }
                     ProcessStatement(statement);
                 }
                 catch (CompileAbortException e)
@@ -79,7 +105,6 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementGoto statementGoto: ProcessStatementGoto(statementGoto); break;
                 case DMASTProcStatementLabel statementLabel: ProcessStatementLabel(statementLabel); break;
                 case DMASTProcStatementBreak statementBreak: ProcessStatementBreak(statementBreak); break;
-                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
                 case DMASTProcStatementDel statementDel: ProcessStatementDel(statementDel); break;
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
                 case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
@@ -211,10 +236,6 @@ namespace DMCompiler.DM.Visitors {
                     else
                     {
                         _proc.Attributes &= ~ProcAttributes.Background;
-                    }
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set background is not implemented"));
                     }
                     break;
                 case "name":

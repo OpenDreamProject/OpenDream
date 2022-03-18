@@ -393,7 +393,7 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
                         // TODO icon += hexcolor is the same as Blend()
-                        Logger.Warning("Appending colors to DMIs is not implemented");
+                        Logger.WarningS("opendream.unimplemented", "Appending colors to DMIs is not implemented");
                         result = first;
                         break;
                     default:

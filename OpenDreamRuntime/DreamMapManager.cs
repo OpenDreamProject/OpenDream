@@ -75,7 +75,7 @@ namespace OpenDreamRuntime {
             if (maps.Count == 0) throw new ArgumentException("No maps were given");
             else if (maps.Count > 1)
             {
-                Logger.Error("Loading more than one map is not implemented, skipping additional maps");
+                Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
             DreamMapJson map = maps[0];
 

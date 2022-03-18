@@ -241,7 +241,7 @@ namespace DMCompiler {
             });
 
             // Successful serialization
-            if (ErrorCount > 0)
+            if (ErrorCount == 0)
             {
                 File.WriteAllText(outputFile, json);
                 return "Saved to " + outputFile;

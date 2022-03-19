@@ -66,11 +66,6 @@ namespace DMCompiler {
 
             }
 
-            DMParser dmParser = new DMParser(lexer, !Settings.SuppressUnimplementedWarnings);
-
-            VerbosePrint("Parsing");
-            DMASTFile astFile = dmParser.File();
-
             successfulCompile = Compile(lexer);
 
             if (successfulCompile)

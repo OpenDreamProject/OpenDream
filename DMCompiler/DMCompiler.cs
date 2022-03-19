@@ -45,14 +45,34 @@ namespace DMCompiler {
             }
 
             bool successfulCompile = false;
-            if (settings.ExperimentalPreproc) {
-                DMASTFile ast = GetAST(settings.Files);
-                successfulCompile = CompileAST(ast) == 0;
+
+            IDMLexer lexer = null;
+            if (Settings.ExperimentalPreproc) {
+                DMParser.ExperimentalPreproc = true;
+                var preprocessor = new Experimental.DMPreprocessor();
+                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
+                preprocessor.IncludeOuter(new Experimental.SourceText(dmStandardDirectory, "_Standard.dm"));
+                foreach (var file in Settings.Files) {
+                    var fi = new FileInfo(file);
+                    preprocessor.IncludeOuter(new Experimental.SourceText(fi.DirectoryName, fi.Name));
+                }
+                IncludedMaps = preprocessor.IncludedMaps;
+                IncludedInterface = preprocessor.IncludedInterface;
+                lexer = new Experimental.PreprocessorTokenConvert(preprocessor.GetEnumerator());
             } else {
             DMPreprocessor preprocessor = Preprocess(settings.Files);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
             }
+
+            DMParser dmParser = new DMParser(lexer, !Settings.SuppressUnimplementedWarnings);
+
+            VerbosePrint("Parsing");
+            DMASTFile astFile = dmParser.File();
+
+            successfulCompile = Compile(lexer);
+
             if (successfulCompile)
             {
                 //Output file is the first file with the extension changed to .json
@@ -65,7 +85,7 @@ namespace DMCompiler {
                 }
                 else
                 {
-                    var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                    var output = SaveJson(maps, IncludedInterface, outputFile);
                     if (ErrorCount > 0)
                     {
                         successfulCompile = false;
@@ -126,6 +146,7 @@ namespace DMCompiler {
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
+        private static bool Compile(IDMLexer dmLexer) {
             DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
 
             VerbosePrint("Parsing");

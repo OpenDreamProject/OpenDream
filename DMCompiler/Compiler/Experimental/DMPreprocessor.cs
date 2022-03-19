@@ -181,11 +181,11 @@ namespace DMCompiler.Compiler.Experimental {
                                 var source_text = new SourceText(current_source.RootDir, includeParameter.Text);
                                 switch (Path.GetExtension(source_text.FullPath)) {
                                     case ".dmm": {
-                                            IncludedMaps.Add(source_text.IncludePath);
+                                            IncludedMaps.Add(source_text.FullPath);
                                             continue;
                                         }
                                     case ".dmf": {
-                                            IncludedInterface = source_text.IncludePath;
+                                            IncludedInterface = source_text.FullPath;
                                             continue;
                                         }
                                     case ".dms": {

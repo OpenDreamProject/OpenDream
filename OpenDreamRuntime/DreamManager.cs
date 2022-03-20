@@ -36,8 +36,8 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
         public Random Random { get; set; } = new();
-
         public Dictionary<string, Queue<DreamObject>> Tags { get; set; } = new();
+
         public void Initialize() {
             InitializeConnectionManager();
 

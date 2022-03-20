@@ -4,8 +4,12 @@
 
 	var/list/vars
 
-	var/tag = null as opendream_unimplemented
+	var/tag
 
 	proc/New()
+
 	proc/Del()
+		if(tag)
+			tag = null
+
 	proc/Topic(href, href_list)

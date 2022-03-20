@@ -94,17 +94,29 @@ namespace DMCompiler.DM.Visitors {
 
             _currentObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
-            try {
-                if (varOverride.VarName == "parent_type") {
-                    DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
+            try
+            {
+                switch (varOverride.VarName)
+                {
+                    case "parent_type":
+                    {
+                        DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                    if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
-                    _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
-                } else {
-                    DMVariable variable = new DMVariable(null, varOverride.VarName, false, false);
+                        if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
+                        _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
+                        break;
+                    }
+                    case "tag":
+                        DMCompiler.Error(new CompilerError(varOverride.Location, "tag: may not be set at compile-time"));
+                        break;
+                    default:
+                    {
+                        DMVariable variable = new DMVariable(null, varOverride.VarName, false, false);
 
-                    SetVariableValue(variable, varOverride.Value);
-                    _currentObject.VariableOverrides[variable.Name] = variable;
+                        SetVariableValue(variable, varOverride.Value);
+                        _currentObject.VariableOverrides[variable.Name] = variable;
+                        break;
+                    }
                 }
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);

@@ -20,6 +20,7 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         List<DreamObject> Mobs { get; set; }
         public Random Random { get; set; }
+        public Dictionary<string, Queue<DreamObject>> Tags { get; set; }
 
         public void Initialize();
         public void Shutdown();

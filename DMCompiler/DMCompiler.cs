@@ -58,15 +58,31 @@ namespace DMCompiler {
 
             bool successfulCompile = Preprocessor is not null && Compile(Preprocessor.GetResult());
 
-            if (successfulCompile) {
-                Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
-
+            if (successfulCompile)
+            {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(Preprocessor.IncludedMaps);
 
-                SaveJson(maps, Preprocessor.IncludedInterface, outputFile);
-            } else {
+                if (ErrorCount > 0)
+                {
+                    successfulCompile = false;
+                }
+                else
+                {
+                    var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                    if (ErrorCount > 0)
+                    {
+                        successfulCompile = false;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
+                        Console.WriteLine(output);
+                    }
+                }
+            }
+            if (!successfulCompile) {
                 Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
             }
 
@@ -187,7 +203,8 @@ namespace DMCompiler {
             return maps;
         }
 
-        public static void SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
+        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile)
+        {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
@@ -205,7 +222,7 @@ namespace DMCompiler {
                 for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                     DMVariable global = DMObjectTree.Globals[i];
                     if (!global.TryAsJsonRepresentation(out var globalJson))
-                        throw new Exception($"Failed to serialize global {global.Name}");
+                        DMCompiler.Error(new CompilerError(global.Value.Location, $"Failed to serialize global {global.Name}"));
 
                     if (globalJson != null) {
                         globalListJson.Globals.Add(i, globalJson);
@@ -229,8 +246,13 @@ namespace DMCompiler {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
             });
 
-            File.WriteAllText(outputFile, json);
-            Console.WriteLine("Saved to " + outputFile);
+            // Successful serialization
+            if (ErrorCount == 0)
+            {
+                File.WriteAllText(outputFile, json);
+                return "Saved to " + outputFile;
+            }
+            return string.Empty;
         }
     }
 

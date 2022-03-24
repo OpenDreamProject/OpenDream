@@ -1,24 +1,23 @@
-﻿using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
-    public struct DreamProcArguments {
-        public List<DreamValue> OrderedArguments;
-        public Dictionary<string, DreamValue> NamedArguments;
+    public readonly struct DreamProcArguments {
+        public readonly List<DreamValue> OrderedArguments;
+        public readonly Dictionary<string, DreamValue> NamedArguments;
 
         public int ArgumentCount => OrderedArguments.Count + NamedArguments.Count;
 
-        public DreamProcArguments(List<DreamValue> orderedArguments, Dictionary<string, DreamValue> namedArguments = null) {
+        public DreamProcArguments(List<DreamValue>? orderedArguments, Dictionary<string, DreamValue>? namedArguments = null) {
             OrderedArguments = orderedArguments ?? new List<DreamValue>();
             NamedArguments = namedArguments ?? new Dictionary<string, DreamValue>();
         }
 
         public List<DreamValue> GetAllArguments() {
-            List<DreamValue> AllArguments = new List<DreamValue>();
+            List<DreamValue> allArguments = new List<DreamValue>();
 
-            AllArguments.AddRange(OrderedArguments);
-            AllArguments.AddRange(NamedArguments.Values);
-            return AllArguments;
+            allArguments.AddRange(OrderedArguments);
+            allArguments.AddRange(NamedArguments.Values);
+            return allArguments;
         }
 
         public DreamValue GetArgument(int argumentPosition, string argumentName) {

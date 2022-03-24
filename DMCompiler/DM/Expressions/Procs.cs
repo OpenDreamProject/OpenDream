@@ -109,7 +109,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
             if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-                DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner.Path}.{targetProc.Name}() is not implemented"));
+                DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}{targetProc.Name}() is not implemented"));
             }
 
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
@@ -132,6 +132,15 @@ namespace DMCompiler.DM.Expressions {
                 }
                 proc.Call(procRef);
             }
+        }
+
+        public override bool TryAsJsonRepresentation(out object json) {
+            json = null;
+            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
+            {
+                DMCompiler.Warning(new CompilerWarning(Location, $"DMM overrides for expression {GetType()} are not implemented"));
+            }
+            return true; //TODO
         }
     }
 }

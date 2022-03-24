@@ -284,7 +284,8 @@ namespace DMCompiler.DM.Visitors {
                 }
                 else
                 {
-                    DMExpression.Emit(_dmObject, _proc, statementForList.List);
+                    // If List is null it's "for(var/atom/A)" (or an atom subtype) which is implicitly "in world"
+                    DMExpression.Emit(_dmObject, _proc, statementForList.List ?? new DMASTIdentifier(statementForList.Location, "world"));
                     _proc.PushPath(varDeclaration.Type.Value);
                     _proc.CreateListEnumerator();
                 }

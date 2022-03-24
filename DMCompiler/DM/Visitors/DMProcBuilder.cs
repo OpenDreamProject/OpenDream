@@ -270,17 +270,32 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
-            DMExpression.Emit(_dmObject, _proc, statementForList.List);
+
             DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
-            if (varDeclaration != null && varDeclaration.Type != null)
+
+            if (varDeclaration?.Type != null)
             {
-                _proc.PushPath(varDeclaration.Type.Value);
+                // Atoms & world will use their contents list implicitly
+                // This is for things like "for(var/client/C)"
+                if (statementForList.List is null && !DMObjectTree.GetDMObject(varDeclaration.Type.Value).IsSubtypeOf(DreamPath.Atom))
+                {
+                    _proc.PushPath(varDeclaration.Type.Value);
+                    _proc.CreateTypeEnumerator();
+                }
+                else
+                {
+                    DMExpression.Emit(_dmObject, _proc, statementForList.List);
+                    _proc.PushPath(varDeclaration.Type.Value);
+                    _proc.CreateListEnumerator();
+                }
             }
             else
             {
+                DMExpression.Emit(_dmObject, _proc, statementForList.List);
                 _proc.PushNull();
+                _proc.CreateListEnumerator();
             }
-            _proc.CreateListEnumerator();
+
             _proc.StartScope();
             {
                 if (statementForList.Initializer != null) {

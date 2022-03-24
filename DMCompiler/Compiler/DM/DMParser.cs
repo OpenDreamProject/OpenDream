@@ -981,9 +981,9 @@ namespace DMCompiler.Compiler.DM {
                     Newline();
 
 
-                    //Implicit "in world"
+                    //Implicit "in world", handled later
                     if (variableDeclaration.Value is null && rangeEnd is null && defaultStep) {
-                        return new DMASTProcStatementForList(loc, initializer, variable, new DMASTIdentifier(loc, "world"), GetForBody());
+                        return new DMASTProcStatementForList(loc, initializer, variable, null, GetForBody());
                     }
 
                     return new DMASTProcStatementForRange(loc, initializer, variable, rangeBegin, rangeEnd, step, GetForBody());

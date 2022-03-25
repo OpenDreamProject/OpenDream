@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Resources {
     public class DreamResource {

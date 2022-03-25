@@ -23,7 +23,7 @@ namespace OpenDreamRuntime {
             EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-            sprite.Appearance = CreateAppearanceFromAtom(atom);
+            sprite.SetAppearance(CreateAppearanceFromAtom(atom));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent metaData)) {
                 atom.GetVariable("name").TryGetValueAsString(out string name);
@@ -58,6 +58,29 @@ namespace OpenDreamRuntime {
 
         public IconAppearance? GetAppearance(DreamObject atom) {
             return _entityManager.GetComponent<DMISpriteComponent>(GetAtomEntity(atom)).Appearance;
+        }
+
+        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetAtomEntity(atom), out var sprite))
+                return;
+            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+
+            update(appearance);
+            sprite.SetAppearance(appearance);
+        }
+
+        public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate) {
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetAtomEntity(atom), out var sprite))
+                return;
+            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+
+            animate(appearance);
+
+            // Don't send the updated appearance to clients, they will animate it
+            sprite.SetAppearance(appearance, dirty: false);
+
+            ServerAppearanceSystem appearanceSystem = EntitySystem.Get<ServerAppearanceSystem>();
+            appearanceSystem.Animate(GetAtomEntity(atom), appearance, duration);
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {

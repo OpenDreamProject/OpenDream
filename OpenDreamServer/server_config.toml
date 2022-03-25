@@ -12,6 +12,8 @@ enabled = false
 tickrate = 20
 port = 25566
 bindto = "::,0.0.0.0"
+pvs_new_budget = 60
+pvs_budget = 150
 # Automatic port forwarding!
 # Disabled by default because you may not want to do this.
 # upnp = true

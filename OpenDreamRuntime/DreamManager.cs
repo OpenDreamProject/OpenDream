@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
@@ -10,13 +8,12 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     partial class DreamManager : IDreamManager {
@@ -82,7 +79,7 @@ namespace OpenDreamRuntime {
             Globals[0] = new DreamValue(WorldInstance);
 
             if (json.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, true);
+                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes, json.GlobalInitProc.VerbName, json.GlobalInitProc.VerbCategory, json.GlobalInitProc.VerbDesc, json.GlobalInitProc.Invisibility);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
@@ -128,16 +125,35 @@ namespace OpenDreamRuntime {
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
 
             GlobalProcs[name] = proc;
         }
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
 
             GlobalProcs[name] = proc;
+        }
+
+        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info)
+        {
+            if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
+            {
+                logRsc = new ConsoleOutputResource();
+                WorldInstance.SetVariableValue("log", new DreamValue(logRsc));
+                Logger.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
+            }
+
+            if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
+            {
+                Logger.LogS(level, "world.log", message);
+            }
+            else
+            {
+                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+            }
         }
     }
 }

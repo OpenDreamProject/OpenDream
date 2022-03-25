@@ -50,6 +50,22 @@ namespace DMCompiler.DM.Expressions {
             _expr.EmitPushValue(dmObject, proc);
             return (DMReference.CreateField(_propertyName), _conditional);
         }
+
+        public override bool TryAsConstant(out Constant constant)
+        {
+            if(_expr.Path is not null)
+            {
+                var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
+                var variable = obj.GetVariable(_propertyName);
+                if (variable.IsConst)
+                {
+                    return variable.Value.TryAsConstant(out constant);
+                }
+            }
+
+            constant = null;
+            return false;
+        }
     }
 
     // x.y.z()
@@ -115,6 +131,12 @@ namespace DMCompiler.DM.Expressions {
             _index.EmitPushValue(dmObject, proc);
 
             return (DMReference.ListIndex, _conditional);
+        }
+
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            // This happens silently in BYOND
+            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+            EmitPushValue(dmObject, proc);
         }
     }
 }

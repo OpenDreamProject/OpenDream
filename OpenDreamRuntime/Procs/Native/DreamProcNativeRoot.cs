@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.IO;
 using System.Globalization;
 using System.Linq;
@@ -12,11 +10,8 @@ using System.Threading.Tasks;
 using System.Web;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
-using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -72,23 +67,39 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("easing", Type = DreamValueType.String)]
         [DreamProcParameter("flags", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_animate(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject obj = arguments.GetArgument(0, "Object").GetValueAsDreamObjectOfType(DreamPath.Atom);
+            // TODO: Leaving out the Object var adds a new step to the previous animation
+            if (!arguments.GetArgument(0, "Object").TryGetValueAsDreamObjectOfType(DreamPath.Atom, out var obj))
+                return DreamValue.Null;
+            // TODO: Is this the correct behavior for invalid time?
+            if (!arguments.GetArgument(0, "time").TryGetValueAsFloat(out float time))
+                return DreamValue.Null;
+            if (arguments.GetArgument(0, "loop").TryGetValueAsInteger(out int loop))
+                throw new NotImplementedException("Looped animations are not implemented");
+            if (arguments.GetArgument(0, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
+                throw new NotImplementedException("Non-linear easing types are not implemented");
+            if (arguments.GetArgument(0, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
+                throw new NotImplementedException("Flags are not implemented");
 
-            if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
-                obj.SetVariable("pixel_x", pixelX);
-            }
+            IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
+            atomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
+                if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
+                    obj.SetVariableValue("pixel_x", pixelX);
+                    pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
+                }
 
-            if (arguments.NamedArguments.TryGetValue("pixel_y", out DreamValue pixelY)) {
-                obj.SetVariable("pixel_y", pixelY);
-            }
+                if (arguments.NamedArguments.TryGetValue("pixel_y", out DreamValue pixelY)) {
+                    obj.SetVariableValue("pixel_y", pixelY);
+                    pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
+                }
 
-            if (arguments.NamedArguments.TryGetValue("dir", out DreamValue dir)) {
-                obj.SetVariable("dir", dir);
-            }
+                if (arguments.NamedArguments.TryGetValue("dir", out DreamValue dir)) {
+                    obj.SetVariableValue("dir", dir);
+                    dir.TryGetValueAsInteger(out int dirValue);
+                    appearance.Direction = (AtomDirection)dirValue;
+                }
 
-            if (arguments.NamedArguments.TryGetValue("transform", out DreamValue transform)) {
-                obj.SetVariable("transform", transform);
-            }
+                // TODO: Rest of the animatable vars
+            });
 
             return DreamValue.Null;
         }
@@ -577,7 +588,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
 
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys));
+            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -1705,7 +1716,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("timestamp", Type = DreamValueType.Float)]
         [DreamProcParameter("format", Type = DreamValueType.String)]
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            int timestamp = arguments.GetArgument(0, "timestamp").GetValueAsInteger();
+            if(!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp))
+            {
+                // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+            }
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format))
             {
                 format = "DDD MMM DD hh:mm:ss YYYY";

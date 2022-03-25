@@ -1,3 +1,4 @@
+using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
@@ -5,14 +6,14 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
-    class DMVisitorExpression : DMASTVisitor {
+    sealed class DMVisitorExpression : DMASTVisitor {
         DMObject _dmObject { get; }
         DMProc _proc { get; }
         DreamPath? _inferredPath { get; }
         internal DMExpression Result { get; private set; }
 
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
-        static public string _scopeMode;
+        public static string _scopeMode;
 
         internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath)
         {
@@ -256,12 +257,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
             var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, land.B, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, lhs.Path);
             Result = new Expressions.LogicalAndAssign(land.Location, lhs, rhs);
         }
         public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
             var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.Path);
             Result = new Expressions.LogicalOrAssign(lor.Location, lhs, rhs);
         }
 
@@ -494,7 +495,7 @@ namespace DMCompiler.DM.Visitors {
 
             if (locate.Expression == null) {
                 if (_inferredPath == null) {
-                    throw new CompileErrorException(locate.Location, "inferred lcoate requires a type");
+                    throw new CompileErrorException(locate.Location, "inferred locate requires a type");
                 }
                 Result = new Expressions.LocateInferred(locate.Location, _inferredPath.Value, container);
                 return;

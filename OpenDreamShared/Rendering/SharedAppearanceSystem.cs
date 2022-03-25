@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Rendering {
     public abstract class SharedAppearanceSystem : EntitySystem {
         [Serializable, NetSerializable]
-        public class AllAppearancesEvent : EntityEventArgs {
+        public sealed class AllAppearancesEvent : EntityEventArgs {
             public Dictionary<uint, IconAppearance> Appearances = new();
 
             public AllAppearancesEvent(Dictionary<uint, IconAppearance> appearances) {
@@ -16,13 +16,26 @@ namespace OpenDreamShared.Rendering {
         }
 
         [Serializable, NetSerializable]
-        public class NewAppearanceEvent : EntityEventArgs {
+        public sealed class NewAppearanceEvent : EntityEventArgs {
             public uint AppearanceId { get; }
             public IconAppearance Appearance { get; }
 
             public NewAppearanceEvent(uint appearanceID, IconAppearance appearance) {
                 AppearanceId = appearanceID;
                 Appearance = appearance;
+            }
+        }
+
+        [Serializable, NetSerializable]
+        public sealed class AnimationEvent : EntityEventArgs {
+            public EntityUid Entity;
+            public uint TargetAppearanceId;
+            public TimeSpan Duration;
+
+            public AnimationEvent(EntityUid entity, uint targetAppearanceId, TimeSpan duration) {
+                Entity = entity;
+                TargetAppearanceId = targetAppearanceId;
+                Duration = duration;
             }
         }
     }

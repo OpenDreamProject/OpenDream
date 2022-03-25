@@ -219,12 +219,25 @@ namespace DMCompiler.DM.Visitors {
                 case Expressions.List:
                 case Expressions.NewList:
                 case Expressions.NewPath:
-                //Not the best way to check the rgb() proc, but temporary
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "rgb": 
-                    //TODO: A more proper compile-time evaluation of rgb()
+
+                //TODO: A better way of handling procs evaluated at compile time
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "rgb":
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "generator":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "matrix":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "icon":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.GlobalField: // Global set to another global
                 case Expressions.StringFormat:
                 case Expressions.ProcCall:
                     if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");

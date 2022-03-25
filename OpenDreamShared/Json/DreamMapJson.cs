@@ -29,10 +29,16 @@ namespace OpenDreamShared.Json {
             Type = type;
         }
 
-        public void AddVarOverride(string varName, object varValue) {
+        public bool AddVarOverride(string varName, object varValue) {
             if (VarOverrides == null) VarOverrides = new Dictionary<string, object>();
 
+            if (VarOverrides.ContainsKey(varName))
+            {
+                VarOverrides[varName] = varValue;
+                return false;
+            }
             VarOverrides.Add(varName, varValue);
+            return true;
         }
     }
 

@@ -186,24 +186,8 @@ namespace DMCompiler.Compiler.DM {
                             Whitespace();
 
                             DMASTExpression value = null;
-                            if (Check(TokenType.DM_LeftBracket)) //TODO: Multidimensional lists
-                            {
-                                //Type information
-                                if (!varPath.IsDescendantOf(DreamPath.List)) {
-                                    var elements = varPath.Elements.ToList();
-                                    elements.Insert(elements.IndexOf("var") + 1, "list");
-                                    varPath = new DreamPath("/" + String.Join("/", elements));
-                                }
+                            PathArray(ref varPath, out value);
 
-                                DMASTExpression size = Expression();
-                                ConsumeRightBracket();
-                                Whitespace();
-
-                                if (size is not null) {
-                                    value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
-                                        new[] { new DMASTCallParameter(loc, size) });
-                                }
-                            }
                             if (Check(TokenType.DM_Equals)) {
                                 Whitespace();
                                 value = Expression();
@@ -317,6 +301,32 @@ namespace DMCompiler.Compiler.DM {
             } else {
                 return null;
             }
+        }
+
+        public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
+            //TODO: Multidimensional lists
+            implied_value = null;
+            if (Check(TokenType.DM_LeftBracket))
+            {
+                var loc = Current().Location;
+                if (!path.IsDescendantOf(DreamPath.List)) {
+                    var elements = path.Elements.ToList();
+                    elements.Insert(elements.IndexOf("var") + 1, "list");
+                    path = new DreamPath("/" + String.Join("/", elements));
+                }
+
+                Whitespace();
+                DMASTExpression size = Expression();
+                ConsumeRightBracket();
+                Whitespace();
+
+                if (size is not null) {
+                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
+                        new[] { new DMASTCallParameter(loc, size) });
+                }
+                return true;
+            }
+            return false;
         }
 
         public DMASTCallable Callable() {
@@ -498,34 +508,40 @@ namespace DMCompiler.Compiler.DM {
                 Error("Expected a label identifier");
             }
 
-            if (expression != null) {
-                if (expression is DMASTIdentifier) {
-                    Check(TokenType.DM_Colon);
-                    return Label((DMASTIdentifier)expression);
-                } else if (expression is DMASTLeftShift) {
-                    DMASTLeftShift leftShift = (DMASTLeftShift)expression;
-                    DMASTProcCall procCall = leftShift.B as DMASTProcCall;
+            if (expression != null)
+            {
+                switch (expression)
+                {
+                    case DMASTIdentifier identifier:
+                        Check(TokenType.DM_Colon);
+                        return Label(identifier);
+                    case DMASTLeftShift leftShift:
+                    {
+                        DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
-                    if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
-                        if (identifier.Identifier == "browse") {
-                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
+                        if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
+                            if (identifier.Identifier == "browse") {
+                                if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
 
-                            DMASTExpression body = procCall.Parameters[0].Value;
-                            DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                            return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                        } else if (identifier.Identifier == "browse_rsc") {
-                            if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
+                                DMASTExpression body = procCall.Parameters[0].Value;
+                                DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
+                                return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
+                            } else if (identifier.Identifier == "browse_rsc") {
+                                if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
 
-                            DMASTExpression file = procCall.Parameters[0].Value;
-                            DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                            return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                        } else if (identifier.Identifier == "output") {
-                            if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
+                                DMASTExpression file = procCall.Parameters[0].Value;
+                                DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
+                                return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
+                            } else if (identifier.Identifier == "output") {
+                                if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
 
-                            DMASTExpression msg = procCall.Parameters[0].Value;
-                            DMASTExpression control = procCall.Parameters[1].Value;
-                            return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                                DMASTExpression msg = procCall.Parameters[0].Value;
+                                DMASTExpression control = procCall.Parameters[1].Value;
+                                return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                            }
                         }
+
+                        break;
                     }
                 }
 
@@ -643,25 +659,7 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression value = null;
                 Whitespace();
 
-                //TODO: Multidimensional lists
-                if (Check(TokenType.DM_LeftBracket)) {
-                    //Type information
-                    if (varPath is not null && !varPath.Path.IsDescendantOf(DreamPath.List)) {
-                        var elements = varPath.Path.Elements.ToList();
-                        elements.Insert(elements.IndexOf("var") + 1, "list");
-                        varPath = new DMASTPath(loc, new DreamPath("/" + String.Join("/", elements)));
-                    }
-
-                    Whitespace();
-                    DMASTExpression size = Expression();
-                    ConsumeRightBracket();
-                    Whitespace();
-
-                    if (size is not null) {
-                        value = new DMASTNewPath(loc, new DMASTPath(loc,DreamPath.List),
-                            new[] { new DMASTCallParameter(loc, size) });
-                    }
-                }
+                PathArray(ref varPath.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
                     if (value != null) Warning("List doubly initialized");
@@ -1431,17 +1429,12 @@ namespace DMCompiler.Compiler.DM {
             if (path != null) {
                 var loc = Current().Location;
                 Whitespace();
-                if (Check(TokenType.DM_LeftBracket)) {
-                    Whitespace();
-                    DMASTExpression expression = Expression();
-                    if (expression != null && expression is not DMASTExpressionConstant) Error("Expected a constant expression");
-                    Whitespace();
-                    ConsumeRightBracket();
-                }
 
                 DMASTExpression value = null;
                 DMValueType type;
                 DMASTExpression possibleValues = null;
+
+                PathArray(ref path.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
                     Whitespace();
@@ -2042,18 +2035,25 @@ namespace DMCompiler.Compiler.DM {
                                 } else {
                                     Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                 }
-                            } else {
+                            } else
+                            {
                                 escapeSequence += c;
-                                if (escapeSequence == "[" || escapeSequence == "]") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == "<" || escapeSequence == ">") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == "\"" || escapeSequence == "'" || escapeSequence == "\\") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else if (escapeSequence == " ") {
-                                    stringBuilder.Append(escapeSequence);
-                                } else { //Unimplemented escape sequence
-                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                switch (escapeSequence)
+                                {
+                                    case "[":
+                                    case "]":
+                                    case "<":
+                                    case ">":
+                                    case "\"":
+                                    case "'":
+                                    case "\\":
+                                    case " ":
+                                    case ".":
+                                        stringBuilder.Append(escapeSequence);
+                                        break;
+                                    default: //Unimplemented escape sequence
+                                        Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                        break;
                                 }
                             }
                         } else if (bracketNesting == 0) {

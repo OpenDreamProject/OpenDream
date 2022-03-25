@@ -1,15 +1,14 @@
-﻿using System;
-using OpenDreamRuntime.Procs;
+﻿using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
+        [Dependency] private DreamResourceManager _dreamRscMan = null;
         [Dependency] private IDreamMapManager _dreamMapManager = null;
         [Dependency] private IGameTiming _gameTiming = null;
         [Dependency] private IConfigurationManager _cfg = null;
@@ -25,7 +24,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
-            dreamObject.SetVariable("log", new DreamValue(new ConsoleOutputResource()));
+            DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
+            dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
             if (fps.Value != null) {
@@ -48,6 +48,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
                 case "maxz":
                     _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
+                case "log":
+                    if (variableValue.TryGetValueAsString(out var logStr))
+                    {
+                        dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
+                    }
+                    else if(!variableValue.TryGetValueAsDreamResource(out _))
+                    {
+                        dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
+                    }
+                    break;
             }
         }
 
@@ -64,8 +74,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {
-                    //TODO: This can only go up to 100%, tick_usage should be able to go higher
-                    float tickUsage = (float)_gameTiming.TickFraction / ushort.MaxValue;
+                    var tickUsage = (_gameTiming.RealTime - _gameTiming.LastTick) / _gameTiming.TickPeriod;
                     return new DreamValue(tickUsage * 100);
                 }
                 case "maxx":

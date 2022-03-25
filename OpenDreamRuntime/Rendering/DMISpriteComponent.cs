@@ -1,22 +1,9 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
-using Robust.Shared.GameObjects;
-using Robust.Shared.Players;
-using Robust.Shared.ViewVariables;
 
 namespace OpenDreamRuntime.Rendering {
     [RegisterComponent]
-    class DMISpriteComponent : SharedDMISpriteComponent {
-        [ViewVariables]
-        public uint? AppearanceId {
-            get => _appearanceId;
-            set {
-                _appearanceId = value;
-                Dirty();
-            }
-        }
-        private uint? _appearanceId;
-
+    sealed class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables]
         public ScreenLocation? ScreenLocation {
             get => _screenLocation;
@@ -29,12 +16,25 @@ namespace OpenDreamRuntime.Rendering {
 
         [ViewVariables]
         public IconAppearance? Appearance {
-            get => (AppearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().GetAppearance(AppearanceId.Value) : null;
-            set => AppearanceId = (value != null) ? EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(value) : null;
+            get => (_appearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().GetAppearance(_appearanceId.Value) : null;
         }
 
+        private uint? _appearanceId;
+
         public override ComponentState GetComponentState() {
-            return new DMISpriteComponentState(AppearanceId, ScreenLocation);
+            return new DMISpriteComponentState(_appearanceId, ScreenLocation);
+        }
+
+        public void SetAppearance(IconAppearance? appearance, bool dirty = true) {
+            if (appearance == null) {
+                _appearanceId = null;
+            } else {
+                _appearanceId = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(appearance);
+            }
+
+            if (dirty) {
+                Dirty();
+            }
         }
     }
 }

@@ -7,13 +7,13 @@ using OpenDreamShared.Dream.Procs;
 using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
-    class DMProc : DreamProc {
+    sealed class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, bool waitFor)
-            : base(name, superProc, waitFor, argumentNames, argumentTypes)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
@@ -25,11 +25,11 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
-    class DMProcState : ProcState
+    sealed class DMProcState : ProcState
     {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
-        // TODO: These pools are not returned to if the proc runtimes
+        // TODO: These pools are not returned to if the proc runtimes while _current is null
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
         private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
 
@@ -137,7 +137,8 @@ namespace OpenDreamRuntime.Procs {
         public readonly DreamObject Usr;
         public readonly DreamProcArguments Arguments;
         public readonly DreamValue[] LocalVariables;
-        public readonly Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
+        private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
+        public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 
         private int _pc = 0;
 
@@ -198,8 +199,7 @@ namespace OpenDreamRuntime.Procs {
                 if (status != null) {
                     if (status == ProcStatus.Returned) {
                         // TODO: This should be automatic (dispose pattern?)
-                        _dreamValuePool.Return(LocalVariables, true);
-                        _stackPool.Return(_stack);
+                        ReturnPools();
                     }
 
                     return status.Value;
@@ -207,8 +207,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // TODO: This should be automatic (dispose pattern?)
-            _dreamValuePool.Return(LocalVariables, true);
-            _stackPool.Return(_stack);
+            ReturnPools();
             return ProcStatus.Returned;
         }
 
@@ -242,6 +241,12 @@ namespace OpenDreamRuntime.Procs {
             thread.PushProcState(state);
 
             return thread;
+        }
+
+        public void ReturnPools()
+        {
+            _dreamValuePool.Return(LocalVariables, true);
+            _stackPool.Return(_stack);
         }
 
         #region Stack

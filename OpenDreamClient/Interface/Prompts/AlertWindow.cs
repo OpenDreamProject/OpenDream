@@ -1,12 +1,10 @@
-﻿using System;
-using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream.Procs;
 using JetBrains.Annotations;
 using Robust.Shared.Console;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Prompts
 {
-    class AlertWindow : PromptWindow
+    sealed class AlertWindow : PromptWindow
     {
         public AlertWindow(int promptId, String title, String message, String button1, String button2, String button3) :
             base(promptId, title, message)

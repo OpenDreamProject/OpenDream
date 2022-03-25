@@ -19,7 +19,7 @@ namespace DMCompiler {
             settings = new();
             settings.Files = new List<string>();
             
-            bool skipBad = false;
+            bool skipBad = args.Contains("--skip-bad-args");
 
             foreach (string arg in args) {
                 switch (arg) {
@@ -27,7 +27,7 @@ namespace DMCompiler {
                     case "--dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "--no-standard": settings.NoStandard = true; break;
                     case "--verbose": settings.Verbose = true; break;
-                    case "--skip-bad-args": skipBad = true; break;
+                    case "--skip-bad-args": break;
                     default: {
                         string extension = Path.GetExtension(arg);
 
@@ -35,7 +35,7 @@ namespace DMCompiler {
                             settings.Files.Add(arg);
                             Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                         } else {
-                            if(skipBad || args.Contains("--skip-bad-args")) {
+                            if(skipBad) {
                                 DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"Invalid compiler arg '{arg}', skipping"));
                             } else {
                                 Console.WriteLine($"Invalid arg '{arg}'");

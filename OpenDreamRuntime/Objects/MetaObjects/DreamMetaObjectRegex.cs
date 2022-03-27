@@ -4,7 +4,7 @@ using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectRegex : DreamMetaObjectDatum {
+    sealed class DreamMetaObjectRegex : DreamMetaObjectDatum {
         public struct DreamRegex {
             public Regex Regex;
             public bool IsGlobal;

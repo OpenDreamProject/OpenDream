@@ -1389,11 +1389,9 @@ namespace OpenDreamRuntime.Procs {
                 {
                     state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
                 }
-
-                var dreamMan = IoCManager.Resolve<IDreamManager>();
-                if (dreamMan.Tags.ContainsKey(refString))
+                else if (state.DreamManager.Tags.ContainsKey(refString))
                 {
-                    state.Push(new DreamValue(dreamMan.Tags[refString].Peek()));
+                    state.Push(new DreamValue(state.DreamManager.Tags[refString].Peek()));
                 }
                 else
                 {

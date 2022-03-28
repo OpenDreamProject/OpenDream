@@ -47,22 +47,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
-            // TODO handle the inevitable edge cases this probably won't cover
-            if (_proc is not null && constant.Value.Path.Type == DreamPath.PathType.UpwardSearch)
-            {
-                var truePath = new DreamPath(_dmObject.Path + "/" + constant.Value.Path.PathString[1..]);
-                // Check that it exists
-                if (DMObjectTree.TryGetTypeId(truePath, out var _))
-                {
-                    Result = new Expressions.Path(constant.Location, truePath);
-                    return;
-                }
-                // Skip procs and verbs
-                if (truePath.FindElement("proc") == -1 && truePath.FindElement("verb") == -1)
-                {
-                    DMCompiler.Error(new CompilerError(constant.Location, $"{constant.Value.Path.PathString}: undefined type path"));
-                }
-            }
             Result = new Expressions.Path(constant.Location, constant.Value.Path);
         }
 

@@ -1889,13 +1889,20 @@ namespace DMCompiler.Compiler.DM {
                 DMASTPath path = Path(true);
 
                 if (path != null) {
-                    primary = new DMASTConstantPath(loc, path);
+                    if (path.Path.Type == DreamPath.PathType.UpwardSearch)
+                    {
+                        primary = new DMASTUpwardPathSearch(loc, new DMASTConstantPath(loc, new DMASTPath(loc, _currentPath)), path);
+                    }
+                    else
+                    {
+                        primary = new DMASTConstantPath(loc, path);
 
-                    while (Check(TokenType.DM_Period)) {
-                        DMASTPath search = Path();
-                        if (search == null) Error("Expected a path for an upward search");
+                        while (Check(TokenType.DM_Period)) {
+                            DMASTPath search = Path();
+                            if (search == null) Error("Expected a path for an upward search");
 
-                        primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                            primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                        }
                     }
 
                     //TODO actual modified type support

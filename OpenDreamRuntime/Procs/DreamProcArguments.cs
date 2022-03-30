@@ -29,19 +29,5 @@ namespace OpenDreamRuntime.Procs {
             }
             return DreamValue.Null;
         }
-
-        public DreamList CreateDreamList() {
-            DreamList list = DreamList.Create();
-
-            foreach (DreamValue argument in OrderedArguments) {
-                list.AddValue(argument);
-            }
-
-            foreach (KeyValuePair<string, DreamValue> argument in NamedArguments) {
-                list.SetValue(new DreamValue(argument.Key), argument.Value);
-            }
-
-            return list;
-        }
     }
 }

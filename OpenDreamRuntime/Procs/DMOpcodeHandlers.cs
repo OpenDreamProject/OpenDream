@@ -395,7 +395,7 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
                         // TODO icon += hexcolor is the same as Blend()
-                        Logger.WarningS("opendream.unimplemented", "Appending colors to DMIs is not implemented");
+                        state.DreamManager.WriteWorldLog("Appending colors to DMIs is not implemented", LogLevel.Warning, "opendream.unimplemented");
                         result = first;
                         break;
                     default:
@@ -485,10 +485,22 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? BitNot(DMProcState state) {
-            int value = state.Pop().GetValueAsInteger();
+        public static ProcStatus? BitNot(DMProcState state)
+        {
+            var input = state.Pop();
+            if (input.TryGetValueAsInteger(out var value))
+            {
+                state.Push(new DreamValue((~value) & 0xFFFFFF));
+            }
+            else
+            {
+                if (input.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out _)) // TODO ~ on /matrix
+                {
+                    throw new NotImplementedException("/matrix does not support the '~' operator yet");
+                }
+                state.Push(new DreamValue(16777215)); // 2^24 - 1
+            }
 
-            state.Push(new DreamValue((~value) & 0xFFFFFF));
             return null;
         }
 
@@ -643,8 +655,8 @@ namespace OpenDreamRuntime.Procs {
                     result = second;
                 }
             } else if (second.Value != null) {
-                if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                    result = new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger());
+                if (first.TryGetValueAsInteger(out var firstInt) && second.TryGetValueAsInteger(out var secondInt)) {
+                    result = new DreamValue(firstInt | secondInt);
                 } else if (first.Value == null) {
                     result = second;
                 } else {
@@ -1361,12 +1373,21 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? LocateCoord(DMProcState state) {
-            int z = state.Pop().GetValueAsInteger();
-            int y = state.Pop().GetValueAsInteger();
-            int x = state.Pop().GetValueAsInteger();
+        public static ProcStatus? LocateCoord(DMProcState state)
+        {
+            var z = state.Pop();
+            var y = state.Pop();
+            var x = state.Pop();
+            if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
+                z.TryGetValueAsInteger(out var zInt))
+            {
+                state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(xInt, yInt, zInt)));
+            }
+            else
+            {
+                state.Push(DreamValue.Null);
+            }
 
-            state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(x, y, z)));
             return null;
         }
 
@@ -1381,15 +1402,13 @@ namespace OpenDreamRuntime.Procs {
 
             DreamList containerList;
             if (container != null && container.IsSubtypeOf(DreamPath.Atom)) {
-                containerList = container.GetVariable("contents").GetValueAsDreamList();
+                container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString)) {
-                int refID = int.Parse(refString);
-
-                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+            if (value.TryGetValueAsString(out string refString) && int.TryParse(refString, out var refId)) {
+                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refId)));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);
@@ -1436,7 +1455,11 @@ namespace OpenDreamRuntime.Procs {
             float totalWeight = 0;
             for (int i = 0; i < count; i++) {
                 DreamValue value = state.Pop();
-                float weight = state.Pop().GetValueAsFloat();
+                if (!state.Pop().TryGetValueAsFloat(out var weight))
+                {
+                    // Breaking change, no clue what weight BYOND is giving to non-nums
+                    throw new Exception($"pick() weight '{weight}' is not a number");
+                }
 
                 totalWeight += weight;
                 values[i] = (value, totalWeight);

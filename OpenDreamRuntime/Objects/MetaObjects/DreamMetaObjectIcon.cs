@@ -8,21 +8,40 @@ using OpenDreamShared.Resources;
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectIcon : DreamMetaObjectDatum
     {
-        [Dependency] private readonly DreamResourceManager _rscMan = default;
-        public struct DreamIcon {
-            public DreamResource Resource;
-            public string? State;
-            public AtomDirection Direction;
-            public int Frame;
-            public byte? Moving;
-            public DMIParser.ParsedDMIDescription Description;
+        [Dependency] private readonly DreamResourceManager _rscMan = default!;
 
-            public DreamIcon(DreamResource rsc, DreamValue? state, DreamValue? dir, DreamValue? frame, DreamValue? moving)
+        public enum DreamIconMovingMode : byte
+        {
+            Both = 0,
+            Movement = 1,
+            NonMovement = 2,
+
+        }
+
+        public static Dictionary<DreamObject, DreamIconObject> ObjectToDreamIcon = new();
+
+        public struct DreamIconObject {
+            // Actual DMI data
+            public DMIParser.ParsedDMIDescription Description; // TODO Eventually this should probably be removed in favor of just directly storing the data for the subset of the DMI that we actually care about
+
+            // These vars correspond to the args in icon/new() and the resulting /icon obj, not the actual DMI data
+            public string Icon;
+            public string? State; // Specific icon_state. Null is all states.
+            public AtomDirection? Direction; // Specific dir. Null is all dirs.
+            public byte? Frame; //1-indexed. Specific frame. Null is all frames.
+            public DreamIconMovingMode Moving;
+
+            public DreamIconObject(DreamResource rsc, DreamValue? state, DreamValue? dir, DreamValue? frame, DreamValue? moving)
             {
-                Resource = rsc;
-                Description = DMIParser.ParseDMI(new MemoryStream(rsc.ResourceData));
+                if (rsc is ConsoleOutputResource)
+                {
+                    throw new Exception("Invalid icon file");
+                }
 
-                // TODO confirm BYOND behavior of invalid types
+                Description = DMIParser.ParseDMI(new MemoryStream(rsc.ResourceData));
+                Icon = rsc.ResourcePath;
+
+                // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
 
                 if (state is not null && state.Value.TryGetValueAsString(out var iconState))
                 {
@@ -39,37 +58,36 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 else
                 {
-                    Direction = AtomDirection.South;
+                    Direction = null;
                 }
 
                 if (frame is not null && frame.Value.TryGetValueAsInteger(out var frameVal))
                 {
-                    Frame = frameVal;
+                    //TODO: Figure out how many frames an icon can have and see if this needs to be bigger than a byte
+                    Frame = Convert.ToByte(frameVal - 1); //1-indexed
                 }
                 else
                 {
-                    Frame = 0;
+                    Frame = null;
                 }
 
-                if (moving != DreamValue.Null)
+                if (moving is not null && moving != DreamValue.Null)
                 {
-                    if (moving is not null && (!moving.Value.TryGetValueAsInteger(out var movingVal) || movingVal != 0))
+                    if (moving.Value.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
                     {
-                        Moving = 1;
+                        Moving = DreamIconMovingMode.NonMovement;
                     }
                     else
                     {
-                        Moving = 0;
+                        Moving = DreamIconMovingMode.Movement;
                     }
                 }
                 else
                 {
-                    Moving = null;
+                    Moving = DreamIconMovingMode.Both;
                 }
             }
         }
-
-        public static Dictionary<DreamObject, DreamIcon> ObjectToDreamIcon = new();
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
@@ -80,20 +98,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             DreamValue frame = creationArguments.GetArgument(3, "frame");
             DreamValue moving = creationArguments.GetArgument(4, "moving");
 
-            DreamIcon dreamIcon;
+            DreamIconObject dreamIconObject;
 
             if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out DreamObject copyFrom)) {
-                dreamIcon = ObjectToDreamIcon[copyFrom];
+                dreamIconObject = ObjectToDreamIcon[copyFrom];
             } else if (icon.TryGetValueAsString(out string fileString))
             {
                 var ext = Path.GetExtension(fileString);
                 switch (ext) // TODO implement other icon file types
                 {
                     case ".dmi":
-                        dreamIcon = new DreamIcon(_rscMan.LoadResource(fileString), state, dir, frame, moving);
-                        Stream dmiStream = new MemoryStream(dreamIcon.Resource.ResourceData);
-                        dreamIcon.Description = DMIParser.ParseDMI(dmiStream);
-                        dreamObject.SetVariableValue("icon", new DreamValue(dreamIcon.Resource.ResourcePath));
+                        dreamIconObject = new DreamIconObject(_rscMan.LoadResource(fileString), state, dir, frame, moving);
+                        dreamObject.SetVariableValue("icon", new DreamValue(fileString));
                         break;
                     case ".png":
                     case ".jpg":
@@ -107,13 +123,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             } else if (icon.TryGetValueAsDreamResource(out var rsc))
             {
-                dreamIcon = new DreamIcon(rsc, state, dir, frame, moving);
-                dreamObject.SetVariableValue("icon", new DreamValue(dreamIcon.Resource.ResourcePath));
+                dreamIconObject = new DreamIconObject(rsc, state, dir, frame, moving);
+                dreamObject.SetVariableValue("icon", new DreamValue(rsc.ResourcePath));
             } else {
                 throw new Exception("Invalid icon file " + icon);
             }
 
-            ObjectToDreamIcon.Add(dreamObject, dreamIcon);
+            ObjectToDreamIcon.Add(dreamObject, dreamIconObject);
 
         }
 

@@ -1406,7 +1406,7 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
+            if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis)
             {
                 // Breaking change - BYOND doesn't specify the arg
                 Error($"bad argument definition '{Current().PrintableText}'", false);

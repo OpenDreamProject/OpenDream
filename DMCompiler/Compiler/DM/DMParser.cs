@@ -1409,18 +1409,10 @@ namespace DMCompiler.Compiler.DM {
             if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis)
             {
                 // Breaking change - BYOND doesn't specify the arg
-                Error($"bad argument definition '{Current().PrintableText}'", false);
-                while (!Check(TokenType.DM_Comma))
-                {
-                    if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
-                    {
-                        Advance();
-                    }
-                    else
-                    {
-                        return parameters.ToArray();
-                    }
-                }
+                Error($"error: bad argument definition '{Current().PrintableText}'", false);
+                Advance();
+                BracketWhitespace();
+                Check(TokenType.DM_Comma);
                 BracketWhitespace();
                 parameters.AddRange(DefinitionParameters());
 
@@ -1430,25 +1422,24 @@ namespace DMCompiler.Compiler.DM {
 
                 while (Check(TokenType.DM_Comma)) {
                     BracketWhitespace();
-
                     parameter = DefinitionParameter();
+
                     if (parameter != null) {
                         parameters.Add(parameter);
+                        BracketWhitespace();
+                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !Check(TokenType.DM_IndeterminateArgs))
+                        {
+                            Error($"error: {parameter.Name}: missing comma ',' or right-paren ')'", false);
+                            parameters.AddRange(DefinitionParameters());
+                        }
                     } else if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // Breaking change - BYOND doesn't specify the arg
-                        Error($"bag argument definition '{Current().PrintableText}'", false);
-                        while (!Check(TokenType.DM_Comma))
-                        {
-                            if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
-                            {
-                                Advance();
-                            }
-                            else
-                            {
-                                return parameters.ToArray();
-                            }
-                        }
+                        Error($"error: bag argument definition '{Current().PrintableText}'", false);
+                        Advance();
                         BracketWhitespace();
+                        Check(TokenType.DM_Comma);
+                        BracketWhitespace();
+
                         parameters.AddRange(DefinitionParameters());
 
                     } else if (Current().Type == TokenType.EndOfFile)
@@ -1941,6 +1932,8 @@ namespace DMCompiler.Compiler.DM {
 
                         primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
                     }
+
+                    Whitespace(); // whitespace between path and modified type
 
                     //TODO actual modified type support
                     if (Check(TokenType.DM_LeftCurlyBracket)) {

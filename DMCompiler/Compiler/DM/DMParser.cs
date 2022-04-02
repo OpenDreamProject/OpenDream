@@ -1200,9 +1200,9 @@ namespace DMCompiler.Compiler.DM {
             } else if (Check(TokenType.DM_Else)) {
                 var loc = Current().Location;
                 Whitespace();
-                if (Check(TokenType.DM_If))
+                if (Current().Type == TokenType.DM_If)
                 {
-                    Error("Expected \"if\" or \"else\"");
+                    Error("Expected 'if' or 'else', got 'else if'", false);
                 }
                 DMASTProcBlockInner body = ProcBlock();
 

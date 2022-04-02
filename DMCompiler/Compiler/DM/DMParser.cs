@@ -152,6 +152,7 @@ namespace DMCompiler.Compiler.DM {
                     if (Check(TokenType.DM_LeftParenthesis)) {
                         BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
+
                         BracketWhitespace();
                         ConsumeRightParenthesis();
                         Whitespace();
@@ -1405,7 +1406,26 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            if (parameter != null || Check(TokenType.DM_IndeterminateArgs)) {
+            if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
+            {
+                // Breaking change - BYOND doesn't specify the arg
+                Error($"bad argument definition '{Current().PrintableText}'", false);
+                while (!Check(TokenType.DM_Comma))
+                {
+                    if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
+                    {
+                        Advance();
+                    }
+                    else
+                    {
+                        return parameters.ToArray();
+                    }
+                }
+                BracketWhitespace();
+                parameters.AddRange(DefinitionParameters());
+
+            }
+            else {
                 if (parameter != null) parameters.Add(parameter);
 
                 while (Check(TokenType.DM_Comma)) {
@@ -1414,8 +1434,23 @@ namespace DMCompiler.Compiler.DM {
                     parameter = DefinitionParameter();
                     if (parameter != null) {
                         parameters.Add(parameter);
-                    } else if (!Check(TokenType.DM_IndeterminateArgs)) {
-                        Error("Expected parameter definition");
+                    } else if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                        // Breaking change - BYOND doesn't specify the arg
+                        Error($"bag argument definition '{Current().PrintableText}'", false);
+                        while (!Check(TokenType.DM_Comma))
+                        {
+                            if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
+                            {
+                                Advance();
+                            }
+                            else
+                            {
+                                return parameters.ToArray();
+                            }
+                        }
+                        BracketWhitespace();
+                        parameters.AddRange(DefinitionParameters());
+
                     }
                 }
             }

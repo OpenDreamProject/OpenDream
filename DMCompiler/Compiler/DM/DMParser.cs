@@ -1420,6 +1420,13 @@ namespace DMCompiler.Compiler.DM {
             else {
                 if (parameter != null) parameters.Add(parameter);
 
+                BracketWhitespace();
+                if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !Check(TokenType.DM_IndeterminateArgs))
+                {
+                    Error($"error: {parameter.Name}: missing comma ',' or right-paren ')'", false);
+                    parameters.AddRange(DefinitionParameters());
+                }
+
                 while (Check(TokenType.DM_Comma)) {
                     BracketWhitespace();
                     parameter = DefinitionParameter();

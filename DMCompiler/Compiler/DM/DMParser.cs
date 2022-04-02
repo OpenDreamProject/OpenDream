@@ -1451,6 +1451,9 @@ namespace DMCompiler.Compiler.DM {
                         BracketWhitespace();
                         parameters.AddRange(DefinitionParameters());
 
+                    } else if (Current().Type == TokenType.EndOfFile)
+                    {
+                        return parameters.ToArray();
                     }
                 }
             }

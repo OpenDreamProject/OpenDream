@@ -308,6 +308,7 @@ namespace DMCompiler.Compiler.DM {
             if (Current().Type == TokenType.DM_LeftBracket)
             {
                 var loc = Current().Location;
+                // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
                 if (!path.Elements[..^1].Contains("list")) {
                     var elements = path.Elements.ToList();
                     elements.Insert(elements.IndexOf("var") + 1, "list");

@@ -53,9 +53,9 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
             DMExpression.TryConstant(_dmObject, _proc, constant.Path, out var pathExpr);
-            if (pathExpr is not Expressions.Path) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
+            if (pathExpr is not Expressions.Path expr) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
 
-            DreamPath path = ((Expressions.Path)pathExpr).Value;
+            DreamPath path = expr.Value;
             DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
 
             if (foundPath == null) {
@@ -80,42 +80,50 @@ namespace DMCompiler.DM.Visitors {
         }
 
 
-        public void VisitIdentifier(DMASTIdentifier identifier) {
+        public void VisitIdentifier(DMASTIdentifier identifier)
+        {
             var name = identifier.Identifier;
 
-            if (name == "src") {
-                Result = new Expressions.Src(identifier.Location, _dmObject.Path);
-            } else if (name == "usr") {
-                Result = new Expressions.Usr(identifier.Location);
-            } else if (name == "args") {
-                Result = new Expressions.Args(identifier.Location);
-            } else {
-                DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
-                if (localVar != null && _scopeMode == "normal") {
-                    Result = new Expressions.Local(identifier.Location, localVar);
-                    return;
-                }
-
-                int? procGlobalId = _proc?.GetGlobalVariableId(name);
-                if (procGlobalId != null)
+            switch (name)
+            {
+                case "src":
+                    Result = new Expressions.Src(identifier.Location, _dmObject.Path);
+                    break;
+                case "usr":
+                    Result = new Expressions.Usr(identifier.Location);
+                    break;
+                case "args":
+                    Result = new Expressions.Args(identifier.Location);
+                    break;
+                default:
                 {
-                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
-                    return;
-                }
+                    DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
+                    if (localVar != null && _scopeMode == "normal") {
+                        Result = new Expressions.Local(identifier.Location, localVar);
+                        return;
+                    }
 
-                var field = _dmObject?.GetVariable(name);
-                if (field != null && _scopeMode == "normal") {
-                    Result = new Expressions.Field(identifier.Location, field);
-                    return;
-                }
+                    int? procGlobalId = _proc?.GetGlobalVariableId(name);
+                    if (procGlobalId != null)
+                    {
+                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
+                        return;
+                    }
 
-                int? globalId = _dmObject?.GetGlobalVariableId(name);
-                if (globalId != null) {
-                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-                    return;
-                }
+                    var field = _dmObject?.GetVariable(name);
+                    if (field != null && _scopeMode == "normal") {
+                        Result = new Expressions.Field(identifier.Location, field);
+                        return;
+                    }
 
-                throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                    int? globalId = _dmObject?.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                        return;
+                    }
+
+                    throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                }
             }
         }
 

@@ -189,6 +189,8 @@ namespace DMCompiler.Compiler.DM {
                             PathArray(ref varPath, out value);
 
                             if (Check(TokenType.DM_Equals)) {
+                                if (value != null) Warning("List doubly initialized");
+
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
@@ -316,21 +318,28 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 List<DMASTCallParameter> sizes = new List<DMASTCallParameter>(2); // Most common is 1D or 2D lists
+                bool setSize = false;
 
                 while (Check(TokenType.DM_LeftBracket))
                 {
                     Whitespace();
 
                     var size = Expression();
-                    sizes.Add(size is null
-                        ? new DMASTCallParameter(loc, new DMASTConstantNull(loc))
-                        : new DMASTCallParameter(loc, size));
+                    if (size is null)
+                    {
+                        sizes.Add(new DMASTCallParameter(loc, new DMASTConstantNull(loc)));
+                    }
+                    else
+                    {
+                        sizes.Add(new DMASTCallParameter(loc, size));
+                        setSize = true;
+                    }
 
                     ConsumeRightBracket();
                     Whitespace();
                 }
 
-                if (sizes.Count > 0)
+                if (setSize)
                 {
                     implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
                         sizes.ToArray());

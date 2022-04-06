@@ -470,6 +470,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.New(newDereference.Location, expr, args);
         }
 
+        public void VisitNewListIndex(DMASTNewListIndex newListIdx) {
+            var expr = DMExpression.Create(_dmObject, _proc, newListIdx.ListIdx, _inferredPath);
+            var args = new ArgumentList(newListIdx.Location, _dmObject, _proc, newListIdx.Parameters, _inferredPath);
+            Result = new Expressions.New(newListIdx.Location, expr, args);
+        }
+
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) {
             var expr = DMExpression.Create(_dmObject, _proc, preIncrement.Expression, _inferredPath);
             Result = new Expressions.PreIncrement(preIncrement.Location, expr);

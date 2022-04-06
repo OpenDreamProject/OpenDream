@@ -1865,6 +1865,7 @@ namespace DMCompiler.Compiler.DM {
 
                 //TODO: These don't need to be separate types
                 DMASTExpression newExpression = type switch {
+                    DMASTListIndex listIdx => new DMASTNewListIndex(loc, listIdx, parameters),
                     DMASTDereference deref => new DMASTNewDereference(loc, deref, parameters),
                     DMASTIdentifier identifier => new DMASTNewIdentifier(loc, identifier, parameters),
                     DMASTConstantPath path => new DMASTNewPath(loc, path.Value, parameters),

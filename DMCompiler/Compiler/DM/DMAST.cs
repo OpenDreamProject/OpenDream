@@ -65,6 +65,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
+        public void VisitNewListIndex(DMASTNewListIndex newListIndex) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
         public void VisitNot(DMASTNot not) { throw new NotImplementedException(); }
         public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
@@ -1049,6 +1050,20 @@ namespace DMCompiler.Compiler.DM {
             visitor.VisitNewDereference(this);
         }
     }
+
+    public class DMASTNewListIndex : DMASTExpression {
+            public DMASTListIndex ListIdx;
+            public DMASTCallParameter[] Parameters;
+
+            public DMASTNewListIndex(Location location, DMASTListIndex listIdx, DMASTCallParameter[] parameters) : base(location) {
+                ListIdx = listIdx;
+                Parameters = parameters;
+            }
+
+            public override void Visit(DMASTVisitor visitor) {
+                visitor.VisitNewListIndex(this);
+            }
+        }
 
     public class DMASTNewInferred : DMASTExpression {
         public DMASTCallParameter[] Parameters;

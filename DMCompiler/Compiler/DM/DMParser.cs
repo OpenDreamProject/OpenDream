@@ -1410,11 +1410,7 @@ namespace DMCompiler.Compiler.DM {
             {
                 // Breaking change - BYOND doesn't specify the arg
                 Error($"error: bad argument definition '{Current().PrintableText}'", false);
-                Advance();
-                BracketWhitespace();
-                Check(TokenType.DM_Comma);
-                BracketWhitespace();
-                parameters.AddRange(DefinitionParameters());
+                Recover();
 
             }
             else {
@@ -1423,36 +1419,51 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
                 if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !Check(TokenType.DM_IndeterminateArgs))
                 {
-                    Error($"error: {parameter.Name}: missing comma ',' or right-paren ')'", false);
+                    Error($"error: {parameter?.Name}: missing comma ',' or right-paren ')'", false);
                     parameters.AddRange(DefinitionParameters());
                 }
 
                 while (Check(TokenType.DM_Comma)) {
                     BracketWhitespace();
+                    if (Current().Location.Line == 83 && Current().Location.Column == 71)
+                    {
+                        Console.WriteLine("e");
+                    }
                     parameter = DefinitionParameter();
 
-                    if (parameter != null) {
+                    if (parameter != null)
+                    {
                         parameters.Add(parameter);
                         BracketWhitespace();
-                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !Check(TokenType.DM_IndeterminateArgs))
+                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
+                            !Check(TokenType.DM_IndeterminateArgs))
                         {
                             Error($"error: {parameter.Name}: missing comma ',' or right-paren ')'", false);
                             parameters.AddRange(DefinitionParameters());
                         }
+                    } else if (Check(TokenType.DM_Null)){
+                        // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
+                        Error($"error: 'null' is not a valid variable name", false);
+                        Recover();
+
                     } else if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // Breaking change - BYOND doesn't specify the arg
                         Error($"error: bag argument definition '{Current().PrintableText}'", false);
-                        Advance();
-                        BracketWhitespace();
-                        Check(TokenType.DM_Comma);
-                        BracketWhitespace();
-
-                        parameters.AddRange(DefinitionParameters());
+                        Recover();
                     }
                 }
             }
 
             return parameters.ToArray();
+
+            void Recover()
+            {
+                Advance();
+                BracketWhitespace();
+                Check(TokenType.DM_Comma);
+                BracketWhitespace();
+                parameters.AddRange(DefinitionParameters());
+            }
         }
 
         public DMASTDefinitionParameter DefinitionParameter() {

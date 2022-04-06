@@ -2089,7 +2089,7 @@ namespace DMCompiler.Compiler.DM {
                     if (bracketNesting > 0) Error("Expected ']'");
 
                     string stringValue = stringBuilder.ToString();
-                    if (interpolationValues is null || interpolationValues.Count == 0) {
+                    if (interpolationValues is null) {
                         return new DMASTConstantString(constantToken.Location, stringValue);
                     } else {
                         return new DMASTStringFormat(constantToken.Location, stringValue, interpolationValues.ToArray());

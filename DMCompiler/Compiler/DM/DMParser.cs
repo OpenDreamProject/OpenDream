@@ -1369,6 +1369,7 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 parameters.Add(parameter ?? new DMASTCallParameter(loc, new DMASTConstantNull(loc)));
                 parameter = CallParameter();
+                BracketWhitespace();
             }
 
             if (parameter != null) {

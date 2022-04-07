@@ -1425,10 +1425,6 @@ namespace DMCompiler.Compiler.DM {
 
                 while (Check(TokenType.DM_Comma)) {
                     BracketWhitespace();
-                    if (Current().Location.Line == 83 && Current().Location.Column == 71)
-                    {
-                        Console.WriteLine("e");
-                    }
                     parameter = DefinitionParameter();
 
                     if (parameter != null)

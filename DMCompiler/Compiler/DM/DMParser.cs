@@ -1362,6 +1362,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTCallParameter[] CallParameters() {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
+            BracketWhitespace();
 
             while (Check(TokenType.DM_Comma)) {
                 BracketWhitespace();

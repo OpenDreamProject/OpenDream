@@ -202,6 +202,33 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // addtext(...)
+    // https://www.byond.com/docs/ref/#/proc/addtext
+    class AddText : DMExpression
+    {
+        DMASTAddText _astNode;
+        public AddText(Location location, DMASTAddText astNode) : base(location)
+        {
+            _astNode = astNode;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc)
+        {
+            if (_astNode.Parameters.Length == 0) throw new CompileErrorException(_astNode.Location, "Invalid addtext() parameter count");
+
+            //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
+            for (int i = _astNode.Parameters.Length - 1; i >= 0; i--)
+            {
+                DMASTCallParameter parameter = _astNode.Parameters[i];
+
+                if (parameter.Name != null) throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
+                DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
+            }
+
+            proc.MassConcatenation(_astNode.Parameters.Length);
+        }
+    }
+
     // issaved(x)
     class IsSaved : DMExpression {
         DMExpression _expr;

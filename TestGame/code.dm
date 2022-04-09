@@ -84,6 +84,10 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
+	verb/test_addtext()
+		set category = "Test"
+		usr << addtext("This text ", "was added together from ", 4 ," things!");
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

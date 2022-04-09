@@ -1477,6 +1477,29 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        ///<summary>Right now this is used exclusively by addtext() calls, to concatenate its arguments together,
+        ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,
+        ///so as to slightly reduce the amount of re-allocation taking place.
+        ///</summary>.
+        public static ProcStatus? MassConcatenation(DMProcState state)
+        {
+            int count = state.ReadInt();
+            if (count == 1) // One argument -- In this case it's just a stringification operation :^)
+            {
+                string str = state.Pop().Stringify();
+                state.Push(new DreamValue(str));
+                return null;
+            }
+            int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
+            StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
+            for(int i = 0; i < count; ++i)
+            {
+                builder.Append(state.Pop().Stringify());
+            }
+            state.Push(new DreamValue(builder.ToString()));
+            return null;
+        }
+
         public static ProcStatus? IsSaved(DMProcState state) {
             DreamValue owner = state.Pop();
             string property = state.ReadString();

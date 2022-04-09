@@ -564,6 +564,10 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NewList(newList.Location, expressions);
         }
 
+        public void VisitAddText(DMASTAddText addText) {
+            Result = new Expressions.AddText(addText.Location, addText);
+        }
+
         public void VisitInput(DMASTInput input) {
             Result = new Expressions.Input(input.Location, input);
         }

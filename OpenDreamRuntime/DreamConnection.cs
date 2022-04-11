@@ -204,9 +204,7 @@ namespace OpenDreamRuntime
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
             DreamObject src = null;
 
-            if (srcRefValue.Value != null) {
-                int srcRef = int.Parse(srcRefValue.GetValueAsString());
-
+            if (srcRefValue.Value != null && int.TryParse(srcRefValue.GetValueAsString(), out var srcRef)) {
                 src = DreamObject.GetFromReferenceID(_dreamManager, srcRef);
             }
 

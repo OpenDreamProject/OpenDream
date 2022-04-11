@@ -94,7 +94,10 @@ namespace OpenDreamShared.Dream {
             return hashCode;
         }
 
-        public void SetColor(string color) {
+        public void SetColor(string color)
+        {
+            // TODO the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
+            if (color == string.Empty) color = "#ffffff";
             if (!ColorHelpers.TryParseColor(color, out Color)) {
                 throw new ArgumentException($"Invalid color '{color}'");
             }

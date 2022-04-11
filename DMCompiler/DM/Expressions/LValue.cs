@@ -73,7 +73,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.CreateLocal(LocalVar.Id), false);
+            if (LocalVar.IsParameter) {
+                return (DMReference.CreateArgument(LocalVar.Id), false);
+            } else {
+                return (DMReference.CreateLocal(LocalVar.Id), false);
+            }
         }
 
         public override bool TryAsConstant(out Constant constant) {

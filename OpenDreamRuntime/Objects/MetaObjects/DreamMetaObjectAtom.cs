@@ -247,9 +247,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Layer = image.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelOffset.X = image.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelOffset.Y = image.GetVariable("pixel_y").GetValueAsInteger();
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom)) {
+            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom))
+            {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
-            } else {
+            } else if (value.TryGetValueAsPath(out DreamPath path))
+            {
+                var def = _dreamManager.ObjectTree.GetObjectDefinition(path);
+                appearance = _atomManager.CreateAppearanceFromDefinition(def);
+            }
+            else {
                 throw new Exception($"Invalid overlay {value}");
             }
 

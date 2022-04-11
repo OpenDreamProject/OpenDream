@@ -305,7 +305,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            state.Push(state.Arguments);
+            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+
+            state.Push(new DreamProcArguments(args));
             return null;
         }
 
@@ -390,6 +392,11 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                         result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                        break;
+                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
+                        // TODO icon += hexcolor is the same as Blend()
+                        Logger.WarningS("opendream.unimplemented", "Appending colors to DMIs is not implemented");
+                        result = first;
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);

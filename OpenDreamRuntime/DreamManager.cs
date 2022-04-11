@@ -170,6 +170,10 @@ namespace OpenDreamRuntime {
             else
             {
                 logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+                if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
+                {
+                    Logger.LogS(level, "world.log", message);
+                }
             }
         }
     }

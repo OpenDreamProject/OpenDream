@@ -47,6 +47,8 @@ json_path = ""
 # Safe blocks DLL usage and any attempt to access files outside of the project directory
 # Trusted has no safeguards
 trust_level = 2
+# If true, exceptions will always print to the console in addition to the world.log file (if set)
+always_show_exceptions = false
 
 # These are actually client cvars that, currently, have to be passed as program args.
 # Documented here in hopes that we'll have a client_config.toml without using the launcher one day

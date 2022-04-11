@@ -140,6 +140,7 @@ namespace OpenDreamShared.Dream.Procs {
             Usr,
             Args,
             ListIndex,
+            Argument,
             Local,
             Global,
             Field,
@@ -152,6 +153,10 @@ namespace OpenDreamShared.Dream.Procs {
 
         [FieldOffset(0)]
         public Type RefType;
+
+        //Argument
+        [FieldOffset(1)]
+        public byte ArgumentId;
 
         //Local
         [FieldOffset(1)]
@@ -168,6 +173,12 @@ namespace OpenDreamShared.Dream.Procs {
         //Proc, GlobalProc, SrcProc
         [FieldOffset(8)]
         public string ProcName;
+
+        public static DMReference CreateArgument(int argId) {
+            if (argId > 255) throw new Exception("Argument id is greater than the maximum of 255");
+
+            return new DMReference() { RefType = Type.Argument, ArgumentId = (byte)argId };
+        }
 
         public static DMReference CreateLocal(int local) {
             if (local > 255) throw new Exception("Local variable id is greater than the maximum of 255");

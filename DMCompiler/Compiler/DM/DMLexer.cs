@@ -25,7 +25,8 @@ namespace DMCompiler.Compiler.DM {
             "red", "blue", "green", "black",
             "bold", "b",
             "italic",
-            "..."            //TODO: ASCII/Unicode values
+            "u", "U", "x",  //TODO: ASCII/Unicode values *properly*
+            "..."
         };
 
         public static Dictionary<string, TokenType> Keywords = new() {

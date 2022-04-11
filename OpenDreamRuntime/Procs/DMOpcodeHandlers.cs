@@ -1494,7 +1494,10 @@ namespace OpenDreamRuntime.Procs {
             StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
             for(int i = 0; i < count; ++i)
             {
-                builder.Append(state.Pop().Stringify());
+                if (state.Pop().TryGetValueAsString(out var addStr))
+                {
+                    builder.Append(addStr);
+                }
             }
             state.Push(new DreamValue(builder.ToString()));
             return null;

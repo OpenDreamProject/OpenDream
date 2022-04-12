@@ -565,7 +565,16 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitAddText(DMASTAddText addText) {
-            Result = new Expressions.AddText(addText.Location, addText);
+            if (addText.Parameters.Length < 2) throw new CompileErrorException(addText.Location, "Invalid addtext() parameter count; expected 2 or more arguments");
+            DMExpression[] exp_arr = new DMExpression[addText.Parameters.Length];
+            for (int i = 0; i < exp_arr.Length; i++)
+            {
+                DMASTCallParameter parameter = addText.Parameters[i];
+                if(parameter.Name != null)
+                    throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
+                exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
+            }
+            Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
         public void VisitInput(DMASTInput input) {

@@ -206,26 +206,22 @@ namespace DMCompiler.DM.Expressions {
     // https://www.byond.com/docs/ref/#/proc/addtext
     class AddText : DMExpression
     {
-        DMASTAddText _astNode;
-        public AddText(Location location, DMASTAddText astNode) : base(location)
+        readonly DMExpression[] parameters;
+        public AddText(Location location, DMExpression[] paras) : base(location)
         {
-            _astNode = astNode;
+            parameters = paras;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc)
         {
-            if (_astNode.Parameters.Length == 0) throw new CompileErrorException(_astNode.Location, "Invalid addtext() parameter count");
+            //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
 
             //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
-            for (int i = _astNode.Parameters.Length - 1; i >= 0; i--)
+            for (int i = parameters.Length - 1; i >= 0; i--) 
             {
-                DMASTCallParameter parameter = _astNode.Parameters[i];
-
-                if (parameter.Name != null) throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
-                DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
+                parameters[i].EmitPushValue(dmObject, proc);
             }
-
-            proc.MassConcatenation(_astNode.Parameters.Length);
+            proc.MassConcatenation(parameters.Length);
         }
     }
 

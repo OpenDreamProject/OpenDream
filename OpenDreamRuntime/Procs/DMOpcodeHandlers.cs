@@ -1484,10 +1484,10 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? MassConcatenation(DMProcState state)
         {
             int count = state.ReadInt();
-            if (count == 1) // One argument -- In this case it's just a stringification operation :^)
+            if (count < 2) // One or zero arguments -- shouldn't really ever happen. addtext() compiletimes with <2 args and stringification should probably be a different opcode
             {
-                string str = state.Pop().Stringify();
-                state.Push(new DreamValue(str));
+                Logger.Warning("addtext() called with " + count.ToString() + " arguments at runtime."); // TODO: tweak this warning if this ever gets used for other sorts of string concat
+                state.Push(DreamValue.Null);
                 return null;
             }
             int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.

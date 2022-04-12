@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Objects {
         /// Returns a list of the TreeEntry's Types sorted in DFS traversal order
         /// </summary>
         /// <returns>IEnumerable of sorted TreeEntries</returns>
-        /// <seealso cref="DreamPath.IsDescendantOf">IsDescendantOf</seealso>
+        /// <seealso cref="DreamObjectDefinition.IsSubtypeOf">IsDescendantOf</seealso>
         public IEnumerable<TreeEntry> GetDFSSortedTypeList() {
             List<TreeEntry> dfs_sorted_types = new();
             Stack<TreeEntry> dfs_sort_stack = new();
@@ -215,10 +215,10 @@ namespace OpenDreamRuntime.Objects {
             IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedTypeList();
             uint class_num = 0;
             foreach (TreeEntry type in dfs_sorted_types) {
-                type.Path.typeIndex = class_num++;
+                type.ObjectDefinition.typeIndex = class_num++;
                 if (type.ParentEntry != null)
-                    type.ParentEntry.Path.numChildren++;
-                type.Path.numChildren = (uint)type.InheritingTypes.Count;
+                    type.ParentEntry.ObjectDefinition.numChildren++;
+                type.ObjectDefinition.numChildren = (uint)type.InheritingTypes.Count;
             }
 
             //Fourth pass: Load each type's vars and procs

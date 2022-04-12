@@ -720,7 +720,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (type.TryGetValueAsPath(out DreamPath typePath)) {
                     DreamObjectDefinition valueDefinition = DreamManager.ObjectTree.GetObjectDefinition(valuePath);
 
-                    return new DreamValue(valueDefinition.IsSubtypeOf(typePath) ? 1 : 0);
+                    return new DreamValue(valueDefinition.IsSubtypeOf(DreamManager.ObjectTree.GetObjectDefinition(typePath)) ? 1 : 0);
                 } else {
                     return new DreamValue(1);
                 }

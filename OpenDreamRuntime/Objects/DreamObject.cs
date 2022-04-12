@@ -6,6 +6,7 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
         public DreamObjectDefinition? ObjectDefinition { get; protected set; }
         public bool Deleted = false;
 
@@ -71,8 +72,10 @@ namespace OpenDreamRuntime.Objects {
             _variables = from._variables;
         }
 
-        public bool IsSubtypeOf(DreamPath path) {
-            return ObjectDefinition.IsSubtypeOf(path);
+        public bool IsSubtypeOf(DreamPath path)
+        {
+            var otherDef = _dreamMan.ObjectTree.GetObjectDefinition(path);
+            return ObjectDefinition.IsSubtypeOf(otherDef);
         }
 
         public bool HasVariable(string name) {

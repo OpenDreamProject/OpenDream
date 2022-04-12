@@ -29,14 +29,6 @@ namespace OpenDreamShared.Dream {
         public PathType Type;
         private string[] _elements;
         private string _pathString;
-        /// <summary>
-        /// Internal type ID used for performant subclass checking
-        /// </summary>
-        public uint typeIndex = 0;
-        /// <summary>
-        /// Number of children for performant subclass checking
-        /// </summary>
-        public uint numChildren = 0;
 
         public enum PathType {
             Absolute,
@@ -135,10 +127,14 @@ namespace OpenDreamShared.Dream {
         /// Checks if the DreamPath is a descendant of another. NOTE: For type inheritance, use IsSubtypeOf()
         /// </summary>
         /// <param name="path">Path to compare to.</param>
-        public bool IsDescendantOf(DreamPath ancestor)
-        {
-            // Unsigned overflow is desired, see: Doom3/unity's impl
-            return (typeIndex - ancestor.typeIndex) <= ancestor.numChildren;
+        public bool IsDescendantOf(DreamPath path) {
+            if (path.Elements.Length > Elements.Length) return false;
+
+            for (int i = 0; i < path.Elements.Length; i++) {
+                if (Elements[i] != path.Elements[i]) return false;
+            }
+
+            return true;
         }
 
         public DreamPath AddToPath(string path) {

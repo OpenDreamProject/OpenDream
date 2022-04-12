@@ -15,6 +15,15 @@ namespace OpenDreamRuntime.Objects {
         public readonly Dictionary<string, DreamValue> Variables = new();
         public readonly Dictionary<string, int> GlobalVariables = new();
 
+        /// <summary>
+        /// Internal type ID used for performant subclass checking
+        /// </summary>
+        public uint typeIndex = 0;
+        /// <summary>
+        /// Number of children for performant subclass checking
+        /// </summary>
+        public uint numChildren = 0;
+
         private DreamObjectDefinition _parentObjectDefinition = null;
 
         public DreamObjectDefinition(DreamPath type) {
@@ -113,8 +122,9 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public bool IsSubtypeOf(DreamPath path) {
-            return Type.IsDescendantOf(path);
+        public bool IsSubtypeOf(DreamObjectDefinition ancestor) {
+            // Unsigned overflow is desired, see: Doom3/unity's impl
+            return (typeIndex - ancestor.typeIndex) <= ancestor.numChildren;
         }
     }
 }

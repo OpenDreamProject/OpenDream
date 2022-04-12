@@ -14,6 +14,7 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamObject(DreamObjectDefinition? objectDefinition) {
             ObjectDefinition = objectDefinition;
+            IoCManager.InjectDependencies(this);
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
@@ -75,7 +76,7 @@ namespace OpenDreamRuntime.Objects {
         public bool IsSubtypeOf(DreamPath path)
         {
             var otherDef = _dreamMan.ObjectTree.GetObjectDefinition(path);
-            return ObjectDefinition.IsSubtypeOf(otherDef);
+            return ObjectDefinition?.IsSubtypeOf(otherDef) ?? false;
         }
 
         public bool HasVariable(string name) {

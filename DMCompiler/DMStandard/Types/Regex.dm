@@ -22,4 +22,8 @@
 	proc/Find(haystack, Start = 1, End = 0)
 	proc/Replace(haystack, replacement, Start = 1, End = 0)
 
+	proc/Replace_char(haystack, replacement, Start = 1, End = 0)
+		set opendream_unimplemented = TRUE
+		return haystack
+
 proc/regex(pattern, flags)

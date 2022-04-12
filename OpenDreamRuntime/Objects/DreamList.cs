@@ -1,34 +1,38 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using OpenDreamRuntime.Procs;
-using Robust.Shared.IoC;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
     delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 
-    public class DreamList : DreamObject {
-        internal event DreamListValueAssignedEventHandler ValueAssigned;
-        internal event DreamListBeforeValueRemovedEventHandler BeforeValueRemoved;
+    [Virtual]
+    public class DreamList : DreamObject
+    {
+        private static DreamObjectDefinition? _listDef;
 
-        private List<DreamValue> _values = new();
-        private Dictionary<DreamValue, DreamValue> _associativeValues = null;
+        internal event DreamListValueAssignedEventHandler? ValueAssigned;
+        internal event DreamListBeforeValueRemovedEventHandler? BeforeValueRemoved;
 
-        protected DreamList() : base(null) {
-            ObjectDefinition = IoCManager.Resolve<IDreamManager>().ObjectTree.List.ObjectDefinition;
+        private List<DreamValue> _values;
+        private Dictionary<DreamValue, DreamValue>? _associativeValues;
+
+        protected DreamList(int size = 0) : base(null)
+        {
+            _values = new List<DreamValue>(size);
+            ObjectDefinition = _listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List);
         }
 
-        public static DreamList CreateUninitialized() {
-            return new DreamList();
+        public static DreamList CreateUninitialized(int size = 0) {
+            return new DreamList(size);
         }
 
-        public static DreamList Create() {
-            return new DreamList();
+        public static DreamList Create(int size = 0) {
+            return new DreamList(size);
         }
 
-        public static DreamList Create(IEnumerable<object> collection) {
-            var list = new DreamList();
+        public static DreamList Create(string[] collection) {
+            var list = new DreamList(collection.Length);
 
             foreach (object value in collection) {
                 list._values.Add(new DreamValue(value));
@@ -42,11 +46,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
-            DreamList copy = Create();
 
             if (start == 0) ++start; //start being 0 and start being 1 are equivalent
             if (end > _values.Count + 1) throw new Exception("list index out of bounds");
             if (end == 0) end = _values.Count + 1;
+
+            DreamList copy = Create(end);
 
             for (int i = start; i < end; i++) {
                 DreamValue value = _values[i - 1];
@@ -90,7 +95,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void RemoveValue(DreamValue value) {
-            int valueIndex = _values.IndexOf(value);
+            int valueIndex = _values.LastIndexOf(value);
 
             if (valueIndex != -1) {
                 BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
@@ -176,7 +181,7 @@ namespace OpenDreamRuntime.Objects {
     }
 
     // /datum.vars list
-    class DreamListVars : DreamList {
+    sealed class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 
         private DreamListVars(DreamObject dreamObject) : base() {
@@ -193,15 +198,28 @@ namespace OpenDreamRuntime.Objects {
             return _dreamObject.GetVariableNames();
         }
 
-        public override DreamValue GetValue(DreamValue key) {
-            return _dreamObject.GetVariable(key.GetValueAsString());
+        public override DreamValue GetValue(DreamValue key)
+        {
+            if (!key.TryGetValueAsString(out var varName)) {
+                throw new Exception($"Invalid var index {key}");
+            }
+
+            if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
+                throw new Exception($"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+            }
+
+            return objectVar;
         }
 
         public override void SetValue(DreamValue key, DreamValue value) {
-            string varName = key.GetValueAsString();
+            if (key.TryGetValueAsString(out var varName)) {
+                if (!_dreamObject.HasVariable(varName)) {
+                    throw new Exception($"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                }
 
-            if (_dreamObject.HasVariable(varName)) {
                 _dreamObject.SetVariable(varName, value);
+            } else {
+                throw new Exception($"Invalid var index {key}");
             }
         }
     }

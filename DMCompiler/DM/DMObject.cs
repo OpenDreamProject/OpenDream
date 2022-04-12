@@ -74,7 +74,7 @@ namespace DMCompiler.DM {
 
             if (procs != null) {
                 foreach (DMProc proc in procs) {
-                    if (proc.Unimplemented) return true;
+                    if ((proc.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) return true;
                 }
             }
 

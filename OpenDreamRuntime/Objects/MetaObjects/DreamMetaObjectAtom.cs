@@ -72,21 +72,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "pixel_x":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.PixelOffset.X = variableValue.GetValueAsInteger();
+                        variableValue.TryGetValueAsInteger(out appearance.PixelOffset.X);
                     });
                     break;
                 case "pixel_y":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.PixelOffset.Y = variableValue.GetValueAsInteger();
+                        variableValue.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                     });
                     break;
                 case "layer":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.Layer = variableValue.GetValueAsFloat();
+                        variableValue.TryGetValueAsFloat(out appearance.Layer);
                     });
                     break;
                 case "invisibility":
                     variableValue.TryGetValueAsInteger(out int vis);
+                    vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         appearance.Invisibility = vis;
                     });
@@ -94,7 +95,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "mouse_opacity":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.MouseOpacity = (MouseOpacity)variableValue.GetValueAsInteger();
+                        //TODO figure out the weird inconsistencies with this being internally clamped
+                        variableValue.TryGetValueAsInteger(out var opacity);
+                        appearance.MouseOpacity = (MouseOpacity)opacity;
                     });
                     break;
                 case "color":
@@ -106,7 +109,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "dir":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.Direction = (AtomDirection)variableValue.GetValueAsInteger();
+                        //TODO figure out the weird inconsistencies with this being internally clamped
+                        if (!variableValue.TryGetValueAsInteger(out var dir))
+                        {
+                            dir = 2; // SOUTH
+                        }
+                        appearance.Direction = (AtomDirection)dir;
                     });
                     break;
                 case "transform":
@@ -239,9 +247,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Layer = image.GetVariable("layer").GetValueAsFloat();
                 appearance.PixelOffset.X = image.GetVariable("pixel_x").GetValueAsInteger();
                 appearance.PixelOffset.Y = image.GetVariable("pixel_y").GetValueAsInteger();
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom)) {
+            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out DreamObject overlayAtom))
+            {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
-            } else {
+            } else if (value.TryGetValueAsPath(out DreamPath path))
+            {
+                var def = _dreamManager.ObjectTree.GetObjectDefinition(path);
+                appearance = _atomManager.CreateAppearanceFromDefinition(def);
+            }
+            else {
                 throw new Exception($"Invalid overlay {value}");
             }
 

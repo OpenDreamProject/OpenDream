@@ -5,7 +5,8 @@
 
 	var/atom/statobj
 	var/statpanel
-	
+	var/default_verb_category = "Commands"
+
 	var/tag
 	var/type = /client
 
@@ -45,7 +46,7 @@
 		set opendream_unimplemented = TRUE
 	proc/MeasureText(text, style, width=0)
 		set opendream_unimplemented = TRUE
-	
+
 	proc/New(TopicData)
 		view = world.view
 		mob = new world.mob(null)
@@ -91,7 +92,7 @@
 
 	proc/Center()
 		//TODO: walk(usr, 0)
-	
+
 	proc/IsByondMember()
 		set opendream_unimplemented = TRUE
 		return FALSE

@@ -245,9 +245,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArguments(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new List<DreamValue>(), new Dictionary<string, DreamValue>());
             int argumentCount = state.ReadInt();
-            DreamValue[] argumentValues = new DreamValue[argumentCount];
+            int namedCount = state.ReadInt();
+            int unnamedCount = argumentCount - namedCount;
+            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
+            DreamValue[]? argumentValues = argumentCount > 0 ? new DreamValue[argumentCount] : null;
 
             for (int i = argumentCount - 1; i >= 0; i--) {
                 argumentValues[i] = state.Pop();
@@ -303,7 +305,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            state.Push(state.Arguments);
+            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+
+            state.Push(new DreamProcArguments(args));
             return null;
         }
 
@@ -388,6 +392,11 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                         result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                        break;
+                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
+                        // TODO icon += hexcolor is the same as Blend()
+                        Logger.WarningS("opendream.unimplemented", "Appending colors to DMIs is not implemented");
+                        result = first;
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
@@ -977,7 +986,6 @@ namespace OpenDreamRuntime.Procs {
 
                     if (proc == null) {
                         //Attempting to call a super proc where there is none will just return null
-                        //TODO: Make this a compiler error
                         state.Push(DreamValue.Null);
                         return null;
                     }

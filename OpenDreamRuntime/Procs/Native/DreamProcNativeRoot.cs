@@ -588,7 +588,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
 
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys));
+            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -1716,7 +1716,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("timestamp", Type = DreamValueType.Float)]
         [DreamProcParameter("format", Type = DreamValueType.String)]
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            int timestamp = arguments.GetArgument(0, "timestamp").GetValueAsInteger();
+            if(!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp))
+            {
+                // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+            }
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format))
             {
                 format = "DDD MMM DD hh:mm:ss YYYY";

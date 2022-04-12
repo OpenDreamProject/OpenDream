@@ -1,6 +1,8 @@
 ﻿#define TRUE 1
 #define FALSE 0
 
+#define OPENDREAM 1
+
 #define NORTH 1
 #define SOUTH 2
 #define EAST 4
@@ -57,9 +59,12 @@
 #define SEE_INFRA		(1<<6)     // can see infra-red objects
 #define SEE_SELF		(1<<5) // can see self, no matter what
 #define SEE_MOBS		(1<<2) // can see all mobs, no matter what
+#define SEEMOBS			(1<<2) // undocumented, identical to SEE_MOBS
 #define SEE_OBJS		(1<<3) // can see all objs, no matter what
+#define SEEOBJS			(1<<3) // undocumented, identical to SEE_OBJS
 #define SEE_TURFS		(1<<4) // can see all turfs (and areas), no matter what
-#define SEE_PIXEL		(1<<8) // if an object is located on an unlit area, but some of its pixels are in a lit area (via pixel_x,y or smooth movement), can see those pixels
+#define SEETURFS		(1<<4) // undocumented, identical to SEE_TURFS
+#define SEE_PIXELS		(1<<8) // if an object is located on an unlit area, but some of its pixels are in a lit area (via pixel_x,y or smooth movement), can see those pixels
 #define SEE_THRU		(1<<9) // can see through opaque objects
 #define SEE_BLACKNESS	(1<<10) // render dark tiles as blackness
 #define BLIND			(1<<0) // can't see anything
@@ -100,6 +105,12 @@
 #define COLORSPACE_HSV 1
 #define COLORSPACE_HSL 2
 #define COLORSPACE_HCY 3
+
+//See color matrix filter: filter(type="color", ...)
+#define FILTER_COLOR_RGB 0
+#define FILTER_COLOR_HSV 1
+#define FILTER_COLOR_HSL 2
+#define FILTER_COLOR_HCY 3
 
 //atom.appearance_flags
 #define LONG_GLIDE		(1<<0)

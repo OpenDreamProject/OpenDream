@@ -26,7 +26,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry[] Types;
-        public TreeEntry List;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
@@ -35,7 +34,6 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
 
             LoadTypesFromJson(json.Types);
-            List = GetTreeEntry(DreamPath.List);
         }
 
         public bool HasTreeEntry(DreamPath path) {
@@ -244,7 +242,7 @@ namespace OpenDreamRuntime.Objects {
                 }
 
                 if (jsonType.InitProc != null) {
-                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, true);
+                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, jsonType.InitProc.Attributes, jsonType.InitProc.VerbName, jsonType.InitProc.VerbCategory, jsonType.InitProc.VerbDesc, jsonType.InitProc.Invisibility);
 
                     initProc.SuperProc = definition.InitializionProc;
                     definition.InitializionProc = initProc;
@@ -292,7 +290,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.WaitFor ?? true);
+            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
         private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {

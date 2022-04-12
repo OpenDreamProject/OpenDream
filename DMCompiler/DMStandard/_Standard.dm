@@ -100,11 +100,13 @@ proc/winset(player, control_id, params)
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
 #include "Types\Exception.dm"
+#include "Types\Generator.dm"
 #include "Types\Icon.dm"
 #include "Types\Image.dm"
 #include "Types\List.dm"
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
+#include "Types\Particles.dm"
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
@@ -116,6 +118,10 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Obj.dm"
 #include "Types\Atoms\Turf.dm"
 #include "UnsortedAdditions.dm"
+
+proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
+	set opendream_unimplented = TRUE
+	return Haystack
 
 proc/block(var/atom/Start, var/atom/End)
 	var/list/atoms = list()

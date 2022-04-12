@@ -1,19 +1,17 @@
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
-    class DMProc : DreamProc {
+    sealed class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, bool waitFor)
-            : base(name, superProc, waitFor, argumentNames, argumentTypes)
+        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
@@ -25,11 +23,11 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
-    class DMProcState : ProcState
+    sealed class DMProcState : ProcState
     {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
-        // TODO: These pools are not returned to if the proc runtimes
+        // TODO: These pools are not returned to if the proc runtimes while _current is null
         private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
         private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
 
@@ -134,9 +132,11 @@ namespace OpenDreamRuntime.Procs {
         public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
         public DreamObject Instance;
         public readonly DreamObject Usr;
-        public readonly DreamProcArguments Arguments;
         public readonly DreamValue[] LocalVariables;
-        public readonly Stack<IEnumerator<DreamValue>> EnumeratorStack = new();
+        public readonly DreamValue[] Arguments;
+        public readonly int ArgumentCount;
+        private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
+        public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 
         private int _pc = 0;
 
@@ -150,20 +150,24 @@ namespace OpenDreamRuntime.Procs {
             _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
-            Arguments = arguments;
+            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames.Count);
+            Arguments = _dreamValuePool.Rent(ArgumentCount);
             LocalVariables = _dreamValuePool.Rent(256);
 
-            // args -> locals
-            for (int i = 0; i < proc.ArgumentNames.Count; i++) {
-                string argumentName = proc.ArgumentNames[i];
+            //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
+            //Positional arguments
+            for (int i = 0; i < ArgumentCount; i++) {
+                Arguments[i] = (i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+            }
 
-                if (Arguments.NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
-                    LocalVariables[i] = argumentValue;
-                } else if (i < Arguments.OrderedArguments.Count) {
-                    LocalVariables[i] = Arguments.OrderedArguments[i];
-                } else {
-                    LocalVariables[i] = DreamValue.Null;
+            //Named arguments
+            foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
+                int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                if (argumentIndex == -1) {
+                    throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }
+
+                Arguments[argumentIndex] = argumentValue;
             }
         }
 
@@ -197,8 +201,7 @@ namespace OpenDreamRuntime.Procs {
                 if (status != null) {
                     if (status == ProcStatus.Returned) {
                         // TODO: This should be automatic (dispose pattern?)
-                        _dreamValuePool.Return(LocalVariables, true);
-                        _stackPool.Return(_stack);
+                        ReturnPools();
                     }
 
                     return status.Value;
@@ -206,8 +209,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // TODO: This should be automatic (dispose pattern?)
-            _dreamValuePool.Return(LocalVariables, true);
-            _stackPool.Return(_stack);
+            ReturnPools();
             return ProcStatus.Returned;
         }
 
@@ -241,6 +243,13 @@ namespace OpenDreamRuntime.Procs {
             thread.PushProcState(state);
 
             return thread;
+        }
+
+        public void ReturnPools()
+        {
+            _dreamValuePool.Return(LocalVariables, true);
+            _dreamValuePool.Return(Arguments, true);
+            _stackPool.Return(_stack);
         }
 
         #region Stack
@@ -297,6 +306,7 @@ namespace OpenDreamRuntime.Procs {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {
+                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
                 case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
                 case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
                 case DMReference.Type.Field: return DMReference.CreateField(ReadString());
@@ -343,6 +353,7 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
+                case DMReference.Type.Argument: Arguments[reference.ArgumentId] = value; break;
                 case DMReference.Type.Local: LocalVariables[reference.LocalId] = value; break;
                 case DMReference.Type.SrcField: Instance.SetVariable(reference.FieldName, value); break;
                 case DMReference.Type.Global: DreamManager.Globals[reference.GlobalId] = value; break;
@@ -373,29 +384,25 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
                 case DMReference.Type.Global: return DreamManager.Globals[reference.GlobalId];
+                case DMReference.Type.Argument: return Arguments[reference.ArgumentId];
                 case DMReference.Type.Local: return LocalVariables[reference.LocalId];
                 case DMReference.Type.Args: {
-                    DreamList argsList = Arguments.CreateDreamList();
+                    DreamList argsList = DreamList.Create(ArgumentCount);
+
+                    for (int i = 0; i < ArgumentCount; i++) {
+                        argsList.AddValue(Arguments[i]);
+                    }
 
                     argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
-                        switch (key.Type) {
-                            case DreamValue.DreamValueType.String: {
-                                string argumentName = key.GetValueAsString();
-
-                                Arguments.NamedArguments[argumentName] = value;
-                                LocalVariables[Proc.ArgumentNames.IndexOf(argumentName)] = value;
-                                break;
-                            }
-                            case DreamValue.DreamValueType.Float: {
-                                int argumentIndex = key.GetValueAsInteger() - 1;
-
-                                Arguments.OrderedArguments[argumentIndex] = value;
-                                LocalVariables[argumentIndex] = value;
-                                break;
-                            }
-                            default:
-                                throw new Exception("Invalid key used on an args list");
+                        if (!key.TryGetValueAsInteger(out int argIndex)) {
+                            throw new Exception($"Cannot index args with {key}");
                         }
+
+                        if (argIndex > ArgumentCount) {
+                            throw new Exception($"Args index {argIndex} is too large");
+                        }
+
+                        Arguments[argIndex - 1] = value;
                     };
 
                     return new(argsList);
@@ -433,6 +440,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Usr:
                 case DMReference.Type.Self:
                 case DMReference.Type.Global:
+                case DMReference.Type.Argument:
                 case DMReference.Type.Local:
                 case DMReference.Type.Args:
                 case DMReference.Type.SrcField:

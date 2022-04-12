@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
@@ -13,6 +14,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamClient.Interface.Controls
 {
+    [Virtual]
     class InfoPanel : Control
     {
         public string PanelName { get; private set; }
@@ -24,7 +26,7 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class StatPanel : InfoPanel
+    sealed class StatPanel : InfoPanel
     {
         private Label _textBlock;
 
@@ -57,7 +59,7 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class VerbPanel : InfoPanel
+    sealed class VerbPanel : InfoPanel
     {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         private readonly GridContainer _grid;
@@ -73,21 +75,20 @@ namespace OpenDreamClient.Interface.Controls
         {
             _grid.Children.Clear();
 
-            foreach (string verbName in _dreamInterface.AvailableVerbs)
+            foreach ((string verbType, string verbName, string verbCategory) in _dreamInterface.AvailableVerbs)
             {
-                Button verbButton = new Button()
+                if (verbCategory != PanelName)
+                    continue;
+                InterfaceButton verbButton = new InterfaceButton()
                 {
                     Margin = new Thickness(2),
                     MinWidth = 100,
-                    Children =
-                    {
-                        new Label { Text = verbName, Margin = new Thickness(6, 0, 6, 2) }
-                    }
+                    Text = verbName == string.Empty ? verbType : verbName
                 };
 
                 verbButton.OnPressed += _ =>
                 {
-                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbName);
+                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbType);
                 };
 
                 _grid.Children.Add(verbButton);
@@ -95,13 +96,15 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    class ControlInfo : InterfaceControl
+    sealed class ControlInfo : InterfaceControl
     {
         [Dependency] private readonly IClientNetManager _netManager = default!;
 
         private TabContainer _tabControl;
         private Dictionary<string, StatPanel> _statPanels = new();
-        private VerbPanel _verbPanel;
+        private SortedDictionary<string, VerbPanel> _verbPanels = new();
+
+        private bool _defaultPanelSent = false;
 
         public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
         {
@@ -117,9 +120,6 @@ namespace OpenDreamClient.Interface.Controls
             };
             _tabControl.OnTabChanged += OnSelectionChanged;
 
-            _verbPanel = new VerbPanel("Verbs");
-            _tabControl.AddChild(_verbPanel);
-
             RefreshVerbs();
 
             return _tabControl;
@@ -127,7 +127,10 @@ namespace OpenDreamClient.Interface.Controls
 
         public void RefreshVerbs()
         {
-            _verbPanel.RefreshVerbs();
+            foreach (var panel in _verbPanels)
+            {
+                _verbPanels[panel.Key].RefreshVerbs();
+            }
         }
 
         public void SelectStatPanel(string statPanelName)
@@ -154,13 +157,57 @@ namespace OpenDreamClient.Interface.Controls
 
                 if (!_statPanels.TryGetValue(updatingPanel.Key, out panel))
                 {
-                    panel = new StatPanel(updatingPanel.Key);
-
-                    _tabControl.AddChild(panel);
-                    _statPanels.Add(updatingPanel.Key, panel);
+                    panel = CreateStatPanel(updatingPanel.Key);
                 }
 
                 panel.UpdateLines(updatingPanel.Value);
+            }
+
+            // Tell the server we're ready to receive data
+            if (!_defaultPanelSent && _tabControl.ChildCount > 0)
+            {
+                var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
+                msg.StatPanel = _tabControl.GetActualTabTitle(0);
+                _netManager.ClientSendMessage(msg);
+                _defaultPanelSent = true;
+            }
+
+        }
+
+        public bool HasVerbPanel(string name)
+        {
+            return _verbPanels.ContainsKey(name);
+        }
+
+        public VerbPanel CreateVerbPanel(string name)
+        {
+            var panel = new VerbPanel(name);
+            _verbPanels.Add(name, panel);
+            SortPanels();
+
+            return panel;
+        }
+
+        public StatPanel CreateStatPanel(string name)
+        {
+            var panel = new StatPanel(name);
+            panel.Margin = new Thickness(20, 2);
+            _statPanels.Add(name, panel);
+            SortPanels();
+            return panel;
+        }
+
+        private void SortPanels()
+        {
+            _tabControl.Children.Clear();
+            foreach(var (_, statPanel) in _statPanels)
+            {
+                _tabControl.AddChild(statPanel);
+            }
+
+            foreach(var (_, verbPanel) in _verbPanels)
+            {
+                _tabControl.AddChild(verbPanel);
             }
         }
 

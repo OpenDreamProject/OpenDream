@@ -90,22 +90,41 @@ namespace OpenDreamRuntime
         public void UpdateAvailableVerbs()
         {
             _availableVerbs.Clear();
+            List<(string, string, string)>? verbs = null;
 
             if (MobDreamObject != null)
             {
                 List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
-
+                verbs = new List<(string, string, string)>(mobVerbPaths.Count);
                 foreach (DreamValue mobVerbPath in mobVerbPaths)
                 {
                     DreamPath path = mobVerbPath.GetValueAsPath();
                     if (path.LastElement is null) continue;
+                    var proc = MobDreamObject.GetProc(path.LastElement);
+                    _availableVerbs.Add(path.LastElement, proc);
 
-                    _availableVerbs.Add(path.LastElement, MobDreamObject.GetProc(path.LastElement));
+                    // Don't send hidden verbs. Names starting with "." count as hidden.
+                    if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
+                        (proc.VerbName != null && proc.VerbName[0] == '.'))
+                    {
+                        continue;
+                    }
+
+                    string? category = proc.VerbCategory;
+                    // Explicitly null category is hidden from verb panels, "" category becomes the default_verb_category
+                    if (category == string.Empty)
+                    {
+                        // But if default_verb_category is null, we hide it from the verb panel
+                        category = ClientDreamObject.GetVariable("default_verb_category").TryGetValueAsString(out var value) ? value : null;
+                    }
+                    // No set name is serialized as an empty string and the last element will be used
+                    // Null category is serialized as an empty string and treated as hidden
+                    verbs.Add((path.LastElement, proc.VerbName ?? string.Empty, category ?? string.Empty));
                 }
             }
 
             var msg = _netManager.CreateNetMessage<MsgUpdateAvailableVerbs>();
-            msg.AvailableVerbs = _availableVerbs.Keys.ToArray();
+            msg.AvailableVerbs = verbs?.ToArray() ?? Array.Empty<(string, string, string)>();
             Session.ConnectedClient.SendMessage(msg);
         }
 
@@ -184,9 +203,7 @@ namespace OpenDreamRuntime
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
             DreamObject src = null;
 
-            if (srcRefValue.Value != null) {
-                int srcRef = int.Parse(srcRefValue.GetValueAsString());
-
+            if (srcRefValue.Value != null && int.TryParse(srcRefValue.GetValueAsString(), out var srcRef)) {
                 src = DreamObject.GetFromReferenceID(_dreamManager, srcRef);
             }
 

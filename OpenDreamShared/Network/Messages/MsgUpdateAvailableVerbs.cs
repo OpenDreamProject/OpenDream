@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Lidgren.Network;
 using Robust.Shared.Network;
 
@@ -7,16 +9,16 @@ namespace OpenDreamShared.Network.Messages
     {
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-        public string[] AvailableVerbs;
+        public (string, string, string)[] AvailableVerbs;
 
         public override void ReadFromBuffer(NetIncomingMessage buffer)
         {
             var count = buffer.ReadVariableInt32();
-            var verbs = new string[count];
+            (string, string, string)[] verbs = new (string, string, string)[count];
 
             for (var i = 0; i < count; i++)
             {
-                verbs[i] = buffer.ReadString();
+                verbs[i] = (buffer.ReadString(), buffer.ReadString(), buffer.ReadString());
             }
 
             AvailableVerbs = verbs;
@@ -28,7 +30,9 @@ namespace OpenDreamShared.Network.Messages
 
             foreach (var verb in AvailableVerbs)
             {
-                buffer.Write(verb);
+                buffer.Write(verb.Item1);
+                buffer.Write(verb.Item2);
+                buffer.Write(verb.Item3);
             }
         }
     }

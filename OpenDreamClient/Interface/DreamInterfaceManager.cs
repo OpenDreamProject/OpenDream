@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Web;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
@@ -14,8 +12,6 @@ using OpenDreamShared.Compiler.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
@@ -23,7 +19,7 @@ using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
 
 namespace OpenDreamClient.Interface {
-    class DreamInterfaceManager : IDreamInterfaceManager {
+    sealed class DreamInterfaceManager : IDreamInterfaceManager {
         [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IDreamMacroManager _macroManager = default!;
@@ -39,7 +35,7 @@ namespace OpenDreamClient.Interface {
         public ControlInfo DefaultInfo;
         public ControlMap DefaultMap;
 
-        public string[] AvailableVerbs { get; private set; } = Array.Empty<string>();
+        public (string, string, string)[] AvailableVerbs { get; private set; } = Array.Empty<(string, string, string)>();
 
         public Dictionary<string, ControlWindow> Windows { get; } = new();
         public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
@@ -97,7 +93,16 @@ namespace OpenDreamClient.Interface {
         private void RxUpdateAvailableVerbs(MsgUpdateAvailableVerbs message)
         {
             AvailableVerbs = message.AvailableVerbs;
+            foreach (var verb in AvailableVerbs)
+            {
+                // Verb category
+                if (verb.Item3 != string.Empty && !DefaultInfo.HasVerbPanel(verb.Item3))
+                {
+                    DefaultInfo.CreateVerbPanel(verb.Item3);
+                }
+            }
             DefaultInfo?.RefreshVerbs();
+
         }
 
         public void RxOutput(MsgOutput pOutput) {
@@ -335,7 +340,7 @@ namespace OpenDreamClient.Interface {
 
     public interface IDreamInterfaceManager
     {
-        string[] AvailableVerbs { get; }
+        (string, string, string)[] AvailableVerbs { get; }
         Dictionary<string, ControlWindow> Windows { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 

@@ -44,25 +44,28 @@ namespace DMCompiler.Compiler.DM {
             }
         }
         public class ASTHasher {
-            public string Hash(DMASTObjectDefinition objdef) {
+            public static string Hash(DMASTObjectDefinition objdef) {
                 return $"OD-{objdef.Path}";
             }
 
-            public string Hash(DMASTObjectVarDefinition vardef) {
+            public static string Hash(DMASTObjectVarDefinition vardef) {
                 return $"OVD-{vardef.ObjectPath}-{vardef.Name}";
             }
-            public string Hash(DMASTObjectVarOverride vardef) {
+            public static string Hash(DMASTObjectVarOverride vardef) {
                 return $"OVO-{vardef.ObjectPath}-{vardef.VarName}";
             }
 
-            public string Hash(DMASTProcDefinition procdef) {
+            public static string Hash(DMASTProcDefinition procdef) {
                 return $"PD-{procdef.ObjectPath}-{procdef.IsOverride}-{procdef.Name}";
             }
 
             public Dictionary<string, List<DMASTNode>> nodes = new();
 
             public List<DMASTNode> GetNode(DMASTNode node) {
-                return nodes[Hash((dynamic)node)];
+                if (nodes.TryGetValue(Hash((dynamic)node), out List<DMASTNode> rval)) {
+                    return rval;
+                }
+                else { return null; }
             }
             public void HashFile(DMASTFile node) {
                 var traveler = new TopLevelTraveler();
@@ -84,14 +87,28 @@ namespace DMCompiler.Compiler.DM {
                 }
             }
         }
-        public class ObjectPrinter {
 
-            public List<Type> equality_field_types = new() {
-                typeof(string),
-                typeof(int),
-                typeof(float),
-                typeof(bool)
-            };
+        public class Labeler {
+            public Dictionary<object, int> labels = new();
+            public int label_i = 0;
+
+            public void Add(object obj) {
+                if (labels.ContainsKey(obj)) {
+                    return;
+                }
+                labels[obj] = label_i++;
+            }
+
+            public int? GetLabel(object obj) {
+                if (labels.TryGetValue(obj, out var i)) {
+                    return i;
+                }
+                return null;
+            }
+
+        }
+
+        public class ObjectPrinter {
             public List<Type> tostring_types = new() {
                 typeof(string),
                 typeof(int),
@@ -100,20 +117,11 @@ namespace DMCompiler.Compiler.DM {
                 typeof(char)
             };
             public List<Type> recurse_types = new() { };
+            public List<Type> ignore_types = new() { };
 
-            public Dictionary<object, int> node_labels = new();
-            public int current_label = 0;
+            public class ObjectTraveler { }
 
-            public class ObjectTraveler {
-            }
-
-            public void Print(object node, System.IO.TextWriter print, int depth = 0, int max_depth = 9999, bool label = false) {
-                if (label == true) {
-                    if (!node_labels.ContainsKey(node)) {
-                        node_labels[node] = current_label;
-                    }
-                    current_label += 1;
-                }
+            public void Print(object node, System.IO.TextWriter print, int depth = 0, int max_depth = 9999, Labeler labeler = null) {
                 if (depth > max_depth) {
                     return;
                 }
@@ -145,6 +153,9 @@ namespace DMCompiler.Compiler.DM {
                     if (ty == null) {
                         ty = field.FieldType;
                     }
+                    if (ignore_types.Contains(ty)) {
+                        continue;
+                    }
 
                     var v = field.GetValue(node);
                     bool is_recurse = false;
@@ -171,8 +182,9 @@ namespace DMCompiler.Compiler.DM {
                         throw new Exception("unknown field type " + ty.ToString());
                     }
                 }
-                if (node_labels.ContainsKey(node)) {
-                    print.WriteLine(node_labels[node].ToString().PadRight(4 + 2 * depth) + line);
+                var label_i = labeler?.GetLabel(node);
+                if (label_i != null) {
+                    print.WriteLine(label_i.ToString().PadRight(4 + 2 * depth) + line);
                 }
                 else {
                     print.WriteLine("".PadRight(4 + 2 * depth) + line);
@@ -180,7 +192,7 @@ namespace DMCompiler.Compiler.DM {
                 foreach (var r in recurse) {
                     if (r.Item2 != null) {
                         print.WriteLine(pad + "->" + r.Item1);
-                        Print(r.Item2, print, depth + 1, max_depth, label);
+                        Print(r.Item2, print, depth + 1, max_depth, labeler);
                     }
                     else {
                         print.WriteLine(pad + "->" + r.Item1 + "=null");
@@ -196,9 +208,9 @@ namespace DMCompiler.Compiler.DM {
         // new DMAST.DMASTNodePrinter().Print(proc, Console.Out);
         public class DMASTNodePrinter : ObjectPrinter {
             public DMASTNodePrinter() {
-                equality_field_types.Add(typeof(DMValueType));
-                tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath) } );
-                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode) } );
+                tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath), typeof(DreamPath.PathType) } );
+                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode), typeof(DMASTCallable), typeof(VarDeclInfo) } );
+                ignore_types.Add(typeof(Location));
             }
         }
 

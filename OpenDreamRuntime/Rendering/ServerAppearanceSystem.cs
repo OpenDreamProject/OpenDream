@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
+using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamRuntime.Rendering {
     sealed class ServerAppearanceSystem : SharedAppearanceSystem {

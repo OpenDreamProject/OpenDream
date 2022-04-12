@@ -14,10 +14,12 @@ namespace DMCompiler.DM {
     class DMProc {
         public class LocalVariable {
             public int Id;
+            public bool IsParameter;
             public DreamPath? Type;
 
-            public LocalVariable(int id, DreamPath? type) {
+            public LocalVariable(int id, bool isParameter, DreamPath? type) {
                 Id = id;
+                IsParameter = isParameter;
                 Type = type;
             }
         }
@@ -25,7 +27,7 @@ namespace DMCompiler.DM {
         public class LocalConstVariable : LocalVariable {
             public Expressions.Constant Value;
 
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, type) {
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
                 Value = value;
             }
         }
@@ -44,10 +46,9 @@ namespace DMCompiler.DM {
         public MemoryStream Bytecode = new MemoryStream();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
-        public bool Unimplemented { get; set; } = false;
         public Location Location = Location.Unknown;
+        public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
-        public bool IsOverride = false;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -56,15 +57,21 @@ namespace DMCompiler.DM {
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
+        private Dictionary<string, LocalVariable> _parameters = new();
         private int _localVariableIdCounter = 0;
-        private bool _waitFor = true;
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
 
+        [CanBeNull] public string VerbName;
+        [CanBeNull] public string VerbCategory = string.Empty;
+        [CanBeNull] public string VerbDesc;
+        public sbyte? Invisibility;
+
+
         public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
             _astDefinition = astDefinition;
-            IsOverride = _astDefinition?.IsOverride ?? false; // init procs don't have AST definitions
+            if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
@@ -72,7 +79,7 @@ namespace DMCompiler.DM {
 
         public void Compile(DMObject dmObject) {
             foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                AddParameter(parameter.Name, parameter.Type);
+                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
             }
 
             new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
@@ -80,7 +87,24 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
-            if(!_waitFor) procDefinition.WaitFor = _waitFor; // Procs set this to true by default, so only serialize if false
+
+            if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
+            {
+                procDefinition.Attributes = Attributes;
+            }
+
+            procDefinition.VerbName = VerbName;
+            // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+            VerbCategory = VerbCategory switch
+            {
+                "" => null,
+                null => string.Empty,
+                _ => VerbCategory
+            };
+            procDefinition.VerbCategory = VerbCategory;
+            procDefinition.VerbDesc = VerbDesc;
+            procDefinition.Invisibility = Invisibility;
+
             procDefinition.MaxStackSize = _maxStackSize;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
@@ -102,7 +126,15 @@ namespace DMCompiler.DM {
         }
 
         public void WaitFor(bool waitFor) {
-            _waitFor = waitFor;
+            if (waitFor)
+            {
+                // "waitfor" is true by default
+                Attributes &= ~ProcAttributes.DisableWaitfor;
+            }
+            else
+            {
+                Attributes |= ProcAttributes.DisableWaitfor;
+            }
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst)
@@ -129,9 +161,15 @@ namespace DMCompiler.DM {
             return (id == null) ? null : DMObjectTree.Globals[id.Value];
         }
 
-        public void AddParameter(string name, DMValueType type) {
+        public void AddParameter(string name, DMValueType valueType, DreamPath? type) {
             Parameters.Add(name);
-            ParameterTypes.Add(type);
+            ParameterTypes.Add(valueType);
+
+            if (_parameters.ContainsKey(name)) {
+                DMCompiler.Error(new CompilerError(_astDefinition.Location, $"Duplicate argument \"{name}\""));
+            } else {
+                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
+            }
         }
 
         public void ResolveLabels() {
@@ -158,20 +196,27 @@ namespace DMCompiler.DM {
         }
 
         public bool TryAddLocalVariable(string name, DreamPath? type) {
-            int localVarId = _localVariableIdCounter++;
+            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+                return false;
 
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, type));
+            int localVarId = _localVariableIdCounter++;
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
-            int localVarId = _localVariableIdCounter++;
+            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+                return false;
 
+            int localVarId = _localVariableIdCounter++;
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
         }
 
         public LocalVariable GetLocalVariable(string name) {
-            DMProcScope scope = _scopes.Peek();
+            if (_parameters.TryGetValue(name, out LocalVariable parameter)) {
+                return parameter;
+            }
 
+            DMProcScope scope = _scopes.Peek();
             while (scope != null) {
                 if (scope.LocalVariables.TryGetValue(name, out LocalVariable localVariable)) return localVariable;
 
@@ -182,7 +227,9 @@ namespace DMCompiler.DM {
         }
 
         public DMReference GetLocalVariableReference(string name) {
-            return DMReference.CreateLocal(GetLocalVariable(name).Id);
+            LocalVariable local = GetLocalVariable(name);
+
+            return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
         }
 
         public void Error() {
@@ -245,7 +292,22 @@ namespace DMCompiler.DM {
             AddLabel(loopLabel + "_continue");
         }
 
-        public void LoopJumpToStart(string loopLabel) {
+        public void BackgroundSleep()
+        {
+            // TODO This seems like a bad way to handle background, doesn't it?
+
+            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
+            {
+                PushFloat(-1);
+                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
+                PushArguments(1, arr, null);
+                Call(DMReference.CreateGlobalProc("sleep"));
+            }
+        }
+
+        public void LoopJumpToStart(string loopLabel)
+        {
+            BackgroundSleep();
             Jump(loopLabel + "_start");
         }
 
@@ -321,10 +383,12 @@ namespace DMCompiler.DM {
                         break;
                     }
                 }
+                BackgroundSleep();
                 Jump(continueLabel);
             }
             else
             {
+                BackgroundSleep();
                 Jump(_loopStack.Peek() + "_continue");
             }
         }
@@ -356,6 +420,7 @@ namespace DMCompiler.DM {
             ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
+            WriteInt(parameterNames?.Length ?? 0);
 
             if (argumentCount > 0) {
                 if (parameterTypes == null || parameterTypes.Length != argumentCount) {
@@ -751,6 +816,7 @@ namespace DMCompiler.DM {
             WriteByte((byte)reference.RefType);
 
             switch (reference.RefType) {
+                case DMReference.Type.Argument: WriteByte(reference.ArgumentId); break;
                 case DMReference.Type.Local: WriteByte(reference.LocalId); break;
                 case DMReference.Type.Global: WriteInt(reference.GlobalId); break;
                 case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;
@@ -777,7 +843,9 @@ namespace DMCompiler.DM {
         private void ShrinkStack(int size) {
             _currentStackSize -= size;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-            if (_currentStackSize < 0) throw new Exception($"Negative stack size {Location}");
+            if (_currentStackSize < 0) {
+                throw new CompileAbortException(Location, $"Negative stack size in proc {_astDefinition.ObjectPath}.{Name}()");
+            }
         }
     }
 }

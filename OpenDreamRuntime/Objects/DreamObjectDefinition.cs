@@ -57,14 +57,14 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
 
             SetProcDefinition(name, proc);
         }
 
         public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
 
             SetProcDefinition(name, proc);
         }
@@ -101,6 +101,16 @@ namespace OpenDreamRuntime.Objects {
 
         public bool HasVariable(string variableName) {
             return Variables.ContainsKey(variableName);
+        }
+
+        public bool TryGetVariable(string varName, out DreamValue value) {
+            if (Variables.TryGetValue(varName, out value)) {
+                return true;
+            } else if (_parentObjectDefinition != null) {
+                return _parentObjectDefinition.TryGetVariable(varName, out value);
+            } else {
+                return false;
+            }
         }
 
         public bool IsSubtypeOf(DreamPath path) {

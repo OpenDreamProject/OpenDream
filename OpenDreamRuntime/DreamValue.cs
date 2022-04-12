@@ -95,7 +95,8 @@ namespace OpenDreamRuntime {
             return "DreamValue(" + Type + ", " + value + ")";
         }
 
-        public object GetValueExpectingType(DreamValueType type) {
+        [Obsolete("Deprecated. Use the relevant TryGetValueAs[Type]() instead.")]
+        private object GetValueExpectingType(DreamValueType type) {
             if (Type == type) {
                 return Value;
             }
@@ -103,6 +104,7 @@ namespace OpenDreamRuntime {
             throw new Exception("Value " + this + " was not the expected type of " + type + "");
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsString() instead.")]
         public string GetValueAsString() {
             return (string)GetValueExpectingType(DreamValueType.String);
         }
@@ -118,6 +120,7 @@ namespace OpenDreamRuntime {
         }
 
         //Casts a float value to an integer
+        [Obsolete("Deprecated. Use TryGetValueAsInteger() instead.")]
         public int GetValueAsInteger() {
             return (int)(float)GetValueExpectingType(DreamValueType.Float);
         }
@@ -132,6 +135,7 @@ namespace OpenDreamRuntime {
             }
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsFloat() instead.")]
         public float GetValueAsFloat() {
             return (float)GetValueExpectingType(DreamValueType.Float);
         }
@@ -146,6 +150,7 @@ namespace OpenDreamRuntime {
             }
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsDreamResource() instead.")]
         public DreamResource GetValueAsDreamResource() {
             return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
         }
@@ -160,6 +165,7 @@ namespace OpenDreamRuntime {
             }
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsDreamObject() instead.")]
         public DreamObject GetValueAsDreamObject() {
             DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
 
@@ -182,6 +188,7 @@ namespace OpenDreamRuntime {
             }
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsDreamObjectOfType() instead.")]
         public DreamObject GetValueAsDreamObjectOfType(DreamPath type) {
             DreamObject value = GetValueAsDreamObject();
 
@@ -196,6 +203,7 @@ namespace OpenDreamRuntime {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsDreamList() instead.")]
         public DreamList GetValueAsDreamList() {
             return (DreamList)GetValueAsDreamObject();
         }
@@ -212,6 +220,7 @@ namespace OpenDreamRuntime {
             }
         }
 
+        [Obsolete("Deprecated. Use TryGetValueAsPath() instead.")]
         public DreamPath GetValueAsPath() {
             return (DreamPath)GetValueExpectingType(DreamValueType.DreamPath);
         }
@@ -226,10 +235,6 @@ namespace OpenDreamRuntime {
 
                 return false;
             }
-        }
-
-        public DreamProc GetValueAsProc() {
-            return (DreamProc)GetValueExpectingType(DreamValueType.DreamProc);
         }
 
         public bool TryGetValueAsProc(out DreamProc proc) {
@@ -265,17 +270,21 @@ namespace OpenDreamRuntime {
         public string Stringify() {
             switch (Type) {
                 case DreamValueType.String:
-                    return GetValueAsString();
+                    TryGetValueAsString(out var stringString);
+                    return stringString;
                 case DreamValueType.Float:
-                    return GetValueAsFloat().ToString();
+                    TryGetValueAsFloat(out var floatString);
+                    return floatString.ToString();
                 case DreamValueType.DreamResource:
-                    return GetValueAsDreamResource().ResourcePath;
+                    TryGetValueAsDreamResource(out var rscPath);
+                    return rscPath.ResourcePath;
                 case DreamValueType.DreamPath:
-                    return GetValueAsPath().PathString;
+                    TryGetValueAsPath(out var path);
+                    return path.PathString;
                 case DreamValueType.DreamObject when Value == null:
                     return "";
                 case DreamValueType.DreamObject: {
-                    DreamObject dreamObject = GetValueAsDreamObject();
+                    TryGetValueAsDreamObject(out var dreamObject);
 
                     if (dreamObject.IsSubtypeOf(DreamPath.Atom)) {
                         return dreamObject.GetVariable("name").Stringify();

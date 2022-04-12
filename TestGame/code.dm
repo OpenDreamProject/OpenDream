@@ -24,6 +24,7 @@
 		animate(src, pixel_x = 0, time = 2)
 
 	verb/tell_location()
+		set name = "Tell Location"
 		usr << "You are at ([x], [y], [z])"
 
 	verb/say(message as text)
@@ -47,6 +48,7 @@
 		usr << "The total shown on the dice is: [result]"
 
 	verb/test_alert()
+		set category = "Test"
 		alert(usr, "Prepare to die.")
 		usr << "prompt done"
 
@@ -55,6 +57,7 @@
 		usr << "you entered [v]"
 
 	verb/test_browse()
+		set category = "Test"
 		usr << browse({"
 <!DOCTYPE html>
 <html>
@@ -78,6 +81,7 @@
 </html>"},"window=honk")
 
 	verb/test_output()
+		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
 /mob/Stat()

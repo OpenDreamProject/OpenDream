@@ -211,7 +211,7 @@ namespace OpenDreamRuntime.Objects {
             }
 
             //Third pass: Create a DFS list of types so that all children of a parent type have contiguous indices,
-            //so we can type-check by just checking in a range. See: DreamPath.IsDescendantOf
+            //so we can type-check by just checking in a range. See: DreamObjectDefinition.IsSubtypeOf
             IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedTypeList();
             uint class_num = 0;
             foreach (TreeEntry type in dfs_sorted_types) {

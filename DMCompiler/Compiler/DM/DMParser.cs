@@ -2222,6 +2222,7 @@ namespace DMCompiler.Compiler.DM {
                 switch (identifier.Identifier) {
                     case "list": return new DMASTList(identifier.Location, callParameters);
                     case "newlist": return new DMASTNewList(identifier.Location, callParameters);
+                    case "addtext": return new DMASTAddText(identifier.Location, callParameters);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);

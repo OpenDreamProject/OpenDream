@@ -305,7 +305,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            state.Push(state.Arguments);
+            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+
+            state.Push(new DreamProcArguments(args));
             return null;
         }
 
@@ -390,6 +392,11 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                         result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                        break;
+                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
+                        // TODO icon += hexcolor is the same as Blend()
+                        Logger.WarningS("opendream.unimplemented", "Appending colors to DMIs is not implemented");
+                        result = first;
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
@@ -1580,6 +1587,32 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
+            return null;
+        }
+
+        ///<summary>Right now this is used exclusively by addtext() calls, to concatenate its arguments together,
+        ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,
+        ///so as to slightly reduce the amount of re-allocation taking place.
+        ///</summary>.
+        public static ProcStatus? MassConcatenation(DMProcState state)
+        {
+            int count = state.ReadInt();
+            if (count < 2) // One or zero arguments -- shouldn't really ever happen. addtext() compiletimes with <2 args and stringification should probably be a different opcode
+            {
+                Logger.Warning("addtext() called with " + count.ToString() + " arguments at runtime."); // TODO: tweak this warning if this ever gets used for other sorts of string concat
+                state.Push(DreamValue.Null);
+                return null;
+            }
+            int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
+            StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
+            for(int i = 0; i < count; ++i)
+            {
+                if (state.Pop().TryGetValueAsString(out var addStr))
+                {
+                    builder.Append(addStr);
+                }
+            }
+            state.Push(new DreamValue(builder.ToString()));
             return null;
         }
 

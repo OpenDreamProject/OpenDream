@@ -1,6 +1,8 @@
 ﻿#define TRUE 1
 #define FALSE 0
 
+#define OPENDREAM 1
+
 #define NORTH 1
 #define SOUTH 2
 #define EAST 4

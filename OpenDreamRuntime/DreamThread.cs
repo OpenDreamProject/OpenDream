@@ -47,10 +47,10 @@ namespace OpenDreamRuntime {
             Invisibility = invisibility;
         }
 
-        public abstract ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments);
+        public abstract ProcState CreateState(DreamThread thread, DreamObject src, DreamObject? usr, DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
-        public DreamValue Spawn(DreamObject src, DreamProcArguments arguments, DreamObject usr = null) {
+        public DreamValue Spawn(DreamObject src, DreamProcArguments arguments, DreamObject? usr = null) {
             var context = new DreamThread();
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
@@ -58,13 +58,13 @@ namespace OpenDreamRuntime {
         }
     }
 
-    class CancellingRuntime : Exception {
+    sealed class CancellingRuntime : Exception {
         public CancellingRuntime(string message)
             : base(message)
         {}
     }
 
-    class PropagatingRuntime : Exception {
+    sealed class PropagatingRuntime : Exception {
         public PropagatingRuntime(string message)
             : base(message)
         {}
@@ -107,10 +107,10 @@ namespace OpenDreamRuntime {
         public virtual void ReturnedInto(DreamValue value) {}
     }
 
-    public class DreamThread {
+    public sealed class DreamThread {
         private const int MaxStackDepth = 256;
 
-        private ProcState _current;
+        private ProcState? _current;
         private Stack<ProcState> _stack = new();
 
         // The amount of stack frames containing `WaitFor = false`
@@ -188,7 +188,7 @@ namespace OpenDreamRuntime {
         }
 
         public void PopProcState() {
-            if (_current.WaitFor == false) {
+            if (_current?.WaitFor == false) {
                 _syncCount--;
             }
 
@@ -209,13 +209,14 @@ namespace OpenDreamRuntime {
             Stack<ProcState> newStackReversed = new();
 
             // `WaitFor = true` frames
-            while (_current.WaitFor) {
+            while (_current is not null && _current.WaitFor) {
                 var frame = _current;
                 PopProcState();
                 newStackReversed.Push(frame);
             }
 
             // `WaitFor = false` frame
+            if(_current == null) throw new InvalidOperationException();
             newStackReversed.Push(_current);
             PopProcState();
 
@@ -239,7 +240,14 @@ namespace OpenDreamRuntime {
 
         public void AppendStackTrace(StringBuilder builder) {
             builder.Append("   ");
-            _current.AppendStackFrame(builder);
+            if(_current is null)
+            {
+                builder.Append("(init)...");
+            }
+            else
+            {
+                _current.AppendStackFrame(builder);
+            }
             builder.AppendLine();
 
             foreach (var frame in _stack) {

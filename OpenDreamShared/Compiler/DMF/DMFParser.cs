@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 using OpenDreamShared.Interface;
 using Robust.Shared.IoC;
 using Robust.Shared.Serialization.Manager;
@@ -9,7 +8,7 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamShared.Compiler.DMF {
-    public class DMFParser : Parser<char> {
+    public sealed class DMFParser : Parser<char> {
         public static readonly TokenType[] ValidAttributeValueTypes = {
             TokenType.DMF_None,
             TokenType.DMF_String,
@@ -34,6 +33,7 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_BottomLeft,
             TokenType.DMF_BottomRight,
             TokenType.DMF_Vertical,
+            TokenType.DMF_Line,
 
             TokenType.DMF_Main,
             TokenType.DMF_Input,
@@ -56,26 +56,38 @@ namespace OpenDreamShared.Compiler.DMF {
             var serializationManager = IoCManager.Resolve<ISerializationManager>();
             bool parsing = true;
             while (parsing) {
-                WindowDescriptor windowDescriptor = Window(serializationManager);
-                if (windowDescriptor != null) {
-                    windowDescriptors.Add(windowDescriptor);
-                    Newline();
-                }
+                try {
+                    WindowDescriptor windowDescriptor = Window(serializationManager);
+                    if (windowDescriptor != null) {
+                        windowDescriptors.Add(windowDescriptor);
+                        Newline();
+                    }
 
-                MacroSetDescriptor macroSet = MacroSet(serializationManager);
-                if (macroSet != null) {
-                    macroSetDescriptors.Add(macroSet);
-                    Newline();
-                }
+                    MacroSetDescriptor macroSet = MacroSet(serializationManager);
+                    if (macroSet != null) {
+                        macroSetDescriptors.Add(macroSet);
+                        Newline();
+                    }
 
-                MenuDescriptor menu = Menu(serializationManager);
-                if (menu != null) {
-                    menuDescriptors.Add(menu.Name, menu);
-                    Newline();
-                }
+                    MenuDescriptor menu = Menu(serializationManager);
+                    if (menu != null) {
+                        menuDescriptors.Add(menu.Name, menu);
+                        Newline();
+                    }
 
-                if (windowDescriptor == null && macroSet == null && menu == null) {
-                    parsing = false;
+                    if (windowDescriptor == null && macroSet == null && menu == null) {
+                        parsing = false;
+                    }
+                } catch (CompileErrorException) { //Error recovery
+                    Token token = Current();
+                    while (token.Type is not (TokenType.DMF_Window or TokenType.DMF_Macro or TokenType.DMF_Menu)) {
+                        token = Advance();
+
+                        if (token.Type == TokenType.EndOfFile) {
+                            parsing = false;
+                            break;
+                        }
+                    }
                 }
             }
 

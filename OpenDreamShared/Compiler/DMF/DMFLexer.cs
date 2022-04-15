@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace OpenDreamShared.Compiler.DMF {
-    public class DMFLexer : TextLexer {
+    public sealed class DMFLexer : TextLexer {
         public static readonly List<string> ValidAttributes = new() {
             "align",
             "allow-html",
@@ -73,6 +73,7 @@ namespace OpenDreamShared.Compiler.DMF {
             "on-change",
             "on-hide",
             "on-show",
+            "on-status",
             "on-size",
             "on-tab",
             "pos",
@@ -133,6 +134,7 @@ namespace OpenDreamShared.Compiler.DMF {
             { "MAP", TokenType.DMF_Map },
             { "menu", TokenType.DMF_Menu },
             { "none", TokenType.DMF_None },
+            { "line", TokenType.DMF_Line },
             { "OUTPUT", TokenType.DMF_Output },
             { "pushbox", TokenType.DMF_PushBox },
             { "pushbutton", TokenType.DMF_PushButton },

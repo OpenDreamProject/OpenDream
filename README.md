@@ -16,7 +16,9 @@ The first step to building OpenDream is initializing the submodule for the game 
 
 To do this, simply run `git submodule update --init --recursive` in git bash and let it finish.
 
-OpenDream requires .NET 6. To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
+**OpenDream requires .NET 6.** You can check your version by running `dotnet --version`. It should be at least `6.0.0`.
+
+To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
 
 There's 3 main parts: Compiler, Server, and Client
 

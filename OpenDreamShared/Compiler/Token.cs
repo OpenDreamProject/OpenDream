@@ -149,6 +149,7 @@
         DMF_Integer,
         DMF_Label,
         DMF_Left,
+        DMF_Line,
         DMF_Macro,
         DMF_Main,
         DMF_Map,

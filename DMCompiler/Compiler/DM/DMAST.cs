@@ -52,6 +52,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
+        public void VisitAddText(DMASTAddText input) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -65,6 +66,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
+        public void VisitNewListIndex(DMASTNewListIndex newListIndex) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
         public void VisitNot(DMASTNot not) { throw new NotImplementedException(); }
         public void VisitNegate(DMASTNegate negate) { throw new NotImplementedException(); }
@@ -854,14 +856,29 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTNewList : DMASTExpression {
+    public class DMASTAddText : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location) {
+        public DMASTAddText(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
         public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAddText(this);
+        }
+    }
+
+    public class DMASTNewList : DMASTExpression
+    {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location)
+        {
+            Parameters = parameters;
+        }
+
+        public override void Visit(DMASTVisitor visitor)
+        {
             visitor.VisitNewList(this);
         }
     }
@@ -1049,6 +1066,20 @@ namespace DMCompiler.Compiler.DM {
             visitor.VisitNewDereference(this);
         }
     }
+
+    public class DMASTNewListIndex : DMASTExpression {
+            public DMASTListIndex ListIdx;
+            public DMASTCallParameter[] Parameters;
+
+            public DMASTNewListIndex(Location location, DMASTListIndex listIdx, DMASTCallParameter[] parameters) : base(location) {
+                ListIdx = listIdx;
+                Parameters = parameters;
+            }
+
+            public override void Visit(DMASTVisitor visitor) {
+                visitor.VisitNewListIndex(this);
+            }
+        }
 
     public class DMASTNewInferred : DMASTExpression {
         public DMASTCallParameter[] Parameters;

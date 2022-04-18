@@ -526,6 +526,16 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
+            DMASTAddText addtext = expression as DMASTAddText;
+            if(addtext != null) {
+                foreach (DMASTCallParameter parameter in addtext.Parameters)
+                {
+                    SimplifyExpression(ref parameter.Value);
+                }
+
+                return;
+            }
+
             DMASTNewPath newPath = expression as DMASTNewPath;
             if (newPath != null) {
                 if (newPath.Parameters != null) {

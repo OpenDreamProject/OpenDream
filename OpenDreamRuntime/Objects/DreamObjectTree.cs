@@ -235,8 +235,6 @@ namespace OpenDreamRuntime.Objects {
             List<string> argumentNames = new();
             List<DMValueType> argumentTypes = new();
 
-
-
             if (procDefinition.Arguments != null) {
                 argumentNames.EnsureCapacity(procDefinition.Arguments.Count);
                 argumentTypes.EnsureCapacity(procDefinition.Arguments.Count);

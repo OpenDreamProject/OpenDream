@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using OpenDreamShared.Compiler;
 
 namespace DMCompiler {
     class Program {
@@ -16,6 +18,8 @@ namespace DMCompiler {
         private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
             settings = new();
             settings.Files = new List<string>();
+            
+            bool skipBad = args.Contains("--skip-bad-args");
 
             foreach (string arg in args) {
                 switch (arg) {
@@ -23,6 +27,7 @@ namespace DMCompiler {
                     case "--dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "--no-standard": settings.NoStandard = true; break;
                     case "--verbose": settings.Verbose = true; break;
+                    case "--skip-bad-args": break;
                     default: {
                         string extension = Path.GetExtension(arg);
 
@@ -30,8 +35,12 @@ namespace DMCompiler {
                             settings.Files.Add(arg);
                             Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                         } else {
-                            Console.WriteLine($"Invalid arg '{arg}'");
-                            return false;
+                            if(skipBad) {
+                                DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"Invalid compiler arg '{arg}', skipping"));
+                            } else {
+                                Console.WriteLine($"Invalid arg '{arg}'");
+                                return false;
+                            }
                         }
 
                         break;

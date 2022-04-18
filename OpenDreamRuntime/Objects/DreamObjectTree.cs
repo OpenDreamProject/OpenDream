@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,7 +85,7 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         /// <returns>IEnumerable of sorted TreeEntries</returns>
         /// <seealso cref="DreamObjectDefinition.IsSubtypeOf">IsDescendantOf</seealso>
-        public IEnumerable<TreeEntry> GetDFSSortedTypeList() {
+        private IEnumerable<TreeEntry> GetDFSSortedTypeList() {
             List<TreeEntry> dfs_sorted_types = new();
             Stack<TreeEntry> dfs_sort_stack = new();
 
@@ -207,19 +207,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            //Third pass: Create a DFS list of types so that all children of a parent type have contiguous indices,
-            //so we can type-check by just checking in a range. See: DreamObjectDefinition.IsSubtypeOf
-            IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedTypeList();
-            uint class_num = 0;
-            foreach (TreeEntry type in dfs_sorted_types) {
-                if(type.ObjectDefinition == null) continue;
-                type.ObjectDefinition.TypeIndex = class_num++;
-                if (type.ParentEntry != null)
-                    type.ParentEntry.ObjectDefinition.NumChildren++;
-                type.ObjectDefinition.NumChildren = (uint)type.InheritingTypes.Count;
-            }
-
-            //Fourth pass: Load each type's vars and procs
+            //Third pass: Load each type's vars and procs
             //This must happen top-down from the root of the object tree for inheritance to work
             //Thus, the enumeration of GetAllDescendants()
             foreach (TreeEntry type in GetAllDescendants(DreamPath.Root)) {
@@ -245,6 +233,22 @@ namespace OpenDreamRuntime.Objects {
                     initProc.SuperProc = definition.InitializionProc;
                     definition.InitializionProc = initProc;
                 }
+            }
+
+            //Fourth pass: Create a DFS list of types so that all children of a parent type have contiguous indices,
+            //so we can type-check by just checking in a range. See: DreamObjectDefinition.IsSubtypeOf
+            IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedTypeList();
+            uint class_num = 0;
+            foreach (TreeEntry type in dfs_sorted_types) {
+                if (type == RootType)
+                {
+                    class_num++;
+                    continue;
+                }
+                type.ObjectDefinition.TypeIndex = class_num++;
+                if (type.ParentEntry != null)
+                    type.ParentEntry.ObjectDefinition.NumChildren++;
+                type.ObjectDefinition.NumChildren = (uint)type.InheritingTypes.Count;
             }
 
             //Fifth pass: Set atom's text

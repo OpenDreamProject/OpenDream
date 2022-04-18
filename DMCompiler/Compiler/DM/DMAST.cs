@@ -52,6 +52,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
+        public void VisitAddText(DMASTAddText input) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -855,14 +856,29 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTNewList : DMASTExpression {
+    public class DMASTAddText : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location) {
+        public DMASTAddText(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
         public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAddText(this);
+        }
+    }
+
+    public class DMASTNewList : DMASTExpression
+    {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location)
+        {
+            Parameters = parameters;
+        }
+
+        public override void Visit(DMASTVisitor visitor)
+        {
             visitor.VisitNewList(this);
         }
     }

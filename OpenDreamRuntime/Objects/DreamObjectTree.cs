@@ -30,6 +30,8 @@ namespace OpenDreamRuntime.Objects {
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
 
+        public TreeEntry RootType { get => Types[0]; }
+
         public DreamObjectTree(DreamCompiledJson json) {
             Strings = json.Strings;
 
@@ -87,15 +89,10 @@ namespace OpenDreamRuntime.Objects {
             List<TreeEntry> dfs_sorted_types = new();
             Stack<TreeEntry> dfs_sort_stack = new();
 
-            dfs_sort_stack.Push(Types[0]); // Always the root ('/')
+            dfs_sort_stack.Push(RootType);
             while (dfs_sort_stack.Count != 0) {
                 TreeEntry current = dfs_sort_stack.Pop();
                 dfs_sorted_types.Add(current);
-
-                // Because stacks pop the elements out LIFO, push in reverse
-                // to traverse the returned list in the same order as was returned to us
-                List<int> rev_children = new(current.InheritingTypes);
-                rev_children.Reverse();
 
                 foreach (int childTypeId in current.InheritingTypes) {
                     dfs_sort_stack.Push(Types[childTypeId]);
@@ -216,10 +213,10 @@ namespace OpenDreamRuntime.Objects {
             uint class_num = 0;
             foreach (TreeEntry type in dfs_sorted_types) {
                 if(type.ObjectDefinition == null) continue;
-                type.ObjectDefinition.typeIndex = class_num++;
+                type.ObjectDefinition.TypeIndex = class_num++;
                 if (type.ParentEntry != null)
-                    type.ParentEntry.ObjectDefinition.numChildren++;
-                type.ObjectDefinition.numChildren = (uint)type.InheritingTypes.Count;
+                    type.ParentEntry.ObjectDefinition.NumChildren++;
+                type.ObjectDefinition.NumChildren = (uint)type.InheritingTypes.Count;
             }
 
             //Fourth pass: Load each type's vars and procs

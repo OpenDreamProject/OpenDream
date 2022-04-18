@@ -18,11 +18,11 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Internal type ID used for performant subclass checking
         /// </summary>
-        public uint typeIndex = 0;
+        public uint TypeIndex = 0;
         /// <summary>
         /// Number of children for performant subclass checking
         /// </summary>
-        public uint numChildren = 0;
+        public uint NumChildren = 0;
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
@@ -124,7 +124,7 @@ namespace OpenDreamRuntime.Objects {
 
         public bool IsSubtypeOf(DreamObjectDefinition ancestor) {
             // Unsigned overflow is desired, see: Doom3/unity's impl
-            return (typeIndex - ancestor.typeIndex) <= ancestor.numChildren;
+            return (TypeIndex - ancestor.TypeIndex) <= ancestor.NumChildren;
         }
     }
 }

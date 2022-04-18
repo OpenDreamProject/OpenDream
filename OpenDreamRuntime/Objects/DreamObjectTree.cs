@@ -240,11 +240,6 @@ namespace OpenDreamRuntime.Objects {
             IEnumerable<TreeEntry> dfs_sorted_types = GetDFSSortedTypeList();
             uint class_num = 0;
             foreach (TreeEntry type in dfs_sorted_types) {
-                if (type == RootType)
-                {
-                    class_num++;
-                    continue;
-                }
                 type.ObjectDefinition.TypeIndex = class_num++;
                 if (type.ParentEntry != null)
                     type.ParentEntry.ObjectDefinition.NumChildren++;

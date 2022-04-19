@@ -49,6 +49,7 @@ namespace DMCompiler.DM {
         public Location Location = Location.Unknown;
         public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
+        public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -69,7 +70,9 @@ namespace DMCompiler.DM {
         public sbyte? Invisibility;
 
 
-        public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
+        public DMProc(int id, [CanBeNull] DMASTProcDefinition astDefinition)
+        {
+            Id = id;
             _astDefinition = astDefinition;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;

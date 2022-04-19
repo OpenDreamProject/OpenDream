@@ -12,7 +12,7 @@ namespace DMCompiler.DM {
         public int Id;
         public DreamPath Path;
         public DMObject Parent;
-        public Dictionary<string, List<DMProc>> Procs = new();
+        public Dictionary<string, List<int>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
         public Dictionary<string, int> GlobalVariables = new();
@@ -38,8 +38,10 @@ namespace DMCompiler.DM {
                 }
             }
 
-            foreach (List<DMProc> procs in Procs.Values) {
-                foreach (DMProc proc in procs) {
+            foreach (List<int> procs in Procs.Values) {
+                foreach (int procId in procs)
+                {
+                    DMProc proc = DMObjectTree.AllProcs[procId];
                     DMCompiler.VerbosePrint($"Compiling proc {Path}.{proc.Name}()");
                     proc.Compile(this);
                 }
@@ -47,9 +49,9 @@ namespace DMCompiler.DM {
         }
 
         public void AddProc(string name, DMProc proc) {
-            if (!Procs.ContainsKey(name)) Procs.Add(name, new List<DMProc>());
+            if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
-            Procs[name].Add(proc);
+            Procs[name].Add(proc.Id);
         }
 
         public DMVariable GetVariable(string name) {
@@ -65,15 +67,17 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
-        public List<DMProc> GetProcs(string name) {
+        public List<int> GetProcs(string name) {
             return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 
         public bool IsProcUnimplemented(string name) {
-            List<DMProc> procs = GetProcs(name);
+            List<int> procs = GetProcs(name);
 
             if (procs != null) {
-                foreach (DMProc proc in procs) {
+                foreach (int procId in procs)
+                {
+                    DMProc proc = DMObjectTree.AllProcs[procId];
                     if ((proc.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) return true;
                 }
             }
@@ -103,8 +107,9 @@ namespace DMCompiler.DM {
         }
 
         public void CreateInitializationProc() {
-            if (InitializationProc == null) {
-                InitializationProc = new DMProc(null);
+            if (InitializationProc == null)
+            {
+                InitializationProc = DMObjectTree.CreateDMProc(null);
 
                 InitializationProc.PushArguments(0);
                 InitializationProc.Call(DMReference.SuperProc);

@@ -203,7 +203,9 @@ namespace DMCompiler {
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
-            compiledDream.Types = DMObjectTree.CreateJsonRepresentation();
+            var jsonRep = DMObjectTree.CreateJsonRepresentation();
+            compiledDream.Types = jsonRep.Item1;
+            compiledDream.Procs = jsonRep.Item2;
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {

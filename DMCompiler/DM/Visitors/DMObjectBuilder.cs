@@ -126,15 +126,18 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
                 }
 
-                DMProc proc = new DMProc(procDefinition);
+                DMProc proc;
 
                 if (procDefinition.ObjectPath == null) {
                     if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
                         throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
                     }
 
+                    proc = new DMProc(-1, procDefinition); // -1 for global procs
+
                     DMObjectTree.AddGlobalProc(procDefinition.Name, proc);
                 } else {
+                    proc = DMObjectTree.CreateDMProc(procDefinition);
                     dmObject.AddProc(procName, proc);
                 }
 

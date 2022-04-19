@@ -41,9 +41,19 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateListEnumerator(DMProcState state)
         {
-            state.Pop().TryGetValueAsPath(out var type);
-            DreamObject listObject = state.Pop().GetValueAsDreamObject();
-            DreamList list = listObject as DreamList;
+            var popped = state.Pop();
+            DreamList? list = null;
+            if (!popped.TryGetValueAsDreamObject(out var listObject))
+            {
+                if (popped.TryGetValueAsString(out var popStr) && popStr == "world")
+                {
+                    list = state.DreamManager.WorldContentsList;
+                }
+            }
+            else
+            {
+                list = listObject as DreamList;
+            }
 
             if (list == null) {
                 if (listObject == null) {
@@ -71,13 +81,20 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateTypeEnumerator(DMProcState state)
         {
-            state.Pop().TryGetValueAsPath(out var type);
+            if (!state.Pop().TryGetValueAsPath(out var type))
+            {
+                throw new Exception($"Cannot create a type enumerator for a non-path");
+            }
 
             DreamList list;
 
             if (type == DreamPath.Client)
             {
                 list = DreamList.Create(state.DreamManager.Clients);
+            }
+            else if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Atom))
+            {
+                list = state.DreamManager.WorldContentsList;
             }
             else if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Datum))
             {

@@ -71,6 +71,11 @@ namespace DMCompiler.DM.Visitors {
             statementForList.Body?.Visit(this);
         }
 
+        public void VisitProcStatementForType(DMASTProcStatementForType statementForType) {
+            statementForType.Initializer?.Visit(this);
+            statementForType.Body?.Visit(this);
+        }
+
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
             SimplifyExpression(ref statementForRange.RangeStart);
             SimplifyExpression(ref statementForRange.RangeEnd);

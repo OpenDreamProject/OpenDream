@@ -106,6 +106,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
                 case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
                 case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
+                case DMASTProcStatementForType statementForType: ProcessStatementForType(statementForType); break;
                 case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
@@ -411,25 +412,17 @@ namespace DMCompiler.DM.Visitors {
 
             if (varDeclaration?.Type != null)
             {
-                // Atoms & world will use their contents list implicitly
-                // This is for things like "for(var/client/C)"
-                if (statementForList.List is null && !DMObjectTree.GetDMObject(varDeclaration.Type.Value).IsSubtypeOf(DreamPath.Atom))
+                if (statementForList.List is null) // This shouldn't happen
                 {
-                    _proc.PushPath(varDeclaration.Type.Value);
-                    _proc.CreateTypeEnumerator();
+                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Attempted to create a list enumerator with a null list"));
+                    return;
                 }
-                else
-                {
-                    // If List is null it's "for(var/atom/A)" (or an atom subtype) which is implicitly "in world"
-                    DMExpression.Emit(_dmObject, _proc, statementForList.List ?? new DMASTIdentifier(statementForList.Location, "world"));
-                    _proc.PushPath(varDeclaration.Type.Value);
-                    _proc.CreateListEnumerator();
-                }
+                DMExpression.Emit(_dmObject, _proc, statementForList.List);
+                _proc.CreateListEnumerator();
             }
             else
             {
                 DMExpression.Emit(_dmObject, _proc, statementForList.List);
-                _proc.PushNull();
                 _proc.CreateListEnumerator();
             }
 
@@ -457,6 +450,55 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     ProcessBlockInner(statementForList.Body);
+
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
+                }
+                _proc.LoopEnd();
+            }
+            _proc.EndScope();
+            _proc.DestroyEnumerator();
+        }
+
+        public void ProcessStatementForType(DMASTProcStatementForType statementForType)
+        {
+            DMASTProcStatementVarDeclaration varDeclaration = statementForType.Initializer as DMASTProcStatementVarDeclaration;
+
+            if (varDeclaration?.Type != null)
+            {
+                _proc.PushPath(varDeclaration.Type.Value);
+                _proc.CreateTypeEnumerator();
+            }
+            else // This shouldn't happen, just to be safe
+            {
+                DMCompiler.Error(new CompilerError(varDeclaration.Location, "Attempted to create a type enumerator with a null type"));
+                return;
+            }
+
+            _proc.StartScope();
+            {
+                if (statementForType.Initializer != null) {
+                    ProcessStatement(statementForType.Initializer);
+                }
+
+                string loopLabel = _proc.NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForType.Variable);
+                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
+                    _proc.Enumerate(outputRef);
+                    _proc.BreakIfFalse();
+
+                    if (varDeclaration != null && varDeclaration.Type != null)
+                    {
+                        DMExpression.Emit(_dmObject, _proc, statementForType.Variable);
+                        _proc.PushPath(varDeclaration.Type.Value);
+                        _proc.IsType();
+
+                        _proc.ContinueIfFalse();
+                    }
+
+                    ProcessBlockInner(statementForType.Body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);

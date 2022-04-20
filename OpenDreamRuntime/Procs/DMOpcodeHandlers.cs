@@ -41,24 +41,11 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateListEnumerator(DMProcState state)
         {
-            var type = state.Pop();
             var popped = state.Pop();
 
             DreamList? list = null;
-            if (!popped.TryGetValueAsDreamObject(out var listObject))
-            {
-                if (popped.TryGetValueAsString(out var popStr) && popStr == "world" && type.TryGetValueAsPath(out var typePath))
-                {
-                    if (state.DreamManager.ObjectTree.GetObjectDefinition(typePath).IsSubtypeOf(DreamPath.Atom))
-                    {
-                        list = state.DreamManager.WorldContentsList;
-                    }
-                }
-            }
-            else
-            {
+            if (popped.TryGetValueAsDreamObject(out var listObject))
                 list = listObject as DreamList;
-            }
 
             if (list == null) {
                 if (listObject == null) {

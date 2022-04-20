@@ -410,6 +410,8 @@ namespace DMCompiler.DM.Visitors {
             DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
 
             DMExpression.Emit(_dmObject, _proc, statementForList.List);
+            if(varDeclaration?.Type is null) _proc.PushNull();
+            else _proc.PushPath((DreamPath)varDeclaration?.Type);
             _proc.CreateListEnumerator();
             _proc.StartScope();
             {
@@ -473,15 +475,6 @@ namespace DMCompiler.DM.Visitors {
                     (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
                     _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
-
-                    if (varDeclaration != null && varDeclaration.Type != null)
-                    {
-                        DMExpression.Emit(_dmObject, _proc, statementForType.Variable);
-                        _proc.PushPath(varDeclaration.Type.Value);
-                        _proc.IsType();
-
-                        _proc.ContinueIfFalse();
-                    }
 
                     ProcessBlockInner(statementForType.Body);
 

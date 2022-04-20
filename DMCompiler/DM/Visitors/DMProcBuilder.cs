@@ -407,25 +407,10 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
-
             DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
 
-            if (varDeclaration?.Type != null)
-            {
-                if (statementForList.List is null) // This shouldn't happen
-                {
-                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Attempted to create a list enumerator with a null list"));
-                    return;
-                }
-                DMExpression.Emit(_dmObject, _proc, statementForList.List);
-                _proc.CreateListEnumerator();
-            }
-            else
-            {
-                DMExpression.Emit(_dmObject, _proc, statementForList.List);
-                _proc.CreateListEnumerator();
-            }
-
+            DMExpression.Emit(_dmObject, _proc, statementForList.List);
+            _proc.CreateListEnumerator();
             _proc.StartScope();
             {
                 if (statementForList.Initializer != null) {

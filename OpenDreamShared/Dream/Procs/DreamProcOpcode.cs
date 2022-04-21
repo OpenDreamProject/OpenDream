@@ -215,6 +215,7 @@ namespace OpenDreamShared.Dream.Procs {
             switch (RefType) {
                 case Type.Local: return $"{RefType} {LocalId}";
                 case Type.Global: return $"{RefType} {GlobalId}";
+                case Type.Argument: return $"{RefType} {ArgumentId}";
                 case Type.SrcField:
                 case Type.Field:
                     return $"{RefType} \"{FieldName}\"";

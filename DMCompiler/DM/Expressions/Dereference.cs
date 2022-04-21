@@ -108,7 +108,8 @@ namespace DMCompiler.DM.Expressions {
             if (_expr.Path == null) return (null, null);
 
             DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
-            return (dmObject, dmObject.GetProcs(_field)?[^1]);
+            var procId = dmObject.GetProcs(_field)?[^1];
+            return (dmObject, procId is null ? null : DMObjectTree.AllProcs[procId.Value]);
         }
     }
 

@@ -50,6 +50,7 @@ namespace DMCompiler.DM {
         public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
         public int Id;
+        private DMObject _dmObject;
         public Dictionary<string, int> GlobalVariables = new();
 
         private DMASTProcDefinition _astDefinition = null;
@@ -70,9 +71,10 @@ namespace DMCompiler.DM {
         public sbyte? Invisibility;
 
 
-        public DMProc(int id, [CanBeNull] DMASTProcDefinition astDefinition)
+        public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
         {
             Id = id;
+            _dmObject = dmObject;
             _astDefinition = astDefinition;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
@@ -80,16 +82,22 @@ namespace DMCompiler.DM {
             _scopes.Push(new DMProcScope());
         }
 
-        public void Compile(DMObject dmObject) {
-            foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
-            }
+        public void Compile() {
+            DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
+            if (_astDefinition is not null) // It's null for initialization procs
+            {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
 
-            new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
+                new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+
+            procDefinition.Name = Name;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {

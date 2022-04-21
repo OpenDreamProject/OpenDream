@@ -13,13 +13,17 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.Reset();
             ProcessFile(astFile);
 
+
+            // TODO Nuke this pass
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
-                dmObject.CompileProcs();
+                dmObject.CreateInitializationProc();
             }
 
-            DMObject root = DMObjectTree.GetDMObject(DreamPath.Root);
+            foreach (DMProc proc in DMObjectTree.AllProcs)
+                proc.Compile();
+
             foreach (DMProc gProc in DMObjectTree.GlobalProcs.Values) {
-                gProc.Compile(root);
+                gProc.Compile();
             }
 
             DMObjectTree.CreateGlobalInitProc();
@@ -133,11 +137,11 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
                     }
 
-                    proc = new DMProc(-1, procDefinition); // -1 for global procs
+                    proc = new DMProc(-1, dmObject, procDefinition); // -1 for global procs
 
                     DMObjectTree.AddGlobalProc(procDefinition.Name, proc);
                 } else {
-                    proc = DMObjectTree.CreateDMProc(procDefinition);
+                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);
                 }
 

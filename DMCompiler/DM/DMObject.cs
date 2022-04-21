@@ -17,37 +17,13 @@ namespace DMCompiler.DM {
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
         public Dictionary<string, int> GlobalVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
-        public DMProc InitializationProc = null;
+        public int? InitializationProc;
 
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
             Path = path;
             Parent = parent;
         }
-
-        public void CompileProcs() {
-            if (InitializationProcExpressions.Count > 0) {
-                CreateInitializationProc();
-
-                foreach (DMExpression expression in InitializationProcExpressions) {
-                    try {
-                        expression.EmitPushValue(this, InitializationProc);
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
-                    }
-                }
-            }
-
-            foreach (List<int> procs in Procs.Values) {
-                foreach (int procId in procs)
-                {
-                    DMProc proc = DMObjectTree.AllProcs[procId];
-                    DMCompiler.VerbosePrint($"Compiling proc {Path}.{proc.Name}()");
-                    proc.Compile(this);
-                }
-            }
-        }
-
         public void AddProc(string name, DMProc proc) {
             if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
@@ -107,12 +83,20 @@ namespace DMCompiler.DM {
         }
 
         public void CreateInitializationProc() {
-            if (InitializationProc == null)
+            if (InitializationProcExpressions.Count > 0 && InitializationProc == null)
             {
-                InitializationProc = DMObjectTree.CreateDMProc(null);
+                var init = DMObjectTree.CreateDMProc(this, null);
+                InitializationProc = init.Id;
+                init.PushArguments(0);
+                init.Call(DMReference.SuperProc);
 
-                InitializationProc.PushArguments(0);
-                InitializationProc.Call(DMReference.SuperProc);
+                foreach (DMExpression expression in InitializationProcExpressions) {
+                    try {
+                        expression.EmitPushValue(this, init);
+                    } catch (CompileErrorException e) {
+                        DMCompiler.Error(e.Error);
+                    }
+                }
             }
         }
 
@@ -144,24 +128,15 @@ namespace DMCompiler.DM {
                 typeJson.GlobalVariables = GlobalVariables;
             }
 
-            if (InitializationProc != null) {
-                typeJson.InitProc = InitializationProc.GetJsonRepresentation();
+            if (InitializationProc != null)
+            {
+                typeJson.InitProc = InitializationProc;
             }
 
-            if (Procs.Count > 0) {
-                typeJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
-
-                foreach (KeyValuePair<string, List<DMProc>> procs in Procs) {
-                    List<ProcDefinitionJson> procJson = new();
-
-                    foreach (DMProc proc in procs.Value) {
-                        procJson.Add(proc.GetJsonRepresentation());
-                    }
-
-                    typeJson.Procs.Add(procs.Key, procJson);
-                }
+            if (Procs.Count > 0)
+            {
+                typeJson.Procs = Procs;
             }
-
             return typeJson;
         }
 

@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using System;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using DMCompiler.Compiler.DM;
@@ -17,7 +18,7 @@ namespace DMCompiler.DM {
         public static Dictionary<string, DMProc> GlobalProcs = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
-        public static DMProc GlobalInitProc = CreateDMProc(null);
+        public static DMProc GlobalInitProc;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
@@ -27,6 +28,7 @@ namespace DMCompiler.DM {
 
         static DMObjectTree() {
             Reset();
+            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
         public static void Reset() {
@@ -36,9 +38,9 @@ namespace DMCompiler.DM {
             GetDMObject(DreamPath.Root);
         }
 
-        public static DMProc CreateDMProc([CanBeNull] DMASTProcDefinition astDefinition)
+        public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
         {
-            DMProc dmProc = new DMProc(_dmProcIdCounter++, astDefinition);
+            DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
             AllProcs.Add(dmProc);
             return dmProc;
         }

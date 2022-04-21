@@ -1,4 +1,5 @@
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {

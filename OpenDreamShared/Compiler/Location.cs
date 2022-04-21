@@ -4,7 +4,14 @@ namespace OpenDreamShared.Compiler
 {
     public readonly struct Location
     {
+        /// <summary>
+        /// For when DM location information can't be determined.
+        /// </summary>
         public static readonly Location Unknown = new Location();
+        /// <summary>
+        /// For when internal OpenDream warnings/errors are raised.
+        /// </summary>
+        public static readonly Location Internal = new Location("<internal>", null, null);
 
         public Location(string filePath, int? line, int? column) {
             SourceFile = filePath;

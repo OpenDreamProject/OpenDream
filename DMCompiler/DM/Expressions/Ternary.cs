@@ -1,9 +1,11 @@
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     // x ? y : z
     class Ternary : DMExpression {
         DMExpression _a, _b, _c;
+        public override DreamPath? Path => _a.Path;
 
         public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
             _a = a;

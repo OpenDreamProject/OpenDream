@@ -439,6 +439,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x = y
     class Assignment : AssignmentBinaryOp {
+        public override DreamPath? Path => LHS.Path;
+        
         public Assignment(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 

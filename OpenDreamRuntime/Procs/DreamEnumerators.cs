@@ -84,7 +84,7 @@ namespace OpenDreamRuntime.Procs {
         public bool MoveNext() {
             bool hasNext = _dreamValueEnumerator.MoveNext();
             if (_filterType != null) {
-                while (hasNext && (_dreamValueEnumerator.Current.Type != DreamValue.DreamValueType.DreamObject || !_dreamValueEnumerator.Current.TryGetValueAsDreamObjectOfType(_filterType.Value, out _)))
+                while (hasNext && !_dreamValueEnumerator.Current.TryGetValueAsDreamObjectOfType(_filterType.Value, out _))
                 {
                     hasNext = _dreamValueEnumerator.MoveNext();
                 }

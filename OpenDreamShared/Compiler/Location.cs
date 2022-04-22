@@ -9,7 +9,7 @@ namespace OpenDreamShared.Compiler
         /// </summary>
         public static readonly Location Unknown = new Location();
         /// <summary>
-        /// For when internal OpenDream warnings/errors are raised.
+        /// For when internal OpenDream warnings/errors are raised or something internal needs to be passed a location.
         /// </summary>
         public static readonly Location Internal = new Location("<internal>", null, null);
 

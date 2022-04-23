@@ -159,7 +159,7 @@ namespace DMCompiler.DM.Visitors {
 
                             if (varDeclaration.Value != null) {
                                 DMVisitorExpression._scopeMode = "static";
-                                DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
+                                DMExpression expression = DMExpression.Create(dmObject, null, varDeclaration.Value, varDeclaration.Type);
                                 DMVisitorExpression._scopeMode = "normal";
                                 DMObjectTree.AddGlobalInitAssign(dmObject, proc.GetGlobalVariableId(varDeclaration.Name).Value, expression);
                             }

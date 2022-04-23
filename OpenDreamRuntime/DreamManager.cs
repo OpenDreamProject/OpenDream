@@ -35,6 +35,8 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
+        public List<DreamObject> Clients { get; set; } = new();
+        public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, Queue<DreamObject>> Tags { get; set; } = new();
 
@@ -152,6 +154,10 @@ namespace OpenDreamRuntime {
             else
             {
                 logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+                if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
+                {
+                    Logger.LogS(level, "world.log", message);
+                }
             }
         }
     }

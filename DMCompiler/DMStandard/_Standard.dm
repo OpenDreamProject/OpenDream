@@ -3,6 +3,7 @@
 /var/world/world = null
 
 proc/abs(A)
+proc/addtext(...)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
 proc/animate(Object, time, loop, easing, flags)
 proc/arccos(X)

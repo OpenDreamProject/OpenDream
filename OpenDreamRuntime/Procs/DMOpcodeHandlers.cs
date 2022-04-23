@@ -39,14 +39,19 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            DreamObject listObject = state.Pop().GetValueAsDreamObject();
-            DreamList list = listObject as DreamList;
+        public static ProcStatus? CreateListEnumerator(DMProcState state)
+        {
+            var popped = state.Pop();
+
+            DreamList? list = null;
+            if (popped.TryGetValueAsDreamObject(out var listObject))
+                list = listObject as DreamList;
 
             if (list == null) {
                 if (listObject == null) {
                     list = null;
-                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
+                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World))
+                {
                     list = listObject.GetVariable("contents").GetValueAsDreamList();
                 } else {
                     throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);
@@ -64,6 +69,32 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return null;
+        }
+
+        public static ProcStatus? CreateTypeEnumerator(DMProcState state)
+        {
+            if (!state.Pop().TryGetValueAsPath(out var type))
+            {
+                throw new Exception($"Cannot create a type enumerator for a non-path");
+            }
+
+            if (type == DreamPath.Client)
+            {
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Clients));
+                return null;
+            }
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Atom))
+            {
+                state.EnumeratorStack.Push(new DreamValueAsObjectEnumerator(state.DreamManager.WorldContentsList.GetValues(), type));
+                return null;
+            }
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Datum))
+            {
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums));
+                return null;
+            }
+
+            throw new Exception($"Type enumeration of {type.ToString()} is not supported");
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {
@@ -305,7 +336,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            state.Push(state.Arguments);
+            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+
+            state.Push(new DreamProcArguments(args));
             return null;
         }
 
@@ -1482,6 +1515,32 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
+            return null;
+        }
+
+        ///<summary>Right now this is used exclusively by addtext() calls, to concatenate its arguments together,
+        ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,
+        ///so as to slightly reduce the amount of re-allocation taking place.
+        ///</summary>.
+        public static ProcStatus? MassConcatenation(DMProcState state)
+        {
+            int count = state.ReadInt();
+            if (count < 2) // One or zero arguments -- shouldn't really ever happen. addtext() compiletimes with <2 args and stringification should probably be a different opcode
+            {
+                Logger.Warning("addtext() called with " + count.ToString() + " arguments at runtime."); // TODO: tweak this warning if this ever gets used for other sorts of string concat
+                state.Push(DreamValue.Null);
+                return null;
+            }
+            int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
+            StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
+            for(int i = 0; i < count; ++i)
+            {
+                if (state.Pop().TryGetValueAsString(out var addStr))
+                {
+                    builder.Append(addStr);
+                }
+            }
+            state.Push(new DreamValue(builder.ToString()));
             return null;
         }
 

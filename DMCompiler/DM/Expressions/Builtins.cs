@@ -202,6 +202,29 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // addtext(...)
+    // https://www.byond.com/docs/ref/#/proc/addtext
+    class AddText : DMExpression
+    {
+        readonly DMExpression[] parameters;
+        public AddText(Location location, DMExpression[] paras) : base(location)
+        {
+            parameters = paras;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc)
+        {
+            //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
+
+            //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
+            for (int i = parameters.Length - 1; i >= 0; i--) 
+            {
+                parameters[i].EmitPushValue(dmObject, proc);
+            }
+            proc.MassConcatenation(parameters.Length);
+        }
+    }
+
     // issaved(x)
     class IsSaved : DMExpression {
         DMExpression _expr;

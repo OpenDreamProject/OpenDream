@@ -39,14 +39,19 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            DreamObject listObject = state.Pop().GetValueAsDreamObject();
-            DreamList list = listObject as DreamList;
+        public static ProcStatus? CreateListEnumerator(DMProcState state)
+        {
+            var popped = state.Pop();
+
+            DreamList? list = null;
+            if (popped.TryGetValueAsDreamObject(out var listObject))
+                list = listObject as DreamList;
 
             if (list == null) {
                 if (listObject == null) {
                     list = null;
-                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
+                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World))
+                {
                     list = listObject.GetVariable("contents").GetValueAsDreamList();
                 } else {
                     throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);
@@ -64,6 +69,32 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return null;
+        }
+
+        public static ProcStatus? CreateTypeEnumerator(DMProcState state)
+        {
+            if (!state.Pop().TryGetValueAsPath(out var type))
+            {
+                throw new Exception($"Cannot create a type enumerator for a non-path");
+            }
+
+            if (type == DreamPath.Client)
+            {
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Clients));
+                return null;
+            }
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Atom))
+            {
+                state.EnumeratorStack.Push(new DreamValueAsObjectEnumerator(state.DreamManager.WorldContentsList.GetValues(), type));
+                return null;
+            }
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Datum))
+            {
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums));
+                return null;
+            }
+
+            throw new Exception($"Type enumeration of {type.ToString()} is not supported");
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {

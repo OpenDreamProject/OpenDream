@@ -126,7 +126,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
             DMOpcodeHandlers.IsInRange,
-            DMOpcodeHandlers.MassConcatenation
+            DMOpcodeHandlers.MassConcatenation,
+            DMOpcodeHandlers.CreateTypeEnumerator
         };
         #endregion
 

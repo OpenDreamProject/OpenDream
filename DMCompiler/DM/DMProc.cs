@@ -247,6 +247,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
+        public void CreateTypeEnumerator() {
+            WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
+        }
+
         public void CreateRangeEnumerator() {
             ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);

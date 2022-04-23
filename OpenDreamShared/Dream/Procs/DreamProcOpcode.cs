@@ -95,8 +95,9 @@ namespace OpenDreamShared.Dream.Procs {
         Throw = 0x5A,
         IsInRange = 0x5B,
         MassConcatenation = 0x5C,
-        Output = 0x5D,
-        Input = 0x5E
+        CreateTypeEnumerator = 0x5D,
+        Output = 0x5E,
+        Input = 0x5F
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -217,6 +218,7 @@ namespace OpenDreamShared.Dream.Procs {
             switch (RefType) {
                 case Type.Local: return $"{RefType} {LocalId}";
                 case Type.Global: return $"{RefType} {GlobalId}";
+                case Type.Argument: return $"{RefType} {ArgumentId}";
                 case Type.SrcField:
                 case Type.Field:
                     return $"{RefType} \"{FieldName}\"";

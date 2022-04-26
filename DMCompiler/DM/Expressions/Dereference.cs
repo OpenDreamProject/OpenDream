@@ -20,6 +20,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTProcCall when expr.Path == null:
                 case DMASTDereferenceProc:
                 case DMASTListIndex:
+                case DMASTTernary:
                     return true;
                 case DMASTDereference deref when expr is Dereference _deref:
                     return DirectConvertable(_deref._expr, deref);

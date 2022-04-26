@@ -24,7 +24,7 @@ namespace OpenDreamRuntime {
 
         private DreamCompiledJson _compiledJson;
 
-        public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
@@ -48,7 +48,8 @@ namespace OpenDreamRuntime {
 
             _dreamResourceManager.Initialize();
 
-            ObjectTree = new DreamObjectTree(json);
+            ObjectTree.LoadJson(json);
+
             SetMetaObjects();
 
             if (_compiledJson.GlobalProcs != null) {

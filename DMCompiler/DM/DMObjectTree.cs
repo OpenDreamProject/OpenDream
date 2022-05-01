@@ -6,6 +6,7 @@ using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
@@ -15,7 +16,7 @@ namespace DMCompiler.DM {
 
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
-        public static Dictionary<string, DMProc> GlobalProcs = new();
+        public static Dictionary<string, int> GlobalProcs = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
@@ -76,8 +77,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static bool TryGetGlobalProc(string name, out DMProc proc) {
-            return GlobalProcs.TryGetValue(name, out proc);
+        public static bool TryGetGlobalProc(string name, [CanBeNull] out DMProc proc)
+        {
+            proc = null;
+            return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
 
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
@@ -133,8 +136,8 @@ namespace DMCompiler.DM {
             return id;
         }
 
-        public static void AddGlobalProc(string name, DMProc proc) {
-            GlobalProcs.Add(name, proc);
+        public static void AddGlobalProc(string name, int id) {
+            GlobalProcs.Add(name, id);
         }
 
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {

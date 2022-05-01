@@ -228,14 +228,7 @@ namespace DMCompiler {
             }
 
             if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = new(DMObjectTree.GlobalProcs.Count);
-
-                foreach (KeyValuePair<string, DMProc> globalProc in DMObjectTree.GlobalProcs) {
-                    string name = globalProc.Key;
-                    DMProc proc = globalProc.Value;
-
-                    compiledDream.GlobalProcs[name] = proc.GetJsonRepresentation();
-                }
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs;
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {

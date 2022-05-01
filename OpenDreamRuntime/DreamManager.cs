@@ -52,9 +52,11 @@ namespace OpenDreamRuntime {
 
             SetMetaObjects();
 
-            if (_compiledJson.GlobalProcs != null) {
+            if (_compiledJson.GlobalProcs != null)
+            {
+                GlobalProcs.EnsureCapacity(_compiledJson.GlobalProcs.Count);
                 foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadGlobalProcJson(procJson.Key, procJson.Value));
+                    GlobalProcs.Add(procJson.Key, ObjectTree.Procs[procJson.Value]);
                 }
             }
 

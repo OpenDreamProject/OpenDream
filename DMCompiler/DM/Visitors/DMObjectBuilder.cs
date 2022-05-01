@@ -22,10 +22,6 @@ namespace DMCompiler.DM.Visitors {
             foreach (DMProc proc in DMObjectTree.AllProcs)
                 proc.Compile();
 
-            foreach (DMProc gProc in DMObjectTree.GlobalProcs.Values) {
-                gProc.Compile();
-            }
-
             DMObjectTree.CreateGlobalInitProc();
         }
 
@@ -137,9 +133,8 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
                     }
 
-                    proc = new DMProc(-1, dmObject, procDefinition); // -1 for global procs
-
-                    DMObjectTree.AddGlobalProc(procDefinition.Name, proc);
+                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
+                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 } else {
                     proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
@@ -34,8 +34,11 @@ namespace DMCompiler.DM {
 
         public static void Reset() {
             AllObjects.Clear();
+            AllProcs.Clear();
+            GlobalProcs.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
+            _dmProcIdCounter = 0;
             GetDMObject(DreamPath.Root);
         }
 
@@ -43,6 +46,7 @@ namespace DMCompiler.DM {
         {
             DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
             AllProcs.Add(dmProc);
+
             return dmProc;
         }
 

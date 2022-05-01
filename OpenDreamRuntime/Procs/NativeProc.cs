@@ -81,7 +81,7 @@ namespace OpenDreamRuntime.Procs {
         {
             if (_defaultArgumentValues != null) {
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
+                    int argumentIndex = ArgumentNames?.IndexOf(defaultArgumentValue.Key) ?? -1;
 
                     if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
                         arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);

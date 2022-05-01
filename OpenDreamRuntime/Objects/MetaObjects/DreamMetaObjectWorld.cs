@@ -22,7 +22,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
-            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList() ?? DreamList.Create();
+            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);

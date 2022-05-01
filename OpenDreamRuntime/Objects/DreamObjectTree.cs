@@ -209,12 +209,12 @@ namespace OpenDreamRuntime.Objects {
                     }
                 }
 
-                if (jsonType.InitProc != null && definition.InitializionProc != null)
+                if (jsonType.InitProc != null)
                 {
                     var initProc = Procs[jsonType.InitProc.Value];
-
-                    initProc.SuperProc = Procs[definition.InitializionProc.Value];
-                    definition.InitializionProc = jsonType.InitProc.Value;
+                    if(definition.InitializationProc != null)
+                        initProc.SuperProc = Procs[definition.InitializationProc.Value];
+                    definition.InitializationProc = jsonType.InitProc.Value;
                 }
             }
 
@@ -244,19 +244,21 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamProc LoadProcJson(string procName, ProcDefinitionJson procDefinition) {
+        public DreamProc LoadGlobalProcJson(string procName, ProcDefinitionJson procDefinition) {
             byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
-            List<string> argumentNames = new();
-            List<DMValueType> argumentTypes = new();
+            List<string>? argumentNames = null;
+            List<DMValueType>? argumentTypes = null;
 
             if (procDefinition.Arguments != null) {
-                argumentNames.EnsureCapacity(procDefinition.Arguments.Count);
-                argumentTypes.EnsureCapacity(procDefinition.Arguments.Count);
+                argumentNames = new List<string>(procDefinition.Arguments.Count);
+                argumentTypes = new List<DMValueType>(procDefinition.Arguments.Count);
 
                 foreach (ProcArgumentJson argument in procDefinition.Arguments) {
                     argumentNames.Add(argument.Name);
                     argumentTypes.Add(argument.Type);
                 }
+
+
             }
 
             return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);

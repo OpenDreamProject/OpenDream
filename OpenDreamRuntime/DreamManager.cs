@@ -54,7 +54,7 @@ namespace OpenDreamRuntime {
 
             if (_compiledJson.GlobalProcs != null) {
                 foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
+                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadGlobalProcJson(procJson.Key, procJson.Value));
                 }
             }
 

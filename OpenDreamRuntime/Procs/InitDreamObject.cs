@@ -47,11 +47,11 @@ namespace OpenDreamRuntime.Procs {
                 case Stage.Init: {
                     _stage = Stage.OnObjectCreated;
 
-                    if (src.ObjectDefinition.InitializionProc == null) {
+                    if (src.ObjectDefinition.InitializationProc == null) {
                         goto switch_start;
                     }
 
-                    var proc = _dreamMan.ObjectTree.Procs[src.ObjectDefinition.InitializionProc.Value];
+                    var proc = _dreamMan.ObjectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
                     var initProcState = proc.CreateState(Thread, src, _usr, new(null));
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;

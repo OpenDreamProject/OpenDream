@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly IDreamManager _dreamMan = default!;
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
-        public int? InitializionProc;
+        public int? InitializationProc;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();
         public readonly Dictionary<string, DreamValue> Variables = new();
@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Objects {
             IoCManager.InjectDependencies(this);
             Type = copyFrom.Type;
             MetaObject = copyFrom.MetaObject;
-            InitializionProc = copyFrom.InitializionProc;
+            InitializationProc = copyFrom.InitializationProc;
             _parentObjectDefinition = copyFrom._parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
@@ -41,7 +41,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamObjectDefinition(DreamPath type, DreamObjectDefinition parentObjectDefinition) {
             IoCManager.InjectDependencies(this);
             Type = type;
-            InitializionProc = parentObjectDefinition.InitializionProc;
+            InitializationProc = parentObjectDefinition.InitializationProc;
             _parentObjectDefinition = parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(parentObjectDefinition.Variables);

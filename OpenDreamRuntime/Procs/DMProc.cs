@@ -10,7 +10,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+        public DMProc(string name, DreamProc superProc, List<String>? argumentNames, List<DMValueType>? argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             Bytecode = bytecode;
@@ -150,7 +150,7 @@ namespace OpenDreamRuntime.Procs {
             _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
-            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames.Count);
+            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             Arguments = _dreamValuePool.Rent(ArgumentCount);
             LocalVariables = _dreamValuePool.Rent(256);
 
@@ -162,7 +162,7 @@ namespace OpenDreamRuntime.Procs {
 
             //Named arguments
             foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
                 if (argumentIndex == -1) {
                     throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }

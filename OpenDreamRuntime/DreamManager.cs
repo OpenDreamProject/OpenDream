@@ -137,7 +137,7 @@ namespace OpenDreamRuntime {
             GlobalProcs[name] = proc;
         }
 
-        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info)
+        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log")
         {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
             {
@@ -148,14 +148,14 @@ namespace OpenDreamRuntime {
 
             if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
             {
-                Logger.LogS(level, "world.log", message);
+                Logger.LogS(level, sawmill, message);
             }
             else
             {
-                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] {sawmill}: {message}"));
                 if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
                 {
-                    Logger.LogS(level, "world.log", message);
+                    Logger.LogS(level, sawmill, message);
                 }
             }
         }

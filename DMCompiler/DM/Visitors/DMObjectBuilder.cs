@@ -147,7 +147,7 @@ namespace DMCompiler.DM.Visitors {
 
                             if (varDeclaration.Value != null) {
                                 DMVisitorExpression._scopeMode = "static";
-                                DMExpression expression = DMExpression.Create(_currentObject, DMObjectTree.GlobalInitProc, varDeclaration.Value, varDeclaration.Type);
+                                DMExpression expression = DMExpression.Create(dmObject, null, varDeclaration.Value, varDeclaration.Type);
                                 DMVisitorExpression._scopeMode = "normal";
                                 DMObjectTree.AddGlobalInitAssign(dmObject, proc.GetGlobalVariableId(varDeclaration.Name).Value, expression);
                             }
@@ -226,6 +226,14 @@ namespace DMCompiler.DM.Visitors {
                     EmitInitializationAssign(variable, expression);
                     break;
                 case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "generator":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "matrix":
+                    variable.Value = new Expressions.Null(Location.Unknown);
+                    EmitInitializationAssign(variable, expression);
+                    break;
+                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "icon":
                     variable.Value = new Expressions.Null(Location.Unknown);
                     EmitInitializationAssign(variable, expression);
                     break;

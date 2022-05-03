@@ -14,10 +14,12 @@ namespace DMCompiler.DM {
     class DMProc {
         public class LocalVariable {
             public int Id;
+            public bool IsParameter;
             public DreamPath? Type;
 
-            public LocalVariable(int id, DreamPath? type) {
+            public LocalVariable(int id, bool isParameter, DreamPath? type) {
                 Id = id;
+                IsParameter = isParameter;
                 Type = type;
             }
         }
@@ -25,7 +27,7 @@ namespace DMCompiler.DM {
         public class LocalConstVariable : LocalVariable {
             public Expressions.Constant Value;
 
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, type) {
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
                 Value = value;
             }
         }
@@ -55,6 +57,7 @@ namespace DMCompiler.DM {
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
         private Stack<string> _loopStack = new();
         private Stack<DMProcScope> _scopes = new();
+        private Dictionary<string, LocalVariable> _parameters = new();
         private int _localVariableIdCounter = 0;
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
@@ -76,7 +79,7 @@ namespace DMCompiler.DM {
 
         public void Compile(DMObject dmObject) {
             foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                AddParameter(parameter.Name, parameter.Type);
+                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
             }
 
             new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
@@ -158,9 +161,15 @@ namespace DMCompiler.DM {
             return (id == null) ? null : DMObjectTree.Globals[id.Value];
         }
 
-        public void AddParameter(string name, DMValueType type) {
+        public void AddParameter(string name, DMValueType valueType, DreamPath? type) {
             Parameters.Add(name);
-            ParameterTypes.Add(type);
+            ParameterTypes.Add(valueType);
+
+            if (_parameters.ContainsKey(name)) {
+                DMCompiler.Error(new CompilerError(_astDefinition.Location, $"Duplicate argument \"{name}\""));
+            } else {
+                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
+            }
         }
 
         public void ResolveLabels() {
@@ -187,20 +196,27 @@ namespace DMCompiler.DM {
         }
 
         public bool TryAddLocalVariable(string name, DreamPath? type) {
-            int localVarId = _localVariableIdCounter++;
+            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+                return false;
 
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, type));
+            int localVarId = _localVariableIdCounter++;
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
-            int localVarId = _localVariableIdCounter++;
+            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+                return false;
 
+            int localVarId = _localVariableIdCounter++;
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
         }
 
         public LocalVariable GetLocalVariable(string name) {
-            DMProcScope scope = _scopes.Peek();
+            if (_parameters.TryGetValue(name, out LocalVariable parameter)) {
+                return parameter;
+            }
 
+            DMProcScope scope = _scopes.Peek();
             while (scope != null) {
                 if (scope.LocalVariables.TryGetValue(name, out LocalVariable localVariable)) return localVariable;
 
@@ -211,7 +227,9 @@ namespace DMCompiler.DM {
         }
 
         public DMReference GetLocalVariableReference(string name) {
-            return DMReference.CreateLocal(GetLocalVariable(name).Id);
+            LocalVariable local = GetLocalVariable(name);
+
+            return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
         }
 
         public void Error() {
@@ -227,6 +245,10 @@ namespace DMCompiler.DM {
         public void CreateListEnumerator() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
+        }
+
+        public void CreateTypeEnumerator() {
+            WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
         }
 
         public void CreateRangeEnumerator() {
@@ -274,7 +296,22 @@ namespace DMCompiler.DM {
             AddLabel(loopLabel + "_continue");
         }
 
-        public void LoopJumpToStart(string loopLabel) {
+        public void BackgroundSleep()
+        {
+            // TODO This seems like a bad way to handle background, doesn't it?
+
+            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
+            {
+                PushFloat(-1);
+                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
+                PushArguments(1, arr, null);
+                Call(DMReference.CreateGlobalProc("sleep"));
+            }
+        }
+
+        public void LoopJumpToStart(string loopLabel)
+        {
+            BackgroundSleep();
             Jump(loopLabel + "_start");
         }
 
@@ -350,10 +387,12 @@ namespace DMCompiler.DM {
                         break;
                     }
                 }
+                BackgroundSleep();
                 Jump(continueLabel);
             }
             else
             {
+                BackgroundSleep();
                 Jump(_loopStack.Peek() + "_continue");
             }
         }
@@ -385,6 +424,7 @@ namespace DMCompiler.DM {
             ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
             WriteOpcode(DreamProcOpcode.PushArguments);
             WriteInt(argumentCount);
+            WriteInt(parameterNames?.Length ?? 0);
 
             if (argumentCount > 0) {
                 if (parameterTypes == null || parameterTypes.Length != argumentCount) {
@@ -737,6 +777,12 @@ namespace DMCompiler.DM {
             WriteInt(count);
         }
 
+        public void MassConcatenation(int count) {
+            ShrinkStack(count - 1);
+            WriteOpcode(DreamProcOpcode.MassConcatenation);
+            WriteInt(count);
+        }
+
         public void Locate() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Locate);
@@ -780,6 +826,7 @@ namespace DMCompiler.DM {
             WriteByte((byte)reference.RefType);
 
             switch (reference.RefType) {
+                case DMReference.Type.Argument: WriteByte(reference.ArgumentId); break;
                 case DMReference.Type.Local: WriteByte(reference.LocalId); break;
                 case DMReference.Type.Global: WriteInt(reference.GlobalId); break;
                 case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;

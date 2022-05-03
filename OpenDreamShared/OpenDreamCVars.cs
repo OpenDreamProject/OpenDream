@@ -10,5 +10,8 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<int> DownloadTimeout =
             CVarDef.Create("opendream.download_timeout", 30, CVar.CLIENTONLY);
+
+        public static readonly CVarDef<bool> AlwaysShowExceptions =
+            CVarDef.Create("opendream.always_show_exceptions", false, CVar.SERVERONLY);
     }
 }

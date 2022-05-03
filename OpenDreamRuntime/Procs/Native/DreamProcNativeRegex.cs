@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 instance.SetVariable("index", new DreamValue(match.Index + 1));
                 instance.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamList.Create();
+                    DreamList groupList = DreamList.Create(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
@@ -57,7 +57,6 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
-            if (!dreamRegex.IsGlobal) throw new NotImplementedException("Non-global regex replaces are not implemented");
 
             DreamValue haystack = arguments.GetArgument(0, "haystack");
             DreamValue replace = arguments.GetArgument(1, "replacement");
@@ -65,12 +64,16 @@ namespace OpenDreamRuntime.Procs.Native {
             int end = arguments.GetArgument(3, "End").GetValueAsInteger();
 
             string haystackString = haystack.GetValueAsString();
-            if (end == 0) end = haystackString.Length;
+            string haystackSubstring = haystackString;
+            if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
             if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
-                throw new NotImplementedException("Proc replacements are not implemented");
-            } else if (replace.TryGetValueAsString(out string replaceString)) {
-                string replaced = dreamRegex.Regex.Replace(haystackString, replaceString, end - start, start - 1);
+                throw new NotImplementedException("Proc regex replacements are not implemented");
+            } else if (replace.TryGetValueAsString(out string replaceString))
+            {
+                string replaced = dreamRegex.Regex.Replace(haystackSubstring, replaceString, dreamRegex.IsGlobal ? -1 : 1, start - 1);
+
+                if(end != 0) replaced += haystackString.Substring(end - start + 1);
 
                 instance.SetVariable("text", new DreamValue(replaced));
                 return new DreamValue(replaced);

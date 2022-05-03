@@ -68,11 +68,14 @@ namespace DMCompiler.Compiler.DMM {
                         while (statement != null) {
                             DMASTObjectVarOverride varOverride = statement as DMASTObjectVarOverride;
                             if (varOverride == null) Error("Expected a var override");
-                            if (!varOverride.ObjectPath.Equals(DreamPath.Root)) Error("Invalid var name");
-                            DMExpression value = DMExpression.Create(null, null, varOverride.Value);
-                            if (!value.TryAsJsonRepresentation(out var valueJson)) Error($"Failed to serialize value to json ({value})");
+                            if (!varOverride.ObjectPath.Equals(DreamPath.Root)) DMCompiler.Error(new CompilerError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}"));
+                            DMExpression value = DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
+                            if (!value.TryAsJsonRepresentation(out var valueJson)) DMCompiler.Error(new CompilerError(statement.Location, $"Failed to serialize value to json ({value})"));
 
-                            mapObject.AddVarOverride(varOverride.VarName, valueJson);
+                            if(!mapObject.AddVarOverride(varOverride.VarName, valueJson))
+                            {
+                                DMCompiler.Warning(new CompilerWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}"));
+                            }
 
                             if (Check(TokenType.DM_Semicolon)) {
                                 statement = Statement(requireDelimiter: false);
@@ -93,7 +96,7 @@ namespace DMCompiler.Compiler.DMM {
                             cellDefinition.Objects.Add(mapObject);
                         }
                     }
-                    
+
 
                     if (Check(TokenType.DM_Comma)) {
                         objectType = Path();

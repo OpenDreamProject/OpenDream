@@ -34,7 +34,10 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore /m
     - name: Content.Tests
-      run: dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
+      shell: pwsh
+      run: |
+        $env:COMPlus_gcServer=1
+        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
     - name: Content.IntegrationTests
       shell: pwsh
       run: |

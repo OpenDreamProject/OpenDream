@@ -1407,8 +1407,16 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString) && int.TryParse(refString, out var refId)) {
-                state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refId)));
+            if (value.TryGetValueAsString(out string refString)) {
+                if (int.TryParse(refString, out var refId))
+                {
+                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refId)));
+                }
+                else
+                {
+                    state.Push(DreamValue.Null);
+                }
+
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);

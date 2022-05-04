@@ -1,4 +1,16 @@
-/proc/sync_test()
+/turf/blue
+
+/world/proc/assert_test_pass()
+	var/assert_test_a = 5 + 2
+	ASSERT(assert_test_a == 7)
+	return 1
+
+/world/proc/assert_test_fail()
+	var/assert_test_a = 5 + 2
+	ASSERT(assert_test_a == "a")
+	return 1
+
+/world/proc/sync_test()
 	return 1992
 
 /world/proc/async_test()

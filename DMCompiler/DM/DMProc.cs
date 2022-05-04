@@ -55,7 +55,7 @@ namespace DMCompiler.DM {
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
-        private Stack<string> _loopStack = new();
+        [CanBeNull] private Stack<string> _loopStack = null;
         private Stack<DMProcScope> _scopes = new();
         private Dictionary<string, LocalVariable> _parameters = new();
         private int _localVariableIdCounter = 0;
@@ -286,6 +286,7 @@ namespace DMCompiler.DM {
         }
 
         public void LoopStart(string loopLabel) {
+            _loopStack ??= new Stack<string>(3); // Start, continue, end
             _loopStack.Push(loopLabel);
 
             AddLabel(loopLabel + "_start");
@@ -316,7 +317,15 @@ namespace DMCompiler.DM {
         }
 
         public void LoopEnd() {
-            AddLabel(_loopStack.Pop() + "_end");
+            if (_loopStack?.TryPop(out var pop) ?? false)
+            {
+                AddLabel(pop + "_end");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot pop empty loop stack"));
+            }
+
             EndScope();
         }
 
@@ -358,14 +367,25 @@ namespace DMCompiler.DM {
             {
                 Jump(label.Identifier + "_end");
             }
+            else if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                Jump(peek + "_end");
+            }
             else
             {
-                Jump(_loopStack.Peek() + "_end");
+                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot peek empty loop stack"));
             }
         }
 
         public void BreakIfFalse() {
-            JumpIfFalse(_loopStack.Peek() + "_end");
+            if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                JumpIfFalse(peek + "_end");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot peek empty loop stack"));
+            }
         }
 
         public void Continue(DMASTIdentifier label = null) {
@@ -393,12 +413,26 @@ namespace DMCompiler.DM {
             else
             {
                 BackgroundSleep();
-                Jump(_loopStack.Peek() + "_continue");
+                if (_loopStack?.TryPeek(out var peek) ?? false)
+                {
+                    Jump(peek + "_continue");
+                }
+                else
+                {
+                    DMCompiler.Error(new CompilerError(Location.Internal, "Cannot peek empty loop stack"));
+                }
             }
         }
 
         public void ContinueIfFalse() {
-            JumpIfFalse(_loopStack.Peek() + "_continue");
+            if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                Jump(peek + "_continue");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot peek empty loop stack"));
+            }
         }
 
         public void Goto(string label) {

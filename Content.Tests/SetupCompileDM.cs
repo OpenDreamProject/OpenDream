@@ -3,7 +3,7 @@ using System.IO;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 
-// This it outside of any namespace so it affects the whole assembly.
+// This is outside of any namespace so it affects the whole assembly.
 [SetUpFixture]
 // ReSharper disable once CheckNamespace
 public class SetupCompileDm {

@@ -6,12 +6,12 @@ using Robust.Shared.Map;
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    [ComponentReference(typeof(ILookupWorldBox2Component))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
+    sealed class DMISpriteComponent : SharedDMISpriteComponent/*, ILookupWorldBox2Component*/ {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
 
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
@@ -83,7 +83,7 @@ namespace OpenDreamClient.Rendering {
         private void OnIconSizeChanged() {
             //Changing the icon's size leads to a new AABB used for entity lookups
             //These AABBs are cached, and have to be queued for an update
-            EntitySystem.Get<DreamClientSystem>().QueueLookupTreeUpdate(Owner);
+            _entitySystemMan.GetEntitySystem<EntityLookupSystem>().UpdateBounds(Owner);
         }
     }
 }

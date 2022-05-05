@@ -24,7 +24,6 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IBaseClient _baseClient = default!;
-        [Dependency] private readonly IEntityLookup _entityLookup = default!;
 
         public override void Initialize() {
             _inputManager.KeyBindStateChanged += OnKeyBindStateChanged;
@@ -94,7 +93,7 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid? GetEntityOnMap(MapCoordinates coords) {
-            IEnumerable<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
+            IEnumerable<EntityUid> entities = _entitySystemManager.GetEntitySystem<EntityLookupSystem>().GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (EntityUid entity in entities) {

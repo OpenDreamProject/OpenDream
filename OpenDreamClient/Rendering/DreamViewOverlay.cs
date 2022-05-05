@@ -5,6 +5,7 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace OpenDreamClient.Rendering {
     class DreamViewOverlay : Overlay {
@@ -12,6 +13,7 @@ namespace OpenDreamClient.Rendering {
         private IEntitySystemManager _entitySystem = IoCManager.Resolve<IEntitySystemManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
+        [CanBeNull] private EntityLookupSystem _lookupSystem;
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
@@ -27,7 +29,9 @@ namespace OpenDreamClient.Rendering {
         private void DrawMap(DrawingHandleWorld handle, EntityUid eye) {
             List<DMISpriteComponent> sprites = new();
 
-            foreach (EntityUid entity in _entitySystem.GetEntitySystem<EntityLookupSystem>().GetEntitiesInRange(eye, 15)) {
+            _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
+
+            foreach (EntityUid entity in _lookupSystem.GetEntitiesInRange(eye, 15)) {
                 if (!_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite))
                     continue;
                 if (!sprite.IsVisible())

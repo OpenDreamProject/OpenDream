@@ -49,7 +49,7 @@ namespace OpenDreamRuntime {
 
             _compiledJson = json;
 
-            _dreamResourceManager.Initialize(testingJson);
+            _dreamResourceManager.Initialize(jsonPath);
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();

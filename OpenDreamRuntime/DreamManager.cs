@@ -40,7 +40,7 @@ namespace OpenDreamRuntime {
         public Random Random { get; set; } = new();
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
-        public void Initialize(string? testingJson) {
+        public void Initialize(string jsonPath) {
             InitializeConnectionManager();
 
             DreamCompiledJson json = LoadJson(testingJson);

@@ -1,10 +1,11 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Asynchronous;
+using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 
 namespace Content.Tests
@@ -20,6 +21,9 @@ namespace Content.Tests
         {
             _taskManager = IoCManager.Resolve<ITaskManager>();
             _taskManager.Initialize();
+            IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
+            componentFactory.RegisterClass<DMISpriteComponent>();
+            componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             _dreamMan.Initialize(SetupCompileDm.CompiledProject);
         }

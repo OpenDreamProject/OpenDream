@@ -84,11 +84,7 @@ namespace OpenDreamRuntime {
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
-            //TODO figure out why this json doesn't work
-            if (testingJson is null)
-            {
-                _dreamMapManager.LoadMaps(json.Maps);
-            }
+            _dreamMapManager.LoadMaps(json.Maps);
             WorldInstance.SpawnProc("New");
         }
 

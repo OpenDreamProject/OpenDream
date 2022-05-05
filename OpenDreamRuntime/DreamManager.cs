@@ -101,9 +101,8 @@ namespace OpenDreamRuntime {
             UpdateStat();
         }
 
-        private DreamCompiledJson LoadJson(string? testingJson)
+        private DreamCompiledJson? LoadJson(string? jsonPath)
         {
-            string jsonPath = testingJson ?? _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
                 Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });

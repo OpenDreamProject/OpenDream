@@ -43,7 +43,7 @@ namespace OpenDreamRuntime {
         public void Initialize(string jsonPath) {
             InitializeConnectionManager();
 
-            DreamCompiledJson json = LoadJson(testingJson);
+            DreamCompiledJson json = LoadJson(jsonPath);
             if (json == null)
                 return;
 

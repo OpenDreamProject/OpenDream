@@ -127,7 +127,6 @@ namespace OpenDreamShared.Dream.Procs {
         Unimplemented = 0x2000
     }
 
-    [StructLayout(LayoutKind.Explicit)]
     public struct DMReference {
         public static readonly DMReference Src = new() { RefType = Type.Src };
         public static readonly DMReference Self = new() { RefType = Type.Self };
@@ -153,76 +152,61 @@ namespace OpenDreamShared.Dream.Procs {
             SuperProc
         }
 
-        [FieldOffset(0)]
         public Type RefType;
 
-        //Argument
-        [FieldOffset(1)]
-        public byte ArgumentId;
+        //Argument, Local, Global
+        public int Int;
 
-        //Local
-        [FieldOffset(1)]
-        public byte LocalId;
-
-        //Global
-        [FieldOffset(1)]
-        public int GlobalId;
-
-        //Field, SrcField
-        [FieldOffset(8)]
-        public string FieldName;
-
-        //Proc, GlobalProc, SrcProc
-        [FieldOffset(8)]
-        public string ProcName;
+        //Field, SrcField, Proc, GlobalProc, SrcProc
+        public string Name;
 
         public static DMReference CreateArgument(int argId) {
             if (argId > 255) throw new Exception("Argument id is greater than the maximum of 255");
 
-            return new DMReference() { RefType = Type.Argument, ArgumentId = (byte)argId };
+            return new DMReference() { RefType = Type.Argument, Int = (byte)argId };
         }
 
         public static DMReference CreateLocal(int local) {
             if (local > 255) throw new Exception("Local variable id is greater than the maximum of 255");
 
-            return new DMReference() { RefType = Type.Local, LocalId = (byte)local };
+            return new DMReference() { RefType = Type.Local, Int = (byte)local };
         }
 
         public static DMReference CreateGlobal(int global) {
-            return new DMReference() { RefType = Type.Global, GlobalId = global };
+            return new DMReference() { RefType = Type.Global, Int = global };
         }
 
         public static DMReference CreateField(string fieldName) {
-            return new DMReference() { RefType = Type.Field, FieldName = fieldName };
+            return new DMReference() { RefType = Type.Field, Name = fieldName };
         }
 
         public static DMReference CreateSrcField(string fieldName) {
-            return new DMReference() { RefType = Type.SrcField, FieldName = fieldName };
+            return new DMReference() { RefType = Type.SrcField, Name = fieldName };
         }
 
         public static DMReference CreateProc(string procName) {
-            return new DMReference() { RefType = Type.Proc, ProcName = procName };
+            return new DMReference() { RefType = Type.Proc, Name = procName };
         }
 
         public static DMReference CreateGlobalProc(string procName) {
-            return new DMReference() { RefType = Type.GlobalProc, ProcName = procName };
+            return new DMReference() { RefType = Type.GlobalProc, Name = procName };
         }
 
         public static DMReference CreateSrcProc(string procName) {
-            return new DMReference() { RefType = Type.SrcProc, ProcName = procName };
+            return new DMReference() { RefType = Type.SrcProc, Name = procName };
         }
 
         public override string ToString() {
             switch (RefType) {
-                case Type.Local: return $"{RefType} {LocalId}";
-                case Type.Global: return $"{RefType} {GlobalId}";
-                case Type.Argument: return $"{RefType} {ArgumentId}";
+                case Type.Local: return $"{RefType} {Int}";
+                case Type.Global: return $"{RefType} {Int}";
+                case Type.Argument: return $"{RefType} {Int}";
                 case Type.SrcField:
                 case Type.Field:
-                    return $"{RefType} \"{FieldName}\"";
+                    return $"{RefType} \"{Name}\"";
                 case Type.SrcProc:
                 case Type.Proc:
-                    return $"{RefType} \"{ProcName}\"";
+                    return $"{RefType} \"{Name}\"";
                 default: return RefType.ToString();
             }
         }

@@ -308,8 +308,8 @@ namespace OpenDreamRuntime.Procs {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
-                case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
+                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadInt());
+                case DMReference.Type.Local: return DMReference.CreateLocal(ReadInt());
                 case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
                 case DMReference.Type.Field: return DMReference.CreateField(ReadString());
                 case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
@@ -355,16 +355,16 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: Arguments[reference.ArgumentId] = value; break;
-                case DMReference.Type.Local: LocalVariables[reference.LocalId] = value; break;
-                case DMReference.Type.SrcField: Instance.SetVariable(reference.FieldName, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.GlobalId] = value; break;
+                case DMReference.Type.Argument: Arguments[reference.Int] = value; break;
+                case DMReference.Type.Local: LocalVariables[reference.Int] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Int] = value; break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{reference.FieldName}\" on {owner}");
+                        throw new Exception($"Cannot assign field \"{reference.Name}\" on {owner}");
 
-                    ownerObj.SetVariable(reference.FieldName, value);
+                    ownerObj.SetVariable(reference.Name, value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
@@ -385,9 +385,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Src: return new(Instance);
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
-                case DMReference.Type.Global: return DreamManager.Globals[reference.GlobalId];
-                case DMReference.Type.Argument: return Arguments[reference.ArgumentId];
-                case DMReference.Type.Local: return LocalVariables[reference.LocalId];
+                case DMReference.Type.Global: return DreamManager.Globals[reference.Int];
+                case DMReference.Type.Argument: return Arguments[reference.Int];
+                case DMReference.Type.Local: return LocalVariables[reference.Int];
                 case DMReference.Type.Args: {
                     DreamList argsList = DreamList.Create(ArgumentCount);
 
@@ -412,15 +412,15 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot get field \"{reference.FieldName}\" from {owner}");
-                    if (!ownerObj.TryGetVariable(reference.FieldName, out var fieldValue))
-                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                    if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
+                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;
                 }
                 case DMReference.Type.SrcField: {
-                    if (!Instance.TryGetVariable(reference.FieldName, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+                    if (!Instance.TryGetVariable(reference.Name, out var fieldValue))
+                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;
                 }

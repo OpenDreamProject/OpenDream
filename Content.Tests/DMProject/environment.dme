@@ -1,0 +1,13 @@
+// BEGIN_INTERNALS
+// END_INTERNALS
+// BEGIN_FILE_DIR
+#define FILE_DIR .
+// END_FILE_DIR
+// BEGIN_PREFERENCES
+// END_PREFERENCES
+// BEGIN_INCLUDE
+#include "code.dm"
+#include "interface.dmf"
+#include "map.dmm"
+#include "Tests\Const\ConstTests.dm"
+// END_INCLUDE

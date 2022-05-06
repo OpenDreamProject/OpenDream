@@ -39,16 +39,17 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
 
-        public void Initialize() {
+        //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
+        public void Initialize(string jsonPath) {
             InitializeConnectionManager();
 
-            DreamCompiledJson json = LoadJson();
+            DreamCompiledJson json = LoadJson(jsonPath);
             if (json == null)
                 return;
 
             _compiledJson = json;
 
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.Initialize(jsonPath);
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
@@ -96,8 +97,8 @@ namespace OpenDreamRuntime {
             UpdateStat();
         }
 
-        private DreamCompiledJson LoadJson() {
-            string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
+        private DreamCompiledJson? LoadJson(string? jsonPath)
+        {
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
                 Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });

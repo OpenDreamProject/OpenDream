@@ -96,7 +96,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Proc,
             TokenType.DM_Step,
             TokenType.DM_Throw,
-            TokenType.DM_Null
+            TokenType.DM_Null,
+            TokenType.DM_Switch
         };
 
         public DMASTFile File() {
@@ -479,7 +480,13 @@ namespace DMCompiler.Compiler.DM {
                         Whitespace();
                         procStatements.Add(statement);
                     } else {
-                        if (procStatements.Count == 0) return null;
+                        if (procStatements.Count == 0)
+                        {
+                            // Sometimes ';' gets used in NOP blocks
+                            Delimiter();
+                            Whitespace();
+                            return null;
+                        }
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -1916,7 +1923,8 @@ namespace DMCompiler.Compiler.DM {
 
                         while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
                         Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        Newline(); //The lexer tosses in a newline after }
+                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                        Check(TokenType.Newline);
                     }
                 }
             }

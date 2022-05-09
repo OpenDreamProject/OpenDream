@@ -323,7 +323,7 @@ namespace DMCompiler.DM {
             }
             else
             {
-                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot pop empty loop stack"));
+                DMCompiler.Error(new CompilerError(Location, "Cannot pop empty loop stack"));
             }
 
             EndScope();

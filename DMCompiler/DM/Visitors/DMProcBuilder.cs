@@ -19,27 +19,40 @@ namespace DMCompiler.DM.Visitors {
             if (procDefinition.Body == null) return;
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
-                string parameterName = parameter.Name;
+                try
+                {
+                    string parameterName = parameter.Name;
 
-                if (parameter.Value != null) { //Parameter has a default value
-                    string afterDefaultValueCheck = _proc.NewLabelName();
-                    DMReference parameterRef = _proc.GetLocalVariableReference(parameterName);
+                    if (parameter.Value != null) { //Parameter has a default value
+                        string afterDefaultValueCheck = _proc.NewLabelName();
+                        DMReference parameterRef = _proc.GetLocalVariableReference(parameterName);
 
-                    //Don't set parameter to default if not null
-                    _proc.PushReferenceValue(parameterRef);
-                    _proc.IsNull();
-                    _proc.JumpIfFalse(afterDefaultValueCheck);
+                        //Don't set parameter to default if not null
+                        _proc.PushReferenceValue(parameterRef);
+                        _proc.IsNull();
+                        _proc.JumpIfFalse(afterDefaultValueCheck);
 
-                    //Set default
-                    try {
-                        DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        //Set default
+                        try {
+                            DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
+                        } catch (CompileErrorException e) {
+                            DMCompiler.Error(e.Error);
+                        }
+                        _proc.Assign(parameterRef);
+                        _proc.Pop();
+
+                        _proc.AddLabel(afterDefaultValueCheck);
                     }
-                    _proc.Assign(parameterRef);
-                    _proc.Pop();
-
-                    _proc.AddLabel(afterDefaultValueCheck);
+                }
+                catch (CompileAbortException e)
+                {
+                    // The parameter's location info isn't passed all the way down so change the error to make it more accurate
+                    e.Error.Location = parameter.Location;
+                    DMCompiler.Error(e.Error);
+                    return; // Don't spam the error that will continue to exist
+                }
+                catch (CompileErrorException e) { //Retreat from the parameter when there's an error
+                    DMCompiler.Error(e.Error);
                 }
             }
 

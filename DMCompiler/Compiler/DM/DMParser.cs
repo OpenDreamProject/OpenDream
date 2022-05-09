@@ -97,7 +97,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Step,
             TokenType.DM_Throw,
             TokenType.DM_Null,
-            TokenType.DM_Switch
+            TokenType.DM_Switch,
+            TokenType.DM_Spawn
         };
 
         public DMASTFile File() {

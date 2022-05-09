@@ -373,7 +373,7 @@ namespace DMCompiler.DM {
             }
             else
             {
-                DMCompiler.Error(new CompilerError(Location.Internal, "Cannot peek empty loop stack"));
+                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
             }
         }
 

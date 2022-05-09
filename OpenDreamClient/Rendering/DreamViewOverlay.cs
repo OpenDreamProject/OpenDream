@@ -31,6 +31,9 @@ namespace OpenDreamClient.Rendering {
 
             _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
 
+            if(_entityManager.TryGetComponent<DMISpriteComponent>(eye, out var player) && player.IsVisible())
+                sprites.Add(player);
+
             foreach (EntityUid entity in _lookupSystem.GetEntitiesInRange(eye, 15)) {
                 if (!_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite))
                     continue;

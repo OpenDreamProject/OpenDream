@@ -7,7 +7,7 @@ using Robust.Shared.Map;
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent/*, ILookupWorldBox2Component*/ {
+    sealed class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 

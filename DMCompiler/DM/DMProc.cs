@@ -860,15 +860,20 @@ namespace DMCompiler.DM {
             WriteByte((byte)reference.RefType);
 
             switch (reference.RefType) {
-                case DMReference.Type.Argument: WriteByte(reference.ArgumentId); break;
-                case DMReference.Type.Local: WriteByte(reference.LocalId); break;
-                case DMReference.Type.Global: WriteInt(reference.GlobalId); break;
-                case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;
-                case DMReference.Type.SrcField: WriteString(reference.FieldName); break;
-                case DMReference.Type.Proc: WriteString(reference.ProcName); ShrinkStack(affectStack ? 1 : 0); break;
-                case DMReference.Type.GlobalProc: WriteString(reference.ProcName); break;
-                case DMReference.Type.SrcProc: WriteString(reference.ProcName); break;
+                case DMReference.Type.Argument:
+                case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
+                
+                case DMReference.Type.Global: WriteInt(reference.Index); break;
+
+                case DMReference.Type.Field:
+                case DMReference.Type.Proc: WriteString(reference.Name); ShrinkStack(affectStack ? 1 : 0); break;
+
+                case DMReference.Type.SrcField:
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.SrcProc: WriteString(reference.Name); break;
+
                 case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.Src:
                 case DMReference.Type.Self:

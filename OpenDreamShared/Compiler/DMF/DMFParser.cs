@@ -151,7 +151,7 @@ namespace OpenDreamShared.Compiler.DMF {
                     return null;
                 }
 
-                return (ControlDescriptor) serializationManager.ReadValue(descriptorType, attributes);
+                return (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
             }
 
             return null;
@@ -184,7 +184,7 @@ namespace OpenDreamShared.Compiler.DMF {
                 var attributes = Attributes();
                 if (hasId) attributes.Add("id", macroIdToken.Text);
 
-                return serializationManager.ReadValue<MacroDescriptor>(attributes);
+                return serializationManager.Read<MacroDescriptor>(attributes);
             }
 
             return null;
@@ -218,7 +218,7 @@ namespace OpenDreamShared.Compiler.DMF {
                 //TODO: Name and Id are separate
                 if (hasId && !attributes.Has("name")) attributes.Add("name", (string) elementNameToken.Value);
 
-                return serializationManager.ReadValue<MenuElementDescriptor>(attributes);
+                return serializationManager.Read<MenuElementDescriptor>(attributes);
             }
 
             return null;

@@ -24,11 +24,10 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IBaseClient _baseClient = default!;
-        private EntityLookupSystem _lookupSystem;
+        [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
         public override void Initialize() {
             _inputManager.KeyBindStateChanged += OnKeyBindStateChanged;
-            _lookupSystem = _entitySystemManager.GetEntitySystem<EntityLookupSystem>();
         }
 
         public override void Shutdown() {

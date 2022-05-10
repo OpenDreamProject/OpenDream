@@ -308,8 +308,8 @@ namespace OpenDreamRuntime.Procs {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadInt());
-                case DMReference.Type.Local: return DMReference.CreateLocal(ReadInt());
+                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
+                case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
                 case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
                 case DMReference.Type.Field: return DMReference.CreateField(ReadString());
                 case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());

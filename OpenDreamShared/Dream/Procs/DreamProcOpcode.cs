@@ -155,7 +155,7 @@ namespace OpenDreamShared.Dream.Procs {
         public Type RefType;
 
         //Argument, Local, Global
-        public int Int;
+        public int Index;
 
         //Field, SrcField, Proc, GlobalProc, SrcProc
         public string Name;
@@ -163,17 +163,17 @@ namespace OpenDreamShared.Dream.Procs {
         public static DMReference CreateArgument(int argId) {
             if (argId > 255) throw new Exception("Argument id is greater than the maximum of 255");
 
-            return new DMReference() { RefType = Type.Argument, Int = (byte)argId };
+            return new DMReference() { RefType = Type.Argument, Index = (byte)argId };
         }
 
         public static DMReference CreateLocal(int local) {
             if (local > 255) throw new Exception("Local variable id is greater than the maximum of 255");
 
-            return new DMReference() { RefType = Type.Local, Int = (byte)local };
+            return new DMReference() { RefType = Type.Local, Index = (byte)local };
         }
 
         public static DMReference CreateGlobal(int global) {
-            return new DMReference() { RefType = Type.Global, Int = global };
+            return new DMReference() { RefType = Type.Global, Index = global };
         }
 
         public static DMReference CreateField(string fieldName) {
@@ -198,9 +198,9 @@ namespace OpenDreamShared.Dream.Procs {
 
         public override string ToString() {
             switch (RefType) {
-                case Type.Local: return $"{RefType} {Int}";
-                case Type.Global: return $"{RefType} {Int}";
-                case Type.Argument: return $"{RefType} {Int}";
+                case Type.Local: return $"{RefType} {Index}";
+                case Type.Global: return $"{RefType} {Index}";
+                case Type.Argument: return $"{RefType} {Index}";
                 case Type.SrcField:
                 case Type.Field:
                     return $"{RefType} \"{Name}\"";

@@ -355,10 +355,10 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: Arguments[reference.Int] = value; break;
-                case DMReference.Type.Local: LocalVariables[reference.Int] = value; break;
+                case DMReference.Type.Argument: Arguments[reference.Index] = value; break;
+                case DMReference.Type.Local: LocalVariables[reference.Index] = value; break;
                 case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.Int] = value; break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
@@ -385,9 +385,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Src: return new(Instance);
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
-                case DMReference.Type.Global: return DreamManager.Globals[reference.Int];
-                case DMReference.Type.Argument: return Arguments[reference.Int];
-                case DMReference.Type.Local: return LocalVariables[reference.Int];
+                case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
+                case DMReference.Type.Argument: return Arguments[reference.Index];
+                case DMReference.Type.Local: return LocalVariables[reference.Index];
                 case DMReference.Type.Args: {
                     DreamList argsList = DreamList.Create(ArgumentCount);
 

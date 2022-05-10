@@ -34,13 +34,21 @@ namespace DMCompiler.DM {
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
-            expression.Visit(instance);
+            if (expression is null)
+            {
+                DMCompiler.Error(new CompilerError(proc.Location, $"Attempted to visit null expression in proc {dmObject.Path}.{proc.Name}()"));
+            }
+            else
+            {
+                expression.Visit(instance);
+            }
+
             return instance.Result;
         }
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
-            expr.EmitPushValue(dmObject, proc);
+            expr?.EmitPushValue(dmObject, proc); // This shouldn't be null but it can be
         }
 
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {

@@ -827,7 +827,8 @@ namespace DMCompiler.DM {
 
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
-                case DMReference.Type.Local:
+                case DMReference.Type.Local: WriteByte((byte)reference.Int); break;
+                
                 case DMReference.Type.Global: WriteInt(reference.Int); break;
 
                 case DMReference.Type.Field:

@@ -183,7 +183,6 @@ namespace OpenDreamRuntime.Procs {
             _proc = other._proc;
             Instance = other.Instance;
             Usr = other.Usr;
-            Arguments = other.Arguments;
             _pc = other._pc;
 
             _stack = _stackPool.Rent(other._stack.Length);
@@ -191,6 +190,9 @@ namespace OpenDreamRuntime.Procs {
 
             LocalVariables = _dreamValuePool.Rent(256);
             Array.Copy(other.LocalVariables, LocalVariables, 256);
+
+            Arguments = _dreamValuePool.Rent(other.Arguments.Length);
+            Array.Copy(other.Arguments, Arguments, other.Arguments.Length);
         }
 
         protected override ProcStatus InternalResume()

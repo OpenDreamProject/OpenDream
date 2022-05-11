@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
 
-                if (state.Value.TryGetValueAsString(out var iconState))
+                if (state.TryGetValueAsString(out var iconState))
                 {
                     State = iconState;
                 }
@@ -52,7 +52,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     State = null;
                 }
 
-                if (dir.Value.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
+                if (dir.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
                 {
                     Direction = (AtomDirection)dirVal;
                 }
@@ -61,7 +61,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     Direction = null;
                 }
 
-                if (frame.Value.TryGetValueAsInteger(out var frameVal))
+                if (frame.TryGetValueAsInteger(out var frameVal))
                 {
                     //TODO: Figure out how many frames an icon can have and see if this needs to be bigger than a byte
                     Frame = Convert.ToByte(frameVal - 1); //1-indexed
@@ -73,7 +73,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 if (moving != DreamValue.Null)
                 {
-                    if (moving.Value.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
+                    if (moving.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
                     {
                         Moving = DreamIconMovingMode.NonMovement;
                     }

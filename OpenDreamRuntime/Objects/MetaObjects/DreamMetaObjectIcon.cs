@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             public byte? Frame; //1-indexed. Specific frame. Null is all frames.
             public DreamIconMovingMode Moving;
 
-            public DreamIconObject(DreamResource rsc, DreamValue? state, DreamValue? dir, DreamValue? frame, DreamValue? moving)
+            public DreamIconObject(DreamResource rsc, DreamValue state, DreamValue dir, DreamValue frame, DreamValue moving)
             {
                 if (Path.GetExtension(rsc.ResourcePath) != ".dmi")
                 {
@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
 
-                if (state is not null && state.Value.TryGetValueAsString(out var iconState))
+                if (state.Value.TryGetValueAsString(out var iconState))
                 {
                     State = iconState;
                 }
@@ -52,7 +52,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     State = null;
                 }
 
-                if (dir is not null && dir.Value.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
+                if (dir.Value.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
                 {
                     Direction = (AtomDirection)dirVal;
                 }
@@ -61,7 +61,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     Direction = null;
                 }
 
-                if (frame is not null && frame.Value.TryGetValueAsInteger(out var frameVal))
+                if (frame.Value.TryGetValueAsInteger(out var frameVal))
                 {
                     //TODO: Figure out how many frames an icon can have and see if this needs to be bigger than a byte
                     Frame = Convert.ToByte(frameVal - 1); //1-indexed
@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     Frame = null;
                 }
 
-                if (moving is not null && moving != DreamValue.Null)
+                if (moving != DreamValue.Null)
                 {
                     if (moving.Value.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
                     {

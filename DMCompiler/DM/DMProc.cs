@@ -248,6 +248,7 @@ namespace DMCompiler.DM {
         }
 
         public void CreateTypeEnumerator() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
         }
 
@@ -427,7 +428,7 @@ namespace DMCompiler.DM {
         public void ContinueIfFalse() {
             if (_loopStack?.TryPeek(out var peek) ?? false)
             {
-                Jump(peek + "_continue");
+                JumpIfFalse(peek + "_continue");
             }
             else
             {

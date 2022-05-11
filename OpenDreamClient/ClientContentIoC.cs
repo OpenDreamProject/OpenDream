@@ -6,7 +6,7 @@ using OpenDreamClient.States;
 using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
-    internal static class ClientContentIoC {
+    public static class ClientContentIoC {
         public static void Register() {
             IoCManager.Register<IDreamInterfaceManager, DreamInterfaceManager>();
             IoCManager.Register<IDreamMacroManager, DreamMacroManager>();

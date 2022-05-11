@@ -23,7 +23,7 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
 
-        public void Initialize();
+        public void Initialize(string? testingJson);
         public void Shutdown();
         public IPlayerSession GetSessionFromClient(DreamObject client);
         DreamConnection GetConnectionFromClient(DreamObject client);
@@ -34,7 +34,7 @@ namespace OpenDreamRuntime {
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func);
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
-        public void WriteWorldLog(string message, LogLevel level);
+        public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
         IEnumerable<DreamConnection> Connections { get; }
     }

@@ -39,16 +39,17 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
 
-        public void Initialize() {
+        //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
+        public void Initialize(string jsonPath) {
             InitializeConnectionManager();
 
-            DreamCompiledJson json = LoadJson();
+            DreamCompiledJson json = LoadJson(jsonPath);
             if (json == null)
                 return;
 
             _compiledJson = json;
 
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.Initialize(jsonPath);
 
             ObjectTree = new DreamObjectTree(json);
             SetMetaObjects();
@@ -96,8 +97,8 @@ namespace OpenDreamRuntime {
             UpdateStat();
         }
 
-        private DreamCompiledJson LoadJson() {
-            string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
+        private DreamCompiledJson? LoadJson(string? jsonPath)
+        {
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
                 Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
@@ -121,6 +122,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
+            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
             ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile());
         }
 
@@ -138,7 +140,7 @@ namespace OpenDreamRuntime {
             GlobalProcs[name] = proc;
         }
 
-        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info)
+        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log")
         {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
             {
@@ -149,14 +151,14 @@ namespace OpenDreamRuntime {
 
             if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
             {
-                Logger.LogS(level, "world.log", message);
+                Logger.LogS(level, sawmill, message);
             }
             else
             {
-                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] {sawmill}: {message}"));
                 if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
                 {
-                    Logger.LogS(level, "world.log", message);
+                    Logger.LogS(level, sawmill, message);
                 }
             }
         }

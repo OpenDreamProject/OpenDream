@@ -109,7 +109,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 {
                     case ".dmi":
                         dreamIconObject = new DreamIconObject(_rscMan.LoadResource(fileString), state, dir, frame, moving);
-                        dreamObject.SetVariableValue("icon", new DreamValue(fileString));
                         break;
                     case ".png":
                     case ".jpg":

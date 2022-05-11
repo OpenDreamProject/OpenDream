@@ -123,7 +123,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (icon.TryGetValueAsDreamResource(out var rsc))
             {
                 dreamIconObject = new DreamIconObject(rsc, state, dir, frame, moving);
-                dreamObject.SetVariableValue("icon", new DreamValue(rsc.ResourcePath));
             } else {
                 throw new Exception("Invalid icon file " + icon);
             }

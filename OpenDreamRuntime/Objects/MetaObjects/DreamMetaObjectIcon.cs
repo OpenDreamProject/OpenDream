@@ -33,7 +33,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             public DreamIconObject(DreamResource rsc, DreamValue? state, DreamValue? dir, DreamValue? frame, DreamValue? moving)
             {
-                if (rsc is ConsoleOutputResource)
+                if (Path.GetExtension(rsc.ResourcePath) != ".dmi")
                 {
                     throw new Exception("Invalid icon file");
                 }

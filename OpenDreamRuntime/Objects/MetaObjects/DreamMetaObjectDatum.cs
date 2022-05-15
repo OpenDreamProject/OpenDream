@@ -1,4 +1,6 @@
-﻿using Robust.Shared.IoC;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
+using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectDatum : DreamMetaObjectRoot {
@@ -6,8 +8,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
+        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
+            {
+                _dreamManager.Datums.Add(dreamObject);
+            }
+
+            base.OnObjectCreated(dreamObject, creationArguments);
+        }
+
         public override void OnObjectDeleted(DreamObject dreamObject) {
             base.OnObjectDeleted(dreamObject);
+
+            if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
+            {
+                _dreamManager.Datums.Remove(dreamObject);
+            }
 
             dreamObject.SpawnProc("Del");
         }

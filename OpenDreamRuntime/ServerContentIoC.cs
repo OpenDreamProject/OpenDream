@@ -2,7 +2,7 @@
 using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime {
-    internal static class ServerContentIoC {
+    public static class ServerContentIoC {
         public static void Register() {
             IoCManager.Register<IDreamManager, DreamManager>();
             IoCManager.Register<IAtomManager, AtomManager>();

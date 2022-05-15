@@ -34,10 +34,14 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
                     case '\\': {
-                        //An escaped identifier.
-                        //The next character turns into an identifier.
-                        token = CreateToken(TokenType.DM_Preproc_Identifier, Advance());
-
+                        if (Advance() == '\n') {
+                            token = CreateToken(TokenType.DM_Preproc_LineSplice, c);
+                        } else {
+                            //An escaped identifier.
+                            //The next character turns into an identifier.
+                            token = CreateToken(TokenType.DM_Preproc_Identifier, GetCurrent());
+                        }
+                        
                         Advance();
                         break;
                     }
@@ -364,23 +368,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return token;
         }
 
-        protected override char Advance() {
-            char current = base.Advance();
-            if (current == '\\') {
-                if (_source[_currentPosition] == '\n') { //Skip a newline if it comes after a backslash
-                    base.Advance();
-
-                    current = Advance();
-                    while (current == ' ' || current == '\t' || current == '\n')
-                    {
-                        current = Advance();
-                    }
-                }
-            }
-
-            return current;
-        }
-
         //Lexes a string
         //If it contains string interpolations, it splits the string tokens into parts and lexes the expressions as normal
         //For example, "There are [amount] of them" becomes:
@@ -415,10 +402,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     if (exprToken.Type != TokenType.DM_Preproc_Punctuator_RightBracket) return CreateToken(TokenType.Error, null, "Expected ']' to end expression");
                     textBuilder.Append(']');
                 } else if (stringC == '\\') {
-                    Advance();
-                    textBuilder.Append(GetCurrent());
-
-                    Advance();
+                    if (Advance() == '\n') { //Line splice
+                        //Remove the '\' from textBuilder and ignore newlines & all incoming whitespace
+                        textBuilder.Remove(textBuilder.Length - 1, 1);
+                        do {
+                            Advance();
+                        } while (GetCurrent() == '\n' || GetCurrent() == ' ' || GetCurrent() == '\t');
+                    } else {
+                        textBuilder.Append(GetCurrent());
+                        Advance();
+                    }
                 } else if (stringC == terminator) {
                     if (isLong) {
                         stringC = Advance();

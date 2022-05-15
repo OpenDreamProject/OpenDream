@@ -5,13 +5,15 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Maths;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace OpenDreamClient.Rendering {
     class DreamViewOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
-        private IEntityLookup _entityLookup = IoCManager.Resolve<IEntityLookup>();
+        private IEntitySystemManager _entitySystem = IoCManager.Resolve<IEntitySystemManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
+        [CanBeNull] private EntityLookupSystem _lookupSystem;
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
@@ -25,9 +27,17 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void DrawMap(DrawingHandleWorld handle, EntityUid eye) {
-            List<DMISpriteComponent> sprites = new();
 
-            foreach (EntityUid entity in _entityLookup.GetEntitiesInRange(eye, 15)) {
+
+            _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
+
+            var entities = _lookupSystem.GetEntitiesInRange(eye, 15);
+            List<DMISpriteComponent> sprites = new(entities.Count + 1);
+
+            if(_entityManager.TryGetComponent<DMISpriteComponent>(eye, out var player) && player.IsVisible())
+                sprites.Add(player);
+
+            foreach (EntityUid entity in entities) {
                 if (!_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite))
                     continue;
                 if (!sprite.IsVisible())

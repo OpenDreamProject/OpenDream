@@ -36,7 +36,7 @@ namespace DMCompiler {
                             Console.WriteLine($"Compiling {Path.GetFileName(arg)}");
                         } else {
                             if(skipBad) {
-                                DMCompiler.Warning(new CompilerWarning(Location.Unknown, $"Invalid compiler arg '{arg}', skipping"));
+                                DMCompiler.Warning(new CompilerWarning(Location.Interal, $"Invalid compiler arg '{arg}', skipping"));
                             } else {
                                 Console.WriteLine($"Invalid arg '{arg}'");
                                 return false;

@@ -1441,7 +1441,7 @@ namespace DMCompiler.Compiler.DM {
                         Recover();
 
                     } else if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
-                        // Breaking change - BYOND doesn't specify the arg
+                        // BYOND doesn't specify the arg
                         Error($"error: bag argument definition '{Current().PrintableText}'", false);
                         Recover();
                     }

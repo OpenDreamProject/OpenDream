@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DMCompiler.Compiler.DMPreprocessor;
+using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using DereferenceType = DMCompiler.Compiler.DM.DMASTDereference.DereferenceType;
 using OpenDreamShared.Dream.Procs;
+using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
@@ -162,7 +164,23 @@ namespace DMCompiler.Compiler.DM {
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
                         BracketWhitespace();
-                        DMASTDefinitionParameter[] parameters = DefinitionParameters();
+                        var parameters = DefinitionParameters();
+
+                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
+                            !Check(TokenType.DM_IndeterminateArgs))
+                        {
+                            Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
+                            parameters.AddRange(DefinitionParameters());
+                        }
+                        if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                            // BYOND doesn't specify the arg
+                            Error($"error: bag argument definition '{Current().PrintableText}'", false);
+                            Advance();
+                            BracketWhitespace();
+                            Check(TokenType.DM_Comma);
+                            BracketWhitespace();
+                            parameters.AddRange(DefinitionParameters());
+                        }
 
                         BracketWhitespace();
                         ConsumeRightParenthesis();
@@ -177,7 +195,7 @@ namespace DMCompiler.Compiler.DM {
                             }
                         }
 
-                        statement = new DMASTProcDefinition(loc, _currentPath, parameters, procBlock);
+                        statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                     }
 
                     //Object definition
@@ -1400,64 +1418,36 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTDefinitionParameter[] DefinitionParameters() {
+        public List<DMASTDefinitionParameter> DefinitionParameters() {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
-            {
-                // BYOND doesn't specify the arg
-                Error($"error: bad argument definition '{Current().PrintableText}'", false);
-                Recover();
+            if (parameter != null) parameters.Add(parameter);
 
-            }
-            else {
-                if (parameter != null) parameters.Add(parameter);
+            BracketWhitespace();
 
+            while (Check(TokenType.DM_Comma)) {
                 BracketWhitespace();
-                if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !Check(TokenType.DM_IndeterminateArgs))
+                parameter = DefinitionParameter();
+
+                if (parameter != null)
                 {
-                    Error($"error: {parameter?.Name}: missing comma ',' or right-paren ')'", false);
+                    parameters.Add(parameter);
+                    BracketWhitespace();
+
+                }
+                if (Check(TokenType.DM_Null)){
+                    // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
+                    Error($"error: 'null' is not a valid variable name", false);
+                    Advance();
+                    BracketWhitespace();
+                    Check(TokenType.DM_Comma);
+                    BracketWhitespace();
                     parameters.AddRange(DefinitionParameters());
                 }
-
-                while (Check(TokenType.DM_Comma)) {
-                    BracketWhitespace();
-                    parameter = DefinitionParameter();
-
-                    if (parameter != null)
-                    {
-                        parameters.Add(parameter);
-                        BracketWhitespace();
-                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
-                            !Check(TokenType.DM_IndeterminateArgs))
-                        {
-                            Error($"error: {parameter.Name}: missing comma ',' or right-paren ')'", false);
-                            parameters.AddRange(DefinitionParameters());
-                        }
-                    } else if (Check(TokenType.DM_Null)){
-                        // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
-                        Error($"error: 'null' is not a valid variable name", false);
-                        Recover();
-
-                    } else if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
-                        // BYOND doesn't specify the arg
-                        Error($"error: bag argument definition '{Current().PrintableText}'", false);
-                        Recover();
-                    }
-                }
             }
 
-            return parameters.ToArray();
-
-            void Recover()
-            {
-                Advance();
-                BracketWhitespace();
-                Check(TokenType.DM_Comma);
-                BracketWhitespace();
-                parameters.AddRange(DefinitionParameters());
-            }
+            return parameters;
         }
 
         public DMASTDefinitionParameter DefinitionParameter() {

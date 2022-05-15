@@ -1408,7 +1408,7 @@ namespace DMCompiler.Compiler.DM {
 
             if (parameter == null && !Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile)
             {
-                // Breaking change - BYOND doesn't specify the arg
+                // BYOND doesn't specify the arg
                 Error($"error: bad argument definition '{Current().PrintableText}'", false);
                 Recover();
 

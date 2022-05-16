@@ -1220,6 +1220,8 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatementTryCatch TryCatch() {
             if (Check(TokenType.DM_Try)) {
                 var loc = Current().Location;
+                Whitespace();
+
                 DMASTProcBlockInner tryBody = ProcBlock();
                 if (tryBody == null) {
                     DMASTProcStatement statement = ProcStatement();

@@ -831,7 +831,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
                 Token afterIfBody = Current();
-                bool newLineAfterIf = Newline();
+                bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
                 if (Check(TokenType.DM_Else)) {
                     Whitespace();

@@ -1296,6 +1296,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTCallParameter[] ProcCall() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
+                Whitespace(includeIndentation: true);
 
                 DMASTCallParameter[] callParameters = CallParameters();
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
@@ -1359,9 +1360,11 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
             BracketWhitespace();
+            Whitespace(includeIndentation: true);
 
             while (Check(TokenType.DM_Comma)) {
                 BracketWhitespace();
+                Whitespace(includeIndentation: true);
                 var loc = Current().Location;
                 parameters.Add(parameter ?? new DMASTCallParameter(loc, new DMASTConstantNull(loc)));
                 parameter = CallParameter();

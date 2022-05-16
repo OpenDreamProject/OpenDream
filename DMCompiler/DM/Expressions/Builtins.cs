@@ -193,8 +193,16 @@ namespace DMCompiler.DM.Expressions {
 
                 proc.PickWeighted(_values.Length);
             } else {
-                foreach (PickValue pickValue in _values) {
-                    pickValue.Value.EmitPushValue(dmObject, proc);
+                foreach (PickValue pickValue in _values)
+                {
+                    if (pickValue.Value is Arglist args)
+                    {
+                        args.EmitPushArglist(dmObject, proc);
+                    }
+                    else
+                    {
+                        pickValue.Value.EmitPushValue(dmObject, proc);
+                    }
                 }
 
                 proc.PickUnweighted(_values.Length);
@@ -217,7 +225,7 @@ namespace DMCompiler.DM.Expressions {
             //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
 
             //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
-            for (int i = parameters.Length - 1; i >= 0; i--) 
+            for (int i = parameters.Length - 1; i >= 0; i--)
             {
                 parameters[i].EmitPushValue(dmObject, proc);
             }

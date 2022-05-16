@@ -21,6 +21,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTDereferenceProc:
                 case DMASTListIndex:
                 case DMASTTernary:
+                case DMASTBinaryAnd:
                     return true;
                 case DMASTDereference deref when expr is Dereference _deref:
                     return DirectConvertable(_deref._expr, deref);

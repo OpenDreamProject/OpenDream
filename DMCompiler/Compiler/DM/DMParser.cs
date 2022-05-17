@@ -941,7 +941,20 @@ namespace DMCompiler.Compiler.DM {
                         Error("Expected = before to in for");
                     }
                 }
-                if (!Check(ForSeparatorTypes)) {
+                Whitespace();
+                AsTypes(); //TODO: Correctly handle
+                Whitespace();
+                if (Check(TokenType.DM_In)) {
+                    Whitespace();
+                    DMASTExpression listExpr = Expression();
+                    Whitespace();
+                    Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
+                    Whitespace();
+                    Newline();
+                    return new DMASTProcStatementForRaw(loc, expr1, listExpr, null, GetForBody());
+                }
+                else if (!Check(ForSeparatorTypes)) {
+                    Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
                     Whitespace();
                     Newline();
@@ -995,9 +1008,14 @@ namespace DMCompiler.Compiler.DM {
                 DMASTProcBlockInner body = ProcBlock();
                 if (body == null) {
                     var loc = Current().Location;
-                    DMASTProcStatement statement = ProcStatement();
 
-                    if (statement == null) Error("Expected body or statement");
+                    DMASTProcStatement statement;
+                    if (Check(TokenType.DM_Semicolon)) {
+                        statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc));
+                    } else {
+                        statement = ProcStatement();
+                        if (statement == null) Error("Expected body or statement");
+                    }
                     body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
                 }
 

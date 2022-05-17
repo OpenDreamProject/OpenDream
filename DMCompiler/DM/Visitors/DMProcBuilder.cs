@@ -390,13 +390,14 @@ namespace DMCompiler.DM.Visitors {
                             new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
                             new DMASTIdentifier(exprIn.Value.Location, variableIdent), exprIn.StartRange, exprIn.EndRange, exprIn.Step, statementForRaw.Body));
                     }
-                    if (statementForRaw.Expression1 is DMASTVarDeclExpression) {
+                    if (statementForRaw.Expression1 is DMASTVarDeclExpression vd) {
                         string variableIdent = null;
                         if (statementForRaw.Expression1 is DMASTVarDeclExpression decl) {
                             variableIdent = decl.DeclPath.Path.LastElement;
                         }
-                        ProcessStatementForList(new DMASTProcStatementForList(statementForRaw.Location, null,
-                            new DMASTIdentifier(statementForRaw.Location, variableIdent), new DMASTIdentifier(statementForRaw.Location, "world"),
+                        var procVarDecl = new DMASTProcStatementVarDeclaration(statementForRaw.Location, vd.DeclPath, vd);
+                        ProcessStatementForType(new DMASTProcStatementForType(statementForRaw.Location, procVarDecl,
+                            new DMASTIdentifier(statementForRaw.Location, variableIdent),
                             statementForRaw.Body));
                     }
                     if (statementForRaw.Expression1 is DMASTExpressionInRange) {

@@ -765,6 +765,12 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
+        public void PushGlobalVars()
+        {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushGlobalVars);
+        }
+
         public void FormatString(string value) {
             ShrinkStack(value.Count((char c) => c == 0xFF) - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
@@ -863,7 +869,7 @@ namespace DMCompiler.DM {
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
-                
+
                 case DMReference.Type.Global: WriteInt(reference.Index); break;
 
                 case DMReference.Type.Field:

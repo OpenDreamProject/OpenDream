@@ -134,6 +134,10 @@ namespace DMCompiler.DM.Visitors {
             if (globalId != null) {
                 Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
                 return;
+            } else if (name == "vars")
+            {
+                Result = new Expressions.GlobalVars(globalIdentifier.Location, null);
+                return;
             }
 
             throw new CompileErrorException(globalIdentifier.Location, $"Unknown global \"{name}\"");

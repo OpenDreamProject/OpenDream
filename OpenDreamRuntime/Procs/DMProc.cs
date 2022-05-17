@@ -127,7 +127,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Throw,
             DMOpcodeHandlers.IsInRange,
             DMOpcodeHandlers.MassConcatenation,
-            DMOpcodeHandlers.CreateTypeEnumerator
+            DMOpcodeHandlers.CreateTypeEnumerator,
+            DMOpcodeHandlers.PushGlobalVars
         };
         #endregion
 

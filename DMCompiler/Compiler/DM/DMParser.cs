@@ -161,6 +161,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
+                        DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                         BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
                         BracketWhitespace();
@@ -184,6 +185,7 @@ namespace DMCompiler.Compiler.DM {
                         DMASTBlockInner block = Block();
 
                         if (block != null) {
+                            DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                             statement = new DMASTObjectDefinition(loc, _currentPath, block);
                         }
                     }
@@ -241,6 +243,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Empty object definition
                     if (statement == null) {
+                        DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 

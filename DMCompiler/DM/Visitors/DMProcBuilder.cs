@@ -313,7 +313,12 @@ namespace DMCompiler.DM.Visitors {
 
             DMExpression value;
             if (varDeclaration.Value != null) {
-                value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                try {
+                    value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                } catch (CompileErrorException e) {
+                    DMCompiler.Error(e.Error);
+                    value = new Expressions.Null(varDeclaration.Location);
+                }
             } else {
                 value = new Expressions.Null(varDeclaration.Location);
             }

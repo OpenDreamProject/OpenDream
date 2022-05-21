@@ -62,6 +62,7 @@ namespace DMCompiler.DM {
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
+        private bool _negativeStackSizeError = false;
 
         [CanBeNull] public string VerbName;
         [CanBeNull] public string VerbCategory = string.Empty;
@@ -893,8 +894,9 @@ namespace DMCompiler.DM {
         private void ShrinkStack(int size) {
             _currentStackSize -= size;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-            if (_currentStackSize < 0) {
-                throw new CompileAbortException(Location, $"Negative stack size in proc {_astDefinition.ObjectPath}.{Name}()");
+            if (_currentStackSize < 0 && !_negativeStackSizeError) {
+                _negativeStackSizeError = true;
+                DMCompiler.Error(new CompilerError(Location, $"Negative stack size"));
             }
         }
     }

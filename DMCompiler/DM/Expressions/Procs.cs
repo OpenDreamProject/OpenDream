@@ -109,7 +109,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
             if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-                DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}{targetProc.Name}() is not implemented");
+                DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);

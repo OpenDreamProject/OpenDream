@@ -184,8 +184,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '/': {
                         switch (Advance()) {
                             case '/': {
-                                while (Advance() != '\n' && !AtEndOfSource) {
-                                }
+                                do {
+                                    Advance();
+
+                                    if (GetCurrent() == '\\' && Advance() == '\n') { //Line splice within a comment
+                                        do {
+                                            Advance();
+                                        } while (GetCurrent() is ' ' or '\t' or '\n');
+                                    }
+                                } while (GetCurrent() != '\n');
 
                                 token = CreateToken(TokenType.Skip, "//");
                                 break;

@@ -385,10 +385,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
-            {
-                DMCompiler.Warning(new CompilerWarning(Location, "DMM overrides for newlist() are not implemented"));
-            }
+            DMCompiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
             return true; //TODO
         }
     }

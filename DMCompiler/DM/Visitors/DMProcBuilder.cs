@@ -202,10 +202,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set popup_menu is not implemented"));
-                    }
-
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -217,9 +214,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes &= ~ProcAttributes.Instant;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set instant is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
@@ -276,14 +271,10 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisFloat.Value), 0, 100));
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set invisibility is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set src is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
                     break;
             }
         }

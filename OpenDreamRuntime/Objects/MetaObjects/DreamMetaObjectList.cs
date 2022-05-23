@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     class DreamMetaObjectList : DreamMetaObjectRoot {
@@ -22,10 +23,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "len") {
+            if (variableName == "len")
+            {
                 DreamList list = (DreamList)dreamObject;
 
                 return new DreamValue(list.GetLength());
+            } else if(variableName == "type"){
+                return new DreamValue(DreamPath.List);
             } else {
                 return base.OnVariableGet(dreamObject, variableName, variableValue);
             }

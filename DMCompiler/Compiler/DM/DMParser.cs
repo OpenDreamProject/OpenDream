@@ -111,8 +111,9 @@ namespace DMCompiler.Compiler.DM {
                 } catch (CompileErrorException) { }
 
                 if (Current().Type != TokenType.EndOfFile) {
-                    Warning("Error recovery had to skip to the next top-level statement");
+                    Token skipFrom = Current();
                     LocateNextTopLevel();
+                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
                 }
             }
 

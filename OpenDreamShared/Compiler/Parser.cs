@@ -91,8 +91,9 @@ namespace OpenDreamShared.Compiler {
             if (throwException) throw new CompileErrorException(error);
         }
 
-        protected void Warning(string message) {
-            Warnings.Add(new CompilerWarning(_currentToken, message));
+        protected void Warning(string message, Token token = null) {
+            token ??= _currentToken;
+            Warnings.Add(new CompilerWarning(token, message));
         }
     }
 }

@@ -22,16 +22,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "len")
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
+        {
+            switch (variableName)
             {
-                DreamList list = (DreamList)dreamObject;
-
-                return new DreamValue(list.GetLength());
-            } else if(variableName == "type"){
-                return new DreamValue(DreamPath.List);
-            } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+                case "len":
+                {
+                    DreamList list = (DreamList)dreamObject;
+                    return new DreamValue(list.GetLength());
+                }
+                case "type":
+                    return new DreamValue(DreamPath.List);
+                default:
+                    return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

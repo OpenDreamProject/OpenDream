@@ -61,4 +61,6 @@ namespace OpenDreamShared.Compiler {
         public CompileAbortException(CompilerError error) : base(error) {}
         public CompileAbortException(Location location, string message) : base(location, message) {}
     }
+
+    public sealed class CompileMaxErrorLimitException : Exception { }
 }

@@ -132,26 +132,29 @@ namespace DMCompiler {
                 }
             }
 
-            if (dmParser.Errors.Count > 0) {
-                foreach (CompilerError error in dmParser.Errors) {
-                    Error(error);
+            try
+            {
+                if (dmParser.Errors.Count > 0) {
+                    foreach (CompilerError error in dmParser.Errors) {
+                        Error(error);
+                    }
                 }
+
+                if (astFile == null) return false;
+
+                DMASTSimplifier astSimplifier = new DMASTSimplifier();
+                VerbosePrint("Constant folding");
+                astSimplifier.SimplifyAST(astFile);
+
+                DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
+                dmObjectBuilder.BuildObjectTree(astFile);
             }
-
-            if (astFile == null) return false;
-
-            DMASTSimplifier astSimplifier = new DMASTSimplifier();
-            VerbosePrint("Constant folding");
-            astSimplifier.SimplifyAST(astFile);
-
-            DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
-            dmObjectBuilder.BuildObjectTree(astFile);
-
-            if (ErrorCount > 0) {
+            catch (CompileMaxErrorLimitException _)
+            {
                 return false;
             }
 
-            return true;
+            return ErrorCount == 0;
         }
 
         public static void Error(CompilerError error) {
@@ -160,8 +163,7 @@ namespace DMCompiler {
             if (ErrorCount >= 200)
             {
                 Console.WriteLine("Maximum compilation errors exceeded, aborting.");
-                EndCompilation(false);
-                Environment.Exit(1);
+                throw new CompileMaxErrorLimitException();
             }
         }
 

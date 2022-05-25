@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
@@ -27,6 +29,40 @@ namespace Content.Tests
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             _dreamMan.Initialize(SetupCompileDm.CompiledProject);
         }
+
+        [Test, TestCaseSource(nameof(GetTests))]
+        public void TestFiles(string file)
+        {
+            var prev = _dreamMan.DMExceptionCount;
+
+            string firstLine;
+
+            using(StreamReader reader = new StreamReader(file))
+            {
+                firstLine = reader.ReadLine() ?? "";
+            }
+
+            bool shouldRuntime = firstLine.Contains("RUNTIME TRUE", StringComparison.InvariantCulture);
+
+            var fileName = Path.GetFileName(file)[..^3]; // Ignore the ".dm" extension
+
+            var result = DreamThread.Run(async(state) => {
+                var world = _dreamMan.WorldInstance;
+                var proc = world.GetProc($"{fileName}_Proc");
+                return await state.Call(proc, world, null, new DreamProcArguments(null));
+            });
+
+            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(shouldRuntime ? prev + 1 : prev));
+        }
+
+        private static string[] GetTests()
+        {
+            return Directory.GetFiles(
+                Path.Combine("DMProject", "Tests"), "*", SearchOption.AllDirectories);
+        }
+
+
+        // TODO Move all tests below this line to the new auto-test system
 
         [Test]
         public void SyncReturn()

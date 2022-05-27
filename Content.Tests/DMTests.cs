@@ -44,7 +44,7 @@ namespace Content.Tests
 
             bool shouldRuntime = firstLine.Contains("RUNTIME TRUE", StringComparison.InvariantCulture);
 
-            var fileName = Path.GetFileName(file)[..^3]; // Ignore the ".dm" extension
+            var fileName = Path.GetFileNameWithoutExtension(file); // Ignore the ".dm" extension
 
             var result = DreamThread.Run(async(state) => {
                 var world = _dreamMan.WorldInstance;

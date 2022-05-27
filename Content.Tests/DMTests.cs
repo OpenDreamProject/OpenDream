@@ -48,8 +48,13 @@ namespace Content.Tests
 
             var result = DreamThread.Run(async(state) => {
                 var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc($"{fileName}_Proc");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
+                
+                if (world.TryGetProc($"{fileName}_Proc", out DreamProc proc)) {
+                    return await state.Call(proc, world, null, new DreamProcArguments(null));
+                } else {
+                    Assert.Fail($"No proc named {fileName}_Proc");
+                    return DreamValue.Null;
+                }
             });
 
             Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(shouldRuntime ? prev + 1 : prev));

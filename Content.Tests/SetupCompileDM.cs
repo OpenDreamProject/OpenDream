@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 
@@ -16,6 +17,9 @@ public class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
+
+        // TODO Auto-generate the DME based on the files in DMProject/Shared and DMProject/Tests
+
         bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
             Files = new() { DmEnvironment }
         });

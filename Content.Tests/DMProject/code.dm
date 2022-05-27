@@ -1,3 +1,5 @@
+// TODO Move all of these into test files
+
 /turf/blue
 
 /world/proc/assert_test_pass()

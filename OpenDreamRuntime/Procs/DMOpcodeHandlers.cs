@@ -1524,7 +1524,11 @@ namespace OpenDreamRuntime.Procs {
 
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
                     values = list.GetValues().ToArray();
-                } else {
+                } else if (value.Value is DreamProcArguments args)
+                {
+                    values = args.GetAllArguments().ToArray();
+                }
+                else {
                     state.Push(value);
                     return null;
                 }

@@ -1891,10 +1891,9 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
             if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
             {
-                Whitespace();
+                BracketWhitespace();
                 DMASTExpression inner = Expression();
-                Newline();
-                Whitespace(includeIndentation: true);
+                BracketWhitespace();
                 ConsumeRightParenthesis();
 
                 return inner;

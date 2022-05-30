@@ -106,6 +106,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
                 case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
                 case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
+                case DMASTProcStatementForType statementForType: ProcessStatementForType(statementForType); break;
                 case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
@@ -201,10 +202,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set popup_menu is not implemented"));
-                    }
-
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -216,9 +214,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes &= ~ProcAttributes.Instant;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set instant is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
@@ -275,14 +271,10 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisFloat.Value), 0, 100));
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set invisibility is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set src is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
                     break;
             }
         }
@@ -312,7 +304,12 @@ namespace DMCompiler.DM.Visitors {
 
             DMExpression value;
             if (varDeclaration.Value != null) {
-                value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                try {
+                    value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                } catch (CompileErrorException e) {
+                    DMCompiler.Error(e.Error);
+                    value = new Expressions.Null(varDeclaration.Location);
+                }
             } else {
                 value = new Expressions.Null(varDeclaration.Location);
             }
@@ -406,6 +403,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
+            DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
+
             DMExpression.Emit(_dmObject, _proc, statementForList.List);
             _proc.CreateListEnumerator();
             _proc.StartScope();
@@ -422,17 +421,8 @@ namespace DMCompiler.DM.Visitors {
                     _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
 
-                    DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
                     if (varDeclaration != null && varDeclaration.Type != null)
                     {
-                        //This is terrible but temporary
-                        //TODO: See https://github.com/wixoaGit/OpenDream/issues/50
-                        var obj = DMObjectTree.GetDMObject(varDeclaration.Type.Value);
-                        if (statementForList.List is DMASTIdentifier list && list.Identifier == "world" && !obj.IsSubtypeOf(DreamPath.Atom))
-                        {
-                            var warn = new CompilerWarning(statementForList.Location, "Cannot currently loop 'in world' for non-ATOM types");
-                            DMCompiler.Warning(warn);
-                        }
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
                         _proc.PushPath(varDeclaration.Type.Value);
                         _proc.IsType();
@@ -441,6 +431,46 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     ProcessBlockInner(statementForList.Body);
+
+                    _proc.LoopContinue(loopLabel);
+                    _proc.LoopJumpToStart(loopLabel);
+                }
+                _proc.LoopEnd();
+            }
+            _proc.EndScope();
+            _proc.DestroyEnumerator();
+        }
+
+        public void ProcessStatementForType(DMASTProcStatementForType statementForType)
+        {
+            DMASTProcStatementVarDeclaration varDeclaration = statementForType.Initializer as DMASTProcStatementVarDeclaration;
+
+            if (varDeclaration?.Type != null)
+            {
+                _proc.PushPath(varDeclaration.Type.Value);
+                _proc.CreateTypeEnumerator();
+            }
+            else // This shouldn't happen, just to be safe
+            {
+                DMCompiler.Error(new CompilerError(varDeclaration.Location, "Attempted to create a type enumerator with a null type"));
+                return;
+            }
+
+            _proc.StartScope();
+            {
+                if (statementForType.Initializer != null) {
+                    ProcessStatement(statementForType.Initializer);
+                }
+
+                string loopLabel = _proc.NewLabelName();
+                _proc.LoopStart(loopLabel);
+                {
+                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForType.Variable);
+                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
+                    _proc.Enumerate(outputRef);
+                    _proc.BreakIfFalse();
+
+                    ProcessBlockInner(statementForType.Body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);

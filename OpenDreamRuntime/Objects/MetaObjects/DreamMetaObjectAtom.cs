@@ -60,6 +60,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         if (variableValue.TryGetValueAsDreamResource(out DreamResource resource)) {
                             appearance.Icon = resource.ResourcePath;
+                        } else if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out DreamObject iconObject)) {
+                            DreamMetaObjectIcon.DreamIconObject icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObject];
+
+                            appearance.Icon = icon.Icon;
+                            if (icon.State != null) appearance.IconState = icon.State;
+                            //TODO: If a dir is set, the icon will stay that direction. Likely will be a part of "icon generation" when that's implemented.
+                            if (icon.Direction != null) appearance.Direction = icon.Direction.Value;
                         } else {
                             appearance.Icon = null;
                         }

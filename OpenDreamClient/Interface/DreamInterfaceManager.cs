@@ -43,7 +43,11 @@ namespace OpenDreamClient.Interface {
         public void LoadInterfaceFromSource(string source) {
             DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
             DMFParser dmfParser = new DMFParser(dmfLexer);
-            InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
+
+            InterfaceDescriptor interfaceDescriptor = null;
+            try {
+                interfaceDescriptor = dmfParser.Interface();
+            } catch (CompileErrorException) { }
 
             if (dmfParser.Warnings.Count > 0) {
                 foreach (CompilerWarning warning in dmfParser.Warnings) {
@@ -51,7 +55,7 @@ namespace OpenDreamClient.Interface {
                 }
             }
 
-            if (dmfParser.Errors.Count > 0) {
+            if (dmfParser.Errors.Count > 0 || interfaceDescriptor == null) {
                 foreach (CompilerError error in dmfParser.Errors) {
                     Logger.Error(error.ToString());
                 }

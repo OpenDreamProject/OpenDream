@@ -12,12 +12,13 @@
   </PropertyGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.13.1" />
-    <PackageReference Include="NUnit.ConsoleRunner" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="NUnit" Version="3.13.2" />
+    <PackageReference Include="NUnit.ConsoleRunner" Version="3.15.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamClient\OpenDreamClient.csproj" />
     <ProjectReference Include="..\OpenDreamServer\OpenDreamServer.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
@@ -26,6 +27,12 @@
     <ProjectReference Include="..\RobustToolbox\Robust.Shared.Maths\Robust.Shared.Maths.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Shared\Robust.Shared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.UnitTesting\Robust.UnitTesting.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copy DMProject to output directory. !-->
+    <None Include="$(ProjectDir)\DMProject\**" CopyToOutputDirectory="PreserveNewest" LinkBase="DMProject\" />
+    <!-- Copy DMStandard to output directory. !-->
+    <None Include="$(SolutionDir)\DMCompiler\DMStandard\**" CopyToOutputDirectory="PreserveNewest" LinkBase="DMStandard\" />
   </ItemGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets" />
 

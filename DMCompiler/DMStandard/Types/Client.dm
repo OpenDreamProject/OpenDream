@@ -60,9 +60,6 @@
 	proc/Stat()
 		if (statobj != null) statobj.Stat()
 
-	proc/Click(atom/object, location, control, params)
-		object.Click(location, control, params)
-
 	proc/Move(loc, dir)
 		mob.Move(loc, dir)
 
@@ -96,3 +93,38 @@
 	proc/IsByondMember()
 		set opendream_unimplemented = TRUE
 		return FALSE
+
+	proc/Click(atom/object, location, control, params)
+		object.Click(location, control, params)
+
+	proc/DblClick(atom/object, location, control, params)
+		set opendream_unimplemented = TRUE
+		object.DblClick(location,control,params)
+
+	proc/MouseDrag(atom/src_object,over_object,src_location,over_location,src_control,over_control,params)
+		set opendream_unimplemented = TRUE
+		src_object.MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
+
+	proc/MouseDrop(atom/src_object,over_object,src_location,over_location,src_control,over_control,params)
+		set opendream_unimplemented = TRUE
+		src_object.MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
+
+	proc/MouseEntered(atom/object,location,control,params)
+		set opendream_unimplemented = TRUE
+		object.MouseEntered(location,control,params)
+
+	proc/MouseExited(atom/object,location,control,params)
+		set opendream_unimplemented = TRUE
+		object.MouseExited(location,control,params)
+
+	proc/MouseMove(atom/object,location,control,params)
+		set opendream_unimplemented = TRUE
+		object.MouseMove(location,control,params)
+
+	proc/MouseUp(atom/object,location,control,params)
+		set opendream_unimplemented = TRUE
+		object.MouseUp(location,control,params)
+
+	proc/MouseWheel(atom/object,delta_x,delta_y,location,control,params)
+		set opendream_unimplemented = TRUE
+		object.MouseWheel(delta_x,delta_y,location,control,params)

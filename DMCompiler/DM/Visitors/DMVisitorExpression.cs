@@ -53,9 +53,9 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
             DMExpression.TryConstant(_dmObject, _proc, constant.Path, out var pathExpr);
-            if (pathExpr is not Expressions.Path) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
+            if (pathExpr is not Expressions.Path expr) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
 
-            DreamPath path = ((Expressions.Path)pathExpr).Value;
+            DreamPath path = expr.Value;
             DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
 
             if (foundPath == null) {
@@ -80,42 +80,50 @@ namespace DMCompiler.DM.Visitors {
         }
 
 
-        public void VisitIdentifier(DMASTIdentifier identifier) {
+        public void VisitIdentifier(DMASTIdentifier identifier)
+        {
             var name = identifier.Identifier;
 
-            if (name == "src") {
-                Result = new Expressions.Src(identifier.Location, _dmObject.Path);
-            } else if (name == "usr") {
-                Result = new Expressions.Usr(identifier.Location);
-            } else if (name == "args") {
-                Result = new Expressions.Args(identifier.Location);
-            } else {
-                DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
-                if (localVar != null && _scopeMode == "normal") {
-                    Result = new Expressions.Local(identifier.Location, localVar);
-                    return;
-                }
-
-                int? procGlobalId = _proc?.GetGlobalVariableId(name);
-                if (procGlobalId != null)
+            switch (name)
+            {
+                case "src":
+                    Result = new Expressions.Src(identifier.Location, _dmObject.Path);
+                    break;
+                case "usr":
+                    Result = new Expressions.Usr(identifier.Location);
+                    break;
+                case "args":
+                    Result = new Expressions.Args(identifier.Location);
+                    break;
+                default:
                 {
-                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
-                    return;
-                }
+                    DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
+                    if (localVar != null && _scopeMode == "normal") {
+                        Result = new Expressions.Local(identifier.Location, localVar);
+                        return;
+                    }
 
-                var field = _dmObject?.GetVariable(name);
-                if (field != null && _scopeMode == "normal") {
-                    Result = new Expressions.Field(identifier.Location, field);
-                    return;
-                }
+                    int? procGlobalId = _proc?.GetGlobalVariableId(name);
+                    if (procGlobalId != null)
+                    {
+                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
+                        return;
+                    }
 
-                int? globalId = _dmObject?.GetGlobalVariableId(name);
-                if (globalId != null) {
-                    Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-                    return;
-                }
+                    var field = _dmObject?.GetVariable(name);
+                    if (field != null && _scopeMode == "normal") {
+                        Result = new Expressions.Field(identifier.Location, field);
+                        return;
+                    }
 
-                throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                    int? globalId = _dmObject?.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                        return;
+                    }
+
+                    throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                }
             }
         }
 
@@ -431,8 +439,8 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                    DMCompiler.Warning(new CompilerWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior"));
+                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                    DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {
                 Result = new Expressions.Dereference(dereference.Location, null, expr, dereference.Conditional, dereference.Property);
@@ -473,6 +481,12 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, newDereference.Dereference, _inferredPath);
             var args = new ArgumentList(newDereference.Location, _dmObject, _proc, newDereference.Parameters, _inferredPath);
             Result = new Expressions.New(newDereference.Location, expr, args);
+        }
+
+        public void VisitNewListIndex(DMASTNewListIndex newListIdx) {
+            var expr = DMExpression.Create(_dmObject, _proc, newListIdx.ListIdx, _inferredPath);
+            var args = new ArgumentList(newListIdx.Location, _dmObject, _proc, newListIdx.Parameters, _inferredPath);
+            Result = new Expressions.New(newListIdx.Location, expr, args);
         }
 
         public void VisitPreIncrement(DMASTPreIncrement preIncrement) {
@@ -553,6 +567,19 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.NewList(newList.Location, expressions);
+        }
+
+        public void VisitAddText(DMASTAddText addText) {
+            if (addText.Parameters.Length < 2) throw new CompileErrorException(addText.Location, "Invalid addtext() parameter count; expected 2 or more arguments");
+            DMExpression[] exp_arr = new DMExpression[addText.Parameters.Length];
+            for (int i = 0; i < exp_arr.Length; i++)
+            {
+                DMASTCallParameter parameter = addText.Parameters[i];
+                if(parameter.Name != null)
+                    throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
+                exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
+            }
+            Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
         public void VisitInput(DMASTInput input) {

@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
+using OpenDreamShared;
 using Robust.Server.ServerStatus;
 using Robust.Shared;
 using Robust.Shared.Configuration;
@@ -8,9 +9,10 @@ using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
-    public class EntryPoint : GameServer {
-        [Dependency]
-        private IDreamManager _dreamManager;
+    public sealed class EntryPoint : GameServer {
+
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IConfigurationManager _configManager = default!;
         private DreamCommandSystem _commandSystem;
 
         public override void Init() {
@@ -40,7 +42,7 @@ namespace OpenDreamRuntime {
 
         public override void PostInit() {
             _commandSystem = EntitySystem.Get<DreamCommandSystem>();
-            _dreamManager.Initialize();
+            _dreamManager.Initialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
         }
 
         protected override void Dispose(bool disposing) {

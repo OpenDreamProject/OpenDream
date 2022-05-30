@@ -1,7 +1,9 @@
-﻿using OpenDreamShared.Dream;
+﻿using JetBrains.Annotations;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.Graphics;
 using Robust.Shared.Map;
+using Robust.Shared.Physics;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
@@ -12,6 +14,8 @@ namespace OpenDreamClient.Rendering {
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
+        [CanBeNull] private EntityLookupSystem _lookupSystem;
 
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
@@ -27,8 +31,8 @@ namespace OpenDreamClient.Rendering {
             Icon.SetAppearance(state.AppearanceId);
         }
 
-        public Box2 GetWorldAABB(Vector2? worldPos = null, Angle? worldRot = null) {
-            return Icon.GetWorldAABB(worldPos);
+        public Box2 GetAABB(Transform transform) {
+            return Icon.GetWorldAABB(transform.Position);
         }
 
         public bool IsVisible(bool checkWorld = true) {
@@ -81,9 +85,8 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnIconSizeChanged() {
-            //Changing the icon's size leads to a new AABB used for entity lookups
-            //These AABBs are cached, and have to be queued for an update
-            EntitySystem.Get<DreamClientSystem>().QueueLookupTreeUpdate(Owner);
+            _lookupSystem ??= _entitySystemMan.GetEntitySystem<EntityLookupSystem>();
+            _lookupSystem?.UpdateBounds(Owner);
         }
     }
 }

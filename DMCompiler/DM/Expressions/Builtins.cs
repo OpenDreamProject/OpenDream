@@ -208,12 +208,43 @@ namespace DMCompiler.DM.Expressions {
 
                 proc.PickWeighted(_values.Length);
             } else {
-                foreach (PickValue pickValue in _values) {
-                    pickValue.Value.EmitPushValue(dmObject, proc);
+                foreach (PickValue pickValue in _values)
+                {
+                    if (pickValue.Value is Arglist args)
+                    {
+                        args.EmitPushArglist(dmObject, proc);
+                    }
+                    else
+                    {
+                        pickValue.Value.EmitPushValue(dmObject, proc);
+                    }
                 }
 
                 proc.PickUnweighted(_values.Length);
             }
+        }
+    }
+
+    // addtext(...)
+    // https://www.byond.com/docs/ref/#/proc/addtext
+    class AddText : DMExpression
+    {
+        readonly DMExpression[] parameters;
+        public AddText(Location location, DMExpression[] paras) : base(location)
+        {
+            parameters = paras;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc)
+        {
+            //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
+
+            //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
+            for (int i = parameters.Length - 1; i >= 0; i--)
+            {
+                parameters[i].EmitPushValue(dmObject, proc);
+            }
+            proc.MassConcatenation(parameters.Length);
         }
     }
 
@@ -377,10 +408,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
-            {
-                DMCompiler.Warning(new CompilerWarning(Location, "DMM overrides for newlist() are not implemented"));
-            }
+            DMCompiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
             return true; //TODO
         }
     }

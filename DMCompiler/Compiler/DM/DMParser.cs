@@ -325,11 +325,7 @@ namespace DMCompiler.Compiler.DM {
                     Whitespace();
 
                     var size = Expression();
-                    if (size is null)
-                    {
-                        sizes.Add(new DMASTCallParameter(loc, new DMASTConstantNull(loc)));
-                    }
-                    else
+                    if (size is not null)
                     {
                         sizes.Add(new DMASTCallParameter(loc, size));
                         setSize = true;

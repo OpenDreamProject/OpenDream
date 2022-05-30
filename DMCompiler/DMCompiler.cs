@@ -133,9 +133,9 @@ namespace DMCompiler {
 
             if (astFile == null) return false;
 
-            DMASTSimplifier astSimplifier = new DMASTSimplifier();
+            DMASTFolder astSimplifier = new DMASTFolder();
             VerbosePrint("Constant folding");
-            astSimplifier.SimplifyAST(astFile);
+            astSimplifier.FoldAST(astFile);
 
             DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
             dmObjectBuilder.BuildObjectTree(astFile);
@@ -152,9 +152,19 @@ namespace DMCompiler {
             ErrorCount++;
         }
 
+        //TODO: Convert uses of DMCompiler.Error() to this version
+        public static void Error(Location loc, string message) {
+            Error(new CompilerError(loc, message));
+        }
+
         public static void Warning(CompilerWarning warning) {
             Console.WriteLine(warning);
             WarningCount++;
+        }
+
+        //TODO: Convert uses of DMCompiler.Warning() to this version
+        public static void Warning(Location loc, string message) {
+            Warning(new CompilerWarning(loc, message));
         }
 
         public static void UnimplementedWarning(Location loc, string message) {

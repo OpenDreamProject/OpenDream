@@ -32,19 +32,21 @@ namespace DMCompiler.DM {
             Location = location;
         }
 
-        public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
-            expression.Visit(instance);
-            return instance.Result;
+        public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null, string scopeMode = "normal") {
+            var instance = new DMExpressionBuilder(dmObject, proc, inferredPath);
+
+            return instance.BuildExpression(expression, scopeMode: scopeMode);
         }
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
+
             expr.EmitPushValue(dmObject, proc);
         }
 
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {
             var expr = Create(dmObject, proc, expression, null);
+
             return expr.TryAsConstant(out constant);
         }
 

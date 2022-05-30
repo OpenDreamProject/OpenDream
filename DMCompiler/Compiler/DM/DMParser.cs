@@ -337,7 +337,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (setSize)
                 {
-                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
+                    implied_value = new DMASTNewMultidimensionalList(loc, new DMASTPath(loc, DreamPath.List),
                         sizes.ToArray());
                 }
 

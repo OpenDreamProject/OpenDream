@@ -63,6 +63,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newMultidimensionalList) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
         public void VisitNewInferred(DMASTNewInferred newInferred) { throw new NotImplementedException(); }
@@ -1019,6 +1020,20 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewPath(this);
+        }
+    }
+
+    public class DMASTNewMultidimensionalList : DMASTExpression {
+        public DMASTPath Path;
+        public DMASTCallParameter[] Dimensions;
+
+        public DMASTNewMultidimensionalList(Location location, DMASTPath path, DMASTCallParameter[] dimensions) : base(location) {
+            Path = path;
+            Dimensions = dimensions;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewMultidimensionalList(this);
         }
     }
 

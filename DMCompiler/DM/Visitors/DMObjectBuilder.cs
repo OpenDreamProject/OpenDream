@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
@@ -219,6 +219,7 @@ namespace DMCompiler.DM.Visitors {
                 case Expressions.List:
                 case Expressions.NewList:
                 case Expressions.NewPath:
+                case Expressions.NewMultidimensionalList:
 
                 //TODO: A better way of handling procs evaluated at compile time
                 case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "rgb":

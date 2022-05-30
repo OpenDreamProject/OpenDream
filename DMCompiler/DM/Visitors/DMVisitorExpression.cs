@@ -449,6 +449,11 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList) {
+            var args = new ArgumentList(newList.Location, _dmObject, _proc, newList.Dimensions, _inferredPath);
+            Result = new Expressions.NewMultidimensionalList(newList.Location, newList.Path.Path, args);
+        }
+
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
                 throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");

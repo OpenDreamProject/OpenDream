@@ -77,6 +77,21 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    class NewMultidimensionalList : DMExpression {
+        DreamPath TargetPath;
+        ArgumentList Arguments;
+
+        public NewMultidimensionalList(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
+            TargetPath = targetPath;
+            Arguments = arguments;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            Arguments.EmitPushArguments(dmObject, proc);
+            proc.CreateMultidimensionalList();
+        }
+    }
+
     // locate()
     class LocateInferred : DMExpression {
         DreamPath _path;

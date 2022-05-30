@@ -531,6 +531,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
+        public void CreateMultidimensionalList() {
+            WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
+        }
+
         public void Not() {
             WriteOpcode(DreamProcOpcode.BooleanNot);
         }

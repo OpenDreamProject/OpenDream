@@ -125,7 +125,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareEquivalent,
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
-            DMOpcodeHandlers.IsInRange
+            DMOpcodeHandlers.IsInRange,
+            DMOpcodeHandlers.CreateMultidimensionalList
         };
         #endregion
 

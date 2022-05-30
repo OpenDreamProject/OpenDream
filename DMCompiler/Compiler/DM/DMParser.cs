@@ -480,14 +480,6 @@ namespace DMCompiler.Compiler.DM {
                     if (statement != null) {
                         Whitespace();
                         procStatements.Add(statement);
-                    } else {
-                        if (procStatements.Count == 0)
-                        {
-                            // Sometimes ';' gets used in NOP blocks
-                            Delimiter();
-                            Whitespace();
-                            return null;
-                        }
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -499,6 +491,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
+            if (procStatements.Count == 0) return null;
             return procStatements;
         }
 

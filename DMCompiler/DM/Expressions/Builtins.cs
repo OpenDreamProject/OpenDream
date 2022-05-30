@@ -315,13 +315,13 @@ namespace DMCompiler.DM.Expressions {
                     DMASTAssign associatedAssign = value.Value as DMASTAssign;
 
                     if (associatedAssign != null) {
-                        DMExpression.Create(dmObject, proc, associatedAssign.RHS).EmitPushValue(dmObject, proc);
+                        DMExpression.Create(dmObject, proc, associatedAssign.Value).EmitPushValue(dmObject, proc);
 
-                        if (associatedAssign.LHS is DMASTIdentifier identifier) {
+                        if (associatedAssign.Expression is DMASTIdentifier identifier) {
                             proc.PushString(identifier.Identifier);
                             proc.ListAppendAssociated();
                         } else {
-                            DMExpression.Create(dmObject, proc, associatedAssign.LHS).EmitPushValue(dmObject, proc);
+                            DMExpression.Create(dmObject, proc, associatedAssign.Expression).EmitPushValue(dmObject, proc);
                             proc.ListAppendAssociated();
                         }
                     } else {
@@ -351,7 +351,7 @@ namespace DMCompiler.DM.Expressions {
                 DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
 
                 if (associatedAssign != null) {
-                    if (associatedAssign.LHS is DMASTIdentifier identifier) {
+                    if (associatedAssign.Expression is DMASTIdentifier identifier) {
                         associatedValues.Add(identifier.Identifier, value);
                     } else {
                         throw new System.Exception("Invalid associated value key");

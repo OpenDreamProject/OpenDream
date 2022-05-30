@@ -520,7 +520,7 @@ namespace DMCompiler.Compiler.DM {
                         return Label(identifier);
                     case DMASTLeftShift leftShift:
                     {
-                        DMASTProcCall procCall = leftShift.RHS as DMASTProcCall;
+                        DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
                         if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
                             if (identifier.Identifier == "browse") {
@@ -528,19 +528,19 @@ namespace DMCompiler.Compiler.DM {
 
                                 DMASTExpression body = procCall.Parameters[0].Value;
                                 DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                                return new DMASTProcStatementBrowse(loc, leftShift.LHS, body, options);
+                                return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
                             } else if (identifier.Identifier == "browse_rsc") {
                                 if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
 
                                 DMASTExpression file = procCall.Parameters[0].Value;
                                 DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
-                                return new DMASTProcStatementBrowseResource(loc, leftShift.LHS, file, filepath);
+                                return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
                             } else if (identifier.Identifier == "output") {
                                 if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
 
                                 DMASTExpression msg = procCall.Parameters[0].Value;
                                 DMASTExpression control = procCall.Parameters[1].Value;
-                                return new DMASTProcStatementOutputControl(loc, leftShift.LHS, msg, control);
+                                return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
                             }
                         }
 
@@ -1393,10 +1393,10 @@ namespace DMCompiler.Compiler.DM {
                 DMASTAssign assign = expression as DMASTAssign;
 
                 if (assign != null) {
-                    if (assign.LHS is DMASTConstantString) {
-                        return new DMASTCallParameter(assign.Location, assign.RHS, ((DMASTConstantString)assign.LHS).Value);
-                    } else if (assign.LHS is DMASTIdentifier) {
-                        return new DMASTCallParameter(assign.Location, assign.RHS, ((DMASTIdentifier)assign.LHS).Identifier);
+                    if (assign.Expression is DMASTConstantString) {
+                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTConstantString)assign.Expression).Value);
+                    } else if (assign.Expression is DMASTIdentifier) {
+                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
                     }
                 }
 

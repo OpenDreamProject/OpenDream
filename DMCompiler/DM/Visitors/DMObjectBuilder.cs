@@ -146,7 +146,9 @@ namespace DMCompiler.DM.Visitors {
                             variable.Value = new Expressions.Null(varDeclaration.Location);
 
                             if (varDeclaration.Value != null) {
-                                DMExpression expression = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type, scopeMode: "static");
+                                DMVisitorExpression._scopeMode = "static";
+                                DMExpression expression = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
+                                DMVisitorExpression._scopeMode = "normal";
                                 DMObjectTree.AddGlobalInitAssign(dmObject, proc.GetGlobalVariableId(varDeclaration.Name).Value, expression);
                             }
                         }
@@ -199,7 +201,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
-            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type, scopeMode: variable.IsGlobal ? "static" : "normal");
+            DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
+            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            DMVisitorExpression._scopeMode = "normal";
             expression.ValType = valType;
 
             if (expression.TryAsConstant(out var constant)) {

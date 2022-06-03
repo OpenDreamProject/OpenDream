@@ -26,13 +26,12 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
-
             _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
             _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
             var spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
             var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
 
-            var entities = _lookupSystem.GetEntitiesInRange(eye, 15);
+            var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
             List<DMISpriteComponent> sprites = new(entities.Count + 1);
 
             if(spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager))

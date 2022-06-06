@@ -1,12 +1,9 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectClient : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectClient : DreamMetaObjectRoot {
         public override bool ShouldCallNew => true;
 
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
@@ -17,10 +14,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
+            _dreamManager.Clients.Add(dreamObject);
+
             ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
             if (perspective != ClientPerspective.Mob) {
                 //Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
             }
+        }
+
+        public override void OnObjectDeleted(DreamObject dreamObject) {
+            base.OnObjectDeleted(dreamObject);
+            _dreamManager.Clients.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

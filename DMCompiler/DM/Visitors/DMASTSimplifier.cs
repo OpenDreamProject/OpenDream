@@ -71,6 +71,11 @@ namespace DMCompiler.DM.Visitors {
             statementForList.Body?.Visit(this);
         }
 
+        public void VisitProcStatementForType(DMASTProcStatementForType statementForType) {
+            statementForType.Initializer?.Visit(this);
+            statementForType.Body?.Visit(this);
+        }
+
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
             SimplifyExpression(ref statementForRange.RangeStart);
             SimplifyExpression(ref statementForRange.RangeEnd);
@@ -520,6 +525,16 @@ namespace DMCompiler.DM.Visitors {
             DMASTList list = expression as DMASTList;
             if (list != null) {
                 foreach (DMASTCallParameter parameter in list.Values) {
+                    SimplifyExpression(ref parameter.Value);
+                }
+
+                return;
+            }
+
+            DMASTAddText addtext = expression as DMASTAddText;
+            if(addtext != null) {
+                foreach (DMASTCallParameter parameter in addtext.Parameters)
+                {
                     SimplifyExpression(ref parameter.Value);
                 }
 

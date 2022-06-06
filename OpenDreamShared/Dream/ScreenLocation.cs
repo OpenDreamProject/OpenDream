@@ -6,7 +6,7 @@ using System.Globalization;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
-    public class ScreenLocation {
+    public sealed class ScreenLocation {
         public int X, Y;
         public int PixelOffsetX, PixelOffsetY;
         public ScreenLocation Range;

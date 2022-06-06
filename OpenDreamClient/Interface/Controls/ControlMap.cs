@@ -4,7 +4,7 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    class ControlMap : InterfaceControl
+    sealed class ControlMap : InterfaceControl
     {
         public ScalingViewport Viewport { get; private set; }
 

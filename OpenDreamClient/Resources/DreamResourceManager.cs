@@ -92,9 +92,10 @@ namespace OpenDreamClient.Resources
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourcePath)) {
                     _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
-                    var msg = _netManager.CreateNetMessage<MsgRequestResource>();
-                    msg.ResourcePath = resourcePath;
+
+                    var msg = new MsgRequestResource() { ResourcePath = resourcePath };
                     _netManager.ClientSendMessage(msg);
+
                     var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
                     Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
                         if (_loadingResources.ContainsKey(resourcePath)) {

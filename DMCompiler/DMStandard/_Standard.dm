@@ -3,6 +3,7 @@
 /var/world/world = null
 
 proc/abs(A)
+proc/addtext(...)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
 proc/animate(Object, time, loop, easing, flags)
 proc/arccos(X)
@@ -120,7 +121,7 @@ proc/winset(player, control_id, params)
 #include "UnsortedAdditions.dm"
 
 proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
-	set opendream_unimplented = TRUE
+	set opendream_unimplemented = TRUE
 	return Haystack
 
 proc/block(var/atom/Start, var/atom/End)

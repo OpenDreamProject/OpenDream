@@ -1,12 +1,10 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
+    [Virtual]
     class DreamMetaObjectMovable : DreamMetaObjectAtom {
         private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();

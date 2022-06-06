@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime {
-    class DreamMapManager : IDreamMapManager {
+    sealed class DreamMapManager : IDreamMapManager {
         public struct Cell {
             public DreamObject Turf;
             public DreamObject Area;

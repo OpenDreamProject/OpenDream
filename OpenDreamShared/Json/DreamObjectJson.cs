@@ -17,7 +17,7 @@ namespace OpenDreamShared.Json {
         public List<int> Children { get; set; }
     }
 
-    public class GlobalListJson {
+    public sealed class GlobalListJson {
         public int GlobalCount { get; set; }
         public Dictionary<int, object> Globals { get; set; }
     }

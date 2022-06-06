@@ -8,7 +8,6 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {

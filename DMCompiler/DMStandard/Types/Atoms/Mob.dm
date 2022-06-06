@@ -7,6 +7,7 @@
 
 
 	var/see_invisible = 0
+	var/see_infrared = 0 as opendream_unimplemented
 	var/sight = 0 as opendream_unimplemented
 	var/see_in_dark = 2 as opendream_unimplemented
 

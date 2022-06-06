@@ -1,11 +1,9 @@
-﻿using System;
-using OpenDreamShared.Interface;
+﻿using OpenDreamShared.Interface;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlChild : InterfaceControl
+    sealed class ControlChild : InterfaceControl
     {
         // todo: robust needs GridSplitter.
         // and a non-shit grid control.

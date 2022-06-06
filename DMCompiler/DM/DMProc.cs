@@ -57,13 +57,14 @@ namespace DMCompiler.DM {
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
-        private Stack<string> _loopStack = new();
+        [CanBeNull] private Stack<string> _loopStack = null;
         private Stack<DMProcScope> _scopes = new();
         private Dictionary<string, LocalVariable> _parameters = new();
         private int _localVariableIdCounter = 0;
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
+        private bool _negativeStackSizeError = false;
 
         [CanBeNull] public string VerbName;
         [CanBeNull] public string VerbCategory = string.Empty;
@@ -258,6 +259,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
+        public void CreateTypeEnumerator() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
+        }
+
         public void CreateRangeEnumerator() {
             ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
@@ -293,6 +299,7 @@ namespace DMCompiler.DM {
         }
 
         public void LoopStart(string loopLabel) {
+            _loopStack ??= new Stack<string>(3); // Start, continue, end
             _loopStack.Push(loopLabel);
 
             AddLabel(loopLabel + "_start");
@@ -323,7 +330,15 @@ namespace DMCompiler.DM {
         }
 
         public void LoopEnd() {
-            AddLabel(_loopStack.Pop() + "_end");
+            if (_loopStack?.TryPop(out var pop) ?? false)
+            {
+                AddLabel(pop + "_end");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location, "Cannot pop empty loop stack"));
+            }
+
             EndScope();
         }
 
@@ -365,14 +380,25 @@ namespace DMCompiler.DM {
             {
                 Jump(label.Identifier + "_end");
             }
+            else if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                Jump(peek + "_end");
+            }
             else
             {
-                Jump(_loopStack.Peek() + "_end");
+                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
             }
         }
 
         public void BreakIfFalse() {
-            JumpIfFalse(_loopStack.Peek() + "_end");
+            if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                JumpIfFalse(peek + "_end");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+            }
         }
 
         public void Continue(DMASTIdentifier label = null) {
@@ -400,12 +426,26 @@ namespace DMCompiler.DM {
             else
             {
                 BackgroundSleep();
-                Jump(_loopStack.Peek() + "_continue");
+                if (_loopStack?.TryPeek(out var peek) ?? false)
+                {
+                    Jump(peek + "_continue");
+                }
+                else
+                {
+                    DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+                }
             }
         }
 
         public void ContinueIfFalse() {
-            JumpIfFalse(_loopStack.Peek() + "_continue");
+            if (_loopStack?.TryPeek(out var peek) ?? false)
+            {
+                JumpIfFalse(peek + "_continue");
+            }
+            else
+            {
+                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+            }
         }
 
         public void Goto(string label) {
@@ -784,6 +824,12 @@ namespace DMCompiler.DM {
             WriteInt(count);
         }
 
+        public void MassConcatenation(int count) {
+            ShrinkStack(count - 1);
+            WriteOpcode(DreamProcOpcode.MassConcatenation);
+            WriteInt(count);
+        }
+
         public void Locate() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Locate);
@@ -827,15 +873,20 @@ namespace DMCompiler.DM {
             WriteByte((byte)reference.RefType);
 
             switch (reference.RefType) {
-                case DMReference.Type.Argument: WriteByte(reference.ArgumentId); break;
-                case DMReference.Type.Local: WriteByte(reference.LocalId); break;
-                case DMReference.Type.Global: WriteInt(reference.GlobalId); break;
-                case DMReference.Type.Field: WriteString(reference.FieldName); ShrinkStack(affectStack ? 1 : 0); break;
-                case DMReference.Type.SrcField: WriteString(reference.FieldName); break;
-                case DMReference.Type.Proc: WriteString(reference.ProcName); ShrinkStack(affectStack ? 1 : 0); break;
-                case DMReference.Type.GlobalProc: WriteString(reference.ProcName); break;
-                case DMReference.Type.SrcProc: WriteString(reference.ProcName); break;
+                case DMReference.Type.Argument:
+                case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
+                
+                case DMReference.Type.Global: WriteInt(reference.Index); break;
+
+                case DMReference.Type.Field:
+                case DMReference.Type.Proc: WriteString(reference.Name); ShrinkStack(affectStack ? 1 : 0); break;
+
+                case DMReference.Type.SrcField:
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.SrcProc: WriteString(reference.Name); break;
+
                 case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.Src:
                 case DMReference.Type.Self:
@@ -854,8 +905,9 @@ namespace DMCompiler.DM {
         private void ShrinkStack(int size) {
             _currentStackSize -= size;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-            if (_currentStackSize < 0) {
-                throw new CompileAbortException(Location, $"Negative stack size in proc {_astDefinition.ObjectPath}.{Name}()");
+            if (_currentStackSize < 0 && !_negativeStackSizeError) {
+                _negativeStackSizeError = true;
+                DMCompiler.Error(new CompilerError(Location, $"Negative stack size"));
             }
         }
     }

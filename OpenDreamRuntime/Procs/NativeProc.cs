@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
@@ -31,7 +29,7 @@ namespace OpenDreamRuntime.Procs {
             return (procAttribute.Name, defaultArgumentValues, argumentNames);
         }
 
-        public class State : ProcState
+        public sealed class State : ProcState
         {
             public DreamObject Src;
             public DreamObject Usr;

@@ -1,16 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    public class AsyncNativeProc : DreamProc {
-
+    public sealed class AsyncNativeProc : DreamProc {
         public delegate Task<DreamValue> HandlerFn(State s);
 
-        public class State : ProcState
+        public sealed class State : ProcState
         {
             public DreamObject Src;
             public DreamObject Usr;

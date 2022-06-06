@@ -6,7 +6,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectWorld : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
         [Dependency] private DreamResourceManager _dreamRscMan = null;
         [Dependency] private IDreamMapManager _dreamMapManager = null;

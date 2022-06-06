@@ -11,7 +11,6 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler.Compiler.DM {
 
     public static partial class DMAST {
-
         public class TopLevelTraveler {
             public Action<DMASTNode> VisitDefine;
 

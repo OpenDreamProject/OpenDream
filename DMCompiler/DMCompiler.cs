@@ -35,7 +35,7 @@ namespace DMCompiler {
             _compileStartTime = DateTime.Now;
 
             if (settings.SuppressUnimplementedWarnings) {
-                Warning(new CompilerWarning(Location.Unknown, "Unimplemented proc & var warnings are currently suppressed"));
+                Warning(new CompilerWarning(Location.Internal, "Unimplemented proc & var warnings are currently suppressed"));
             }
 
             DMPreprocessor preprocessor = Preprocess(settings.Files);
@@ -155,6 +155,13 @@ namespace DMCompiler {
         public static void Warning(CompilerWarning warning) {
             Console.WriteLine(warning);
             WarningCount++;
+        }
+
+        public static void UnimplementedWarning(Location loc, string message) {
+            if (Settings.SuppressUnimplementedWarnings)
+                return;
+
+            Warning(new CompilerWarning(loc, message));
         }
 
         public static void VerbosePrint(string message) {

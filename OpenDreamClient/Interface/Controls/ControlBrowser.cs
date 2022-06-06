@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Web;
 using OpenDreamShared.Interface;
@@ -9,8 +7,6 @@ using Robust.Client.UserInterface;
 using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
@@ -78,8 +74,7 @@ namespace OpenDreamClient.Interface.Controls
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 context.DoCancel();
 
-                var msg = _netManager.CreateNetMessage<MsgTopic>();
-                msg.Query = newUri.Query;
+                var msg = new MsgTopic() { Query = newUri.Query };
                 _netManager.ClientSendMessage(msg);
             }
         }

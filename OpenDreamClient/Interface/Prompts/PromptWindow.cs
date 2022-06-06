@@ -83,10 +83,12 @@ namespace OpenDreamClient.Interface.Prompts
             if (_responseSent) return;
             _responseSent = true;
 
-            var msg = _netManager.CreateNetMessage<MsgPromptResponse>();
-            msg.PromptId = _promptId;
-            msg.Type = responseType;
-            msg.Value = value;
+            var msg = new MsgPromptResponse() {
+                PromptId = _promptId,
+                Type = responseType,
+                Value = value
+            };
+
             _netManager.ClientSendMessage(msg);
         }
 

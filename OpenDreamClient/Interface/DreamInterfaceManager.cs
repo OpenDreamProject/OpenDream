@@ -242,7 +242,7 @@ namespace OpenDreamClient.Interface {
         {
             LoadInterfaceFromSource(message.InterfaceText);
 
-            _netManager.ClientSendMessage(_netManager.CreateNetMessage<MsgAckLoadInterface>());
+            _netManager.ClientSendMessage(new MsgAckLoadInterface());
         }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)

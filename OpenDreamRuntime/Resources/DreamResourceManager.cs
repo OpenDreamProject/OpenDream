@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using OpenDreamShared;
+﻿using System.IO;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Resources
@@ -50,9 +45,11 @@ namespace OpenDreamRuntime.Resources
 
             if (resource.ResourceData != null)
             {
-                var msg = _netManager.CreateNetMessage<MsgResource>();
-                msg.ResourcePath = resource.ResourcePath;
-                msg.ResourceData = resource.ResourceData;
+                var msg = new MsgResource() {
+                    ResourcePath = resource.ResourcePath,
+                    ResourceData = resource.ResourceData
+                };
+
                 pRequestResource.MsgChannel.SendMessage(msg);
             } else {
                 Logger.WarningS("opendream.res", $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");

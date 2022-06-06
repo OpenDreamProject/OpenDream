@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Maths;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Interface.Controls
@@ -166,8 +160,10 @@ namespace OpenDreamClient.Interface.Controls
             // Tell the server we're ready to receive data
             if (!_defaultPanelSent && _tabControl.ChildCount > 0)
             {
-                var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
-                msg.StatPanel = _tabControl.GetActualTabTitle(0);
+                var msg = new MsgSelectStatPanel() {
+                    StatPanel = _tabControl.GetActualTabTitle(0)
+                };
+
                 _netManager.ClientSendMessage(msg);
                 _defaultPanelSent = true;
             }
@@ -211,12 +207,12 @@ namespace OpenDreamClient.Interface.Controls
             }
         }
 
-        private void OnSelectionChanged(int tabIndex)
-        {
+        private void OnSelectionChanged(int tabIndex) {
             InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);
+            var msg = new MsgSelectStatPanel() {
+                StatPanel = panel.PanelName
+            };
 
-            var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
-            msg.StatPanel = panel.PanelName;
             _netManager.ClientSendMessage(msg);
         }
     }

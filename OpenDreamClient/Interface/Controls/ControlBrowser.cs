@@ -12,7 +12,7 @@ using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    class ControlBrowser : InterfaceControl
+    sealed class ControlBrowser : InterfaceControl
     {
         private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
         {

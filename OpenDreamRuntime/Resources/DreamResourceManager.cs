@@ -5,10 +5,9 @@ using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Resources
 {
-    public class DreamResourceManager
+    public sealed class DreamResourceManager
     {
         [Dependency] private readonly IServerNetManager _netManager = default!;
-        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
         public string RootPath { get; private set; }
 

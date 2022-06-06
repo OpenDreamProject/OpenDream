@@ -3,7 +3,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamShared.Network.Messages
 {
-    public class MsgSound : NetMessage {
+    public sealed class MsgSound : NetMessage {
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
         public ushort Channel;

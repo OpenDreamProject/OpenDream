@@ -4,7 +4,7 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    class ControlLabel : InterfaceControl {
+    sealed class ControlLabel : InterfaceControl {
         private Label _label;
 
         public ControlLabel(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }

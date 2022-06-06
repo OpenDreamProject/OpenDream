@@ -1,12 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs.Native
 {
-    internal class DreamProcNativeWorld
+    internal static class DreamProcNativeWorld
     {
         [DreamProc("Export")]
         [DreamProcParameter("Addr", Type = DreamValue.DreamValueType.String)]

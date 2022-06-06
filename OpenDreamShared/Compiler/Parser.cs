@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Robust.Shared.Analyzers;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
+    [Virtual]
     public partial class Parser<SourceType> {
         public List<CompilerError> Errors = new();
         public List<CompilerWarning> Warnings = new();

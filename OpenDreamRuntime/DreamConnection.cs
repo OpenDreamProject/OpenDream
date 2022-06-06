@@ -13,9 +13,8 @@ using Robust.Shared.Network;
 
 namespace OpenDreamRuntime
 {
-    public class DreamConnection
+    public sealed class DreamConnection
     {
-        [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 

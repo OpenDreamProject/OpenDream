@@ -1,8 +1,8 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
+    [Virtual]
     class DreamMetaObjectDatum : DreamMetaObjectRoot {
         public override bool ShouldCallNew => true;
 

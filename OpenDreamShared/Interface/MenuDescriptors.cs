@@ -2,7 +2,7 @@
 using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
-    public class MenuDescriptor {
+    public sealed class MenuDescriptor {
         public string Name;
         public List<MenuElementDescriptor> Elements;
 
@@ -12,7 +12,7 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    public class MenuElementDescriptor : ElementDescriptor {
+    public sealed class MenuElementDescriptor : ElementDescriptor {
         [DataField("command")]
         public string Command;
         [DataField("category")]

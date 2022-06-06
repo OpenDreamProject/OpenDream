@@ -4,15 +4,13 @@ using Robust.Server.ServerStatus;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
-
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
+
         private DreamCommandSystem _commandSystem;
 
         public override void Init() {

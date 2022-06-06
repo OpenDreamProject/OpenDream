@@ -4,6 +4,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
+    [Virtual]
     class DreamMetaObjectAtom : DreamMetaObjectDatum {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();

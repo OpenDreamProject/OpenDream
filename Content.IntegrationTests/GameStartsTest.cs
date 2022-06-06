@@ -6,7 +6,7 @@ using Robust.Shared.Network;
 
 namespace Content.IntegrationTests {
     [TestFixture]
-    public class GameStartsTest : ContentIntegrationTest {
+    public sealed class GameStartsTest : ContentIntegrationTest {
         /// <summary>
         ///     A simple test that starts a server and client and makes sure they connected successfully.
         /// </summary>

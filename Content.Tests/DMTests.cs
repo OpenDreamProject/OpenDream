@@ -13,7 +13,7 @@ using Robust.Shared.IoC;
 namespace Content.Tests
 {
     [TestFixture]
-    public partial class DMTests : ContentUnitTest
+    public sealed partial class DMTests : ContentUnitTest
     {
         private IDreamManager _dreamMan;
         private ITaskManager _taskManager;

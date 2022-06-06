@@ -1,9 +1,8 @@
-using System;
 using System.Text;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
-    class InitDreamObjectState : ProcState
+    sealed class InitDreamObjectState : ProcState
     {
         enum Stage {
             // Need to call the object's (init) proc

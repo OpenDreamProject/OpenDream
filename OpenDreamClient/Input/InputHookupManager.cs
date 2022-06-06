@@ -5,18 +5,12 @@ using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.Player;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Input;
-using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 using Robust.Shared.Timing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace OpenDreamClient.Input {
-    public class InputHookupManager : EntitySystem {
+    public sealed class InputHookupManager : EntitySystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;

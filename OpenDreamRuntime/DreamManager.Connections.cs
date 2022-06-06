@@ -8,7 +8,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamRuntime
 {
-    partial class DreamManager
+    sealed partial class DreamManager
     {
         [Dependency] private readonly IServerNetManager _netManager;
 

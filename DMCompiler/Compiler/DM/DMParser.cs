@@ -96,7 +96,9 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Proc,
             TokenType.DM_Step,
             TokenType.DM_Throw,
-            TokenType.DM_Null
+            TokenType.DM_Null,
+            TokenType.DM_Switch,
+            TokenType.DM_Spawn
         };
 
         public DMASTFile File() {
@@ -111,8 +113,9 @@ namespace DMCompiler.Compiler.DM {
                 } catch (CompileErrorException) { }
 
                 if (Current().Type != TokenType.EndOfFile) {
-                    Warning("Error recovery had to skip to the next top-level statement");
+                    Token skipFrom = Current();
                     LocateNextTopLevel();
+                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
                 }
             }
 
@@ -161,6 +164,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
+                        DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                         BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
                         BracketWhitespace();
@@ -184,6 +188,7 @@ namespace DMCompiler.Compiler.DM {
                         DMASTBlockInner block = Block();
 
                         if (block != null) {
+                            DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                             statement = new DMASTObjectDefinition(loc, _currentPath, block);
                         }
                     }
@@ -241,6 +246,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Empty object definition
                     if (statement == null) {
+                        DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 
@@ -478,8 +484,6 @@ namespace DMCompiler.Compiler.DM {
                     if (statement != null) {
                         Whitespace();
                         procStatements.Add(statement);
-                    } else {
-                        if (procStatements.Count == 0) return null;
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -491,6 +495,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
+            if (procStatements.Count == 0) return null;
             return procStatements;
         }
 
@@ -831,7 +836,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
                 Token afterIfBody = Current();
-                bool newLineAfterIf = Newline();
+                bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
                 if (Check(TokenType.DM_Else)) {
                     Whitespace();
@@ -1220,6 +1225,8 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatementTryCatch TryCatch() {
             if (Check(TokenType.DM_Try)) {
                 var loc = Current().Location;
+                Whitespace();
+
                 DMASTProcBlockInner tryBody = ProcBlock();
                 if (tryBody == null) {
                     DMASTProcStatement statement = ProcStatement();
@@ -1887,9 +1894,11 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
-            if (allowParentheses && Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
+            if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
+            {
+                BracketWhitespace();
                 DMASTExpression inner = Expression();
+                BracketWhitespace();
                 ConsumeRightParenthesis();
 
                 return inner;
@@ -1916,7 +1925,8 @@ namespace DMCompiler.Compiler.DM {
 
                         while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
                         Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        Newline(); //The lexer tosses in a newline after }
+                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                        Check(TokenType.Newline);
                     }
                 }
             }

@@ -159,7 +159,7 @@ namespace DMCompiler.DM.Visitors {
 
                             if (varDeclaration.Value != null) {
                                 DMVisitorExpression._scopeMode = "static";
-                                DMExpression expression = DMExpression.Create(dmObject, null, varDeclaration.Value, varDeclaration.Type);
+                                DMExpression expression = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
                                 DMVisitorExpression._scopeMode = "normal";
                                 DMObjectTree.AddGlobalInitAssign(dmObject, proc.GetGlobalVariableId(varDeclaration.Name).Value, expression);
                             }
@@ -227,38 +227,32 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(value.Location, "Value of const var must be a constant");
             }
 
-            switch (expression) {
-                case Expressions.List:
-                case Expressions.NewList:
-                case Expressions.NewPath:
-
+            //Whether this should be initialized at runtime
+            bool isValid = expression switch {
                 //TODO: A better way of handling procs evaluated at compile time
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "rgb":
-                    variable.Value = new Expressions.Null(Location.Unknown);
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "generator":
-                    variable.Value = new Expressions.Null(Location.Unknown);
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "matrix":
-                    variable.Value = new Expressions.Null(Location.Unknown);
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                case Expressions.ProcCall procCall when procCall.GetTargetProc(_currentObject).Proc?.Name == "icon":
-                    variable.Value = new Expressions.Null(Location.Unknown);
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                case Expressions.GlobalField: // Global set to another global
-                case Expressions.StringFormat:
-                case Expressions.ProcCall:
-                    if (!variable.IsGlobal) throw new CompileErrorException(value.Location,$"Invalid initial value for \"{variable.Name}\"");
+                Expressions.ProcCall procCall => procCall.GetTargetProc(_currentObject).Proc?.Name switch {
+                    "rgb" => true,
+                    "generator" => true,
+                    "matrix" => true,
+                    "icon" => true,
+                    "file" => true,
+                    "sound" => true,
+                    _ => variable.IsGlobal
+                },
 
-                    variable.Value = new Expressions.Null(Location.Unknown);
-                    EmitInitializationAssign(variable, expression);
-                    break;
-                default:
-                    throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
+                Expressions.List => true,
+                Expressions.NewList => true,
+                Expressions.NewPath => true,
+                Expressions.GlobalField => variable.IsGlobal, // Global set to another global
+                Expressions.StringFormat => variable.IsGlobal,
+                _ => false
+            };
+
+            if (isValid) {
+                variable.Value = new Expressions.Null(Location.Internal);
+                EmitInitializationAssign(variable, expression);
+            } else {
+                throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
             }
         }
 

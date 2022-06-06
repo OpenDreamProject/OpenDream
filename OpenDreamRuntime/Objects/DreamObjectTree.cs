@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json;
+﻿using System.Text.Json;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
-    public class DreamObjectTree {
-        public class TreeEntry {
+    public sealed class DreamObjectTree {
+        public sealed class TreeEntry {
             public DreamPath Path;
             public DreamObjectDefinition ObjectDefinition;
             public TreeEntry ParentEntry;

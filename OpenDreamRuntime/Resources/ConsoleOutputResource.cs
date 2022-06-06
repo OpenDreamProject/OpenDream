@@ -1,12 +1,10 @@
-using Robust.Shared.Log;
-
 namespace OpenDreamRuntime.Resources
 {
     /// <summary>
     /// A special resource that outputs to the console
     /// <c>world.log</c> defaults to this
     /// </summary>
-    class ConsoleOutputResource : DreamResource {
+    sealed class ConsoleOutputResource : DreamResource {
         public ConsoleOutputResource() : base(null, null) { }
 
         public override string ReadAsString() {

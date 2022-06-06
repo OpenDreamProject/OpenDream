@@ -8,7 +8,7 @@ namespace DMCompiler.DM.Expressions {
     class Dereference : LValue {
         // Kind of a lazy port
         DMExpression _expr;
-        string _propertyName;
+        public readonly string PropertyName;
         bool _conditional;
 
         public override DreamPath? Path => _path;
@@ -21,6 +21,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTDereferenceProc:
                 case DMASTListIndex:
                 case DMASTTernary:
+                case DMASTBinaryAnd:
                     return true;
                 case DMASTDereference deref when expr is Dereference _deref:
                     return DirectConvertable(_deref._expr, deref);
@@ -33,23 +34,23 @@ namespace DMCompiler.DM.Expressions {
         {
             _expr = expr;
             _conditional = conditional;
-            _propertyName = propertyName;
+            PropertyName = propertyName;
             _path = path;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.Initial(_propertyName);
+            proc.Initial(PropertyName);
         }
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.IsSaved(_propertyName);
+            proc.IsSaved(PropertyName);
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            return (DMReference.CreateField(_propertyName), _conditional);
+            return (DMReference.CreateField(PropertyName), _conditional);
         }
 
         public override bool TryAsConstant(out Constant constant)
@@ -57,7 +58,7 @@ namespace DMCompiler.DM.Expressions {
             if(_expr.Path is not null)
             {
                 var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
-                var variable = obj.GetVariable(_propertyName);
+                var variable = obj.GetVariable(PropertyName);
                 if (variable.IsConst)
                 {
                     return variable.Value.TryAsConstant(out constant);
@@ -136,8 +137,25 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
-            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+            // TODO Support "vars" actually pushing initial() correctly
+            if (_expr is Dereference deref && deref.PropertyName != "vars")
+            {
+                DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+            }
             EmitPushValue(dmObject, proc);
+        }
+
+        public bool IsSaved()
+        {
+            // Silent in BYOND
+            // TODO Support "vars" actually pushing issaved() correctly
+            if (_expr is Dereference deref && deref.PropertyName != "vars")
+            {
+                DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
+                return false;
+            }
+
+            return true;
         }
     }
 }

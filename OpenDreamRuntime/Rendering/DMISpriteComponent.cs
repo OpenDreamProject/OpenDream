@@ -3,7 +3,9 @@ using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Rendering {
     [RegisterComponent]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    public sealed class DMISpriteComponent : SharedDMISpriteComponent
+    {
+        private ServerAppearanceSystem? _appearanceSystem;
         [ViewVariables]
         public ScreenLocation? ScreenLocation {
             get => _screenLocation;
@@ -28,8 +30,14 @@ namespace OpenDreamRuntime.Rendering {
         public void SetAppearance(IconAppearance? appearance, bool dirty = true) {
             if (appearance == null) {
                 _appearanceId = null;
-            } else {
-                _appearanceId = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(appearance);
+            } else
+            {
+                if (_appearanceSystem is null)
+                {
+                    EntitySystem.TryGet<ServerAppearanceSystem>(out _appearanceSystem);
+                }
+
+                _appearanceId = _appearanceSystem?.AddAppearance(appearance);
             }
 
             if (dirty) {

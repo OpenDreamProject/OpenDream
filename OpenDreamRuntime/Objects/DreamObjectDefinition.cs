@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
-    public class DreamObjectDefinition {
+    public sealed class DreamObjectDefinition {
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
         public DreamProc InitializionProc = null;

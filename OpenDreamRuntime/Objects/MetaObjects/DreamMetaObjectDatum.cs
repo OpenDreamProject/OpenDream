@@ -4,6 +4,7 @@ using Robust.Shared.IoC;
 using System.Linq;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
+    [Virtual]
     class DreamMetaObjectDatum : DreamMetaObjectRoot {
         public override bool ShouldCallNew => true;
 

@@ -22,7 +22,7 @@ namespace DMCompiler.Compiler.DM {
             "Hers", "hers",
             "icon",
             "improper", "proper",
-            "red", "blue", "green", "black",
+            "red", "blue", "green", "black", "yellow", "navy", "teal", "cyan",
             "bold", "b",
             "italic",
             "u", "U", "x",  //TODO: ASCII/Unicode values *properly*

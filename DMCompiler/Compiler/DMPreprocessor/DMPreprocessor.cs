@@ -64,6 +64,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         switch (Path.GetExtension(filePath)) {
+                            case ".dmp":
                             case ".dmm": {
                                 IncludedMaps.Add(filePath);
                                 break;
@@ -134,9 +135,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         while (defineToken.Type != TokenType.Newline && defineToken.Type != TokenType.EndOfFile) {
-                            defineTokens.Add(defineToken);
-
-                            defineToken = GetNextToken();
+                            //Note that line splices behave differently inside macros than outside
+                            //Outside, a line splice will remove all empty lines that come after it
+                            //Inside, only one line is spliced
+                            if (defineToken.Type == TokenType.DM_Preproc_LineSplice) {
+                                defineToken = GetNextToken(true);
+                            } else {
+                                defineTokens.Add(defineToken);
+                                defineToken = GetNextToken();
+                            }
                         }
 
                         _defines[defineIdentifier.Text] = new DMMacro(parameters, defineTokens);
@@ -260,6 +267,14 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         _currentLine.Clear();
+                        break;
+                    }
+                    case TokenType.DM_Preproc_LineSplice: {
+                        do {
+                            token = GetNextToken(true);
+                        } while (token.Type == TokenType.Newline);
+                        _unprocessedTokens.Push(token);
+
                         break;
                     }
                     case TokenType.Error: //Pass the error token on to the DM lexer

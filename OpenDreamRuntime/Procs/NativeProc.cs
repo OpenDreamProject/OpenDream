@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    public class NativeProc : DreamProc {
+    public sealed class NativeProc : DreamProc {
         public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
@@ -31,7 +29,7 @@ namespace OpenDreamRuntime.Procs {
             return (procAttribute.Name, defaultArgumentValues, argumentNames);
         }
 
-        public class State : ProcState
+        public sealed class State : ProcState
         {
             public DreamObject Src;
             public DreamObject Usr;

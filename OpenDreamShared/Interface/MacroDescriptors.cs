@@ -2,7 +2,7 @@
 using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
-    public class MacroSetDescriptor {
+    public sealed class MacroSetDescriptor {
         public string Name;
         public List<MacroDescriptor> Macros;
 
@@ -12,7 +12,7 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    public class MacroDescriptor : ElementDescriptor {
+    public sealed class MacroDescriptor : ElementDescriptor {
         public string Id {
             get => _id ?? Command;
             set => _id = value;

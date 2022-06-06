@@ -157,6 +157,13 @@ namespace DMCompiler {
             WarningCount++;
         }
 
+        public static void UnimplementedWarning(Location loc, string message) {
+            if (Settings.SuppressUnimplementedWarnings)
+                return;
+
+            Warning(new CompilerWarning(loc, message));
+        }
+
         public static void VerbosePrint(string message) {
             if (!Settings.Verbose) return;
 

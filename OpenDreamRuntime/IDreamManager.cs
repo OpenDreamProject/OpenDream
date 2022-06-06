@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Resources;
 using Robust.Server.Player;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
@@ -24,7 +20,7 @@ namespace OpenDreamRuntime {
         public Random Random { get; set; }
         public Dictionary<string, Queue<DreamObject>> Tags { get; set; }
 
-        public void Initialize();
+        public void Initialize(string? testingJson);
         public void Shutdown();
         public IPlayerSession GetSessionFromClient(DreamObject client);
         DreamConnection GetConnectionFromClient(DreamObject client);

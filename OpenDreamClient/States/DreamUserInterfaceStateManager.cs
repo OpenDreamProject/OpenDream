@@ -1,10 +1,8 @@
-using System;
 using JetBrains.Annotations;
 using OpenDreamClient.States.Connecting;
 using OpenDreamClient.States.MainMenu;
 using Robust.Client;
 using Robust.Client.State;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.States
 {
@@ -12,7 +10,7 @@ namespace OpenDreamClient.States
     ///     Handles changing the UI state depending on connection status.
     /// </summary>
     [UsedImplicitly]
-    public class DreamUserInterfaceStateManager
+    public sealed class DreamUserInterfaceStateManager
     {
         [Dependency] private readonly IGameController _gameController = default!;
         [Dependency] private readonly IBaseClient _client = default!;

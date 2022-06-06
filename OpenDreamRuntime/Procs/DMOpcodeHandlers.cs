@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -11,7 +9,6 @@ using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
@@ -1038,22 +1035,22 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Proc: {
                     DreamValue owner = state.Pop();
                     if (!owner.TryGetValueAsDreamObject(out instance) || instance == null)
-                        throw new Exception($"Cannot dereference proc \"{procRef.ProcName}\" from {owner}");
-                    if (!instance.TryGetProc(procRef.ProcName, out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.ProcName}\"");
+                        throw new Exception($"Cannot dereference proc \"{procRef.Name}\" from {owner}");
+                    if (!instance.TryGetProc(procRef.Name, out proc))
+                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.Name}\"");
 
                     break;
                 }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
-                    proc = state.DreamManager.GlobalProcs[procRef.ProcName];
+                    proc = state.DreamManager.GlobalProcs[procRef.Name];
 
                     break;
                 }
                 case DMReference.Type.SrcProc: {
                     instance = state.Instance;
-                    if (!instance.TryGetProc(procRef.ProcName, out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.ProcName}\"");
+                    if (!instance.TryGetProc(procRef.Name, out proc))
+                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.Name}\"");
 
                     break;
                 }
@@ -1528,7 +1525,11 @@ namespace OpenDreamRuntime.Procs {
 
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
                     values = list.GetValues().ToArray();
-                } else {
+                } else if (value.Value is DreamProcArguments args)
+                {
+                    values = args.GetAllArguments().ToArray();
+                }
+                else {
                     state.Push(value);
                     return null;
                 }

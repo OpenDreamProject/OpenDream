@@ -439,8 +439,8 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                    DMCompiler.Warning(new CompilerWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior"));
+                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                    DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {
                 Result = new Expressions.Dereference(dereference.Location, null, expr, dereference.Conditional, dereference.Property);

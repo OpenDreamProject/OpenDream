@@ -9,14 +9,10 @@ using Robust.Client.UserInterface;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Localization;
 using Robust.Shared.Timing;
-using Robust.Shared.Utility;
 
 namespace OpenDreamClient {
-    public class EntryPoint : GameClient
+    public sealed class EntryPoint : GameClient
     {
         [Dependency]
         private readonly IDreamInterfaceManager _dreamInterface = default!;

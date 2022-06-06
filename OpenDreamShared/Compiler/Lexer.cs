@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Robust.Shared.Analyzers;
 using System.Collections.Generic;
 using System.IO;
 
 namespace OpenDreamShared.Compiler {
+    [Virtual]
     public class Lexer<SourceType> {
         public Location CurrentLocation { get; protected set; }
         public IEnumerable<SourceType> Source { get; protected set; }
@@ -63,6 +64,7 @@ namespace OpenDreamShared.Compiler {
         }
     }
 
+    [Virtual]
     public class TextLexer : Lexer<char> {
         protected string _source;
         protected int _currentPosition = 0;
@@ -127,6 +129,7 @@ namespace OpenDreamShared.Compiler {
         }
     }
 
+    [Virtual]
     public class TokenLexer : Lexer<Token> {
         public TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
             Advance();

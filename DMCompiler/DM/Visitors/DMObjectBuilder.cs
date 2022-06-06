@@ -13,7 +13,6 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.Reset();
             ProcessFile(astFile);
 
-
             // TODO Nuke this pass
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CreateInitializationProc();

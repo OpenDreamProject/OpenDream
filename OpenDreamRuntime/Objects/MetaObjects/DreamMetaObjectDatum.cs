@@ -52,24 +52,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 oldVariableValue.TryGetValueAsString(out var oldStr);
                 variableValue.TryGetValueAsString(out var tagStr);
 
-                // Even if we're setting it to the same string we still need to dequeue it
+                // Even if we're setting it to the same string we still need to remove it
                 if (!string.IsNullOrEmpty(oldStr))
                 {
-                    var queue = _dreamManager.Tags[oldStr];
-                    if (queue.Count > 1)
+                    var list = _dreamManager.Tags[oldStr];
+                    if (list.Count > 1)
                     {
-                        if (queue.Peek() == dreamObject)
+                        if (list.First() == dreamObject)
                         {
-                            queue.Dequeue();
+                            list.RemoveAt(0);
                         }
                         else
                         {
-                            // We're working off of the assumption that the majority of tags are unique most of the time
-                            // But when it isn't we have to do this grossness to remove the correct obj from the queue
-                            var realList = queue.ToList();
-                            realList.Remove(dreamObject);
-                            var replacementQueue = new Queue<DreamObject>(realList);
-                            _dreamManager.Tags.Add(tagStr, replacementQueue);
+                            list.Remove(dreamObject);
                         }
                     }
                     else
@@ -78,18 +73,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
                 }
 
-                // Now we queue it (if it's a string)
+                // Now we add it (if it's a string)
                 if (!string.IsNullOrEmpty(tagStr))
                 {
                     if (_dreamManager.Tags.ContainsKey(tagStr))
                     {
-                        var currentQueue = _dreamManager.Tags[tagStr];
-                        currentQueue.Enqueue(dreamObject);
+                        var list = _dreamManager.Tags[tagStr];
+                        list.Add(dreamObject);
                     }
                     else
                     {
-                        var newQueue = new Queue<DreamObject>(new[] { dreamObject });
-                        _dreamManager.Tags.Add(tagStr, newQueue);
+                        var newList = new List<DreamObject>(new[] { dreamObject });
+                        _dreamManager.Tags.Add(tagStr, newList);
                     }
                 }
             }

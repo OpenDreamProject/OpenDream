@@ -1,3 +1,7 @@
+using Robust.Server.Console;
+using Robust.Server.Player;
+using System.Net;
+
 namespace OpenDreamRuntime {
     #if DEBUG
     /// <summary>

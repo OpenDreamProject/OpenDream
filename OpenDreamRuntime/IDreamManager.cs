@@ -18,6 +18,7 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Clients { get; set; }
         public List<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
+        public Dictionary<string, List<DreamObject>> Tags { get; set; }
 
         public void Initialize(string? testingJson);
         public void Shutdown();

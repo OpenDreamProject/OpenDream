@@ -9,7 +9,5 @@
 	proc/New()
 
 	proc/Del()
-		if(tag)
-			tag = null
 
 	proc/Topic(href, href_list)

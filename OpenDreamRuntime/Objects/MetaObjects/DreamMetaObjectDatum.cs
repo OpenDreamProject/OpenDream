@@ -27,6 +27,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _dreamManager.Datums.Remove(dreamObject);
             }
 
+            dreamObject.SetVariable("tag", DreamValue.Null);
+
             dreamObject.SpawnProc("Del");
         }
 

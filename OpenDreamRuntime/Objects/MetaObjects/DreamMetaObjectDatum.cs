@@ -69,9 +69,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 // Now we add it (if it's a string)
                 if (!string.IsNullOrEmpty(tagStr))
                 {
-                    if (_dreamManager.Tags.ContainsKey(tagStr))
+                    if (_dreamManager.Tags.TryGetValue(tagStr, out var list))
                     {
-                        var list = _dreamManager.Tags[tagStr];
                         list.Add(dreamObject);
                     }
                     else

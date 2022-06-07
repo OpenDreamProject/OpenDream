@@ -77,12 +77,10 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class NewMultidimensionalList : DMExpression {
-        DreamPath TargetPath;
+    sealed class NewMultidimensionalList : DMExpression {
         ArgumentList Arguments;
 
-        public NewMultidimensionalList(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
-            TargetPath = targetPath;
+        public NewMultidimensionalList(Location location, ArgumentList arguments) : base(location) {
             Arguments = arguments;
         }
 

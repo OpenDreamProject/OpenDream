@@ -346,8 +346,12 @@ namespace DMCompiler.Compiler.DM {
 
                 if (setSize)
                 {
-                    implied_value = new DMASTNewMultidimensionalList(loc, new DMASTPath(loc, DreamPath.List),
-                        sizes.ToArray());
+                    DMASTExpression[] expressions = new DMASTExpression[sizes.Count];
+                    for (var i = 0; i < sizes.Count; i++)
+                    {
+                        expressions[i] = sizes[i].Value;
+                    }
+                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
                 }
 
                 return true;

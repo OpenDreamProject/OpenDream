@@ -459,7 +459,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList) {
             var args = new ArgumentList(newList.Location, _dmObject, _proc, newList.Dimensions, _inferredPath);
-            Result = new Expressions.NewMultidimensionalList(newList.Location, newList.Path.Path, args);
+            Result = new Expressions.NewMultidimensionalList(newList.Location, args);
         }
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {

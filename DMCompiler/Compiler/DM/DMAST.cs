@@ -1055,11 +1055,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNewMultidimensionalList : DMASTExpression {
-        public DMASTPath Path;
-        public DMASTCallParameter[] Dimensions;
+        public DMASTExpression[] Dimensions;
 
-        public DMASTNewMultidimensionalList(Location location, DMASTPath path, DMASTCallParameter[] dimensions) : base(location) {
-            Path = path;
+        public DMASTNewMultidimensionalList(Location location, DMASTExpression[] dimensions) : base(location) {
             Dimensions = dimensions;
         }
 

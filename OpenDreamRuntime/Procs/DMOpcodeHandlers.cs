@@ -1442,7 +1442,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))
                 {
-                    state.Push(new DreamValue(state.DreamManager.Tags[refString].Peek()));
+                    state.Push(new DreamValue(state.DreamManager.Tags[refString].First()));
                 }
                 else
                 {

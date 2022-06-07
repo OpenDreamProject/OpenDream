@@ -58,14 +58,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     var list = _dreamManager.Tags[oldStr];
                     if (list.Count > 1)
                     {
-                        if (list.First() == dreamObject)
-                        {
-                            list.RemoveAt(0);
-                        }
-                        else
-                        {
-                            list.Remove(dreamObject);
-                        }
+                        list.Remove(dreamObject);
                     }
                     else
                     {

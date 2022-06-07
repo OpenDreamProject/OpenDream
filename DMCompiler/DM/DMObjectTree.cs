@@ -13,7 +13,6 @@ namespace DMCompiler.DM {
         public static List<DMObject> AllObjects = new();
         public static List<DMProc> AllProcs = new();
 
-
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
         public static Dictionary<string, int> GlobalProcs = new();

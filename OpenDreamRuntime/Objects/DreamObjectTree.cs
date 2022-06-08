@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -241,26 +241,6 @@ namespace OpenDreamRuntime.Objects {
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
                 }
             }
-        }
-
-        public DreamProc LoadGlobalProcJson(string procName, ProcDefinitionJson procDefinition) {
-            byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
-            List<string>? argumentNames = null;
-            List<DMValueType>? argumentTypes = null;
-
-            if (procDefinition.Arguments != null) {
-                argumentNames = new List<string>(procDefinition.Arguments.Count);
-                argumentTypes = new List<DMValueType>(procDefinition.Arguments.Count);
-
-                foreach (ProcArgumentJson argument in procDefinition.Arguments) {
-                    argumentNames.Add(argument.Name);
-                    argumentTypes.Add(argument.Type);
-                }
-
-
-            }
-
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
         public DreamProc LoadProcJson(ProcDefinitionJson procDefinition) {

@@ -38,6 +38,7 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Clients { get; set; } = new();
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
+        public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {

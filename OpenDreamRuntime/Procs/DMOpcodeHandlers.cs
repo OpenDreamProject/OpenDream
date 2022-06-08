@@ -1436,9 +1436,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsString(out string refString)) {
-                if (int.TryParse(refString, out var refId))
+                if(int.TryParse(refString, out var refID))
                 {
-                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refId)));
+                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+                }
+                else if (state.DreamManager.Tags.ContainsKey(refString))
+                {
+                    state.Push(new DreamValue(state.DreamManager.Tags[refString].First()));
                 }
                 else
                 {

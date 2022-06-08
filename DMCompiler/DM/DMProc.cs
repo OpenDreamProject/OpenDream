@@ -50,9 +50,14 @@ namespace DMCompiler.DM {
         public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
         public int Id;
-        private DMObject _dmObject;
         public Dictionary<string, int> GlobalVariables = new();
 
+        [CanBeNull] public string VerbName;
+        [CanBeNull] public string VerbCategory = string.Empty;
+        [CanBeNull] public string VerbDesc;
+        public sbyte? Invisibility;
+
+        private DMObject _dmObject;
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
@@ -65,11 +70,6 @@ namespace DMCompiler.DM {
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
         private bool _negativeStackSizeError = false;
-
-        [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory = string.Empty;
-        [CanBeNull] public string VerbDesc;
-        public sbyte? Invisibility;
 
 
         public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
@@ -875,7 +875,7 @@ namespace DMCompiler.DM {
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
-                
+
                 case DMReference.Type.Global: WriteInt(reference.Index); break;
 
                 case DMReference.Type.Field:

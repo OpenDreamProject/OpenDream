@@ -10,17 +10,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
+        public DreamMetaObjectDatum(DreamObjectDefinition definition) : base(definition){}
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
                 _dreamManager.Datums.Add(dreamObject);
             }
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
 
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
@@ -40,14 +42,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 "parent_type" => new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type)
                     .ParentEntry.ObjectDefinition.Type),
                 "vars" => new DreamValue(DreamListVars.Create(dreamObject)),
-                _ => base.OnVariableGet(dreamObject, variableName, variableValue)
+                _ => ParentType.OnVariableGet(dreamObject, variableName, variableValue)
             };
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue,
             DreamValue oldVariableValue)
         {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "tag")
             {

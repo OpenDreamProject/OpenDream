@@ -7,18 +7,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
 
+        public DreamMetaObjectMob(DreamObjectDefinition definition) : base(definition){}
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
             _dreamManager.Mobs.Add(dreamObject);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
             _dreamManager.Mobs.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "key" || variableName == "ckey") {
                 if (_playerManager.TryGetSessionByUsername(variableValue.GetValueAsString(), out var session)) {
@@ -50,7 +52,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (variableName == "client") {
                 return new(_dreamManager.GetClientFromMob(dreamObject));
             } else {
-              return base.OnVariableGet(dreamObject, variableName, variableValue);
+              return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

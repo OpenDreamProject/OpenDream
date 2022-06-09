@@ -5,10 +5,12 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]
-    class DreamMetaObjectAtom : DreamMetaObjectDatum {
+    class DreamMetaObjectAtom : DreamMetaObjectRoot {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
+
+        public DreamMetaObjectAtom(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
@@ -20,7 +22,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 creationArguments.OrderedArguments.Add(DreamValue.Null); //First argument is loc, which is null
             }
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
@@ -30,12 +32,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
 
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue)
         {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             switch (variableName)
             {
@@ -205,7 +207,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     return new DreamValue(matrix);
                 default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

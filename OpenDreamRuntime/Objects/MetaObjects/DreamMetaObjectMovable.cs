@@ -5,14 +5,16 @@ using Robust.Shared.Map;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]
-    class DreamMetaObjectMovable : DreamMetaObjectAtom {
+    class DreamMetaObjectMovable : DreamMetaObjectRoot {
         private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
 
+        public DreamMetaObjectMovable(DreamObjectDefinition definition) : base(definition){}
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue screenLocationValue = dreamObject.GetVariable("screen_loc");
             if (screenLocationValue.Value != null)UpdateScreenLocation(dreamObject, screenLocationValue);
@@ -25,11 +27,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 contents.RemoveValue(new DreamValue(dreamObject));
             }
 
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             switch (variableName) {
                 case "x":

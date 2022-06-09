@@ -3,8 +3,11 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectList : DreamMetaObjectRoot {
+
+        public DreamMetaObjectList(DreamObjectDefinition definition) : base(definition){}
+
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
 
             if (creationArguments.GetArgument(0, "Size").TryGetValueAsInteger(out int size)) {
                 ((DreamList)dreamObject).Resize(size);
@@ -12,7 +15,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "len") {
                 DreamList list = (DreamList)dreamObject;
@@ -34,7 +37,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "type":
                     return new DreamValue(DreamPath.List);
                 default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

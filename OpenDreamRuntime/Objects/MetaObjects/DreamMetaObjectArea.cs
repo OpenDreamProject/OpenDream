@@ -2,9 +2,11 @@
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectArea : DreamMetaObjectAtom {
+    sealed class DreamMetaObjectArea : DreamMetaObjectRoot {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+
+        public DreamMetaObjectArea(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = DreamList.Create();
@@ -21,19 +23,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _dreamManager.AreaContents.Add(dreamObject, contents);
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
             _dreamManager.AreaContents.Remove(dreamObject);
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
         }
 
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "contents") {
                 return new DreamValue(_dreamManager.AreaContents[dreamObject]);
             } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+                return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
     }

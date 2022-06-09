@@ -9,10 +9,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
-        private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+
+        public DreamMetaObjectClient(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
 
             _dreamManager.Clients.Add(dreamObject);
 
@@ -23,12 +24,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
             _dreamManager.Clients.Remove(dreamObject);
         }
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             switch (variableName) {
                 case "eye": {
@@ -120,7 +121,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "connection":
                     return new DreamValue("seeker");
                 default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

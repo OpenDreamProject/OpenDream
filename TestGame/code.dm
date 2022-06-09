@@ -5,6 +5,12 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/client
+	parent_type = /datum
+
+/datum/proc/meep()
+	src << "meep"
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -26,6 +32,7 @@
 	verb/tell_location()
 		set name = "Tell Location"
 		usr << "You are at ([x], [y], [z])"
+		meep()
 
 	verb/say(message as text)
 		var/list/viewers = viewers()

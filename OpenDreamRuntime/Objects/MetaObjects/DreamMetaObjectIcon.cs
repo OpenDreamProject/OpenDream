@@ -5,9 +5,11 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectIcon : DreamMetaObjectDatum
+    sealed class DreamMetaObjectIcon : DreamMetaObjectRoot
     {
         [Dependency] private readonly DreamResourceManager _rscMan = default!;
+
+        public DreamMetaObjectIcon(DreamObjectDefinition definition) : base(definition){}
 
         public enum DreamIconMovingMode : byte
         {
@@ -89,7 +91,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue icon = creationArguments.GetArgument(0, "icon");
             DreamValue state = creationArguments.GetArgument(1, "icon_state");
@@ -133,7 +135,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override void OnObjectDeleted(DreamObject dreamObject) {
             ObjectToDreamIcon.Remove(dreamObject);
 
-            base.OnObjectDeleted(dreamObject);
+            ParentType.OnObjectDeleted(dreamObject);
         }
     }
 }

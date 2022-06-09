@@ -1,10 +1,16 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]
     class DreamMetaObjectRoot : IDreamMetaObject {
         public virtual bool ShouldCallNew => false;
+        public IDreamMetaObject ParentType { get; set; }
 
+        public DreamMetaObjectRoot(DreamObjectDefinition? definition)
+        {
+            if(definition is null || definition.Type == DreamPath.Root) return;
+            ParentType = definition.MetaObject;
+        }
         public virtual void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
 
         }

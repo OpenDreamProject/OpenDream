@@ -111,19 +111,22 @@ namespace OpenDreamRuntime {
         }
 
         private void SetMetaObjects() {
-            ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
-            ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
-            ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
-            ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
-            ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
-            ObjectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix());
-            ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
-            ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
-            ObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());
-            ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
-            ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
-            ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
+            // Root and Datum need to be first and second, respectively
+            ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot(ObjectTree.GetObjectDefinition(DreamPath.Root)));
+            ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum(ObjectTree.GetObjectDefinition(DreamPath.Datum)));
+
+            //TODO Investigate what types BYOND can reparent without exploding and only allow reparenting those
+            ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList(ObjectTree.GetObjectDefinition(DreamPath.List)));
+            ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient(ObjectTree.GetObjectDefinition(DreamPath.Client)));
+            ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld(ObjectTree.GetObjectDefinition(DreamPath.World)));
+            ObjectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix(ObjectTree.GetObjectDefinition(DreamPath.Matrix)));
+            ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex(ObjectTree.GetObjectDefinition(DreamPath.Regex)));
+            ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom(ObjectTree.GetObjectDefinition(DreamPath.Atom)));
+            ObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea(ObjectTree.GetObjectDefinition(DreamPath.Area)));
+            ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf(ObjectTree.GetObjectDefinition(DreamPath.Turf)));
+            ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable(ObjectTree.GetObjectDefinition(DreamPath.Movable)));
+            ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob(ObjectTree.GetObjectDefinition(DreamPath.Mob)));
+            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon(ObjectTree.GetObjectDefinition(DreamPath.Icon)));
         }
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func) {

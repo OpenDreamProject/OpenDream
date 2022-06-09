@@ -1,11 +1,13 @@
 ﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectTurf : DreamMetaObjectAtom {
+    sealed class DreamMetaObjectTurf : DreamMetaObjectRoot {
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
+        public DreamMetaObjectTurf(DreamObjectDefinition definition) : base(definition){}
+
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             if (variableName == "loc") {
                 if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject replacedTurf)) {
@@ -31,7 +33,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 return new DreamValue(_dreamMapManager.GetAreaAt(x, y, z));
             } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+                return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
     }

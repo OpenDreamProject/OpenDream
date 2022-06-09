@@ -30,8 +30,6 @@
 		return icon_states(src, mode)
 
 	proc/Insert(new_icon, icon_state, dir, frame, moving, delay)
-		set opendream_unimplemented = TRUE
-		CRASH("/icon.Insert() is not implemented")
 
 	proc/MapColors(...)
 		set opendream_unimplemented = TRUE

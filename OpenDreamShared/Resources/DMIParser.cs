@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -42,6 +43,80 @@ namespace OpenDreamShared.Resources {
                         { "", state }
                     }
                 };
+            }
+
+            public void InsertIcon(ParsedDMIDescription icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
+            {
+                List<ParsedDMIState> states;
+                if (icon_state is null)
+                {
+                    states = icon.States.Values.ToList();
+                }
+                else
+                {
+                    states = new List<ParsedDMIState>(1) { icon.States[icon_state] };
+                }
+
+                foreach (var state in states)
+                {
+                    if (dir is not null)
+                    {
+                        var goodDir = state.Directions[dir.Value];
+                        state.Directions.Clear();
+                        state.Directions = new Dictionary<AtomDirection, ParsedDMIFrame[]>(1) { { dir.Value, goodDir } };
+                    }
+
+                    if (frame is not null)
+                    {
+                        // TODO Ref says it must start at 1, need to check behavior for when it's less. Manually validate it for now.
+                        var goodFrame = Math.Max(frame.Value, 1);
+                        foreach (var (direction, frames) in state.Directions)
+                        {
+                            state.Directions[direction] = new ParsedDMIFrame[1] { frames[goodFrame] };
+                            if (delay is not null)
+                            {
+                                if (delay > 0)
+                                {
+                                    state.Rewind = false;
+                                }
+                                else if(delay < 0)
+                                {
+                                    state.Rewind = true;
+                                }
+                                else
+                                {
+                                    if (States.Count == 0)
+                                    {
+                                        // TODO Delay should be 1 tick. Is this a tick?
+                                        frames[goodFrame].Delay = 1f;
+                                    }
+                                    else
+                                    {
+                                        // Delay of the nearest frame. Hopefully. Christ
+                                        var stateDirs = States.Last().Value.Directions;
+                                        frames[goodFrame].Delay = dir is null
+                                            ? stateDirs.First().Value.Last().Delay
+                                            : stateDirs[dir.Value].Last().Delay;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // All of that above was just to adjust the inserted icon to match the args. Now we can actually insert it.
+
+                foreach (var state in states)
+                {
+                    if (States.ContainsKey(state.Name))
+                    {
+                        States[state.Name] = state;
+                    }
+                    else
+                    {
+                        States.Add(state.Name, state);
+                    }
+                }
             }
 
             public bool HasState(string stateName = null) {

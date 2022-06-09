@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamClient.Resources.ResourceTypes;
+﻿using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Client.Graphics;
 using Robust.Client.Utility;
-using Robust.Shared.Maths;
-using Robust.Shared.ViewVariables;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamClient.Input {
     //Lifted from SS14 for the most part
     //Used for atoms with an opaque mouse_opacity
-    internal class ClickMapManager : IClickMapManager {
+    internal sealed class ClickMapManager : IClickMapManager {
         [ViewVariables]
         private readonly Dictionary<AtlasTexture, ClickMap> _clickMaps = new();
 

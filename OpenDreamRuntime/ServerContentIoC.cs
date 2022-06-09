@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Resources;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime {
     public static class ServerContentIoC {

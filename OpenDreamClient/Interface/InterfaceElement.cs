@@ -4,6 +4,7 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface
 {
+    [Virtual]
     public class InterfaceElement {
         public string Name { get => ElementDescriptor.Name; }
 

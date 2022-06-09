@@ -6,7 +6,7 @@ using NUnit.Framework.Internal;
 // This it outside of any namespace so it affects the whole assembly.
 [SetUpFixture]
 // ReSharper disable once CheckNamespace
-public class SetupCompileDm {
+public sealed class SetupCompileDm {
     public const string TestProject = "DMProject";
     public const string Environment = "environment.dme";
 

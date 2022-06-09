@@ -269,10 +269,10 @@ namespace DMCompiler.DM.Expressions {
                 case Local:
                     proc.PushFloat(0);
                     return;
-                case ListIndex:
+                case ListIndex idx:
                     proc.PushFloat(0);
-                    // Silent in BYOND
-                    DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
+                    //TODO Support "vars" properly
+                    idx.IsSaved();
                     return;
                 default:
                     throw new CompileErrorException(Location, $"can't get saved value of {_expr}");

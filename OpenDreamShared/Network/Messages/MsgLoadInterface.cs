@@ -6,7 +6,7 @@ namespace OpenDreamShared.Network.Messages
     /// <summary>
     /// Sent server -> client to tell the client to load the interface after connecting, before going in-game.
     /// </summary>
-    public class MsgLoadInterface : NetMessage
+    public sealed class MsgLoadInterface : NetMessage
     {
         public override MsgGroups MsgGroup => MsgGroups.Core;
 

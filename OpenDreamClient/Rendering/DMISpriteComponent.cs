@@ -35,7 +35,7 @@ namespace OpenDreamClient.Rendering {
             return Icon.GetWorldAABB(transform.Position);
         }
 
-        public bool IsVisible(bool checkWorld = true) {
+        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null) {
             if (Icon?.DMI == null) return false;
             if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
 
@@ -45,7 +45,8 @@ namespace OpenDreamClient.Rendering {
                 if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
                     return false;
 
-                EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
+                IoCManager.Resolve(ref mapManager);
+                EntityUid mapEntity = mapManager.GetMapEntityId(transform.MapID);
                 if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
                     return false;
             }

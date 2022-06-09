@@ -1,10 +1,7 @@
 ﻿using OpenDreamShared.Rendering;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System.Collections.Generic;
 
 namespace OpenDreamClient.Rendering {
-    class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
+    sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
         public HashSet<EntityUid> ScreenObjects = new();
 
         [Dependency] private IEntityManager _entityManager = default!;

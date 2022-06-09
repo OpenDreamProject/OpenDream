@@ -2,7 +2,7 @@
 using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Json {
-    public class DreamMapJson {
+    public sealed class DreamMapJson {
         public int MaxX { get; set; }
         public int MaxY { get; set; }
         public int MaxZ { get; set; }
@@ -10,7 +10,7 @@ namespace OpenDreamShared.Json {
         public List<MapBlockJson> Blocks { get; set; } = new();
     }
 
-    public class CellDefinitionJson {
+    public sealed class CellDefinitionJson {
         public string Name { get; set; }
         public MapObjectJson Turf { get; set; }
         public MapObjectJson Area { get; set; }
@@ -21,7 +21,7 @@ namespace OpenDreamShared.Json {
         }
     }
 
-    public class MapObjectJson {
+    public sealed class MapObjectJson {
         public int Type { get; set; }
         public Dictionary<string, object> VarOverrides { get; set; }
 
@@ -42,7 +42,7 @@ namespace OpenDreamShared.Json {
         }
     }
 
-    public class MapBlockJson {
+    public sealed class MapBlockJson {
         public int X { get; set; }
         public int Y { get; set; }
         public int Z { get; set; }

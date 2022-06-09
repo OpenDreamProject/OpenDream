@@ -1,13 +1,12 @@
 using System;
 using System.IO;
-using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 
 // This is outside of any namespace so it affects the whole assembly.
 [SetUpFixture]
 // ReSharper disable once CheckNamespace
-public class SetupCompileDm {
+public sealed class SetupCompileDm {
     public const string TestProject = "DMProject";
     public const string Environment = "environment.dme";
 

@@ -2,7 +2,7 @@
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectList : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectList : DreamMetaObjectRoot {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 

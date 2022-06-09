@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry[] Types;
-        public Dictionary<int, DreamProc> Procs;
+        public List<DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
@@ -265,10 +265,9 @@ namespace OpenDreamRuntime.Objects {
         private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs)
         {
             Procs = new(jsonProcs.Length);
-            for(var i = 0; i < jsonProcs.Length; i++)
+            foreach (var proc in jsonProcs)
             {
-                var proc = LoadProcJson(jsonProcs[i]);
-                Procs.Add(i, proc);
+                Procs.Add(LoadProcJson(proc));
             }
         }
 
@@ -277,7 +276,7 @@ namespace OpenDreamRuntime.Objects {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
             procId = Procs.Count;
-            Procs.Add(procId, proc);
+            Procs.Add(proc);
             return proc;
         }
 
@@ -286,7 +285,7 @@ namespace OpenDreamRuntime.Objects {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
             procId = Procs.Count;
-            Procs.Add(procId, proc);
+            Procs.Add(proc);
             return proc;
         }
     }

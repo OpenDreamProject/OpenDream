@@ -457,9 +457,15 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
-        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList) {
-            var args = new ArgumentList(newList.Location, _dmObject, _proc, newList.Dimensions, _inferredPath);
-            Result = new Expressions.NewMultidimensionalList(newList.Location, args);
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList)
+        {
+            DMExpression[] expressions = new DMExpression[newList.Dimensions.Length];
+            for (int i = 0; i < newList.Dimensions.Length; i++)
+            {
+                expressions[i] = DMExpression.Create(_dmObject, _proc, newList.Dimensions[i], _inferredPath);
+            }
+
+            Result = new Expressions.NewMultidimensionalList(newList.Location, expressions);
         }
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {

@@ -78,15 +78,18 @@ namespace DMCompiler.DM.Expressions {
     }
 
     sealed class NewMultidimensionalList : DMExpression {
-        ArgumentList Arguments;
+        DMExpression[] Expressions;
 
-        public NewMultidimensionalList(Location location, ArgumentList arguments) : base(location) {
-            Arguments = arguments;
+        public NewMultidimensionalList(Location location, DMExpression[] expressions) : base(location) {
+            Expressions = expressions;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            Arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateMultidimensionalList();
+            foreach (var expr in Expressions)
+            {
+                expr.EmitPushValue(dmObject, proc);
+            }
+            proc.CreateMultidimensionalList(Expressions.Length);
         }
     }
 

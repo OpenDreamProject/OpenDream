@@ -131,15 +131,26 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
-        public static ProcStatus? CreateMultidimensionalList(DMProcState state) {
-            DreamProcArguments arguments = state.PopArguments();
-            var values = arguments.GetAllArguments();
-            List<int> sizes = new List<int>(values.Count);
+        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
+        {
+            var count = state.ReadInt();
+
+            List<DreamValue> values = new List<DreamValue>(count);
+            for (var i = 0; i < count; i++)
+            {
+                values.Add(state.Pop());
+            }
+            List<int> sizes = new List<int>(count);
             foreach (var dv in values)
             {
-                dv.TryGetValueAsInteger(out var size);
+                if (!dv.TryGetValueAsInteger(out var size))
+                {
+                    throw new Exception("Invalid list size");
+                }
                 sizes.Add(size);
             }
+
+            sizes.Reverse();
             var list = DreamList.CreateMultidimensional(sizes);
 
             state.Push(new DreamValue(list));

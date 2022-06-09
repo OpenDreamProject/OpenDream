@@ -571,8 +571,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
-        public void CreateMultidimensionalList() {
+        public void CreateMultidimensionalList(int count) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
+            WriteInt(count);
         }
 
         public void Not() {
@@ -868,7 +870,7 @@ namespace DMCompiler.DM {
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
-                
+
                 case DMReference.Type.Global: WriteInt(reference.Index); break;
 
                 case DMReference.Type.Field:

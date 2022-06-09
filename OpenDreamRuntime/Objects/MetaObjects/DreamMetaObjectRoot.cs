@@ -1,4 +1,5 @@
 using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]

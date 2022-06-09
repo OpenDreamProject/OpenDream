@@ -33,6 +33,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType.OnObjectDeleted(dreamObject);
         }
 
+        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue,
+            DreamValue oldVariableValue)
+        {
+            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        }
+
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             if (variableName == "contents") {
                 return new DreamValue(_dreamManager.AreaContents[dreamObject]);

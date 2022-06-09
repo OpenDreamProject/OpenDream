@@ -11,6 +11,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
 
+        public override bool ShouldCallNew => true;
+
         public DreamMetaObjectMovable(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

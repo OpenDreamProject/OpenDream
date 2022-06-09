@@ -3,9 +3,11 @@ using OpenDreamShared.Dream;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectMob : DreamMetaObjectMovable {
+    sealed class DreamMetaObjectMob : DreamMetaObjectRoot {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
+
+        public override bool ShouldCallNew => true;
 
         public DreamMetaObjectMob(DreamObjectDefinition definition) : base(definition){}
 

@@ -4,6 +4,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectTurf : DreamMetaObjectRoot {
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
+        public override bool ShouldCallNew => true;
+
         public DreamMetaObjectTurf(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

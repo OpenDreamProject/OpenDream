@@ -6,6 +6,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
+        public override bool ShouldCallNew => true;
+
         public DreamMetaObjectArea(DreamObjectDefinition definition) : base(definition){}
 
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

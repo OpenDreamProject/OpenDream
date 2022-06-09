@@ -3,7 +3,7 @@
 namespace OpenDreamShared.Json {
     public sealed class DreamCompiledJson {
         public List<string> Strings { get; set; }
-        public Dictionary<string, int> GlobalProcs { get; set; }
+        public List<int> GlobalProcs { get; set; }
         public GlobalListJson Globals { get; set; }
         public ProcDefinitionJson GlobalInitProc { get; set; }
         public List<DreamMapJson> Maps { get; set; }

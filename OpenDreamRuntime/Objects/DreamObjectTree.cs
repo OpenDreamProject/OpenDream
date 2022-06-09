@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry[] Types;
-        public List<DreamProc> Procs;
+        public Dictionary<int, DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
@@ -199,11 +199,12 @@ namespace OpenDreamRuntime.Objects {
 
                 if (jsonType.Procs != null)
                 {
-                    foreach (var proc in jsonType.Procs)
+                    foreach (var procList in jsonType.Procs)
                     {
-                        foreach (var procId in proc.Value)
+                        foreach (var procId in procList)
                         {
-                            type.ObjectDefinition.SetProcDefinition(proc.Key, procId);
+                            var proc = Procs[procId];
+                            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
                         }
                     }
                 }
@@ -264,9 +265,10 @@ namespace OpenDreamRuntime.Objects {
         private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs)
         {
             Procs = new(jsonProcs.Length);
-            foreach (var proc in jsonProcs)
+            for(var i = 0; i < jsonProcs.Length; i++)
             {
-                Procs.Add(LoadProcJson(proc));
+                var proc = LoadProcJson(jsonProcs[i]);
+                Procs.Add(i, proc);
             }
         }
 
@@ -275,7 +277,7 @@ namespace OpenDreamRuntime.Objects {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
             procId = Procs.Count;
-            Procs.Add(proc);
+            Procs.Add(procId, proc);
             return proc;
         }
 
@@ -284,7 +286,7 @@ namespace OpenDreamRuntime.Objects {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
             procId = Procs.Count;
-            Procs.Add(proc);
+            Procs.Add(procId, proc);
             return proc;
         }
     }

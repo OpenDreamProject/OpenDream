@@ -234,8 +234,9 @@ namespace DMCompiler {
                 compiledDream.Globals = globalListJson;
             }
 
-            if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs;
+            if (DMObjectTree.GlobalProcs.Count > 0)
+            {
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {

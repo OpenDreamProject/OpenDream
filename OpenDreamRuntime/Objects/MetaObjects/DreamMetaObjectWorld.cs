@@ -15,6 +15,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private ViewRange _viewRange;
 
+        private double TickLag { get => _gameTiming.TickPeriod.TotalMilliseconds / 100; }
+
         public DreamMetaObjectWorld() {
             IoCManager.InjectDependencies(this);
         }
@@ -64,13 +66,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             switch (variableName) {
                 case "tick_lag":
-                    return new DreamValue(_gameTiming.TickPeriod.TotalMilliseconds / 100);
+                    return new DreamValue(TickLag);
                 case "fps":
                     return new DreamValue(_gameTiming.TickRate);
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.CurTime.TotalMilliseconds / 100);
+                    return new DreamValue(_gameTiming.CurTick.Value * TickLag / 100);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {

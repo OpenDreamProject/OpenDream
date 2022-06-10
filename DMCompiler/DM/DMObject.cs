@@ -135,11 +135,7 @@ namespace DMCompiler.DM {
 
             if (Procs.Count > 0)
             {
-                typeJson.Procs = new List<List<int>>(Procs.Count);
-                foreach (var (_, value) in Procs)
-                {
-                    typeJson.Procs.Add(value);
-                }
+                typeJson.Procs = new List<List<int>>(Procs.Values);
             }
             return typeJson;
         }

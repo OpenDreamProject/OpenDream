@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("icon_state", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("dir", Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("frame", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("moving", Type = DreamValue.DreamValueType.Float)] // do by hand
+        [DreamProcParameter("moving", Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("delay", Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Insert(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO Figure out what happens when you pass the wrong types as args

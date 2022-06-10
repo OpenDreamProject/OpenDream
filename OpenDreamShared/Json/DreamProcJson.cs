@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 
 namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {
+        public string Name { get; set; }
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }
         public ProcAttributes Attributes { get; set; } = ProcAttributes.None;

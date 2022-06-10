@@ -4,6 +4,7 @@ using OpenDreamRuntime.Objects;
 namespace OpenDreamRuntime.Procs {
     sealed class InitDreamObjectState : ProcState
     {
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
         enum Stage {
             // Need to call the object's (init) proc
             Init,
@@ -18,6 +19,7 @@ namespace OpenDreamRuntime.Procs {
         public InitDreamObjectState(DreamThread thread, DreamObject dreamObject, DreamObject usr, DreamProcArguments arguments)
             : base(thread)
         {
+            IoCManager.InjectDependencies(this);
             _dreamObject = dreamObject;
             _usr = usr;
             _arguments = arguments;
@@ -44,11 +46,12 @@ namespace OpenDreamRuntime.Procs {
                 case Stage.Init: {
                     _stage = Stage.OnObjectCreated;
 
-                    if (src.ObjectDefinition.InitializionProc == null) {
+                    if (src.ObjectDefinition.InitializationProc == null) {
                         goto switch_start;
                     }
 
-                    var initProcState = src.ObjectDefinition.InitializionProc.CreateState(Thread, src, _usr, new(null));
+                    var proc = _dreamMan.ObjectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
+                    var initProcState = proc.CreateState(Thread, src, _usr, new(null));
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;
                 }

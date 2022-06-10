@@ -210,7 +210,9 @@ namespace DMCompiler {
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
-            compiledDream.Types = DMObjectTree.CreateJsonRepresentation();
+            var jsonRep = DMObjectTree.CreateJsonRepresentation();
+            compiledDream.Types = jsonRep.Item1;
+            compiledDream.Procs = jsonRep.Item2;
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
@@ -232,15 +234,9 @@ namespace DMCompiler {
                 compiledDream.Globals = globalListJson;
             }
 
-            if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = new(DMObjectTree.GlobalProcs.Count);
-
-                foreach (KeyValuePair<string, DMProc> globalProc in DMObjectTree.GlobalProcs) {
-                    string name = globalProc.Key;
-                    DMProc proc = globalProc.Value;
-
-                    compiledDream.GlobalProcs[name] = proc.GetJsonRepresentation();
-                }
+            if (DMObjectTree.GlobalProcs.Count > 0)
+            {
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {

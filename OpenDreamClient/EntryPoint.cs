@@ -48,8 +48,6 @@ namespace OpenDreamClient {
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
-
-            //TODO: Disable prediction once bugs in RobustToolbox are fixed
         }
 
         public override void PostInit() {

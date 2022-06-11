@@ -20,9 +20,8 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-
-        private DreamCompiledJson _compiledJson;
 
         public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
@@ -39,6 +38,8 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+
+        private DreamCompiledJson _compiledJson;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {
@@ -100,6 +101,7 @@ namespace OpenDreamRuntime {
 
         public void Update()
         {
+            _procScheduler.Process();
             UpdateStat();
         }
 

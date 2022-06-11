@@ -1479,8 +1479,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (delayMilliseconds > 0) {
                 await Task.Delay(delayMilliseconds);
             } else {
+                // TODO: This postpones execution until the next tick.
+                // It should instead start again in the current tick if possible.
                 await Task.Yield();
             }
+
             return DreamValue.Null;
         }
 

@@ -572,7 +572,7 @@ namespace DMCompiler.DM {
         }
 
         public void CreateMultidimensionalList(int count) {
-            GrowStack(1);
+            ShrinkStack(count - 1);
             WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
             WriteInt(count);
         }

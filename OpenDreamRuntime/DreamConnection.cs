@@ -270,7 +270,7 @@ namespace OpenDreamRuntime
                             Dictionary<String, DreamValue> arguments = new();
 
                             // TODO: this should probably be done on the client, shouldn't it?
-                            for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                            for (int i = 0; i < (verb.ArgumentNames?.Count ?? 0); i++) {
                                 String argumentName = verb.ArgumentNames[i];
                                 DMValueType argumentType = verb.ArgumentTypes[i];
                                 DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs

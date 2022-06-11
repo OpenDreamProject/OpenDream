@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Net;
 using System.Web;
+using OpenDreamClient.Resources;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.UserInterface;
@@ -31,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
@@ -60,7 +62,7 @@ namespace OpenDreamClient.Interface.Controls
         }
 
         public void SetFileSource(ResourcePath filepath, bool userData) {
-            _webView.Url = (userData ? "usr://" : "res://") + filepath;
+            _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
         private void BeforeBrowseHandler(IBeforeBrowseContext context)
@@ -90,7 +92,7 @@ namespace OpenDreamClient.Interface.Controls
                 var path = new ResourcePath(newUri.AbsolutePath);
                 try
                 {
-                    stream = _resourceManager.UserData.OpenRead(path);
+                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;
                 }
                 catch (FileNotFoundException)

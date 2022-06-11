@@ -16,6 +16,7 @@ namespace OpenDreamClient.Resources
         ResourcePath CreateCacheFile(string filename, string data);
         ResourcePath CreateCacheFile(string filename, byte[] data);
         void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource;
+        ResourcePath GetCacheFilePath(string filename);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager
@@ -113,18 +114,23 @@ namespace OpenDreamClient.Resources
             }
         }
 
+        public ResourcePath GetCacheFilePath(string filename)
+        {
+            return _cacheDirectory / new ResourcePath(filename).ToRelativePath();
+        }
+
         public ResourcePath CreateCacheFile(string filename, string data)
         {
             var path = _cacheDirectory / filename;
             _resourceManager.UserData.WriteAllText(path, data);
-            return path;
+            return new ResourcePath(filename);
         }
 
         public ResourcePath CreateCacheFile(string filename, byte[] data)
         {
             var path = _cacheDirectory / filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
-            return path;
+            return new ResourcePath(filename);
         }
 
         private DreamResource GetCachedResource(string resourcePath) {

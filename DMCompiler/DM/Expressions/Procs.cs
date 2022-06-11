@@ -24,8 +24,10 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
         }
 
-        public DMProc GetProc(DMObject dmObject) {
-            return dmObject.GetProcs(_identifier)?[^1];
+        public DMProc GetProc(DMObject dmObject)
+        {
+            var procId = dmObject.GetProcs(_identifier)?[^1];
+            return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
     }
 

@@ -49,8 +49,15 @@ namespace DMCompiler.DM {
         public Location Location = Location.Unknown;
         public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
+        public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
+        [CanBeNull] public string VerbName;
+        [CanBeNull] public string VerbCategory = string.Empty;
+        [CanBeNull] public string VerbDesc;
+        public sbyte? Invisibility;
+
+        private DMObject _dmObject;
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
@@ -64,13 +71,11 @@ namespace DMCompiler.DM {
         private int _currentStackSize = 0;
         private bool _negativeStackSizeError = false;
 
-        [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory = string.Empty;
-        [CanBeNull] public string VerbDesc;
-        public sbyte? Invisibility;
 
-
-        public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
+        public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
+        {
+            Id = id;
+            _dmObject = dmObject;
             _astDefinition = astDefinition;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
@@ -78,16 +83,22 @@ namespace DMCompiler.DM {
             _scopes.Push(new DMProcScope());
         }
 
-        public void Compile(DMObject dmObject) {
-            foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
-            }
+        public void Compile() {
+            DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
+            if (_astDefinition is not null) // It's null for initialization procs
+            {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
 
-            new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
+                new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+
+            procDefinition.Name = Name;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {
@@ -864,7 +875,7 @@ namespace DMCompiler.DM {
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
-                
+
                 case DMReference.Type.Global: WriteInt(reference.Index); break;
 
                 case DMReference.Type.Field:

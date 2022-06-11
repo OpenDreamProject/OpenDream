@@ -1751,7 +1751,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     DreamPath objectTypePath = typePath.AddToPath("..");
                     DreamObjectDefinition objectDefinition = DreamManager.ObjectTree.GetObjectDefinition(objectTypePath);
 
-                    foreach (KeyValuePair<string, DreamProc> proc in objectDefinition.Procs) {
+                    foreach (KeyValuePair<string, int> proc in objectDefinition.Procs) {
                         list.AddValue(new DreamValue(proc.Key));
                     }
                 } else {

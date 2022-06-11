@@ -24,7 +24,7 @@ namespace OpenDreamRuntime {
 
         private DreamCompiledJson _compiledJson;
 
-        public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
@@ -52,12 +52,17 @@ namespace OpenDreamRuntime {
 
             _dreamResourceManager.Initialize(jsonPath);
 
-            ObjectTree = new DreamObjectTree(json);
+            ObjectTree.LoadJson(json);
+
             SetMetaObjects();
 
-            if (_compiledJson.GlobalProcs != null) {
-                foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
+            if (_compiledJson.GlobalProcs != null)
+            {
+                GlobalProcs.EnsureCapacity(_compiledJson.GlobalProcs.Count);
+                foreach (var procId in _compiledJson.GlobalProcs)
+                {
+                    var proc = ObjectTree.Procs[procId];
+                    GlobalProcs.Add(proc.Name, proc);
                 }
             }
 

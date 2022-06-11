@@ -132,18 +132,10 @@ namespace OpenDreamRuntime.Procs {
         {
             var count = state.ReadInt();
 
-            List<DreamValue> values = new List<DreamValue>(count);
+            List<int> sizes = new List<int>(count);
             for (var i = 0; i < count; i++)
             {
-                values.Add(state.Pop());
-            }
-            List<int> sizes = new List<int>(count);
-            foreach (var dv in values)
-            {
-                if (!dv.TryGetValueAsInteger(out var size))
-                {
-                    throw new Exception("Invalid list size");
-                }
+                state.Pop().TryGetValueAsInteger(out var size);
                 sizes.Add(size);
             }
 

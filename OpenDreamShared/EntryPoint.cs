@@ -3,7 +3,7 @@ using Robust.Shared.ContentPack;
 
 namespace OpenDreamShared {
     [UsedImplicitly]
-    public class EntryPoint : GameShared {
+    public sealed class EntryPoint : GameShared {
         public override void PreInit() {
             base.PreInit();
         }

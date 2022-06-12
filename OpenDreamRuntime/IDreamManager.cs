@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Resources;
 using Robust.Server.Player;
-using Robust.Shared.Log;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
@@ -22,6 +18,7 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Clients { get; set; }
         public List<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
+        public Dictionary<string, List<DreamObject>> Tags { get; set; }
 
         public void Initialize(string? testingJson);
         public void Shutdown();

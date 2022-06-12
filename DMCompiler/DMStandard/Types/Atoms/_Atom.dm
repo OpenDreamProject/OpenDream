@@ -60,6 +60,30 @@
 
 	proc/Click(location, control, params)
 
+	proc/DblClick(location, control, params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseEntered(location,control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseExited(location,control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseMove(location,control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseUp(location,control,params)
+		set opendream_unimplemented = TRUE
+
+	proc/MouseWheel(delta_x,delta_y,location,control,params)
+		set opendream_unimplemented = TRUE
+
 	proc/Entered(atom/movable/Obj, atom/OldLoc)
 	proc/Exited(atom/movable/Obj, atom/newloc)
 	proc/Uncrossed(atom/movable/O)

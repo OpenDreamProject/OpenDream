@@ -6,7 +6,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectWorld : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectWorld : DreamMetaObjectRoot {
         [Dependency] private IDreamManager _dreamManager = null;
         [Dependency] private DreamResourceManager _dreamRscMan = null;
         [Dependency] private IDreamMapManager _dreamMapManager = null;
@@ -14,6 +14,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private IConfigurationManager _cfg = null;
 
         private ViewRange _viewRange;
+
+        private double TickLag { get => _gameTiming.TickPeriod.TotalMilliseconds / 100; }
 
         public DreamMetaObjectWorld() {
             IoCManager.InjectDependencies(this);
@@ -64,13 +66,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             switch (variableName) {
                 case "tick_lag":
-                    return new DreamValue(_gameTiming.TickPeriod.TotalMilliseconds / 100);
+                    return new DreamValue(TickLag);
                 case "fps":
                     return new DreamValue(_gameTiming.TickRate);
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.CurTime.TotalMilliseconds / 100);
+                    return new DreamValue(_gameTiming.CurTick.Value * TickLag);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {

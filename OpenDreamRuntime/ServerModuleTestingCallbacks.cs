@@ -1,5 +1,4 @@
 #nullable enable
-using System;
 using OpenDreamShared;
 
 namespace OpenDreamRuntime

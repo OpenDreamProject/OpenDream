@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
@@ -11,7 +13,7 @@ using Robust.Shared.IoC;
 namespace Content.Tests
 {
     [TestFixture]
-    public sealed class DMTests : ContentUnitTest
+    public sealed partial class DMTests : ContentUnitTest
     {
         private IDreamManager _dreamMan;
         private ITaskManager _taskManager;
@@ -27,6 +29,45 @@ namespace Content.Tests
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             _dreamMan.Initialize(SetupCompileDm.CompiledProject);
         }
+
+        [Test, TestCaseSource(nameof(GetTests))]
+        public void TestFiles(string file)
+        {
+            var prev = _dreamMan.DMExceptionCount;
+
+            string firstLine;
+
+            using(StreamReader reader = new StreamReader(file))
+            {
+                firstLine = reader.ReadLine() ?? "";
+            }
+
+            bool shouldRuntime = firstLine.Contains("RUNTIME TRUE", StringComparison.InvariantCulture);
+
+            var fileName = Path.GetFileNameWithoutExtension(file); // Ignore the ".dm" extension
+
+            var result = DreamThread.Run(async(state) => {
+                var world = _dreamMan.WorldInstance;
+                
+                if (world.TryGetProc($"{fileName}_Proc", out DreamProc proc)) {
+                    return await state.Call(proc, world, null, new DreamProcArguments(null));
+                } else {
+                    Assert.Fail($"No proc named {fileName}_Proc");
+                    return DreamValue.Null;
+                }
+            });
+
+            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(shouldRuntime ? prev + 1 : prev));
+        }
+
+        private static string[] GetTests()
+        {
+            return Directory.GetFiles(
+                Path.Combine("DMProject", "Tests"), "*", SearchOption.AllDirectories);
+        }
+
+
+        // TODO Move all tests below this line to the new auto-test system
 
         [Test]
         public void SyncReturn()
@@ -307,36 +348,6 @@ namespace Content.Tests
         }
 
         [Test]
-        public void ListIndexMutateTest()
-        {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("list_index_mutate");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.That(result, Is.EqualTo(new DreamValue(30)));
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
-        //TODO Failing test
-        /*[Test]
-        public void SwitchConstTest() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("switch_const");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.That(result, Is.EqualTo(new DreamValue(1)));
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(0));
-        }*/
-
-        [Test]
         public void ClampValueTest() {
             var prev = _dreamMan.DMExceptionCount;
 
@@ -437,45 +448,6 @@ namespace Content.Tests
         }*/
 
         [Test]
-        public void ConstSwitch() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstSwitch_1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(1), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
-        [Test]
-        public void ConstDivZero() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            // Case 1
-            var result1 = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstZero1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev + 1));
-
-            //Case 2
-            //TODO Failed test
-            /*prev = _dreamMan.DMExceptionCount;
-            var result2 = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstZero2");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev + 1));*/
-        }
-
-        [Test]
         public void AssertPass() {
             var prev = _dreamMan.DMExceptionCount;
 
@@ -502,62 +474,6 @@ namespace Content.Tests
             Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev + 1));
         }
 
-        [Test]
-        public void ConstList() {
-            var prev = _dreamMan.DMExceptionCount;
 
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstList1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(5), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
-        //TODO Failing test. DM code doesn't compile.
-        /*[Test]
-        public void ConstProc() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstProc1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(1), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }*/
-
-        [Test]
-        public void ConstInit() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstInit1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(5), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
-        //TODO Failing test. DM code doesn't compile.
-        /*[Test]
-        public void ConstSort() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("ConstSort1");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(1), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }*/
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
@@ -129,6 +128,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.IsInRange,
             DMOpcodeHandlers.MassConcatenation,
             DMOpcodeHandlers.CreateTypeEnumerator,
+            DMOpcodeHandlers.CreateMultidimensionalList,
             DMOpcodeHandlers.Output,
             DMOpcodeHandlers.Input
         };
@@ -155,7 +155,7 @@ namespace OpenDreamRuntime.Procs {
             _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
-            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames.Count);
+            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             Arguments = _dreamValuePool.Rent(ArgumentCount);
             LocalVariables = _dreamValuePool.Rent(256);
 
@@ -167,7 +167,7 @@ namespace OpenDreamRuntime.Procs {
 
             //Named arguments
             foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
                 if (argumentIndex == -1) {
                     throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }

@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime {
     interface IDreamMapManager {

@@ -1,8 +1,7 @@
 ﻿using OpenDreamShared.Dream;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectTurf : DreamMetaObjectAtom {
+    sealed class DreamMetaObjectTurf : DreamMetaObjectAtom {
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
         public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {

@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace OpenDreamRuntime.Procs {
+﻿namespace OpenDreamRuntime.Procs {
     [AttributeUsage(AttributeTargets.Method)]
-    class DreamProcAttribute : Attribute {
+    sealed class DreamProcAttribute : Attribute {
         public string Name;
 
         public DreamProcAttribute(string name) {
@@ -11,7 +9,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-    class DreamProcParameterAttribute : Attribute {
+    sealed class DreamProcParameterAttribute : Attribute {
         public string Name;
         public DreamValue.DreamValueType Type;
         public object DefaultValue;

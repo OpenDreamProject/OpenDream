@@ -1,22 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Web;
+using OpenDreamClient.Resources;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.UserInterface;
 using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls
 {
-    class ControlBrowser : InterfaceControl
+    sealed class ControlBrowser : InterfaceControl
     {
         private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
         {
@@ -35,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
@@ -64,7 +62,7 @@ namespace OpenDreamClient.Interface.Controls
         }
 
         public void SetFileSource(ResourcePath filepath, bool userData) {
-            _webView.Url = (userData ? "usr://" : "res://") + filepath;
+            _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
         private void BeforeBrowseHandler(IBeforeBrowseContext context)
@@ -78,8 +76,7 @@ namespace OpenDreamClient.Interface.Controls
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 context.DoCancel();
 
-                var msg = _netManager.CreateNetMessage<MsgTopic>();
-                msg.Query = newUri.Query;
+                var msg = new MsgTopic() { Query = newUri.Query };
                 _netManager.ClientSendMessage(msg);
             }
         }
@@ -95,7 +92,7 @@ namespace OpenDreamClient.Interface.Controls
                 var path = new ResourcePath(newUri.AbsolutePath);
                 try
                 {
-                    stream = _resourceManager.UserData.OpenRead(path);
+                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;
                 }
                 catch (FileNotFoundException)

@@ -1,11 +1,9 @@
 ﻿using OpenDreamShared.Input;
 using OpenDreamClient.Interface;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Input {
-    class DreamCommandSystem : SharedDreamCommandSystem {
+    sealed class DreamCommandSystem : SharedDreamCommandSystem {
         public void RunCommand(string command) {
             string[] split = command.Split(" ");
             string verb = split[0];

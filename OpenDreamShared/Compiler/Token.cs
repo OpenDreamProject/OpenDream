@@ -22,6 +22,7 @@
         DM_Preproc_Ifdef,
         DM_Preproc_Ifndef,
         DM_Preproc_Include,
+        DM_Preproc_LineSplice,
         DM_Preproc_Number,
         DM_Preproc_ParameterStringify,
         DM_Preproc_Punctuator,
@@ -171,7 +172,7 @@
         DMF_Window
     }
 
-    public partial class Token {
+    public sealed partial class Token {
         public TokenType Type;
         public Location Location;
         public string Text;

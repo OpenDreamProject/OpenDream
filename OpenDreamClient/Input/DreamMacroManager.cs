@@ -1,16 +1,11 @@
 ﻿using OpenDreamShared.Interface;
 using Robust.Client.Input;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
-using Robust.Shared.IoC;
-using System;
-using System.Collections.Generic;
-using Robust.Shared.Log;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Input {
-    class DreamMacroManager : IDreamMacroManager {
+    sealed class DreamMacroManager : IDreamMacroManager {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 

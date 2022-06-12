@@ -1,8 +1,5 @@
-using System;
 using System.Text.RegularExpressions;
-using OpenDreamClient.States.MainMenu;
 using Robust.Client;
-using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.State;
 using Robust.Client.UserInterface;
@@ -10,15 +7,12 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared;
 using Robust.Shared.AuthLib;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
-using Robust.Shared.Localization;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.States.MainMenu
 {
-    public class MainMenuState : State
+    public sealed class MainMenuState : State
     {
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IBaseClient _client = default!;

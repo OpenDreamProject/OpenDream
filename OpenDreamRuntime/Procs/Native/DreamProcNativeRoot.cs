@@ -1479,8 +1479,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (delayMilliseconds > 0) {
                 await Task.Delay(delayMilliseconds);
             } else {
+                // TODO: This postpones execution until the next tick.
+                // It should instead start again in the current tick if possible.
                 await Task.Yield();
             }
+
             return DreamValue.Null;
         }
 
@@ -1751,7 +1754,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     DreamPath objectTypePath = typePath.AddToPath("..");
                     DreamObjectDefinition objectDefinition = DreamManager.ObjectTree.GetObjectDefinition(objectTypePath);
 
-                    foreach (KeyValuePair<string, DreamProc> proc in objectDefinition.Procs) {
+                    foreach (KeyValuePair<string, int> proc in objectDefinition.Procs) {
                         list.AddValue(new DreamValue(proc.Key));
                     }
                 } else {

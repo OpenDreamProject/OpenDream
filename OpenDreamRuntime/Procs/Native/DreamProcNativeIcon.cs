@@ -1,4 +1,3 @@
-using System;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 

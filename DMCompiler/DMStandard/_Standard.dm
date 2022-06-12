@@ -121,7 +121,7 @@ proc/winset(player, control_id, params)
 #include "UnsortedAdditions.dm"
 
 proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
-	set opendream_unimplented = TRUE
+	set opendream_unimplemented = TRUE
 	return Haystack
 
 proc/block(var/atom/Start, var/atom/End)

@@ -9,5 +9,10 @@
 #include "code.dm"
 #include "interface.dmf"
 #include "map.dmm"
-#include "Tests\Const\ConstTests.dm"
-// END_INCLUDE
+#include "Shared\DerefTests.dm"
+#include "Tests\Const\Const1.dm"
+#include "Tests\Const\Const2.dm"
+#include "Tests\Const\Const4.dm"
+#include "Tests\Const\Const5.dm"
+#include "Tests\List\List2.dm"
+#include "Tests\List\List3.dm"

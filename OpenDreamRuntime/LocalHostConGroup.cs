@@ -1,14 +1,13 @@
-using System.Net;
 using Robust.Server.Console;
 using Robust.Server.Player;
-using Robust.Shared.IoC;
+using System.Net;
 
 namespace OpenDreamRuntime {
     #if DEBUG
     /// <summary>
     ///     Debug ConGroup controller implementation that gives any client connected through localhost every permission.
     /// </summary>
-    public class LocalHostConGroup : IConGroupControllerImplementation, IPostInjectInit {
+    public sealed class LocalHostConGroup : IConGroupControllerImplementation, IPostInjectInit {
         public bool CanCommand(IPlayerSession session, string cmdName) {
             return IsLocal(session);
         }

@@ -1,9 +1,8 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectArea : DreamMetaObjectAtom {
+    sealed class DreamMetaObjectArea : DreamMetaObjectAtom {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 

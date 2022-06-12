@@ -6,7 +6,7 @@ using NUnit.Framework.Internal;
 // This is outside of any namespace so it affects the whole assembly.
 [SetUpFixture]
 // ReSharper disable once CheckNamespace
-public class SetupCompileDm {
+public sealed class SetupCompileDm {
     public const string TestProject = "DMProject";
     public const string Environment = "environment.dme";
 
@@ -16,6 +16,9 @@ public class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
+
+        // TODO Auto-generate the DME based on the files in DMProject/Shared and DMProject/Tests
+
         bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
             Files = new() { DmEnvironment }
         });

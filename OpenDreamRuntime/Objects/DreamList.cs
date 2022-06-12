@@ -51,6 +51,28 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
+        public static DreamList CreateMultidimensional(List<int> dimensions)
+        {
+            var list = new DreamList(dimensions[0]);
+
+            if (dimensions.Count > 1)
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(new DreamValue(CreateMultidimensional(dimensions.GetRange(1, dimensions.Count - 1))));
+                }
+            }
+            else
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(DreamValue.Null);
+                }
+            }
+
+            return list;
+        }
+
         public bool IsAssociative() {
             return _associativeValues != null && _associativeValues.Count > 0;
         }

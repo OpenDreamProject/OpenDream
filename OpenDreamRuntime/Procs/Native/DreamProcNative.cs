@@ -1,6 +1,5 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {

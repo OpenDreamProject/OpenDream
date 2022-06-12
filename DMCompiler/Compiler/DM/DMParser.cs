@@ -344,7 +344,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (sizes.Count > 0)
                 {
-                    DMASTExpression[] expressions = new DMASTExpression[sizes.Count];
+                    DMASTExpression[] expressions = sizes.ToArray()
                     for (var i = 0; i < sizes.Count; i++)
                     {
                         expressions[i] = sizes[i];

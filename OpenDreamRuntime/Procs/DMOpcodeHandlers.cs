@@ -257,6 +257,11 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
             DreamList list = state.Pop().GetValueAsDreamList();
 
+            if (index.TryGetValueAsInteger(out var idx) && idx == list.GetLength() + 1)
+            {
+                list.Resize(list.GetLength() + 1);
+            }
+
             list.SetValue(index, value);
             state.Push(new DreamValue(list));
             return null;

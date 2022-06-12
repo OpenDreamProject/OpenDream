@@ -25,6 +25,8 @@ namespace OpenDreamRuntime.Objects {
         public TreeEntry[] Types;
         public List<DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
+        // Any time `\ref[string]` happens
+        public List<string> RefStrings = new List<string>(); //TODO: Improve this impl.
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
 

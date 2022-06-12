@@ -178,10 +178,30 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(value.Stringify());
                             break;
                         }
-                        case StringFormatTypes.Ref: {
-                            DreamObject refObject = state.Pop().GetValueAsDreamObject();
-
-                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                        case StringFormatTypes.Ref:
+                        {
+                            var value = state.Pop();
+                            if(value.TryGetValueAsDreamObject(out var refObject))
+                            {
+                                formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                            }
+                            else if(value.TryGetValueAsString(out var refStr))
+                            {
+                                var idx = state.DreamManager.ObjectTree.Strings.IndexOf(refStr);
+                                if (idx != -1)
+                                {
+                                    formattedString.Append(idx);
+                                }
+                                else
+                                {
+                                    state.DreamManager.ObjectTree.Strings.Add(refStr);
+                                    formattedString.Append(state.DreamManager.ObjectTree.Strings.Count);
+                                }
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                             break;
                         }
                         default: throw new Exception("Invalid special character");

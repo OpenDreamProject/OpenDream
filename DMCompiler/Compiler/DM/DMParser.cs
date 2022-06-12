@@ -205,6 +205,8 @@ namespace DMCompiler.Compiler.DM {
                             PathArray(ref varPath, out value);
 
                             if (Check(TokenType.DM_Equals)) {
+                                if (value != null) Warning("List doubly initialized");
+
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
@@ -313,26 +315,39 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
-            //TODO: Multidimensional lists
             implied_value = null;
-            if (Check(TokenType.DM_LeftBracket))
+            if (Current().Type == TokenType.DM_LeftBracket)
             {
                 var loc = Current().Location;
-                if (!path.IsDescendantOf(DreamPath.List)) {
+                // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
+                if (!path.Elements[..^1].Contains("list")) {
                     var elements = path.Elements.ToList();
                     elements.Insert(elements.IndexOf("var") + 1, "list");
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                Whitespace();
-                DMASTExpression size = Expression();
-                ConsumeRightBracket();
-                Whitespace();
+                List<DMASTExpression> sizes = new List<DMASTExpression>(2); // Most common is 1D or 2D lists
 
-                if (size is not null) {
-                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
-                        new[] { new DMASTCallParameter(loc, size) });
+                while (Check(TokenType.DM_LeftBracket))
+                {
+                    Whitespace();
+
+                    var size = Expression();
+                    if (size is not null)
+                    {
+                        sizes.Add(size);
+                    }
+
+                    ConsumeRightBracket();
+                    Whitespace();
                 }
+
+                if (sizes.Count > 0)
+                {
+                    DMASTExpression[] expressions = sizes.ToArray();
+                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
+                }
+
                 return true;
             }
             return false;
@@ -665,8 +680,6 @@ namespace DMCompiler.Compiler.DM {
                 PathArray(ref varPath.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
-                    if (value != null) Warning("List doubly initialized");
-
                     Whitespace();
                     value = Expression();
 

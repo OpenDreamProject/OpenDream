@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Compiler;
+using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using System;
@@ -244,6 +244,7 @@ namespace DMCompiler.DM.Visitors {
                 Expressions.List => true,
                 Expressions.NewList => true,
                 Expressions.NewPath => true,
+                Expressions.NewMultidimensionalList => true,
                 Expressions.GlobalField => variable.IsGlobal, // Global set to another global
                 Expressions.StringFormat => variable.IsGlobal,
                 _ => false

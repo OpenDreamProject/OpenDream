@@ -344,7 +344,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (sizes.Count > 0)
                 {
-                    DMASTExpression[] expressions = sizes.ToArray()
+                    DMASTExpression[] expressions = sizes.ToArray();
                     implied_value = new DMASTNewMultidimensionalList(loc, expressions);
                 }
 

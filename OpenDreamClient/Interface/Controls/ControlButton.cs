@@ -2,8 +2,6 @@
 using OpenDreamClient.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Interface.Controls {
     sealed class InterfaceButton : Button
@@ -13,6 +11,7 @@ namespace OpenDreamClient.Interface.Controls {
             Label.Margin = new Thickness(6, 0, 6, 2);
         }
     }
+
     sealed class ControlButton : InterfaceControl
     {
         public const string StyleClassDMFButton = "DMFbutton";

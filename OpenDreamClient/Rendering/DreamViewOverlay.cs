@@ -1,46 +1,46 @@
 ﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using Robust.Shared.Maths;
-using System.Collections.Generic;
 using JetBrains.Annotations;
+using Robust.Shared.Map;
 
 namespace OpenDreamClient.Rendering {
-    class DreamViewOverlay : Overlay {
+    sealed class DreamViewOverlay : Overlay {
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
         private IEntitySystemManager _entitySystem = IoCManager.Resolve<IEntitySystemManager>();
         private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
+        private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
         private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
         [CanBeNull] private EntityLookupSystem _lookupSystem;
+        [CanBeNull] private SharedTransformSystem _transformSystem;
 
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
         protected override void Draw(in OverlayDrawArgs args) {
-            DrawingHandleWorld handle = args.WorldHandle;
-            EntityUid? eye = _playerManager.LocalPlayer.Session.AttachedEntity;
+            EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
             if (eye == null) return;
 
-            DrawMap(handle, eye.Value);
+            DrawingHandleWorld handle = args.WorldHandle;
+            DrawMap(args, eye.Value);
             DrawScreenObjects(handle, eye.Value, args.WorldAABB);
         }
 
-        private void DrawMap(DrawingHandleWorld handle, EntityUid eye) {
-
-
+        private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
+            _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
             _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
+            var spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+            var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
 
-            var entities = _lookupSystem.GetEntitiesInRange(eye, 15);
+            var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
             List<DMISpriteComponent> sprites = new(entities.Count + 1);
 
-            if(_entityManager.TryGetComponent<DMISpriteComponent>(eye, out var player) && player.IsVisible())
+            if(spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager))
                 sprites.Add(player);
 
             foreach (EntityUid entity in entities) {
-                if (!_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite))
+                if (!spriteQuery.TryGetComponent(entity, out var sprite))
                     continue;
-                if (!sprite.IsVisible())
+                if (!sprite.IsVisible(mapManager: _mapManager))
                     continue;
 
                 sprites.Add(sprite);
@@ -48,10 +48,10 @@ namespace OpenDreamClient.Rendering {
 
             sprites.Sort(_renderOrderComparer);
             foreach (DMISpriteComponent sprite in sprites) {
-                if (!_entityManager.TryGetComponent<TransformComponent>(sprite.Owner, out var spriteTransform))
+                if (!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                     continue;
 
-                DrawIcon(handle, sprite.Icon, spriteTransform.WorldPosition - 0.5f);
+                DrawIcon(args.WorldHandle, sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
             }
         }
 
@@ -65,7 +65,7 @@ namespace OpenDreamClient.Rendering {
 
             List<DMISpriteComponent> sprites = new();
             foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
-                if (!sprite.IsVisible(checkWorld: false)) continue;
+                if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager)) continue;
 
                 sprites.Add(sprite);
             }

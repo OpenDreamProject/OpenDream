@@ -3,7 +3,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamShared.Network.Messages
 {
-    public class MsgAckLoadInterface : NetMessage
+    public sealed class MsgAckLoadInterface : NetMessage
     {
         public override MsgGroups MsgGroup => MsgGroups.Core;
 

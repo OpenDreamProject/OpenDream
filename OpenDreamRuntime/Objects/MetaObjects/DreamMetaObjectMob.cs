@@ -1,10 +1,9 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectMob : DreamMetaObjectMovable {
+    sealed class DreamMetaObjectMob : DreamMetaObjectMovable {
         private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
         private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
 

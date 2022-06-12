@@ -12,44 +12,22 @@ namespace DMCompiler.DM {
         public int Id;
         public DreamPath Path;
         public DMObject Parent;
-        public Dictionary<string, List<DMProc>> Procs = new();
+        public Dictionary<string, List<int>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         public Dictionary<string, DMVariable> VariableOverrides = new(); //NOTE: The type of all these variables are null
         public Dictionary<string, int> GlobalVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
-        public DMProc InitializationProc = null;
+        public int? InitializationProc;
 
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
             Path = path;
             Parent = parent;
         }
-
-        public void CompileProcs() {
-            if (InitializationProcExpressions.Count > 0) {
-                CreateInitializationProc();
-
-                foreach (DMExpression expression in InitializationProcExpressions) {
-                    try {
-                        expression.EmitPushValue(this, InitializationProc);
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
-                    }
-                }
-            }
-
-            foreach (List<DMProc> procs in Procs.Values) {
-                foreach (DMProc proc in procs) {
-                    DMCompiler.VerbosePrint($"Compiling proc {Path}.{proc.Name}()");
-                    proc.Compile(this);
-                }
-            }
-        }
-
         public void AddProc(string name, DMProc proc) {
-            if (!Procs.ContainsKey(name)) Procs.Add(name, new List<DMProc>());
+            if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
-            Procs[name].Add(proc);
+            Procs[name].Add(proc.Id);
         }
 
         public DMVariable GetVariable(string name) {
@@ -65,15 +43,17 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
-        public List<DMProc> GetProcs(string name) {
+        public List<int> GetProcs(string name) {
             return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 
         public bool IsProcUnimplemented(string name) {
-            List<DMProc> procs = GetProcs(name);
+            List<int> procs = GetProcs(name);
 
             if (procs != null) {
-                foreach (DMProc proc in procs) {
+                foreach (int procId in procs)
+                {
+                    DMProc proc = DMObjectTree.AllProcs[procId];
                     if ((proc.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) return true;
                 }
             }
@@ -103,11 +83,20 @@ namespace DMCompiler.DM {
         }
 
         public void CreateInitializationProc() {
-            if (InitializationProc == null) {
-                InitializationProc = new DMProc(null);
+            if (InitializationProcExpressions.Count > 0 && InitializationProc == null)
+            {
+                var init = DMObjectTree.CreateDMProc(this, null);
+                InitializationProc = init.Id;
+                init.PushArguments(0);
+                init.Call(DMReference.SuperProc);
 
-                InitializationProc.PushArguments(0);
-                InitializationProc.Call(DMReference.SuperProc);
+                foreach (DMExpression expression in InitializationProcExpressions) {
+                    try {
+                        expression.EmitPushValue(this, init);
+                    } catch (CompileErrorException e) {
+                        DMCompiler.Error(e.Error);
+                    }
+                }
             }
         }
 
@@ -139,24 +128,15 @@ namespace DMCompiler.DM {
                 typeJson.GlobalVariables = GlobalVariables;
             }
 
-            if (InitializationProc != null) {
-                typeJson.InitProc = InitializationProc.GetJsonRepresentation();
+            if (InitializationProc != null)
+            {
+                typeJson.InitProc = InitializationProc;
             }
 
-            if (Procs.Count > 0) {
-                typeJson.Procs = new Dictionary<string, List<ProcDefinitionJson>>();
-
-                foreach (KeyValuePair<string, List<DMProc>> procs in Procs) {
-                    List<ProcDefinitionJson> procJson = new();
-
-                    foreach (DMProc proc in procs.Value) {
-                        procJson.Add(proc.GetJsonRepresentation());
-                    }
-
-                    typeJson.Procs.Add(procs.Key, procJson);
-                }
+            if (Procs.Count > 0)
+            {
+                typeJson.Procs = new List<List<int>>(Procs.Values);
             }
-
             return typeJson;
         }
 

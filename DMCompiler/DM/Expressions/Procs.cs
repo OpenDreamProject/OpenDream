@@ -24,8 +24,10 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
         }
 
-        public DMProc GetProc(DMObject dmObject) {
-            return dmObject.GetProcs(_identifier)?[^1];
+        public DMProc GetProc(DMObject dmObject)
+        {
+            var procId = dmObject.GetProcs(_identifier)?[^1];
+            return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
     }
 
@@ -108,8 +110,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-                DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}{targetProc.Name}() is not implemented"));
+            if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
+                DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
@@ -136,10 +138,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
-            {
-                DMCompiler.Warning(new CompilerWarning(Location, $"DMM overrides for expression {GetType()} are not implemented"));
-            }
+            DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
             return true; //TODO
         }
     }

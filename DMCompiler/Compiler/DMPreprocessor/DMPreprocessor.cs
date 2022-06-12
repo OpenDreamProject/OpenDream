@@ -64,6 +64,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         switch (Path.GetExtension(filePath)) {
+                            case ".dmp":
                             case ".dmm": {
                                 IncludedMaps.Add(filePath);
                                 break;

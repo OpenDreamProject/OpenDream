@@ -184,8 +184,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '/': {
                         switch (Advance()) {
                             case '/': {
-                                while (Advance() != '\n' && !AtEndOfSource) {
-                                }
+                                do {
+                                    Advance();
+
+                                    if (GetCurrent() == '\\' && Advance() == '\n') { //Line splice within a comment
+                                        do {
+                                            Advance();
+                                        } while (GetCurrent() is ' ' or '\t' or '\n');
+                                    }
+                                } while (GetCurrent() != '\n');
 
                                 token = CreateToken(TokenType.Skip, "//");
                                 break;
@@ -287,32 +294,39 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     }
                     case '#': {
-                        StringBuilder textBuilder = new StringBuilder(char.ToString(c));
-                        while ((IsAlphabetic(Advance()) ||GetCurrent() == '_' || GetCurrent() == '#') && !AtEndOfSource) {
+                        bool isConcat = (Advance() == '#');
+                        if (isConcat) Advance();
+
+                        // Whitespace after '#' is ignored
+                        while (GetCurrent() is ' ' or '\t') {
+                            Advance();
+                        }
+
+                        StringBuilder textBuilder = new StringBuilder();
+                        while (IsAlphabetic(GetCurrent()) || GetCurrent() == '_') {
                             textBuilder.Append(GetCurrent());
+                            Advance();
                         }
 
                         string text = textBuilder.ToString();
-                        switch (text) {
-                            case "#include": token = CreateToken(TokenType.DM_Preproc_Include, text); break;
-                            case "#define": token = CreateToken(TokenType.DM_Preproc_Define, text); break;
-                            case "#undef": token = CreateToken(TokenType.DM_Preproc_Undefine, text); break;
-                            case "#if": token = CreateToken(TokenType.DM_Preproc_If, text); break;
-                            case "#ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, text); break;
-                            case "#ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, text); break;
-                            case "#else": token = CreateToken(TokenType.DM_Preproc_Else, text); break;
-                            case "#endif": token = CreateToken(TokenType.DM_Preproc_EndIf, text); break;
-                            case "#error": token = CreateToken(TokenType.DM_Preproc_Error, text); break;
-                            case "#warn":
-                            case "#warning": token = CreateToken(TokenType.DM_Preproc_Warning, text); break;
-                            default: {
-                                if (text.StartsWith("##")) {
-                                    token = CreateToken(TokenType.DM_Preproc_TokenConcat, text, text.Substring(2));
-                                } else {
-                                    token = CreateToken(TokenType.DM_Preproc_ParameterStringify, text, text.Substring(1));
-                                }
-
-                                break;
+                        if (text == String.Empty) {
+                            token = CreateToken(TokenType.Skip, isConcat ? "##" : "#");
+                        } else if (isConcat) {
+                            token = CreateToken(TokenType.DM_Preproc_TokenConcat, $"##{text}", text);
+                        } else {
+                            switch (text) {
+                                case "warn":
+                                case "warning": token = CreateToken(TokenType.DM_Preproc_Warning, "#warn"); break;
+                                case "include": token = CreateToken(TokenType.DM_Preproc_Include, "#include"); break;
+                                case "define": token = CreateToken(TokenType.DM_Preproc_Define, "#define"); break;
+                                case "undef": token = CreateToken(TokenType.DM_Preproc_Undefine, "#undef"); break;
+                                case "if": token = CreateToken(TokenType.DM_Preproc_If, "#if"); break;
+                                case "ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, "#ifdef"); break;
+                                case "ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, "#ifndef"); break;
+                                case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
+                                case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
+                                case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
+                                default: token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text); break;
                             }
                         }
 

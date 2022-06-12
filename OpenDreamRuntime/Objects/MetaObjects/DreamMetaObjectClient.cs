@@ -1,12 +1,9 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectClient : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectClient : DreamMetaObjectRoot {
         public override bool ShouldCallNew => true;
 
         private Dictionary<DreamList, DreamObject> _screenListToClient = new();

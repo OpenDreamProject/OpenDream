@@ -1,11 +1,10 @@
 ﻿using OpenDreamShared.Interface;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlOutput : InterfaceControl {
+    sealed class ControlOutput : InterfaceControl {
         private OutputPanel _textBox;
         //private Border _border;
 

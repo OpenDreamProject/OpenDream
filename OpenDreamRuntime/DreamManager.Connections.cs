@@ -1,16 +1,14 @@
-using System.Collections.Generic;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.IoC;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime
 {
-    partial class DreamManager
+    sealed partial class DreamManager
     {
         [Dependency] private readonly IServerNetManager _netManager;
 
@@ -75,9 +73,11 @@ namespace OpenDreamRuntime
             switch (e.NewStatus)
             {
                 case SessionStatus.Connected:
-                    var msgLoadInterface = _netManager.CreateNetMessage<MsgLoadInterface>();
                     var interfaceResource = _dreamResourceManager.LoadResource(_compiledJson.Interface);
-                    msgLoadInterface.InterfaceText = interfaceResource.ReadAsString();
+                    var msgLoadInterface = new MsgLoadInterface() {
+                        InterfaceText = interfaceResource.ReadAsString()
+                    };
+
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);
                     break;
                 case SessionStatus.InGame:

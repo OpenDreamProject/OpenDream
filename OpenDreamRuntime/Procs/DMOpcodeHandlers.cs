@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -11,7 +9,6 @@ using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
@@ -129,6 +126,24 @@ namespace OpenDreamRuntime.Procs {
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
+        }
+
+        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
+        {
+            var count = state.ReadInt();
+
+            List<int> sizes = new List<int>(count);
+            for (var i = 0; i < count; i++)
+            {
+                state.Pop().TryGetValueAsInteger(out var size);
+                sizes.Add(size);
+            }
+
+            sizes.Reverse();
+            var list = DreamList.CreateMultidimensional(sizes);
+
+            state.Push(new DreamValue(list));
+            return null;
         }
 
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
@@ -1446,9 +1461,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsString(out string refString)) {
-                if (int.TryParse(refString, out var refId))
+                if(int.TryParse(refString, out var refID))
                 {
-                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refId)));
+                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+                }
+                else if (state.DreamManager.Tags.ContainsKey(refString))
+                {
+                    state.Push(new DreamValue(state.DreamManager.Tags[refString].First()));
                 }
                 else
                 {
@@ -1531,7 +1550,11 @@ namespace OpenDreamRuntime.Procs {
 
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
                     values = list.GetValues().ToArray();
-                } else {
+                } else if (value.Value is DreamProcArguments args)
+                {
+                    values = args.GetAllArguments().ToArray();
+                }
+                else {
                     state.Push(value);
                     return null;
                 }

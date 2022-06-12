@@ -3,11 +3,13 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.Graphics;
 using Robust.Shared.Map;
+using Robust.Shared.Physics;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    [ComponentReference(typeof(ILookupWorldBox2Component))]
+    sealed class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
@@ -29,11 +31,11 @@ namespace OpenDreamClient.Rendering {
             Icon.SetAppearance(state.AppearanceId);
         }
 
-        public Box2 GetWorldAABB(Vector2? worldPos = null, Angle? worldRot = null) {
-            return Icon.GetWorldAABB(worldPos);
+        public Box2 GetAABB(Transform transform) {
+            return Icon.GetWorldAABB(transform.Position);
         }
 
-        public bool IsVisible(bool checkWorld = true) {
+        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null) {
             if (Icon?.DMI == null) return false;
             if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
 
@@ -43,7 +45,8 @@ namespace OpenDreamClient.Rendering {
                 if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
                     return false;
 
-                EntityUid mapEntity = IoCManager.Resolve<IMapManager>().GetMapEntityId(transform.MapID);
+                IoCManager.Resolve(ref mapManager);
+                EntityUid mapEntity = mapManager.GetMapEntityId(transform.MapID);
                 if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
                     return false;
             }

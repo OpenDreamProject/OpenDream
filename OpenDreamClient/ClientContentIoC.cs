@@ -3,7 +3,6 @@ using OpenDreamClient.Input;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient {
     public static class ClientContentIoC {

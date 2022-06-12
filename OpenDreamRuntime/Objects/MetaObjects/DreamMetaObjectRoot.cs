@@ -1,7 +1,7 @@
-﻿using System;
-using OpenDreamRuntime.Procs;
+﻿using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
+    [Virtual]
     class DreamMetaObjectRoot : IDreamMetaObject {
         public virtual bool ShouldCallNew => false;
 

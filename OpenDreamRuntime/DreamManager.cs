@@ -20,11 +20,10 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
 
-        private DreamCompiledJson _compiledJson;
-
-        public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
@@ -38,6 +37,9 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Clients { get; set; } = new();
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
+        public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+
+        private DreamCompiledJson _compiledJson;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {
@@ -51,12 +53,17 @@ namespace OpenDreamRuntime {
 
             _dreamResourceManager.Initialize(jsonPath);
 
-            ObjectTree = new DreamObjectTree(json);
+            ObjectTree.LoadJson(json);
+
             SetMetaObjects();
 
-            if (_compiledJson.GlobalProcs != null) {
-                foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
+            if (_compiledJson.GlobalProcs != null)
+            {
+                GlobalProcs.EnsureCapacity(_compiledJson.GlobalProcs.Count);
+                foreach (var procId in _compiledJson.GlobalProcs)
+                {
+                    var proc = ObjectTree.Procs[procId];
+                    GlobalProcs.Add(proc.Name, proc);
                 }
             }
 
@@ -94,6 +101,7 @@ namespace OpenDreamRuntime {
 
         public void Update()
         {
+            _procScheduler.Process();
             UpdateStat();
         }
 

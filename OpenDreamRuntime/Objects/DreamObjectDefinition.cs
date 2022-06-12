@@ -1,41 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
-    public class DreamObjectDefinition {
+    public sealed class DreamObjectDefinition
+    {
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
         public DreamPath Type;
         public IDreamMetaObject MetaObject = null;
-        public DreamProc InitializionProc = null;
-        public readonly Dictionary<string, DreamProc> Procs = new();
-        public readonly Dictionary<string, DreamProc> OverridingProcs = new();
+        public int? InitializationProc;
+        public readonly Dictionary<string, int> Procs = new();
+        public readonly Dictionary<string, int> OverridingProcs = new();
         public readonly Dictionary<string, DreamValue> Variables = new();
         public readonly Dictionary<string, int> GlobalVariables = new();
 
         private DreamObjectDefinition _parentObjectDefinition = null;
 
-        public DreamObjectDefinition(DreamPath type) {
+        public DreamObjectDefinition(DreamPath type)
+        {
+            IoCManager.InjectDependencies(this);
             Type = type;
         }
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
+            IoCManager.InjectDependencies(this);
             Type = copyFrom.Type;
             MetaObject = copyFrom.MetaObject;
-            InitializionProc = copyFrom.InitializionProc;
+            InitializationProc = copyFrom.InitializationProc;
             _parentObjectDefinition = copyFrom._parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
             GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
-            Procs = new Dictionary<string, DreamProc>(copyFrom.Procs);
-            OverridingProcs = new Dictionary<string, DreamProc>(copyFrom.OverridingProcs);
+            Procs = new Dictionary<string, int>(copyFrom.Procs);
+            OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
         }
 
         public DreamObjectDefinition(DreamPath type, DreamObjectDefinition parentObjectDefinition) {
+            IoCManager.InjectDependencies(this);
             Type = type;
-            InitializionProc = parentObjectDefinition.InitializionProc;
+            InitializationProc = parentObjectDefinition.InitializationProc;
             _parentObjectDefinition = parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(parentObjectDefinition.Variables);
@@ -46,27 +50,26 @@ namespace OpenDreamRuntime.Objects {
             Variables[variableName] = value;
         }
 
-        public void SetProcDefinition(string procName, DreamProc proc) {
-            if (HasProc(procName)) {
+        public void SetProcDefinition(string procName, int procId) {
+            if (HasProc(procName))
+            {
+                var proc = _dreamMan.ObjectTree.Procs[procId];
                 proc.SuperProc = GetProc(procName);
-                OverridingProcs[procName] = proc;
+                OverridingProcs[procName] = procId;
             } else {
-                Procs[procName] = proc;
+                Procs[procName] = procId;
             }
         }
 
-        public void SetNativeProc(NativeProc.HandlerFn func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
-
-            SetProcDefinition(name, proc);
+        public void SetNativeProc(NativeProc.HandlerFn func)
+        {
+            var proc = _dreamMan.ObjectTree.CreateNativeProc(func, out var procId);
+            SetProcDefinition(proc.Name, procId);
         }
 
         public void SetNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
-
-            SetProcDefinition(name, proc);
+            var proc = _dreamMan.ObjectTree.CreateAsyncNativeProc(func, out var procId);
+            SetProcDefinition(proc.Name, procId);
         }
 
         public DreamProc GetProc(string procName) {
@@ -78,13 +81,18 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool TryGetProc(string procName, out DreamProc proc) {
-            if (OverridingProcs.TryGetValue(procName, out proc)) {
+            if (OverridingProcs.TryGetValue(procName, out var procId))
+            {
+                proc = _dreamMan.ObjectTree.Procs[procId];
                 return true;
-            } else if (Procs.TryGetValue(procName, out proc)) {
+            } else if (Procs.TryGetValue(procName, out procId)) {
+                proc = _dreamMan.ObjectTree.Procs[procId];
                 return true;
             } else if (_parentObjectDefinition != null) {
                 return _parentObjectDefinition.TryGetProc(procName, out proc);
-            } else {
+            } else
+            {
+                proc = null;
                 return false;
             }
         }

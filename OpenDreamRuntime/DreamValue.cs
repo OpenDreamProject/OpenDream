@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
@@ -321,7 +320,7 @@ namespace OpenDreamRuntime {
         }
     }
 
-    public class DreamValueJsonConverter : JsonConverter<DreamValue> {
+    public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
         public override void Write(Utf8JsonWriter writer, DreamValue value, JsonSerializerOptions options) {
             writer.WriteStartObject();
             writer.WriteNumber("Type", (int)value.Type);

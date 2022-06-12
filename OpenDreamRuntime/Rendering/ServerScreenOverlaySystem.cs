@@ -2,13 +2,9 @@
 using OpenDreamShared.Rendering;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System.Collections.Generic;
 
 namespace OpenDreamRuntime.Rendering {
-
-    class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
+    sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
         [Dependency] IAtomManager _atomManager = default!;
 
         private Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();

@@ -96,7 +96,9 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Proc,
             TokenType.DM_Step,
             TokenType.DM_Throw,
-            TokenType.DM_Null
+            TokenType.DM_Null,
+            TokenType.DM_Switch,
+            TokenType.DM_Spawn
         };
 
         public DMASTFile File() {
@@ -111,8 +113,9 @@ namespace DMCompiler.Compiler.DM {
                 } catch (CompileErrorException) { }
 
                 if (Current().Type != TokenType.EndOfFile) {
-                    Warning("Error recovery had to skip to the next top-level statement");
+                    Token skipFrom = Current();
                     LocateNextTopLevel();
+                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
                 }
             }
 
@@ -161,6 +164,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
+                        DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                         BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
                         BracketWhitespace();
@@ -184,6 +188,7 @@ namespace DMCompiler.Compiler.DM {
                         DMASTBlockInner block = Block();
 
                         if (block != null) {
+                            DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                             statement = new DMASTObjectDefinition(loc, _currentPath, block);
                         }
                     }
@@ -200,6 +205,8 @@ namespace DMCompiler.Compiler.DM {
                             PathArray(ref varPath, out value);
 
                             if (Check(TokenType.DM_Equals)) {
+                                if (value != null) Warning("List doubly initialized");
+
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
@@ -241,6 +248,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Empty object definition
                     if (statement == null) {
+                        DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 
@@ -307,26 +315,39 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
-            //TODO: Multidimensional lists
             implied_value = null;
-            if (Check(TokenType.DM_LeftBracket))
+            if (Current().Type == TokenType.DM_LeftBracket)
             {
                 var loc = Current().Location;
-                if (!path.IsDescendantOf(DreamPath.List)) {
+                // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
+                if (!path.Elements[..^1].Contains("list")) {
                     var elements = path.Elements.ToList();
                     elements.Insert(elements.IndexOf("var") + 1, "list");
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                Whitespace();
-                DMASTExpression size = Expression();
-                ConsumeRightBracket();
-                Whitespace();
+                List<DMASTExpression> sizes = new List<DMASTExpression>(2); // Most common is 1D or 2D lists
 
-                if (size is not null) {
-                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
-                        new[] { new DMASTCallParameter(loc, size) });
+                while (Check(TokenType.DM_LeftBracket))
+                {
+                    Whitespace();
+
+                    var size = Expression();
+                    if (size is not null)
+                    {
+                        sizes.Add(size);
+                    }
+
+                    ConsumeRightBracket();
+                    Whitespace();
                 }
+
+                if (sizes.Count > 0)
+                {
+                    DMASTExpression[] expressions = sizes.ToArray();
+                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
+                }
+
                 return true;
             }
             return false;
@@ -478,8 +499,6 @@ namespace DMCompiler.Compiler.DM {
                     if (statement != null) {
                         Whitespace();
                         procStatements.Add(statement);
-                    } else {
-                        if (procStatements.Count == 0) return null;
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -491,6 +510,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
+            if (procStatements.Count == 0) return null;
             return procStatements;
         }
 
@@ -660,8 +680,6 @@ namespace DMCompiler.Compiler.DM {
                 PathArray(ref varPath.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
-                    if (value != null) Warning("List doubly initialized");
-
                     Whitespace();
                     value = Expression();
 
@@ -831,7 +849,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
                 Token afterIfBody = Current();
-                bool newLineAfterIf = Newline();
+                bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
                 if (Check(TokenType.DM_Else)) {
                     Whitespace();
@@ -1889,9 +1907,11 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
-            if (allowParentheses && Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
+            if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
+            {
+                BracketWhitespace();
                 DMASTExpression inner = Expression();
+                BracketWhitespace();
                 ConsumeRightParenthesis();
 
                 return inner;
@@ -1918,7 +1938,8 @@ namespace DMCompiler.Compiler.DM {
 
                         while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
                         Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        Newline(); //The lexer tosses in a newline after }
+                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                        Check(TokenType.Newline);
                     }
                 }
             }

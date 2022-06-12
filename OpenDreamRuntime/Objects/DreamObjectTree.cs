@@ -1,17 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects {
-    public class DreamObjectTree {
-        public class TreeEntry {
+    public sealed class DreamObjectTree {
+        public sealed class TreeEntry {
             public DreamPath Path;
             public DreamObjectDefinition ObjectDefinition;
             public TreeEntry ParentEntry;
@@ -23,13 +23,17 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry[] Types;
+        public List<DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
 
-        public DreamObjectTree(DreamCompiledJson json) {
+        public void LoadJson(DreamCompiledJson json)
+        {
             Strings = json.Strings;
 
+            // Load procs first so types can set their init proc's super proc
+            LoadProcsFromJson(json.Procs);
             LoadTypesFromJson(json.Types);
         }
 
@@ -192,15 +196,25 @@ namespace OpenDreamRuntime.Objects {
                 type.ObjectDefinition = definition;
 
                 LoadVariablesFromJson(definition, jsonType);
-                if (jsonType.Procs != null) {
-                    LoadProcsFromJson(definition, jsonType.Procs);
+
+                if (jsonType.Procs != null)
+                {
+                    foreach (var procList in jsonType.Procs)
+                    {
+                        foreach (var procId in procList)
+                        {
+                            var proc = Procs[procId];
+                            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
+                        }
+                    }
                 }
 
-                if (jsonType.InitProc != null) {
-                    var initProc = new DMProc($"{type.Path}/(init)", null, null, null, jsonType.InitProc.Bytecode, jsonType.InitProc.MaxStackSize, jsonType.InitProc.Attributes, jsonType.InitProc.VerbName, jsonType.InitProc.VerbCategory, jsonType.InitProc.VerbDesc, jsonType.InitProc.Invisibility);
-
-                    initProc.SuperProc = definition.InitializionProc;
-                    definition.InitializionProc = initProc;
+                if (jsonType.InitProc != null)
+                {
+                    var initProc = Procs[jsonType.InitProc.Value];
+                    if(definition.InitializationProc != null)
+                        initProc.SuperProc = Procs[definition.InitializationProc.Value];
+                    definition.InitializationProc = jsonType.InitProc.Value;
                 }
             }
 
@@ -230,7 +244,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamProc LoadProcJson(string procName, ProcDefinitionJson procDefinition) {
+        public DreamProc LoadProcJson(ProcDefinitionJson procDefinition) {
             byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
             List<string> argumentNames = new();
             List<DMValueType> argumentTypes = new();
@@ -245,17 +259,34 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            return new DMProc(procName, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            return new DMProc(procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
-        private void LoadProcsFromJson(DreamObjectDefinition objectDefinition, Dictionary<string, List<ProcDefinitionJson>> jsonProcs) {
-            foreach (KeyValuePair<string, List<ProcDefinitionJson>> jsonProc in jsonProcs) {
-                string procName = $"{objectDefinition.Type}/{jsonProc.Key}";
-
-                foreach (ProcDefinitionJson procDefinition in jsonProc.Value) {
-                    objectDefinition.SetProcDefinition(jsonProc.Key, LoadProcJson(procName, procDefinition));
-                }
+        private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs)
+        {
+            Procs = new(jsonProcs.Length);
+            foreach (var proc in jsonProcs)
+            {
+                Procs.Add(LoadProcJson(proc));
             }
+        }
+
+        public NativeProc CreateNativeProc(NativeProc.HandlerFn func, out int procId)
+        {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+            procId = Procs.Count;
+            Procs.Add(proc);
+            return proc;
+        }
+
+        public AsyncNativeProc CreateAsyncNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func, out int procId)
+        {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
+            procId = Procs.Count;
+            Procs.Add(proc);
+            return proc;
         }
     }
 }

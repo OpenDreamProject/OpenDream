@@ -195,7 +195,7 @@ namespace OpenDreamRuntime.Procs {
                                 else
                                 {
                                     state.DreamManager.ObjectTree.Strings.Add(refStr);
-                                    formattedString.Append(state.DreamManager.ObjectTree.Strings.Count);
+                                    formattedString.Append(state.DreamManager.ObjectTree.Strings.Count - 1);
                                 }
                             }
                             else

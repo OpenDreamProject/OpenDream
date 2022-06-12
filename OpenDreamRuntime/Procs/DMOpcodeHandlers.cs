@@ -1329,7 +1329,21 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.Pop();
-            DreamResource file = state.Pop().GetValueAsDreamResource();
+            var value = state.Pop();
+            DreamResource file;
+            if (!value.TryGetValueAsDreamResource(out file))
+            {
+                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon))
+                {
+                    // TODO Only load the correct state/dir
+                    file = IoCManager.Resolve<DreamResourceManager>()
+                        .LoadResource(DreamMetaObjectIcon.ObjectToDreamIcon[icon].Icon);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             DreamObject client;

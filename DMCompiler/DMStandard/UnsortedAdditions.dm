@@ -1,7 +1,7 @@
 ﻿
-/proc/addtext(...)
-	set opendream_unimplemented = TRUE
 /proc/bounds(Ref=src, Dist=0)
+	set opendream_unimplemented = TRUE
+/proc/obounds(Ref=src, Dist=0)
 	set opendream_unimplemented = TRUE
 /proc/bounds_dist(Ref, Target)
 	set opendream_unimplemented = TRUE

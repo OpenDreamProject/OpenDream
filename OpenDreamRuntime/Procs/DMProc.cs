@@ -1,4 +1,3 @@
-using System;
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
@@ -125,7 +124,10 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareEquivalent,
             DMOpcodeHandlers.CompareNotEquivalent,
             DMOpcodeHandlers.Throw,
-            DMOpcodeHandlers.IsInRange
+            DMOpcodeHandlers.IsInRange,
+            DMOpcodeHandlers.MassConcatenation,
+            DMOpcodeHandlers.CreateTypeEnumerator,
+            DMOpcodeHandlers.CreateMultidimensionalList
         };
         #endregion
 
@@ -150,7 +152,7 @@ namespace OpenDreamRuntime.Procs {
             _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
-            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames.Count);
+            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             Arguments = _dreamValuePool.Rent(ArgumentCount);
             LocalVariables = _dreamValuePool.Rent(256);
 
@@ -162,7 +164,7 @@ namespace OpenDreamRuntime.Procs {
 
             //Named arguments
             foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
                 if (argumentIndex == -1) {
                     throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }
@@ -181,7 +183,6 @@ namespace OpenDreamRuntime.Procs {
             _proc = other._proc;
             Instance = other.Instance;
             Usr = other.Usr;
-            Arguments = other.Arguments;
             _pc = other._pc;
 
             _stack = _stackPool.Rent(other._stack.Length);
@@ -189,6 +190,9 @@ namespace OpenDreamRuntime.Procs {
 
             LocalVariables = _dreamValuePool.Rent(256);
             Array.Copy(other.LocalVariables, LocalVariables, 256);
+
+            Arguments = _dreamValuePool.Rent(other.Arguments.Length);
+            Array.Copy(other.Arguments, Arguments, other.Arguments.Length);
         }
 
         protected override ProcStatus InternalResume()
@@ -353,16 +357,16 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: Arguments[reference.ArgumentId] = value; break;
-                case DMReference.Type.Local: LocalVariables[reference.LocalId] = value; break;
-                case DMReference.Type.SrcField: Instance.SetVariable(reference.FieldName, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.GlobalId] = value; break;
+                case DMReference.Type.Argument: Arguments[reference.Index] = value; break;
+                case DMReference.Type.Local: LocalVariables[reference.Index] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{reference.FieldName}\" on {owner}");
+                        throw new Exception($"Cannot assign field \"{reference.Name}\" on {owner}");
 
-                    ownerObj.SetVariable(reference.FieldName, value);
+                    ownerObj.SetVariable(reference.Name, value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
@@ -383,9 +387,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Src: return new(Instance);
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
-                case DMReference.Type.Global: return DreamManager.Globals[reference.GlobalId];
-                case DMReference.Type.Argument: return Arguments[reference.ArgumentId];
-                case DMReference.Type.Local: return LocalVariables[reference.LocalId];
+                case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
+                case DMReference.Type.Argument: return Arguments[reference.Index];
+                case DMReference.Type.Local: return LocalVariables[reference.Index];
                 case DMReference.Type.Args: {
                     DreamList argsList = DreamList.Create(ArgumentCount);
 
@@ -410,15 +414,15 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot get field \"{reference.FieldName}\" from {owner}");
-                    if (!ownerObj.TryGetVariable(reference.FieldName, out var fieldValue))
-                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                    if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
+                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;
                 }
                 case DMReference.Type.SrcField: {
-                    if (!Instance.TryGetVariable(reference.FieldName, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.FieldName}\"");
+                    if (!Instance.TryGetVariable(reference.Name, out var fieldValue))
+                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;
                 }

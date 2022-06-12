@@ -27,6 +27,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) { throw new NotImplementedException(); }
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
+        public void VisitProcStatementForType(DMASTProcStatementForType statementForType) { throw new NotImplementedException(); }
         public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) { throw new NotImplementedException(); }
         public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
         public void VisitProcStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {throw new NotImplementedException(); }
@@ -52,6 +53,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitStringFormat(DMASTStringFormat stringFormat) { throw new NotImplementedException(); }
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
+        public void VisitAddText(DMASTAddText input) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -63,6 +65,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newMultidimensionalList) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
         public void VisitNewListIndex(DMASTNewListIndex newListIndex) { throw new NotImplementedException(); }
@@ -524,6 +527,19 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    // for(var/client/C) & similar
+    public class DMASTProcStatementForType : DMASTProcStatementFor {
+        public DMASTIdentifier Variable;
+
+        public DMASTProcStatementForType(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTProcBlockInner body) : base(location, initializer, body) {
+            Variable = variable;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForType(this);
+        }
+    }
+
     public class DMASTProcStatementForRange : DMASTProcStatementFor {
         public DMASTIdentifier Variable;
         public DMASTExpression RangeStart, RangeEnd, Step;
@@ -855,14 +871,29 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTNewList : DMASTExpression {
+    public class DMASTAddText : DMASTExpression {
         public DMASTCallParameter[] Parameters;
 
-        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location) {
+        public DMASTAddText(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
         public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAddText(this);
+        }
+    }
+
+    public class DMASTNewList : DMASTExpression
+    {
+        public DMASTCallParameter[] Parameters;
+
+        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location)
+        {
+            Parameters = parameters;
+        }
+
+        public override void Visit(DMASTVisitor visitor)
+        {
             visitor.VisitNewList(this);
         }
     }
@@ -1020,6 +1051,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewPath(this);
+        }
+    }
+
+    public class DMASTNewMultidimensionalList : DMASTExpression {
+        public DMASTExpression[] Dimensions;
+
+        public DMASTNewMultidimensionalList(Location location, DMASTExpression[] dimensions) : base(location) {
+            Dimensions = dimensions;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitNewMultidimensionalList(this);
         }
     }
 

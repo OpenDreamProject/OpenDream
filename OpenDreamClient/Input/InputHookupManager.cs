@@ -5,18 +5,12 @@ using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.Player;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Input;
-using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 using Robust.Shared.Timing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace OpenDreamClient.Input {
-    public class InputHookupManager : EntitySystem {
+    public sealed class InputHookupManager : EntitySystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -24,7 +18,7 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IBaseClient _baseClient = default!;
-        [Dependency] private readonly IEntityLookup _entityLookup = default!;
+        [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
         public override void Initialize() {
             _inputManager.KeyBindStateChanged += OnKeyBindStateChanged;
@@ -94,7 +88,7 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid? GetEntityOnMap(MapCoordinates coords) {
-            IEnumerable<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
+            IEnumerable<EntityUid> entities = _lookupSystem.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
 
             var foundSprites = new List<DMISpriteComponent>();
             foreach (EntityUid entity in entities) {

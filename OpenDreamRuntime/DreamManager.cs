@@ -20,11 +20,10 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
 
-        private DreamCompiledJson _compiledJson;
-
-        public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
@@ -35,29 +34,39 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
+        public List<DreamObject> Clients { get; set; } = new();
+        public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
+        public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+
+        private DreamCompiledJson _compiledJson;
 
         public TrustLevel TrustLevel { get; private set; } = TrustLevel.Ultrasafe;
 
-        public void Initialize()
-        {
+        //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
+        public void Initialize(string jsonPath) {
             LoadTrustLevel();
             InitializeConnectionManager();
 
-            DreamCompiledJson json = LoadJson();
+            DreamCompiledJson json = LoadJson(jsonPath);
             if (json == null)
                 return;
 
             _compiledJson = json;
 
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.Initialize(jsonPath);
 
-            ObjectTree = new DreamObjectTree(json);
+            ObjectTree.LoadJson(json);
+
             SetMetaObjects();
 
-            if (_compiledJson.GlobalProcs != null) {
-                foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
+            if (_compiledJson.GlobalProcs != null)
+            {
+                GlobalProcs.EnsureCapacity(_compiledJson.GlobalProcs.Count);
+                foreach (var procId in _compiledJson.GlobalProcs)
+                {
+                    var proc = ObjectTree.Procs[procId];
+                    GlobalProcs.Add(proc.Name, proc);
                 }
             }
 
@@ -110,11 +119,12 @@ namespace OpenDreamRuntime {
 
         public void Update()
         {
+            _procScheduler.Process();
             UpdateStat();
         }
 
-        private DreamCompiledJson LoadJson() {
-            string jsonPath = _configManager.GetCVar<string>(OpenDreamCVars.JsonPath);
+        private DreamCompiledJson? LoadJson(string? jsonPath)
+        {
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
                 Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
@@ -138,6 +148,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
+            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
         }
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
@@ -154,7 +165,7 @@ namespace OpenDreamRuntime {
             GlobalProcs[name] = proc;
         }
 
-        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info)
+        public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log")
         {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc))
             {
@@ -165,14 +176,14 @@ namespace OpenDreamRuntime {
 
             if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
             {
-                Logger.LogS(level, "world.log", message);
+                Logger.LogS(level, sawmill, message);
             }
             else
             {
-                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] world.log: {message}"));
+                logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] {sawmill}: {message}"));
                 if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
                 {
-                    Logger.LogS(level, "world.log", message);
+                    Logger.LogS(level, sawmill, message);
                 }
             }
         }

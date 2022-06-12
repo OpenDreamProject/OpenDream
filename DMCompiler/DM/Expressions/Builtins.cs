@@ -77,6 +77,22 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    sealed class NewMultidimensionalList : DMExpression {
+        DMExpression[] Expressions;
+
+        public NewMultidimensionalList(Location location, DMExpression[] expressions) : base(location) {
+            Expressions = expressions;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            foreach (var expr in Expressions)
+            {
+                expr.EmitPushValue(dmObject, proc);
+            }
+            proc.CreateMultidimensionalList(Expressions.Length);
+        }
+    }
+
     // locate()
     class LocateInferred : DMExpression {
         DreamPath _path;
@@ -193,12 +209,43 @@ namespace DMCompiler.DM.Expressions {
 
                 proc.PickWeighted(_values.Length);
             } else {
-                foreach (PickValue pickValue in _values) {
-                    pickValue.Value.EmitPushValue(dmObject, proc);
+                foreach (PickValue pickValue in _values)
+                {
+                    if (pickValue.Value is Arglist args)
+                    {
+                        args.EmitPushArglist(dmObject, proc);
+                    }
+                    else
+                    {
+                        pickValue.Value.EmitPushValue(dmObject, proc);
+                    }
                 }
 
                 proc.PickUnweighted(_values.Length);
             }
+        }
+    }
+
+    // addtext(...)
+    // https://www.byond.com/docs/ref/#/proc/addtext
+    class AddText : DMExpression
+    {
+        readonly DMExpression[] parameters;
+        public AddText(Location location, DMExpression[] paras) : base(location)
+        {
+            parameters = paras;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc)
+        {
+            //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
+
+            //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
+            for (int i = parameters.Length - 1; i >= 0; i--)
+            {
+                parameters[i].EmitPushValue(dmObject, proc);
+            }
+            proc.MassConcatenation(parameters.Length);
         }
     }
 
@@ -222,10 +269,10 @@ namespace DMCompiler.DM.Expressions {
                 case Local:
                     proc.PushFloat(0);
                     return;
-                case ListIndex:
+                case ListIndex idx:
                     proc.PushFloat(0);
-                    // Silent in BYOND
-                    DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
+                    //TODO Support "vars" properly
+                    idx.IsSaved();
                     return;
                 default:
                     throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
@@ -362,10 +409,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
-            {
-                DMCompiler.Warning(new CompilerWarning(Location, "DMM overrides for newlist() are not implemented"));
-            }
+            DMCompiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
             return true; //TODO
         }
     }

@@ -34,8 +34,40 @@ namespace OpenDreamRuntime.Objects {
         public static DreamList Create(string[] collection) {
             var list = new DreamList(collection.Length);
 
-            foreach (object value in collection) {
+            foreach (string value in collection) {
                 list._values.Add(new DreamValue(value));
+            }
+
+            return list;
+        }
+
+        public static DreamList Create(List<DreamObject> collection) {
+            var list = new DreamList(collection.Count);
+
+            foreach (DreamObject value in collection) {
+                list._values.Add(new DreamValue(value));
+            }
+
+            return list;
+        }
+
+        public static DreamList CreateMultidimensional(List<int> dimensions)
+        {
+            var list = new DreamList(dimensions[0]);
+
+            if (dimensions.Count > 1)
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(new DreamValue(CreateMultidimensional(dimensions.GetRange(1, dimensions.Count - 1))));
+                }
+            }
+            else
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(DreamValue.Null);
+                }
             }
 
             return list;

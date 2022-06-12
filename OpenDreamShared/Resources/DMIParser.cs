@@ -22,7 +22,7 @@ namespace OpenDreamShared.Resources {
             AtomDirection.Northwest
         };
 
-        public class ParsedDMIDescription {
+        public sealed class ParsedDMIDescription {
             public string Source;
             public float Version;
             public int Width, Height;
@@ -55,7 +55,7 @@ namespace OpenDreamShared.Resources {
             }
         }
 
-        public class ParsedDMIState {
+        public sealed class ParsedDMIState {
             public string Name;
             public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
             public bool Loop = true;
@@ -68,7 +68,7 @@ namespace OpenDreamShared.Resources {
             }
         }
 
-        public class ParsedDMIFrame {
+        public sealed class ParsedDMIFrame {
             public int X, Y;
             public float Delay;
         }

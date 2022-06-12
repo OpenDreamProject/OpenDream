@@ -1,6 +1,5 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
@@ -116,6 +115,10 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObjectDefinition regex = objectTree.GetObjectDefinition(DreamPath.Regex);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Find);
             regex.SetNativeProc(DreamProcNativeRegex.NativeProc_Replace);
+
+            DreamObjectDefinition icon = objectTree.GetObjectDefinition(DreamPath.Icon);
+            icon.SetNativeProc(DreamProcNativeIcon.NativeProc_Width);
+            icon.SetNativeProc(DreamProcNativeIcon.NativeProc_Height);
 
             //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
             //savefile.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);

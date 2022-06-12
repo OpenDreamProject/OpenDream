@@ -3,7 +3,7 @@ using Robust.Shared.Network;
 
 namespace OpenDreamShared.Network.Messages
 {
-    public class MsgRequestResource : NetMessage
+    public sealed class MsgRequestResource : NetMessage
     {
         public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
 

@@ -1,11 +1,13 @@
-﻿using Robust.Shared.GameObjects;
+﻿using Robust.Shared.Analyzers;
+using Robust.Shared.GameObjects;
 using Robust.Shared.Serialization;
 using System;
 
 namespace OpenDreamShared.Input {
+    [Virtual]
     public class SharedMouseInputSystem : EntitySystem {
         [Serializable, NetSerializable]
-        public class EntityClickedEvent : EntityEventArgs {
+        public sealed class EntityClickedEvent : EntityEventArgs {
             public EntityUid EntityUid { get; }
             public bool Shift { get; }
             public bool Ctrl { get; }

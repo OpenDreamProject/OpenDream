@@ -4,16 +4,13 @@ using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
-using Robust.Shared;
 using Robust.Shared.Configuration;
-using Robust.Shared.Maths;
 
 namespace OpenDreamClient.States.Connecting
 {
     [GenerateTypedNameReferences]
-    public partial class ConnectingControl : Control
+    public sealed partial class ConnectingControl : Control
     {
-
         public ConnectingControl(IResourceCache resCache, IConfigurationManager configMan)
         {
 

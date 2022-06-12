@@ -439,8 +439,8 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                    DMCompiler.Warning(new CompilerWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior"));
+                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                    DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {
                 Result = new Expressions.Dereference(dereference.Location, null, expr, dereference.Conditional, dereference.Property);
@@ -455,6 +455,17 @@ namespace DMCompiler.DM.Visitors {
         public void VisitNewPath(DMASTNewPath newPath) {
             var args = new ArgumentList(newPath.Location, _dmObject, _proc, newPath.Parameters, _inferredPath);
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
+        }
+
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList)
+        {
+            DMExpression[] expressions = new DMExpression[newList.Dimensions.Length];
+            for (int i = 0; i < newList.Dimensions.Length; i++)
+            {
+                expressions[i] = DMExpression.Create(_dmObject, _proc, newList.Dimensions[i], _inferredPath);
+            }
+
+            Result = new Expressions.NewMultidimensionalList(newList.Location, expressions);
         }
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
@@ -562,6 +573,19 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.NewList(newList.Location, expressions);
+        }
+
+        public void VisitAddText(DMASTAddText addText) {
+            if (addText.Parameters.Length < 2) throw new CompileErrorException(addText.Location, "Invalid addtext() parameter count; expected 2 or more arguments");
+            DMExpression[] exp_arr = new DMExpression[addText.Parameters.Length];
+            for (int i = 0; i < exp_arr.Length; i++)
+            {
+                DMASTCallParameter parameter = addText.Parameters[i];
+                if(parameter.Name != null)
+                    throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
+                exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
+            }
+            Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
         public void VisitInput(DMASTInput input) {

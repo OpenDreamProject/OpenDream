@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Web;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Input;
 using Robust.Server.Player;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Input {
-    class MouseInputSystem : SharedMouseInputSystem {
+    sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private IAtomManager _atomManager = default!;
-        [Dependency] private IEntityManager _entityManager = default!;
         [Dependency] private IDreamManager _dreamManager = default!;
 
         public override void Initialize() {

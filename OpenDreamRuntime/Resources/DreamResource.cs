@@ -2,8 +2,8 @@
 using System.Text;
 
 namespace OpenDreamRuntime.Resources {
-    public class DreamResource
-    {
+    [Virtual]
+    public class DreamResource {
         [Dependency] private readonly DreamResourceManager _rscMan = default!;
 
         public string ResourcePath;

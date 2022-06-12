@@ -1,14 +1,14 @@
 ﻿using OpenDreamShared.Interface;
 using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Manager.Result;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface
 {
+    [Virtual]
     public class InterfaceElement {
         public string Name { get => ElementDescriptor.Name; }
 
-        protected readonly ElementDescriptor ElementDescriptor;
+        protected ElementDescriptor ElementDescriptor;
 
         public InterfaceElement(ElementDescriptor elementDescriptor) {
             ElementDescriptor = elementDescriptor;
@@ -16,8 +16,13 @@ namespace OpenDreamClient.Interface
 
         public void PopulateElementDescriptor(MappingDataNode node, ISerializationManager serializationManager)
         {
-            var result = (IDeserializedDefinition)serializationManager.Read(ElementDescriptor.GetType(), node);
-            serializationManager.PopulateDataDefinition(ElementDescriptor, result);
+            MappingDataNode original = (MappingDataNode)serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
+            foreach (var key in node.Keys) {
+                original.Remove(key);
+            }
+
+            MappingDataNode newNode = original.Merge(node);
+            ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
             UpdateElementDescriptor();
         }
 

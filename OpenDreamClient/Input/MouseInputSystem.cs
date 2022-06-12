@@ -1,12 +1,10 @@
 ﻿using OpenDreamShared.Input;
 using Robust.Client.Input;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
-using Robust.Shared.IoC;
 
 namespace OpenDreamClient.Input {
-    class MouseInputSystem : SharedMouseInputSystem {
+    sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
 
         public override void Initialize() {

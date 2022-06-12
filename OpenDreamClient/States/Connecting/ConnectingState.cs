@@ -1,14 +1,11 @@
-using Robust.Client;
 using Robust.Client.ResourceManagement;
 using Robust.Client.State;
 using Robust.Client.UserInterface;
 using Robust.Shared.Configuration;
-using Robust.Shared.IoC;
-using Robust.Shared.Network;
 
 namespace OpenDreamClient.States.Connecting
 {
-    public class ConnectingState : State
+    public sealed class ConnectingState : State
     {
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IResourceCache _resourceCache = default!;

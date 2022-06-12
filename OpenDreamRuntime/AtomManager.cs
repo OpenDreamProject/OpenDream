@@ -1,15 +1,11 @@
-﻿using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Map;
-using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime {
-    class AtomManager : IAtomManager {
+    sealed class AtomManager : IAtomManager {
         //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();

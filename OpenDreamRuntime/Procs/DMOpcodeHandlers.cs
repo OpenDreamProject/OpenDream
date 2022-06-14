@@ -1490,6 +1490,7 @@ namespace OpenDreamRuntime.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 if(int.TryParse(refString, out var refID))
                 {
+                    // TODO: This impl. isn't entirely correct, but refs aren't implemented like BYOND's yet
                     var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
                     if (obj is null && state.DreamManager.ObjectTree.Strings.Count > refID)
                     {

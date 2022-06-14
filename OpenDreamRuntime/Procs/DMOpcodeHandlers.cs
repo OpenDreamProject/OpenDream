@@ -1490,7 +1490,15 @@ namespace OpenDreamRuntime.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 if(int.TryParse(refString, out var refID))
                 {
-                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+                    var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
+                    if (obj is null && state.DreamManager.ObjectTree.Strings.Count > refID)
+                    {
+                        state.Push(new DreamValue(state.DreamManager.ObjectTree.Strings[refID]));
+                    }
+                    else
+                    {
+                        state.Push(obj is null ? DreamValue.Null : new DreamValue(obj));
+                    }
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))
                 {

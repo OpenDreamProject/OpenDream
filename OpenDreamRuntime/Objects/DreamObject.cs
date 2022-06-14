@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Objects {
             return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
-        public static DreamObject GetFromReferenceID(IDreamManager manager, int refID) {
+        public static DreamObject? GetFromReferenceID(IDreamManager manager, int refID) {
             foreach (KeyValuePair<DreamObject, int> referenceIDPair in manager.ReferenceIDs) {
                 if (referenceIDPair.Value == refID) return referenceIDPair.Key;
             }

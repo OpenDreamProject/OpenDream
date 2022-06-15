@@ -1742,7 +1742,7 @@ public static ProcStatus? PickUnweighted(DMProcState state) {
                 case DreamValue.DreamValueType.Float when second.Value == null:
                     return first.GetValueAsFloat() < 0;
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    return string.Compare(first.GetValueAsString(), second.GetValueAsString()) < 0;
+                    return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) < 0;
                 default: {
                     if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                         return 0 < second.GetValueAsFloat();

@@ -792,7 +792,15 @@ namespace OpenDreamRuntime.Procs.Native {
                 case JsonValueKind.String:
                     return new DreamValue(jsonElement.GetString());
                 case JsonValueKind.Number:
-                    return new DreamValue(jsonElement.GetUInt32());
+                    if (!jsonElement.TryGetSingle(out float floatValue)) {
+                        throw new Exception("Invalid number " + jsonElement);
+                    }
+                    
+                    return new DreamValue(floatValue);
+                case JsonValueKind.True:
+                    return new DreamValue(1);
+                case JsonValueKind.False:
+                    return new DreamValue(0);
                 case JsonValueKind.Null:
                     return DreamValue.Null;
                 default:

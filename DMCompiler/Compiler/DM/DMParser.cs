@@ -2155,7 +2155,7 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     if (Check(DereferenceTypes)) {
-                        if (expression is DMASTConstantString && token.Type == TokenType.DM_Colon)
+                        if (expression is DMASTExpressionConstant && token.Type == TokenType.DM_Colon)
                         {
                             //Not a valid dereference, but could still be a part of a ternary, so abort
                             ReuseToken(token);

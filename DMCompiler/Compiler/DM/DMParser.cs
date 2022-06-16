@@ -2061,9 +2061,9 @@ namespace DMCompiler.Compiler.DM {
                                         escapeSequence += tokenValue[i++];
                                     }
                                     i--;
+
                                     if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
-                                        stringBuilder.Append('\\');
-                                        stringBuilder.Append(escapeSequence);
+                                        DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
                                     } else if (escapeSequence.StartsWith("n")) {
                                         stringBuilder.Append('\n');
                                         stringBuilder.Append(escapeSequence.Skip(1).ToArray());

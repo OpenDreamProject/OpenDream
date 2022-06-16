@@ -1553,38 +1553,38 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-public static ProcStatus? PickUnweighted(DMProcState state) {
-    int count = state.ReadInt();
+        public static ProcStatus? PickUnweighted(DMProcState state) {
+            int count = state.ReadInt();
 
-    DreamValue picked = DreamValue.Null;
-    if (count == 1) {
-        DreamValue value = state.Pop();
+            DreamValue picked = DreamValue.Null;
+            if (count == 1) {
+                DreamValue value = state.Pop();
 
-        List<DreamValue> values;
-        if (value.TryGetValueAsDreamList(out DreamList list)) {
-            values = list.GetValues();
-        } else if (value.Value is DreamProcArguments args) {
-            values = args.GetAllArguments();
-        } else {
-            state.Push(value);
+                List<DreamValue> values;
+                if (value.TryGetValueAsDreamList(out DreamList list)) {
+                    values = list.GetValues();
+                } else if (value.Value is DreamProcArguments args) {
+                    values = args.GetAllArguments();
+                } else {
+                    state.Push(value);
+                    return null;
+                }
+
+                picked = values[state.DreamManager.Random.Next(0, values.Count)];
+            } else {
+                int pickedIndex = state.DreamManager.Random.Next(0, count);
+
+                for (int i = 0; i < count; i++) {
+                    DreamValue value = state.Pop();
+
+                    if (i == pickedIndex)
+                        picked = value;
+                }
+            }
+
+            state.Push(picked);
             return null;
         }
-
-        picked = values[state.DreamManager.Random.Next(0, values.Count)];
-    } else {
-        int pickedIndex = state.DreamManager.Random.Next(0, count);
-
-        for (int i = 0; i < count; i++) {
-            DreamValue value = state.Pop();
-
-            if (i == pickedIndex)
-                picked = value;
-        }
-    }
-
-    state.Push(picked);
-    return null;
-}
 
         ///<summary>Right now this is used exclusively by addtext() calls, to concatenate its arguments together,
         ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,

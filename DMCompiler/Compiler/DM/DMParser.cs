@@ -2155,21 +2155,23 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     if (Check(DereferenceTypes)) {
-                        if (expression is DMASTExpressionConstant && token.Type == TokenType.DM_Colon)
-                        {
+                        bool invalidDeref = (expression is DMASTExpressionConstant && token.Type == TokenType.DM_Colon);
+                        DMASTIdentifier property = null;
+                        if (!invalidDeref) {
+                            property = Identifier();
+                            if (property == null) {
+                                if (token.Type == TokenType.DM_Colon) {
+                                    invalidDeref = true;
+                                } else {
+                                    Error("Expected an identifier to dereference");
+                                }
+                            }
+                        }
+
+                        if (invalidDeref) {
                             //Not a valid dereference, but could still be a part of a ternary, so abort
                             ReuseToken(token);
                             break;
-                        }
-                        DMASTIdentifier property = Identifier();
-                        if (property == null) {
-                            if (token.Type == TokenType.DM_Colon) {
-                                //Not a valid dereference, but could still be a part of a ternary, so abort
-                                ReuseToken(token);
-                                break;
-                            } else {
-                                Error("Expected an identifier to dereference");
-                            }
                         }
 
                         (DereferenceType type, bool conditional) = token.Type switch {

@@ -16,7 +16,6 @@ public sealed class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
-
         // TODO Auto-generate the DME based on the files in DMProject/Shared and DMProject/Tests
 
         bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {

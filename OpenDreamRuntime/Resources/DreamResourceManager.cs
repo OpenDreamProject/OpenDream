@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using OpenDreamShared.Network.Messages;
-using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Resources
@@ -17,6 +16,7 @@ namespace OpenDreamRuntime.Resources
         public void Initialize(string jsonPath)
         {
             RootPath = Path.GetDirectoryName(jsonPath);
+            Directory.SetCurrentDirectory(RootPath);
 
             Logger.DebugS("opendream.res", $"Resource root path is {RootPath}");
 

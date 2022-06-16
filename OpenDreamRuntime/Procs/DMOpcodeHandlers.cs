@@ -257,6 +257,11 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
             DreamList list = state.Pop().GetValueAsDreamList();
 
+            if (index.TryGetValueAsInteger(out var idx) && idx == list.GetLength() + 1)
+            {
+                list.Resize(list.GetLength() + 1);
+            }
+
             list.SetValue(index, value);
             state.Push(new DreamValue(list));
             return null;
@@ -1442,7 +1447,21 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.Pop();
-            DreamResource file = state.Pop().GetValueAsDreamResource();
+            var value = state.Pop();
+            DreamResource file;
+            if (!value.TryGetValueAsDreamResource(out file))
+            {
+                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon))
+                {
+                    // TODO Only load the correct state/dir
+                    file = IoCManager.Resolve<DreamResourceManager>()
+                        .LoadResource(DreamMetaObjectIcon.ObjectToDreamIcon[icon].Icon);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             DreamObject client;
@@ -1650,28 +1669,33 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? PickUnweighted(DMProcState state) {
             int count = state.ReadInt();
 
-            DreamValue[] values;
+            DreamValue picked = DreamValue.Null;
             if (count == 1) {
                 DreamValue value = state.Pop();
 
+                List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
-                    values = list.GetValues().ToArray();
-                } else if (value.Value is DreamProcArguments args)
-                {
-                    values = args.GetAllArguments().ToArray();
-                }
-                else {
+                    values = list.GetValues();
+                } else if (value.Value is DreamProcArguments args) {
+                    values = args.GetAllArguments();
+                } else {
                     state.Push(value);
                     return null;
                 }
+
+                picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {
-                values = new DreamValue[count];
+                int pickedIndex = state.DreamManager.Random.Next(0, count);
+
                 for (int i = 0; i < count; i++) {
-                    values[i] = state.Pop();
+                    DreamValue value = state.Pop();
+
+                    if (i == pickedIndex)
+                        picked = value;
                 }
             }
 
-            state.Push(values[state.DreamManager.Random.Next(0, values.Length)]);
+            state.Push(picked);
             return null;
         }
 
@@ -1748,6 +1772,7 @@ namespace OpenDreamRuntime.Procs {
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.Float: return firstValue == second.GetValueAsFloat();
+                        case DreamValue.DreamValueType.DreamPath:
                         case DreamValue.DreamValueType.DreamObject:
                         case DreamValue.DreamValueType.String: return false;
                     }
@@ -1770,6 +1795,7 @@ namespace OpenDreamRuntime.Procs {
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamPath: return firstValue.Equals(second.GetValueAsPath());
+                        case DreamValue.DreamValueType.Float:
                         case DreamValue.DreamValueType.DreamObject:
                         case DreamValue.DreamValueType.String: return false;
                     }
@@ -1813,6 +1839,8 @@ namespace OpenDreamRuntime.Procs {
                     return first.GetValueAsFloat() > second.GetValueAsFloat();
                 case DreamValue.DreamValueType.Float when second.Value == null:
                     return first.GetValueAsFloat() > 0;
+                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                    return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) > 0;
                 default: {
                     if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                         return 0 > second.GetValueAsFloat();
@@ -1828,6 +1856,8 @@ namespace OpenDreamRuntime.Procs {
                     return first.GetValueAsFloat() < second.GetValueAsFloat();
                 case DreamValue.DreamValueType.Float when second.Value == null:
                     return first.GetValueAsFloat() < 0;
+                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                    return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) < 0;
                 default: {
                     if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                         return 0 < second.GetValueAsFloat();

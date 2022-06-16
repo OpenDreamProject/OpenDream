@@ -367,7 +367,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                         parameterToken = GetNextToken(true);
                     } else {
-                        if (parameterToken.Type != TokenType.Newline) currentParameter.Add(parameterToken);
+                        currentParameter.Add(parameterToken);
 
                         if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) parenthesisNesting++;
                         else if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_RightParenthesis) parenthesisNesting--;

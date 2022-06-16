@@ -62,8 +62,9 @@ namespace Content.Tests
 
         private static string[] GetTests()
         {
-            return Directory.GetFiles(
-                Path.Combine("DMProject", "Tests"), "*", SearchOption.AllDirectories);
+            Directory.SetCurrentDirectory("DMProject");
+
+            return Directory.GetFiles("Tests", "*", SearchOption.AllDirectories);
         }
 
 

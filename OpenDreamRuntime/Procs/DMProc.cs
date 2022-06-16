@@ -431,19 +431,19 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.ListIndex: {
                     DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
-                    DreamValue list = peek ? _stack[_stackIndex - 2] : Pop();
-                    if (!list.TryGetValueAsDreamList(out var listObj))
-                    {
-                        if (list.TryGetValueAsDreamObject(out _))
-                        {
-                            if(peek) Pop(); // So the next thing we pop is the obj
-                            return index;
-                        }
+                    DreamValue indexing = peek ? _stack[_stackIndex - 2] : Pop();
 
-                        throw new Exception($"Cannot get index {index} of {list}");
+                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
+                        return listObj.GetValue(index);
+                    } else if (indexing.TryGetValueAsString(out string strValue)) {
+                        if (!index.TryGetValueAsInteger(out int strIndex))
+                            throw new Exception($"Attempted to index string with {index}");
+
+                        char c = strValue[strIndex - 1];
+                        return new DreamValue(Convert.ToString(c));
+                    } else {
+                        throw new Exception($"Cannot get index {index} of {indexing}");
                     }
-
-                    return listObj.GetValue(index);
                 }
                 case DMReference.Type.GlobalProc:
                 {

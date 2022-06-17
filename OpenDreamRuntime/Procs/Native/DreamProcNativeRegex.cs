@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamShared.Dream;
 using DreamRegex = OpenDreamRuntime.Objects.MetaObjects.DreamMetaObjectRegex.DreamRegex;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -62,22 +63,70 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = arguments.GetArgument(2, "Start").GetValueAsInteger();
             int end = arguments.GetArgument(3, "End").GetValueAsInteger();
 
-            string haystackString = haystack.GetValueAsString();
+            if (!haystack.TryGetValueAsString(out var haystackString))
+            {
+                if (haystack.Value is null)
+                {
+                    return DreamValue.Null;
+                }
+                //TODO Check what actually happens
+                throw new ArgumentException("Bad regex haystack");
+            }
             string haystackSubstring = haystackString;
             if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
             if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
-                throw new NotImplementedException("Proc regex replacements are not implemented");
-            } else if (replace.TryGetValueAsString(out string replaceString))
+                return DoProcReplace(replaceProc);
+            }
+            if (replace.TryGetValueAsString(out string replaceString))
             {
-                string replaced = dreamRegex.Regex.Replace(haystackSubstring, replaceString, dreamRegex.IsGlobal ? -1 : 1, start - 1);
+                return DoTextReplace(replaceString);
+            }
+
+            if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null)
+            {
+                var dreamMan = IoCManager.Resolve<IDreamManager>();
+                if (dreamMan.GlobalProcs.ContainsKey(procPath.LastElement))
+                {
+                    var proc = dreamMan.GlobalProcs[procPath.LastElement];
+                    return DoProcReplace(proc);
+
+                }
+            }
+
+            throw new ArgumentException("Replacement argument must be a string or a proc");
+
+            DreamValue DoProcReplace(DreamProc proc)
+            {
+                var match = dreamRegex.Regex.Match(haystackSubstring);
+                var captures = match.Captures;
+                List<DreamValue> args = new List<DreamValue>(captures.Count + 1);
+                args.Add(new DreamValue(match.Value));
+                foreach (var capture in captures)
+                {
+                    args.Add(capture is null ? DreamValue.Null : new DreamValue(capture));
+                }
+                var result = DreamThread.Run(async(state) => await state.Call(proc, instance, usr, new DreamProcArguments(args)));
+                if (result.TryGetValueAsString(out var replacement))
+                {
+                    return DoTextReplace(replacement);
+                }
+                //TODO Confirm this behavior
+                if (result.Value is null)
+                {
+                    return new DreamValue(haystackSubstring);
+                }
+                throw new ArgumentException("Replacement is not a string");
+            }
+
+            DreamValue DoTextReplace(string replacement)
+            {
+                string replaced = dreamRegex.Regex.Replace(haystackSubstring, replacement, dreamRegex.IsGlobal ? -1 : 1, start - 1);
 
                 if(end != 0) replaced += haystackString.Substring(end - start + 1);
 
                 instance.SetVariable("text", new DreamValue(replaced));
                 return new DreamValue(replaced);
-            } else {
-                throw new ArgumentException("Replacement argument must be a string");
             }
         }
 

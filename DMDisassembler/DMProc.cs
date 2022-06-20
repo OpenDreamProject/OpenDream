@@ -10,7 +10,6 @@ namespace DMDisassembler {
         private class DecompiledOpcode {
             public long Position;
             public string Text;
-            public bool ShowPosition = false;
 
             public DecompiledOpcode(long position, string text) {
                 Position = position;

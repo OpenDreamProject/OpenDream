@@ -1,4 +1,4 @@
-/world/proc/Const1_Proc()
+/proc/RunTest()
 	var/const/ConstSwitch_c = 6
 
 	switch (1)

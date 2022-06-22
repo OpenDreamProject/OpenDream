@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -15,8 +16,18 @@ namespace Content.Tests
     [TestFixture]
     public sealed partial class DMTests : ContentUnitTest
     {
+        public const string TestProject = "DMProject";
+        public const string Map = "map.dmm";
+        public const string InitializeEnvironment = "./environment.dme";
+
         private IDreamManager _dreamMan;
         private ITaskManager _taskManager;
+
+        private enum DMTestType {
+            CompileError,   // Should fail to compile
+            RuntimeError,   // Should throw an exception at runtime
+            NoError         // Should run without errors
+        }
 
         [OneTimeSetUp]
         public void OneTimeSetup()
@@ -27,46 +38,88 @@ namespace Content.Tests
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
-            _dreamMan.Initialize(SetupCompileDm.CompiledProject);
+            Compile(InitializeEnvironment);
+            _dreamMan.Initialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+        }
+
+        public string Compile(string sourceFile) {
+            bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
+                Files = new() { sourceFile }
+            });
+
+            return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
+        }
+
+        public void Cleanup(string compiledFile) {
+            if (!File.Exists(compiledFile))
+                return;
+
+            File.Delete(compiledFile);
         }
 
         [Test, TestCaseSource(nameof(GetTests))]
-        public void TestFiles(string file)
+        public void TestFiles(string sourceFile)
         {
-            var prev = _dreamMan.DMExceptionCount;
+            DMTestType testType = GetDMTestType(sourceFile);
 
-            string firstLine;
-
-            using(StreamReader reader = new StreamReader(file))
-            {
-                firstLine = reader.ReadLine() ?? "";
+            string compiledFile = Compile(sourceFile);
+            if (testType == DMTestType.CompileError) {
+                Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+                return;
             }
 
-            bool shouldRuntime = firstLine.Contains("RUNTIME TRUE", StringComparison.InvariantCulture);
+            Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
+            Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
 
-            var fileName = Path.GetFileNameWithoutExtension(file); // Ignore the ".dm" extension
+            bool successfulRun = RunTest();
+            if (testType == DMTestType.RuntimeError) {
+                Assert.IsFalse(successfulRun, "A DM runtime was expected");
+            } else {
+                //TODO: This should use the runtime exception as the failure message
+                Assert.IsTrue(successfulRun, "A DM runtime exception was thrown");
+            }
+            
+            Cleanup(compiledFile);
+        }
 
-            var result = DreamThread.Run(async(state) => {
+        private bool RunTest() {
+            var prev = _dreamMan.DMExceptionCount;
+
+            var result = DreamThread.Run(async (state) => {
                 var world = _dreamMan.WorldInstance;
-                
-                if (world.TryGetProc($"{fileName}_Proc", out DreamProc proc)) {
-                    return await state.Call(proc, world, null, new DreamProcArguments(null));
+
+                if (_dreamMan.ObjectTree.GlobalProcs.TryGetValue("RunTest", out DreamProc proc)) {
+                    return await state.Call(proc, null, null, new DreamProcArguments(null));
                 } else {
-                    Assert.Fail($"No proc named {fileName}_Proc");
+                    Assert.Fail($"No global proc named RunTest");
                     return DreamValue.Null;
                 }
             });
 
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(shouldRuntime ? prev + 1 : prev));
+            return _dreamMan.DMExceptionCount == prev;
         }
 
-        private static string[] GetTests()
+        private static IEnumerable<string> GetTests()
         {
-            Directory.SetCurrentDirectory("DMProject");
+            Directory.SetCurrentDirectory(TestProject);
 
-            return Directory.GetFiles("Tests", "*", SearchOption.AllDirectories);
+            foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
+                yield return Path.GetFullPath(sourceFile);
+            }
         }
 
+        private static DMTestType GetDMTestType(string sourceFile) {
+            using (StreamReader reader = new StreamReader(sourceFile)) {
+                string firstLine = reader.ReadLine();
+
+                if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))
+                    return DMTestType.CompileError;
+                else if (firstLine.Contains("RUNTIME ERROR", StringComparison.InvariantCulture))
+                    return DMTestType.RuntimeError;
+                else
+                    return DMTestType.NoError;
+            }
+        }
 
         // TODO Move all tests below this line to the new auto-test system
 
@@ -123,24 +176,6 @@ namespace Content.Tests
 
             Assert.That(sync_result, Is.EqualTo(new DreamValue(1)));
             Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev + 1));
-        }
-
-        [Test]
-        public void SyncImage() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var sync_result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("image_test");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            var obj = sync_result.GetValueAsDreamObject();
-            Assert.IsNotNull(obj);
-
-            var imageDefinition = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Image);
-            Assert.That(obj.ObjectDefinition, Is.EqualTo(imageDefinition));
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
         }
 
         /*[Test, Timeout(10000)]
@@ -230,21 +265,6 @@ namespace Content.Tests
             Assert.IsNotNull(obj);
             Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
         }
-
-        [Test]
-        public void ValueInList() {
-            var prev = _dreamMan.DMExceptionCount;
-
-            var result = DreamThread.Run(async(state) => {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("value_in_list");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.AreEqual(new DreamValue(1), result);
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
 
         [Test]
         public void CallTest()
@@ -403,20 +423,6 @@ namespace Content.Tests
             {
                 var world = _dreamMan.WorldInstance;
                 var proc = world.GetProc("matrix_operations_test");
-                return await state.Call(proc, world, null, new DreamProcArguments(null));
-            });
-
-            Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
-        }
-
-        [Test]
-        public void UnicodeProcsTest()
-        {
-            var prev = _dreamMan.DMExceptionCount;
-            DreamThread.Run(async state =>
-            {
-                var world = _dreamMan.WorldInstance;
-                var proc = world.GetProc("unicode_procs_test");
                 return await state.Call(proc, world, null, new DreamProcArguments(null));
             });
 

@@ -24,9 +24,6 @@
 	src:nonexistent_proc()
 	. = 2
 
-/world/proc/image_test()
-	return image('a', "Hello")
-
 /world/proc/crash_test()
 	. = 1
 	CRASH("This should stop the current proc")
@@ -89,14 +86,6 @@
 /world/proc/crazy_inferred_types()
 	var/list/L = list()
 	L[new()] = new()
-
-/world/proc/value_in_list(test)
-	var/list/L = list(1, 2, 3)
-	if (4 in L)
-		return FALSE
-	if (!(3 in L))
-		return FALSE
-	return TRUE
 
 /world/proc/call_target()
 	return 13
@@ -277,12 +266,3 @@
 	test_matrix_subtract()
 	test_matrix_translate()
 	test_matrix_turn()
-
-/world/proc/unicode_procs_test()
-	ASSERT(length("😀") == 2)
-	ASSERT(length_char("😀") == 1)
-
-	// This is the combination of the Man, Woman, Girl and Boy emojis.
-	// It's 1 character per emoji, plus 3 zero-width joiner characters between them.
-	ASSERT(length("👨‍👩‍👧‍👦") == 11)
-	ASSERT(length_char("👨‍👩‍👧‍👦") == 7)

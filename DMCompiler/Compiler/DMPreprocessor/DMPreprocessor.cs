@@ -29,8 +29,33 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             _unimplementedWarnings = unimplementedWarnings;
         }
 
-        public void IncludeFile(string includePath, string file) {
+        public void IncludeFile(string includePath, string file, Location? includedFrom = null) {
             file = file.Replace('\\', Path.DirectorySeparatorChar);
+
+            switch (Path.GetExtension(file)) {
+                case ".dmp":
+                case ".dmm":
+                    IncludedMaps.Add(Path.Combine(includePath, file));
+                    break;
+                case ".dmf":
+                    if (IncludedInterface != null) {
+                        DMCompiler.Error(new CompilerError(includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({file}) while one was already included ({IncludedInterface})"));
+                        break;
+                    }
+
+                    IncludedInterface = file;
+                    break;
+                case ".dms":
+                    // Webclient interface file. Probably never gonna be supported.
+                    DMCompiler.Warning(new CompilerWarning(includedFrom ?? Location.Internal, "DMS files are not supported"));
+                    break;
+                default:
+                    PreprocessFile(includePath, file);
+                    break;
+            }
+        }
+
+        public void PreprocessFile(string includePath, string file) {
             string path = Path.Combine(includePath, file);
             string source = File.ReadAllText(path);
             source = source.Replace("\r\n", "\n");
@@ -54,40 +79,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         string filePath = Path.Combine(includePath, fullIncludePath);
 
                         if (!File.Exists(filePath)) {
-                            EmitErrorToken(token, $"Could not find included file \"{fullIncludePath}\"");
+                            DMCompiler.Error(new CompilerError(token.Location, $"Could not find included file \"{fullIncludePath}\""));
                             break;
                         }
 
                         if (_includedFiles.Contains(filePath)) {
-                            EmitWarningToken(token, $"File \"{fullIncludePath}\" was already included");
+                            DMCompiler.Warning(new CompilerWarning(token.Location, $"File \"{fullIncludePath}\" was already included"));
                             break;
                         }
 
-                        switch (Path.GetExtension(filePath)) {
-                            case ".dmp":
-                            case ".dmm": {
-                                IncludedMaps.Add(filePath);
-                                break;
-                            }
-                            case ".dmf": {
-                                if (IncludedInterface != null) {
-                                    EmitErrorToken(token, $"Attempted to include a second interface file ({fullIncludePath}) while one was already included ({IncludedInterface})");
-                                    break;
-                                }
-
-                                IncludedInterface = fullIncludePath;
-                                break;
-                            }
-                            case ".dms": {
-                                // Webclient interface file. Probably never gonna be supported so just ignore them.
-                                break;
-                            }
-                            default: {
-                                IncludeFile(includePath, fullIncludePath);
-                                break;
-                            }
-                        }
-
+                        IncludeFile(includePath, fullIncludePath, includedFrom: token.Location);
                         break;
                     }
                     case TokenType.DM_Preproc_Define: {
@@ -173,7 +174,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                         break;
                                     }
                                 } catch (CompileErrorException e) {
-                                    EmitErrorToken(token, e.Message);
+                                    DMCompiler.Error(new CompilerError(token.Location, e.Message));
 
                                     break;
                                 }
@@ -204,7 +205,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         SkipIfBody();
                         if (_unimplementedWarnings)
                         {
-                            EmitWarningToken(token, "#if is not implemented");
+                            DMCompiler.Warning(new CompilerWarning(token.Location, "#if is not implemented"));
                         }
                         break;
                     }
@@ -306,12 +307,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         private bool VerifyDirectiveUsage(Token token) {
             if (!_enableDirectives) {
-                EmitErrorToken(token, "Cannot use a preprocessor directive here");
+                DMCompiler.Error(new CompilerError(token.Location, "Cannot use a preprocessor directive here"));
                 return false;
             }
 
             if (!_isCurrentLineWhitespaceOnly) {
-                EmitErrorToken(token, "There can only be whitespace before a preprocessor directive");
+                DMCompiler.Error(new CompilerError(token.Location, "There can only be whitespace before a preprocessor directive"));
                 return false;
             }
 
@@ -384,14 +385,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             _unprocessedTokens.Push(leftParenToken);
             return null;
-        }
-
-        private void EmitErrorToken(Token token, string errorMessage) {
-            _result.Add(new Token(TokenType.Error, String.Empty, token.Location, errorMessage));
-        }
-
-        private void EmitWarningToken(Token token, string warningMessage) {
-            _result.Add(new Token(TokenType.Warning, String.Empty, token.Location, warningMessage));
         }
     }
 }

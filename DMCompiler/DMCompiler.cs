@@ -26,6 +26,8 @@ namespace DMCompiler {
         private static DateTime _compileStartTime;
 
         public static bool Compile(DMCompilerSettings settings) {
+            ErrorCount = 0;
+            WarningCount = 0;
             Settings = settings;
             if (Settings.Files == null) return false;
 
@@ -178,7 +180,7 @@ namespace DMCompiler {
                 VerbosePrint($"Converting map {mapPath}");
 
                 DMPreprocessor preprocessor = new DMPreprocessor(false, !Settings.SuppressUnimplementedWarnings);
-                preprocessor.IncludeFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
+                preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
 
                 DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
                 DMMParser parser = new DMMParser(lexer);

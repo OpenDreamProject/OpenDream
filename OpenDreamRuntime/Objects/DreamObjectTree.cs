@@ -24,6 +24,7 @@ namespace OpenDreamRuntime.Objects {
 
         public TreeEntry[] Types;
         public List<DreamProc> Procs;
+        public Dictionary<string, DreamProc> GlobalProcs;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
@@ -33,7 +34,7 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
 
             // Load procs first so types can set their init proc's super proc
-            LoadProcsFromJson(json.Procs);
+            LoadProcsFromJson(json.Procs, json.GlobalProcs);
             LoadTypesFromJson(json.Types);
         }
 
@@ -262,12 +263,21 @@ namespace OpenDreamRuntime.Objects {
             return new DMProc(procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
-        private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs)
+        private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)
         {
             Procs = new(jsonProcs.Length);
             foreach (var proc in jsonProcs)
             {
                 Procs.Add(LoadProcJson(proc));
+            }
+
+            if (jsonGlobalProcs != null) {
+                GlobalProcs = new(jsonGlobalProcs.Count);
+
+                foreach (var procId in jsonGlobalProcs) {
+                    var proc = Procs[procId];
+                    GlobalProcs.Add(proc.Name, proc);
+                }
             }
         }
 
@@ -287,6 +297,20 @@ namespace OpenDreamRuntime.Objects {
             procId = Procs.Count;
             Procs.Add(proc);
             return proc;
+        }
+
+        public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+
+            GlobalProcs[name] = proc;
+        }
+
+        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+
+            GlobalProcs[name] = proc;
         }
     }
 }

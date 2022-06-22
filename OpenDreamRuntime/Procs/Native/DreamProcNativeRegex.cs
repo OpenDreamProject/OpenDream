@@ -97,6 +97,10 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamValue DoProcReplace(DreamProc proc)
             {
+                if(dreamRegex.IsGlobal)
+                {
+                    throw new NotImplementedException("Proc global regex replacements are not implemented");
+                }
                 var match = dreamRegex.Regex.Match(haystackSubstring);
                 var groups = match.Groups;
                 List<DreamValue> args = new List<DreamValue>(groups.Count);

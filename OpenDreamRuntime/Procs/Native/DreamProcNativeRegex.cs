@@ -110,7 +110,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return DoTextReplace(replacement);
                 }
                 //TODO Confirm this behavior
-                if (result.Value is null)
+                if (result == DreamValue.Null)
                 {
                     return new DreamValue(haystackSubstring);
                 }

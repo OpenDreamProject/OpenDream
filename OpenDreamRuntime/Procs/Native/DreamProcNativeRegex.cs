@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (!haystack.TryGetValueAsString(out var haystackString))
             {
-                if (haystack.Value is null)
+                if (haystack == DreamValue.Null)
                 {
                     return DreamValue.Null;
                 }

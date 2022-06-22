@@ -90,7 +90,6 @@ namespace OpenDreamRuntime.Procs.Native {
                 {
                     var proc = dreamMan.GlobalProcs[procPath.LastElement];
                     return DoProcReplace(proc);
-
                 }
             }
 

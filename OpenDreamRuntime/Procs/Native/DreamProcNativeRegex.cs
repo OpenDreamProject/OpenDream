@@ -105,7 +105,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 {
                     args.Add(capture is null ? DreamValue.Null : new DreamValue(capture));
                 }
-                var result = DreamThread.Run(async(state) => await state.Call(proc, instance, usr, new DreamProcArguments(args)));
+                var result = DreamThread.Run(async(state) => await state.Call(proc, instance, null, new DreamProcArguments(args)));
                 if (result.TryGetValueAsString(out var replacement))
                 {
                     return DoTextReplace(replacement);

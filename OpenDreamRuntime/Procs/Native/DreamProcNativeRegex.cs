@@ -98,12 +98,11 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue DoProcReplace(DreamProc proc)
             {
                 var match = dreamRegex.Regex.Match(haystackSubstring);
-                var captures = match.Captures;
-                List<DreamValue> args = new List<DreamValue>(captures.Count + 1);
-                args.Add(new DreamValue(match.Value));
-                foreach (var capture in captures)
+                var groups = match.Groups;
+                List<DreamValue> args = new List<DreamValue>(groups.Count);
+                foreach (Group group in groups)
                 {
-                    args.Add(capture is null ? DreamValue.Null : new DreamValue(capture));
+                    args.Add(new DreamValue(group.Value));
                 }
                 var result = DreamThread.Run(async(state) => await state.Call(proc, instance, null, new DreamProcArguments(args)));
                 if (result.TryGetValueAsString(out var replacement))

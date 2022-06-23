@@ -276,11 +276,15 @@ namespace DMCompiler.DM.Visitors {
             string afterSpawnLabel = _proc.NewLabelName();
             _proc.Spawn(afterSpawnLabel);
 
-            ProcessBlockInner(statementSpawn.Body);
+            _proc.StartScope();
+            {
+                ProcessBlockInner(statementSpawn.Body);
 
-            //Prevent the new thread from executing outside its own code
-            _proc.PushNull();
-            _proc.Return();
+                //Prevent the new thread from executing outside its own code
+                _proc.PushNull();
+                _proc.Return();
+            }
+            _proc.EndScope();
 
             _proc.AddLabel(afterSpawnLabel);
         }

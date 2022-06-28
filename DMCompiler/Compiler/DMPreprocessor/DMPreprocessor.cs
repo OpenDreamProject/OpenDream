@@ -115,8 +115,19 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             break;
                         }
 
-                        IEnumerable<Token> expanded = Expand(token, macro).Reverse();
-                        foreach (Token expandedToken in expanded) {
+                        List<List<Token>> parameters = null;
+                        if (macro.HasParameters() && !TryGetMacroParameters(out parameters)) {
+                            yield return token;
+                            break;
+                        }
+
+                        List<Token> expandedTokens = macro.Expand(token, parameters);
+                        expandedTokens.Reverse();
+
+                        foreach (Token expandedToken in expandedTokens) {
+                            expandedToken.Location = token.Location;
+
+                            // These tokens are pushed so that nested macros get processed
                             PushToken(expandedToken);
                         }
 
@@ -223,21 +234,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
 
             return true;
-        }
-
-        private IEnumerable<Token> Expand(Token identifier, DMMacro macro) {
-            List<List<Token>> parameters = null;
-
-            if (macro.HasParameters() && !TryGetMacroParameters(out parameters)) {
-                yield break;
-            }
-
-            List<Token> expandedTokens = macro.Expand(identifier, parameters);
-            foreach (Token expandedToken in expandedTokens) {
-                expandedToken.Location = identifier.Location;
-
-                yield return expandedToken;
-            }
         }
 
         private void HandleIncludeDirective(Token includeToken) {

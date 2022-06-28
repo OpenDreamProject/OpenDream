@@ -250,11 +250,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return;
             }
 
-            string file = (string)includedFileToken.Value;
-            string directory = Path.Combine(_lexerStack.Peek().IncludeDirectory, Path.GetDirectoryName(file));
-            string fileName = Path.GetFileName(file);
+            DMPreprocessorLexer currentLexer = _lexerStack.Peek();
+            string file = Path.Combine(Path.GetDirectoryName(currentLexer.SourceName), (string)includedFileToken.Value);
+            string directory = currentLexer.IncludeDirectory;
 
-            IncludeFile(directory, fileName, includedFrom: includeToken.Location);
+            IncludeFile(directory, file, includedFrom: includeToken.Location);
         }
 
         private void HandleDefineDirective(Token defineToken) {

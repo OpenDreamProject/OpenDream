@@ -89,8 +89,6 @@ namespace Content.Tests
             var prev = _dreamMan.DMExceptionCount;
 
             var result = DreamThread.Run(async (state) => {
-                var world = _dreamMan.WorldInstance;
-
                 if (_dreamMan.ObjectTree.GlobalProcs.TryGetValue("RunTest", out DreamProc proc)) {
                     return await state.Call(proc, null, null, new DreamProcArguments(null));
                 } else {

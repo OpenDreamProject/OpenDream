@@ -2011,7 +2011,7 @@ namespace DMCompiler.Compiler.DM {
 
                                     string insideBracketsText = insideBrackets?.ToString();
                                     if (insideBracketsText != String.Empty) {
-                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.Location.SourceFile, insideBracketsText);
+                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                         List<Token> preprocTokens = new();
                                         Token preprocToken;
                                         do {

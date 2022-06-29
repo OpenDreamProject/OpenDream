@@ -316,10 +316,14 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
             {
+                if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
+                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                }
+
                 PushFloat(-1);
                 DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
                 PushArguments(1, arr, null);
-                Call(DMReference.CreateGlobalProc("sleep"));
+                Call(DMReference.CreateGlobalProc(sleepProc.Id));
             }
         }
 
@@ -880,18 +884,29 @@ namespace DMCompiler.DM {
 
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
-                case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
+                case DMReference.Type.Local:
+                    WriteByte((byte)reference.Index);
+                    break;
 
-                case DMReference.Type.Global: WriteInt(reference.Index); break;
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.Global:
+                    WriteInt(reference.Index);
+                    break;
 
                 case DMReference.Type.Field:
-                case DMReference.Type.Proc: WriteString(reference.Name); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.Proc:
+                    WriteString(reference.Name);
+                    ShrinkStack(affectStack ? 1 : 0);
+                    break;
 
                 case DMReference.Type.SrcField:
-                case DMReference.Type.GlobalProc:
-                case DMReference.Type.SrcProc: WriteString(reference.Name); break;
+                case DMReference.Type.SrcProc:
+                    WriteString(reference.Name);
+                    break;
 
-                case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+                case DMReference.Type.ListIndex:
+                    ShrinkStack(affectStack ? 2 : 0);
+                    break;
 
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.Src:
@@ -899,7 +914,9 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
                     break;
-                default: throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
+
+                default:
+                    throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
             }
         }
 

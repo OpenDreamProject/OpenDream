@@ -24,10 +24,10 @@ namespace OpenDreamRuntime.Objects {
 
         public TreeEntry[] Types;
         public List<DreamProc> Procs;
-        public Dictionary<string, DreamProc> GlobalProcs;
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
+        private Dictionary<string, int> _globalProcIds;
 
         public void LoadJson(DreamCompiledJson json)
         {
@@ -60,6 +60,12 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamObjectDefinition GetObjectDefinition(int typeId) {
             return GetTreeEntry(typeId).ObjectDefinition;
+        }
+
+        public bool TryGetGlobalProc(string name, out DreamProc? globalProc) {
+            globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
+
+            return (globalProc != null);
         }
 
         public IEnumerable<TreeEntry> GetAllDescendants(DreamPath path) {
@@ -272,11 +278,12 @@ namespace OpenDreamRuntime.Objects {
             }
 
             if (jsonGlobalProcs != null) {
-                GlobalProcs = new(jsonGlobalProcs.Count);
+                _globalProcIds = new(jsonGlobalProcs.Count);
 
                 foreach (var procId in jsonGlobalProcs) {
                     var proc = Procs[procId];
-                    GlobalProcs.Add(proc.Name, proc);
+
+                    _globalProcIds.Add(proc.Name, procId);
                 }
             }
         }
@@ -303,14 +310,14 @@ namespace OpenDreamRuntime.Objects {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
 
-            GlobalProcs[name] = proc;
+            Procs[_globalProcIds[name]] = proc;
         }
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
 
-            GlobalProcs[name] = proc;
+            Procs[_globalProcIds[name]] = proc;
         }
     }
 }

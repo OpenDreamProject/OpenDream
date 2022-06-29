@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
@@ -155,10 +154,10 @@ namespace OpenDreamShared.Dream.Procs {
 
         public Type RefType;
 
-        //Argument, Local, Global
+        //Argument, Local, Global, GlobalProc
         public int Index;
 
-        //Field, SrcField, Proc, GlobalProc, SrcProc
+        //Field, SrcField, Proc, SrcProc
         public string Name;
 
         public static DMReference CreateArgument(int argId) {
@@ -189,8 +188,8 @@ namespace OpenDreamShared.Dream.Procs {
             return new DMReference() { RefType = Type.Proc, Name = procName };
         }
 
-        public static DMReference CreateGlobalProc(string procName) {
-            return new DMReference() { RefType = Type.GlobalProc, Name = procName };
+        public static DMReference CreateGlobalProc(int procId) {
+            return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
 
         public static DMReference CreateSrcProc(string procName) {
@@ -199,15 +198,18 @@ namespace OpenDreamShared.Dream.Procs {
 
         public override string ToString() {
             switch (RefType) {
-                case Type.Local: return $"{RefType} {Index}";
-                case Type.Global: return $"{RefType} {Index}";
-                case Type.Argument: return $"{RefType} {Index}";
+                case Type.Local:
+                case Type.Global:
+                case Type.Argument:
+                case Type.GlobalProc:
+                    return $"{RefType} {Index}";
+
                 case Type.SrcField:
                 case Type.Field:
-                    return $"{RefType} \"{Name}\"";
                 case Type.SrcProc:
                 case Type.Proc:
                     return $"{RefType} \"{Name}\"";
+
                 default: return RefType.ToString();
             }
         }

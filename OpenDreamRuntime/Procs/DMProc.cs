@@ -314,10 +314,10 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
                 case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
                 case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
+                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
                 case DMReference.Type.Field: return DMReference.CreateField(ReadString());
                 case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
                 case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadString());
                 case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
                 case DMReference.Type.Src: return DMReference.Src;
                 case DMReference.Type.Self: return DMReference.Self;
@@ -460,6 +460,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Usr:
                 case DMReference.Type.Self:
                 case DMReference.Type.Global:
+                case DMReference.Type.GlobalProc:
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local:
                 case DMReference.Type.Args:

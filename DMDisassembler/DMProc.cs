@@ -153,11 +153,11 @@ namespace DMDisassembler {
                 case DMReference.Type.Argument: return DMReference.CreateArgument(reader.ReadByte());
                 case DMReference.Type.Local: return DMReference.CreateLocal(reader.ReadByte());
                 case DMReference.Type.Global: return DMReference.CreateGlobal(reader.ReadInt32());
+                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(reader.ReadInt32());
                 case DMReference.Type.Field: return DMReference.CreateField(Program.CompiledJson.Strings[reader.ReadInt32()]);
                 case DMReference.Type.SrcField: return DMReference.CreateSrcField(Program.CompiledJson.Strings[reader.ReadInt32()]);
                 case DMReference.Type.Proc: return DMReference.CreateProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
                 case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
                 default: return new DMReference() { RefType = refType };
             }
         }

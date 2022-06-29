@@ -1066,7 +1066,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
-                    proc = state.DreamManager.ObjectTree.GlobalProcs[procRef.Name];
+                    proc = state.DreamManager.ObjectTree.Procs[procRef.Index];
 
                     break;
                 }
@@ -1123,7 +1123,8 @@ namespace OpenDreamRuntime.Procs {
                     if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
                         throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
                     string procName = fullProcPath.LastElement;
-                    DreamProc proc = state.DreamManager.ObjectTree.GlobalProcs[procName];
+                    if (!state.DreamManager.ObjectTree.TryGetGlobalProc(procName, out DreamProc? proc))
+                        throw new Exception($"Failed to get global proc \"{procName}\"");
 
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;

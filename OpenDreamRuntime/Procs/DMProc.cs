@@ -224,7 +224,8 @@ namespace OpenDreamRuntime.Procs {
 
         public override void AppendStackFrame(StringBuilder builder)
         {
-            builder.Append($"{Proc.Name}(...)");
+            //TODO: Assigning to src shouldn't change the proc path in stack frames
+            builder.Append($"{Instance?.ObjectDefinition?.Type}/{Proc.Name}(...)");
         }
 
         public void Jump(int position) {
@@ -361,6 +362,13 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Local: LocalVariables[reference.Index] = value; break;
                 case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
                 case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
+                case DMReference.Type.Src:
+                    //TODO: src can be assigned to non-DreamObject values
+                    if (!value.TryGetValueAsDreamObject(out Instance)) {
+                        throw new Exception($"Cannot assign src to {value}");
+                    }
+
+                    break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)

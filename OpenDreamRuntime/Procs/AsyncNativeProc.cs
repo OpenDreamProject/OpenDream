@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
@@ -140,11 +141,11 @@ namespace OpenDreamRuntime.Procs {
         private Func<State, Task<DreamValue>> _taskFunc;
 
         private AsyncNativeProc()
-            : base("<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null, null, null, null, null)
+            : base(DreamPath.Root, "<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null, null, null, null, null)
         {}
 
-        public AsyncNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
+        public AsyncNativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;

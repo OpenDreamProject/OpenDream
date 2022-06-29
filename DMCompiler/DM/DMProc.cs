@@ -98,6 +98,7 @@ namespace DMCompiler.DM {
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
 
+            procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)

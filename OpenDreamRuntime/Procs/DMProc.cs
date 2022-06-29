@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
@@ -9,8 +10,8 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
+        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
@@ -224,8 +225,13 @@ namespace OpenDreamRuntime.Procs {
 
         public override void AppendStackFrame(StringBuilder builder)
         {
-            //TODO: Assigning to src shouldn't change the proc path in stack frames
-            builder.Append($"{Instance?.ObjectDefinition?.Type}/{Proc.Name}(...)");
+            if (Proc.OwningType != DreamPath.Root) {
+                builder.Append(Proc.OwningType);
+                builder.Append('/');
+            }
+            
+            builder.Append(Proc.Name);
+            builder.Append("(...)");
         }
 
         public void Jump(int position) {

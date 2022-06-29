@@ -1,10 +1,10 @@
-﻿using System;
-using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
 namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {
+        public int OwningTypeId { get; set; }
         public string Name { get; set; }
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }

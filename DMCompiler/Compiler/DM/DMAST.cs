@@ -1709,11 +1709,11 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTCallParameter : DMASTNode {
         public DMASTExpression Value;
-        public string Name;
+        public DMASTExpression Key;
 
-        public DMASTCallParameter(Location location, DMASTExpression value, string name = null) : base(location) {
+        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression key = null) : base(location) {
             Value = value;
-            Name = name;
+            Key = key;
         }
 
         public override void Visit(DMASTVisitor visitor) {

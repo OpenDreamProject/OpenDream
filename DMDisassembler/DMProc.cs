@@ -74,6 +74,8 @@ namespace DMDisassembler {
                     case DreamProcOpcode.Enumerate:
                     case DreamProcOpcode.PushReferenceValue: text.Append(ReadReference(binaryReader).ToString()); break;
 
+                    case DreamProcOpcode.CreateList:
+                    case DreamProcOpcode.CreateAssociativeList:
                     case DreamProcOpcode.PickWeighted:
                     case DreamProcOpcode.PickUnweighted: text.Append(binaryReader.ReadInt32()); break;
 

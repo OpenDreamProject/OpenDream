@@ -280,19 +280,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DestroyEnumerator);
         }
 
-        public void CreateList() {
-            GrowStack(1);
+        public void CreateList(int size) {
+            ShrinkStack(size - 1); //Shrinks by the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateList);
+            WriteInt(size);
         }
 
-        public void ListAppend() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.ListAppend);
-        }
-
-        public void ListAppendAssociated() {
-            ShrinkStack(2);
-            WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        public void CreateAssociativeList(int size) {
+            ShrinkStack(size * 2 - 1); //Shrinks by twice the size of the list, grows by 1
+            WriteOpcode(DreamProcOpcode.CreateAssociativeList);
+            WriteInt(size);
         }
 
         public string NewLabelName() {

@@ -31,7 +31,7 @@ namespace OpenDreamShared.Dream.Procs {
         CreateRangeEnumerator = 0x1B,
         //0x1C
         CompareLessThanOrEqual = 0x1D,
-        //0x1E
+        CreateAssociativeList = 0x1E,
         Remove = 0x1F,
         DeleteObject = 0x20,
         PushResource = 0x21,
@@ -39,7 +39,7 @@ namespace OpenDreamShared.Dream.Procs {
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        ListAppend = 0x26,
+        //0x26
         Divide = 0x27,
         Multiply = 0x28,
         BitXorReference = 0x29,
@@ -53,7 +53,7 @@ namespace OpenDreamShared.Dream.Procs {
         CompareGreaterThanOrEqual = 0x31,
         SwitchCase = 0x32,
         Mask = 0x33,
-        ListAppendAssociated = 0x34,
+        //0x34
         Error = 0x35,
         IsInList = 0x36,
         PushArguments = 0x37,

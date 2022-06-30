@@ -64,7 +64,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CreateRangeEnumerator,
             null, //0x1C
             DMOpcodeHandlers.CompareLessThanOrEqual,
-            null, //0x1E
+            DMOpcodeHandlers.CreateAssociativeList,
             DMOpcodeHandlers.Remove,
             DMOpcodeHandlers.DeleteObject,
             DMOpcodeHandlers.PushResource,
@@ -277,6 +277,17 @@ namespace OpenDreamRuntime.Procs {
 
         public DreamValue Pop() {
             return _stack[--_stackIndex];
+        }
+
+        /// <summary>
+        /// Pops multiple values off the stack
+        /// </summary>
+        /// <param name="count">Amount of values to pop</param>
+        /// <returns>A ReadOnlySpan of the popped values, in FIFO order</returns>
+        public ReadOnlySpan<DreamValue> PopCount(int count) {
+            _stackIndex -= count;
+
+            return _stack.AsSpan(_stackIndex, count);
         }
 
         public DreamValue Peek() {

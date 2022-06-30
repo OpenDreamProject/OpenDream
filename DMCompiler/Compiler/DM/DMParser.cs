@@ -1401,22 +1401,21 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTCallParameter CallParameter() {
             DMASTExpression expression = Expression();
+            if (expression == null)
+                return null;
 
-            if (expression != null) {
-                DMASTAssign assign = expression as DMASTAssign;
-
-                if (assign != null) {
-                    if (assign.Expression is DMASTConstantString) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTConstantString)assign.Expression).Value);
-                    } else if (assign.Expression is DMASTIdentifier) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
-                    }
+            if (expression is DMASTAssign assign) {
+                DMASTExpression key = assign.Expression;
+                if (key is DMASTIdentifier identifier) {
+                    key = new DMASTConstantString(key.Location, identifier.Identifier);
+                } else if (key is DMASTConstantNull) {
+                    key = new DMASTConstantString(key.Location, "null");
                 }
 
+                return new DMASTCallParameter(assign.Location, assign.Value, key);
+            } else {
                 return new DMASTCallParameter(expression.Location, expression);
             }
-
-            return null;
         }
 
         public DMASTDefinitionParameter[] DefinitionParameters() {

@@ -30,7 +30,31 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateList(DMProcState state) {
-            var list = DreamList.Create();
+            int size = state.ReadInt();
+            var list = DreamList.Create(size);
+
+            foreach (DreamValue value in state.PopCount(size)) {
+                list.AddValue(value);
+            }
+
+            state.Push(new DreamValue(list));
+            return null;
+        }
+
+        public static ProcStatus? CreateAssociativeList(DMProcState state) {
+            int size = state.ReadInt();
+            var list = DreamList.Create(size);
+
+            ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
+            for (int i = 0; i < popped.Length; i += 2) {
+                DreamValue key = popped[i];
+
+                if (key == DreamValue.Null) {
+                    list.AddValue(popped[i + 1]);
+                } else {
+                    list.SetValue(key, popped[i + 1], allowGrowth: true);
+                }
+            }
 
             state.Push(new DreamValue(list));
             return null;
@@ -133,13 +157,12 @@ namespace OpenDreamRuntime.Procs {
             var count = state.ReadInt();
 
             List<int> sizes = new List<int>(count);
-            for (var i = 0; i < count; i++)
+            foreach (var size in state.PopCount(count))
             {
-                state.Pop().TryGetValueAsInteger(out var size);
-                sizes.Add(size);
+                size.TryGetValueAsInteger(out var sizeInt);
+                sizes.Add(sizeInt);
             }
 
-            sizes.Reverse();
             var list = DreamList.CreateMultidimensional(sizes);
 
             state.Push(new DreamValue(list));
@@ -306,11 +329,7 @@ namespace OpenDreamRuntime.Procs {
             int namedCount = state.ReadInt();
             int unnamedCount = argumentCount - namedCount;
             DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
-            DreamValue[]? argumentValues = argumentCount > 0 ? new DreamValue[argumentCount] : null;
-
-            for (int i = argumentCount - 1; i >= 0; i--) {
-                argumentValues[i] = state.Pop();
-            }
+            ReadOnlySpan<DreamValue> argumentValues = argumentCount > 0 ? state.PopCount(argumentCount) : null;
 
             for (int i = 0; i < argumentCount; i++) {
                 DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
@@ -1581,12 +1600,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
 
-                for (int i = 0; i < count; i++) {
-                    DreamValue value = state.Pop();
-
-                    if (i == pickedIndex)
-                        picked = value;
-                }
+                picked = state.PopCount(count)[pickedIndex];
             }
 
             state.Push(picked);
@@ -1608,13 +1622,14 @@ namespace OpenDreamRuntime.Procs {
             }
             int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
             StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
-            for(int i = 0; i < count; ++i)
+            foreach (DreamValue add in state.PopCount(count))
             {
-                if (state.Pop().TryGetValueAsString(out var addStr))
+                if (add.TryGetValueAsString(out var addStr))
                 {
                     builder.Append(addStr);
                 }
             }
+
             state.Push(new DreamValue(builder.ToString()));
             return null;
         }

@@ -63,6 +63,7 @@ namespace Content.Tests
             string compiledFile = Compile(sourceFile);
             if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                 Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+                Cleanup(compiledFile);
                 return;
             }
 

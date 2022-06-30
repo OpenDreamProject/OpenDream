@@ -103,9 +103,42 @@ namespace OpenDreamShared.Dream.Procs {
         Unnamed = 0xFD
     }
 
-    public enum StringFormatTypes {
-        Stringify = 0x0,
-        Ref = 0x1
+    public enum StringFormatTypes : byte {
+        Stringify = 0x0,                //Plain []
+        Ref = 0x1,                      //\ref[]
+
+        UpperDefiniteArticle = 0x2,     //The
+        LowerDefiniteArticle = 0x3,     //the
+        UpperIndefiniteArticle = 0x4,   //A, An, Some
+        LowerIndefiniteArticle = 0x5,   //a, an, some
+        UpperSubjectPronoun = 0x6,      //He, She, They, It
+        LowerSubjectPronoun = 0x7,      //he, she, they, it
+        UpperPossessiveAdjective = 0x8, //His, Her, Their, Its
+        LowerPossessiveAdjective = 0x9, //his, her, their, its
+        ObjectPronoun = 0xA,            //him, her, them, it
+        ReflexivePronoun = 0xB,         //himself, herself, themself, it
+        UpperPossessivePronoun = 0xC,   //His, Hers, Theirs, Its
+        LowerPossessivePronoun = 0xD,   //his, hers, theirs, its
+
+        Proper = 0xE,                   //String represents a proper noun
+        Improper = 0xF,                 //String represents an improper noun
+
+        OrdinalIndicator = 0x10,        //1st, 2nd, 3rd, 4th, ...
+        PluralSuffix = 0x11,            //-s suffix at the end of a plural noun
+
+        Icon = 0x12,                    //Use an atom's icon
+
+        ColorRed = 0x13,
+        ColorBlue = 0x14,
+        ColorGreen = 0x15,
+        ColorBlack = 0x16,
+        ColorYellow = 0x17,
+        ColorNavy = 0x18,
+        ColorTeal = 0x19,
+        ColorCyan = 0x1A,
+
+        Bold = 0x1B,
+        Italic = 0x1C
     }
 
     [Flags]

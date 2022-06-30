@@ -184,7 +184,13 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
                         }
-                        default: throw new Exception("Invalid special character");
+                        default:
+                            if (Enum.IsDefined(typeof(StringFormatTypes), (byte)c)) {
+                                //Likely an unimplemented text macro, ignore it
+                                break;
+                            }
+
+                            throw new Exception("Invalid special character");
                     }
                 } else {
                     formattedString.Append(c);

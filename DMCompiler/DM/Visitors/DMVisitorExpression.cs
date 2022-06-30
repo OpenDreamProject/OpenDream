@@ -79,7 +79,6 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.StringFormat(stringFormat.Location, stringFormat.Value, expressions);
         }
 
-
         public void VisitIdentifier(DMASTIdentifier identifier)
         {
             var name = identifier.Identifier;

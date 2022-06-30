@@ -789,7 +789,21 @@ namespace DMCompiler.DM {
         }
 
         public void FormatString(string value) {
-            ShrinkStack(value.Count((char c) => c == 0xFF) - 1); //Shrinks by the amount of formats in the string, grows 1
+            int formatCount = 0;
+            for (int i = 0; i < value.Length; i++) {
+                if (value[i] == 0xFF) {
+                    StringFormatTypes formatType = (StringFormatTypes)value[++i];
+
+                    switch (formatType) {
+                        case StringFormatTypes.Stringify:
+                        case StringFormatTypes.Ref:
+                            formatCount++;
+                            break;
+                    }
+                }
+            }
+
+            ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
         }

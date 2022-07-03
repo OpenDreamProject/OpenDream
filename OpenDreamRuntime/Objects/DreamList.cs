@@ -51,13 +51,6 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
-        public static DreamList Create(List<DreamValue> values)
-        {
-            var list = new DreamList(values.Count);
-            list._values = values;
-            return list;
-        }
-
         public static DreamList CreateMultidimensional(List<int> dimensions)
         {
             var list = new DreamList(dimensions[0]);

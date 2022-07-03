@@ -136,7 +136,7 @@ namespace DMCompiler.DM.Visitors {
                 return;
             } else if (name == "vars")
             {
-                Result = new Expressions.GlobalVars(globalIdentifier.Location, null);
+                Result = new Expressions.GlobalVars(globalIdentifier.Location);
                 return;
             }
 

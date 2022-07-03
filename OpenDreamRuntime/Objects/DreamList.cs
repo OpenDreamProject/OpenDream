@@ -275,7 +275,6 @@ namespace OpenDreamRuntime.Objects {
 
         public static DreamGlobalVars Create() {
             var list = new DreamGlobalVars();
-            list.InitSpawn(new DreamProcArguments(null));
             return list;
         }
 

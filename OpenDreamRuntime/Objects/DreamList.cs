@@ -295,7 +295,7 @@ namespace OpenDreamRuntime.Objects {
             return _dreamMan.Globals[globalId];
         }
 
-        public override void SetValue(DreamValue key, DreamValue value) {
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             if (key.TryGetValueAsString(out var varName)) {
                 var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
                 if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {

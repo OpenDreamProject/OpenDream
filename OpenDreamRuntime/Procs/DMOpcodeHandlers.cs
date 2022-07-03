@@ -371,7 +371,6 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? PushGlobalVars(DMProcState state)
         {
-            var list = state.DreamManager.Globals.GetRange(1, state.DreamManager.Globals.Count - 1);
             state.Push(new DreamValue(DreamGlobalVars.Create()));
             return null;
         }

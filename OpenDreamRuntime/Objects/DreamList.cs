@@ -281,7 +281,7 @@ namespace OpenDreamRuntime.Objects {
 
         public override List<DreamValue> GetValues() {
             var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
-            List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count);
+            List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
             // Skip world
             foreach (var key in root.GlobalVariables.Keys.Skip(1))
             {

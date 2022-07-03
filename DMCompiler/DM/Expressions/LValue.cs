@@ -166,8 +166,8 @@ namespace DMCompiler.DM.Expressions {
 
     class GlobalVars : LValue
     {
-        public GlobalVars(Location location, DreamPath? path)
-            : base(location, path) {
+        public GlobalVars(Location location)
+            : base(location, null) {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

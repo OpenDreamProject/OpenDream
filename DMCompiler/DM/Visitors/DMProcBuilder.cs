@@ -215,10 +215,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set popup_menu is not implemented"));
-                    }
-
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -230,9 +227,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Attributes &= ~ProcAttributes.Instant;
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set instant is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
@@ -245,58 +240,40 @@ namespace DMCompiler.DM.Visitors {
                     }
                     break;
                 case "name":
-                    DMASTConstantString name = statementSet.Value as DMASTConstantString;
-                    if (name is null) throw new CompileErrorException(statementSet.Location, "bad text");
-                    _proc.VerbName = name.Value;
+                    if (constant is not Expressions.String nameStr) {
+                        throw new CompileErrorException(statementSet.Location, "name attribute must be a string");
+                    }
+
+                    _proc.VerbName = nameStr.Value;
                     break;
                 case "category":
-                    switch (statementSet.Value)
-                    {
-                        case DMASTConstantString category:
-                        {
-                            _proc.VerbCategory = category.Value;
-                            break;
-                        }
-                        case DMASTConstantNull:
-                            _proc.VerbCategory = null;
-                            break;
-                        default:
-                            throw new CompileErrorException(statementSet.Location, "bad text");
-                    }
+                    _proc.VerbCategory = constant switch {
+                        Expressions.String str => str.Value,
+                        Expressions.Null => null,
+                        _ => throw new CompileErrorException(statementSet.Location, "category attribute must be a string or null")
+                    };
 
                     break;
                 case "desc":
-                    DMASTConstantString desc = statementSet.Value as DMASTConstantString;
-                    if (desc is null) throw new CompileErrorException(statementSet.Location, "bad text");
-                    _proc.VerbDesc = desc.Value;
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set desc is not implemented"));
+                    if (constant is not Expressions.String descStr) {
+                        throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
+
+                    _proc.VerbDesc = descStr.Value;
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    DMASTConstantFloat invisFloat = statementSet.Value as DMASTConstantFloat;
-                    if (invisFloat is null)
-                    {
-                        DMASTConstantInteger invisInt = statementSet.Value as DMASTConstantInteger;
-                        if(invisInt is null) throw new CompileErrorException(statementSet.Location, "bad num");
-                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(invisInt.Value, 0, 100));
-                    }
-                    else
-                    {
-                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisFloat.Value), 0, 100));
+                    if (constant is not Expressions.Number invisNum) {
+                        throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set invisibility is not implemented"));
-                    }
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set src is not implemented"));
-                    }
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
                     break;
             }
         }
@@ -312,11 +289,15 @@ namespace DMCompiler.DM.Visitors {
             string afterSpawnLabel = _proc.NewLabelName();
             _proc.Spawn(afterSpawnLabel);
 
-            ProcessBlockInner(statementSpawn.Body);
+            _proc.StartScope();
+            {
+                ProcessBlockInner(statementSpawn.Body);
 
-            //Prevent the new thread from executing outside its own code
-            _proc.PushNull();
-            _proc.Return();
+                //Prevent the new thread from executing outside its own code
+                _proc.PushNull();
+                _proc.Return();
+            }
+            _proc.EndScope();
 
             _proc.AddLabel(afterSpawnLabel);
         }
@@ -326,7 +307,12 @@ namespace DMCompiler.DM.Visitors {
 
             DMExpression value;
             if (varDeclaration.Value != null) {
-                value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                try {
+                    value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                } catch (CompileErrorException e) {
+                    DMCompiler.Error(e.Error);
+                    value = new Expressions.Null(varDeclaration.Location);
+                }
             } else {
                 value = new Expressions.Null(varDeclaration.Location);
             }

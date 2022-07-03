@@ -9,5 +9,4 @@
 #include "code.dm"
 #include "interface.dmf"
 #include "map.dmm"
-#include "Tests\Const\ConstTests.dm"
 // END_INCLUDE

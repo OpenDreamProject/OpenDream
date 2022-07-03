@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text.Json;
-using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
@@ -8,7 +7,6 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
@@ -20,17 +18,15 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
 
-        private DreamCompiledJson _compiledJson;
-
-        public DreamObjectTree ObjectTree { get; private set; }
+        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
-        public Dictionary<string, DreamProc> GlobalProcs { get; set; } = new();
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -38,27 +34,51 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Clients { get; set; } = new();
         public List<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
+        public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+
+        private DreamCompiledJson _compiledJson;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {
             InitializeConnectionManager();
-
-            DreamCompiledJson json = LoadJson(jsonPath);
-            if (json == null)
-                return;
-
-            _compiledJson = json;
-
             _dreamResourceManager.Initialize(jsonPath);
 
-            ObjectTree = new DreamObjectTree(json);
-            SetMetaObjects();
-
-            if (_compiledJson.GlobalProcs != null) {
-                foreach (var procJson in _compiledJson.GlobalProcs) {
-                    GlobalProcs.Add(procJson.Key, ObjectTree.LoadProcJson(procJson.Key, procJson.Value));
-                }
+            if (!LoadJson(jsonPath)) {
+                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+                return;
             }
+
+            //TODO: Move to LoadJson()
+            _dreamMapManager.LoadMaps(_compiledJson.Maps);
+            WorldInstance.SpawnProc("New");
+        }
+
+        public void Shutdown() {
+
+        }
+
+        public void Update()
+        {
+            _procScheduler.Process();
+            UpdateStat();
+        }
+
+        public bool LoadJson(string? jsonPath)
+        {
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+                return false;
+
+            string jsonSource = File.ReadAllText(jsonPath);
+            DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
+            if (json == null)
+                return false;
+
+            _compiledJson = json;
+            _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
+
+            ObjectTree.LoadJson(json);
+
+            SetMetaObjects();
 
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
@@ -80,33 +100,11 @@ namespace OpenDreamRuntime {
             Globals[0] = new DreamValue(WorldInstance);
 
             if (json.GlobalInitProc != null) {
-                var globalInitProc = new DMProc("(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes, json.GlobalInitProc.VerbName, json.GlobalInitProc.VerbCategory, json.GlobalInitProc.VerbDesc, json.GlobalInitProc.Invisibility);
+                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes, json.GlobalInitProc.VerbName, json.GlobalInitProc.VerbCategory, json.GlobalInitProc.VerbDesc, json.GlobalInitProc.Invisibility);
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
             }
 
-            _dreamMapManager.LoadMaps(json.Maps);
-            WorldInstance.SpawnProc("New");
-        }
-
-        public void Shutdown() {
-
-        }
-
-        public void Update()
-        {
-            UpdateStat();
-        }
-
-        private DreamCompiledJson? LoadJson(string? jsonPath)
-        {
-            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath)) {
-                Logger.Fatal("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist");
-                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
-                return null;
-            }
-
-            string jsonSource = File.ReadAllText(jsonPath);
-            return JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
+            return true;
         }
 
         private void SetMetaObjects() {
@@ -122,20 +120,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-        }
-
-        public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
-
-            GlobalProcs[name] = proc;
-        }
-
-        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
-
-            GlobalProcs[name] = proc;
+            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
         }
 
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log")

@@ -22,7 +22,7 @@ namespace DMCompiler.Compiler.DM {
             "Hers", "hers",
             "icon",
             "improper", "proper",
-            "red", "blue", "green", "black",
+            "red", "blue", "green", "black", "yellow", "navy", "teal", "cyan",
             "bold", "b",
             "italic",
             "u", "U", "x",  //TODO: ASCII/Unicode values *properly*
@@ -61,7 +61,7 @@ namespace DMCompiler.Compiler.DM {
 
         private Stack<int> _indentationStack = new(new int[] { 0 });
 
-        public DMLexer(string sourceName, List<Token> source) : base(sourceName, source) { }
+        public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
             Token token;
@@ -82,6 +82,7 @@ namespace DMCompiler.Compiler.DM {
                     if (BracketNesting == 0) { //Don't parse indentation when inside brackets/parentheses
                         int currentIndentationLevel = _indentationStack.Peek();
                         int indentationLevel = CheckIndentation();
+
                         if (indentationLevel > currentIndentationLevel) {
                             _indentationStack.Push(indentationLevel);
 
@@ -107,13 +108,7 @@ namespace DMCompiler.Compiler.DM {
                     }
                 } else {
                     switch (preprocToken.Type) {
-                        case TokenType.DM_Preproc_Whitespace: {
-                            while (Advance().Type == TokenType.DM_Preproc_Whitespace && !AtEndOfSource) {
-                            }
-
-                            token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text);
-                            break;
-                        }
+                        case TokenType.DM_Preproc_Whitespace: Advance(); token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_LeftParenthesis: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_RightParenthesis: BracketNesting = Math.Max(BracketNesting - 1, 0); Advance(); token = CreateToken(TokenType.DM_RightParenthesis, preprocToken.Text); break;
                         case TokenType.DM_Preproc_Punctuator_LeftBracket: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftBracket, preprocToken.Text); break;
@@ -321,8 +316,9 @@ namespace DMCompiler.Compiler.DM {
         private int CheckIndentation() {
             int indentationLevel = 0;
 
-            while (GetCurrent().Type == TokenType.DM_Preproc_Whitespace) {
-                indentationLevel++;
+            Token current = GetCurrent();
+            if (current.Type == TokenType.DM_Preproc_Whitespace) {
+                indentationLevel = current.Text.Length;
 
                 Advance();
             }

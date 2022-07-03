@@ -6,12 +6,11 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared;
 using Robust.Shared.Configuration;
-using Robust.Shared.Maths;
 
 namespace OpenDreamClient.States.MainMenu
 {
     [GenerateTypedNameReferences]
-    public partial class MainMenuControl : Control
+    public sealed partial class MainMenuControl : Control
     {
         public LineEdit UserNameBox => UsernameBoxProtected;
         public LineEdit AddressBox => AddressBoxProtected;
@@ -20,7 +19,6 @@ namespace OpenDreamClient.States.MainMenu
 
         public MainMenuControl(IResourceCache resCache, IConfigurationManager configMan)
         {
-
             RobustXamlLoader.Load(this);
 
             Panel.PanelOverride = new StyleBoxFlat(Color.Black);

@@ -1,16 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    public class AsyncNativeProc : DreamProc {
-
+    public sealed class AsyncNativeProc : DreamProc {
         public delegate Task<DreamValue> HandlerFn(State s);
 
-        public class State : ProcState
+        public sealed class State : ProcState
         {
             public DreamObject Src;
             public DreamObject Usr;
@@ -39,7 +37,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // Used to avoid reentrant resumptions in our proc
-            protected void SafeResume() {
+            public void SafeResume() {
                 if (_inResume) {
                     return;
                 }
@@ -85,17 +83,16 @@ namespace OpenDreamRuntime.Procs {
                         return ProcStatus.Returned;
                     }
 
-                    // We have to resume now so that the execution context knows we have returned
-                    // This should lead to `return ProcStatus.Returned` inside `InternalResume`.
+                    IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
                     _task.ContinueWith(
-                        (_, inst) => ((State)inst).SafeResume(),
-                        this,
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                        _ => procScheduler.ScheduleAsyncNative(this),
+                        TaskScheduler.FromCurrentSynchronizationContext()
+                    );
                 }
 
-                // We need to call a proc.
                 while (_callProcNotify != null || _callResult != null)
                 {
+                    // We need to call a proc.
                     if (_callProcNotify != null) {
                         var callProcNotify = _callProcNotify;
                         _callProcNotify = null;
@@ -144,11 +141,11 @@ namespace OpenDreamRuntime.Procs {
         private Func<State, Task<DreamValue>> _taskFunc;
 
         private AsyncNativeProc()
-            : base("<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null, null, null, null, null)
+            : base(DreamPath.Root, "<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null, null, null, null, null)
         {}
 
-        public AsyncNativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
+        public AsyncNativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
@@ -158,7 +155,7 @@ namespace OpenDreamRuntime.Procs {
         {
             if (_defaultArgumentValues != null) {
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
+                    int argumentIndex = ArgumentNames?.IndexOf(defaultArgumentValue.Key) ?? -1;
 
                     if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
                         arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);

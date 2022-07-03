@@ -2,6 +2,7 @@
 using System.Text;
 
 namespace OpenDreamRuntime.Resources {
+    [Virtual]
     public class DreamResource {
         public string ResourcePath;
         public byte[] ResourceData {

@@ -7,17 +7,17 @@ namespace OpenDreamShared.Json {
         List = 2
     }
 
-    public class DreamTypeJson {
+    public sealed class DreamTypeJson {
         public string Path { get; set; }
         public int? Parent { get; set; }
-        public ProcDefinitionJson InitProc { get; set; }
-        public Dictionary<string, List<ProcDefinitionJson>> Procs { get; set; }
+        public int? InitProc { get; set; }
+        public List<List<int>> Procs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
         public Dictionary<string, int> GlobalVariables { get; set; }
         public List<int> Children { get; set; }
     }
 
-    public class GlobalListJson {
+    public sealed class GlobalListJson {
         public int GlobalCount { get; set; }
         public Dictionary<int, object> Globals { get; set; }
     }

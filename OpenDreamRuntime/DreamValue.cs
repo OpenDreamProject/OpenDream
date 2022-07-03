@@ -1,7 +1,8 @@
-﻿using System;
+﻿using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamRuntime.Procs;
@@ -321,7 +322,7 @@ namespace OpenDreamRuntime {
         }
     }
 
-    public class DreamValueJsonConverter : JsonConverter<DreamValue> {
+    public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
         public override void Write(Utf8JsonWriter writer, DreamValue value, JsonSerializerOptions options) {
             writer.WriteStartObject();
             writer.WriteNumber("Type", (int)value.Type);
@@ -330,6 +331,16 @@ namespace OpenDreamRuntime {
                 case DreamValue.DreamValueType.String: writer.WriteString("Value", (string)value.Value); break;
                 case DreamValue.DreamValueType.Float: writer.WriteNumber("Value", (float)value.Value); break;
                 case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: writer.WriteNull("Value"); break;
+                case DreamValue.DreamValueType.DreamObject
+                    when value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var iconObj):
+                {
+                    // TODO Check what happens with multiple states
+                    var icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
+                    var rscMan = IoCManager.Resolve<DreamResourceManager>();
+                    var resource = rscMan.LoadResource(icon.Icon);
+                    var base64 = Convert.ToBase64String(resource.ResourceData);
+                    writer.WriteString("Value",base64); break;
+                }
                 default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
             }
 

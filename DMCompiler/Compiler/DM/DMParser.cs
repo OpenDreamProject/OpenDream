@@ -96,7 +96,9 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Proc,
             TokenType.DM_Step,
             TokenType.DM_Throw,
-            TokenType.DM_Null
+            TokenType.DM_Null,
+            TokenType.DM_Switch,
+            TokenType.DM_Spawn
         };
 
         public DMASTFile File() {
@@ -111,8 +113,9 @@ namespace DMCompiler.Compiler.DM {
                 } catch (CompileErrorException) { }
 
                 if (Current().Type != TokenType.EndOfFile) {
-                    Warning("Error recovery had to skip to the next top-level statement");
+                    Token skipFrom = Current();
                     LocateNextTopLevel();
+                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
                 }
             }
 
@@ -161,6 +164,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
+                        DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                         BracketWhitespace();
                         DMASTDefinitionParameter[] parameters = DefinitionParameters();
                         BracketWhitespace();
@@ -184,6 +188,7 @@ namespace DMCompiler.Compiler.DM {
                         DMASTBlockInner block = Block();
 
                         if (block != null) {
+                            DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                             statement = new DMASTObjectDefinition(loc, _currentPath, block);
                         }
                     }
@@ -200,6 +205,8 @@ namespace DMCompiler.Compiler.DM {
                             PathArray(ref varPath, out value);
 
                             if (Check(TokenType.DM_Equals)) {
+                                if (value != null) Warning("List doubly initialized");
+
                                 Whitespace();
                                 value = Expression();
                                 if (value == null) Error("Expected an expression");
@@ -241,6 +248,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Empty object definition
                     if (statement == null) {
+                        DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 
@@ -307,26 +315,39 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
-            //TODO: Multidimensional lists
             implied_value = null;
-            if (Check(TokenType.DM_LeftBracket))
+            if (Current().Type == TokenType.DM_LeftBracket)
             {
                 var loc = Current().Location;
-                if (!path.IsDescendantOf(DreamPath.List)) {
+                // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
+                if (!path.Elements[..^1].Contains("list")) {
                     var elements = path.Elements.ToList();
                     elements.Insert(elements.IndexOf("var") + 1, "list");
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                Whitespace();
-                DMASTExpression size = Expression();
-                ConsumeRightBracket();
-                Whitespace();
+                List<DMASTExpression> sizes = new List<DMASTExpression>(2); // Most common is 1D or 2D lists
 
-                if (size is not null) {
-                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List),
-                        new[] { new DMASTCallParameter(loc, size) });
+                while (Check(TokenType.DM_LeftBracket))
+                {
+                    Whitespace();
+
+                    var size = Expression();
+                    if (size is not null)
+                    {
+                        sizes.Add(size);
+                    }
+
+                    ConsumeRightBracket();
+                    Whitespace();
                 }
+
+                if (sizes.Count > 0)
+                {
+                    DMASTExpression[] expressions = sizes.ToArray();
+                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
+                }
+
                 return true;
             }
             return false;
@@ -478,8 +499,6 @@ namespace DMCompiler.Compiler.DM {
                     if (statement != null) {
                         Whitespace();
                         procStatements.Add(statement);
-                    } else {
-                        if (procStatements.Count == 0) return null;
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -491,6 +510,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
+            if (procStatements.Count == 0) return null;
             return procStatements;
         }
 
@@ -660,8 +680,6 @@ namespace DMCompiler.Compiler.DM {
                 PathArray(ref varPath.Path, out value);
 
                 if (Check(TokenType.DM_Equals)) {
-                    if (value != null) Warning("List doubly initialized");
-
                     Whitespace();
                     value = Expression();
 
@@ -831,7 +849,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
                 Token afterIfBody = Current();
-                bool newLineAfterIf = Newline();
+                bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
                 if (Check(TokenType.DM_Else)) {
                     Whitespace();
@@ -1220,6 +1238,8 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatementTryCatch TryCatch() {
             if (Check(TokenType.DM_Try)) {
                 var loc = Current().Location;
+                Whitespace();
+
                 DMASTProcBlockInner tryBody = ProcBlock();
                 if (tryBody == null) {
                     DMASTProcStatement statement = ProcStatement();
@@ -1381,22 +1401,21 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTCallParameter CallParameter() {
             DMASTExpression expression = Expression();
+            if (expression == null)
+                return null;
 
-            if (expression != null) {
-                DMASTAssign assign = expression as DMASTAssign;
-
-                if (assign != null) {
-                    if (assign.Expression is DMASTConstantString) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTConstantString)assign.Expression).Value);
-                    } else if (assign.Expression is DMASTIdentifier) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
-                    }
+            if (expression is DMASTAssign assign) {
+                DMASTExpression key = assign.Expression;
+                if (key is DMASTIdentifier identifier) {
+                    key = new DMASTConstantString(key.Location, identifier.Identifier);
+                } else if (key is DMASTConstantNull) {
+                    key = new DMASTConstantString(key.Location, "null");
                 }
 
+                return new DMASTCallParameter(assign.Location, assign.Value, key);
+            } else {
                 return new DMASTCallParameter(expression.Location, expression);
             }
-
-            return null;
         }
 
         public DMASTDefinitionParameter[] DefinitionParameters() {
@@ -1887,9 +1906,11 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
-            if (allowParentheses && Check(TokenType.DM_LeftParenthesis)) {
-                Whitespace();
+            if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
+            {
+                BracketWhitespace();
                 DMASTExpression inner = Expression();
+                BracketWhitespace();
                 ConsumeRightParenthesis();
 
                 return inner;
@@ -1916,7 +1937,8 @@ namespace DMCompiler.Compiler.DM {
 
                         while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
                         Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        Newline(); //The lexer tosses in a newline after }
+                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                        Check(TokenType.Newline);
                     }
                 }
             }
@@ -1988,7 +2010,7 @@ namespace DMCompiler.Compiler.DM {
 
                                     string insideBracketsText = insideBrackets?.ToString();
                                     if (insideBracketsText != String.Empty) {
-                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.Location.SourceFile, insideBracketsText);
+                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                         List<Token> preprocTokens = new();
                                         Token preprocToken;
                                         do {
@@ -2038,19 +2060,95 @@ namespace DMCompiler.Compiler.DM {
                                         escapeSequence += tokenValue[i++];
                                     }
                                     i--;
-                                    if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
-                                        stringBuilder.Append('\\');
-                                        stringBuilder.Append(escapeSequence);
-                                    } else if (escapeSequence.StartsWith("n")) {
-                                        stringBuilder.Append('\n');
-                                        stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                    } else if (escapeSequence.StartsWith("t")) {
-                                        stringBuilder.Append('\t');
-                                        stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                    } else if (escapeSequence == "ref") {
-                                        currentInterpolationType = StringFormatTypes.Ref;
-                                    } else {
-                                        Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+
+                                    bool unimplemented = true;
+                                    //TODO: Many of these require [] before the macro instead of after. They should verify that there is one.
+                                    switch (escapeSequence) {
+                                        case "proper":
+                                        case "improper":
+                                            unimplemented = false;
+                                            if (stringBuilder.Length != 0) {
+                                                Error($"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                            }
+
+                                            //Skip a space if one exists
+                                            if (i < tokenValue.Length && tokenValue[i] == ' ') i++;
+
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);
+                                            break;
+
+                                        case "ref": unimplemented = false; currentInterpolationType = StringFormatTypes.Ref; break;
+                                        case "The": currentInterpolationType = StringFormatTypes.UpperDefiniteArticle; break;
+                                        case "the": currentInterpolationType = StringFormatTypes.LowerDefiniteArticle; break;
+
+                                        case "A":
+                                        case "An":
+                                            currentInterpolationType = StringFormatTypes.UpperIndefiniteArticle;
+                                            break;
+                                        case "a":
+                                        case "an":
+                                            currentInterpolationType = StringFormatTypes.LowerIndefiniteArticle;
+                                            break;
+
+                                        case "He":
+                                        case "She":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperSubjectPronoun);
+                                            break;
+                                        case "he":
+                                        case "she":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerSubjectPronoun);
+                                            break;
+
+                                        case "His":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperPossessiveAdjective);
+                                            break;
+                                        case "his":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
+                                            break;
+
+                                        case "him":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
+                                            break;
+
+                                        case "himself":
+                                        case "herself":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.ReflexivePronoun);
+                                            break;
+
+                                        case "Hers":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperPossessivePronoun);
+                                            break;
+                                        case "hers":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerPossessivePronoun);
+                                            break;
+
+                                        default:
+                                            if (escapeSequence.StartsWith("n")) {
+                                                unimplemented = false;
+                                                stringBuilder.Append('\n');
+                                                stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                            } else if (escapeSequence.StartsWith("t")) {
+                                                unimplemented = false;
+                                                stringBuilder.Append('\t');
+                                                stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                            } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                                Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                            }
+
+                                            break;
+                                    }
+
+                                    if (unimplemented) {
+                                        DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
                                     }
                                 } else
                                 {
@@ -2132,15 +2230,23 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     if (Check(DereferenceTypes)) {
-                        DMASTIdentifier property = Identifier();
-                        if (property == null) {
-                            if (token.Type == TokenType.DM_Colon) {
-                                //Not a valid dereference, but could still be a part of a ternary, so abort
-                                ReuseToken(token);
-                                break;
-                            } else {
-                                Error("Expected an identifier to dereference");
+                        bool invalidDeref = (expression is DMASTExpressionConstant && token.Type == TokenType.DM_Colon);
+                        DMASTIdentifier property = null;
+                        if (!invalidDeref) {
+                            property = Identifier();
+                            if (property == null) {
+                                if (token.Type == TokenType.DM_Colon) {
+                                    invalidDeref = true;
+                                } else {
+                                    Error("Expected an identifier to dereference");
+                                }
                             }
+                        }
+
+                        if (invalidDeref) {
+                            //Not a valid dereference, but could still be a part of a ternary, so abort
+                            ReuseToken(token);
+                            break;
                         }
 
                         (DereferenceType type, bool conditional) = token.Type switch {

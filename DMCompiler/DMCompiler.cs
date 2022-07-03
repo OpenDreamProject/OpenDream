@@ -28,6 +28,8 @@ namespace DMCompiler {
         private static DMPreprocessor _preprocessor;
 
         public static bool Compile(DMCompilerSettings settings) {
+            ErrorCount = 0;
+            WarningCount = 0;
             Settings = settings;
             if (Settings.Files == null) return false;
 
@@ -41,18 +43,7 @@ namespace DMCompiler {
             }
 
             _preprocessor = Preprocess(settings.Files);
-            if (settings.DumpPreprocessor) {
-                StringBuilder result = new();
-                foreach (Token t in _preprocessor.GetResult()) {
-                    result.Append(t.Text);
-                }
-
-                string output = Path.Join(Path.GetDirectoryName(settings.Files?[0]) ?? AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
-                File.WriteAllText(output, result.ToString());
-                Console.WriteLine($"Preprocessor output dumped to {output}");
-            }
-
-            bool successfulCompile = _preprocessor is not null && Compile(_preprocessor.GetResult());
+            bool successfulCompile = _preprocessor is not null && Compile(_preprocessor);
 
             return EndCompilation(successfulCompile);
         }
@@ -95,31 +86,42 @@ namespace DMCompiler {
 
         [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files) {
-            DMPreprocessor preprocessor = new DMPreprocessor(true, !Settings.SuppressUnimplementedWarnings);
-
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
-                if (!File.Exists(Path.Combine(dmStandardDirectory, "_Standard.dm")))
+                string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
+
+                if (!File.Exists(dmStandard))
                 {
-                    Error(new CompilerError(Location.Unknown, "DMStandard not found."));
+                    Error(new CompilerError(Location.Internal, "DMStandard not found."));
                     return null;
                 }
-                preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+
+                files.Add(dmStandard);
             }
 
-            VerbosePrint("Preprocessing");
-            foreach (string file in files) {
-                string directoryPath = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
+            if (Settings.DumpPreprocessor) {
+                //Preprocessing is done twice because the output is used up when dumping it
+                DMPreprocessor dumpPreproc = new DMPreprocessor(true);
+                dumpPreproc.IncludeFiles(files);
 
-                preprocessor.IncludeFile(directoryPath, fileName);
+                StringBuilder result = new();
+                foreach (Token t in dumpPreproc) {
+                    result.Append(t.Text);
+                }
+
+                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+
+                File.WriteAllText(outputPath, result.ToString());
+                Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
 
-            return preprocessor;
+            DMPreprocessor preproc = new DMPreprocessor(true);
+            preproc.IncludeFiles(files);
+            return preproc;
         }
 
-        private static bool Compile(List<Token> preprocessedTokens) {
+        private static bool Compile(IEnumerable<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
             DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
 
@@ -172,6 +174,13 @@ namespace DMCompiler {
             WarningCount++;
         }
 
+        public static void UnimplementedWarning(Location loc, string message) {
+            if (Settings.SuppressUnimplementedWarnings)
+                return;
+
+            Warning(new CompilerWarning(loc, message));
+        }
+
         public static void VerbosePrint(string message) {
             if (!Settings.Verbose) return;
 
@@ -185,10 +194,10 @@ namespace DMCompiler {
             foreach (string mapPath in mapPaths) {
                 VerbosePrint($"Converting map {mapPath}");
 
-                DMPreprocessor preprocessor = new DMPreprocessor(false, !Settings.SuppressUnimplementedWarnings);
-                preprocessor.IncludeFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
+                DMPreprocessor preprocessor = new DMPreprocessor(false);
+                preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
 
-                DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
+                DMLexer lexer = new DMLexer(mapPath, preprocessor);
                 DMMParser parser = new DMMParser(lexer);
                 DreamMapJson map = parser.ParseMap();
 
@@ -218,7 +227,9 @@ namespace DMCompiler {
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
             compiledDream.Interface = interfaceFile;
-            compiledDream.Types = DMObjectTree.CreateJsonRepresentation();
+            var jsonRep = DMObjectTree.CreateJsonRepresentation();
+            compiledDream.Types = jsonRep.Item1;
+            compiledDream.Procs = jsonRep.Item2;
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
@@ -240,15 +251,9 @@ namespace DMCompiler {
                 compiledDream.Globals = globalListJson;
             }
 
-            if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = new(DMObjectTree.GlobalProcs.Count);
-
-                foreach (KeyValuePair<string, DMProc> globalProc in DMObjectTree.GlobalProcs) {
-                    string name = globalProc.Key;
-                    DMProc proc = globalProc.Value;
-
-                    compiledDream.GlobalProcs[name] = proc.GetJsonRepresentation();
-                }
+            if (DMObjectTree.GlobalProcs.Count > 0)
+            {
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
             }
 
             string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {

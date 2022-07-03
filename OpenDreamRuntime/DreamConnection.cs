@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using OpenDreamRuntime.Objects;
@@ -12,17 +9,12 @@ using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
-using Robust.Shared.Maths;
 using Robust.Shared.Network;
-using Robust.Shared.ViewVariables;
 
 namespace OpenDreamRuntime
 {
-    public class DreamConnection
+    public sealed class DreamConnection
     {
-        [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
@@ -44,8 +36,8 @@ namespace OpenDreamRuntime
             get => _selectedStatPanel;
             set {
                 _selectedStatPanel = value;
-                var msg = _netManager.CreateNetMessage<MsgSelectStatPanel>();
-                msg.StatPanel = value;
+
+                var msg = new MsgSelectStatPanel() { StatPanel = value };
                 Session.ConnectedClient.SendMessage(msg);
             }
         }
@@ -123,8 +115,10 @@ namespace OpenDreamRuntime
                 }
             }
 
-            var msg = _netManager.CreateNetMessage<MsgUpdateAvailableVerbs>();
-            msg.AvailableVerbs = verbs?.ToArray() ?? Array.Empty<(string, string, string)>();
+            var msg = new MsgUpdateAvailableVerbs() {
+                AvailableVerbs = verbs?.ToArray() ?? Array.Empty<(string, string, string)>()
+            };
+
             Session.ConnectedClient.SendMessage(msg);
         }
 
@@ -145,8 +139,7 @@ namespace OpenDreamRuntime
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
                     if (Session.Status == SessionStatus.InGame)
                     {
-                        var msg = _netManager.CreateNetMessage<MsgUpdateStatPanels>();
-                        msg.StatPanels = _statPanels;
+                        var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
                         Session.ConnectedClient.SendMessage(msg);
                     }
 
@@ -226,10 +219,10 @@ namespace OpenDreamRuntime
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
                     DreamValue file = outputObject.GetVariable("file");
 
-                    var msg = _netManager.CreateNetMessage<MsgSound>();
-                    msg.Channel = channel;
-                    msg.Volume = volume;
-
+                    var msg = new MsgSound() {
+                        Channel = channel,
+                        Volume = volume
+                    };
 
                     if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
                         msg.File = (string)file.Value;
@@ -249,9 +242,11 @@ namespace OpenDreamRuntime
         }
 
         public void OutputControl(string message, string control) {
-            var msg = _netManager.CreateNetMessage<MsgOutput>();
-            msg.Value = message;
-            msg.Control = control;
+            var msg = new MsgOutput() {
+                Value = message,
+                Control = control
+            };
+
             Session.ConnectedClient.SendMessage(msg);
         }
 
@@ -275,7 +270,7 @@ namespace OpenDreamRuntime
                             Dictionary<String, DreamValue> arguments = new();
 
                             // TODO: this should probably be done on the client, shouldn't it?
-                            for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                            for (int i = 0; i < (verb.ArgumentNames?.Count ?? 0); i++) {
                                 String argumentName = verb.ArgumentNames[i];
                                 DMValueType argumentType = verb.ArgumentTypes[i];
                                 DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
@@ -296,13 +291,14 @@ namespace OpenDreamRuntime
 
         public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {
             var task = MakePromptTask(out var promptId);
+            var msg = new MsgPrompt() {
+                PromptId = promptId,
+                Title = title,
+                Message = message,
+                Types = types,
+                DefaultValue = defaultValue
+            };
 
-            var msg = _netManager.CreateNetMessage<MsgPrompt>();
-            msg.PromptId = promptId;
-            msg.Title = title;
-            msg.Message = message;
-            msg.Types = types;
-            msg.DefaultValue = default;
             Session.ConnectedClient.SendMessage(msg);
 
             return task;
@@ -312,16 +308,16 @@ namespace OpenDreamRuntime
         public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3)
         {
             var task = MakePromptTask(out var promptId);
+            var msg = new MsgAlert() {
+                PromptId = promptId,
+                Title = title,
+                Message = message,
+                Button1 = button1,
+                Button2 = button2,
+                Button3 = button3
+            };
 
-            var msg = _netManager.CreateNetMessage<MsgAlert>();
-            msg.PromptId = promptId;
-            msg.Title = title;
-            msg.Message = message;
-            msg.Button1 = button1;
-            msg.Button2 = button2;
-            msg.Button3 = button3;
             Session.ConnectedClient.SendMessage(msg);
-
             return task;
         }
 
@@ -339,9 +335,11 @@ namespace OpenDreamRuntime
 
         public void BrowseResource(DreamResource resource, string filename)
         {
-            var msg = _netManager.CreateNetMessage<MsgBrowseResource>();
-            msg.Filename = filename;
-            msg.Data = resource.ResourceData;
+            var msg = new MsgBrowseResource() {
+                Filename = filename,
+                Data = resource.ResourceData
+            };
+
             Session.ConnectedClient.SendMessage(msg);
         }
 
@@ -367,18 +365,21 @@ namespace OpenDreamRuntime
                 }
             }
 
-            var msg = _netManager.CreateNetMessage<MsgBrowse>();
-            msg.Size = size;
-            msg.Window = window;
-            msg.HtmlSource = body;
+            var msg = new MsgBrowse() {
+                Size = size,
+                Window = window,
+                HtmlSource = body
+            };
+
             Session.ConnectedClient.SendMessage(msg);
         }
 
-        public void WinSet(string controlId, string @params)
-        {
-            var msg = _netManager.CreateNetMessage<MsgWinSet>();
-            msg.ControlId = controlId;
-            msg.Params = @params;
+        public void WinSet(string controlId, string @params) {
+            var msg = new MsgWinSet() {
+                ControlId = controlId,
+                Params = @params
+            };
+
             Session.ConnectedClient.SendMessage(msg);
         }
     }

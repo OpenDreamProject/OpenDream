@@ -305,6 +305,9 @@ ehthumbs.db
 /DMCompiler/bin
 /DMCompiler/obj
 /DMCompiler/Properties
+/DMDisassembler/bin
+/DMDisassembler/obj
+/DMDisassembler/Properties
 /packages/System.Net.Sockets.4.3.0
 /TestGame/environment.json
 

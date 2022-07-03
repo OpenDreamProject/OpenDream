@@ -3,7 +3,6 @@ using Robust.Shared.Log;
 
 namespace OpenDreamShared.Compiler {
     public partial class Parser<SourceType> {
-
         private Stack<Stack<Token>> _lookahead = new();
 
         protected void SavePosition() {

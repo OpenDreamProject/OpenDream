@@ -1,11 +1,8 @@
-﻿using System.Collections.Generic;
-using OpenDreamShared.Input;
+﻿using OpenDreamShared.Input;
 using Robust.Server.Player;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Input {
-    class DreamCommandSystem : SharedDreamCommandSystem
+    sealed class DreamCommandSystem : SharedDreamCommandSystem
     {
         [Dependency] private readonly IDreamManager _dreamManager;
 

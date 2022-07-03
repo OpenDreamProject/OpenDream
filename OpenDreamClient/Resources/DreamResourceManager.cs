@@ -16,6 +16,7 @@ namespace OpenDreamClient.Resources
         ResourcePath CreateCacheFile(string filename, string data);
         ResourcePath CreateCacheFile(string filename, byte[] data);
         void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource;
+        ResourcePath GetCacheFilePath(string filename);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager
@@ -92,9 +93,10 @@ namespace OpenDreamClient.Resources
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourcePath)) {
                     _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
-                    var msg = _netManager.CreateNetMessage<MsgRequestResource>();
-                    msg.ResourcePath = resourcePath;
+
+                    var msg = new MsgRequestResource() { ResourcePath = resourcePath };
                     _netManager.ClientSendMessage(msg);
+
                     var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
                     Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
                         if (_loadingResources.ContainsKey(resourcePath)) {
@@ -112,18 +114,23 @@ namespace OpenDreamClient.Resources
             }
         }
 
+        public ResourcePath GetCacheFilePath(string filename)
+        {
+            return _cacheDirectory / new ResourcePath(filename).ToRelativePath();
+        }
+
         public ResourcePath CreateCacheFile(string filename, string data)
         {
             var path = _cacheDirectory / filename;
             _resourceManager.UserData.WriteAllText(path, data);
-            return path;
+            return new ResourcePath(filename);
         }
 
         public ResourcePath CreateCacheFile(string filename, byte[] data)
         {
             var path = _cacheDirectory / filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
-            return path;
+            return new ResourcePath(filename);
         }
 
         private DreamResource GetCachedResource(string resourcePath) {

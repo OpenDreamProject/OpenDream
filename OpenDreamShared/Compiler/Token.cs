@@ -172,7 +172,7 @@
         DMF_Window
     }
 
-    public partial class Token {
+    public sealed partial class Token {
         public TokenType Type;
         public Location Location;
         public string Text;

@@ -69,7 +69,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
                         }
                     } else {
-                        expandedTokens.Add(token);
+                        if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"\"{parameterName}\"", Location.Unknown, parameterName));
+                        } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName, Location.Unknown, null));
+                        } else {
+                            expandedTokens.Add(token);
+                        }
                     }
                 } else {
                     expandedTokens.Add(token);

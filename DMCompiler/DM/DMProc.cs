@@ -49,8 +49,15 @@ namespace DMCompiler.DM {
         public Location Location = Location.Unknown;
         public ProcAttributes Attributes;
         public string Name { get => _astDefinition?.Name; }
+        public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
+        [CanBeNull] public string VerbName;
+        [CanBeNull] public string VerbCategory = string.Empty;
+        [CanBeNull] public string VerbDesc;
+        public sbyte? Invisibility;
+
+        private DMObject _dmObject;
         private DMASTProcDefinition _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
@@ -62,14 +69,13 @@ namespace DMCompiler.DM {
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
-
-        [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory = string.Empty;
-        [CanBeNull] public string VerbDesc;
-        public sbyte? Invisibility;
+        private bool _negativeStackSizeError = false;
 
 
-        public DMProc([CanBeNull] DMASTProcDefinition astDefinition) {
+        public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
+        {
+            Id = id;
+            _dmObject = dmObject;
             _astDefinition = astDefinition;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
@@ -77,16 +83,23 @@ namespace DMCompiler.DM {
             _scopes.Push(new DMProcScope());
         }
 
-        public void Compile(DMObject dmObject) {
-            foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
-            }
+        public void Compile() {
+            DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
+            if (_astDefinition is not null) // It's null for initialization procs
+            {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
 
-            new DMProcBuilder(dmObject, this).ProcessProcDefinition(_astDefinition);
+                new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+
+            procDefinition.OwningTypeId = _dmObject.Id;
+            procDefinition.Name = Name;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {
@@ -267,19 +280,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DestroyEnumerator);
         }
 
-        public void CreateList() {
-            GrowStack(1);
+        public void CreateList(int size) {
+            ShrinkStack(size - 1); //Shrinks by the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateList);
+            WriteInt(size);
         }
 
-        public void ListAppend() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.ListAppend);
-        }
-
-        public void ListAppendAssociated() {
-            ShrinkStack(2);
-            WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        public void CreateAssociativeList(int size) {
+            ShrinkStack(size * 2 - 1); //Shrinks by twice the size of the list, grows by 1
+            WriteOpcode(DreamProcOpcode.CreateAssociativeList);
+            WriteInt(size);
         }
 
         public string NewLabelName() {
@@ -304,10 +314,14 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
             {
+                if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
+                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                }
+
                 PushFloat(-1);
                 DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
                 PushArguments(1, arr, null);
-                Call(DMReference.CreateGlobalProc("sleep"));
+                Call(DMReference.CreateGlobalProc(sleepProc.Id));
             }
         }
 
@@ -570,6 +584,12 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
+        public void CreateMultidimensionalList(int count) {
+            ShrinkStack(count - 1);
+            WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
+            WriteInt(count);
+        }
+
         public void Not() {
             WriteOpcode(DreamProcOpcode.BooleanNot);
         }
@@ -766,7 +786,21 @@ namespace DMCompiler.DM {
         }
 
         public void FormatString(string value) {
-            ShrinkStack(value.Count((char c) => c == 0xFF) - 1); //Shrinks by the amount of formats in the string, grows 1
+            int formatCount = 0;
+            for (int i = 0; i < value.Length; i++) {
+                if (value[i] == 0xFF) {
+                    StringFormatTypes formatType = (StringFormatTypes)value[++i];
+
+                    switch (formatType) {
+                        case StringFormatTypes.Stringify:
+                        case StringFormatTypes.Ref:
+                            formatCount++;
+                            break;
+                    }
+                }
+            }
+
+            ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
         }
@@ -862,18 +896,29 @@ namespace DMCompiler.DM {
 
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
-                case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
-                
-                case DMReference.Type.Global: WriteInt(reference.Index); break;
+                case DMReference.Type.Local:
+                    WriteByte((byte)reference.Index);
+                    break;
+
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.Global:
+                    WriteInt(reference.Index);
+                    break;
 
                 case DMReference.Type.Field:
-                case DMReference.Type.Proc: WriteString(reference.Name); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.Proc:
+                    WriteString(reference.Name);
+                    ShrinkStack(affectStack ? 1 : 0);
+                    break;
 
                 case DMReference.Type.SrcField:
-                case DMReference.Type.GlobalProc:
-                case DMReference.Type.SrcProc: WriteString(reference.Name); break;
+                case DMReference.Type.SrcProc:
+                    WriteString(reference.Name);
+                    break;
 
-                case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+                case DMReference.Type.ListIndex:
+                    ShrinkStack(affectStack ? 2 : 0);
+                    break;
 
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.Src:
@@ -881,7 +926,9 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
                     break;
-                default: throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
+
+                default:
+                    throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
             }
         }
 
@@ -893,8 +940,9 @@ namespace DMCompiler.DM {
         private void ShrinkStack(int size) {
             _currentStackSize -= size;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-            if (_currentStackSize < 0) {
-                throw new CompileAbortException(Location, $"Negative stack size in proc {_astDefinition.ObjectPath}.{Name}()");
+            if (_currentStackSize < 0 && !_negativeStackSizeError) {
+                _negativeStackSizeError = true;
+                DMCompiler.Error(new CompilerError(Location, $"Negative stack size"));
             }
         }
     }

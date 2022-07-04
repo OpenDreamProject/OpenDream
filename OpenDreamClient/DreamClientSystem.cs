@@ -1,10 +1,6 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface;
 using Robust.Client.GameObjects;
-using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
-using System.Collections.Generic;
-using Robust.Shared.Log;
 
 namespace OpenDreamClient {
     sealed class DreamClientSystem : EntitySystem {

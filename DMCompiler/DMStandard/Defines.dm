@@ -75,8 +75,8 @@
 #define EDGE_PERSPECTIVE 2
 
 //These are used for the world.byond_version, client.byond_version, etc. vars too
-#define DM_VERSION 513
-#define DM_BUILD 1561
+#define DM_VERSION 514
+#define DM_BUILD 1584
 
 //regex
 #define REGEX_QUOTE(a) regex((a), 1)

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
-    public class IconAppearance : IEquatable<IconAppearance> {
+    public sealed class IconAppearance : IEquatable<IconAppearance> {
         [ViewVariables] public string Icon;
         [ViewVariables] public string IconState;
         [ViewVariables] public AtomDirection Direction;

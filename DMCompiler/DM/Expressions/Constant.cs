@@ -104,7 +104,7 @@ namespace DMCompiler.DM.Expressions {
 
     // 4.0, -4.0
     class Number : Constant {
-        float Value { get; }
+        public float Value { get; }
 
         public Number(Location location, int value) : base(location) {
             Value = value;
@@ -227,7 +227,7 @@ namespace DMCompiler.DM.Expressions {
 
     // "abc"
     class String : Constant {
-        string Value { get; }
+        public string Value { get; }
 
         public String(Location location, string value) : base(location) {
             Value = value;

@@ -1,7 +1,8 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectList : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectList : DreamMetaObjectRoot {
         public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             base.OnObjectCreated(dreamObject, creationArguments);
 
@@ -21,13 +22,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "len") {
-                DreamList list = (DreamList)dreamObject;
-
-                return new DreamValue(list.GetLength());
-            } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
+        {
+            switch (variableName)
+            {
+                case "len":
+                {
+                    DreamList list = (DreamList)dreamObject;
+                    return new DreamValue(list.GetLength());
+                }
+                case "type":
+                    return new DreamValue(DreamPath.List);
+                default:
+                    return base.OnVariableGet(dreamObject, variableName, variableValue);
             }
         }
 

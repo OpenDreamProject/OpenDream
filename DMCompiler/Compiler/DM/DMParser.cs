@@ -1498,6 +1498,8 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTDefinitionParameter(loc, path, value, type, possibleValues);
             }
 
+            Check(TokenType.DM_IndeterminateArgs);
+
             return null;
         }
 

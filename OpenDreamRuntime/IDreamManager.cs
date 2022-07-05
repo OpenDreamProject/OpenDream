@@ -10,7 +10,6 @@ namespace OpenDreamRuntime {
         public int DMExceptionCount { get; set; }
 
         public List<DreamValue> Globals { get; set; }
-        public Dictionary<string, DreamProc> GlobalProcs { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
@@ -22,6 +21,7 @@ namespace OpenDreamRuntime {
 
         public void Initialize(string? testingJson);
         public void Shutdown();
+        public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);
         DreamConnection GetConnectionFromClient(DreamObject client);
         public DreamObject GetClientFromMob(DreamObject mob);
@@ -29,8 +29,6 @@ namespace OpenDreamRuntime {
         DreamConnection GetConnectionBySession(IPlayerSession session);
         public void Update();
 
-        public void SetGlobalNativeProc(NativeProc.HandlerFn func);
-        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
         IEnumerable<DreamConnection> Connections { get; }

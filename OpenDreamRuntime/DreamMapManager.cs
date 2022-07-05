@@ -71,6 +71,7 @@ namespace OpenDreamRuntime {
             {
                 Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
+
             DreamMapJson map = maps[0];
 
             Size = new Vector2i(map.MaxX, map.MaxY);

@@ -917,7 +917,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             //Remove trailing &
-            paramBuilder.Remove(paramBuilder.Length-1, 1);
+            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length-1, 1);
             return new DreamValue(paramBuilder.ToString());
         }
 

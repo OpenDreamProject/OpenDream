@@ -1,5 +1,7 @@
-// RUNTIME TRUE
+// RUNTIME ERROR
+
 var/ConstZero1_a
-/world/proc/Const2_Proc()
-	ConstZero1_a = 1 / Const2_Proc()
+
+/proc/RunTest()
+	ConstZero1_a = 1 / RunTest()
 	return 1

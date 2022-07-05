@@ -30,7 +30,31 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateList(DMProcState state) {
-            var list = DreamList.Create();
+            int size = state.ReadInt();
+            var list = DreamList.Create(size);
+
+            foreach (DreamValue value in state.PopCount(size)) {
+                list.AddValue(value);
+            }
+
+            state.Push(new DreamValue(list));
+            return null;
+        }
+
+        public static ProcStatus? CreateAssociativeList(DMProcState state) {
+            int size = state.ReadInt();
+            var list = DreamList.Create(size);
+
+            ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
+            for (int i = 0; i < popped.Length; i += 2) {
+                DreamValue key = popped[i];
+
+                if (key == DreamValue.Null) {
+                    list.AddValue(popped[i + 1]);
+                } else {
+                    list.SetValue(key, popped[i + 1], allowGrowth: true);
+                }
+            }
 
             state.Push(new DreamValue(list));
             return null;
@@ -133,13 +157,12 @@ namespace OpenDreamRuntime.Procs {
             var count = state.ReadInt();
 
             List<int> sizes = new List<int>(count);
-            for (var i = 0; i < count; i++)
+            foreach (var size in state.PopCount(count))
             {
-                state.Pop().TryGetValueAsInteger(out var size);
-                sizes.Add(size);
+                size.TryGetValueAsInteger(out var sizeInt);
+                sizes.Add(sizeInt);
             }
 
-            sizes.Reverse();
             var list = DreamList.CreateMultidimensional(sizes);
 
             state.Push(new DreamValue(list));
@@ -184,7 +207,13 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
                             break;
                         }
-                        default: throw new Exception("Invalid special character");
+                        default:
+                            if (Enum.IsDefined(typeof(StringFormatTypes), (byte)c)) {
+                                //Likely an unimplemented text macro, ignore it
+                                break;
+                            }
+
+                            throw new Exception("Invalid special character");
                     }
                 } else {
                     formattedString.Append(c);
@@ -300,11 +329,7 @@ namespace OpenDreamRuntime.Procs {
             int namedCount = state.ReadInt();
             int unnamedCount = argumentCount - namedCount;
             DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
-            DreamValue[]? argumentValues = argumentCount > 0 ? new DreamValue[argumentCount] : null;
-
-            for (int i = argumentCount - 1; i >= 0; i--) {
-                argumentValues[i] = state.Pop();
-            }
+            ReadOnlySpan<DreamValue> argumentValues = argumentCount > 0 ? state.PopCount(argumentCount) : null;
 
             for (int i = 0; i < argumentCount; i++) {
                 DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
@@ -371,6 +396,12 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? PushString(DMProcState state) {
             state.Push(new DreamValue(state.ReadString()));
+            return null;
+        }
+
+        public static ProcStatus? PushGlobalVars(DMProcState state)
+        {
+            state.Push(new DreamValue(DreamGlobalVars.Create()));
             return null;
         }
         #endregion Values
@@ -1179,7 +1210,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
-                    proc = state.DreamManager.GlobalProcs[procRef.Name];
+                    proc = state.DreamManager.ObjectTree.Procs[procRef.Index];
 
                     break;
                 }
@@ -1236,7 +1267,8 @@ namespace OpenDreamRuntime.Procs {
                     if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
                         throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
                     string procName = fullProcPath.LastElement;
-                    DreamProc proc = state.DreamManager.GlobalProcs[procName];
+                    if (!state.DreamManager.ObjectTree.TryGetGlobalProc(procName, out DreamProc? proc))
+                        throw new Exception($"Failed to get global proc \"{procName}\"");
 
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
@@ -1687,12 +1719,7 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
 
-                for (int i = 0; i < count; i++) {
-                    DreamValue value = state.Pop();
-
-                    if (i == pickedIndex)
-                        picked = value;
-                }
+                picked = state.PopCount(count)[pickedIndex];
             }
 
             state.Push(picked);
@@ -1714,13 +1741,14 @@ namespace OpenDreamRuntime.Procs {
             }
             int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
             StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
-            for(int i = 0; i < count; ++i)
+            foreach (DreamValue add in state.PopCount(count))
             {
-                if (state.Pop().TryGetValueAsString(out var addStr))
+                if (add.TryGetValueAsString(out var addStr))
                 {
                     builder.Append(addStr);
                 }
             }
+
             state.Push(new DreamValue(builder.ToString()));
             return null;
         }

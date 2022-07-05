@@ -1415,22 +1415,21 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTCallParameter CallParameter() {
             DMASTExpression expression = Expression();
+            if (expression == null)
+                return null;
 
-            if (expression != null) {
-                DMASTAssign assign = expression as DMASTAssign;
-
-                if (assign != null) {
-                    if (assign.Expression is DMASTConstantString) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTConstantString)assign.Expression).Value);
-                    } else if (assign.Expression is DMASTIdentifier) {
-                        return new DMASTCallParameter(assign.Location, assign.Value, ((DMASTIdentifier)assign.Expression).Identifier);
-                    }
+            if (expression is DMASTAssign assign) {
+                DMASTExpression key = assign.Expression;
+                if (key is DMASTIdentifier identifier) {
+                    key = new DMASTConstantString(key.Location, identifier.Identifier);
+                } else if (key is DMASTConstantNull) {
+                    key = new DMASTConstantString(key.Location, "null");
                 }
 
+                return new DMASTCallParameter(assign.Location, assign.Value, key);
+            } else {
                 return new DMASTCallParameter(expression.Location, expression);
             }
-
-            return null;
         }
 
         public DMASTDefinitionParameter[] DefinitionParameters() {
@@ -2025,7 +2024,7 @@ namespace DMCompiler.Compiler.DM {
 
                                     string insideBracketsText = insideBrackets?.ToString();
                                     if (insideBracketsText != String.Empty) {
-                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(constantToken.Location.SourceFile, insideBracketsText);
+                                        DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                         List<Token> preprocTokens = new();
                                         Token preprocToken;
                                         do {
@@ -2076,18 +2075,94 @@ namespace DMCompiler.Compiler.DM {
                                     }
                                     i--;
 
-                                    if (DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                    bool unimplemented = true;
+                                    //TODO: Many of these require [] before the macro instead of after. They should verify that there is one.
+                                    switch (escapeSequence) {
+                                        case "proper":
+                                        case "improper":
+                                            unimplemented = false;
+                                            if (stringBuilder.Length != 0) {
+                                                Error($"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                            }
+
+                                            //Skip a space if one exists
+                                            if (i < tokenValue.Length && tokenValue[i] == ' ') i++;
+
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);
+                                            break;
+
+                                        case "ref": unimplemented = false; currentInterpolationType = StringFormatTypes.Ref; break;
+                                        case "The": currentInterpolationType = StringFormatTypes.UpperDefiniteArticle; break;
+                                        case "the": currentInterpolationType = StringFormatTypes.LowerDefiniteArticle; break;
+
+                                        case "A":
+                                        case "An":
+                                            currentInterpolationType = StringFormatTypes.UpperIndefiniteArticle;
+                                            break;
+                                        case "a":
+                                        case "an":
+                                            currentInterpolationType = StringFormatTypes.LowerIndefiniteArticle;
+                                            break;
+
+                                        case "He":
+                                        case "She":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperSubjectPronoun);
+                                            break;
+                                        case "he":
+                                        case "she":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerSubjectPronoun);
+                                            break;
+
+                                        case "His":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperPossessiveAdjective);
+                                            break;
+                                        case "his":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
+                                            break;
+
+                                        case "him":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
+                                            break;
+
+                                        case "himself":
+                                        case "herself":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.ReflexivePronoun);
+                                            break;
+
+                                        case "Hers":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.UpperPossessivePronoun);
+                                            break;
+                                        case "hers":
+                                            stringBuilder.Append(StringFormatCharacter);
+                                            stringBuilder.Append((char)StringFormatTypes.LowerPossessivePronoun);
+                                            break;
+
+                                        default:
+                                            if (escapeSequence.StartsWith("n")) {
+                                                unimplemented = false;
+                                                stringBuilder.Append('\n');
+                                                stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                            } else if (escapeSequence.StartsWith("t")) {
+                                                unimplemented = false;
+                                                stringBuilder.Append('\t');
+                                                stringBuilder.Append(escapeSequence.Skip(1).ToArray());
+                                            } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
+                                                Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                            }
+
+                                            break;
+                                    }
+
+                                    if (unimplemented) {
                                         DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
-                                    } else if (escapeSequence.StartsWith("n")) {
-                                        stringBuilder.Append('\n');
-                                        stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                    } else if (escapeSequence.StartsWith("t")) {
-                                        stringBuilder.Append('\t');
-                                        stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                    } else if (escapeSequence == "ref") {
-                                        currentInterpolationType = StringFormatTypes.Ref;
-                                    } else {
-                                        Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
                                     }
                                 } else
                                 {

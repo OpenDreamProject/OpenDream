@@ -398,6 +398,12 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(state.ReadString()));
             return null;
         }
+
+        public static ProcStatus? PushGlobalVars(DMProcState state)
+        {
+            state.Push(new DreamValue(DreamGlobalVars.Create()));
+            return null;
+        }
         #endregion Values
 
         #region Math

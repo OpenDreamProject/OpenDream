@@ -785,6 +785,12 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
+        public void PushGlobalVars()
+        {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushGlobalVars);
+        }
+
         public void FormatString(string value) {
             int formatCount = 0;
             for (int i = 0; i < value.Length; i++) {

@@ -259,4 +259,57 @@ namespace OpenDreamRuntime.Objects {
             }
         }
     }
+
+    // global.vars list
+    sealed class DreamGlobalVars : DreamList
+    {
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
+
+        private DreamGlobalVars()
+        {
+            IoCManager.InjectDependencies(this);
+        }
+
+        public static DreamGlobalVars Create() {
+            var list = new DreamGlobalVars();
+            return list;
+        }
+
+        public override List<DreamValue> GetValues() {
+            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
+            // Skip world
+            foreach (var key in root.GlobalVariables.Keys.Skip(1))
+            {
+                values.Add(new DreamValue(key));
+            }
+            return values;
+        }
+
+        public override DreamValue GetValue(DreamValue key)
+        {
+            if (!key.TryGetValueAsString(out var varName)) {
+                throw new Exception($"Invalid var index {key}");
+            }
+            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
+                throw new Exception($"Invalid global {varName}");
+            }
+
+            return _dreamMan.Globals[globalId];
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            if (key.TryGetValueAsString(out var varName)) {
+                var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+                if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
+                    throw new Exception($"Cannot set value of undefined global \"{varName}\"");
+                }
+
+                _dreamMan.Globals[globalId] = value;
+            } else {
+                throw new Exception($"Invalid var index {key}");
+            }
+        }
+    }
 }

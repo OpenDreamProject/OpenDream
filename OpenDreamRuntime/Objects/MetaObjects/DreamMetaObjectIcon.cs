@@ -5,11 +5,15 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectIcon : DreamMetaObjectRoot
+    sealed class DreamMetaObjectIcon : IDreamMetaObject
     {
+        public IDreamMetaObject? ParentType { get; set; }
+
         [Dependency] private readonly DreamResourceManager _rscMan = default!;
 
-        public DreamMetaObjectIcon(DreamObjectDefinition definition) : base(definition){}
+        public DreamMetaObjectIcon() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public enum DreamIconMovingMode : byte
         {
@@ -19,7 +23,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         }
 
-        public static Dictionary<DreamObject, DreamIconObject> ObjectToDreamIcon = new();
+        public static readonly Dictionary<DreamObject, DreamIconObject> ObjectToDreamIcon = new();
 
         public struct DreamIconObject {
             // Actual DMI data
@@ -44,14 +48,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
 
-                if (state.TryGetValueAsString(out var iconState))
-                {
-                    State = iconState;
-                }
-                else
-                {
-                    State = null;
-                }
+                state.TryGetValueAsString(out State);
 
                 if (dir.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
                 {
@@ -90,8 +87,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            ParentType.OnObjectCreated(dreamObject, creationArguments);
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue icon = creationArguments.GetArgument(0, "icon");
             DreamValue state = creationArguments.GetArgument(1, "icon_state");
@@ -129,13 +126,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             ObjectToDreamIcon.Add(dreamObject, dreamIconObject);
-
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
+        public void OnObjectDeleted(DreamObject dreamObject) {
             ObjectToDreamIcon.Remove(dreamObject);
 
-            ParentType.OnObjectDeleted(dreamObject);
+            ParentType?.OnObjectDeleted(dreamObject);
         }
     }
 }

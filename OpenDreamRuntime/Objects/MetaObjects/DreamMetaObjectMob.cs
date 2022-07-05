@@ -3,38 +3,41 @@ using OpenDreamShared.Dream;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectMob : DreamMetaObjectRoot {
-        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
-        private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
+    sealed class DreamMetaObjectMob : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        public override bool ShouldCallNew => true;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IPlayerManager _playerManager = default!;
 
-        public DreamMetaObjectMob(DreamObjectDefinition definition) : base(definition){}
+        public DreamMetaObjectMob() {
+            IoCManager.InjectDependencies(this);
+        }
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            ParentType.OnObjectCreated(dreamObject, creationArguments);
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
             _dreamManager.Mobs.Add(dreamObject);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
-            ParentType.OnObjectDeleted(dreamObject);
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            ParentType?.OnObjectDeleted(dreamObject);
             _dreamManager.Mobs.Remove(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            if (variableName == "key" || variableName == "ckey") {
-                if (_playerManager.TryGetSessionByUsername(variableValue.GetValueAsString(), out var session)) {
+            if (varName == "key" || varName == "ckey") {
+                if (_playerManager.TryGetSessionByUsername(value.GetValueAsString(), out var session)) {
                     var connection = _dreamManager.GetConnectionBySession(session);
 
                     connection.MobDreamObject = dreamObject;
                 }
-            } else if (variableName == "see_invisible") {
+            } else if (varName == "see_invisible") {
                //TODO
-            } else if (variableName == "client" && variableValue != oldVariableValue) {
-                var newClient = variableValue.GetValueAsDreamObject();
-                var oldClient = oldVariableValue.GetValueAsDreamObject();
+            } else if (varName == "client" && value != oldValue) {
+                var newClient = value.GetValueAsDreamObject();
+                var oldClient = oldValue.GetValueAsDreamObject();
 
                 if (newClient != null) {
                     _dreamManager.GetConnectionFromClient(newClient).MobDreamObject = dreamObject;
@@ -44,21 +47,21 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "key" || variableName == "ckey") {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            if (varName == "key" || varName == "ckey") {
                 if (dreamObject.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client)) {
-                    return client.GetVariable(variableName);
+                    return client.GetVariable(varName);
                 } else {
                     return DreamValue.Null;
                 }
-            } else if (variableName == "client") {
+            } else if (varName == "client") {
                 return new(_dreamManager.GetClientFromMob(dreamObject));
             } else {
-              return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
+              return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
-        public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             DreamObject client = a.GetValueAsDreamObjectOfType(DreamPath.Mob).GetVariable("client").GetValueAsDreamObjectOfType(DreamPath.Client);
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
 

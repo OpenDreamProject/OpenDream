@@ -6,23 +6,25 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectWorld : DreamMetaObjectRoot {
-        [Dependency] private IDreamManager _dreamManager = null;
-        [Dependency] private DreamResourceManager _dreamRscMan = null;
-        [Dependency] private IDreamMapManager _dreamMapManager = null;
-        [Dependency] private IGameTiming _gameTiming = null;
-        [Dependency] private IConfigurationManager _cfg = null;
+    sealed class DreamMetaObjectWorld : IDreamMetaObject {
+        public IDreamMetaObject? ParentType { get; set; }
+
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamResourceManager _dreamRscMan = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
+        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
         private ViewRange _viewRange;
 
-        private double TickLag { get => _gameTiming.TickPeriod.TotalMilliseconds / 100; }
+        private double TickLag => _gameTiming.TickPeriod.TotalMilliseconds / 100;
 
-        public DreamMetaObjectWorld(DreamObjectDefinition def) : base(def) {
+        public DreamMetaObjectWorld() {
             IoCManager.InjectDependencies(this);
         }
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            ParentType.OnObjectCreated(dreamObject, creationArguments);
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
@@ -42,20 +44,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            switch (variableName) {
+            switch (varName) {
                 case "fps":
-                    _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
+                    _cfg.SetCVar(CVars.NetTickrate, value.GetValueAsInteger()); break;
                 case "maxz":
-                    _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
+                    _dreamMapManager.SetZLevels(value.GetValueAsInteger()); break;
                 case "log":
-                    if (variableValue.TryGetValueAsString(out var logStr))
+                    if (value.TryGetValueAsString(out var logStr))
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
                     }
-                    else if(!variableValue.TryGetValueAsDreamResource(out _))
+                    else if(!value.TryGetValueAsDreamResource(out _))
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
                     }
@@ -63,8 +65,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            switch (variableName) {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            switch (varName) {
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":
@@ -104,11 +106,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue((_viewRange.IsSquare && _viewRange.IsCenterable) ? _viewRange.Width : _viewRange.ToString());
                 }
                 default:
-                    return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
-        public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }

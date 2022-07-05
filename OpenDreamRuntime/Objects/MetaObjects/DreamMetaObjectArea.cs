@@ -2,15 +2,18 @@
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectArea : DreamMetaObjectRoot {
-        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
-        private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+    sealed class DreamMetaObjectArea : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        public override bool ShouldCallNew => true;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
-        public DreamMetaObjectArea(DreamObjectDefinition definition) : base(definition){}
+        public DreamMetaObjectArea() {
+            IoCManager.InjectDependencies(this);
+        }
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = DreamList.Create();
 
             contents.ValueAssigned += (DreamList list, DreamValue key, DreamValue value) => {
@@ -25,25 +28,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _dreamManager.AreaContents.Add(dreamObject, contents);
 
-            ParentType.OnObjectCreated(dreamObject, creationArguments);
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
+        public void OnObjectDeleted(DreamObject dreamObject) {
             _dreamManager.AreaContents.Remove(dreamObject);
-            ParentType.OnObjectDeleted(dreamObject);
+            ParentType?.OnObjectDeleted(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue,
-            DreamValue oldVariableValue)
-        {
-            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
-        }
-
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "contents") {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            if (varName == "contents") {
                 return new DreamValue(_dreamManager.AreaContents[dreamObject]);
             } else {
-                return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
+                return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
     }

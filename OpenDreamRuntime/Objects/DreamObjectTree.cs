@@ -85,6 +85,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {
+            // TODO: Setting meta objects outside of their order of inheritance can break things.
+            metaObject.ParentType = GetTreeEntry(path).ParentEntry.ObjectDefinition.MetaObject;
+
             foreach (TreeEntry treeEntry in GetAllDescendants(path)) {
                 treeEntry.ObjectDefinition.MetaObject = metaObject;
             }

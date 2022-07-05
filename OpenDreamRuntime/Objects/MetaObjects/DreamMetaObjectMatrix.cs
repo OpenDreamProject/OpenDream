@@ -1,45 +1,36 @@
 ﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectMatrix : DreamMetaObjectRoot {
+    sealed class DreamMetaObjectMatrix : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
+
         private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
-
-        public override bool ShouldCallNew => true;
-
-        public DreamMetaObjectMatrix(DreamObjectDefinition definition) : base(definition){}
-
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue,
-            DreamValue oldVariableValue)
-        {
-            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
-        }
-
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
-        }
 
         public static float[] MatrixToFloatArray(DreamObject matrix) {
             if (!matrix.IsSubtypeOf(DreamPath.Matrix))
                 throw new ArgumentException($"Invalid matrix {matrix}");
 
             float[] array = new float[6];
-            array[0] = matrix.GetVariable("a").GetValueAsFloat();
-            array[1] = matrix.GetVariable("d").GetValueAsFloat();
-            array[2] = matrix.GetVariable("b").GetValueAsFloat();
-            array[3] = matrix.GetVariable("e").GetValueAsFloat();
-            array[4] = matrix.GetVariable("c").GetValueAsFloat();
-            array[5] = matrix.GetVariable("f").GetValueAsFloat();
+            matrix.GetVariable("a").TryGetValueAsFloat(out array[0]);
+            matrix.GetVariable("d").TryGetValueAsFloat(out array[1]);
+            matrix.GetVariable("b").TryGetValueAsFloat(out array[2]);
+            matrix.GetVariable("e").TryGetValueAsFloat(out array[3]);
+            matrix.GetVariable("c").TryGetValueAsFloat(out array[4]);
+            matrix.GetVariable("f").TryGetValueAsFloat(out array[5]);
             return array;
         }
 
-        public override DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
-            DreamObject left = a.GetValueAsDreamObjectOfType(DreamPath.Matrix);
-            float lA = left.GetVariable("a").GetValueAsFloat();
-            float lB = left.GetVariable("b").GetValueAsFloat();
-            float lC = left.GetVariable("c").GetValueAsFloat();
-            float lD = left.GetVariable("d").GetValueAsFloat();
-            float lE = left.GetVariable("e").GetValueAsFloat();
-            float lF = left.GetVariable("f").GetValueAsFloat();
+        public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
+            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject left))
+                throw new ArgumentException($"Invalid matrix {a}");
+
+            left.GetVariable("a").TryGetValueAsFloat(out float lA);
+            left.GetVariable("b").TryGetValueAsFloat(out float lB);
+            left.GetVariable("c").TryGetValueAsFloat(out float lC);
+            left.GetVariable("d").TryGetValueAsFloat(out float lD);
+            left.GetVariable("e").TryGetValueAsFloat(out float lE);
+            left.GetVariable("f").TryGetValueAsFloat(out float lF);
 
             if (b.TryGetValueAsFloat(out float bFloat)) {
                 DreamObject output = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
@@ -52,12 +43,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 return new(output);
             } else if (b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject right)) {
-                float rA = right.GetVariable("a").GetValueAsFloat();
-                float rB = right.GetVariable("b").GetValueAsFloat();
-                float rC = right.GetVariable("c").GetValueAsFloat();
-                float rD = right.GetVariable("d").GetValueAsFloat();
-                float rE = right.GetVariable("e").GetValueAsFloat();
-                float rF = right.GetVariable("f").GetValueAsFloat();
+                right.GetVariable("a").TryGetValueAsFloat(out float rA);
+                right.GetVariable("b").TryGetValueAsFloat(out float rB);
+                right.GetVariable("c").TryGetValueAsFloat(out float rC);
+                right.GetVariable("d").TryGetValueAsFloat(out float rD);
+                right.GetVariable("e").TryGetValueAsFloat(out float rE);
+                right.GetVariable("f").TryGetValueAsFloat(out float rF);
 
                 DreamObject output = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
                 output.SetVariable("a", new(rA * lA + rD * lB));
@@ -69,6 +60,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 return new(output);
             }
+
+            if (ParentType == null)
+                throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
 
             return ParentType.OperatorMultiply(a, b);
         }

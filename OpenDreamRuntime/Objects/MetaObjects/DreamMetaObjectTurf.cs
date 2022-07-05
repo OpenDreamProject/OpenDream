@@ -1,18 +1,17 @@
 ﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectTurf : DreamMetaObjectRoot {
-        private IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+    sealed class DreamMetaObjectTurf : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        public override bool ShouldCallNew => true;
+        private readonly IDreamMapManager _dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
 
-        public DreamMetaObjectTurf(DreamObjectDefinition definition) : base(definition){}
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            ParentType.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
-
-            if (variableName == "loc") {
-                if (variableValue.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject replacedTurf)) {
+            if (varName == "loc") {
+                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject replacedTurf)) {
                     //Transfer all the old turf's contents
                     DreamList contents = replacedTurf.GetVariable("contents").GetValueAsDreamList();
                     foreach (DreamValue child in contents.GetValues()) {
@@ -27,15 +26,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "loc") {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            if (varName == "loc") {
                 int x = dreamObject.GetVariable("x").GetValueAsInteger();
                 int y = dreamObject.GetVariable("y").GetValueAsInteger();
                 int z = dreamObject.GetVariable("z").GetValueAsInteger();
 
                 return new DreamValue(_dreamMapManager.GetAreaAt(x, y, z));
             } else {
-                return ParentType.OnVariableGet(dreamObject, variableName, variableValue);
+                return ParentType.OnVariableGet(dreamObject, varName, value);
             }
         }
     }

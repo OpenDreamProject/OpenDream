@@ -33,15 +33,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
-            if (fps.Value != null) {
-                _cfg.SetCVar(CVars.NetTickrate, fps.GetValueAsInteger());
+            if (fps.TryGetValueAsInteger(out var fpsValue)) {
+                _cfg.SetCVar(CVars.NetTickrate, fpsValue);
             }
 
             DreamValue view = dreamObject.ObjectDefinition.Variables["view"];
             if (view.TryGetValueAsString(out string viewString)) {
                 _viewRange = new ViewRange(viewString);
             } else {
-                _viewRange = new ViewRange(view.GetValueAsInteger());
+                if (!view.TryGetValueAsInteger(out var viewInt)) {
+                    Logger.Warning("world.view did not contain a valid value. A default of 5 is being used.");
+                    viewInt = 5;
+                }
+
+                _viewRange = new ViewRange(viewInt);
             }
         }
 
@@ -50,9 +55,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             switch (varName) {
                 case "fps":
-                    _cfg.SetCVar(CVars.NetTickrate, value.GetValueAsInteger()); break;
+                    if (!value.TryGetValueAsInteger(out var fps))
+                        fps = 10;
+
+                    _cfg.SetCVar(CVars.NetTickrate, fps);
+                    break;
                 case "maxz":
-                    _dreamMapManager.SetZLevels(value.GetValueAsInteger()); break;
+                    value.TryGetValueAsInteger(out var maxz);
+
+                    _dreamMapManager.SetZLevels(maxz);
+                    break;
                 case "log":
                     if (value.TryGetValueAsString(out var logStr))
                     {
@@ -104,7 +116,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "view": {
                     //Number if square & centerable, string representation otherwise
-                    return new DreamValue((_viewRange.IsSquare && _viewRange.IsCenterable) ? _viewRange.Width : _viewRange.ToString());
+                    if (_viewRange.IsSquare && _viewRange.IsCenterable) {
+                        return new DreamValue(_viewRange.Width);
+                    } else {
+                        return new DreamValue(_viewRange.ToString());
+                    }
                 }
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;

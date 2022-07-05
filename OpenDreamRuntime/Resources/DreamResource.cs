@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Resources {
             ResourcePath = resourcePath;
         }
 
-        public virtual string ReadAsString() {
+        public virtual string? ReadAsString() {
             if (!File.Exists(_filePath)) return null;
 
             string resourceString = Encoding.ASCII.GetString(ResourceData);

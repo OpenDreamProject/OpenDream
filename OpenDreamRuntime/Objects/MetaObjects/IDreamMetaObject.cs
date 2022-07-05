@@ -2,7 +2,7 @@
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     public interface IDreamMetaObject {
-        public bool ShouldCallNew => ParentType?.ShouldCallNew ?? false;
+        public bool ShouldCallNew { get; }
         public IDreamMetaObject? ParentType { get; set; }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) =>

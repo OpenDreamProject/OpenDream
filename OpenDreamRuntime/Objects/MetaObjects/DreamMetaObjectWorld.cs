@@ -7,6 +7,7 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectWorld : IDreamMetaObject {
+        public bool ShouldCallNew => false; // Gets called manually later
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;

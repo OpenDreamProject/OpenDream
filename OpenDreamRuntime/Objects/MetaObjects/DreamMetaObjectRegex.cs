@@ -6,6 +6,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectRegex : IDreamMetaObject {
         public static readonly Dictionary<DreamObject, DreamRegex> ObjectToDreamRegex = new();
 
+        public bool ShouldCallNew => false;
         public IDreamMetaObject? ParentType { get; set; }
 
         public struct DreamRegex {

@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectList : IDreamMetaObject {
+        public bool ShouldCallNew => false;
         public IDreamMetaObject? ParentType { get; set; }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

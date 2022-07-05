@@ -7,6 +7,7 @@ using OpenDreamShared.Resources;
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectIcon : IDreamMetaObject
     {
+        public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly DreamResourceManager _rscMan = default!;

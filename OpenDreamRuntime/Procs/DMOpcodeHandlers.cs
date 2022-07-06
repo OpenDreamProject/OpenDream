@@ -381,7 +381,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+            List<DreamValue> args = new(state.GetArguments().ToArray());
 
             state.Push(new DreamProcArguments(args));
             return null;

@@ -61,6 +61,8 @@ namespace OpenDreamRuntime {
         {
             _procScheduler.Process();
             UpdateStat();
+
+            WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
         }
 
         public bool LoadJson(string? jsonPath)

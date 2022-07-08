@@ -1,0 +1,9 @@
+<Popup xmlns="https://spacestation14.io">
+    <PanelContainer StyleClasses="ContextMenuBackground">
+        <ScrollContainer HScrollEnabled="False" ReturnMeasure="True">
+            <BoxContainer Name="ContextMenu" Orientation="Vertical">
+                <!-- Gets filled with ContextMenuItems -->
+            </BoxContainer>
+        </ScrollContainer>
+    </PanelContainer>
+</Popup>

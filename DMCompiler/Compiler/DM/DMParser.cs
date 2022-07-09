@@ -2072,7 +2072,7 @@ namespace DMCompiler.Compiler.DM {
                                             }
 
                                             //Skip a space if one exists
-                                            if (i < tokenValue.Length && tokenValue[i] == ' ') i++;
+                                            if (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
 
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);

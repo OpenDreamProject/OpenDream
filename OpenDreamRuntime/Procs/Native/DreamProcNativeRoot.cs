@@ -1758,28 +1758,41 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("time2text")]
         [DreamProcParameter("timestamp", Type = DreamValueType.Float)]
         [DreamProcParameter("format", Type = DreamValueType.String)]
+        [DreamProcParameter("timezone", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if(!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp))
-            {
+            bool hasTimezoneOffset = arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
+
+            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
                 DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
             }
-            if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format))
-            {
+
+            if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
+
             long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
             if (timestamp >= 0 && timestamp <= 864000) ticks += DateTime.Today.Ticks;
-            DateTime time = new DateTime(ticks);
 
-            format = format.Replace("YYYY", "yyyy");
-            format = format.Replace("YY", "yy");
-            format = format.Replace("Month", "MMMM");
-            format = format.Replace("MM", "M");
-            format = format.Replace("Day", "dddd");
-            format = format.Replace("DDD", "ddd");
-            format = format.Replace("DD", "d");
-            return new DreamValue(time.ToString(format));
+            DateTime time = new DateTime(ticks, DateTimeKind.Utc);
+            if (hasTimezoneOffset) {
+                time = time.AddHours(timezoneOffset);
+            } else {
+                time = time.ToLocalTime();
+            }
+
+            format = format.Replace("YYYY", time.Year.ToString());
+            format = format.Replace("YY", (time.Year % 100).ToString("00"));
+            format = format.Replace("Month", CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(time.Month));
+            format = format.Replace("MMM", CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month));
+            format = format.Replace("MM", time.Month.ToString("00"));
+            format = format.Replace("Day", CultureInfo.InvariantCulture.DateTimeFormat.GetDayName(time.DayOfWeek));
+            format = format.Replace("DDD", CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedDayName(time.DayOfWeek));
+            format = format.Replace("DD", time.Day.ToString("00"));
+            format = format.Replace("hh", time.Hour.ToString("00"));
+            format = format.Replace("mm", time.Minute.ToString("00"));
+            format = format.Replace("ss", time.Second.ToString("00"));
+            return new DreamValue(format);
         }
 
         [DreamProc("typesof")]

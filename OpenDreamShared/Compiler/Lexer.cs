@@ -6,6 +6,7 @@ namespace OpenDreamShared.Compiler {
     [Virtual]
     public class Lexer<SourceType> {
         public Location CurrentLocation { get; protected set; }
+        public string SourceName { get; protected set; }
         public IEnumerable<SourceType> Source { get; protected set; }
         public bool AtEndOfSource { get; protected set; } = false;
 
@@ -16,6 +17,7 @@ namespace OpenDreamShared.Compiler {
 
         public Lexer(string sourceName, IEnumerable<SourceType> source) {
             CurrentLocation = new Location(sourceName, 1, 0);
+            SourceName = sourceName;
             Source = source;
             if (source == null)
                 throw new FileNotFoundException("Source file could not be read: " + sourceName);

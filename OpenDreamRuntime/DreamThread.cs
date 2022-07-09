@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime {
@@ -13,6 +14,7 @@ namespace OpenDreamRuntime {
     }
 
     public abstract class DreamProc {
+        public DreamPath OwningType { get; }
         public string Name { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
@@ -20,20 +22,21 @@ namespace OpenDreamRuntime {
 
         public ProcAttributes Attributes { get; }
 
-        public List<String> ArgumentNames { get; }
-        public List<DMValueType> ArgumentTypes { get; }
+        public List<String>? ArgumentNames { get; }
+        public List<DMValueType>? ArgumentTypes { get; }
 
         public string? VerbName { get; }
         public string? VerbCategory { get; } = string.Empty;
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(string name, DreamProc superProc, ProcAttributes attributes, List<String> argumentNames, List<DMValueType> argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+        protected DreamProc(DreamPath owningType, string name, DreamProc superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+            OwningType = owningType;
             Name = name;
             SuperProc = superProc;
             Attributes = attributes;
-            ArgumentNames = argumentNames ?? new();
-            ArgumentTypes = argumentTypes ?? new();
+            ArgumentNames = argumentNames;
+            ArgumentTypes = argumentTypes;
 
             VerbName = verbName;
             if (verbCategory is not null)

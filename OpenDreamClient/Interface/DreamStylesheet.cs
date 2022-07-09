@@ -39,6 +39,13 @@ namespace OpenDreamClient.Interface {
                 Element<PanelContainer>().Class("MapBackground")
                     .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
 
+                Element<PanelContainer>().Class("ContextMenuBackground")
+                    .Prop("panel", new StyleBoxFlat() {
+                        BackgroundColor = Color.White,
+                        BorderColor = Color.DarkGray,
+                        BorderThickness = new Thickness(1)
+                    }),
+
                 // Default font.
                 Element()
                     .Prop("font", notoSansFont12)

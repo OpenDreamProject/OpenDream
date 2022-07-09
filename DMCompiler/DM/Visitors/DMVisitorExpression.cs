@@ -79,7 +79,6 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.StringFormat(stringFormat.Location, stringFormat.Value, expressions);
         }
 
-
         public void VisitIdentifier(DMASTIdentifier identifier)
         {
             var name = identifier.Identifier;
@@ -133,6 +132,10 @@ namespace DMCompiler.DM.Visitors {
             int? globalId = _dmObject?.GetGlobalVariableId(name);
             if (globalId != null) {
                 Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                return;
+            } else if (name == "vars")
+            {
+                Result = new Expressions.GlobalVars(globalIdentifier.Location);
                 return;
             }
 
@@ -457,6 +460,17 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
+        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList)
+        {
+            DMExpression[] expressions = new DMExpression[newList.Dimensions.Length];
+            for (int i = 0; i < newList.Dimensions.Length; i++)
+            {
+                expressions[i] = DMExpression.Create(_dmObject, _proc, newList.Dimensions[i], _inferredPath);
+            }
+
+            Result = new Expressions.NewMultidimensionalList(newList.Location, expressions);
+        }
+
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
                 throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");
@@ -548,7 +562,21 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitList(DMASTList list) {
-            Result = new Expressions.List(list.Location, list);
+            (DMExpression Key, DMExpression Value)[] values = Array.Empty<(DMExpression, DMExpression)>();
+
+            if (list.Values != null) {
+                values = new (DMExpression, DMExpression)[list.Values.Length];
+
+                for (int i = 0; i < list.Values.Length; i++) {
+                    DMASTCallParameter value = list.Values[i];
+                    DMExpression key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
+                    DMExpression listValue = DMExpression.Create(_dmObject, _proc, value.Value);
+
+                    values[i] = (key, listValue);
+                }
+            }
+
+            Result = new Expressions.List(list.Location, values);
         }
 
         public void VisitNewList(DMASTNewList newList) {
@@ -556,7 +584,7 @@ namespace DMCompiler.DM.Visitors {
 
             for (int i = 0; i < newList.Parameters.Length; i++) {
                 DMASTCallParameter parameter = newList.Parameters[i];
-                if (parameter.Name != null) throw new CompileErrorException(newList.Location,"newlist() does not take named arguments");
+                if (parameter.Key != null) throw new CompileErrorException(newList.Location,"newlist() does not take named arguments");
 
                 expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
             }
@@ -570,7 +598,7 @@ namespace DMCompiler.DM.Visitors {
             for (int i = 0; i < exp_arr.Length; i++)
             {
                 DMASTCallParameter parameter = addText.Parameters[i];
-                if(parameter.Name != null)
+                if(parameter.Key != null)
                     throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
                 exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
             }

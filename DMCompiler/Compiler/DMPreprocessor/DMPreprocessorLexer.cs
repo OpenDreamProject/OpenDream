@@ -5,11 +5,15 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
     class DMPreprocessorLexer : TextLexer {
-        public DMPreprocessorLexer(string sourceName, string source) : base(sourceName, source) { }
+        public string IncludeDirectory;
+
+        public DMPreprocessorLexer(string includeDirectory, string sourceName, string source) : base(sourceName, source) {
+            IncludeDirectory = includeDirectory;
+        }
 
         public Token GetNextTokenIgnoringWhitespace() {
             Token nextToken = GetNextToken();
-            while (nextToken.Type == TokenType.DM_Preproc_Whitespace) nextToken = GetNextToken();
+            if (nextToken.Type == TokenType.DM_Preproc_Whitespace) nextToken = GetNextToken();
 
             return nextToken;
         }
@@ -22,7 +26,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                 switch (c) {
                     case ' ':
-                    case '\t': token = CreateToken(TokenType.DM_Preproc_Whitespace, c); Advance(); break;
+                    case '\t':
+                        int whitespaceLength = 1;
+                        while (Advance() is ' ' or '\t')
+                            whitespaceLength++;
+
+                        token = CreateToken(TokenType.DM_Preproc_Whitespace, new string(c, whitespaceLength));
+                        break;
                     case '}':
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;

@@ -1,4 +1,4 @@
-/world/proc/List2_Proc()
+/proc/RunTest()
 	var/a[]
 	var/b[5]
 

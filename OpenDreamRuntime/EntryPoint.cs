@@ -33,9 +33,9 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
             componentFactory.GenerateNetIds();
 
-            // Disable since disabling prediction causes timing errors otherwise.
             var cfg = IoCManager.Resolve<IConfigurationManager>();
-            cfg.SetCVar(CVars.NetLogLateMsg, false);
+            cfg.OverrideDefault(CVars.NetLogLateMsg, false); // Disable since disabling prediction causes timing errors otherwise.
+            cfg.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
         }
 
         public override void PostInit() {
@@ -48,7 +48,7 @@ namespace OpenDreamRuntime {
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
-            if (level == ModUpdateLevel.PreEngine)
+            if (level == ModUpdateLevel.PostEngine)
             {
                 _commandSystem.RunRepeatingCommands();
                 _dreamManager.Update();

@@ -20,7 +20,7 @@ namespace OpenDreamClient {
         private readonly IDreamResourceManager _dreamResource = default!;
 
         public override void Init() {
-            IoCManager.Resolve<IConfigurationManager>().SetCVar(CVars.NetPredict, false);
+            IoCManager.Resolve<IConfigurationManager>().OverrideDefault(CVars.NetPredict, false);
 
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
@@ -48,8 +48,6 @@ namespace OpenDreamClient {
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
-
-            //TODO: Disable prediction once bugs in RobustToolbox are fixed
         }
 
         public override void PostInit() {

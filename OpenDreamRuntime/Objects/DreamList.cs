@@ -51,6 +51,28 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
+        public static DreamList CreateMultidimensional(List<int> dimensions)
+        {
+            var list = new DreamList(dimensions[0]);
+
+            if (dimensions.Count > 1)
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(new DreamValue(CreateMultidimensional(dimensions.GetRange(1, dimensions.Count - 1))));
+                }
+            }
+            else
+            {
+                for (var i = 0; i < dimensions[0]; i++)
+                {
+                    list._values.Add(DreamValue.Null);
+                }
+            }
+
+            return list;
+        }
+
         public bool IsAssociative() {
             return _associativeValues != null && _associativeValues.Count > 0;
         }
@@ -91,11 +113,15 @@ namespace OpenDreamRuntime.Objects {
             return _associativeValues == null ? DreamValue.Null : (_associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null);
         }
 
-        public virtual void SetValue(DreamValue key, DreamValue value) {
+        public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             ValueAssigned?.Invoke(this, key, value);
 
             if (key.TryGetValueAsInteger(out int keyInteger)) {
-                _values[keyInteger - 1] = value;
+                if (allowGrowth && keyInteger == _values.Count + 1) {
+                    _values.Add(value);
+                } else {
+                    _values[keyInteger - 1] = value;
+                }
             } else {
                 if (!ContainsValue(key)) _values.Add(key);
 
@@ -221,13 +247,66 @@ namespace OpenDreamRuntime.Objects {
             return objectVar;
         }
 
-        public override void SetValue(DreamValue key, DreamValue value) {
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             if (key.TryGetValueAsString(out var varName)) {
                 if (!_dreamObject.HasVariable(varName)) {
                     throw new Exception($"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
                 }
 
                 _dreamObject.SetVariable(varName, value);
+            } else {
+                throw new Exception($"Invalid var index {key}");
+            }
+        }
+    }
+
+    // global.vars list
+    sealed class DreamGlobalVars : DreamList
+    {
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
+
+        private DreamGlobalVars()
+        {
+            IoCManager.InjectDependencies(this);
+        }
+
+        public static DreamGlobalVars Create() {
+            var list = new DreamGlobalVars();
+            return list;
+        }
+
+        public override List<DreamValue> GetValues() {
+            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
+            // Skip world
+            foreach (var key in root.GlobalVariables.Keys.Skip(1))
+            {
+                values.Add(new DreamValue(key));
+            }
+            return values;
+        }
+
+        public override DreamValue GetValue(DreamValue key)
+        {
+            if (!key.TryGetValueAsString(out var varName)) {
+                throw new Exception($"Invalid var index {key}");
+            }
+            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
+                throw new Exception($"Invalid global {varName}");
+            }
+
+            return _dreamMan.Globals[globalId];
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            if (key.TryGetValueAsString(out var varName)) {
+                var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+                if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
+                    throw new Exception($"Cannot set value of undefined global \"{varName}\"");
+                }
+
+                _dreamMan.Globals[globalId] = value;
             } else {
                 throw new Exception($"Invalid var index {key}");
             }

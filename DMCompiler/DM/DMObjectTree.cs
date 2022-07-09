@@ -1,34 +1,52 @@
-﻿using OpenDreamShared.Dream;
+using System;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
+using DMCompiler.Compiler.DM;
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     static class DMObjectTree {
         public static List<DMObject> AllObjects = new();
+        public static List<DMProc> AllProcs = new();
 
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
-        public static Dictionary<string, DMProc> GlobalProcs = new();
+        public static Dictionary<string, int> GlobalProcs = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
-        public static DMProc GlobalInitProc = new DMProc(null);
+        public static DMProc GlobalInitProc;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
         private static Dictionary<DreamPath, int> _pathToTypeId = new();
         private static int _dmObjectIdCounter = 0;
+        private static int _dmProcIdCounter = 0;
 
         static DMObjectTree() {
             Reset();
+            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
         public static void Reset() {
             AllObjects.Clear();
+            AllProcs.Clear();
+            GlobalProcs.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
+            _dmProcIdCounter = 0;
             GetDMObject(DreamPath.Root);
+        }
+
+        public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
+        {
+            DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
+            AllProcs.Add(dmProc);
+
+            return dmProc;
         }
 
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
@@ -62,8 +80,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static bool TryGetGlobalProc(string name, out DMProc proc) {
-            return GlobalProcs.TryGetValue(name, out proc);
+        public static bool TryGetGlobalProc(string name, [CanBeNull] out DMProc proc)
+        {
+            proc = null;
+            return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
 
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
@@ -119,10 +139,10 @@ namespace DMCompiler.DM {
             return id;
         }
 
-        public static void AddGlobalProc(string name, DMProc proc) {
-            GlobalProcs.Add(name, proc);
+        public static void AddGlobalProc(string name, int id) {
+            GlobalProcs.Add(name, id);
         }
-        
+
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
             if (!_globalInitAssigns.TryGetValue(owningType.Path, out var list)) {
                 list = new List<(int GlobalId, DMExpression Value)>();
@@ -149,14 +169,19 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static DreamTypeJson[] CreateJsonRepresentation() {
+        public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {
             DreamTypeJson[] types = new DreamTypeJson[AllObjects.Count];
+            ProcDefinitionJson[] procs = new ProcDefinitionJson[AllProcs.Count];
 
             foreach (DMObject dmObject in AllObjects) {
                 types[dmObject.Id] = dmObject.CreateJsonRepresentation();
             }
 
-            return types;
+            foreach (DMProc dmProc in AllProcs) {
+                procs[dmProc.Id] = dmProc.GetJsonRepresentation();
+            }
+
+            return (types, procs);
         }
     }
 }

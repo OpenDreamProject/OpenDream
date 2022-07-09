@@ -77,6 +77,22 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    sealed class NewMultidimensionalList : DMExpression {
+        DMExpression[] Expressions;
+
+        public NewMultidimensionalList(Location location, DMExpression[] expressions) : base(location) {
+            Expressions = expressions;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            foreach (var expr in Expressions)
+            {
+                expr.EmitPushValue(dmObject, proc);
+            }
+            proc.CreateMultidimensionalList(Expressions.Length);
+        }
+    }
+
     // locate()
     class LocateInferred : DMExpression {
         DreamPath _path;
@@ -224,11 +240,11 @@ namespace DMCompiler.DM.Expressions {
         {
             //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
 
-            //Push addtext's arguments (in reverse, otherwise the strings will be concatenated in reverse, lol)
-            for (int i = parameters.Length - 1; i >= 0; i--)
-            {
-                parameters[i].EmitPushValue(dmObject, proc);
+            //Push addtext's arguments
+            foreach (DMExpression parameter in parameters) {
+                parameter.EmitPushValue(dmObject, proc);
             }
+
             proc.MassConcatenation(parameters.Length);
         }
     }
@@ -300,41 +316,38 @@ namespace DMCompiler.DM.Expressions {
 
     // list(...)
     class List : DMExpression {
-        // Lazy
-        DMASTList _astNode;
+        private readonly (DMExpression Key, DMExpression Value)[] _values;
+        private readonly bool _isAssociative;
 
-        public List(Location location, DMASTList astNode) : base(location) {
-            _astNode = astNode;
+        public List(Location location, (DMExpression Key, DMExpression Value)[] values) : base(location) {
+            _values = values;
+
+            _isAssociative = false;
+            foreach (var value in values) {
+                if (value.Key != null) {
+                    _isAssociative = true;
+                    break;
+                }
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.CreateList();
-
-            if (_astNode.Values != null) {
-                foreach (DMASTCallParameter value in _astNode.Values) {
-                    DMASTAssign associatedAssign = value.Value as DMASTAssign;
-
-                    if (associatedAssign != null) {
-                        DMExpression.Create(dmObject, proc, associatedAssign.Value).EmitPushValue(dmObject, proc);
-
-                        if (associatedAssign.Expression is DMASTIdentifier identifier) {
-                            proc.PushString(identifier.Identifier);
-                            proc.ListAppendAssociated();
-                        } else {
-                            DMExpression.Create(dmObject, proc, associatedAssign.Expression).EmitPushValue(dmObject, proc);
-                            proc.ListAppendAssociated();
-                        }
+            foreach (var value in _values) {
+                if (_isAssociative) {
+                    if (value.Key == null) {
+                        proc.PushNull();
                     } else {
-                        DMExpression.Create(dmObject, proc, value.Value).EmitPushValue(dmObject, proc);
-
-                        if (value.Name != null) {
-                            proc.PushString(value.Name);
-                            proc.ListAppendAssociated();
-                        } else {
-                            proc.ListAppend();
-                        }
+                        value.Key.EmitPushValue(dmObject, proc);
                     }
                 }
+
+                value.Value.EmitPushValue(dmObject, proc);
+            }
+
+            if (_isAssociative) {
+                proc.CreateAssociativeList(_values.Length);
+            } else {
+                proc.CreateList(_values.Length);
             }
         }
 
@@ -342,24 +355,21 @@ namespace DMCompiler.DM.Expressions {
             List<object> list = new();
             Dictionary<string, object> associatedValues = new();
 
-            foreach (DMASTCallParameter parameter in _astNode.Values) {
-                if (!DMExpression.Create(null, null, parameter.Value).TryAsJsonRepresentation(out var value)) {
+            foreach (var value in _values) {
+                if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
                     json = null;
                     return false;
                 }
 
-                DMASTAssign associatedAssign = parameter.Value as DMASTAssign;
-
-                if (associatedAssign != null) {
-                    if (associatedAssign.Expression is DMASTIdentifier identifier) {
-                        associatedValues.Add(identifier.Identifier, value);
-                    } else {
-                        throw new System.Exception("Invalid associated value key");
+                if (value.Key != null) {
+                    if (value.Key is not Expressions.String keyString) { //Only string keys are supported
+                        json = null;
+                        return false;
                     }
-                } else if (parameter.Name != null) {
-                    associatedValues.Add(parameter.Name, value);
+
+                    associatedValues.Add(keyString.Value, jsonValue);
                 } else {
-                    list.Add(value);
+                    list.Add(jsonValue);
                 }
             }
 
@@ -381,14 +391,13 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.CreateList();
-
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
                 proc.PushArguments(0);
                 proc.CreateObject();
-                proc.ListAppend();
             }
+
+            proc.CreateList(_parameters.Length);
         }
 
         public override bool TryAsJsonRepresentation(out object json) {
@@ -415,7 +424,7 @@ namespace DMCompiler.DM.Expressions {
                 if (i < _astNode.Parameters.Length) {
                     DMASTCallParameter parameter = _astNode.Parameters[i];
 
-                    if (parameter.Name != null) throw new CompileErrorException(parameter.Location,"input() does not take named arguments");
+                    if (parameter.Key != null) throw new CompileErrorException(parameter.Location,"input() does not take named arguments");
                     DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();

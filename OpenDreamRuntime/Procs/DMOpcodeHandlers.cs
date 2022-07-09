@@ -610,7 +610,12 @@ namespace OpenDreamRuntime.Procs {
                     default:
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                 }
+            } else if (first.TryGetValueAsInteger(out int firstInt)) {
+                state.Push(new DreamValue(firstInt));
+            } else {
+                throw new Exception("Invalid or operation on " + first + " and " + second);
             }
+
             return null;
         }
 
@@ -744,10 +749,11 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                result = first;
             } else {
                 throw new Exception("Invalid combine operation on " + first + " and " + second);
             }
-
 
             state.AssignReference(reference, result);
             state.Push(result);

@@ -1772,7 +1772,14 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
-            if (timestamp >= 0 && timestamp <= 864000) ticks += DateTime.Today.Ticks;
+
+            // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
+            if (timestamp >= 0 && timestamp < 864000*7) {
+                ticks += DateTime.Today.Ticks;
+            } else {
+                // Offset from January 1st, 2020
+                ticks += new DateTime(2000, 1, 1).Ticks;
+            }
 
             DateTime time = new DateTime(ticks, DateTimeKind.Utc);
             if (hasTimezoneOffset) {

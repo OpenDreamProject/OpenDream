@@ -185,6 +185,7 @@ namespace OpenDreamRuntime.Procs {
             _proc = other._proc;
             Instance = other.Instance;
             Usr = other.Usr;
+            ArgumentCount = other.ArgumentCount;
             _pc = other._pc;
 
             _stack = _stackPool.Rent(other._stack.Length);

@@ -300,9 +300,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fdel")]
         [DreamProcParameter("File", Type = DreamValueType.String)]
         public static DreamValue NativeProc_fdel(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if(!arguments.GetArgument(0, "File").TryGetValueAsString(out var filePath))
-            {
-                throw new Exception("bad file");
+            DreamValue file = arguments.GetArgument(0, "File");
+
+            string filePath;
+            if (file.TryGetValueAsDreamResource(out var resource)) {
+                filePath = resource.ResourcePath;
+            } else if(!file.TryGetValueAsString(out filePath)) {
+                throw new Exception($"{file} is not a valid file");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();

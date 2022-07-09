@@ -352,6 +352,7 @@ namespace OpenDreamRuntime.Procs {
         #region References
         public bool IsNullDereference(DMReference reference) {
             switch (reference.RefType) {
+                case DMReference.Type.Proc:
                 case DMReference.Type.Field: {
                     if (Peek() == DreamValue.Null) {
                         Pop();

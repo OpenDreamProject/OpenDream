@@ -9,7 +9,38 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            if (creationArguments.GetArgument(0, "Size").TryGetValueAsInteger(out int size)) {
+            // Named arguments are ignored
+            if (creationArguments.OrderedArguments.Count > 1) { // Multi-dimensional
+                DreamList[] lists = { (DreamList)dreamObject };
+
+                int dimensions = creationArguments.OrderedArguments.Count;
+                for (int argIndex = 0; argIndex < dimensions; argIndex++) {
+                    DreamValue arg = creationArguments.OrderedArguments[argIndex];
+                    arg.TryGetValueAsInteger(out int size);
+
+                    DreamList[] newLists = null;
+                    if (argIndex < dimensions) {
+                        newLists = new DreamList[size * lists.Length];
+                    }
+
+                    for (int i = 0; i < lists.Length; i++) {
+                        DreamList list = lists[i];
+
+                        for (int j = 0; j < size; j++) {
+                            if (argIndex < dimensions - 1) {
+                                DreamList newList = DreamList.Create();
+
+                                list.AddValue(new DreamValue(newList));
+                                newLists[i * size + j] = newList;
+                            } else {
+                                list.AddValue(DreamValue.Null);
+                            }
+                        }
+                    }
+
+                    lists = newLists;
+                }
+            } else if (creationArguments.OrderedArguments.Count == 1 && creationArguments.OrderedArguments[0].TryGetValueAsInteger(out int size)) {
                 ((DreamList)dreamObject).Resize(size);
             }
         }

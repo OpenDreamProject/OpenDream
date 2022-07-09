@@ -326,7 +326,7 @@ namespace DMCompiler.Compiler.DM {
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                List<DMASTExpression> sizes = new List<DMASTExpression>(2); // Most common is 1D or 2D lists
+                List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
                 while (Check(TokenType.DM_LeftBracket))
                 {
@@ -335,17 +335,15 @@ namespace DMCompiler.Compiler.DM {
                     var size = Expression();
                     if (size is not null)
                     {
-                        sizes.Add(size);
+                        sizes.Add(new DMASTCallParameter(size.Location, size));
                     }
 
                     ConsumeRightBracket();
                     Whitespace();
                 }
 
-                if (sizes.Count > 0)
-                {
-                    DMASTExpression[] expressions = sizes.ToArray();
-                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
+                if (sizes.Count > 0) {
+                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List), sizes.ToArray());
                 }
 
                 return true;

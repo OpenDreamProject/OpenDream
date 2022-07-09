@@ -152,23 +152,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
-        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
-        {
-            var count = state.ReadInt();
-
-            List<int> sizes = new List<int>(count);
-            foreach (var size in state.PopCount(count))
-            {
-                size.TryGetValueAsInteger(out var sizeInt);
-                sizes.Add(sizeInt);
-            }
-
-            var list = DreamList.CreateMultidimensional(sizes);
-
-            state.Push(new DreamValue(list));
-            return null;
-        }
-
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
             state.EnumeratorStack.Pop();
             return null;

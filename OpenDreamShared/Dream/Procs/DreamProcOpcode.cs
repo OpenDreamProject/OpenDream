@@ -95,7 +95,7 @@ namespace OpenDreamShared.Dream.Procs {
         IsInRange = 0x5B,
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
-        CreateMultidimensionalList = 0x5E,
+        //0x5E
         PushGlobalVars = 0x5F
     }
 

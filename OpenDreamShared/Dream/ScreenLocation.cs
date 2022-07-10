@@ -31,14 +31,16 @@ namespace OpenDreamShared.Dream {
         }
 
         public ScreenLocation(string screenLocation) {
-            string[] rangeSplit = screenLocation.Split(" to ");
-            if (rangeSplit.Length > 1) Range = new ScreenLocation(rangeSplit[1]);
-            else Range = null;
+            screenLocation = screenLocation.ToUpper(CultureInfo.InvariantCulture);
 
-            string[] coordinateSplit = rangeSplit[0].Split(",");
-            if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
-            (X, PixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
-            (Y, PixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
+            (X, Y, PixelOffsetX, PixelOffsetY, Range) = screenLocation switch {
+                "TOPLEFT" => (1, 15, 0, 0, null),
+                "TOPRIGHT" => (15, 15, 0, 0, null),
+                "BOTTOMLEFT" => (1, 1, 0, 0, null),
+                "BOTTOMRIGHT" => (1, 15, 0, 0, null),
+                "CENTER" => (7, 7, 0, 0, null),
+                _ => ParseScreenLoc(screenLocation)
+            };
         }
 
         public Vector2 GetViewPosition(Vector2 viewOffset, float iconSize) {
@@ -49,6 +51,18 @@ namespace OpenDreamShared.Dream {
             return X + ":" + PixelOffsetX + "," + Y + ":" + PixelOffsetY;
         }
 
+        private static (int X, int Y, int PixelOffsetX, int PixelOffsetY, ScreenLocation Range) ParseScreenLoc(string screenLoc) {
+            string[] rangeSplit = screenLoc.Split(" TO ");
+            ScreenLocation range = (rangeSplit.Length > 1) ? new ScreenLocation(rangeSplit[1]) : null;
+
+            string[] coordinateSplit = rangeSplit[0].Split(",");
+            if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
+
+            (int x, int pixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
+            (int y, int pixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
+            return (x, y, pixelOffsetX, pixelOffsetY, range);
+        }
+
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
             coordinate = coordinate.Trim();
             if (coordinate == String.Empty) throw new Exception("Invalid screen_loc coordinate");
@@ -57,6 +71,12 @@ namespace OpenDreamShared.Dream {
             coordinate = coordinate.Replace("NORTH", "15");
             coordinate = coordinate.Replace("EAST", "15");
             coordinate = coordinate.Replace("CENTER", "8");
+
+            // TODO: These interact with map zoom in some way
+            coordinate = coordinate.Replace("LEFT", "1");
+            coordinate = coordinate.Replace("BOTTOM", "1");
+            coordinate = coordinate.Replace("RIGHT", "15");
+            coordinate = coordinate.Replace("TOP", "15");
 
             List<(string Operation, float Number, int PixelOffset)> operations = new();
             string currentOperation = null;

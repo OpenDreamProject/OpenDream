@@ -334,6 +334,7 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (315) return SOUTHEAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
+	if (!istype(Loc1) || !istype(Loc2)) return 127
 	if (Loc1 == Loc2) return -1
 
 	var/distX = Loc2.x - Loc1.x

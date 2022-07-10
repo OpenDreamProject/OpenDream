@@ -9,7 +9,6 @@ using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Network;
 
 namespace OpenDreamRuntime
 {
@@ -58,7 +57,7 @@ namespace OpenDreamRuntime
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login");
+                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject );
                         Session.AttachToEntity(_atomManager.GetAtomEntity(_mobDreamObject));
                     }
                     else

@@ -17,8 +17,14 @@ namespace OpenDreamClient.Input {
             _contextMenu = new ContextMenuPopup();
             _userInterfaceManager.ModalRoot.AddChild(_contextMenu);
 
-            CommandBinds.Builder.Bind(EngineKeyFunctions.Use, new PointerInputCmdHandler(OnUse, outsidePrediction: true)).Register<MouseInputSystem>();
-            CommandBinds.Builder.Bind(EngineKeyFunctions.UIRightClick, new PointerInputCmdHandler(OnRightClick, outsidePrediction: true)).Register<MouseInputSystem>();
+            CommandBinds.Builder
+                .Bind(EngineKeyFunctions.Use, new PointerInputCmdHandler(OnUse, outsidePrediction: true))
+                .Bind(EngineKeyFunctions.UIRightClick, new PointerInputCmdHandler(OnRightClick, outsidePrediction: true))
+                .Register<MouseInputSystem>();
+        }
+
+        public override void Shutdown() {
+            CommandBinds.Unregister<MouseInputSystem>();
         }
 
         private bool OnUse(in PointerInputCmdHandler.PointerInputCmdArgs args) {

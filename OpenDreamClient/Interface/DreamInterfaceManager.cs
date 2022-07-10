@@ -15,6 +15,7 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using SixLabors.ImageSharp;
 
@@ -28,6 +29,7 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
         public ControlWindow DefaultWindow;
@@ -207,35 +209,8 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        private void RxWinSet(MsgWinSet message)
-        {
-            if (String.IsNullOrEmpty(message.ControlId)) throw new NotImplementedException("ControlId is null or empty");
-
-            InterfaceElement element = FindElementWithName(message.ControlId);
-            if (element == null) throw new Exception("Invalid element \"" + message.ControlId + "\"");
-
-            //params2list
-            string winsetParams = message.Params.Replace(";", "&");
-            NameValueCollection query = HttpUtility.ParseQueryString(winsetParams);
-
-            var node = new MappingDataNode();
-            foreach (string attribute in query.AllKeys) {
-                if (attribute != null && DMFLexer.ValidAttributes.Contains(attribute)) {
-                    string value = query.GetValues(attribute)[^1];
-
-                    Token attributeValue = new DMFLexer(null, value).GetNextToken();
-                    if (Array.IndexOf(DMFParser.ValidAttributeValueTypes, attributeValue.Type) >= 0)
-                    {
-                        node.Add(attribute, attributeValue.Text);
-                    } else {
-                        throw new Exception("Invalid attribute value (" + attributeValue.Text + ")");
-                    }
-                } else {
-                    throw new Exception("Invalid attribute \"" + attribute + "\"");
-                }
-            }
-
-            element.PopulateElementDescriptor(node, _serializationManager);
+        private void RxWinSet(MsgWinSet message) {
+            WinSet(message.ControlId, message.Params);
         }
 
         private void RxLoadInterface(MsgLoadInterface message)
@@ -301,6 +276,42 @@ namespace OpenDreamClient.Interface {
             });
         }
 
+        public void WinSet(string controlId, string winsetParams) {
+            DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
+            DMFParser parser = new DMFParser(lexer);
+            MappingDataNode node = parser.Attributes();
+
+            if (parser.Errors.Count > 0) {
+                foreach (CompilerError error in parser.Errors) {
+                    Logger.ErrorS("opendream.interface.winset", error.ToString());
+                }
+
+                return;
+            }
+
+            foreach (CompilerWarning warning in parser.Warnings) {
+                Logger.WarningS("opendream.interface.winset", warning.ToString());
+            }
+
+            if (String.IsNullOrEmpty(controlId)) {
+                if (node.TryGet("command", out ValueDataNode command)) {
+                    DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+
+                    commandSystem.RunCommand(command.Value);
+                } else {
+                    Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                }
+            } else {
+                InterfaceElement element = FindElementWithName(controlId);
+
+                if (element != null) {
+                    element.PopulateElementDescriptor(node, _serializationManager);
+                } else {
+                    Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                }
+            }
+        }
+
         private void LoadInterface(InterfaceDescriptor descriptor)
         {
             InterfaceDescriptor = descriptor;
@@ -352,5 +363,6 @@ namespace OpenDreamClient.Interface {
         InterfaceElement FindElementWithName(string name);
         void SaveScreenshot(bool openDialog);
         void LoadInterfaceFromSource(string source);
+        void WinSet(string controlId, string winsetParams);
     }
 }

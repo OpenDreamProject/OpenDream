@@ -26,6 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fexists);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_file);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_file2text);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_filter);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
@@ -99,6 +100,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_viewers);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
             DreamObjectDefinition list = objectTree.GetObjectDefinition(DreamPath.List);

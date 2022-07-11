@@ -95,6 +95,7 @@ proc/view(Dist = 4, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+/proc/winexists(player, control_id)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"

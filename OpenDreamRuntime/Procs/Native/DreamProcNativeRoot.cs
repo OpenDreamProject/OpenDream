@@ -374,6 +374,12 @@ namespace OpenDreamRuntime.Procs.Native {
             return (text != null) ? new DreamValue(text) : DreamValue.Null;
         }
 
+        [DreamProc("filter")]
+        [DreamProcParameter("type", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            return DreamValue.Null;
+        }
+
         [DreamProc("findtext")]
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
@@ -1976,6 +1982,27 @@ namespace OpenDreamRuntime.Procs.Native {
             //TODO: Implement walk_to()
 
             return DreamValue.Null;
+        }
+
+        [DreamProc("winexists")]
+        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueType.String)]
+        public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
+            DreamValue player = state.Arguments.GetArgument(0, "player");
+            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out string controlId)) {
+                return new DreamValue("");
+            }
+
+            DreamConnection connection;
+            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else if (player.TryGetValueAsDreamObjectOfType(DreamPath.Client, out DreamObject client)) {
+                connection = DreamManager.GetConnectionFromClient(client);
+            } else {
+                throw new Exception($"Invalid client {player}");
+            }
+
+            return await connection.WinExists(controlId);
         }
 
         [DreamProc("winset")]

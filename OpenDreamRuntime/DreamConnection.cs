@@ -303,6 +303,17 @@ namespace OpenDreamRuntime
             return task;
         }
 
+        public Task<DreamValue> WinExists(string controlId) {
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgWinExists() {
+                PromptId = promptId,
+                ControlId = controlId
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
 
         public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3)
         {
@@ -334,6 +345,9 @@ namespace OpenDreamRuntime
 
         public void BrowseResource(DreamResource resource, string filename)
         {
+            if (!resource.Exists())
+                return;
+
             var msg = new MsgBrowseResource() {
                 Filename = filename,
                 Data = resource.ResourceData

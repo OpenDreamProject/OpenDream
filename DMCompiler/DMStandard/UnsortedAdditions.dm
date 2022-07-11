@@ -29,8 +29,6 @@
 	set opendream_unimplemented = TRUE
 /proc/winget(player, control_id, params)
 	set opendream_unimplemented = TRUE
-/proc/winexists(player, control_id)
-	set opendream_unimplemented = TRUE
 /proc/winclone(player, window_name, clone_name)
 	set opendream_unimplemented = TRUE
 /proc/winshow(player, window, show=1)

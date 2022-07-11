@@ -1,6 +1,4 @@
-﻿using System.Collections.Specialized;
-using System.Web;
-using OpenDreamShared.Compiler;
+﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
@@ -82,6 +80,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
+            _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
@@ -135,7 +134,6 @@ namespace OpenDreamClient.Interface {
                 message.Message,
                 message.Button1, message.Button2, message.Button3);
         }
-
 
         public void OpenAlert(int promptId, string title, string message, string button1, string button2="", string button3="")
         {
@@ -211,6 +209,17 @@ namespace OpenDreamClient.Interface {
 
         private void RxWinSet(MsgWinSet message) {
             WinSet(message.ControlId, message.Params);
+        }
+
+        private void RxWinExists(MsgWinExists message) {
+            InterfaceElement element = FindElementWithName(message.ControlId);
+            MsgPromptResponse response = new() {
+                PromptId = message.PromptId,
+                Type = DMValueType.Text,
+                Value = (element != null) ? element.Type : String.Empty
+            };
+
+            _netManager.ClientSendMessage(response);
         }
 
         private void RxLoadInterface(MsgLoadInterface message)

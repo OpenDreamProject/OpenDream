@@ -162,6 +162,7 @@
         DMF_PushButton,
         DMF_Resource,
         DMF_Right,
+        DMF_Semicolon,
         DMF_Stretch,
         DMF_String,
         DMF_Sunken,

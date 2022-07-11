@@ -15,13 +15,12 @@ namespace OpenDreamClient.Interface.Controls
         // Just like in win32 (which is definitely what this is inspired by let's be real),
         // windows can be embedded into other windows as a way to do nesting.
 
-        public readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
-
         public List<InterfaceControl> ChildControls = new();
 
         private readonly WindowDescriptor _windowDescriptor;
         private MenuBar _menu = default!;
         private LayoutContainer _canvas = default!;
+        private readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
 
         public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor.MainControlDescriptor, null)
         {
@@ -159,7 +158,6 @@ namespace OpenDreamClient.Interface.Controls
                 _canvas.Children.Add(control.UIElement);
             }
         }
-
 
         // Because of how windows are not always real windows,
         // UIControl contains the *contents* of the window, not the actual OS window itself.

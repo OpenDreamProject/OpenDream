@@ -17,6 +17,8 @@ namespace OpenDreamShared.Interface {
 
     [Virtual, ImplicitDataDefinitionForInheritors]
     public class ElementDescriptor {
+        [DataField("type")]
+        public string Type;
         [DataField("name")]
         public string Name;
     }

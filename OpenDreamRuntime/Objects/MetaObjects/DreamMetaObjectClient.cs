@@ -3,16 +3,16 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectClient : DreamMetaObjectRoot {
-        public override bool ShouldCallNew => true;
+    sealed class DreamMetaObjectClient : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        private Dictionary<DreamList, DreamObject> _screenListToClient = new();
+        private readonly Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
-        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
-        private IAtomManager _atomManager = IoCManager.Resolve<IAtomManager>();
+        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             _dreamManager.Clients.Add(dreamObject);
 
@@ -22,18 +22,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            ParentType?.OnObjectDeleted(dreamObject);
             _dreamManager.Clients.Remove(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            switch (variableName) {
+            switch (varName) {
                 case "eye": {
                     string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-                    DreamObject eye = variableValue.GetValueAsDreamObject();
+                    DreamObject eye = value.GetValueAsDreamObject();
 
                     //Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
                     break;
@@ -47,11 +47,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "mob": {
                     DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
 
-                    connection.MobDreamObject = variableValue.GetValueAsDreamObject();
+                    connection.MobDreamObject = value.GetValueAsDreamObject();
                     break;
                 }
                 case "screen": {
-                    if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= ScreenValueAssigned;
                         oldList.BeforeValueRemoved -= ScreenBeforeValueRemoved;
@@ -59,7 +59,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
 
                     DreamList screenList;
-                    if (!variableValue.TryGetValueAsDreamList(out screenList)) {
+                    if (!value.TryGetValueAsDreamList(out screenList)) {
                         screenList = DreamList.Create();
                     }
 
@@ -71,16 +71,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "images":
                 {
                     //TODO properly implement this var
-                    if (oldVariableValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                     }
 
                     DreamList imageList;
-                    if (!variableValue.TryGetValueAsDreamList(out imageList)) {
+                    if (!value.TryGetValueAsDreamList(out imageList)) {
                         imageList = DreamList.Create();
                     }
 
-                    dreamObject.SetVariableValue(variableName, new DreamValue(imageList));
+                    dreamObject.SetVariableValue(varName, new DreamValue(imageList));
                     break;
                 }
                 case "statpanel": {
@@ -92,8 +92,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            switch (variableName) {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            switch (varName) {
                 //TODO actually return the key
                 case "key":
                 case "ckey":
@@ -120,11 +120,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "connection":
                     return new DreamValue("seeker");
                 default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
-        public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
 
             connection.OutputDreamValue(b);

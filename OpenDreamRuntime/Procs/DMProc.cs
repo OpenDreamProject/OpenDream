@@ -128,25 +128,26 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.IsInRange,
             DMOpcodeHandlers.MassConcatenation,
             DMOpcodeHandlers.CreateTypeEnumerator,
-            DMOpcodeHandlers.CreateMultidimensionalList,
+            null, //0x5E
             DMOpcodeHandlers.PushGlobalVars,
             DMOpcodeHandlers.Output,
             DMOpcodeHandlers.Input
         };
         #endregion
 
-        public IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
+        public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
         public DreamObject Instance;
         public readonly DreamObject Usr;
-        public readonly DreamValue[] LocalVariables;
-        public readonly DreamValue[] Arguments;
         public readonly int ArgumentCount;
         private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
         public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 
         private int _pc = 0;
 
-        private DMProc _proc;
+        // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
+        private readonly DreamValue[] _localVariables;
+
+        private readonly DMProc _proc;
         public override DreamProc Proc => _proc;
 
         public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
@@ -157,13 +158,12 @@ namespace OpenDreamRuntime.Procs {
             Instance = instance;
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
-            Arguments = _dreamValuePool.Rent(ArgumentCount);
-            LocalVariables = _dreamValuePool.Rent(256);
+            _localVariables = _dreamValuePool.Rent(256);
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
-                Arguments[i] = (i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+                _localVariables[i] = (i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
             }
 
             //Named arguments
@@ -173,7 +173,7 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }
 
-                Arguments[argumentIndex] = argumentValue;
+                _localVariables[argumentIndex] = argumentValue;
             }
         }
 
@@ -187,16 +187,14 @@ namespace OpenDreamRuntime.Procs {
             _proc = other._proc;
             Instance = other.Instance;
             Usr = other.Usr;
+            ArgumentCount = other.ArgumentCount;
             _pc = other._pc;
 
             _stack = _stackPool.Rent(other._stack.Length);
             Array.Copy(other._stack, _stack, _stack.Length);
 
-            LocalVariables = _dreamValuePool.Rent(256);
-            Array.Copy(other.LocalVariables, LocalVariables, 256);
-
-            Arguments = _dreamValuePool.Rent(other.Arguments.Length);
-            Array.Copy(other.Arguments, Arguments, other.Arguments.Length);
+            _localVariables = _dreamValuePool.Rent(256);
+            Array.Copy(other._localVariables, _localVariables, 256);
         }
 
         protected override ProcStatus InternalResume()
@@ -229,10 +227,10 @@ namespace OpenDreamRuntime.Procs {
         public override void AppendStackFrame(StringBuilder builder)
         {
             if (Proc.OwningType != DreamPath.Root) {
-                builder.Append(Proc.OwningType);
+                builder.Append(Proc.OwningType.ToString());
                 builder.Append('/');
             }
-            
+
             builder.Append(Proc.Name);
             builder.Append("(...)");
         }
@@ -261,9 +259,12 @@ namespace OpenDreamRuntime.Procs {
 
         public void ReturnPools()
         {
-            _dreamValuePool.Return(LocalVariables, true);
-            _dreamValuePool.Return(Arguments, true);
+            _dreamValuePool.Return(_localVariables, true);
             _stackPool.Return(_stack);
+        }
+
+        public Span<DreamValue> GetArguments() {
+            return _localVariables.AsSpan(0, ArgumentCount);
         }
 
         #region Stack
@@ -353,6 +354,7 @@ namespace OpenDreamRuntime.Procs {
         #region References
         public bool IsNullDereference(DMReference reference) {
             switch (reference.RefType) {
+                case DMReference.Type.Proc:
                 case DMReference.Type.Field: {
                     if (Peek() == DreamValue.Null) {
                         Pop();
@@ -378,8 +380,8 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: Arguments[reference.Index] = value; break;
-                case DMReference.Type.Local: LocalVariables[reference.Index] = value; break;
+                case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
+                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Index] = value; break;
                 case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
                 case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
                 case DMReference.Type.Src:
@@ -416,13 +418,13 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
                 case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
-                case DMReference.Type.Argument: return Arguments[reference.Index];
-                case DMReference.Type.Local: return LocalVariables[reference.Index];
+                case DMReference.Type.Argument: return _localVariables[reference.Index];
+                case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
                 case DMReference.Type.Args: {
                     DreamList argsList = DreamList.Create(ArgumentCount);
 
                     for (int i = 0; i < ArgumentCount; i++) {
-                        argsList.AddValue(Arguments[i]);
+                        argsList.AddValue(_localVariables[i]);
                     }
 
                     argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
@@ -434,7 +436,7 @@ namespace OpenDreamRuntime.Procs {
                             throw new Exception($"Args index {argIndex} is too large");
                         }
 
-                        Arguments[argIndex - 1] = value;
+                        _localVariables[argIndex - 1] = value;
                     };
 
                     return new(argsList);

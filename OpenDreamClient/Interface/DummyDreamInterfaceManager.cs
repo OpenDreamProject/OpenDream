@@ -22,16 +22,23 @@ namespace OpenDreamClient.Interface
         {
 
         }
+
         public InterfaceElement FindElementWithName(string name)
         {
             return null;
         }
+
         public void SaveScreenshot(bool openDialog)
         {
 
         }
+
         public void LoadInterfaceFromSource(string source)
         {
+
+        }
+
+        public void WinSet(string controlId, string winsetParams) {
 
         }
     }

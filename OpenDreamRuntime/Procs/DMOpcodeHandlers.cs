@@ -152,23 +152,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
-        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
-        {
-            var count = state.ReadInt();
-
-            List<int> sizes = new List<int>(count);
-            foreach (var size in state.PopCount(count))
-            {
-                size.TryGetValueAsInteger(out var sizeInt);
-                sizes.Add(sizeInt);
-            }
-
-            var list = DreamList.CreateMultidimensional(sizes);
-
-            state.Push(new DreamValue(list));
-            return null;
-        }
-
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
             state.EnumeratorStack.Pop();
             return null;
@@ -381,7 +364,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+            List<DreamValue> args = new(state.GetArguments().ToArray());
 
             state.Push(new DreamProcArguments(args));
             return null;
@@ -610,7 +593,12 @@ namespace OpenDreamRuntime.Procs {
                     default:
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                 }
+            } else if (first.TryGetValueAsInteger(out int firstInt)) {
+                state.Push(new DreamValue(firstInt));
+            } else {
+                throw new Exception("Invalid or operation on " + first + " and " + second);
             }
+
             return null;
         }
 
@@ -857,10 +845,11 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                result = first;
             } else {
                 throw new Exception("Invalid combine operation on " + first + " and " + second);
             }
-
 
             state.AssignReference(reference, result);
             state.Push(result);

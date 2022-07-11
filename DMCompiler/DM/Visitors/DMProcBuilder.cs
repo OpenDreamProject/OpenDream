@@ -395,10 +395,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
-            DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
-
             DMExpression.Emit(_dmObject, _proc, statementForList.List);
             _proc.CreateListEnumerator();
+
             _proc.StartScope();
             {
                 if (statementForList.Initializer != null) {
@@ -408,15 +407,15 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForList.Variable);
+                    Expressions.LValue outputVariable = (Expressions.LValue)DMExpression.Create(_dmObject, _proc, statementForList.Variable);
                     (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
                     _proc.Enumerate(outputRef);
                     _proc.BreakIfFalse();
 
-                    if (varDeclaration != null && varDeclaration.Type != null)
+                    if (outputVariable.Path != null)
                     {
                         DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
-                        _proc.PushPath(varDeclaration.Type.Value);
+                        _proc.PushPath(outputVariable.Path.Value);
                         _proc.IsType();
 
                         _proc.ContinueIfFalse();

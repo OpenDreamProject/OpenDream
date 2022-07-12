@@ -1604,7 +1604,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Prob(DMProcState state) {
             DreamValue P = state.Pop();
 
-            if (!P.TryGetValueAsFloat(out float probability)) {
+            if (P.TryGetValueAsFloat(out float probability)) {
                 int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
 
                 state.Push(new DreamValue(result));

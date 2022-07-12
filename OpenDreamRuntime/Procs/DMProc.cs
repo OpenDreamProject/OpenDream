@@ -116,7 +116,7 @@ namespace OpenDreamRuntime.Procs {
             null, //0x4F
             DMOpcodeHandlers.JumpIfNullDereference,
             DMOpcodeHandlers.Pop,
-            null, //0x52
+            DMOpcodeHandlers.Prob,
             DMOpcodeHandlers.IsSaved,
             DMOpcodeHandlers.PickUnweighted,
             DMOpcodeHandlers.PickWeighted,

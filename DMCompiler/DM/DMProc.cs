@@ -846,6 +846,11 @@ namespace DMCompiler.DM {
             WriteInt(count);
         }
 
+        public void Prob() {
+            //Pops 1, pushes 1
+            WriteOpcode(DreamProcOpcode.Prob);
+        }
+
         public void MassConcatenation(int count) {
             ShrinkStack(count - 1);
             WriteOpcode(DreamProcOpcode.MassConcatenation);

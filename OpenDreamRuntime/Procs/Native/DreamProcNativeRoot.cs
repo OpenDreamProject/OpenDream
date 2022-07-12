@@ -1234,16 +1234,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(result);
         }
 
-        [DreamProc("prob")]
-        [DreamProcParameter("P", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_prob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            arguments.GetArgument(0, "P").TryGetValueAsFloat(out float probability);
-            if (probability == 0)
-                return new DreamValue(0);
-
-            return new DreamValue((DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0);
-        }
-
         [DreamProc("rand")]
         [DreamProcParameter("L", Type = DreamValueType.Float)]
         [DreamProcParameter("H", Type = DreamValueType.Float)]

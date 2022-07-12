@@ -142,9 +142,8 @@ namespace OpenDreamRuntime.Procs {
                 }
                 else
                 {
-                    throw new Exception("Attempted to create an object that is neither a path nor a path string");
+                    throw new Exception($"Cannot create object from invalid type {val}");
                 }
-
             }
 
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
@@ -1599,6 +1598,20 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(picked);
+            return null;
+        }
+
+        public static ProcStatus? Prob(DMProcState state) {
+            DreamValue P = state.Pop();
+
+            if (!P.TryGetValueAsFloat(out float probability)) {
+                int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
+
+                state.Push(new DreamValue(result));
+            } else {
+                state.Push(new DreamValue(0));
+            }
+
             return null;
         }
 

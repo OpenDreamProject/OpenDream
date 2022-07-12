@@ -594,6 +594,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
+        public void VisitProb(DMASTProb prob) {
+            DMExpression p = DMExpression.Create(_dmObject, _proc, prob.P);
+
+            Result = new Expressions.Prob(prob.Location, p);
+        }
+
         public void VisitInput(DMASTInput input) {
             Result = new Expressions.Input(input.Location, input);
         }
@@ -622,6 +628,9 @@ namespace DMCompiler.DM.Visitors {
                 DMASTPick.PickValue pickValue = pick.Values[i];
                 DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
                 DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                if (weight is Expressions.Prob prob) // pick(prob(50);x, prob(200);y) format
+                    weight = prob.P;
 
                 pickValues[i] = new Expressions.Pick.PickValue(weight, value);
             }

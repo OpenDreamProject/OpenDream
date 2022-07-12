@@ -2325,6 +2325,13 @@ namespace DMCompiler.Compiler.DM {
                     case "list": return new DMASTList(identifier.Location, callParameters);
                     case "newlist": return new DMASTNewList(identifier.Location, callParameters);
                     case "addtext": return new DMASTAddText(identifier.Location, callParameters);
+                    case "prob":
+                        if (callParameters.Length != 1)
+                            Error("prob() takes 1 argument");
+                        if (callParameters[0].Key != null)
+                            Error("prob() does not take a named argument");
+
+                        return new DMASTProb(identifier.Location, callParameters[0].Value);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);

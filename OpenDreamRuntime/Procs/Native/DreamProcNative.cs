@@ -65,7 +65,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oview);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oviewers);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_params2list);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_prob);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_rand);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_rand_seed);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ref);

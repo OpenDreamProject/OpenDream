@@ -1213,7 +1213,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 if (Check(TokenType.DM_If))
                 {
-                    Error("Expected \"if\" or \"else\"");
+                    Error("Expected \"if\" or \"else\", \"else if\" is not permitted as a switch case");
                 }
                 DMASTProcBlockInner body = ProcBlock();
 

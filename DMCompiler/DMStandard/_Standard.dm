@@ -59,6 +59,7 @@ proc/max(A)
 proc/md5(T)
 proc/min(A)
 proc/missile(Type, Start, End)
+	set opendream_unimplemented = TRUE
 proc/nonspantext(Haystack, Needles, Start = 1)
 proc/num2text(N, Digits, Radix)
 proc/oview(Dist = 5, Center = usr)

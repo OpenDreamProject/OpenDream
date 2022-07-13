@@ -345,7 +345,7 @@ namespace DMCompiler.Compiler.DM {
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                List<DMASTExpression> sizes = new List<DMASTExpression>(2); // Most common is 1D or 2D lists
+                List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
                 while (Check(TokenType.DM_LeftBracket))
                 {
@@ -354,17 +354,15 @@ namespace DMCompiler.Compiler.DM {
                     var size = Expression();
                     if (size is not null)
                     {
-                        sizes.Add(size);
+                        sizes.Add(new DMASTCallParameter(size.Location, size));
                     }
 
                     ConsumeRightBracket();
                     Whitespace();
                 }
 
-                if (sizes.Count > 0)
-                {
-                    DMASTExpression[] expressions = sizes.ToArray();
-                    implied_value = new DMASTNewMultidimensionalList(loc, expressions);
+                if (sizes.Count > 0) {
+                    implied_value = new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List), sizes.ToArray());
                 }
 
                 return true;
@@ -1234,7 +1232,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 if (Current().Type == TokenType.DM_If)
                 {
-                    Error("Expected 'if' or 'else', got 'else if'", false);
+                    Error("Expected \"if\" or \"else\", \"else if\" is not permitted as a switch case");
                 }
                 DMASTProcBlockInner body = ProcBlock();
 
@@ -2105,7 +2103,7 @@ namespace DMCompiler.Compiler.DM {
                                             }
 
                                             //Skip a space if one exists
-                                            if (i < tokenValue.Length && tokenValue[i] == ' ') i++;
+                                            if (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
 
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);
@@ -2360,6 +2358,13 @@ namespace DMCompiler.Compiler.DM {
                     case "list": return new DMASTList(identifier.Location, callParameters);
                     case "newlist": return new DMASTNewList(identifier.Location, callParameters);
                     case "addtext": return new DMASTAddText(identifier.Location, callParameters);
+                    case "prob":
+                        if (callParameters.Length != 1)
+                            Error("prob() takes 1 argument");
+                        if (callParameters[0].Key != null)
+                            Error("prob() does not take a named argument");
+
+                        return new DMASTProb(identifier.Location, callParameters[0].Value);
                     case "input": {
                         Whitespace();
                         DMValueType types = AsTypes(defaultType: DMValueType.Text);

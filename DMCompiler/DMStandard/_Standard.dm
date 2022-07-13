@@ -61,7 +61,6 @@ proc/num2text(N, Digits, Radix)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
 proc/params2list(Params)
-proc/prob(P)
 proc/rand(L, H)
 proc/rand_seed(Seed)
 proc/ref(Object)
@@ -95,6 +94,7 @@ proc/view(Dist = 4, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+proc/winexists(player, control_id)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
@@ -334,6 +334,7 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (315) return SOUTHEAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
+	if (!istype(Loc1) || !istype(Loc2)) return 127
 	if (Loc1 == Loc2) return -1
 
 	var/distX = Loc2.x - Loc1.x

@@ -133,6 +133,10 @@ namespace DMCompiler.DM.Visitors {
             if (globalId != null) {
                 Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
                 return;
+            } else if (name == "vars")
+            {
+                Result = new Expressions.GlobalVars(globalIdentifier.Location);
+                return;
             }
 
             throw new CompileErrorException(globalIdentifier.Location, $"Unknown global \"{name}\"");
@@ -456,17 +460,6 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
         }
 
-        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList)
-        {
-            DMExpression[] expressions = new DMExpression[newList.Dimensions.Length];
-            for (int i = 0; i < newList.Dimensions.Length; i++)
-            {
-                expressions[i] = DMExpression.Create(_dmObject, _proc, newList.Dimensions[i], _inferredPath);
-            }
-
-            Result = new Expressions.NewMultidimensionalList(newList.Location, expressions);
-        }
-
         public void VisitNewInferred(DMASTNewInferred newInferred) {
             if (_inferredPath is null) {
                 throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");
@@ -601,6 +594,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
+        public void VisitProb(DMASTProb prob) {
+            DMExpression p = DMExpression.Create(_dmObject, _proc, prob.P);
+
+            Result = new Expressions.Prob(prob.Location, p);
+        }
+
         public void VisitInput(DMASTInput input) {
             Result = new Expressions.Input(input.Location, input);
         }
@@ -629,6 +628,9 @@ namespace DMCompiler.DM.Visitors {
                 DMASTPick.PickValue pickValue = pick.Values[i];
                 DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
                 DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                if (weight is Expressions.Prob prob) // pick(prob(50);x, prob(200);y) format
+                    weight = prob.P;
 
                 pickValues[i] = new Expressions.Pick.PickValue(weight, value);
             }

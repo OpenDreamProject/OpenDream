@@ -61,6 +61,8 @@ namespace OpenDreamRuntime {
         {
             _procScheduler.Process();
             UpdateStat();
+
+            WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
         }
 
         public bool LoadJson(string? jsonPath)
@@ -108,11 +110,13 @@ namespace OpenDreamRuntime {
         }
 
         private void SetMetaObjects() {
-            ObjectTree.SetMetaObject(DreamPath.Root, new DreamMetaObjectRoot());
+            // Datum needs to be set first
+            ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
+
+            //TODO Investigate what types BYOND can reparent without exploding and only allow reparenting those
             ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
             ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
             ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
-            ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
             ObjectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix());
             ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
             ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());

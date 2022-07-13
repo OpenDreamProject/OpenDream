@@ -165,6 +165,7 @@ namespace OpenDreamShared.Compiler.DMF {
                         token = CreateToken(TokenType.Skip, c);
                         break;
                     }
+                    case ';': Advance(); token = CreateToken(TokenType.DMF_Semicolon, c); break;
                     case '=': Advance(); token = CreateToken(TokenType.DMF_Equals, c); break;
                     case '\'':
                     case '"': {

@@ -54,6 +54,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
         public void VisitAddText(DMASTAddText input) { throw new NotImplementedException(); }
+        public void VisitProb(DMASTProb prob) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -65,7 +66,6 @@ namespace DMCompiler.Compiler.DM {
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
-        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newMultidimensionalList) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
         public void VisitNewListIndex(DMASTNewListIndex newListIndex) { throw new NotImplementedException(); }
@@ -883,6 +883,18 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTProb : DMASTExpression {
+        public readonly DMASTExpression P;
+
+        public DMASTProb(Location location, DMASTExpression p) : base(location) {
+            P = p;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProb(this);
+        }
+    }
+
     public class DMASTNewList : DMASTExpression
     {
         public DMASTCallParameter[] Parameters;
@@ -1051,18 +1063,6 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewPath(this);
-        }
-    }
-
-    public class DMASTNewMultidimensionalList : DMASTExpression {
-        public DMASTExpression[] Dimensions;
-
-        public DMASTNewMultidimensionalList(Location location, DMASTExpression[] dimensions) : base(location) {
-            Dimensions = dimensions;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitNewMultidimensionalList(this);
         }
     }
 

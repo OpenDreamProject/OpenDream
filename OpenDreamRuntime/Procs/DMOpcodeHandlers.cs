@@ -142,31 +142,13 @@ namespace OpenDreamRuntime.Procs {
                 }
                 else
                 {
-                    throw new Exception("Attempted to create an object that is neither a path nor a path string");
+                    throw new Exception($"Cannot create object from invalid type {val}");
                 }
-
             }
 
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
-        }
-
-        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
-        {
-            var count = state.ReadInt();
-
-            List<int> sizes = new List<int>(count);
-            foreach (var size in state.PopCount(count))
-            {
-                size.TryGetValueAsInteger(out var sizeInt);
-                sizes.Add(sizeInt);
-            }
-
-            var list = DreamList.CreateMultidimensional(sizes);
-
-            state.Push(new DreamValue(list));
-            return null;
         }
 
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
@@ -381,7 +363,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            List<DreamValue> args = new(state.Arguments.AsSpan(0, state.ArgumentCount).ToArray());
+            List<DreamValue> args = new(state.GetArguments().ToArray());
 
             state.Push(new DreamProcArguments(args));
             return null;
@@ -396,6 +378,12 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? PushString(DMProcState state) {
             state.Push(new DreamValue(state.ReadString()));
+            return null;
+        }
+
+        public static ProcStatus? PushGlobalVars(DMProcState state)
+        {
+            state.Push(new DreamValue(DreamGlobalVars.Create()));
             return null;
         }
         #endregion Values
@@ -604,7 +592,12 @@ namespace OpenDreamRuntime.Procs {
                     default:
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                 }
+            } else if (first.TryGetValueAsInteger(out int firstInt)) {
+                state.Push(new DreamValue(firstInt));
+            } else {
+                throw new Exception("Invalid or operation on " + first + " and " + second);
             }
+
             return null;
         }
 
@@ -738,10 +731,11 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                result = first;
             } else {
                 throw new Exception("Invalid combine operation on " + first + " and " + second);
             }
-
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -1604,6 +1598,20 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(picked);
+            return null;
+        }
+
+        public static ProcStatus? Prob(DMProcState state) {
+            DreamValue P = state.Pop();
+
+            if (P.TryGetValueAsFloat(out float probability)) {
+                int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
+
+                state.Push(new DreamValue(result));
+            } else {
+                state.Push(new DreamValue(0));
+            }
+
             return null;
         }
 

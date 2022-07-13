@@ -83,7 +83,7 @@ namespace OpenDreamShared.Dream.Procs {
         //0x4F,
         JumpIfNullDereference = 0x50,
         Pop = 0x51,
-        //0x52
+        Prob = 0x52,
         IsSaved = 0x53,
         PickUnweighted = 0x54,
         PickWeighted = 0x55,
@@ -95,7 +95,8 @@ namespace OpenDreamShared.Dream.Procs {
         IsInRange = 0x5B,
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
-        CreateMultidimensionalList = 0x5E
+        //0x5E
+        PushGlobalVars = 0x5F
     }
 
     public enum DreamProcOpcodeParameterType {

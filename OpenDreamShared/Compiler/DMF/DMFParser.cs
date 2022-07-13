@@ -238,7 +238,8 @@ namespace OpenDreamShared.Compiler.DMF {
                 }
 
                 Token attributeValue = Current();
-                if (!Check(ValidAttributeValueTypes)) Error("Invalid attribute value (" + attributeValue.Text + ")");
+                if (!Check(ValidAttributeValueTypes))
+                    Error($"Invalid attribute value ({attributeValue.Text})");
 
                 Newline();
                 key = attributeToken.Text;
@@ -256,11 +257,11 @@ namespace OpenDreamShared.Compiler.DMF {
             while (TryGetAttribute(out var key, out var value))
             {
                 if (value == "none") continue;
-
                 if (value[0] == '"')
                 {
                     value = value.Substring(1, value.Length - 2);
                 }
+
                 node.Add(key, value);
             }
 
@@ -268,15 +269,8 @@ namespace OpenDreamShared.Compiler.DMF {
         }
 
         public void Newline() {
-            while (Check(TokenType.Newline)) {
+            while (Check(TokenType.Newline) || Check(TokenType.DMF_Semicolon)) {
             }
-        }
-
-        public string Resource() {
-            Token resourceToken = Current();
-            Consume(TokenType.DMF_Resource, "Expected a resource");
-
-            return (string)resourceToken.Value;
         }
     }
 }

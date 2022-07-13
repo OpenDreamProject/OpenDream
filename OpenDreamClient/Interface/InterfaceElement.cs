@@ -6,7 +6,8 @@ namespace OpenDreamClient.Interface
 {
     [Virtual]
     public class InterfaceElement {
-        public string Name { get => ElementDescriptor.Name; }
+        public string Type => ElementDescriptor.Type;
+        public string Name => ElementDescriptor.Name;
 
         protected ElementDescriptor ElementDescriptor;
 

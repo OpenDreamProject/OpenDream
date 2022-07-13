@@ -29,6 +29,7 @@
 	var/ckey
 	var/connection
 	var/computer_id = 0 as opendream_unimplemented
+	var/tick_lag = 0 as opendream_unimplemented
 
 	var/timezone
 
@@ -40,6 +41,8 @@
 	var/dir = NORTH as opendream_unimplemented
 	var/gender = "neuter" as opendream_unimplemented
 	var/glide_size as opendream_unimplemented
+	var/virtual_eye as opendream_unimplemented
+
 	proc/SoundQuery()
 		set opendream_unimplemented = TRUE
 	proc/Export(file)

@@ -624,12 +624,11 @@ namespace DMCompiler.Compiler.DM {
                     if (varDecl == null) Error("Expected a var declaration");
 
                     varDeclarations.AddRange(varDecl);
-                    while (Whitespace() ||
-                             Newline() ||
-                             Check(TokenType.DM_Semicolon))
-                    {
-                        //eat the junk
-                    }
+
+                    Whitespace();
+                    Check(TokenType.DM_Semicolon);
+                    Whitespace();
+                    Newline();
                 }
 
                 return varDeclarations.ToArray();

@@ -252,7 +252,10 @@ namespace DMCompiler.Compiler.DM {
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 
-                    if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent) {
+                    var currentType = Current().Type;
+                    if (requireDelimiter && !PeekDelimiter() &&
+                        currentType != TokenType.DM_Dedent &&
+                        currentType != TokenType.DM_RightCurlyBracket) {
                         Error("Expected end of object statement");
                     }
 

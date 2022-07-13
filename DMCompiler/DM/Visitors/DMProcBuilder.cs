@@ -374,8 +374,11 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression.Emit(_dmObject, _proc, statementForStandard.Comparator);
-                    _proc.BreakIfFalse();
+                    if (statementForStandard.Comparator != null)
+                    {
+                        DMExpression.Emit(_dmObject, _proc, statementForStandard.Comparator);
+                        _proc.BreakIfFalse();
+                    }
 
                     ProcessBlockInner(statementForStandard.Body);
 

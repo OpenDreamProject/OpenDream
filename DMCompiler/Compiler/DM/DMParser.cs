@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DMCompiler.Compiler.DMPreprocessor;
+using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using DereferenceType = DMCompiler.Compiler.DM.DMASTDereference.DereferenceType;
 using OpenDreamShared.Dream.Procs;
+using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
@@ -166,7 +168,27 @@ namespace DMCompiler.Compiler.DM {
                     if (Check(TokenType.DM_LeftParenthesis)) {
                         DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                         BracketWhitespace();
-                        DMASTDefinitionParameter[] parameters = DefinitionParameters();
+                        var parameters = DefinitionParameters();
+
+                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
+                            !Check(TokenType.DM_IndeterminateArgs))
+                        {
+                            if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
+                            {
+                                Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
+                            }
+                            parameters.AddRange(DefinitionParameters());
+                        }
+                        if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                            // BYOND doesn't specify the arg
+                            Error($"error: bag argument definition '{Current().PrintableText}'", false);
+                            Advance();
+                            BracketWhitespace();
+                            Check(TokenType.DM_Comma);
+                            BracketWhitespace();
+                            parameters.AddRange(DefinitionParameters());
+                        }
+
                         BracketWhitespace();
                         ConsumeRightParenthesis();
                         Whitespace();
@@ -180,7 +202,7 @@ namespace DMCompiler.Compiler.DM {
                             }
                         }
 
-                        statement = new DMASTProcDefinition(loc, _currentPath, parameters, procBlock);
+                        statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                     }
 
                     //Object definition
@@ -1211,7 +1233,7 @@ namespace DMCompiler.Compiler.DM {
             } else if (Check(TokenType.DM_Else)) {
                 var loc = Current().Location;
                 Whitespace();
-                if (Check(TokenType.DM_If))
+                if (Current().Type == TokenType.DM_If)
                 {
                     Error("Expected \"if\" or \"else\", \"else if\" is not permitted as a switch case");
                 }
@@ -1416,26 +1438,36 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTDefinitionParameter[] DefinitionParameters() {
+        public List<DMASTDefinitionParameter> DefinitionParameters() {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter parameter = DefinitionParameter();
 
-            if (parameter != null || Check(TokenType.DM_IndeterminateArgs)) {
-                if (parameter != null) parameters.Add(parameter);
+            if (parameter != null) parameters.Add(parameter);
 
-                while (Check(TokenType.DM_Comma)) {
+            BracketWhitespace();
+
+            while (Check(TokenType.DM_Comma)) {
+                BracketWhitespace();
+                parameter = DefinitionParameter();
+
+                if (parameter != null)
+                {
+                    parameters.Add(parameter);
                     BracketWhitespace();
 
-                    parameter = DefinitionParameter();
-                    if (parameter != null) {
-                        parameters.Add(parameter);
-                    } else if (!Check(TokenType.DM_IndeterminateArgs)) {
-                        Error("Expected parameter definition");
-                    }
+                }
+                if (Check(TokenType.DM_Null)){
+                    // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
+                    Error($"error: 'null' is not a valid variable name", false);
+                    Advance();
+                    BracketWhitespace();
+                    Check(TokenType.DM_Comma);
+                    BracketWhitespace();
+                    parameters.AddRange(DefinitionParameters());
                 }
             }
 
-            return parameters.ToArray();
+            return parameters;
         }
 
         public DMASTDefinitionParameter DefinitionParameter() {
@@ -1466,6 +1498,8 @@ namespace DMCompiler.Compiler.DM {
 
                 return new DMASTDefinitionParameter(loc, path, value, type, possibleValues);
             }
+
+            Check(TokenType.DM_IndeterminateArgs);
 
             return null;
         }
@@ -1928,6 +1962,8 @@ namespace DMCompiler.Compiler.DM {
 
                         primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
                     }
+
+                    Whitespace(); // whitespace between path and modified type
 
                     //TODO actual modified type support
                     if (Check(TokenType.DM_LeftCurlyBracket)) {

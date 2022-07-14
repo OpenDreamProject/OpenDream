@@ -27,7 +27,35 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessFile(DMASTFile file) {
             _currentObject = DMObjectTree.GetDMObject(DreamPath.Root);
 
+            RegisterGlobals(file.BlockInner);
+
             ProcessBlockInner(file.BlockInner);
+        }
+
+        public void RegisterGlobals(DMASTBlockInner block)
+        {
+            foreach (DMASTStatement statement in block.Statements)
+            {
+                switch (statement)
+                {
+                    // TODO Add support for global vars
+                    case DMASTProcDefinition procDefinition:
+                        if(procDefinition.ObjectPath != null) continue;
+                        RegisterGlobalProcDefinition(procDefinition);
+                        break;
+                    default: continue;
+                }
+            }
+        }
+
+        public void RegisterGlobalProcDefinition(DMASTProcDefinition procDef)
+        {
+            if (DMObjectTree.TryGetGlobalProc(procDef.Name, out _)) {
+                throw new CompileErrorException(new CompilerError(procDef.Location, $"proc {procDef.Name} is already defined in global scope"));
+            }
+
+            var proc = DMObjectTree.CreateDMProc(_currentObject, procDef);
+            DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
         }
 
         public void ProcessBlockInner(DMASTBlockInner blockInner) {
@@ -140,12 +168,9 @@ namespace DMCompiler.DM.Visitors {
                 DMProc proc;
 
                 if (procDefinition.ObjectPath == null) {
-                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
+                    if (!DMObjectTree.TryGetGlobalProc(procDefinition.Name, out proc)) { // This should never fail, but better safe than sorry
+                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"failed to get global proc {procDefinition.Name}"));
                     }
-
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
-                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 } else {
                     proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);

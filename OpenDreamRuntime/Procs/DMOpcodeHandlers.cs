@@ -638,7 +638,7 @@ namespace OpenDreamRuntime.Procs {
 
                     left = DreamThread.Run(async (innerState) =>
                     {
-                        var file = await innerState.Call(dreamMan.GlobalProcs[proc], state.Usr, state.Instance, args);
+                        var file = await innerState.Call(state.DreamManager.ObjectTree.Procs[reference.Index], state.Usr, state.Instance, args);
                         return file;
                     });
                     break;
@@ -710,7 +710,7 @@ namespace OpenDreamRuntime.Procs {
 
                     left = DreamThread.Run(async (innerState) =>
                     {
-                        var file = await innerState.Call(dreamMan.GlobalProcs[proc], state.Usr, state.Instance, args);
+                        var file = await innerState.Call(state.DreamManager.ObjectTree.Procs[refLeft.Index], state.Usr, state.Instance, args);
                         return file;
                     });
                     break;

@@ -8,8 +8,11 @@ using Linguini.Syntax.Ast;
 using Robust.Shared.IoC;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectSavefile : DreamMetaObjectRoot {
+    class DreamMetaObjectSavefile : IDreamMetaObject {
         private readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+        public IDreamMetaObject? ParentType { get; set; }
+        public bool ShouldCallNew => false;
         public class Savefile {
             public DreamResource Resource;
             public string CurrentDirPath = "/";
@@ -47,7 +50,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public static Dictionary<DreamObject, Savefile> ObjectToSavefile = new();
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             string filename = creationArguments.GetArgument(0, "filename").GetValueAsString();
             DreamValue timeout = creationArguments.GetArgument(1, "timeout"); //TODO: timeout
 
@@ -55,17 +58,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             Savefile savefile = new Savefile(resource);
             ObjectToSavefile.Add(dreamObject, savefile);
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
+        public void OnObjectDeleted(DreamObject dreamObject) {
             ObjectToSavefile.Remove(dreamObject);
 
-            base.OnObjectDeleted(dreamObject);
+            ParentType?.OnObjectDeleted(dreamObject);
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
+            ParentType?.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
 
             Savefile savefile = ObjectToSavefile[dreamObject];
 
@@ -75,7 +78,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
             Savefile savefile = ObjectToSavefile[dreamObject];
 
             switch (variableName) {
@@ -95,7 +98,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     return new DreamValue(dirList);
                 }
-                default: return base.OnVariableGet(dreamObject, variableName, variableValue);
+                default: return ParentType?.OnVariableGet(dreamObject, variableName, variableValue) ?? variableValue;
             }
         }
 
@@ -105,7 +108,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
 
-        public override DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
+        public DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
             Savefile savefile = ObjectToSavefile[dreamObject];
 
             if (!index.TryGetValueAsString(out string entryName)) throw new Exception("Invalid savefile index " + index);
@@ -117,7 +120,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
+        public void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
             Savefile savefile = ObjectToSavefile[dreamObject];
 
             if (!index.TryGetValueAsString(out string entryName)) throw new Exception("Invalid savefile index " + index);

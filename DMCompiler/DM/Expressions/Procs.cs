@@ -139,7 +139,7 @@ namespace DMCompiler.DM.Expressions {
             if (dmObject.HasProc(targetProc.Name)) {
                 return (DMReference.CreateSrcProc(targetProc.Name), false);
             } else if (DMObjectTree.TryGetGlobalProc(targetProc.Name, out _)) {
-                return (DMReference.CreateGlobalProc(targetProc.Name), false);
+                return (DMReference.CreateGlobalProc(targetProc.Id), false);
             }
 
             throw new CompileErrorException(Location,

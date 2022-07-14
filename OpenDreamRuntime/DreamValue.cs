@@ -282,16 +282,12 @@ namespace OpenDreamRuntime {
                 case DreamValueType.DreamPath:
                     TryGetValueAsPath(out var path);
                     return path.PathString;
-                case DreamValueType.DreamObject when Value == null:
-                    return "";
                 case DreamValueType.DreamObject: {
-                    TryGetValueAsDreamObject(out var dreamObject);
-
-                    if (dreamObject.IsSubtypeOf(DreamPath.Atom)) {
-                        return dreamObject.GetVariable("name").Stringify();
-                    } else {
-                        return dreamObject.ObjectDefinition.Type.ToString();
+                    if (TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                        return dreamObject.GetDisplayName();
                     }
+
+                    return String.Empty;
                 }
                 default:
                     throw new NotImplementedException("Cannot stringify " + this);

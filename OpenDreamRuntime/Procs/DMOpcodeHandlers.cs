@@ -176,7 +176,8 @@ namespace OpenDreamRuntime.Procs {
                 if (c == (char)0xFF) {
                     c = unformattedString[++i];
 
-                    switch ((StringFormatTypes)c) {
+                    StringFormatTypes formatType = (StringFormatTypes) c;
+                    switch (formatType) {
                         case StringFormatTypes.Stringify: {
                             DreamValue value = state.Pop();
 
@@ -187,6 +188,15 @@ namespace OpenDreamRuntime.Procs {
                             DreamObject refObject = state.Pop().GetValueAsDreamObject();
 
                             formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                            break;
+                        }
+                        case StringFormatTypes.UpperDefiniteArticle:
+                        case StringFormatTypes.LowerDefiniteArticle: {
+                            DreamValue value = state.Pop();
+                            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                                formattedString.Append(dreamObject.GetDisplayName(formatType));
+                            }
+
                             break;
                         }
                         default:

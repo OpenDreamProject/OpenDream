@@ -2059,87 +2059,101 @@ namespace DMCompiler.Compiler.DM {
                                     }
                                     i--;
 
-                                    bool unimplemented = true;
+                                    bool unimplemented = false;
+                                    bool skipSpaces = false;
                                     //TODO: Many of these require [] before the macro instead of after. They should verify that there is one.
                                     switch (escapeSequence) {
                                         case "proper":
                                         case "improper":
-                                            unimplemented = false;
                                             if (stringBuilder.Length != 0) {
                                                 Error($"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
                                             }
 
-                                            //Skip a space if one exists
-                                            if (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
-
+                                            skipSpaces = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);
                                             break;
 
-                                        case "ref": unimplemented = false; currentInterpolationType = StringFormatTypes.Ref; break;
-                                        case "The": currentInterpolationType = StringFormatTypes.UpperDefiniteArticle; break;
-                                        case "the": currentInterpolationType = StringFormatTypes.LowerDefiniteArticle; break;
+                                        case "ref":
+                                            currentInterpolationType = StringFormatTypes.Ref; break;
+
+                                        case "The":
+                                            skipSpaces = true;
+                                            currentInterpolationType = StringFormatTypes.UpperDefiniteArticle;
+                                            break;
+                                        case "the":
+                                            skipSpaces = true;
+                                            currentInterpolationType = StringFormatTypes.LowerDefiniteArticle;
+                                            break;
 
                                         case "A":
                                         case "An":
+                                            unimplemented = true;
                                             currentInterpolationType = StringFormatTypes.UpperIndefiniteArticle;
                                             break;
                                         case "a":
                                         case "an":
+                                            unimplemented = true;
                                             currentInterpolationType = StringFormatTypes.LowerIndefiniteArticle;
                                             break;
 
                                         case "He":
                                         case "She":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.UpperSubjectPronoun);
                                             break;
                                         case "he":
                                         case "she":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.LowerSubjectPronoun);
                                             break;
 
                                         case "His":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.UpperPossessiveAdjective);
                                             break;
                                         case "his":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
                                             break;
 
                                         case "him":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
                                             break;
 
                                         case "himself":
                                         case "herself":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.ReflexivePronoun);
                                             break;
 
                                         case "Hers":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.UpperPossessivePronoun);
                                             break;
                                         case "hers":
+                                            unimplemented = true;
                                             stringBuilder.Append(StringFormatCharacter);
                                             stringBuilder.Append((char)StringFormatTypes.LowerPossessivePronoun);
                                             break;
 
                                         default:
                                             if (escapeSequence.StartsWith("n")) {
-                                                unimplemented = false;
                                                 stringBuilder.Append('\n');
                                                 stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                             } else if (escapeSequence.StartsWith("t")) {
-                                                unimplemented = false;
                                                 stringBuilder.Append('\t');
                                                 stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                             } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) {
-                                                Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                                Error($"Invalid escape sequence \"\\{escapeSequence}\"");
                                             }
 
                                             break;
@@ -2148,6 +2162,13 @@ namespace DMCompiler.Compiler.DM {
                                     if (unimplemented) {
                                         DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
                                     }
+
+                                    if (skipSpaces) {
+                                        // Note that some macros in BYOND require a single/zero space between them and the []
+                                        // This doesn't replicate that
+                                        while (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
+                                    }
+
                                 } else
                                 {
                                     escapeSequence += c;

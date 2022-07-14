@@ -1,5 +1,6 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -165,10 +166,18 @@ namespace OpenDreamRuntime.Objects {
             return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
+        public string GetDisplayName(StringFormatTypes? formatType = null) {
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+                return ObjectDefinition?.Type.ToString() ?? String.Empty;
+
+            return TextHelpers.GetObjectDisplayName(name, formatType);
+        }
+
         public override string ToString() {
-            if(Deleted){
+            if(Deleted) {
                 return "DreamObject(DELETED)";
             }
+
             return "DreamObject(" + ObjectDefinition.Type + ")";
         }
     }

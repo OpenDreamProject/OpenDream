@@ -1,11 +1,11 @@
 ﻿using OpenDreamShared.Input;
 using OpenDreamClient.Interface;
-using Robust.Shared.IoC;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Input {
-    class DreamCommandSystem : SharedDreamCommandSystem {
+    sealed class DreamCommandSystem : SharedDreamCommandSystem {
+        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+
         public void RunCommand(string command) {
             string[] split = command.Split(" ");
             string verb = split[0];
@@ -16,12 +16,23 @@ namespace OpenDreamClient.Input {
                     break;
 
                 case ".screenshot":
-                    var interfaceMgr = IoCManager.Resolve<IDreamInterfaceManager>();
-                    interfaceMgr.SaveScreenshot(split.Length == 1 || split[1] != "auto"); break;
+                    _interfaceManager.SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                    break;
+
+                case ".configure":
+                    Logger.WarningS("opendream.commands", ".configure command is not implemented");
+                    break;
+
+                case ".winset":
+                    string winsetParams = command.Substring(verb.Length + 1);
+
+                    _interfaceManager.WinSet(null, winsetParams);
+                    break;
+
                 default: {
                     if (split.Length > 1)
                     {
-                        Logger.Error("Verb argument parsing is not implemented yet.");
+                        Logger.ErrorS("opendream.commands", "Verb argument parsing is not implemented yet.");
                         return;
                     }
 

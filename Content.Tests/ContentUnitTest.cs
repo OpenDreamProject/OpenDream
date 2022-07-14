@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Reflection;
-using NUnit.Framework;
 using OpenDreamClient;
 using OpenDreamRuntime;
 using OpenDreamShared;
@@ -10,6 +9,7 @@ using EntryPoint = OpenDreamRuntime.EntryPoint;
 
 namespace Content.Tests
 {
+    [Virtual]
     public class ContentUnitTest : RobustUnitTest
     {
         protected override void OverrideIoC()

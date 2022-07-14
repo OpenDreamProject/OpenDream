@@ -1,42 +1,83 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using Robust.Shared.IoC;
+using System.Linq;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    class DreamMetaObjectDatum : DreamMetaObjectRoot {
-        public override bool ShouldCallNew => true;
+    sealed class DreamMetaObjectDatum : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
                 _dreamManager.Datums.Add(dreamObject);
             }
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            ParentType?.OnObjectDeleted(dreamObject);
 
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
                 _dreamManager.Datums.Remove(dreamObject);
             }
 
+            dreamObject.SetVariable("tag", DreamValue.Null);
+
             dreamObject.SpawnProc("Del");
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            if (variableName == "type") {
-                return new DreamValue(dreamObject.ObjectDefinition.Type);
-            } else if (variableName == "parent_type") {
-                return new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type).ParentEntry.ObjectDefinition.Type);
-            } else if (variableName == "vars") {
-                return new DreamValue(DreamListVars.Create(dreamObject));
-            } else {
-                return base.OnVariableGet(dreamObject, variableName, variableValue);
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            return varName switch
+            {
+                "type" => new DreamValue(dreamObject.ObjectDefinition.Type),
+                "parent_type" => new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type)
+                    .ParentEntry.ObjectDefinition.Type),
+                "vars" => new DreamValue(DreamListVars.Create(dreamObject)),
+                _ => ParentType?.OnVariableGet(dreamObject, varName, value) ?? value
+            };
+        }
+
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
+
+            if (varName == "tag")
+            {
+                oldValue.TryGetValueAsString(out var oldStr);
+                value.TryGetValueAsString(out var tagStr);
+
+                // Even if we're setting it to the same string we still need to remove it
+                if (!string.IsNullOrEmpty(oldStr))
+                {
+                    var list = _dreamManager.Tags[oldStr];
+                    if (list.Count > 1)
+                    {
+                        list.Remove(dreamObject);
+                    }
+                    else
+                    {
+                        _dreamManager.Tags.Remove(oldStr);
+                    }
+                }
+
+                // Now we add it (if it's a string)
+                if (!string.IsNullOrEmpty(tagStr))
+                {
+                    if (_dreamManager.Tags.TryGetValue(tagStr, out var list))
+                    {
+                        list.Add(dreamObject);
+                    }
+                    else
+                    {
+                        var newList = new List<DreamObject>(new[] { dreamObject });
+                        _dreamManager.Tags.Add(tagStr, newList);
+                    }
+                }
             }
         }
     }

@@ -79,7 +79,6 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.StringFormat(stringFormat.Location, stringFormat.Value, expressions);
         }
 
-
         public void VisitIdentifier(DMASTIdentifier identifier)
         {
             var name = identifier.Identifier;
@@ -133,6 +132,10 @@ namespace DMCompiler.DM.Visitors {
             int? globalId = _dmObject?.GetGlobalVariableId(name);
             if (globalId != null) {
                 Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                return;
+            } else if (name == "vars")
+            {
+                Result = new Expressions.GlobalVars(globalIdentifier.Location);
                 return;
             }
 
@@ -439,8 +442,8 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented && !DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                    DMCompiler.Warning(new CompilerWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior"));
+                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                    DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {
                 Result = new Expressions.Dereference(dereference.Location, null, expr, dereference.Conditional, dereference.Property);
@@ -548,7 +551,21 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitList(DMASTList list) {
-            Result = new Expressions.List(list.Location, list);
+            (DMExpression Key, DMExpression Value)[] values = Array.Empty<(DMExpression, DMExpression)>();
+
+            if (list.Values != null) {
+                values = new (DMExpression, DMExpression)[list.Values.Length];
+
+                for (int i = 0; i < list.Values.Length; i++) {
+                    DMASTCallParameter value = list.Values[i];
+                    DMExpression key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
+                    DMExpression listValue = DMExpression.Create(_dmObject, _proc, value.Value);
+
+                    values[i] = (key, listValue);
+                }
+            }
+
+            Result = new Expressions.List(list.Location, values);
         }
 
         public void VisitNewList(DMASTNewList newList) {
@@ -556,7 +573,7 @@ namespace DMCompiler.DM.Visitors {
 
             for (int i = 0; i < newList.Parameters.Length; i++) {
                 DMASTCallParameter parameter = newList.Parameters[i];
-                if (parameter.Name != null) throw new CompileErrorException(newList.Location,"newlist() does not take named arguments");
+                if (parameter.Key != null) throw new CompileErrorException(newList.Location,"newlist() does not take named arguments");
 
                 expressions[i] = DMExpression.Create(_dmObject, _proc, parameter.Value, _inferredPath);
             }
@@ -570,11 +587,17 @@ namespace DMCompiler.DM.Visitors {
             for (int i = 0; i < exp_arr.Length; i++)
             {
                 DMASTCallParameter parameter = addText.Parameters[i];
-                if(parameter.Name != null)
+                if(parameter.Key != null)
                     throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
                 exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
             }
             Result = new Expressions.AddText(addText.Location, exp_arr);
+        }
+
+        public void VisitProb(DMASTProb prob) {
+            DMExpression p = DMExpression.Create(_dmObject, _proc, prob.P);
+
+            Result = new Expressions.Prob(prob.Location, p);
         }
 
         public void VisitInput(DMASTInput input) {
@@ -605,6 +628,9 @@ namespace DMCompiler.DM.Visitors {
                 DMASTPick.PickValue pickValue = pick.Values[i];
                 DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
                 DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                if (weight is Expressions.Prob prob) // pick(prob(50);x, prob(200);y) format
+                    weight = prob.P;
 
                 pickValues[i] = new Expressions.Pick.PickValue(weight, value);
             }

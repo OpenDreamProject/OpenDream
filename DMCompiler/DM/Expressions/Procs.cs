@@ -17,15 +17,17 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             if (dmObject.HasProc(_identifier)) {
                 return (DMReference.CreateSrcProc(_identifier), false);
-            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out _)) {
-                return (DMReference.CreateGlobalProc(_identifier), false);
+            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
+                return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
 
             throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
         }
 
-        public DMProc GetProc(DMObject dmObject) {
-            return dmObject.GetProcs(_identifier)?[^1];
+        public DMProc GetProc(DMObject dmObject)
+        {
+            var procId = dmObject.GetProcs(_identifier)?[^1];
+            return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
     }
 
@@ -41,17 +43,14 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetGlobalProc(_name, out _)) {
-                throw new CompileErrorException(Location, $"There is no global proc named \"{_name}\"");
+            DMProc globalProc = GetProc();
 
-            }
-
-            return (DMReference.CreateGlobalProc(_name), false);
+            return (DMReference.CreateGlobalProc(globalProc.Id), false);
         }
 
         public DMProc GetProc() {
             if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
-                throw new CompileErrorException(Location, $"No proc named \"{_name}\"");
+                throw new CompileErrorException(Location, $"No global proc named \"{_name}\"");
             }
 
             return globalProc;
@@ -108,8 +107,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings && (targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-                DMCompiler.Warning(new CompilerWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}{targetProc.Name}() is not implemented"));
+            if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
+                DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
@@ -136,10 +135,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
-            if (!DMCompiler.Settings.SuppressUnimplementedWarnings)
-            {
-                DMCompiler.Warning(new CompilerWarning(Location, $"DMM overrides for expression {GetType()} are not implemented"));
-            }
+            DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
             return true; //TODO
         }
     }

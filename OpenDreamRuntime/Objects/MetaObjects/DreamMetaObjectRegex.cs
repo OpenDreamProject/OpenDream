@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectRegex : DreamMetaObjectDatum {
+    sealed class DreamMetaObjectRegex : IDreamMetaObject {
+        public static readonly Dictionary<DreamObject, DreamRegex> ObjectToDreamRegex = new();
+
+        public bool ShouldCallNew => false;
+        public IDreamMetaObject? ParentType { get; set; }
+
         public struct DreamRegex {
             public Regex Regex;
             public bool IsGlobal;
         }
 
-        public static Dictionary<DreamObject, DreamRegex> ObjectToDreamRegex = new();
-
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamValue pattern = creationArguments.GetArgument(0, "pattern");
             DreamValue flags = creationArguments.GetArgument(1, "flags");
             DreamRegex regex;
@@ -35,13 +37,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             ObjectToDreamRegex.Add(dreamObject, regex);
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
+        public void OnObjectDeleted(DreamObject dreamObject) {
             ObjectToDreamRegex.Remove(dreamObject);
 
-            base.OnObjectDeleted(dreamObject);
+            ParentType?.OnObjectDeleted(dreamObject);
         }
     }
 }

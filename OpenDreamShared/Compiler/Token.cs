@@ -162,6 +162,7 @@
         DMF_PushButton,
         DMF_Resource,
         DMF_Right,
+        DMF_Semicolon,
         DMF_Stretch,
         DMF_String,
         DMF_Sunken,
@@ -172,7 +173,7 @@
         DMF_Window
     }
 
-    public partial class Token {
+    public sealed partial class Token {
         public TokenType Type;
         public Location Location;
         public string Text;

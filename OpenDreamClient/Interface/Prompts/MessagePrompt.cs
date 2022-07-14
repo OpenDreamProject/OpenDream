@@ -4,7 +4,7 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Prompts
 {
-    class MessagePrompt : InputWindow {
+    sealed class MessagePrompt : InputWindow {
         public MessagePrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message, defaultValue, canCancel) { }
 
         protected override Control CreateInputControl(String defaultValue) {

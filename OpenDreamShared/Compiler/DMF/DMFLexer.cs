@@ -44,6 +44,7 @@ namespace OpenDreamShared.Compiler.DMF {
             "id",
             "image",
             "image-mode",
+            "inner-size",
             "index",
             "is-checked",
             "is-default",
@@ -76,6 +77,7 @@ namespace OpenDreamShared.Compiler.DMF {
             "on-status",
             "on-size",
             "on-tab",
+            "outer-size",
             "pos",
             "prefix-color",
             "right-click",
@@ -163,6 +165,7 @@ namespace OpenDreamShared.Compiler.DMF {
                         token = CreateToken(TokenType.Skip, c);
                         break;
                     }
+                    case ';': Advance(); token = CreateToken(TokenType.DMF_Semicolon, c); break;
                     case '=': Advance(); token = CreateToken(TokenType.DMF_Equals, c); break;
                     case '\'':
                     case '"': {

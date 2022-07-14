@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -67,6 +65,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int index = arguments.GetArgument(0, "Index").GetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)instance;
 
+            if (index <= 0) index = list.GetLength() + 1;
             if (arguments.OrderedArguments.Count < 2) throw new Exception("No value given to insert");
 
             for (int i = 1; i < arguments.OrderedArguments.Count; i++) {

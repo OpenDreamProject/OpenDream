@@ -54,6 +54,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitList(DMASTList list) { throw new NotImplementedException(); }
         public void VisitNewList(DMASTNewList newList) { throw new NotImplementedException(); }
         public void VisitAddText(DMASTAddText input) { throw new NotImplementedException(); }
+        public void VisitProb(DMASTProb prob) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
@@ -882,6 +883,18 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTProb : DMASTExpression {
+        public readonly DMASTExpression P;
+
+        public DMASTProb(Location location, DMASTExpression p) : base(location) {
+            P = p;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProb(this);
+        }
+    }
+
     public class DMASTNewList : DMASTExpression
     {
         public DMASTCallParameter[] Parameters;
@@ -1696,11 +1709,11 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTCallParameter : DMASTNode {
         public DMASTExpression Value;
-        public string Name;
+        public DMASTExpression Key;
 
-        public DMASTCallParameter(Location location, DMASTExpression value, string name = null) : base(location) {
+        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression key = null) : base(location) {
             Value = value;
-            Name = name;
+            Key = key;
         }
 
         public override void Visit(DMASTVisitor visitor) {

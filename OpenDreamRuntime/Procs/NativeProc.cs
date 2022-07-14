@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    public class NativeProc : DreamProc {
+    public sealed class NativeProc : DreamProc {
         public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
 
         public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
@@ -31,7 +30,7 @@ namespace OpenDreamRuntime.Procs {
             return (procAttribute.Name, defaultArgumentValues, argumentNames);
         }
 
-        public class State : ProcState
+        public sealed class State : ProcState
         {
             public DreamObject Src;
             public DreamObject Usr;
@@ -70,8 +69,8 @@ namespace OpenDreamRuntime.Procs {
         private Dictionary<string, DreamValue> _defaultArgumentValues;
         public HandlerFn Handler { get; }
 
-        public NativeProc(string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
+        public NativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+            : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
             _defaultArgumentValues = defaultArgumentValues;
             Handler = handler;

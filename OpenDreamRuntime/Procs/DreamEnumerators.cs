@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Procs {
@@ -23,7 +22,7 @@ namespace OpenDreamRuntime.Procs {
         public bool MoveNext() {
             _current += _step;
 
-            return _current <= _end;
+            return (_step > 0) ? _current <= _end : _current >= _end;
         }
 
         public void Reset() {

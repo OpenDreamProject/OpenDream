@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Collections.Generic;
+using Robust.Shared.Analyzers;
 using Robust.Shared.Serialization.Manager.Attributes;
 
 namespace OpenDreamShared.Interface {
-    public class InterfaceDescriptor {
+    public sealed class InterfaceDescriptor {
         public List<WindowDescriptor> WindowDescriptors;
         public List<MacroSetDescriptor> MacroSetDescriptors;
         public Dictionary<string, MenuDescriptor> MenuDescriptors;
@@ -16,8 +15,10 @@ namespace OpenDreamShared.Interface {
         }
     }
 
-    [ImplicitDataDefinitionForInheritors]
+    [Virtual, ImplicitDataDefinitionForInheritors]
     public class ElementDescriptor {
+        [DataField("type")]
+        public string Type;
         [DataField("name")]
         public string Name;
     }

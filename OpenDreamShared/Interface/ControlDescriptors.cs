@@ -1,9 +1,10 @@
 ﻿using Robust.Shared.Maths;
 using System.Collections.Generic;
 using Robust.Shared.Serialization.Manager.Attributes;
+using Robust.Shared.Analyzers;
 
 namespace OpenDreamShared.Interface {
-    public class WindowDescriptor {
+    public sealed class WindowDescriptor {
         public string Name;
         public List<ControlDescriptor> ControlDescriptors;
         public ControlDescriptorMain MainControlDescriptor { get; private set; } = null;
@@ -20,6 +21,7 @@ namespace OpenDreamShared.Interface {
         }
     }
 
+    [Virtual]
     public class ControlDescriptor : ElementDescriptor {
         [DataField("pos")]
         public Vector2i? Pos = null;
@@ -39,7 +41,7 @@ namespace OpenDreamShared.Interface {
         public bool IsDisabled = false;
     }
 
-    public class ControlDescriptorMain : ControlDescriptor {
+    public sealed class ControlDescriptorMain : ControlDescriptor {
         [DataField("is-pane")]
         public bool IsPane = false;
         [DataField("icon")]
@@ -50,7 +52,7 @@ namespace OpenDreamShared.Interface {
         public string Title = null;
     }
 
-    public class ControlDescriptorChild : ControlDescriptor {
+    public sealed class ControlDescriptorChild : ControlDescriptor {
         [DataField("left")]
         public string Left = null;
         [DataField("right")]
@@ -59,30 +61,29 @@ namespace OpenDreamShared.Interface {
         public bool IsVert = false;
     }
 
-    public class ControlDescriptorInput : ControlDescriptor {
+    public sealed class ControlDescriptorInput : ControlDescriptor {
     }
 
-    public class ControlDescriptorButton : ControlDescriptor {
+    public sealed class ControlDescriptorButton : ControlDescriptor {
         [DataField("text")]
         public string Text = null;
         [DataField("command")]
         public string Command = null;
-
     }
 
-    public class ControlDescriptorOutput : ControlDescriptor {
+    public sealed class ControlDescriptorOutput : ControlDescriptor {
     }
 
-    public class ControlDescriptorInfo : ControlDescriptor {
+    public sealed class ControlDescriptorInfo : ControlDescriptor {
     }
 
-    public class ControlDescriptorMap : ControlDescriptor {
+    public sealed class ControlDescriptorMap : ControlDescriptor {
     }
 
-    public class ControlDescriptorBrowser : ControlDescriptor {
+    public sealed class ControlDescriptorBrowser : ControlDescriptor {
     }
 
-    public class ControlDescriptorLabel : ControlDescriptor {
+    public sealed class ControlDescriptorLabel : ControlDescriptor {
         [DataField("text")]
         public string Text = null;
     }

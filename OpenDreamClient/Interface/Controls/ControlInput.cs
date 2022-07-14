@@ -2,10 +2,9 @@
 using OpenDreamClient.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.GameObjects;
 
 namespace OpenDreamClient.Interface.Controls {
-    class ControlInput : InterfaceControl
+    sealed class ControlInput : InterfaceControl
     {
         private LineEdit _textBox;
 

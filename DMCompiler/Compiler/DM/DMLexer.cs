@@ -129,6 +129,7 @@ namespace DMCompiler.Compiler.DM {
 
                                 case TokenType.DM_Preproc_Punctuator_LeftBracket:
                                     token = CreateToken(TokenType.DM_QuestionLeftBracket, "?[");
+                                    BracketNesting++;
                                     Advance();
                                     break;
 

@@ -167,7 +167,7 @@ namespace DMCompiler.Compiler.DM {
                     //Proc definition
                     if (Check(TokenType.DM_LeftParenthesis)) {
                         DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
-                        BracketWhitespace();
+                        Whitespace();
                         var parameters = DefinitionParameters();
 
                         if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
@@ -183,13 +183,13 @@ namespace DMCompiler.Compiler.DM {
                             // BYOND doesn't specify the arg
                             Error($"error: bag argument definition '{Current().PrintableText}'", false);
                             Advance();
-                            BracketWhitespace();
+                            Whitespace();
                             Check(TokenType.DM_Comma);
-                            BracketWhitespace();
+                            Whitespace();
                             parameters.AddRange(DefinitionParameters());
                         }
 
-                        BracketWhitespace();
+                        Whitespace();
                         ConsumeRightParenthesis();
                         Whitespace();
 
@@ -848,10 +848,10 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
-                BracketWhitespace();
+                Whitespace();
                 DMASTExpression condition = Expression();
                 if (condition == null) Error("Expected a condition");
-                BracketWhitespace();
+                Whitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
                 Check(TokenType.DM_Colon);
@@ -1188,7 +1188,7 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
                 do {
-                    BracketWhitespace();
+                    Whitespace();
 
                     DMASTExpression expression = Expression();
                     if (expression == null) {
@@ -1281,9 +1281,9 @@ namespace DMCompiler.Compiler.DM {
                 DMASTProcStatement parameter = null;
                 if (Check(TokenType.DM_LeftParenthesis))
                 {
-                    BracketWhitespace();
+                    Whitespace();
                     parameter = ProcVarDeclaration(allowMultiple: false);
-                    BracketWhitespace();
+                    Whitespace();
                     ConsumeRightParenthesis();
                     Whitespace();
                 }
@@ -1335,11 +1335,11 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTCallParameter[] ProcCall() {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                BracketWhitespace();
+                Whitespace();
 
                 DMASTCallParameter[] callParameters = CallParameters();
                 if (callParameters == null) callParameters = new DMASTCallParameter[0];
-                BracketWhitespace();
+                Whitespace();
                 ConsumeRightParenthesis();
 
                 return callParameters;
@@ -1350,14 +1350,14 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTPick.PickValue[] PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                BracketWhitespace();
+                Whitespace();
 
                 DMASTPick.PickValue? arg = PickArgument();
                 if (arg == null) Error("Expected a pick argument");
                 List<DMASTPick.PickValue> args = new() { arg.Value };
 
                 while (Check(TokenType.DM_Comma)) {
-                    BracketWhitespace();
+                    Whitespace();
                     arg = PickArgument();
 
                     if (arg != null) {
@@ -1371,7 +1371,7 @@ namespace DMCompiler.Compiler.DM {
                     }
                 }
 
-                BracketWhitespace();
+                Whitespace();
                 ConsumeRightParenthesis();
                 return args.ToArray();
             }
@@ -1398,14 +1398,14 @@ namespace DMCompiler.Compiler.DM {
         public DMASTCallParameter[] CallParameters() {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter parameter = CallParameter();
-            BracketWhitespace();
+            Whitespace();
 
             while (Check(TokenType.DM_Comma)) {
-                BracketWhitespace();
+                Whitespace();
                 var loc = Current().Location;
                 parameters.Add(parameter ?? new DMASTCallParameter(loc, new DMASTConstantNull(loc)));
                 parameter = CallParameter();
-                BracketWhitespace();
+                Whitespace();
             }
 
             if (parameter != null) {
@@ -1444,25 +1444,24 @@ namespace DMCompiler.Compiler.DM {
 
             if (parameter != null) parameters.Add(parameter);
 
-            BracketWhitespace();
+            Whitespace();
 
             while (Check(TokenType.DM_Comma)) {
-                BracketWhitespace();
+                Whitespace();
                 parameter = DefinitionParameter();
 
                 if (parameter != null)
                 {
                     parameters.Add(parameter);
-                    BracketWhitespace();
-
+                    Whitespace();
                 }
                 if (Check(TokenType.DM_Null)){
                     // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
                     Error($"error: 'null' is not a valid variable name", false);
                     Advance();
-                    BracketWhitespace();
+                    Whitespace();
                     Check(TokenType.DM_Comma);
-                    BracketWhitespace();
+                    Whitespace();
                     parameters.AddRange(DefinitionParameters());
                 }
             }
@@ -1940,9 +1939,9 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
             if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
             {
-                BracketWhitespace();
+                Whitespace();
                 DMASTExpression inner = Expression();
-                BracketWhitespace();
+                Whitespace();
                 ConsumeRightParenthesis();
 
                 return inner;
@@ -2270,13 +2269,6 @@ namespace DMCompiler.Compiler.DM {
             } else {
                 return Check(TokenType.DM_Whitespace);
             }
-        }
-
-        //Inside brackets/parentheses, whitespace can include delimiters in select areas
-        private void BracketWhitespace() {
-            Whitespace();
-            Delimiter();
-            Whitespace();
         }
 
         private DMASTExpression ParseDereference(DMASTExpression expression, bool allowCalls = true) {

@@ -314,6 +314,24 @@ namespace DMCompiler.Compiler.DM {
             return _indentationStack.Peek();
         }
 
+        protected override Token Advance() {
+            Token current = base.Advance();
+
+            // Skip any newlines when inside brackets
+            if (BracketNesting != 0) {
+                while (current.Type == TokenType.Newline) {
+                    current = base.Advance();
+
+                    // Also skip whitespace after the newlines
+                    if (current.Type == TokenType.DM_Preproc_Whitespace) {
+                        current = base.Advance();
+                    }
+                }
+            }
+
+            return current;
+        }
+
         private int CheckIndentation() {
             int indentationLevel = 0;
 

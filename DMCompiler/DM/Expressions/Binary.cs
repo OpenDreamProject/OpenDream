@@ -441,7 +441,7 @@ namespace DMCompiler.DM.Expressions {
     // x = y
     class Assignment : AssignmentBinaryOp {
         public override DreamPath? Path => LHS.Path;
-        
+
         public Assignment(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
@@ -527,12 +527,14 @@ namespace DMCompiler.DM.Expressions {
             proc.PushReferenceValue(reference);
             proc.JumpIfTrue(skipLabel);
 
+            LHS.EmitReference(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
             proc.Jump(endLabel);
 
             proc.AddLabel(skipLabel);
-            proc.PushReferenceValue(reference);
+            var (ref2, _) = LHS.EmitReference(dmObject, proc);
+            proc.PushReferenceValue(ref2);
             proc.AddLabel(endLabel);
         }
     }

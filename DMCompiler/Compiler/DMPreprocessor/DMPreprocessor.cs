@@ -450,6 +450,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 List<Token> currentParameter = new();
 
                 Token parameterToken = GetNextToken(true);
+                while (parameterToken.Type == TokenType.Newline) { // Skip newlines after the left parenthesis
+                    parameterToken = GetNextToken(true);
+                }
+
                 int parenthesisNesting = 0;
                 while (!(parenthesisNesting == 0 && parameterToken.Type == TokenType.DM_Preproc_Punctuator_RightParenthesis) &&
                         parameterToken.Type != TokenType.EndOfFile) {

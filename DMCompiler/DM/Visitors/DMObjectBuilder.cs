@@ -32,10 +32,11 @@ namespace DMCompiler.DM.Visitors {
             ProcessBlockInner(file.BlockInner);
         }
 
-        public void RegisterGlobals(DMASTBlockInner block)
+        private void RegisterGlobals(DMASTBlockInner block)
         {
-            foreach (DMASTStatement statement in block.Statements)
+            for(var i = 0; i < block.Statements.Length; i++)
             {
+                DMASTStatement statement = block.Statements[i];
                 switch (statement)
                 {
                     // TODO Add support for global vars
@@ -48,7 +49,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void RegisterGlobalProcDefinition(DMASTProcDefinition procDef)
+        private void RegisterGlobalProcDefinition(DMASTProcDefinition procDef)
         {
             if (DMObjectTree.TryGetGlobalProc(procDef.Name, out _)) {
                 throw new CompileErrorException(new CompilerError(procDef.Location, $"proc {procDef.Name} is already defined in global scope"));
@@ -59,7 +60,9 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessBlockInner(DMASTBlockInner blockInner) {
-            foreach (DMASTStatement statement in blockInner.Statements) {
+            for(var i = 0; i < blockInner.Statements.Length; i++)
+            {
+                DMASTStatement statement = blockInner.Statements[i];
                 try {
                     ProcessStatement(statement);
                 } catch (CompileErrorException e) {

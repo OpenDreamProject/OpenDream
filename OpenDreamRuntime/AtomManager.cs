@@ -21,10 +21,9 @@ namespace OpenDreamRuntime {
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
             sprite.SetAppearance(CreateAppearanceFromAtom(atom));
 
-            if (_entityManager.TryGetComponent(entity, out MetaDataComponent metaData)) {
-                atom.GetVariable("name").TryGetValueAsString(out string name);
+            if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
                 atom.GetVariable("desc").TryGetValueAsString(out string desc);
-                metaData.EntityName = name;
+                metaData.EntityName = atom.GetDisplayName();
                 metaData.EntityDescription = desc;
             }
 

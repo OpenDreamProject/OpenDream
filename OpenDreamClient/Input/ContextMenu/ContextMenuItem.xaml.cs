@@ -25,7 +25,7 @@ namespace OpenDreamClient.Input.ContextMenu {
 
             NameLabel.Margin = new Thickness(2, 0, 4, 0);
             if (entityManager.TryGetComponent(entity, out _entityMetaData)) {
-                NameLabel.Text = TextHelpers.GetObjectDisplayName(_entityMetaData.EntityName);
+                NameLabel.Text = _entityMetaData.EntityName;
             }
 
             Icon.Margin = new Thickness(2);

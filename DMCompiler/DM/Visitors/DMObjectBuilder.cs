@@ -247,6 +247,7 @@ namespace DMCompiler.DM.Visitors {
                 Expressions.GlobalField => variable.IsGlobal, // Global set to another global
                 Expressions.StringFormat => variable.IsGlobal,
                 Expressions.Add => variable.IsGlobal,
+                Expressions.Subtract => variable.IsGlobal,
                 _ => false
             };
 

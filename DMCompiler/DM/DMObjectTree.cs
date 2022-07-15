@@ -167,6 +167,8 @@ namespace DMCompiler.DM {
                     }
                 }
             }
+
+            GlobalInitProc.ResolveLabels();
         }
 
         public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {

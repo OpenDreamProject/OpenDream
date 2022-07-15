@@ -626,9 +626,8 @@ namespace DMCompiler.Compiler.DM {
                     varDeclarations.AddRange(varDecl);
 
                     Whitespace();
-                    Check(TokenType.DM_Semicolon);
+                    Delimiter();
                     Whitespace();
-                    Newline();
                 }
 
                 return varDeclarations.ToArray();

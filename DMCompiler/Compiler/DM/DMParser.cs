@@ -646,7 +646,10 @@ namespace DMCompiler.Compiler.DM {
                     if (varDecl == null) Error("Expected a var declaration");
 
                     varDeclarations.AddRange(varDecl);
-                    Newline();
+
+                    Whitespace();
+                    Delimiter();
+                    Whitespace();
                 }
 
                 return varDeclarations.ToArray();

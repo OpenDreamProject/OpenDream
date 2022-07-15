@@ -24,7 +24,7 @@
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
-	
+
 	var/version = 0 as opendream_unimplemented
 
 	var/address
@@ -32,7 +32,7 @@
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url
 	var/status as opendream_unimplemented
-	var/list/params = null as opendream_unimplemented
+	var/list/params = list() as opendream_unimplemented
 
 	var/sleep_offline = 0 as opendream_unimplemented
 

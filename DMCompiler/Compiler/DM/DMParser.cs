@@ -916,6 +916,10 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
 
+                if (Check(TokenType.DM_RightParenthesis)) {
+                    return new DMASTProcStatementInfLoop(loc, GetForBody());
+                }
+            
                 _allowVarDeclExpression = true;
                 DMASTExpression expr1 = Expression();
                 Whitespace();

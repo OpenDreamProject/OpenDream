@@ -390,7 +390,7 @@ namespace DMCompiler.DM.Visitors {
                             new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
                             new DMASTIdentifier(exprIn.Value.Location, variableIdent), exprIn.StartRange, exprIn.EndRange, exprIn.Step, statementForRaw.Body));
                     }
-                    if (statementForRaw.Expression1 is DMASTVarDeclExpression vd) {
+                    else if (statementForRaw.Expression1 is DMASTVarDeclExpression vd) {
                         string variableIdent = null;
                         if (statementForRaw.Expression1 is DMASTVarDeclExpression decl) {
                             variableIdent = decl.DeclPath.Path.LastElement;
@@ -400,7 +400,7 @@ namespace DMCompiler.DM.Visitors {
                             new DMASTIdentifier(statementForRaw.Location, variableIdent),
                             statementForRaw.Body));
                     }
-                    if (statementForRaw.Expression1 is DMASTExpressionInRange) {
+                    else if (statementForRaw.Expression1 is DMASTExpressionInRange) {
                         if (statementForRaw.Expression2 is null) {
                             DMASTExpression reference = null;
                             var exprIn = statementForRaw.Expression1 as DMASTExpressionInRange;
@@ -418,12 +418,30 @@ namespace DMCompiler.DM.Visitors {
                             ProcessStatementForRange(new DMASTProcStatementForRange(statementForRaw.Location,
                                 new DMASTProcStatementExpression(statementForRaw.Location, statementForRaw.Expression1),
                                 reference, exprIn.StartRange, exprIn.EndRange, exprIn.Step, statementForRaw.Body));
-                        } else {
+                        }
+                        else {
                             var exprDecl = statementForRaw.Expression1 as DMASTVarDeclExpression;
                             var reference = new DMASTIdentifier(exprDecl.Location, exprDecl.DeclPath.Path.LastElement);
                             ProcessStatementForList(new DMASTProcStatementForList(statementForRaw.Location,
                                 new DMASTProcStatementExpression(exprDecl.Location, exprDecl), reference, statementForRaw.Expression2, statementForRaw.Body));
                         }
+                    }
+                    else if (statementForRaw.Expression1 is DMASTExpressionIn exprIn) {
+                        DMASTIdentifier loopVar = null;
+                        if (exprIn.Value is DMASTVarDeclExpression decl) {
+                            loopVar = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                        } else if (exprIn.Value is DMASTIdentifier id) {
+                            loopVar = id;
+                        }
+                        // TODO: Check if loop var is declared or not
+                        else {
+                            DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid iter var in for"));
+                        }
+                        ProcessStatementForList(new DMASTProcStatementForList(statementForRaw.Location,
+                            null, loopVar, exprIn.List, statementForRaw.Body));
+                    }
+                    else {
+                        DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid expression in for"));
                     }
                 }
             }

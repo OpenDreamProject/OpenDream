@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -25,6 +26,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) { throw new NotImplementedException(); }
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) { throw new NotImplementedException(); }
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
+        public void VisitProcStatementForRaw(DMASTProcStatementForRaw statementForRaw) { throw new NotImplementedException(); }
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) { throw new NotImplementedException(); }
         public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
         public void VisitProcStatementForType(DMASTProcStatementForType statementForType) { throw new NotImplementedException(); }
@@ -65,6 +67,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitPick(DMASTPick pick) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
+        public void VisitVarDeclExpression(DMASTVarDeclExpression vardecl) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
         public void VisitNewDereference(DMASTNewDereference newDereference) { throw new NotImplementedException(); }
@@ -152,6 +155,10 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression(Location location)
             : base(location)
         {}
+
+        public virtual IEnumerable<DMASTExpression> Leaves() {
+            yield break;
+        }
     }
 
     public abstract class DMASTExpressionConstant : DMASTExpression {
@@ -500,6 +507,21 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTProcStatementForRaw : DMASTProcStatement {
+        public DMASTExpression Expression1, Expression2, Expression3;
+        public DMASTProcBlockInner Body;
+
+        public DMASTProcStatementForRaw(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMASTProcBlockInner body) : base(location) {
+            Expression1 = expr1;
+            Expression2 = expr2;
+            Expression3 = expr3;
+            Body = body;
+        }
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementForRaw(this);
+        }
+    }
+
     public class DMASTProcStatementForStandard : DMASTProcStatementFor {
         public DMASTExpression Comparator, Incrementor;
 
@@ -541,11 +563,11 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementForRange : DMASTProcStatementFor {
-        public DMASTIdentifier Variable;
+        public DMASTExpression Reference;
         public DMASTExpression RangeStart, RangeEnd, Step;
 
-        public DMASTProcStatementForRange(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(location, initializer, body) {
-            Variable = variable;
+        public DMASTProcStatementForRange(Location location, DMASTProcStatement initializer, DMASTExpression reference, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(location, initializer, body) {
+            Reference = reference;
             RangeStart = rangeStart;
             RangeEnd = rangeEnd;
             Step = step;
@@ -1047,9 +1069,23 @@ namespace DMCompiler.Compiler.DM {
             Value = value;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; yield return Value; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAssign(this);
         }
+    }
+
+    public class DMASTVarDeclExpression : DMASTExpression {
+        public DMASTPath DeclPath;
+
+        public DMASTVarDeclExpression(Location location, DMASTPath path) : base(location) {
+            DeclPath = path;
+        }
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitVarDeclExpression(this);
+        }
+
     }
 
     public class DMASTNewPath : DMASTExpression {
@@ -1127,6 +1163,8 @@ namespace DMCompiler.Compiler.DM {
             Expression = expression;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNot(this);
         }
@@ -1139,6 +1177,7 @@ namespace DMCompiler.Compiler.DM {
             Expression = expression;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNegate(this);
         }
@@ -1151,6 +1190,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitEqual(this);
@@ -1165,6 +1206,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNotEqual(this);
         }
@@ -1177,6 +1220,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitEquivalent(this);
@@ -1191,6 +1236,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNotEquivalent(this);
         }
@@ -1203,6 +1250,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLessThan(this);
@@ -1217,6 +1266,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLessThanOrEqual(this);
         }
@@ -1229,6 +1280,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGreaterThan(this);
@@ -1243,6 +1296,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGreaterThanOrEqual(this);
         }
@@ -1255,6 +1310,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMultiply(this);
@@ -1269,6 +1326,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDivide(this);
         }
@@ -1281,6 +1340,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitModulus(this);
@@ -1295,6 +1356,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPower(this);
         }
@@ -1307,6 +1370,8 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAdd(this);
@@ -1321,6 +1386,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitSubtract(this);
         }
@@ -1332,6 +1399,8 @@ namespace DMCompiler.Compiler.DM {
         public DMASTPreIncrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPreIncrement(this);
@@ -1345,6 +1414,8 @@ namespace DMCompiler.Compiler.DM {
             Expression = expression;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPreDecrement(this);
         }
@@ -1357,6 +1428,8 @@ namespace DMCompiler.Compiler.DM {
             Expression = expression;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPostIncrement(this);
         }
@@ -1368,6 +1441,8 @@ namespace DMCompiler.Compiler.DM {
         public DMASTPostDecrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
         }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitPostDecrement(this);
@@ -1383,6 +1458,8 @@ namespace DMCompiler.Compiler.DM {
             C = c;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; yield return C;  }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitTernary(this);
         }
@@ -1396,6 +1473,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAppend(this);
         }
@@ -1408,6 +1487,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRemove(this);
@@ -1422,6 +1502,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCombine(this);
         }
@@ -1435,6 +1517,8 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMask(this);
         }
@@ -1447,6 +1531,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLogicalAndAssign(this);
@@ -1460,6 +1545,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLogicalOrAssign(this);
@@ -1474,6 +1560,7 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitMultiplyAssign(this);
         }
@@ -1487,6 +1574,7 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitDivideAssign(this);
         }
@@ -1499,6 +1587,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLeftShiftAssign(this);
@@ -1512,6 +1601,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShiftAssign(this);
@@ -1525,6 +1615,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitXorAssign(this);
@@ -1538,6 +1629,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitModulusAssign(this);
@@ -1551,6 +1643,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitOr(this);
@@ -1564,7 +1657,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
-
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAnd(this);
         }
@@ -1577,6 +1670,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryAnd(this);
@@ -1590,6 +1684,7 @@ namespace DMCompiler.Compiler.DM {
             A = a;
             B = b;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryXor(this);
@@ -1604,6 +1699,7 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryOr(this);
         }
@@ -1615,6 +1711,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTBinaryNot(Location location, DMASTExpression value) : base(location) {
             Value = value;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Value; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitBinaryNot(this);
@@ -1629,6 +1726,7 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLeftShift(this);
         }
@@ -1642,6 +1740,7 @@ namespace DMCompiler.Compiler.DM {
             B = b;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShift(this);
         }
@@ -1656,6 +1755,8 @@ namespace DMCompiler.Compiler.DM {
             List = list;
         }
 
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Value; yield return List; }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIn(this);
         }
@@ -1665,12 +1766,15 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression Value;
         public DMASTExpression StartRange;
         public DMASTExpression EndRange;
+        public DMASTExpression Step;
 
-        public DMASTExpressionInRange(Location location, DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange) : base(location) {
+        public DMASTExpressionInRange(Location location, DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange, DMASTExpression step = null) : base(location) {
             Value = value;
             StartRange = startRange;
             EndRange = endRange;
+            Step = step;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Value; yield return StartRange; yield return EndRange; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitInRange(this);
@@ -1687,6 +1791,7 @@ namespace DMCompiler.Compiler.DM {
             Index = index;
             Conditional = conditional;
         }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; yield return Index; }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitListIndex(this);

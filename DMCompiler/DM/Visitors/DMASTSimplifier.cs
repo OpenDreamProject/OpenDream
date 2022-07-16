@@ -85,6 +85,13 @@ namespace DMCompiler.DM.Visitors {
             statementForRange.Body?.Visit(this);
         }
 
+        public void VisitProcStatementForRaw(DMASTProcStatementForRaw statementForRaw) {
+            if (statementForRaw.Expression1 != null) SimplifyExpression(ref statementForRaw.Expression1);
+            if (statementForRaw.Expression2 != null) SimplifyExpression(ref statementForRaw.Expression2);
+            if (statementForRaw.Expression3 != null) SimplifyExpression(ref statementForRaw.Expression3);
+            statementForRaw.Body?.Visit(this);
+        }
+
         public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
             statementForStandard.Initializer?.Visit(this);
             if (statementForStandard.Comparator != null) SimplifyExpression(ref statementForStandard.Comparator);

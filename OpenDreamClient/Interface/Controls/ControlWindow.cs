@@ -151,6 +151,8 @@ namespace OpenDreamClient.Interface.Controls
                     ControlDescriptorMap => new ControlMap(controlDescriptor, this),
                     ControlDescriptorBrowser => new ControlBrowser(controlDescriptor, this),
                     ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
+                    ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
+                    ControlDescriptorTab => new ControlTab(controlDescriptor, this),
                     _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
                 };
 

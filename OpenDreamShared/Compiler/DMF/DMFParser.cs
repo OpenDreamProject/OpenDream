@@ -46,7 +46,9 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Info,
             TokenType.DMF_Map,
             TokenType.DMF_Browser,
-            TokenType.DMF_Label
+            TokenType.DMF_Label,
+            TokenType.DMF_Grid,
+            TokenType.DMF_Tab,
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -145,12 +147,14 @@ namespace OpenDreamShared.Compiler.DMF {
                     "BUTTON" => typeof(ControlDescriptorButton),
                     "BROWSER" => typeof(ControlDescriptorBrowser),
                     "LABEL" => typeof(ControlDescriptorLabel),
+                    "GRID" => typeof(ControlDescriptorGrid),
+                    "TAB" => typeof(ControlDescriptorTab),
                     _ => null
                 };
 
                 if (descriptorType == null)
                 {
-                    Error("Invalid descriptor type '" + elementTypeValue.Value + "'");
+                    Error($"Invalid descriptor type '{elementTypeValue.Value}'");
                     return null;
                 }
 

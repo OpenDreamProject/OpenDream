@@ -21,6 +21,8 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Sunken,
             TokenType.DMF_PushBox,
             TokenType.DMF_PushButton,
+            TokenType.DMF_Checkbox,
+            TokenType.DMF_Radio,
             TokenType.DMF_Distort,
             TokenType.DMF_Stretch,
             TokenType.DMF_Center,
@@ -32,6 +34,7 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Bottom,
             TokenType.DMF_BottomLeft,
             TokenType.DMF_BottomRight,
+            TokenType.DMF_Horizontal,
             TokenType.DMF_Vertical,
             TokenType.DMF_Line,
 

@@ -169,7 +169,7 @@ namespace OpenDreamShared.Compiler.DMF {
                     case '=': Advance(); token = CreateToken(TokenType.DMF_Equals, c); break;
                     case '\'':
                     case '"': {
-                        string text = c.ToString();
+                        StringBuilder textBuilder = new StringBuilder(c.ToString());
 
                         while (Advance() != c && !AtEndOfSource) {
                             if (GetCurrent() == '\\') {
@@ -177,18 +177,20 @@ namespace OpenDreamShared.Compiler.DMF {
 
                                 switch (GetCurrent()) {
                                     case '"':
-                                    case '\\': text += GetCurrent(); break;
-                                    case 't': text += '\t'; break;
-                                    default: throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
+                                    case '\\': textBuilder.Append(GetCurrent()); break;
+                                    case 't': textBuilder.Append('\t'); break;
+                                    case 'n': textBuilder.Append('\n'); break;
+                                    default: throw new Exception($"Invalid escape sequence '\\{GetCurrent()}'");
                                 }
                             } else {
-                                text += GetCurrent();
+                                textBuilder.Append(GetCurrent());
                             }
                         }
-                        if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
-                        text += c;
+                        if (GetCurrent() != c) throw new Exception($"Expected '{c}'");
+                        textBuilder.Append(c);
                         Advance();
 
+                        string text = textBuilder.ToString();
                         if (c == '"') token = CreateToken(TokenType.DMF_String, text, text.Substring(1, text.Length - 2));
                         else if (c == '\'') token = CreateToken(TokenType.DMF_Resource, text, text.Substring(1, text.Length - 2));
                         break;

@@ -1,8 +1,9 @@
-﻿using Robust.Shared.Maths;
+using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Robust.Shared.Log;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
@@ -33,6 +34,7 @@ namespace OpenDreamShared.Dream {
         public ScreenLocation(string screenLocation) {
             screenLocation = screenLocation.ToUpper(CultureInfo.InvariantCulture);
 
+            // TODO Support non-15x15
             (X, Y, PixelOffsetX, PixelOffsetY, Range) = screenLocation switch {
                 "TOPLEFT" => (1, 15, 0, 0, null),
                 "TOPRIGHT" => (15, 15, 0, 0, null),
@@ -56,7 +58,30 @@ namespace OpenDreamShared.Dream {
             ScreenLocation range = (rangeSplit.Length > 1) ? new ScreenLocation(rangeSplit[1]) : null;
 
             string[] coordinateSplit = rangeSplit[0].Split(",");
-            if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
+
+            if (coordinateSplit[0].Contains(':'))
+            {
+                var innerSplit = coordinateSplit[0].Split(':');
+                if (!int.TryParse(innerSplit[0], out _))
+                {
+                    //TODO Implement this
+                    Logger.LogS(LogLevel.Warning, "opendream.unimplemented", $"Cannot render screen_loc to secondary map control ({innerSplit[0]}) yet, ignoring");
+                    coordinateSplit[0] = innerSplit[1];
+                }
+            }
+
+            if (coordinateSplit.Length != 2)
+            {
+                // Doing "CENTER" is equivalent to "CENTER,CENTER"
+                if (coordinateSplit.Length == 1 && coordinateSplit[0] == "CENTER")
+                {
+                    coordinateSplit = new[] { coordinateSplit[0], "CENTER" };
+                }
+                else
+                {
+                    throw new Exception($"Invalid screen_loc: {screenLoc}");
+                }
+            }
 
             (int x, int pixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
             (int y, int pixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
@@ -65,7 +90,8 @@ namespace OpenDreamShared.Dream {
 
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
             coordinate = coordinate.Trim();
-            if (coordinate == String.Empty) throw new Exception("Invalid screen_loc coordinate");
+            if (coordinate == String.Empty) throw new Exception($"Invalid screen_loc coordinate: {coordinate}");
+            // TODO Support non-15x15
             coordinate = coordinate.Replace("SOUTH", "1");
             coordinate = coordinate.Replace("WEST", "1");
             coordinate = coordinate.Replace("NORTH", "15");
@@ -89,10 +115,10 @@ namespace OpenDreamShared.Dream {
                 if ((c >= '0' && c <= '9') || (currentNumber != String.Empty && (c == '.' || c == ':')) || ((currentNumber == String.Empty || currentNumber.EndsWith(":")) && c == '-')) {
                     currentNumber += c;
                 } else {
-                    if (currentNumber == String.Empty) throw new Exception("Expected a number in screen_loc");
+                    if (currentNumber == String.Empty) throw new Exception($"Expected a number in screen_loc, got coordinate: {coordinate}");
 
                     string[] numberSplit = currentNumber.Split(":");
-                    if (numberSplit.Length > 2) throw new Exception("Invalid number in screen_loc");
+                    if (numberSplit.Length > 2) throw new Exception($"Invalid number in screen_loc, got coordinate: {coordinate}");
 
                     operations.Add((currentOperation, float.Parse(numberSplit[0], CultureInfo.InvariantCulture), (numberSplit.Length == 2) ? int.Parse(numberSplit[1]) : 0));
                     currentOperation = c.ToString();

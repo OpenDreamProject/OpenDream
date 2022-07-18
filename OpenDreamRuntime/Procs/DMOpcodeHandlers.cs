@@ -1686,7 +1686,25 @@ namespace OpenDreamRuntime.Procs {
                     DreamObject firstValue = first.GetValueAsDreamObject();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamObject: return firstValue == second.GetValueAsDreamObject();
+                        case DreamValue.DreamValueType.DreamObject:
+                        {
+                            // TODO: Oh god the pain
+                            if (first.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turf1) &&
+                                second.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turf2) &&
+                                turf1.GetVariable("x").TryGetValueAsInteger(out var x1) &&
+                                turf2.GetVariable("x").TryGetValueAsInteger(out var x2) &&
+                                x1 == x2 &&
+                                turf1.GetVariable("y").TryGetValueAsInteger(out var y1) &&
+                                turf2.GetVariable("y").TryGetValueAsInteger(out var y2) &&
+                                y1 == y2 &&
+                                turf1.GetVariable("z").TryGetValueAsInteger(out var z1) &&
+                                turf2.GetVariable("z").TryGetValueAsInteger(out var z2) &&
+                                z1 == z2)
+                            {
+                                    return true;
+                            }
+                            return firstValue == second.GetValueAsDreamObject();
+                        }
                         case DreamValue.DreamValueType.DreamPath:
                         case DreamValue.DreamValueType.String:
                         case DreamValue.DreamValueType.Float: return false;

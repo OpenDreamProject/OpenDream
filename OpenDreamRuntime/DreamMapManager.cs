@@ -85,6 +85,8 @@ namespace OpenDreamRuntime {
         public void SetTurf(int x, int y, int z, DreamObject turf, bool replace = true) {
             if (!IsValidCoordinate(x, y, z)) throw new ArgumentException("Invalid coordinates");
 
+            DreamObject existingTurf = GetTurf(x, y, z);
+
             _levels[z - 1][x - 1, y - 1].Turf = turf;
 
             EntityUid entity = _atomManager.GetAtomEntity(turf);
@@ -97,7 +99,6 @@ namespace OpenDreamRuntime {
             if (replace) {
                 //Every reference to the old turf becomes the new turf
                 //Do this by turning the old turf object into the new one
-                DreamObject existingTurf = GetTurf(x, y, z);
                 existingTurf.CopyFrom(turf);
             }
         }

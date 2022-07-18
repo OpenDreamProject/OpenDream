@@ -181,27 +181,7 @@ namespace OpenDreamRuntime.Procs {
                         case StringFormatTypes.Ref:
                         {
                             var value = state.Pop();
-                            if(value.TryGetValueAsDreamObject(out var refObject))
-                            {
-                                formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
-                            }
-                            else if(value.TryGetValueAsString(out var refStr))
-                            {
-                                var idx = state.DreamManager.ObjectTree.Strings.IndexOf(refStr);
-                                if (idx != -1)
-                                {
-                                    formattedString.Append(idx);
-                                }
-                                else
-                                {
-                                    state.DreamManager.ObjectTree.Strings.Add(refStr);
-                                    formattedString.Append(state.DreamManager.ObjectTree.Strings.Count - 1);
-                                }
-                            }
-                            else
-                            {
-                                throw new NotImplementedException();
-                            }
+                            formattedString.Append(state.DreamManager.CreateRef(value));
                             break;
                         }
                         default: throw new Exception("Invalid special character");
@@ -1490,15 +1470,34 @@ namespace OpenDreamRuntime.Procs {
             if (value.TryGetValueAsString(out string refString)) {
                 if(int.TryParse(refString, out var refID))
                 {
-                    // TODO: This impl. isn't entirely correct, but refs aren't implemented like BYOND's yet
-                    var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
-                    if (obj is null && state.DreamManager.ObjectTree.Strings.Count > refID)
+                    // The first digit is the type
+                    var typeId = int.Parse(refString.Substring(0, 1));
+                    refID = int.Parse(refString.Substring(1));
+
+                    switch (typeId)
                     {
-                        state.Push(new DreamValue(state.DreamManager.ObjectTree.Strings[refID]));
-                    }
-                    else
-                    {
-                        state.Push(obj is null ? DreamValue.Null : new DreamValue(obj));
+                        // DreamObject
+                        case 1:
+                        {
+                            var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
+                            state.Push(obj is null ? DreamValue.Null : new DreamValue(obj));
+                            break;
+                        }
+                        // String
+                        case 2:
+                        {
+                            if (state.DreamManager.ObjectTree.Strings.Count > refID)
+                            {
+                                state.Push(new DreamValue(state.DreamManager.ObjectTree.Strings[refID]));
+                            }
+                            else
+                            {
+                                state.Push(DreamValue.Null);
+                            }
+                            break;
+                        }
+                        default:
+                            throw new NotImplementedException($"Unsupported reference type for ref {refString}");
                     }
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))

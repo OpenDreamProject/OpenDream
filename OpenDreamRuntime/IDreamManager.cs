@@ -33,6 +33,33 @@ namespace OpenDreamRuntime {
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
+        public virtual int CreateRef(DreamValue value)
+        {
+            // The first digit is the type, i.e. 1 for objects and 2 for strings
+
+            if(value.TryGetValueAsDreamObject(out var refObject))
+            {
+                var id = refObject.CreateReferenceID(this);
+                return Convert.ToInt32(string.Format("{0}{1}", 1, id));
+            }
+            if(value.TryGetValueAsString(out var refStr))
+            {
+                var idx = ObjectTree.Strings.IndexOf(refStr);
+                if (idx != -1)
+                {
+                    return Convert.ToInt32(string.Format("{0}{1}", 2, idx));
+                }
+
+                ObjectTree.Strings.Add(refStr);
+                var id = ObjectTree.Strings.Count - 1;
+                return Convert.ToInt32(string.Format("{0}{1}", 2, id));
+            }
+
+
+
+            throw new NotImplementedException();
+        }
+
         IEnumerable<DreamConnection> Connections { get; }
     }
 }

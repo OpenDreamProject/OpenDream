@@ -38,6 +38,10 @@ namespace OpenDreamRuntime.Objects {
             return null;
         }
 
+
+        /// <summary>
+        /// Do NOT use this directly, instead use IDreamManager.CreateRef()
+        /// </summary>
         public int CreateReferenceID(IDreamManager manager) {
             if(Deleted){
                 throw new Exception("Cannot create reference ID for an object that is deleted"); // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.

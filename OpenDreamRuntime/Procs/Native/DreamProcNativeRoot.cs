@@ -177,6 +177,12 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!arguments.GetArgument(2, "High").TryGetValueAsFloat(out float hVal))
                 throw new Exception("Upper bound is not a number");
 
+            // BYOND supports switching low/high args around
+            if (lVal > hVal)
+            {
+                (hVal, lVal) = (lVal, hVal);
+            }
+
             if (value.TryGetValueAsDreamList(out DreamList list))
             {
                 DreamList tmp = DreamList.Create();

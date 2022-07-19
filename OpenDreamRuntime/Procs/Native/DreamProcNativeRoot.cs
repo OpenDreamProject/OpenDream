@@ -1482,6 +1482,39 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return new DreamValue(total);
         }
+        [DreamProc("sha1")]
+        [DreamProcParameter("input", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        public static DreamValue NativeProc_sha1(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            byte[] hash = new byte[0]; // C# gets bitchy about it not being assigned
+
+            DreamValue inputtohash = arguments.GetArgument(0, "input");
+            using (SHA1 sha1 = SHA1.Create()) {
+                if (inputtohash.TryGetValueAsDreamResource(out DreamResource filetohash))
+                {
+                    string? filestring = filetohash.ReadAsString();
+                    if (filestring != null)
+                    {
+                        hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(filestring));
+                    }
+                }
+                else if (inputtohash.TryGetValueAsString(out string stringtohash))
+                {
+                    hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringtohash));
+                }
+                else
+                {
+                    throw new Exception("Null SHA1 Hash");
+                }
+            }
+            var hashstring = new StringBuilder();
+            foreach(byte b in hash)
+            {
+                hashstring.Append(b.ToString("x2"));
+            }
+
+            return new DreamValue(hashstring.ToString());
+        }
 
         [DreamProc("shutdown")]
         [DreamProcParameter("Addr", Type = DreamValueType.String | DreamValueType.DreamObject)]

@@ -1483,37 +1483,28 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(total);
         }
         [DreamProc("sha1")]
-        [DreamProcParameter("input", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_sha1(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            byte[] hash = new byte[0]; // C# gets bitchy about it not being assigned
+            if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
+            DreamValue arg = arguments.GetArgument(0, "T");
+            string? text;
 
-            DreamValue inputtohash = arguments.GetArgument(0, "input");
-            using (SHA1 sha1 = SHA1.Create()) {
-                if (inputtohash.TryGetValueAsDreamResource(out DreamResource filetohash))
-                {
-                    string? filestring = filetohash.ReadAsString();
-                    if (filestring != null)
-                    {
-                        hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(filestring));
-                    }
-                }
-                else if (inputtohash.TryGetValueAsString(out string stringtohash))
-                {
-                    hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringtohash));
-                }
-                else
-                {
-                    throw new Exception("Null SHA1 Hash");
-                }
-            }
-            var hashstring = new StringBuilder();
-            foreach(byte b in hash)
-            {
-                hashstring.Append(b.ToString("x2"));
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                text = resource.ReadAsString();
+
+                if (text == null)
+                    return DreamValue.Null;
+            } else if (!arg.TryGetValueAsString(out text)) {
+                return DreamValue.Null;
             }
 
-            return new DreamValue(hashstring.ToString());
+            SHA1 sha1 = SHA1.Create();
+            byte[] input = Encoding.UTF8.GetBytes(text);
+            byte[] output = sha1.ComputeHash(input);
+            //Match BYOND formatting
+            string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
+            return new DreamValue(hash);
         }
 
         [DreamProc("shutdown")]

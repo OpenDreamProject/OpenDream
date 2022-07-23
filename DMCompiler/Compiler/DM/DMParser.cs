@@ -919,7 +919,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_RightParenthesis)) {
                     return new DMASTProcStatementInfLoop(loc, GetForBody());
                 }
-            
+
                 _allowVarDeclExpression = true;
                 DMASTExpression expr1 = Expression();
                 Whitespace();
@@ -1615,7 +1615,13 @@ namespace DMCompiler.Compiler.DM {
                         } else {
                             Error("Expected ':'");
                         }
-                    } else {
+                    } else if (b is DMASTListIndex idx && idx.Expression is DMASTDereference idxDeref && idxDeref.Expression is DMASTListIndex)
+                    {
+                        c = new DMASTListIndex(b.Location, new DMASTIdentifier(b.Location, idxDeref.Property),
+                            idx.Index, idx.Conditional);
+                        b = idxDeref.Expression;
+                    }
+                    else {
                         Error("Expected ':'");
                         c = null;
                     }

@@ -428,20 +428,27 @@ namespace DMCompiler.DM.Visitors {
                     }
                     else if (statementForRaw.Expression1 is DMASTExpressionIn exprIn) {
                         DMASTIdentifier loopVar = null;
-                        if (exprIn.Value is DMASTVarDeclExpression decl) {
-                            loopVar = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
-                        } else if (exprIn.Value is DMASTIdentifier id) {
-                            loopVar = id;
-                        }
-                        // TODO: Check if loop var is declared or not
-                        else {
-                            DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid iter var in for"));
+                        switch (exprIn.Value)
+                        {
+                            case DMASTVarDeclExpression decl:
+                                loopVar = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                                break;
+                            case DMASTIdentifier id:
+                                loopVar = id;
+                                break;
+                            // TODO: Check if loop var is declared or not
+                            default:
+                            {
+                                DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid iterator variable in for()"));
+                                loopVar = new DMASTIdentifier(exprIn.Location, "opendream_internal_placeholder"); // Allow processing to proceed with a placeholder
+                                break;
+                            }
                         }
                         ProcessStatementForList(new DMASTProcStatementForList(statementForRaw.Location,
                             null, loopVar, exprIn.List, statementForRaw.Body));
                     }
                     else {
-                        DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid expression in for"));
+                        DMCompiler.Error(new CompilerError(statementForRaw.Expression1.Location, "Invalid expression in for()"));
                     }
                 }
             }

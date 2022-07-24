@@ -57,18 +57,18 @@ namespace DMCompiler {
                     var fi = new FileInfo(file);
                     preprocessor.IncludeOuter(new Experimental.SourceText(fi.DirectoryName, fi.Name));
                 }
-                IncludedMaps = preprocessor.IncludedMaps;
-                IncludedInterface = preprocessor.IncludedInterface;
                 lexer = new Experimental.PreprocessorTokenConvert(preprocessor.GetEnumerator());
                 DMParser dmParser = new DMParser(lexer, !Settings.SuppressUnimplementedWarnings);
                 successfulCompile = Compile(dmParser);
-            } else {
-                DMPreprocessor preprocessor = Preprocess(settings.Files);
                 IncludedMaps = preprocessor.IncludedMaps;
                 IncludedInterface = preprocessor.IncludedInterface;
+            } else {
+                DMPreprocessor preprocessor = Preprocess(settings.Files);
                 DMLexer dmLexer = new DMLexer(null, preprocessor);
                 DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
                 successfulCompile = preprocessor is not null && Compile(dmParser);
+                IncludedMaps = preprocessor.IncludedMaps;
+                IncludedInterface = preprocessor.IncludedInterface;
             }
 
             if (successfulCompile)

@@ -46,8 +46,8 @@ namespace DMCompiler {
 
             bool successfulCompile = false;
 
-            IDMLexer lexer = null;
             if (Settings.ExperimentalPreproc) {
+                IDMLexer lexer = null;
                 DMParser.ExperimentalPreproc = true;
                 var preprocessor = new Experimental.DMPreprocessor();
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -60,13 +60,16 @@ namespace DMCompiler {
                 IncludedMaps = preprocessor.IncludedMaps;
                 IncludedInterface = preprocessor.IncludedInterface;
                 lexer = new Experimental.PreprocessorTokenConvert(preprocessor.GetEnumerator());
+                DMParser dmParser = new DMParser(lexer, !Settings.SuppressUnimplementedWarnings);
+                successfulCompile = Compile(dmParser);
             } else {
-            DMPreprocessor preprocessor = Preprocess(settings.Files);
-            bool successfulCompile = preprocessor is not null && Compile(preprocessor);
-
+                DMPreprocessor preprocessor = Preprocess(settings.Files);
+                IncludedMaps = preprocessor.IncludedMaps;
+                IncludedInterface = preprocessor.IncludedInterface;
+                DMLexer dmLexer = new DMLexer(null, preprocessor);
+                DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
+                successfulCompile = preprocessor is not null && Compile(dmParser);
             }
-
-            successfulCompile = Compile(lexer);
 
             if (successfulCompile)
             {
@@ -139,11 +142,7 @@ namespace DMCompiler {
             return preproc;
         }
 
-        private static bool Compile(IEnumerable<Token> preprocessedTokens) {
-            DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
-        private static bool Compile(IDMLexer dmLexer) {
-            DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
-
+        private static bool Compile(DMParser dmParser) {
             VerbosePrint("Parsing");
             DMASTFile astFile = dmParser.File();
 

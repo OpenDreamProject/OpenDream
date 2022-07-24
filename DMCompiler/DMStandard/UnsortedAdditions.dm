@@ -14,6 +14,8 @@
 	set opendream_unimplemented = TRUE
 /proc/ftp(File, Name)
 	set opendream_unimplemented = TRUE
+/proc/gradient(Gradient, index)
+	set opendream_unimplemented = TRUE
 /proc/generator(type, A, B, rand)
 	set opendream_unimplemented = TRUE
 /proc/issaved(v)

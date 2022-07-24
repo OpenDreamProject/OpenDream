@@ -129,7 +129,12 @@ namespace DMCompiler.Compiler.Experimental {
                         }
                     case '|': {
                             switch (_tp.Peek(1)) {
-                                case '|': return AcceptToken(TokenType.Symbol, 2);
+                                case '|': {
+                                    switch(_tp.Peek(2)) {
+                                        case '=': return AcceptToken(TokenType.Symbol, 3);
+                                        default: return AcceptToken(TokenType.Symbol, 2);
+                                    }
+                                }
                                 case '=': return AcceptToken(TokenType.Symbol, 2);
                                 default: return AcceptToken(TokenType.Symbol, 1);
                             }
@@ -156,8 +161,13 @@ namespace DMCompiler.Compiler.Experimental {
                             }
                         }
                     case '&': {
-                            switch (_tp.Peek(1)) {
-                                case '&': return AcceptToken(TokenType.Symbol, 2);
+                        switch (_tp.Peek(1)) {
+                                case '&': {
+                                        switch (_tp.Peek(2)) {
+                                            case '=': return AcceptToken(TokenType.Symbol, 3);
+                                            default: return AcceptToken(TokenType.Symbol, 2);
+                                        }
+                                    }
                                 case '=': return AcceptToken(TokenType.Symbol, 2);
                                 default: return AcceptToken(TokenType.Symbol, 1);
                             }

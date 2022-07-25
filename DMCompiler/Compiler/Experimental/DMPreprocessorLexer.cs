@@ -212,7 +212,8 @@ namespace DMCompiler.Compiler.Experimental {
                     case '/': {
                             switch (_tp.Peek(1)) {
                                 case '/': _tp.Advance(2); SkipSingleComment(); return new PreprocessorToken(TokenType.Whitespace, " ", loc: current_location);
-                                case '*': _tp.Advance(2); SkipMultiComment(); return new PreprocessorToken(TokenType.Whitespace, " ", loc: current_location);
+                                // note: C turns comments into whitespace tokens but this seems to mess with DM's whitespace sensitivity
+                                case '*': _tp.Advance(2); SkipMultiComment(); continue;  return new PreprocessorToken(TokenType.Whitespace, " ", loc: current_location);
                                 case '=': return AcceptToken(TokenType.Symbol, 2);
                                 default: return AcceptToken(TokenType.Symbol, 1);
                             }
@@ -346,6 +347,14 @@ namespace DMCompiler.Compiler.Experimental {
                 else { n += 1; }
             }
             _tp.Advance(n);
+            // Skip spaces/tabs after a multiline comment ends
+            while (true) {
+                if (_tp.Peek(0) == ' ' || _tp.Peek(0) == '\t') {
+                    _tp.Advance(1);
+                } else {
+                    break;
+                }
+            }
         }
         public void SkipSingleComment() {
             int n = 0;

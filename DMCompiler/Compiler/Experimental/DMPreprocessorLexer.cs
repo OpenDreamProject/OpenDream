@@ -349,6 +349,12 @@ namespace DMCompiler.Compiler.Experimental {
             int nestedComments = 0;
             while (true) {
                 char? c = _tp.Peek(n);
+                if (c == '/' && _tp.Peek(n+1) == '/') {
+                    _tp.Advance(n);
+                    n = 0;
+                    SkipSingleComment();
+                    continue;
+                }
                 if (c == '/' && _tp.Peek(n + 1) == '*') { n += 2; nestedComments++; } else if (c == '*' && _tp.Peek(n + 1) == '/') {
                     n += 2;
                     if (nestedComments > 0) { nestedComments--; } else { break; }

@@ -323,10 +323,19 @@ namespace DMCompiler.Compiler.Experimental {
         }
 
         public void Splice() {
+            bool isSpliceSkip(char? c) {
+                return c == ' ' || c == '\t' || c == '\n';
+            }
             int n = 0;
+            bool skippedLine = false;
             while (true) {
                 char? c = _tp.Peek(n);
-                if (c == ' ' || c == '\t' || c == '\n') {
+                if (isSpliceSkip(c)) {
+                    if (c == '\n' && skippedLine && !isSpliceSkip(_tp.Peek(n+1))) {
+                        break;
+                    } else {
+                        skippedLine = true;
+                    }
                     n += 1;
                     continue;
                 }

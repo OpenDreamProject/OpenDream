@@ -434,6 +434,7 @@ namespace DMCompiler.Compiler.Experimental {
             }
         }
 
+        /*
         List<PreprocessorToken> PeekNestedDirective() {
             List<PreprocessorToken> peeked_tokens = new();
             if (_state.current.IsSymbol("#")) {
@@ -454,16 +455,11 @@ namespace DMCompiler.Compiler.Experimental {
             }
             return peeked_tokens;
         }
+        */
 
         List<PreprocessorToken> ReadLine() {
             List<PreprocessorToken> tokens = new();
             while (_state.current.Type != TokenType.Newline && _state.current.Type != TokenType.EndOfFile) {
-                var peeked_tokens = PeekNestedDirective();
-                if (peeked_tokens != null) {
-                    tokens.AddRange(peeked_tokens);
-                } else {
-                    return tokens;
-                }
                 tokens.Add(_state.current);
                 ConsumerNext();
             }

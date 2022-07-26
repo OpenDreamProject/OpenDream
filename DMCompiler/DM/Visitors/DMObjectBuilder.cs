@@ -189,8 +189,6 @@ namespace DMCompiler.DM.Visitors {
                     case DMASTProcStatementSpawn ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementIf ps: recurse = new() { ps.Body, ps.ElseBody }; break;
                     case DMASTProcStatementFor ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementForLoop ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementForRaw ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementWhile ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementDoWhile ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementInfLoop ps: recurse = new() { ps.Body }; break;

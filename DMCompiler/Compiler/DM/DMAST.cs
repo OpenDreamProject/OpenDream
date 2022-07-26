@@ -26,12 +26,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementSet(DMASTProcStatementSet statementSet) { throw new NotImplementedException(); }
         public void VisitProcStatementSpawn(DMASTProcStatementSpawn statementSpawn) { throw new NotImplementedException(); }
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) { throw new NotImplementedException(); }
-        public void VisitProcStatementForRaw(DMASTProcStatementForRaw statementForRaw) { throw new NotImplementedException(); }
-        public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) { throw new NotImplementedException(); }
-        public void VisitProcStatementForList(DMASTProcStatementForList statementForList) { throw new NotImplementedException(); }
-        public void VisitProcStatementForType(DMASTProcStatementForType statementForType) { throw new NotImplementedException(); }
-        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) { throw new NotImplementedException(); }
-        public void VisitProcStatementForLoop(DMASTProcStatementForLoop statementForLoop) { throw new NotImplementedException(); }
+        public void VisitProcStatementFor(DMASTProcStatementFor statementFor) { throw new NotImplementedException(); }
         public void VisitProcStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {throw new NotImplementedException(); }
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) { throw new NotImplementedException(); }
         public void VisitProcStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) { throw new NotImplementedException(); }
@@ -494,110 +489,22 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementFor : DMASTProcStatement {
-        public DMASTProcStatement Initializer;
-        public DMASTProcBlockInner Body;
-
-        public DMASTProcStatementFor(Location location, DMASTProcStatement initializer, DMASTProcBlockInner body) : base(location) {
-            Initializer = initializer;
-            Body = body;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class DMASTProcStatementForRaw : DMASTProcStatement {
         public DMASTExpression Expression1, Expression2, Expression3;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementForRaw(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMASTProcBlockInner body) : base(location) {
+        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMASTProcBlockInner body) : base(location) {
             Expression1 = expr1;
             Expression2 = expr2;
             Expression3 = expr3;
             Body = body;
         }
+
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForRaw(this);
+            visitor.VisitProcStatementFor(this);
         }
     }
 
-    public class DMASTProcStatementForStandard : DMASTProcStatementFor {
-        public DMASTExpression Comparator, Incrementor;
-
-        public DMASTProcStatementForStandard(Location location, DMASTProcStatement initializer, DMASTExpression comparator, DMASTExpression incrementor, DMASTProcBlockInner body) : base(location, initializer, body) {
-            Comparator = comparator;
-            Incrementor = incrementor;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForStandard(this);
-        }
-    }
-
-    public class DMASTProcStatementForList : DMASTProcStatementFor {
-        public DMASTIdentifier Variable;
-        public DMASTExpression List;
-
-        public DMASTProcStatementForList(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTExpression list, DMASTProcBlockInner body) : base(location, initializer, body) {
-            Variable = variable;
-            List = list;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForList(this);
-        }
-    }
-
-    // for(var/client/C) & similar
-    public class DMASTProcStatementForType : DMASTProcStatementFor {
-        public DMASTIdentifier Variable;
-
-        public DMASTProcStatementForType(Location location, DMASTProcStatement initializer, DMASTIdentifier variable, DMASTProcBlockInner body) : base(location, initializer, body) {
-            Variable = variable;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForType(this);
-        }
-    }
-
-    public class DMASTProcStatementForRange : DMASTProcStatementFor {
-        public DMASTExpression Reference;
-        public DMASTExpression RangeStart, RangeEnd, Step;
-
-        public DMASTProcStatementForRange(Location location, DMASTProcStatement initializer, DMASTExpression reference, DMASTExpression rangeStart, DMASTExpression rangeEnd, DMASTExpression step, DMASTProcBlockInner body) : base(location, initializer, body) {
-            Reference = reference;
-            RangeStart = rangeStart;
-            RangeEnd = rangeEnd;
-            Step = step;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForRange(this);
-        }
-    }
-
-    public class DMASTProcStatementForLoop : DMASTProcStatement {
-        public DMASTProcStatementVarDeclaration VariableDeclaration;
-        public DMASTCallable Variable;
-        public DMASTExpression Condition, Incrementer;
-        public DMASTProcBlockInner Body;
-
-        public DMASTProcStatementForLoop(Location location, DMASTProcStatementVarDeclaration variableDeclaration, DMASTCallable variable, DMASTExpression condition, DMASTExpression incrementer, DMASTProcBlockInner body) : base(location) {
-            VariableDeclaration = variableDeclaration;
-            Variable = variable;
-            Condition = condition;
-            Incrementer = incrementer;
-            Body = body;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementForLoop(this);
-        }
-    }
-
-    public class DMASTProcStatementInfLoop : DMASTProcStatement{
+    public class DMASTProcStatementInfLoop : DMASTProcStatement {
         public DMASTProcBlockInner Body;
 
         public DMASTProcStatementInfLoop(Location location, DMASTProcBlockInner body) : base(location){

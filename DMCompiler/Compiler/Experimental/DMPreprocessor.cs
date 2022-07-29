@@ -18,7 +18,7 @@ namespace DMCompiler.Compiler.Experimental {
         TokenState _state = new();
         bool allow_directives = true;
         bool end_of_source = false;
-        bool enable_expand_debug = false;
+        public bool enable_expand_debug = false;
 
         Queue<SourceText> outer_sources = new();
         Stack<SourceText> inner_sources = new();
@@ -29,7 +29,7 @@ namespace DMCompiler.Compiler.Experimental {
 
         class TokenSource {
             public IEnumerator<PreprocessorToken> tokens;
-            public Queue<PreprocessorToken> unprocessedTokens;
+            public Stack<PreprocessorToken> unprocessedTokens;
 
             public TokenSource(IEnumerator<PreprocessorToken> toks) {
                 tokens = toks;
@@ -54,8 +54,9 @@ namespace DMCompiler.Compiler.Experimental {
             do {
                 try {
                     t = ProducerNext();
+                    //Console.WriteLine($"Next: {t}");
                 } catch (Exception) {
-                    Console.WriteLine("Location:" + _state.current.Location.ToString());
+                    Console.WriteLine("Location:" + lexer.Current.Location);
                     throw;
                 }
                 yield return t;
@@ -74,14 +75,49 @@ namespace DMCompiler.Compiler.Experimental {
             lexer = new DMPreprocessorLexer();
         }
 
-        public void ConsumerNext() {
-            if (current_tokens.unprocessedTokens.Count > 0) {
-                _state.current = current_tokens.unprocessedTokens.Dequeue();
-                end_of_source = current_tokens.unprocessedTokens.Count == 0 && current_tokens.tokens.Current == null;
-                return;
-            }
-            current_tokens.tokens.MoveNext();
+        public void PushSource(IEnumerator<PreprocessorToken> token_source) {
+            token_source_stack.Push(new TokenSource(token_source));
+            token_source.MoveNext();
+            current_tokens = token_source_stack.Peek();
             UpdateState();
+        }
+        public void PopSource() {
+            token_source_stack.Pop();
+            current_tokens = token_source_stack.Peek();
+            UpdateState();
+        }
+
+        public void ReprocessTokens(List<PreprocessorToken> tokens) {
+            foreach(var token in Enumerable.Reverse(tokens)) {
+                current_tokens.unprocessedTokens.Push(token);
+            }
+            UpdateState();
+        }
+        public void ConsumerNext() {
+            if (current_tokens.unprocessedTokens.Count > 1) {
+                current_tokens.unprocessedTokens.Pop();
+            } else if (current_tokens.unprocessedTokens.Count == 1) {
+                current_tokens.unprocessedTokens.Pop();
+            } else {
+                current_tokens.tokens.MoveNext();
+            }
+            UpdateState();
+        }
+
+        protected void UpdateState() {
+            if (current_tokens.unprocessedTokens.Count > 0) {
+                _state.current = current_tokens.unprocessedTokens.Peek();
+                end_of_source = false;
+            } else {
+                _state.current = current_tokens.tokens.Current;
+                end_of_source = current_tokens.tokens.Current == null;
+            }
+            if (_state.current != null && current_source != null) {
+                // this should match the path printed in PrintState for debugging purposes
+                //if (current_source.FullPath == "/home/vagrant/dream/storage/repos/SS13/goonstation/code/WorkInProgress/ObjectProperties.dm") 
+                //    Console.WriteLine("state: " + _state.current.ToString() + " " + _state.current.WhitespaceOnly);
+            }
+            //Console.WriteLine($"US:{_state.current} ");
         }
 
         public string PrintState() {
@@ -95,21 +131,10 @@ namespace DMCompiler.Compiler.Experimental {
         public void IncludeOuter(SourceText srctext) {
             if (current_source == null) {
                 IncludeInner(srctext);
-            }
-            else {
+            } else {
                 outer_sources.Enqueue(srctext);
             }
             //Console.WriteLine("IncludeOuter " + PrintState());
-        }
-
-        protected void UpdateState() {
-            _state.current = current_tokens.tokens.Current;
-            end_of_source = current_tokens.tokens.Current == null;
-            if (_state.current != null && current_source != null) {
-                // this should match the path printed in PrintState for debugging purposes
-                //if (current_source.FullPath == "/home/vagrant/dream/storage/repos/SS13/goonstation/code/WorkInProgress/ObjectProperties.dm") 
-                //    Console.WriteLine("state: " + _state.current.ToString() + " " + _state.current.WhitespaceOnly);
-            }
         }
 
         protected void IncludeInner(SourceText srctext) {
@@ -124,17 +149,6 @@ namespace DMCompiler.Compiler.Experimental {
             //Console.WriteLine("IncludeInner " + PrintState());
         }
 
-        public void PushSource(IEnumerator<PreprocessorToken> token_source) {
-            token_source_stack.Push(new TokenSource(token_source));
-            token_source.MoveNext();
-            current_tokens = token_source_stack.Peek();
-            UpdateState();
-        }
-        public void PopSource() {
-            token_source_stack.Pop();
-            current_tokens = token_source_stack.Peek();
-            UpdateState();
-        }
         public PreprocessorToken ProducerNext(bool sourceRestricted = false) {
             PreprocessorToken found_token = null;
             while (found_token == null) {
@@ -155,8 +169,7 @@ namespace DMCompiler.Compiler.Experimental {
                         current_source = null;
                         SourceText next_include = outer_sources.Dequeue();
                         IncludeInner(next_include);
-                    }
-                    else {
+                    } else {
                         current_source = inner_sources.Pop();
                         ConsumerNext();
                     }
@@ -196,24 +209,20 @@ namespace DMCompiler.Compiler.Experimental {
                                             continue;
                                         }
                                 }
-                            }
-                            else {
+                            } else {
                                 throw new Exception("Constant string required as include argument");
                             }
-                        }
-                        else if (_state.current.Text == "warn") {
+                        } else if (_state.current.Text == "warn") {
                             if (SkippingIfBody()) { lexer.ReadLine(); continue; }
                             string s = lexer.ReadLine();
                             ConsumerNext();
                             Console.WriteLine("warning: " + s);
-                        }
-                        else if (_state.current.Text == "error") {
+                        } else if (_state.current.Text == "error") {
                             if (SkippingIfBody()) { lexer.ReadLine(); continue; }
                             string s = lexer.ReadLine();
                             ConsumerNext();
                             Console.WriteLine("error: " + s);
-                        }
-                        else if (_state.current.Text == "define") {
+                        } else if (_state.current.Text == "define") {
                             if (SkippingIfBody()) { lexer.ReadLine(); continue; }
                             ConsumerNext(); SkipWhitespace();
                             PreprocessorToken defineIdentifier = _state.current;
@@ -234,15 +243,12 @@ namespace DMCompiler.Compiler.Experimental {
                                             parameters.Add(parameterToken.Text + _state.current.Text);
                                             ConsumerNext();
                                             SkipWhitespace();
-                                        }
-                                        else {
+                                        } else {
                                             parameters.Add(parameterToken.Text);
                                         }
-                                    }
-                                    else if (parameterToken.IsSymbol("...")) {
+                                    } else if (parameterToken.IsSymbol("...")) {
                                         parameters.Add(parameterToken.Text);
-                                    }
-                                    else {
+                                    } else {
                                         throw new Exception("bad argument in macro definition: " + defineIdentifier.ToString());
                                     }
                                 } while (_state.current.IsSymbol(","));
@@ -253,46 +259,59 @@ namespace DMCompiler.Compiler.Experimental {
                                 }
                                 ConsumerNext();
                                 SkipWhitespace();
-                            }
-                            else if (defineToken.Type == TokenType.Whitespace) {
+                            } else if (defineToken.Type == TokenType.Whitespace) {
                                 SkipWhitespace();
                             }
                             List<PreprocessorToken> defineTokens = ReadLine();
                             //Console.WriteLine(PreprocessorToken.PrintTokens(defineTokens));
-                            _defines[defineIdentifier.Text] = new DMMacro(parameters, defineTokens);
-                        }
-                        else if (_state.current.Text == "undef") {
+                            _defines[defineIdentifier.Text] = new DMMacro(this, parameters, defineTokens);
+                        } else if (_state.current.Text == "undef") {
                             if (SkippingIfBody()) { lexer.ReadLine(); continue; }
                             ConsumerNext(); SkipWhitespace();
                             PreprocessorToken defineIdentifier = _state.current;
                             if (defineIdentifier.Type != TokenType.Identifier) { throw new Exception("Invalid define identifier"); }
                             ConsumerNext();
                             _defines.Remove(defineIdentifier.Text);
-                        }
-                        else if (_state.current.Text == "if") {
-                            if (SkippingIfBody()) { skippedIfs += 1; lexer.ReadLine(); continue; }
+                        } else if (_state.current.Text == "if") {
+                            if (SkippingIfBody()) { ifStack.Push(-1); elseStack.Push(false); lexer.ReadLine(); continue; }
                             ConsumerNext(); SkipWhitespace();
                             int result = ProcessIfDirective();
                             ifStack.Push(result);
                             elseStack.Push(false);
-                        }
-                        else if (_state.current.Text == "elif") {
+                        } else if (_state.current.Text == "ifdef" || _state.current.Text == "ifndef") {
+                            var def_flag = _state.current.Text;
+                            if (SkippingIfBody()) { ifStack.Push(-1); elseStack.Push(false); lexer.ReadLine(); continue; }
+                            ConsumerNext(); SkipWhitespace();
+                            if (_state.current.Type != TokenType.Identifier) { throw new Exception("expected identifier in #ifdef"); }
+                            int if_val = -42;
+                            if (_defines.ContainsKey(_state.current.Text)) {
+                                if (def_flag == "ifdef") { if_val = 1; }
+                                if (def_flag == "ifndef") { if_val = 0; }
+                            } else {
+                                if (def_flag == "ifdef") { if_val = 0; }
+                                if (def_flag == "ifndef") { if_val = 1; }
+                            }
+                            ifStack.Push(if_val); elseStack.Push(false);
+                            ConsumerNext(); SkipWhitespace();
+                        } else if (_state.current.Text == "elif") {
                             if (!ElseEligible()) {
-                                throw new Exception("invalid use of #elif");
+                                throw new Exception("invalid use of #else");
                             }
                             if (!ElifEligible()) {
-                                var current_mode = ifStack.Peek();
-                                if (current_mode == 1) { ifStack.Pop(); ifStack.Push(-1); }
-                                lexer.ReadLine();
-                                continue;
+                                throw new Exception("invalid use of #elif");
                             }
-
-                            ifStack.Pop(); 
                             ConsumerNext(); SkipWhitespace();
-                            int result = ProcessIfDirective();
-                            ifStack.Push(result);
-                        }
-                        else if (_state.current.Text == "else") {
+
+                            var current_mode = ifStack.Peek();
+                            if (current_mode == 1) { lexer.ReadLine(); ifStack.Pop(); ifStack.Push(-1); }
+                            else if (current_mode == 0) {
+                                ifStack.Pop();
+                                int result = ProcessIfDirective();
+                                ifStack.Push(result);
+                            }
+                            else if (current_mode == -1) { lexer.ReadLine(); }
+
+                        } else if (_state.current.Text == "else") {
                             if (!ElseEligible()) {
                                 throw new Exception("invalid use of #else");
                             }
@@ -301,71 +320,49 @@ namespace DMCompiler.Compiler.Experimental {
                             if (current_mode == 0) { ifStack.Pop(); ifStack.Push(1); }
                             elseStack.Pop(); elseStack.Push(true);
                             ConsumerNext(); SkipWhitespace();
-                        }
-                        else if (_state.current.Text == "endif") {
-                            ConsumerNext(); SkipWhitespace();
-                            if (skippedIfs > 0) { skippedIfs--; }
-                            else { ifStack.Pop(); elseStack.Pop(); }
-                        }
-                        else if (_state.current.Text == "ifdef" || _state.current.Text == "ifndef") {
-                            var def_flag = _state.current.Text;
-                            if (SkippingIfBody()) { skippedIfs += 1; lexer.ReadLine(); continue; }
-                            ConsumerNext(); SkipWhitespace();
-                            if (_state.current.Type != TokenType.Identifier) { throw new Exception("expected identifier in #ifdef"); }
-                            int if_val = -42;
-                            if (_defines.ContainsKey(_state.current.Text)) {
-                                if (def_flag == "ifdef") { if_val = 1; }
-                                if (def_flag == "ifndef") { if_val = 0; }
+                        } else if (_state.current.Text == "endif") {
+                            if (!EndIfEligible()) {
+                                throw new Exception("invalid use of #endif");
                             }
-                            else {
-                                if (def_flag == "ifdef") { if_val = 0; }
-                                if (def_flag == "ifndef") { if_val = 1; }
-                            }
-                            ifStack.Push(if_val); elseStack.Push(false);
                             ConsumerNext(); SkipWhitespace();
-                        }
-                        else {
+                            ifStack.Pop(); elseStack.Pop();
+                        } else {
                             throw new Exception("unknown directive " + _state.current.Text);
                         }
                         continue;
                     }
                     found_token = _state.current;
                     ConsumerNext();
-                }
-                else if (_state.current.Type == TokenType.Identifier) {
-                    var expand_result = IdentifierExpand(_state.current);
-                    if (expand_result != null) {
-                        expand_result = FullExpand(expand_result);
-                        PushSource(expand_result.GetEnumerator());
+                } else if (_state.current.Type == TokenType.Identifier) {
+                    var (id_expand, id_result) = IdentifierExpand();
+                    if (id_expand) {
+                        if (enable_expand_debug) {
+                            Console.WriteLine($"Final result: {PreprocessorToken.PrintTokens(id_result)}");
+                        }
+                        ReprocessTokens(id_result);
+                        continue;
+                    } else {
+                        found_token = id_result[0];
                     }
-                    else {
-                        found_token = _state.current;
-                        ConsumerNext();
-                    }
-                }
-                else if (_state.current.Type == TokenType.Whitespace) {
+                } else if (_state.current.Type == TokenType.Whitespace) {
                     found_token = _state.current;
                     ConsumerNext();
-                }
-                else if (_state.current.Type == TokenType.Newline) {
+                } else if (_state.current.Type == TokenType.Newline) {
                     found_token = _state.current;
                     ConsumerNext();
-                }
-                else if (_state.current.Type == TokenType.String) {
+                } else if (_state.current.Type == TokenType.String) {
                     if (_state.current.Value is StringTokenInfo info && info.nestedTokenInfo != null) {
                         info.nestedTokenInfo.Tokens = FullExpand(info.nestedTokenInfo.Tokens);
                     }
-                    if (_state.current.Value is NestedTokenInfo nti && nti.Tokens != null) {
+                    else if (_state.current.Value is NestedTokenInfo nti && nti.Tokens != null) {
                         nti.Tokens = FullExpand(nti.Tokens);
                     }
                     found_token = _state.current;
                     ConsumerNext();
-                }
-                else if (_state.current.Type == TokenType.Numeric) {
+                } else if (_state.current.Type == TokenType.Numeric) {
                     found_token = _state.current;
                     ConsumerNext();
-                }
-                else {
+                } else {
                     throw new Exception("unknown token " + _state.current.Type + " " + _state.current.Text);
                 }
                 if (SkippingIfBody()) {
@@ -379,7 +376,6 @@ namespace DMCompiler.Compiler.Experimental {
         }
 
         int ProcessIfDirective() {
-            //Console.WriteLine("---");
             List<PreprocessorToken> ifTokens = ReadLine();
 
             //Console.WriteLine(PreprocessorToken.PrintTokens(ifTokens));
@@ -410,20 +406,26 @@ namespace DMCompiler.Compiler.Experimental {
         }
 
         bool SkippingIfBody() {
-            if (ifStack.Count > 0 && (ifStack.Peek() == 0 || ifStack.Peek() == -1)) {
-                return true;
+            foreach(var i in ifStack) {
+                if (i != 1) { return true; }
             }
             return false;
         }
 
         bool ElifEligible() {
-            if (ifStack.Count > 0 && ifStack.Peek() == 1) {
-                return false;
+            if (ifStack.Count > 0 && elseStack.Peek() == false) {
+                return true;
             }
-            return true;
+            return false;
         }
         bool ElseEligible() {
             if (ifStack.Count > 0 && elseStack.Peek() == false) {
+                return true;
+            }
+            return false;
+        }
+        bool EndIfEligible() {
+            if (ifStack.Count > 0) {
                 return true;
             }
             return false;
@@ -434,6 +436,14 @@ namespace DMCompiler.Compiler.Experimental {
             }
         }
 
+        int SkipWhitespace(List<PreprocessorToken> tokens, int start) {
+            int ctok = start;
+            while (ctok < tokens.Count) {
+                if (tokens[ctok].Type != TokenType.Whitespace) { return ctok; }
+                ctok++;
+            }
+            return ctok;
+        }
         /*
         List<PreprocessorToken> PeekNestedDirective() {
             List<PreprocessorToken> peeked_tokens = new();
@@ -466,27 +476,59 @@ namespace DMCompiler.Compiler.Experimental {
             return tokens;
         }
 
+        public (bool, List<PreprocessorToken>) IdentifierExpand() {
+            List<PreprocessorToken> result = new();
+            bool did_expand = false;
+            PreprocessorToken idToken = _state.current;
+            ConsumerNext();
+            if (_defines.TryGetValue(idToken.Text, out DMMacro macro)) {
+                if (idToken.ExpandEligible == false) { return (false, new() { idToken }); }
+
+                List<List<PreprocessorToken>> parameters = null;
+                if (macro.HasParameters()) {
+                    parameters = GetMacroApplyParameters();
+                }
+                if ((parameters == null || parameters?.Count == 0) && macro.HasParameters()) {
+                    PreprocessorToken t = new PreprocessorToken(idToken);
+                    result.Add(t);
+                    result.AddRange(failedMacroApplyTokens);
+                } else if(parameters != null && !macro.VarParameters() && macro.NumParameters() != parameters.Count) {
+                    throw new Exception($"Macro expects {macro.NumParameters()} but received {parameters.Count} arguments");
+                }
+                else {
+                    result = macro.Expand(idToken, parameters);
+                    result = ConcatenateAll(result);
+                    result = FullExpand(result);
+                    did_expand = true;
+                }
+                return (did_expand, result);
+            } else {
+                return (false, new() { idToken });
+            }
+        }
+
+        static int fei = 0;
+
         public List<PreprocessorToken> FullExpand(List<PreprocessorToken> tokens) {
             bool did_expand = true;
+
+            int lfei = fei;
+            fei += 1;
+            if (enable_expand_debug) {
+                Console.WriteLine($"FEs{lfei}: {PreprocessorToken.PrintTokens(tokens)}");
+            }
             while (did_expand) {
                 PushSource(tokens.GetEnumerator());
                 (did_expand, tokens) = Expand();
+                tokens = ConcatenateAll(tokens);
+                if (enable_expand_debug) {
+                    Console.WriteLine($"FEm{lfei}: {PreprocessorToken.PrintTokens(tokens)}");
+                }
                 PopSource();
-                //                bool has_held = false;
-                //                foreach (var held_token in tokens) {
-                //                    if (!held_token.ExpandEligible) {
-                //                        held_token.ExpandEligible = true;
-                //                        has_held = true;
-                //                    }
-                //                }
-                //                if (has_held) {
-                //                    did_expand = true;
-                //                }
             }
-            enable_expand_debug = false;
-            if (enable_expand_debug) {
-                Console.WriteLine($"FullExpand result1----------------------------- \n{PreprocessorToken.PrintTokens(tokens)}");
-            }
+
+            // This is no longer required now that the line splices are handled correctly
+            /* 
             List<PreprocessorToken> directiveResult = new();
             PushSource(tokens.GetEnumerator());
             PreprocessorToken pt = null;
@@ -498,33 +540,37 @@ namespace DMCompiler.Compiler.Experimental {
                 }
             } while (pt != null);
             PopSource();
+            */
 
-            tokens = ConcatenateAll(directiveResult);
-            if (enable_expand_debug) {
-                Console.WriteLine($"FullExpand result2------------------------------ \n{PreprocessorToken.PrintTokens(tokens)}");
-            }
-            enable_expand_debug = false;
             // TODO hack to prevent indentation from being screwed up, but this could be resolved at the TextProducer level instead
             var start_pos = SkipWhitespace(tokens, 0);
             tokens = tokens.Skip(start_pos).ToList();
+            if (enable_expand_debug) {
+                Console.WriteLine($"FEe{lfei}: {PreprocessorToken.PrintTokens(tokens)}");
+            }
+            fei -= 1;
             return tokens;
         }
 
+        List<PreprocessorToken> ReadTokenSource() {
+            List<PreprocessorToken> input = new();
+            while (!end_of_source) {
+                input.Add(_state.current);
+                ConsumerNext();
+            }
+            return input;
+        }
+
         public (bool, List<PreprocessorToken>) Expand() {
-            List<PreprocessorToken> result = new();
             bool did_expand = false;
-            var had_expand = false;
+            List<PreprocessorToken> result = new();
             while (!end_of_source) {
                 PreprocessorToken t = _state.current;
                 if (t.Type == TokenType.Identifier) {
-                    List<PreprocessorToken> nestedExpand = IdentifierExpand(t);
-                    if (nestedExpand != null) {
-                        did_expand = true;
-                        result.AddRange(nestedExpand);
-                    }
-                    else { result.Add(t); ConsumerNext(); }
-                }
-                else if (t.Type == TokenType.String) {
+                    var (id_expand, id_result) = IdentifierExpand();
+                    if (id_expand) { did_expand = true; }
+                    result.AddRange(id_result);
+                } else if (t.Type == TokenType.String) {
                     if (t.Value is StringTokenInfo info && info.nestedTokenInfo != null) {
                         info.nestedTokenInfo.Tokens = FullExpand(info.nestedTokenInfo.Tokens);
                     }
@@ -532,19 +578,52 @@ namespace DMCompiler.Compiler.Experimental {
                         nti.Tokens = FullExpand(nti.Tokens);
                     }
                     result.Add(t); ConsumerNext();
-                }
-                else { result.Add(t); ConsumerNext(); }
+                } else { result.Add(t); ConsumerNext();  }
+            }
+            if (did_expand == false) {
+                // TODO: this goes somewhere, maybe not here
+                foreach(var token in result) { token.ExpandEligible = true; }
             }
             return (did_expand, result);
         }
 
-        int SkipWhitespace(List<PreprocessorToken> tokens, int start) {
-            int ctok = start;
-            while (ctok < tokens.Count) {
-                if (tokens[ctok].Type != TokenType.Whitespace) { return ctok; }
-                ctok++;
+        List<PreprocessorToken> failedMacroApplyTokens = new();
+        // TODO: macro parameters could be read during substitution
+        List<List<PreprocessorToken>> GetMacroApplyParameters() {
+            failedMacroApplyTokens.Clear();
+            void LocalNext() {
+                failedMacroApplyTokens.Add(_state.current);
+                ConsumerNext();
             }
-            return ctok;
+            while (_state.current != null && _state.current.Type == TokenType.Whitespace) {
+                LocalNext();
+            }
+            if (_state.current == null) { return null;  }
+            if (!_state.current.IsSymbol("(")) {
+                return null;
+            }
+            LocalNext();
+            if (_state.current == null) { return null; }
+
+            List<List<PreprocessorToken>> parameters = new();
+            List<PreprocessorToken> currentParameter = new();
+            PreprocessorToken parameterToken = _state.current;
+            int parenthesisNesting = 0;
+            while (parenthesisNesting != 0 || !parameterToken.IsSymbol(")")) {
+                if (parenthesisNesting == 0 && parameterToken.IsSymbol(",")) {
+                    parameters.Add(currentParameter);
+                    currentParameter = new List<PreprocessorToken>();
+                } else {
+                    if (parameterToken.Type != TokenType.Newline) currentParameter.Add(parameterToken);
+                    if (parameterToken.IsSymbol("(")) { parenthesisNesting++; } else if (parameterToken.IsSymbol(")")) { parenthesisNesting--; }
+                }
+                LocalNext();
+                if (_state.current == null) { return null; }
+                parameterToken = _state.current;
+            }
+            LocalNext();
+            parameters.Add(currentParameter);
+            return parameters;
         }
 
         public List<PreprocessorToken> Concatenate(PreprocessorToken token_l, PreprocessorToken token_r) {
@@ -555,24 +634,18 @@ namespace DMCompiler.Compiler.Experimental {
             if (token_l.Type == TokenType.Identifier) {
                 if (token_r.Type == TokenType.Identifier) {
                     result.Add(new PreprocessorToken(TokenType.Identifier, token_l.Text + token_r.Text, loc: token_l.Location));
-                }
-                else if (token_r.Type == TokenType.Symbol) {
+                } else if (token_r.Type == TokenType.Symbol) {
                     simple_concat = true;
-                }
-                else if (token_r.Type == TokenType.Numeric) {
+                } else if (token_r.Type == TokenType.Numeric) {
                     result.Add(new PreprocessorToken(TokenType.Identifier, token_l.Text + token_r.Text, loc: token_l.Location));
-                }
-                else {
+                } else {
                     throw new Exception($"Invalid use of ##: {token_l} ## {token_r}");
                 }
-            }
-            else if (token_l.Type == TokenType.Symbol) {
+            } else if (token_l.Type == TokenType.Symbol) {
                 simple_concat = true;
-            }
-            else if (token_l.Type == TokenType.Numeric) {
+            } else if (token_l.Type == TokenType.Numeric) {
                 simple_concat = true;
-            }
-            else {
+            } else {
                 throw new Exception($"Invalid use of ##: {token_l} ## {token_r}");
             }
             if (simple_concat) {
@@ -617,8 +690,7 @@ namespace DMCompiler.Compiler.Experimental {
                             has_whitespace = null;
                         }
                         previous_token = concat_tokens[0];
-                    }
-                    else if (concat_tokens.Count == 2) {
+                    } else if (concat_tokens.Count == 2) {
                         if (previous_token != null) {
                             expandedTokens.Add(previous_token);
                         }
@@ -631,8 +703,7 @@ namespace DMCompiler.Compiler.Experimental {
                     }
                     //Console.WriteLine($"skipped {token_r_pos - ctok + 1}");
                     ctok += token_r_pos - ctok + 1;
-                }
-                else if (tokens[ctok].IsSymbol("#")) {
+                } else if (tokens[ctok].IsSymbol("#")) {
                     if (!(ctok + 1 < tokens.Count)) {
                         throw new Exception("# invalid usage");
                     }
@@ -645,12 +716,10 @@ namespace DMCompiler.Compiler.Experimental {
                     }
                     previous_token = new PreprocessorToken(TokenType.String, tokens[ctok + 1].Text, loc: tokens[ctok].Location);
                     ctok += 2;
-                }
-                else if (tokens[ctok].Type == TokenType.Whitespace) {
+                } else if (tokens[ctok].Type == TokenType.Whitespace) {
                     has_whitespace = current_token;
                     ctok += 1;
-                }
-                else {
+                } else {
                     if (previous_token != null) {
                         expandedTokens.Add(previous_token);
                     }
@@ -671,75 +740,5 @@ namespace DMCompiler.Compiler.Experimental {
             }
             return expandedTokens;
         }
-
-        public List<PreprocessorToken> IdentifierExpand(PreprocessorToken defined_token) {
-            if (!defined_token.ExpandEligible) { return null; }
-            List<PreprocessorToken> result = new();
-            if (_defines.TryGetValue(defined_token.Text, out DMMacro macro)) {
-                List<List<PreprocessorToken>> parameters = null;
-                ConsumerNext();
-                if (macro.HasParameters()) {
-                    parameters = GetMacroApplyParameters();
-                }
-
-                if (macro is DMDefinedMacro) {
-                    result = macro.Expand(defined_token, parameters);
-                } else {
-                    List<List<PreprocessorToken>> expanded_parameters = new();
-                    if (parameters != null) {
-                        foreach (var parameter in parameters) {
-                            if (enable_expand_debug) {
-                                expanded_parameters.Add(FullExpand(parameter));
-                                enable_expand_debug = true;
-                            } else {
-                                expanded_parameters.Add(FullExpand(parameter));
-                            }
-                        }
-                    }
-                    result = macro.Expand(defined_token, expanded_parameters);
-                }
-                //Console.WriteLine($"id result------------------------------ \n{PreprocessorToken.PrintTokens(result)}");
-                return result;
-            }
-            else {
-                return null;
-            }
-        }
-
-        // TODO need to make sure this doesnt read past the current source
-        List<List<PreprocessorToken>> GetMacroApplyParameters() {
-            if (_state.current == null || !_state.current.IsSymbol("(")) {
-                return null;
-            }
-            ConsumerNext();
-
-            List<List<PreprocessorToken>> parameters = new();
-            List<PreprocessorToken> currentParameter = new();
-            PreprocessorToken parameterToken = _state.current;
-            int parenthesisNesting = 0;
-            //Console.WriteLine("params");
-            while (parenthesisNesting != 0 || !parameterToken.IsSymbol(")")) {
-                if (parenthesisNesting == 0 && parameterToken.IsSymbol(",")) {
-                    parameters.Add(currentParameter);
-                    currentParameter = new List<PreprocessorToken>();
-                }
-                else {
-                    if (parameterToken.Type != TokenType.Newline) currentParameter.Add(parameterToken);
-                    if (parameterToken.IsSymbol("(")) { parenthesisNesting++; }
-                    else if (parameterToken.IsSymbol(")")) { parenthesisNesting--; }
-                }
-                //Console.Write(_state.current.Text);
-                ConsumerNext();
-                if (parameterToken.IsSymbol(")")) {
-                    //Console.WriteLine("\n" + parenthesisNesting);
-                }
-                parameterToken = _state.current;
-            }
-            //Console.WriteLine();
-            ConsumerNext();
-            parameters.Add(currentParameter);
-            return parameters;
-        }
     }
-
 }

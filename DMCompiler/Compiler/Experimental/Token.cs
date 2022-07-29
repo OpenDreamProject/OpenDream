@@ -69,7 +69,9 @@ namespace DMCompiler.Compiler.Experimental {
         public string Text;
         public SourceLocation Location;
 
+        public int expandLevel = 0;
         public bool ExpandEligible = true;
+        public bool PrescanExpandEligible = true;
         public bool WhitespaceOnly = false;
 
         public PreprocessorToken(TokenType ty, string text = null, object value = null, bool whitespace_only = false, SourceLocation loc = null) {
@@ -84,6 +86,17 @@ namespace DMCompiler.Compiler.Experimental {
             else {
                 Location = loc;
             }
+        }
+
+        public PreprocessorToken(PreprocessorToken t) {
+            Type = t.Type;
+            Value = t.Value;
+            Text = t.Text;
+            Location = t.Location;
+            expandLevel = t.expandLevel;
+            ExpandEligible = t.ExpandEligible;
+            PrescanExpandEligible = t.PrescanExpandEligible;
+            WhitespaceOnly = t.WhitespaceOnly;
         }
 
         public DMToken DMToken() {

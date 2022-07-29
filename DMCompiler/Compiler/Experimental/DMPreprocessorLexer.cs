@@ -49,6 +49,7 @@ namespace DMCompiler.Compiler.Experimental {
             while (_tp.Peek(0) != '\n') {
                 _tp.Advance(1);
             }
+            if (_tp.CurrentPosition() == start) { return ""; }
             return _tp.GetString(start, _tp.CurrentPosition() - 1);
         }
 
@@ -205,7 +206,7 @@ namespace DMCompiler.Compiler.Experimental {
                         }
                     case '\\': {
                             switch (_tp.Peek(1)) {
-                                case '\n': _tp.Advance(2); Splice(); continue;
+                                case '\n': _tp.Advance(2); continue;
                                 default: return AcceptToken(TokenType.Symbol, 1);
                             }
                         }
@@ -266,7 +267,7 @@ namespace DMCompiler.Compiler.Experimental {
                 if (c is char cc && _tp.IsIdentifier(cc)) {
                     n += 1;
                     continue;
-                }
+                } 
                 break;
             }
             return AcceptToken(TokenType.Identifier, n);
@@ -327,19 +328,13 @@ namespace DMCompiler.Compiler.Experimental {
                 return c == ' ' || c == '\t' || c == '\n';
             }
             int n = 0;
-            bool skippedLine = false;
             while (true) {
                 char? c = _tp.Peek(n);
-                if (isSpliceSkip(c)) {
-                    if (c == '\n' && skippedLine && !isSpliceSkip(_tp.Peek(n+1))) {
-                        break;
-                    } else {
-                        skippedLine = true;
-                    }
+                if (!isSpliceSkip(c)) {
+                    break;
+                } else {
                     n += 1;
-                    continue;
                 }
-                break;
             }
             whitespace_only_line = true;
             _tp.Advance(n);

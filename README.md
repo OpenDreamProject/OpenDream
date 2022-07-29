@@ -8,7 +8,7 @@ All parts of OpenDream should work fine on Windows and Linux, though the latter 
 
 For more information or if you'd like to contribute, join our [Discord server](https://discord.gg/qreryhZxxs).
 
-A detailed description of differences with BYOND can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Differences-Between-OpenDream-and-BYOND).
+A detailed description of differences with BYOND can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Differences-Between-OpenDream-and-BYOND). **Note that OpenDream cannot connect to BYOND servers, and BYOND's client cannot connect to OpenDream servers.** There is no cross-project compatibility other than being able to migrate from BYOND to OpenDream with minimal effort.
 
 ## Building
 

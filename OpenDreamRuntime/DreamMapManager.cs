@@ -8,7 +8,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
-    internal sealed class DreamMapManager : IDreamMapManager {
+    public sealed class DreamMapManager : IDreamMapManager {
         public sealed class Level {
             public readonly int Z;
             public readonly IMapGrid Grid;
@@ -291,7 +291,7 @@ namespace OpenDreamRuntime {
         }
     }
 
-    internal interface IDreamMapManager {
+    public interface IDreamMapManager {
         public Vector2i Size { get; }
         public int Levels { get; }
 

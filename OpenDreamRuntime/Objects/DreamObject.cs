@@ -65,9 +65,9 @@ namespace OpenDreamRuntime.Objects {
             manager.ReferenceIDs.Remove(this);
         }
 
-        public void CopyFrom(DreamObject from) {
-            ObjectDefinition = from.ObjectDefinition;
-            _variables = from._variables;
+        public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {
+            ObjectDefinition = objectDefinition;
+            _variables.Clear();
         }
 
         public bool IsSubtypeOf(DreamPath path) {

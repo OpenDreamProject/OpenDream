@@ -11,7 +11,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
@@ -20,18 +19,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
 
-            DreamValue locArgument = creationArguments.GetArgument(0, "loc");
-            if (locArgument.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out _)) {
-                dreamObject.SetVariable("loc", locArgument); //loc is set before /New() is ever called
-            } else if (creationArguments.ArgumentCount == 0) {
-                creationArguments.OrderedArguments.Add(DreamValue.Null); //First argument is loc, which is null
-            }
-
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
-            _atomManager.DeleteAtomEntity(dreamObject);
+            _atomManager.DeleteMovableEntity(dreamObject);
             _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
@@ -46,24 +38,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             switch (varName)
             {
-                case "name": {
-                    value.TryGetValueAsString(out string name);
-                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
-                    if (!_entityManager.TryGetComponent(entity, out MetaDataComponent metaData))
-                        break;
-
-                    metaData.EntityName = name;
-                    break;
-                }
-                case "desc": {
-                    value.TryGetValueAsString(out string desc);
-                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
-                    if (!_entityManager.TryGetComponent(entity, out MetaDataComponent metaData))
-                        break;
-
-                    metaData.EntityDescription = desc;
-                    break;
-                }
                 case "icon":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         if (value.TryGetValueAsDreamResource(out DreamResource resource)) {
@@ -186,25 +160,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
-                case "x":
-                    return new(_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.WorldPosition.X ?? 0);
-                case "y":
-                    return new(_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.WorldPosition.Y ?? 0);
-                case "z":
-                    return new(((int?)_entityManager.GetComponentOrNull<TransformComponent>(_atomManager.GetAtomEntity(dreamObject))?.MapID) ?? 0);
-                case "contents":
-                    DreamList contents = DreamList.Create();
-                    EntityUid entity = _atomManager.GetAtomEntity(dreamObject);
-
-                    if (_entityManager.TryGetComponent<TransformComponent>(entity, out var transform)) {
-                        foreach (TransformComponent child in transform.Children) {
-                            DreamObject childAtom = _atomManager.GetAtomFromEntity(child.Owner);
-
-                            contents.AddValue(new DreamValue(childAtom));
-                        }
-                    }
-
-                    return new(contents);
                 case "transform":
                     // Clone the matrix
                     DreamObject matrix = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
@@ -220,7 +175,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
@@ -229,7 +184,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 } else if (icon.TryGetValueAsString(out string iconString)) {
                     appearance.Icon = iconString;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                    appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");

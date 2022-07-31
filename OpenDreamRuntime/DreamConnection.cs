@@ -58,7 +58,7 @@ namespace OpenDreamRuntime
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
                         _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject );
-                        Session.AttachToEntity(_atomManager.GetAtomEntity(_mobDreamObject));
+                        Session.AttachToEntity(_atomManager.GetMovableEntity(_mobDreamObject));
                     }
                     else
                     {

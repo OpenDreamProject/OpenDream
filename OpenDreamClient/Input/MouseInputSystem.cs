@@ -1,14 +1,18 @@
 ﻿using OpenDreamClient.Input.ContextMenu;
 using OpenDreamShared.Input;
 using Robust.Client.Input;
+using Robust.Client.Player;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
+using Robust.Shared.Map;
 
 namespace OpenDreamClient.Input {
     sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
         private ContextMenuPopup _contextMenu;
@@ -28,14 +32,22 @@ namespace OpenDreamClient.Input {
         }
 
         private bool OnUse(in PointerInputCmdHandler.PointerInputCmdArgs args) {
-            if (args.EntityUid == EntityUid.Invalid)
-                return false;
-
             bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
             bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
             bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
-            RaiseNetworkEvent(new EntityClickedEvent(args.EntityUid, shift, ctrl, alt));
 
+            if (args.EntityUid == EntityUid.Invalid) { // Turf was clicked
+                EntityUid? gridUid = args.Coordinates.GetGridUid(_entityManager);
+                if (gridUid == null)
+                    return false;
+
+                IMapGrid grid = _mapManager.GetGrid(gridUid.Value);
+                Vector2i position = grid.CoordinatesToTile(args.Coordinates);
+                RaiseNetworkEvent(new TurfClickedEvent(position, (int)grid.ParentMapId, shift, ctrl, alt));
+                return true;
+            }
+
+            RaiseNetworkEvent(new EntityClickedEvent(args.EntityUid, shift, ctrl, alt));
             return true;
         }
 

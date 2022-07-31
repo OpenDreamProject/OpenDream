@@ -1,21 +1,23 @@
-﻿using OpenDreamRuntime.Objects;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
 
 namespace OpenDreamRuntime {
-    sealed class AtomManager : IAtomManager {
+    internal sealed class AtomManager : IAtomManager {
         //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
-        private Dictionary<DreamObject, EntityUid> _atomToEntity = new();
-        private Dictionary<EntityUid, DreamObject> _entityToAtom = new();
+        private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
+        private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
 
-        public EntityUid CreateAtomEntity(DreamObject atom) {
+        private EntityUid CreateMovableEntity(DreamObject atom) {
             EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
@@ -32,41 +34,48 @@ namespace OpenDreamRuntime {
             return entity;
         }
 
-        public EntityUid GetAtomEntity(DreamObject atom)
+        public EntityUid GetMovableEntity(DreamObject movable)
         {
-            return _atomToEntity.ContainsKey(atom) ? _atomToEntity[atom] : CreateAtomEntity(atom);
+            return _atomToEntity.ContainsKey(movable) ? _atomToEntity[movable] : CreateMovableEntity(movable);
         }
 
-        public DreamObject GetAtomFromEntity(EntityUid entity) {
-            _entityToAtom.TryGetValue(entity, out DreamObject atom);
-
-            return atom;
+        public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable) {
+            return _entityToAtom.TryGetValue(entity, out movable);
         }
 
-        public void DeleteAtomEntity(DreamObject atom) {
-            EntityUid entity = GetAtomEntity(atom);
+        public void DeleteMovableEntity(DreamObject movable) {
+            EntityUid entity = GetMovableEntity(movable);
 
             _entityToAtom.Remove(entity);
-            _atomToEntity.Remove(atom);
+            _atomToEntity.Remove(movable);
             _entityManager.DeleteEntity(entity);
         }
 
-        public IconAppearance? GetAppearance(DreamObject atom) {
-            return _entityManager.GetComponent<DMISpriteComponent>(GetAtomEntity(atom)).Appearance;
+        public IconAppearance? GetMovableAppearance(DreamObject movable) {
+            return _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(movable)).Appearance;
         }
 
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetAtomEntity(atom), out var sprite))
-                return;
-            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+            if (atom.IsSubtypeOf(DreamPath.Turf)) {
+                IconAppearance appearance = new IconAppearance(_dreamMapManager.GetTurfAppearance(atom));
+                update(appearance);
+                _dreamMapManager.SetTurfAppearance(atom, appearance);
+            } else if (atom.IsSubtypeOf(DreamPath.Movable)) {
+                if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
+                    return;
 
-            update(appearance);
-            sprite.SetAppearance(appearance);
+                IconAppearance appearance = new IconAppearance(sprite.Appearance);
+                update(appearance);
+                sprite.SetAppearance(appearance);
+            }
         }
 
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate) {
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetAtomEntity(atom), out var sprite))
+            if (!atom.IsSubtypeOf(DreamPath.Movable))
+                return; //Animating non-movables is unimplemented
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
                 return;
+
             IconAppearance appearance = new IconAppearance(sprite.Appearance);
 
             animate(appearance);
@@ -75,7 +84,7 @@ namespace OpenDreamRuntime {
             sprite.SetAppearance(appearance, dirty: false);
 
             ServerAppearanceSystem appearanceSystem = EntitySystem.Get<ServerAppearanceSystem>();
-            appearanceSystem.Animate(GetAtomEntity(atom), appearance, duration);
+            appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
@@ -155,5 +164,20 @@ namespace OpenDreamRuntime {
 
             return appearance;
         }
+    }
+
+    internal interface IAtomManager {
+        public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
+        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
+
+        public EntityUid GetMovableEntity(DreamObject movable);
+        public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
+        public void DeleteMovableEntity(DreamObject movable);
+        public IconAppearance? GetMovableAppearance(DreamObject movable);
+
+        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
+        public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
+        public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
+        public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
     }
 }

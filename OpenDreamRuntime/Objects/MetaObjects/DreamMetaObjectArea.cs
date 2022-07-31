@@ -16,14 +16,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = DreamList.Create();
 
-            contents.ValueAssigned += (DreamList list, DreamValue key, DreamValue value) => {
-                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject turf)) {
-                    int x = turf.GetVariable("x").GetValueAsInteger();
-                    int y = turf.GetVariable("y").GetValueAsInteger();
-                    int z = turf.GetVariable("z").GetValueAsInteger();
+            contents.ValueAssigned += (_, _, value) => {
+                if (!value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out DreamObject turf))
+                    return;
 
-                    _dreamMapManager.SetArea(x, y, z, dreamObject);
-                }
+                (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
+                level.SetArea(pos, dreamObject);
             };
 
             _dreamManager.AreaContents.Add(dreamObject, contents);

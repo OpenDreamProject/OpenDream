@@ -57,7 +57,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (varName == "client") {
                 return new(_dreamManager.GetClientFromMob(dreamObject));
             } else {
-              return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
+                return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 

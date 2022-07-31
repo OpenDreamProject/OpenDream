@@ -1147,9 +1147,10 @@ namespace OpenDreamRuntime.Procs.Native {
 
             for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
-                    if (x == centerX && y == centerY) continue;
-
-                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+                    if (x == centerX && y == centerY)
+                        continue;
+                    if (!mapMgr.TryGetTurfAt((x, y), centerZ, out var turf))
+                        continue;
 
                     view.AddValue(new DreamValue(turf));
                     foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
@@ -1926,7 +1927,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
             for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
                 for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
-                    DreamObject turf = mapMgr.GetTurf(x, y, centerZ);
+                    if (!mapMgr.TryGetTurfAt((x, y), centerZ, out var turf))
+                        continue;
 
                     view.AddValue(new DreamValue(turf));
                     foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {

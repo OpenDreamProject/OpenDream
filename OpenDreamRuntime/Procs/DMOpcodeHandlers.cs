@@ -146,6 +146,21 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
+            DreamObjectDefinition objectDef = state.DreamManager.ObjectTree.GetObjectDefinition(objectPath);
+            if (objectDef.IsSubtypeOf(DreamPath.Turf)) {
+                // Turfs are special. They're never created outside of map initialization
+                // So instead this will replace an existing turf's type and return that same turf
+                DreamValue loc = arguments.GetArgument(0, "loc");
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turf))
+                    throw new Exception($"Invalid turf loc {loc}");
+
+                IDreamMapManager dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+                dreamMapManager.SetTurf(turf, objectDef, arguments);
+
+                state.Push(loc);
+                return null;
+            }
+
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
@@ -1476,7 +1491,8 @@ namespace OpenDreamRuntime.Procs {
             if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
                 z.TryGetValueAsInteger(out var zInt))
             {
-                state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(xInt, yInt, zInt)));
+                IoCManager.Resolve<IDreamMapManager>().TryGetTurfAt((xInt, yInt), zInt, out var turf);
+                state.Push(new DreamValue(turf));
             }
             else
             {

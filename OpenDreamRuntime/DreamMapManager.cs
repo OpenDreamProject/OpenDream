@@ -102,6 +102,9 @@ namespace OpenDreamRuntime {
 
         public void UpdateTiles() {
             foreach (Level level in _levels) {
+                if (level.QueuedTileUpdates.Count == 0)
+                    continue;
+
                 List<(Vector2i, Tile)> tiles = new(level.QueuedTileUpdates.Count);
                 foreach (var tileUpdate in level.QueuedTileUpdates) {
                     tiles.Add( (tileUpdate.Key, tileUpdate.Value) );

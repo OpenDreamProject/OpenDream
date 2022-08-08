@@ -649,9 +649,6 @@ namespace OpenDreamRuntime.Procs {
             }
             DreamValue right = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-
             switch (left.Type) {
                 case DreamValue.DreamValueType.DreamObject: { //Output operation
                     if (left == DreamValue.Null) {

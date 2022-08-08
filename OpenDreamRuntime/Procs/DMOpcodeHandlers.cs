@@ -699,7 +699,7 @@ namespace OpenDreamRuntime.Procs {
             switch (refLeft.RefType)
             {
                 case DMReference.Type.ListIndex:
-                    idx = state.GetReferenceValue(refLeft, true);
+                    idx = state.Pop();
                     left = state.Pop();
                     break;
                 case DMReference.Type.GlobalProc:

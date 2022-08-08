@@ -373,7 +373,7 @@ namespace DMCompiler.DM {
 
         public void Output(DMReference leftRef) {
             ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.Output);
+            WriteOpcode(DreamProcOpcode.OutputRef);
             WriteReference(leftRef);
         }
 

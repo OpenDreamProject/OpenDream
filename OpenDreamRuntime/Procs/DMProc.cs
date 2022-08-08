@@ -130,8 +130,9 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CreateTypeEnumerator,
             null, //0x5E
             DMOpcodeHandlers.PushGlobalVars,
-            DMOpcodeHandlers.Output,
-            DMOpcodeHandlers.Input
+            DMOpcodeHandlers.OutputRef,
+            DMOpcodeHandlers.Input,
+            DMOpcodeHandlers.Output
         };
         #endregion
 

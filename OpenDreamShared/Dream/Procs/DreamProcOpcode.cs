@@ -97,8 +97,9 @@ namespace OpenDreamShared.Dream.Procs {
         CreateTypeEnumerator = 0x5D,
         //0x5E
         PushGlobalVars = 0x5F,
-        Output = 0x60,
-        Input = 0x61
+        OutputRef = 0x60,
+        Input = 0x61,
+        Output = 0x62
     }
 
     public enum DreamProcOpcodeParameterType {

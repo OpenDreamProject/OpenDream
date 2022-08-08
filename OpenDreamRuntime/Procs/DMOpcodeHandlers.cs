@@ -680,7 +680,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
 
                 default:
-                    throw new Exception("Invalid bit output on " + left + " and " + right);
+                    throw new Exception("Invalid output on " + left + " and " + right);
             }
 
             return null;

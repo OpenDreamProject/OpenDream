@@ -533,11 +533,6 @@ namespace DMCompiler.Compiler.DM {
                         return Label(identifier);
                     case DMASTLeftShift leftShift:
                     {
-                        if (leftShift.A is DMASTConstantInteger or DMASTConstantFloat &&
-                            leftShift.B is DMASTConstantInteger or DMASTConstantFloat)
-                        {
-                            return new DMASTProcStatementExpression(loc, expression);
-                        }
 
                         DMASTProcCall procCall = leftShift.B as DMASTProcCall;
                         if (procCall?.Callable is DMASTCallableProcIdentifier identifier) {

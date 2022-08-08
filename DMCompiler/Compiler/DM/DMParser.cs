@@ -566,11 +566,6 @@ namespace DMCompiler.Compiler.DM {
                     }
                     case DMASTRightShift rightShift:
                     {
-                        if (rightShift.A is DMASTConstantInteger or DMASTConstantFloat &&
-                            rightShift.B is DMASTConstantInteger or DMASTConstantFloat)
-                        {
-                            return new DMASTProcStatementExpression(loc, expression);
-                        }
                         return new DMASTProcStatementInput(loc, rightShift.A, rightShift.B);
                     }
                 }

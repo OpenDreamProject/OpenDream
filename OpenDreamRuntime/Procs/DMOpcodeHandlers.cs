@@ -733,7 +733,7 @@ namespace OpenDreamRuntime.Procs {
                     }
                     else
                     {
-                        throw new Exception("Invalid bit input on " + left + " and " + state.GetReferenceValue(refRight));
+                        throw new Exception("Invalid input on " + left + " and " + state.GetReferenceValue(refRight));
                     }
 
                     break;

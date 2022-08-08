@@ -742,7 +742,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
 
                 default:
-                    throw new Exception("Invalid bit input on " + left + " and " + state.GetReferenceValue(refRight));
+                    throw new Exception("Invalid input on " + left + " and " + state.GetReferenceValue(refRight));
             }
 
             state.AssignReference(refRight, assignValue);

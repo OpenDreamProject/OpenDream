@@ -173,7 +173,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) {
-
             SimplifyExpression(ref statementOutput.Left);
             SimplifyExpression(ref statementOutput.Right);
         }

@@ -42,11 +42,9 @@
 
 	var/bound_width as opendream_unimplemented
 	var/bound_height as opendream_unimplemented
-	var/name
 	var/x
 	var/y
 	var/z
-	var/list/filters = list() as opendream_unimplemented
 	var/list/vis_contents = list() as opendream_unimplemented
 
 	var/dir = SOUTH

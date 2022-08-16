@@ -9,8 +9,10 @@ namespace DMCompiler.Compiler.DM
     {
         public DreamPath? TypePath;
         public string VarName;
-        public bool IsGlobal;
+
+        ///<summary>Marks whether the variable is /global/ or /static/. (These are seemingly interchangeable keywords in DM and so are under this same boolean)</summary>
         public bool IsStatic;
+
         public bool IsConst;
         public bool IsList;
     }
@@ -63,7 +65,6 @@ namespace DMCompiler.Compiler.DM
     {
         public DreamPath ObjectPath;
         public bool IsTmp;
-        public bool IsToplevel;
 
         public ObjVarDeclInfo(DreamPath path)
         {
@@ -76,9 +77,9 @@ namespace DMCompiler.Compiler.DM
                 readIdx += 1;
             }
             ObjectPath = new DreamPath(path.Type, currentPath.ToArray());
-            if (ObjectPath.Elements.Length == 0)
+            if (ObjectPath.Elements.Length == 0) // Variables declared in the root scope are inherently static.
             {
-                IsToplevel = true;
+                IsStatic = true;
             }
             currentPath.Clear();
             readIdx += 1;

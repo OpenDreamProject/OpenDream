@@ -37,6 +37,17 @@ namespace DMCompiler.DM {
             return Parent?.GetVariable(name);
         }
 
+        /// <summary>
+        /// Does a recursive search through self and parents to check if we already contain this variable.
+        /// </summary>
+        public bool HasVariable(string name) {
+            if (Variables.ContainsKey(name))
+                return true;
+            if (Parent == null)
+                return false;
+            return Parent.HasVariable(name);
+        }
+
         public bool HasProc(string name) {
             if (Procs.ContainsKey(name)) return true;
 
@@ -68,6 +79,10 @@ namespace DMCompiler.DM {
             return global;
         }
 
+        /// <summary>
+        /// Recursively searches for a global/static with the given name.
+        /// </summary>
+        /// <returns>Either the ID or null if no such global exists.</returns>
         public int? GetGlobalVariableId(string name) {
             if (GlobalVariables.TryGetValue(name, out int id)) {
                 return id;

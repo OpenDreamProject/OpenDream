@@ -39,6 +39,10 @@ namespace DMCompiler {
             if (settings.SuppressUnimplementedWarnings) {
                 Warning(new CompilerWarning(Location.Internal, "Unimplemented proc & var warnings are currently suppressed"));
             }
+            if(OpenDreamShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
+            {
+                Error(new CompilerError(Location.Internal, "Some opcodes have the same byte value! Output assembly may be corrupted."));
+            }
 
             DMPreprocessor preprocessor = Preprocess(settings.Files);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);

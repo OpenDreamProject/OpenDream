@@ -668,12 +668,37 @@ namespace DMCompiler.DM.Visitors {
                     string caseLabel = _proc.NewLabelName();
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
-                        if (value is DMASTSwitchCaseRange range) {
+                        if (value is DMASTSwitchCaseRange range) { // if(1 to 5) or something
                             if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeStart, out var lower))
                                 throw new CompileErrorException(new CompilerError(range.RangeStart.Location, "Expected a constant"));
                             if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeEnd, out var upper))
                                 throw new CompileErrorException(new CompilerError(range.RangeEnd.Location, "Expected a constant"));
-
+                            //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
+                            //We are deviating from parity here and just calling that a CompilerError.
+                            if(lower is not Number)
+                            {
+                                if (lower is Null) // We do a little null coercion, as a treat
+                                    {
+                                    lower = new Number(lower.Location, 0.0f);
+                                    DMCompiler.Warning(new CompilerWarning(range.RangeStart.Location, "Malformed range, lower bound is coerced from null to 0"));
+                                }
+                                else
+                                {
+                                    DMCompiler.Error(new CompilerError(range.RangeStart.Location, "Invalid range, lower bound is not a number"));
+                                }
+                            }
+                            if(upper is not Number)
+                            {
+                                if (upper is Null)
+                                {
+                                    upper = new Number(upper.Location, 0.0f);
+                                    DMCompiler.Warning(new CompilerWarning(range.RangeEnd.Location, "Malformed range, upper bound is coerced from null to 0"));
+                                }
+                                else
+                                {
+                                    DMCompiler.Error(new CompilerError(range.RangeEnd.Location, "Invalid range, upper bound is not a number"));
+                                }
+                            }
                             lower.EmitPushValue(_dmObject, _proc);
                             upper.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCaseRange(caseLabel);

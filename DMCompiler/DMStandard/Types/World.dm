@@ -29,8 +29,8 @@
 	var/version = 0 as opendream_unimplemented
 
 	var/address
-	var/port
-	var/internet_address = "127.0.0.1" as opendream_unimplemented
+	var/port = 0
+	var/internet_address = "127.0.0.1"
 	var/url
 	var/status as opendream_unimplemented
 	var/list/params = list() as opendream_unimplemented

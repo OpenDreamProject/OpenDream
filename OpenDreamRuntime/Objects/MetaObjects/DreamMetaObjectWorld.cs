@@ -4,6 +4,9 @@ using OpenDreamShared.Dream;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
+using Robust.Shared.Network;
+using System.Net;
+using System.Net.Sockets;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectWorld : IDreamMetaObject {
@@ -11,6 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly DreamResourceManager _dreamRscMan = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
@@ -19,6 +23,40 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         private ViewRange _viewRange;
 
         private double TickLag => _gameTiming.TickPeriod.TotalMilliseconds / 100;
+        /// <summary> Determines whether we try to show IPv6 or IPv4 to the user during .address and .internet_address queries.</summary>
+        private bool DisplayIPv6
+        {
+            get
+            {
+                var binds = _cfg.GetCVar(CVars.NetBindTo).Split(',');
+                foreach (var bindAddress in binds)
+                {
+                    if (!IPAddress.TryParse(bindAddress.Trim(), out var address)) // EXTREMELY unlikely since RT does this same check on network startup
+                    {
+                        continue;
+                    }
+
+                    if (address.AddressFamily == AddressFamily.InterNetworkV6)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        /// <summary> Tries to return the address of the server, as it appears over the internet. May return null.</summary>
+        private IPAddress? InternetAddress
+        {
+            get
+            {
+                NetManager? net = (NetManager?)_netManager;
+                if(net == null) // This may be the case if we're on IntegrationNetManager instead of NetManager.
+                { // If so, I don't really know how to force RT to fess up about what our IP is, since it's all hidden behind privates at time of writing.
+                    return null;
+                }
+                return net.ServerChannel?.RemoteEndPoint.Address;
+            }
+        }
 
         public DreamMetaObjectWorld() {
             IoCManager.InjectDependencies(this);
@@ -100,12 +138,30 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue(_dreamMapManager.Size.Y);
                 case "maxz":
                     return new DreamValue(_dreamMapManager.Levels);
-                //case "address":
-                //    return new(Runtime.Server.Address.ToString());
-                //case "port":
-                //    return new(Runtime.Server.Port);
-                //case "url":
-                //    return new("opendream://" + Runtime.Server.Address + ":" + Runtime.Server.Port);
+                case "address": // By address they mean, the local address we have on the network, not on the internet.
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    var ipType = DisplayIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+                    foreach (var ip in host.AddressList)
+                    {
+                        if (ip.AddressFamily == ipType)
+                        {
+                            return new DreamValue(ip.ToString());
+                        }
+                    }
+                    return DreamValue.Null;
+                case "port":
+                    return new DreamValue(_netManager.Port);
+                case "url":
+                    if (InternetAddress == null)
+                        return DreamValue.Null;
+                    return new(InternetAddress + ":" + _netManager.Port); // RIP "opendream://"
+                case "internet_address":
+                    IPAddress? address = InternetAddress;
+                    // We don't need to do any logic with DisplayIPv6 since whatever this address is,
+                    // ought to be the address that the boolean's getter is searching for anyways.
+                    if (address == null)
+                        return DreamValue.Null;
+                    return new(address.ToString());
                 case "system_type": {
                     //system_type value should match the defines in Defines.dm
                     if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other) {

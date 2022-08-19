@@ -197,6 +197,11 @@
 #define SIDE_MAP 2
 #define TILED_ICON_MAP 32768
 
+//world.movement_mode
+#define LEGACY_MOVEMENT_MODE 0
+#define TILE_MOVEMENT_MODE 1
+#define PIXEL_MOVEMENT_MODE 2
+
 //generator() distributions
 #define UNIFORM_RAND 0
 #define NORMAL_RAND 1

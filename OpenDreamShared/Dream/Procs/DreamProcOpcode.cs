@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
@@ -248,4 +249,31 @@ namespace OpenDreamShared.Dream.Procs {
             }
         }
     }
+
+    // Dummy class-as-namespace because C# just kinda be like this
+    public static class OpcodeVerifier
+    {
+        /// <summary>
+        /// Validates that the opcodes in DreamProcOpcode are all unique, such that none resolve to the same byte.
+        /// </summary>
+        /// <returns>True if there are duplicate opcodes, false if not</returns>
+        public static bool AreOpcodesInvalid() // FIXME: Can this be made into something done during compiletime? Like, *this code's* compiletime? >:/
+        {
+            // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
+            // but since we're in OpenDreamShared I want each executable to be able to do what they want with this information.
+            
+            // Key is an int (or whatever the underlying type is) we're already using for an opcode
+            HashSet<DreamProcOpcode> bytePool = new();
+            foreach (DreamProcOpcode usedInt in Enum.GetValues(typeof(DreamProcOpcode)))
+            {
+                if(bytePool.Contains(usedInt))
+                {
+                    return true;
+                }
+                bytePool.Add(usedInt);
+            }
+            return false;
+        }
+    }
+   
 }

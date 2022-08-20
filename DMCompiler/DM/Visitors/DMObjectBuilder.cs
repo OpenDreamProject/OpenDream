@@ -7,8 +7,6 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     class DMObjectBuilder {
-        private DMObject _currentObject = null;
-
         public void BuildObjectTree(DMASTFile astFile) {
             DMObjectTree.Reset();
             ProcessFile(astFile);
@@ -24,28 +22,29 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.CreateGlobalInitProc();
         }
 
-        public void ProcessFile(DMASTFile file) {
-            _currentObject = DMObjectTree.GetDMObject(DreamPath.Root);
-
-            ProcessBlockInner(file.BlockInner);
+        private void ProcessFile(DMASTFile file) {
+            ProcessBlockInner(file.BlockInner, DMObjectTree.Root);
         }
 
-        public void ProcessBlockInner(DMASTBlockInner blockInner) {
+        private void ProcessBlockInner(DMASTBlockInner blockInner, DMObject currentObject) {
             foreach (DMASTStatement statement in blockInner.Statements) {
                 try {
-                    ProcessStatement(statement);
+                    ProcessStatement(statement, ref currentObject);
                 } catch (CompileErrorException e) {
                     DMCompiler.Error(e.Error);
                 }
             }
         }
 
-        public void ProcessStatement(DMASTStatement statement) {
+        private void ProcessStatement(DMASTStatement statement, ref DMObject currentObject) {
             switch (statement) {
-                case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition); break;
+                case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition, ref currentObject); break;
+
+                //The above are the only cases where the currentObject could be set to a novel, new() value.
+                //The rest can just have it be passed as mutable ref like normal.
                 case DMASTObjectVarDefinition varDefinition: ProcessVarDefinition(varDefinition); break;
                 case DMASTObjectVarOverride varOverride: ProcessVarOverride(varOverride); break;
-                case DMASTProcDefinition procDefinition: ProcessProcDefinition(procDefinition); break;
+                case DMASTProcDefinition procDefinition: ProcessProcDefinition(procDefinition, currentObject); break;
                 case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                     foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
                         ProcessVarDefinition(varDefinition);
@@ -57,31 +56,27 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
-            DMObject oldObject = _currentObject;
+        private void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition, ref DMObject currentObject) {
 
             DMCompiler.VerbosePrint($"Generating {objectDefinition.Path}");
-            _currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
-            if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock);
-            _currentObject = oldObject;
+            currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
+            if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, currentObject);
         }
 
-        public void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
-            DMObject oldObject = _currentObject;
+        private void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMVariable variable;
-
-            _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
+            DMObject varObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
             //Lets check if we're duplicating a definition, first.
-            if (_currentObject.HasGlobalVariable(varDefinition.Name))
+            if (varObject.HasGlobalVariable(varDefinition.Name))
             {
                 DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\""));
-                variable = _currentObject.GetGlobalVariable(varDefinition.Name);
+                variable = varObject.GetGlobalVariable(varDefinition.Name);
             }
-            else if (_currentObject.HasLocalVariable(varDefinition.Name))
+            else if (varObject.HasLocalVariable(varDefinition.Name))
             {
                 DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
-                variable = _currentObject.GetVariable(varDefinition.Name);
+                variable = varObject.GetVariable(varDefinition.Name);
             }
             //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
             else if (varDefinition.IsStatic) { // static
@@ -90,30 +85,25 @@ namespace DMCompiler.DM.Visitors {
                 if(DoesOverrideGlobalVars(varDefinition)) // Some snowflake behaviour for global.vars
                 {
                     DMCompiler.Error(new CompilerError(varDefinition.Location, "Duplicate definition of global.vars"));
-                    //We can't salvage any part of this definiton, since global.vars doesn't technically even exist, so lets just return
-                    _currentObject = oldObject; //TODO: Does C# have deferred things, like with destructor fanciness or something?
+                    //We can't salvage any part of this definition, since global.vars doesn't technically even exist, so lets just return
                     return;
                 }
                 //otherwise create
-                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
+                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
             } else { // not static
                 variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
-                _currentObject.Variables[variable.Name] = variable;
+                varObject.Variables[variable.Name] = variable;
             }
 
             try {
-                SetVariableValue(variable, varDefinition.Value, varDefinition.ValType);
+                SetVariableValue(varObject, variable, varDefinition.Value, varDefinition.ValType);
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
             }
-
-            _currentObject = oldObject;
         }
 
-        public void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
-            DMObject oldObject = _currentObject;
-
-            _currentObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
+        private void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
+            DMObject varObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
             try
             {
@@ -124,35 +114,37 @@ namespace DMCompiler.DM.Visitors {
                         DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
                         if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
-                        _currentObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
-                        break;
+                            varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
+                        return;
                     }
                     case "tag":
                         DMCompiler.Error(new CompilerError(varOverride.Location, "tag: may not be set at compile-time"));
-                        break;
-                    default:
-                    {
-                        DMVariable variable = new DMVariable(null, varOverride.VarName, false, false);
-
-                        SetVariableValue(variable, varOverride.Value);
-                        _currentObject.VariableOverrides[variable.Name] = variable;
-                        break;
-                    }
+                        return;
                 }
+                DMVariable variable;
+                if (varObject.HasLocalVariable(varOverride.VarName))
+                {
+                    variable = varObject.GetVariable(varOverride.VarName);
+                }
+                else // Shouldn't happen, ideally
+                {
+                    DMCompiler.Warning(new CompilerWarning(varOverride.Location, $"Override of var {varOverride.VarName} found before variable declaration. This isn't supposed to happen!"));
+                    variable = new DMVariable(null, varOverride.VarName, false, false);
+                }
+                OverrideVariableValue(varObject, variable, varOverride.Value);
+                varObject.VariableOverrides[variable.Name] = variable;
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
             }
-
-            _currentObject = oldObject;
         }
 
-        public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
+        private void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
             string procName = procDefinition.Name;
-            DMObject dmObject = _currentObject;
+            DMObject dmObject = currentObject; // Default value if we can't discern its object
 
             try {
                 if (procDefinition.ObjectPath.HasValue) {
-                    dmObject = DMObjectTree.GetDMObject(_currentObject.Path.Combine(procDefinition.ObjectPath.Value));
+                    dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath.Value));
                 }
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
@@ -244,9 +236,9 @@ namespace DMCompiler.DM.Visitors {
             return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
         }
 
-        private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+        private void SetVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
-            DMExpression expression = DMExpression.Create(_currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
             expression.ValType = valType;
 
@@ -262,7 +254,7 @@ namespace DMCompiler.DM.Visitors {
             //Whether this should be initialized at runtime
             bool isValid = expression switch {
                 //TODO: A better way of handling procs evaluated at compile time
-                Expressions.ProcCall procCall => procCall.GetTargetProc(_currentObject).Proc?.Name switch {
+                Expressions.ProcCall procCall => procCall.GetTargetProc(currentObject).Proc?.Name switch {
                     "rgb" => true,
                     "generator" => true,
                     "matrix" => true,
@@ -284,23 +276,23 @@ namespace DMCompiler.DM.Visitors {
 
             if (isValid) {
                 variable.Value = new Expressions.Null(Location.Internal);
-                EmitInitializationAssign(variable, expression);
+                EmitInitializationAssign(currentObject, variable, expression);
             } else {
                 throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
             }
         }
 
-        private void EmitInitializationAssign(DMVariable variable, DMExpression expression) {
+        private void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {
             if (variable.IsGlobal) {
-                int? globalId = _currentObject.GetGlobalVariableId(variable.Name);
-                if (globalId == null) throw new Exception($"Invalid global {_currentObject.Path}.{variable.Name}");
+                int? globalId = currentObject.GetGlobalVariableId(variable.Name);
+                if (globalId == null) throw new Exception($"Invalid global {currentObject.Path}.{variable.Name}");
 
-                DMObjectTree.AddGlobalInitAssign(_currentObject, globalId.Value, expression);
+                DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
             } else {
                 Expressions.Field field = new Expressions.Field(Location.Unknown, variable);
                 Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
 
-                _currentObject.InitializationProcExpressions.Add(assign);
+                currentObject.InitializationProcExpressions.Add(assign);
             }
         }
     }

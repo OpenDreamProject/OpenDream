@@ -270,7 +270,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTObjectVarDefinition : DMASTStatement {
+        /// <summary>The path of the object that we are a property of.</summary>
         public DreamPath ObjectPath { get => _varDecl.ObjectPath; }
+        /// <summary>The actual type of the variable itself.</summary>
         public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
         public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;

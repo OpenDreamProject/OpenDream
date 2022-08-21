@@ -224,6 +224,7 @@ namespace DMCompiler.DM.Visitors {
                     }
                 }
             }
+
         }
 
         /// <summary>
@@ -236,6 +237,28 @@ namespace DMCompiler.DM.Visitors {
             return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
         }
 
+        /// <summary>
+        /// A filter proc above <see cref="SetVariableValue"/> <br/>
+        /// which checks first to see if overriding this thing's value is valid (as in the case of const and <see cref="DMValueType.CompiletimeReadonly"/>)
+        /// </summary>
+        private void OverrideVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
+        {
+            if(variable.IsConst)
+            {
+                DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is const and cannot be modified"));
+                return;
+            }
+            if((valType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
+            {
+                DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified"));
+            }
+            SetVariableValue(currentObject, variable, value, valType);
+        }
+
+        /// <summary>
+        /// Handles setting a variable to a value (when called by itself, this assumes the statement is a declaration and not a re-assignment)
+        /// </summary>
+        /// <exception cref="CompileErrorException"></exception>
         private void SetVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);

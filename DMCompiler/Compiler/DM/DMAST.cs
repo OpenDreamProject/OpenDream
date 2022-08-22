@@ -202,6 +202,16 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatement[] Statements;
 
         public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements)
+        /// <summary> Initializes an empty block. </summary>
+        public DMASTProcBlockInner(Location location) : base(location)
+        {
+            Statements = Array.Empty<DMASTProcStatement>();
+        }
+        public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location)
+        {
+                Statements = new DMASTProcStatement[] { statement };
+                SetStatements = Array.Empty<DMASTProcStatement>();
+        }
             : base(location)
         {
             Statements = statements;

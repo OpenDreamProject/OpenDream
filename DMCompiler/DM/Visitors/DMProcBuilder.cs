@@ -116,14 +116,13 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
-                case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
-                    foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                        ProcessStatementVarDeclaration(varDeclaration);
-                    }
-
+                //FIXME: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
+                case DMASTAggregate<DMASTProcStatementVarDeclaration> polyvar:
+                    foreach (var declare in polyvar.Statements)
+                        ProcessStatementVarDeclaration(declare);
                     break;
-                }
                 default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
+                }
             }
         }
 

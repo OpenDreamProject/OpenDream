@@ -631,15 +631,13 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
-                Whitespace();
+                Whitespace(); // NOTE: This might be a redundant whitespace check? Not... sure?
                 DMASTProcStatementVarDeclaration[] vars = ProcVarEnd(allowMultiple);
                 if (vars == null) Error("Expected a var declaration");
+                if (vars.Length > 1)
+                    return new DMASTAggregate<DMASTProcStatementVarDeclaration>(firstToken.Location, vars);
+                return vars[0];
 
-                if (vars.Length > 1) {
-                    return new DMASTProcStatementMultipleVarDeclarations(firstToken.Location, vars);
-                } else {
-                    return vars[0];
-                }
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }

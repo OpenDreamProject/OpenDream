@@ -51,33 +51,36 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
-            // TODO ProcessStatementSet() needs to be before any loops but this is nasty
-            foreach (var stmt in block.Statements) {
-                if (stmt is DMASTProcStatementSet set) {
-                    try {
+            foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
+                Location loc = stmt.Location;
+                try {
+                    if (stmt is DMASTProcStatementSet set) {
                         ProcessStatementSet(set);
-                    } catch (CompileAbortException e) {
-                        // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                        e.Error.Location = set.Location;
-                        DMCompiler.Emit(e.Error);
-                        return; // Don't spam the error that will continue to exist
-                    } catch (CompileErrorException e) {
-                        //Retreat from the statement when there's an error
-                        DMCompiler.Emit(e.Error);
                     }
+                    else if (stmt is DMASTAggregate<DMASTProcStatementSet> greg) { // hi greg
+                        foreach (DMASTProcStatementSet greg_set in greg.Statements)
+                        {
+                            loc = greg_set.Location;
+                            ProcessStatementSet(greg_set);
+                        }
+                    }
+                    else // Shouldn't happen >:/
+                        throw new CompileAbortException(loc, "Non-set statements where located in the block's SetStatements array!");
+                } catch (CompileAbortException e) {
+                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                    e.Error.Location = set.Location;
+                    DMCompiler.Emit(e.Error);
+                    return; // Don't spam the error that will continue to exist
+                } catch (CompileErrorException e) {
+                    //Retreat from the statement when there's an error
+                    DMCompiler.Emit(e.Error);
                 }
             }
 
             foreach (DMASTProcStatement statement in block.Statements) {
-                // see above
-                if (statement is DMASTProcStatementSet) {
-                    continue;
-                }
-
                 if (statement.Location.Line != null) {
                     _proc.DebugLine(statement.Location.Line.Value);
                 }
-
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {
@@ -160,8 +163,18 @@ namespace DMCompiler.DM.Visitors {
         {
             var attribute = statementSet.Attribute.ToLower();
             // TODO deal with "src"
-            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant) && attribute != "src") {
+            if(attribute == "src")
+            {
+                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                return;
+            }
+            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
                 throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+            }
+            if (statementSet.WasInKeyword)  // check if it was 'set x in y' or whatever
+            {                               // (which is illegal for everything except setting src to something)
+                DMCompiler.Error(new CompilerError(statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?"));
+                //fallthrough into normal behaviour because this error is kinda pedantic
             }
 
             switch (statementSet.Attribute.ToLower()) {

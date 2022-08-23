@@ -18,6 +18,7 @@ namespace DMCompiler.DM {
         public Dictionary<string, int> GlobalVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
+        private bool IAmRoot => Path == DreamPath.Root;
 
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
@@ -30,6 +31,10 @@ namespace DMCompiler.DM {
             Procs[name].Add(proc.Id);
         }
 
+        ///<remarks> 
+        /// Note that this DOES NOT query our<see cref= "GlobalVariables" />. <br/>
+        /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
+        /// </remarks>
         public DMVariable GetVariable(string name) {
             if (Variables.TryGetValue(name, out DMVariable variable)) {
                 return variable;
@@ -38,14 +43,31 @@ namespace DMCompiler.DM {
         }
 
         /// <summary>
-        /// Does a recursive search through self and parents to check if we already contain this variable.
+        /// Does a recursive search through self and parents to check if we already contain this variable, as a NON-STATIC VALUE!
         /// </summary>
-        public bool HasVariable(string name) {
+        public bool HasLocalVariable(string name) {
             if (Variables.ContainsKey(name))
                 return true;
             if (Parent == null)
                 return false;
-            return Parent.HasVariable(name);
+            return Parent.HasLocalVariable(name);
+        }
+
+        /// <summary> Similar to <see cref="HasLocalVariable"/>, just checks our globals/statics instead. </summary>
+        /// <remarks> Does NOT return true if the global variable is in the root namespace, unless called on the Root object itself.</remarks>
+        public bool HasGlobalVariable(string name)
+        {
+            if (IAmRoot)
+                return GlobalVariables.ContainsKey(name);
+            return HasGlobalVariableNotInRoot(name);
+        }
+        private bool HasGlobalVariableNotInRoot(string name)
+        {
+            if (GlobalVariables.ContainsKey(name))
+                return true;
+            if (Parent == null || Parent.IAmRoot)
+                return false;
+            return Parent.HasGlobalVariable(name);
         }
 
         public bool HasProc(string name) {

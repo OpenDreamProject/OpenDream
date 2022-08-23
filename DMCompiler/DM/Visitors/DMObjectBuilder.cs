@@ -71,9 +71,20 @@ namespace DMCompiler.DM.Visitors {
             DMVariable variable;
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
-
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
-            if (varDefinition.IsStatic) { // static
+            //Lets check if we're duplicating a definition, first.
+            if (_currentObject.HasGlobalVariable(varDefinition.Name))
+            {
+                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\""));
+                variable = _currentObject.GetGlobalVariable(varDefinition.Name);
+            }
+            else if (_currentObject.HasLocalVariable(varDefinition.Name))
+            {
+                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
+                variable = _currentObject.GetVariable(varDefinition.Name);
+            }
+            //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
+            else if (varDefinition.IsStatic) { // static
 
                 //make sure this static doesn't already exist first
                 if(DoesOverrideGlobalVars(varDefinition)) // Some snowflake behaviour for global.vars
@@ -83,27 +94,11 @@ namespace DMCompiler.DM.Visitors {
                     _currentObject = oldObject; //TODO: Does C# have deferred things, like with destructor fanciness or something?
                     return;
                 }
-                if (_currentObject.GlobalVariables.ContainsKey(varDefinition.Name))
-                {
-                    DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var {varDefinition.Name}"));
-                    variable = _currentObject.GetGlobalVariable(varDefinition.Name);
-                }
-                else //then create
-                {
-                    variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
-                }
+                //otherwise create
+                variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
             } else { // not static
-                //make sure the var doesn't already exist, first
-                if (_currentObject.HasVariable(varDefinition.Name))
-                {
-                    DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var {varDefinition.Name}"));
-                    variable = _currentObject.GetVariable(varDefinition.Name); // Querying for the variable twice is a bit shoddy but this is an edgy error case anyways, so
-                }
-                else
-                {
-                    variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
-                    _currentObject.Variables[variable.Name] = variable;
-                }
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
+                _currentObject.Variables[variable.Name] = variable;
             }
 
             try {

@@ -53,6 +53,19 @@ namespace DMCompiler.Compiler.DM {
                 Error("Expected ']'");
             }
         }
+
+        /// <summary> Small helper function for <see cref="ExpressionFromString"/>, for macros that require a preceding expression in the string.</summary>
+        /// <returns><see langword="true"/> if error occurs.</returns>
+        private bool CheckInterpolation(List<DMASTExpression>? interpolationValues, string mack)
+        {
+            if (interpolationValues == null || interpolationValues.Count == 0)
+            {
+                Error($"Macro \"\\{mack}\" requires preceding interpolated expression");
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Handles parsing of Tokens of type <see cref="TokenType.DM_String"/>.<br/>
         /// (Shunted into a helper because this is a quite long and arduous block of code)
@@ -61,13 +74,14 @@ namespace DMCompiler.Compiler.DM {
         private DMASTExpression ExpressionFromString(Token constantToken)
         {
             string tokenValue = (string)constantToken.Value;
-            StringBuilder stringBuilder = new StringBuilder(tokenValue.Length);
+            StringBuilder stringBuilder = new StringBuilder(tokenValue.Length); // The actual text (but includes special codepoints for macros and markers for where interps go)
             List<DMASTExpression>? interpolationValues = null;
             Advance();
 
             int bracketNesting = 0;
             StringBuilder? insideBrackets = null;
             StringFormatTypes currentInterpolationType = StringFormatTypes.Stringify;
+            string usedPrefixMacro = null; // A flag that is a macro's name if the macros \the, \a etc. are used in the string (macros that prefix the interpolation that they modify)
             for (int i = 0; i < tokenValue.Length; i++)
             {
                 char c = tokenValue[i];
@@ -75,7 +89,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (bracketNesting > 0)
                 {
-                    insideBrackets?.Append(c); // should never be null
+                    insideBrackets!.Append(c); // should never be null
                 }
 
                 switch (c)
@@ -158,7 +172,6 @@ namespace DMCompiler.Compiler.DM {
 
                                 bool unimplemented = false;
                                 bool skipSpaces = false;
-                                //TODO: Many of these require [] before the macro instead of after. They should verify that there is one.
                                 switch (escapeSequence)
                                 {
                                     case "proper":
@@ -174,54 +187,65 @@ namespace DMCompiler.Compiler.DM {
                                         break;
 
                                     case "ref":
+                                        // usedPrefixMacro = true; -- while ref is indeed a prefix macro, it DOES NOT ERROR if it fails to find what it's supposed to /ref.
+                                        // TODO: Actually care about this when we add --noparity
                                         currentInterpolationType = StringFormatTypes.Ref; break;
 
                                     case "The":
                                         skipSpaces = true;
+                                        usedPrefixMacro = "The";
                                         currentInterpolationType = StringFormatTypes.UpperDefiniteArticle;
                                         break;
                                     case "the":
                                         skipSpaces = true;
+                                        usedPrefixMacro = "the";
                                         currentInterpolationType = StringFormatTypes.LowerDefiniteArticle;
                                         break;
 
                                     case "A":
                                     case "An":
                                         unimplemented = true;
+                                        usedPrefixMacro = escapeSequence;
                                         currentInterpolationType = StringFormatTypes.UpperIndefiniteArticle;
                                         break;
                                     case "a":
                                     case "an":
                                         unimplemented = true;
+                                        usedPrefixMacro = escapeSequence;
                                         currentInterpolationType = StringFormatTypes.LowerIndefiniteArticle;
                                         break;
 
                                     case "He":
                                     case "She":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.UpperSubjectPronoun);
                                         break;
                                     case "he":
                                     case "she":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.LowerSubjectPronoun);
                                         break;
 
                                     case "His":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "His")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.UpperPossessiveAdjective);
                                         break;
                                     case "his":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "his")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
                                         break;
 
                                     case "him":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "him")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
                                         break;
@@ -229,17 +253,20 @@ namespace DMCompiler.Compiler.DM {
                                     case "himself":
                                     case "herself":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.ReflexivePronoun);
                                         break;
 
                                     case "Hers":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "Hers")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.UpperPossessivePronoun);
                                         break;
                                     case "hers":
                                         unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "hers")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.LowerPossessivePronoun);
                                         break;
@@ -317,6 +344,8 @@ namespace DMCompiler.Compiler.DM {
             string stringValue = stringBuilder.ToString();
             if (interpolationValues is null)
             {
+                if (usedPrefixMacro != null) // FIXME: \the should not compiletime here, instead becoming a tab character followed by "he", when in parity mode
+                    Error($"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");
                 return new DMASTConstantString(constantToken.Location, stringValue);
             }
             else

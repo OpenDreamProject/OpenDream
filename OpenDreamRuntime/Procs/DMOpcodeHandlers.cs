@@ -1432,9 +1432,9 @@ namespace OpenDreamRuntime.Procs {
                 return null;
             }
 
-            DreamObject client;
+            DreamObject? client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                client = receiver.GetVariable("client").GetValueAsDreamObject();
+                receiver.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out client);
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
                 client = receiver;
             } else {
@@ -1447,6 +1447,8 @@ namespace OpenDreamRuntime.Procs {
                 if (message.Type != DreamValue.DreamValueType.String && message.Value != null) throw new Exception("Invalid output() message " + message);
                 connection.OutputControl((string)message.Value, control);
             }
+
+            // TODO: When errors are more strict (or a setting for it added), a null client should error
 
             return null;
         }

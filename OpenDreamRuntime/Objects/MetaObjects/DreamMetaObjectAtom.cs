@@ -108,10 +108,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "transform":
                 {
-                    DreamObject matrix = value.GetValueAsDreamObjectOfType(DreamPath.Matrix);
-
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.Transform = DreamMetaObjectMatrix.MatrixToFloatArray(matrix);
+                        float[] matrixArray = value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out var matrix)
+                            ? DreamMetaObjectMatrix.MatrixToFloatArray(matrix)
+                            : DreamMetaObjectMatrix.IdentityMatrixArray;
+
+                        appearance.Transform = matrixArray;
                     });
                     break;
                 }

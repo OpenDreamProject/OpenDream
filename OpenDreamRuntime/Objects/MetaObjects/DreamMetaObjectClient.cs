@@ -125,26 +125,28 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
+            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
+                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Client}");
 
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
             return new DreamValue(0);
         }
 
         private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue == DreamValue.Null) return;
+            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+                return;
 
-            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, atom);
+            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, movable);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue == DreamValue.Null) return;
+            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+                return;
 
-            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, atom);
+            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, movable);
         }
     }
 }

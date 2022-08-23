@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
@@ -167,7 +167,7 @@ namespace OpenDreamRuntime {
         }
 
         [Obsolete("Deprecated. Use TryGetValueAsDreamObject() instead.")]
-        public DreamObject GetValueAsDreamObject() {
+        public DreamObject? GetValueAsDreamObject() {
             DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
 
             if (dreamObject?.Deleted == true) {
@@ -179,7 +179,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {
+        public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
                 dreamObject = GetValueAsDreamObject();
                 return true;
@@ -189,18 +189,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamObjectOfType() instead.")]
-        public DreamObject GetValueAsDreamObjectOfType(DreamPath type) {
-            DreamObject value = GetValueAsDreamObject();
-
-            if (value?.IsSubtypeOf(type) == true) {
-                return value;
-            } else {
-                throw new Exception("Value " + this + " was not of type '" + type + "'");
-            }
-        }
-
-        public bool TryGetValueAsDreamObjectOfType(DreamPath type, out DreamObject dreamObject) {
+        public bool TryGetValueAsDreamObjectOfType(DreamPath type, [NotNullWhen(true)] out DreamObject? dreamObject) {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 

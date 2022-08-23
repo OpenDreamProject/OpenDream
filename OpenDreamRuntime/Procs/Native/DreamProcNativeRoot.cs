@@ -2038,12 +2038,12 @@ namespace OpenDreamRuntime.Procs.Native {
             string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
             DreamConnection connection;
 
-            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out DreamObject mob)) {
+            if (player.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out var mob)) {
                 connection = DreamManager.GetConnectionFromMob(mob);
-            } else {
-                DreamObject client = player.GetValueAsDreamObjectOfType(DreamPath.Client);
-
+            } else if (player.TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
+            } else {
+                throw new ArgumentException($"Invalid \"player\" argument {player}");
             }
 
             connection.WinSet(winsetControlId, winsetParams);

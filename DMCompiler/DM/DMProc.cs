@@ -794,10 +794,10 @@ namespace DMCompiler.DM {
                         formatCount++;
                 }
             }
-
-            ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
+            ShrinkStack(formatCount-1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
+            WriteInt(formatCount);
         }
 
         public void IsInList() {

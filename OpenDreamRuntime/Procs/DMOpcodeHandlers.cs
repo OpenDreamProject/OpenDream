@@ -185,30 +185,86 @@ namespace OpenDreamRuntime.Procs {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
 
-            for (int i = 0; i < unformattedString.Length; i++) {
-                char c = unformattedString[i];
-
+            int interpCount = state.ReadInt();
+            
+            ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
+            int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
+            int prevInterpIndex = -1; // If we find a suffix macro, this is what it points to (treating -1 as a 'null' state here)
+            
+            foreach(char c in unformattedString)
+            {
                 if (StringFormatEncoder.Decode(c,out var formatType)) {
                     switch (formatType) {
-                        case StringFormatEncoder.FormatSuffix.StringifyWithArticle: {
-                            DreamValue value = state.Pop();
-
-                            formattedString.Append(value.Stringify());
-                            break;
+                        //Interp values
+                        case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                            formattedString.Append(interps[nextInterpIndex].Stringify());
+                            nextInterpIndex++;
+                            prevInterpIndex++;
+                            continue;
                         }
                         case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
-                            var value = state.Pop();
+                            DreamObject? refObject = interps[nextInterpIndex].GetValueAsDreamObject();
+                            if (refObject == null) continue;
+
                             formattedString.Append(state.DreamManager.CreateRef(value));
-                            break;
+                            nextInterpIndex++;
+                            prevInterpIndex++;
+                            continue;
                         }
                         case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
                         {
-                            DreamValue value = state.Pop();
-                            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                                formattedString.Append(dreamObject.GetDisplayName());
+                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                                formattedString.Append(dreamObject.GetNameUnformatted());
                             }
+                            //Things that aren't objects just print nothing in this case
+                            nextInterpIndex++;
+                            prevInterpIndex++;
+                            continue;
+                        }
+                        //Macro values
+                        case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
+                        case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
+                            {
+                                if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                                {
+                                    bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                                    if (!hasName) continue;
+                                    string nameStr = objectName.Stringify();
+                                    if (!DreamObject.PropernessOfString(nameStr))
+                                    {
+                                        formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
+                                    }
+                                }
+                                continue;
+                            }
+                        case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
+                        case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
+                        {
+                            bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle; // saves some wordiness with the ternaries below
+                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                            {
+                                bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                                string nameStr = objectName.Stringify();
+                                if (!hasName) continue; // datums that lack a name var don't use articles
+                                if (DreamObject.PropernessOfString(nameStr)) continue; // Proper nouns don't need articles, I guess.
 
-                            break;
+                                if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
+                                {
+                                    if (gender.Stringify() == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
+                                    {
+                                        formattedString.Append(wasCapital ? "Some" : "some");
+                                        continue;
+                                    }
+                                }
+                                if (DreamObject.StringStartsWithVowel(nameStr))
+                                {
+                                    formattedString.Append(wasCapital ? "An " : "an ");
+                                    continue;
+                                }
+                                formattedString.Append(wasCapital ? "A " : "a ");
+                                continue;
+                            }
+                            continue;
                         }
                         default:
                             if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
@@ -218,9 +274,9 @@ namespace OpenDreamRuntime.Procs {
 
                             throw new Exception("Invalid special character");
                     }
-                } else {
-                    formattedString.Append(c);
+                    continue;
                 }
+                formattedString.Append(c);
             }
 
             state.Push(new DreamValue(formattedString.ToString()));

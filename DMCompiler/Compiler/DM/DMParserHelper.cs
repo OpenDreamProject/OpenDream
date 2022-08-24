@@ -81,7 +81,7 @@ namespace DMCompiler.Compiler.DM {
             int bracketNesting = 0;
             StringBuilder? insideBrackets = null;
             StringFormatEncoder.FormatSuffix currentInterpolationType = StringFormatEncoder.InterpolationDefault;
-            string usedPrefixMacro = null; // A flag that is a macro's name if the macros \the, \a etc. are used in the string (macros that prefix the interpolation that they modify)
+            string usedPrefixMacro = null; // A string holding the name of the last prefix macro (\the, \a etc.) used, for error presentation poipoises
             for (int i = 0; i < tokenValue.Length; i++)
             {
                 char c = tokenValue[i];
@@ -170,6 +170,7 @@ namespace DMCompiler.Compiler.DM {
 
                                 bool unimplemented = false;
                                 bool skipSpaces = false;
+                                bool consumeSpaceCharacter = false;
                                 switch (escapeSequence)
                                 {
                                     case "Proper": // Users can have a little case-insensitivity, as a treat
@@ -197,29 +198,29 @@ namespace DMCompiler.Compiler.DM {
                                         currentInterpolationType = StringFormatEncoder.FormatSuffix.ReferenceOfValue; break;
 
                                     case "The":
-                                        skipSpaces = true;
                                         usedPrefixMacro = "The";
+                                        consumeSpaceCharacter = true;
                                         currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperDefiniteArticle));
                                         break;
                                     case "the":
-                                        skipSpaces = true;
                                         usedPrefixMacro = "the";
+                                        consumeSpaceCharacter = true;
                                         currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerDefiniteArticle));
                                         break;
 
                                     case "A":
                                     case "An":
-                                        unimplemented = true;
                                         usedPrefixMacro = escapeSequence;
+                                        consumeSpaceCharacter = true;
                                         currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle));
                                         break;
                                     case "a":
                                     case "an":
-                                        unimplemented = true;
                                         usedPrefixMacro = escapeSequence;
+                                        consumeSpaceCharacter = true;
                                         currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle));
                                         break;
@@ -303,14 +304,16 @@ namespace DMCompiler.Compiler.DM {
                                 {
                                     DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
                                 }
-
                                 if (skipSpaces)
                                 {
                                     // Note that some macros in BYOND require a single/zero space between them and the []
                                     // This doesn't replicate that
                                     while (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
                                 }
-
+                                if(consumeSpaceCharacter)
+                                {
+                                    if (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
+                                }
                             }
                             else
                             {
@@ -357,10 +360,11 @@ namespace DMCompiler.Compiler.DM {
                     Error($"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");
                 return new DMASTConstantString(constantToken.Location, stringValue);
             }
-            else
+            if(currentInterpolationType != StringFormatEncoder.InterpolationDefault) // this implies a prefix tried to modify a [] that never ended up existing after it
             {
-                return new DMASTStringFormat(constantToken.Location, stringValue, interpolationValues.ToArray());
+                Error($"Macro \"\\{usedPrefixMacro}\" must precede an interpolated expression");
             }
+            return new DMASTStringFormat(constantToken.Location, stringValue, interpolationValues.ToArray());
         }
     }
 }

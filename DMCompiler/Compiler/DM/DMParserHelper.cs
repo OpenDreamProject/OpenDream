@@ -174,6 +174,11 @@ namespace DMCompiler.Compiler.DM {
                                 bool skipSpaces = false;
                                 switch (escapeSequence)
                                 {
+                                    case "Proper": // Users can have a little case-insensitivity, as a treat
+                                    case "Improper":
+                                        Warning($"Escape sequence \"\\{escapeSequence}\" should not be capitalized. Coercing macro to \"\\{escapeSequence.ToLower()}");
+                                        escapeSequence = escapeSequence.ToLower();
+                                        goto case "proper"; // Fallthrough!
                                     case "proper":
                                     case "improper":
                                         if (stringBuilder.Length != 0)
@@ -243,11 +248,19 @@ namespace DMCompiler.Compiler.DM {
                                         stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
                                         break;
 
+                                    case "Him": // BYOND errors here but lets be nice!
+                                        Warning("\"\\Him\" is not an available text macro. Coercing macro into \"\\him\"");
+                                        goto case "him"; // Fallthrough!
                                     case "him":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "him")) break;
                                         stringBuilder.Append(StringFormatCharacter);
                                         stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
+                                        break;
+
+                                    case "Her":
+                                    case "her":
+                                        Error("\"Her\" is a grammatically ambiguous pronoun. Use \\him or \\his instead");
                                         break;
 
                                     case "himself":

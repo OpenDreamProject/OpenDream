@@ -278,8 +278,7 @@ namespace DMCompiler.Compiler.DM {
         private ObjVarDeclInfo _varDecl;
 
         public bool IsStatic { get => _varDecl.IsStatic; }
-        public bool IsToplevel { get => _varDecl.IsToplevel; }
-        public bool IsGlobal { get => _varDecl.IsStatic || _varDecl.IsToplevel; }
+        public bool IsGlobal { get => _varDecl.IsStatic; }  // TODO: Standardize our phrasing in the codebase. Are we calling these Statics or Globals?
         public bool IsConst { get => _varDecl.IsConst; }
         public bool IsTmp { get => _varDecl.IsTmp; }
 

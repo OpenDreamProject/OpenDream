@@ -71,10 +71,32 @@ namespace DMCompiler.DM.Visitors {
             DMVariable variable;
 
             _currentObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
+            //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
+            //Lets check if we're duplicating a definition, first.
+            if (_currentObject.HasGlobalVariable(varDefinition.Name))
+            {
+                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\""));
+                variable = _currentObject.GetGlobalVariable(varDefinition.Name);
+            }
+            else if (_currentObject.HasLocalVariable(varDefinition.Name))
+            {
+                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
+                variable = _currentObject.GetVariable(varDefinition.Name);
+            }
+            //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
+            else if (varDefinition.IsStatic) { // static
 
-            if (varDefinition.IsGlobal) {
+                //make sure this static doesn't already exist first
+                if(DoesOverrideGlobalVars(varDefinition)) // Some snowflake behaviour for global.vars
+                {
+                    DMCompiler.Error(new CompilerError(varDefinition.Location, "Duplicate definition of global.vars"));
+                    //We can't salvage any part of this definiton, since global.vars doesn't technically even exist, so lets just return
+                    _currentObject = oldObject; //TODO: Does C# have deferred things, like with destructor fanciness or something?
+                    return;
+                }
+                //otherwise create
                 variable = _currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
-            } else {
+            } else { // not static
                 variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
                 _currentObject.Variables[variable.Name] = variable;
             }
@@ -210,6 +232,16 @@ namespace DMCompiler.DM.Visitors {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// A snowflake helper proc which determines whether the given definition would be a duplication definition of global.vars.<br/>
+        /// It exists because global.vars is not a "real" global but rather a construct indirectly implemented via PushGlobals et al.
+        /// </summary>
+        private bool DoesOverrideGlobalVars(DMASTObjectVarDefinition varDefinition)
+        {
+            if (varDefinition == null) return false;
+            return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
         }
 
         private void SetVariableValue(DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {

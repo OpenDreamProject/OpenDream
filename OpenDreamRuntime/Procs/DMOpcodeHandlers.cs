@@ -181,6 +181,47 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        /// <summary>
+        /// Helper function of <see cref="FormatString"/> to handle text macros that are "suffix" (coming after the noun) pronouns
+        /// </summary>
+        /// <param name="pronouns">This should be in MALE,FEMALE,PLURAL,NEUTER order.</param>
+        private static void HandleSuffixPronoun(ref StringBuilder formattedString, ReadOnlySpan<DreamValue> interps, int prevInterpIndex, string[] pronouns)
+        {
+            DreamObject? dreamObject;
+            if (prevInterpIndex == -1 || prevInterpIndex >= interps.Length) // We should probably be throwing here
+            {
+                return;
+            }
+            interps[prevInterpIndex].TryGetValueAsDreamObject(out dreamObject);
+            if (dreamObject == null)
+            {
+                return;
+            }
+            bool hasGender = dreamObject.TryGetVariable("gender", out var objectName); // NOTE: in DM, this has to be a native property.
+            if (!hasGender)
+            {
+                return;
+            }
+            string genderStr = objectName.Stringify(); // FIXME: We should be more supportive of invalid values for var/gender.
+            switch(genderStr)
+            {
+                case "male":
+                    formattedString.Append(pronouns[0]);
+                    return;
+                case "female":
+                    formattedString.Append(pronouns[1]);
+                    return;
+                case "plural":
+                    formattedString.Append(pronouns[2]);
+                    return;
+                case "neuter":
+                    formattedString.Append(pronouns[3]);
+                    return;
+                default:
+                    return;
+            }
+
+        }
         public static ProcStatus? FormatString(DMProcState state) {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
@@ -221,22 +262,23 @@ namespace OpenDreamRuntime.Procs {
                             prevInterpIndex++;
                             continue;
                         }
-                        //Macro values
+                        //Macro values//
+                        //Prefix macros
                         case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
                         case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
+                        {
+                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
                             {
-                                if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                                bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                                if (!hasName) continue;
+                                string nameStr = objectName.Stringify();
+                                if (!DreamObject.PropernessOfString(nameStr))
                                 {
-                                    bool hasName = dreamObject.TryGetVariable("name", out var objectName);
-                                    if (!hasName) continue;
-                                    string nameStr = objectName.Stringify();
-                                    if (!DreamObject.PropernessOfString(nameStr))
-                                    {
-                                        formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
-                                    }
+                                    formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
                                 }
-                                continue;
                             }
+                            continue;
+                        }
                         case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
                         case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
                         {
@@ -266,6 +308,31 @@ namespace OpenDreamRuntime.Procs {
                             }
                             continue;
                         }
+                        //Suffix macros
+                        case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "He", "She", "They", "Tt" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "he", "she", "they", "it" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Her", "Their", "Its" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "her", "their", "its" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.ObjectPronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "him", "her", "them", "it" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "himself", "herself", "themself", "itself" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Hers", "Theirs", "Its" });
+                            break;
+                        case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
+                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
+                            break;
                         default:
                             if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
                                 //Likely an unimplemented text macro, ignore it

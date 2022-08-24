@@ -227,24 +227,20 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "He":
                                     case "She":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperSubjectPronoun));
                                         break;
                                     case "he":
                                     case "she":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerSubjectPronoun));
                                         break;
 
                                     case "His":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "His")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective));
                                         break;
                                     case "his":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "his")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective));
                                         break;
@@ -253,7 +249,6 @@ namespace DMCompiler.Compiler.DM {
                                         Warning("\"\\Him\" is not an available text macro. Coercing macro into \"\\him\"");
                                         goto case "him"; // Fallthrough!
                                     case "him":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "him")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ObjectPronoun));
                                         break;
@@ -265,18 +260,15 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "himself":
                                     case "herself":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ReflexivePronoun));
                                         break;
 
                                     case "Hers":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "Hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessivePronoun));
                                         break;
                                     case "hers":
-                                        unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessivePronoun));
                                         break;

@@ -80,7 +80,7 @@ namespace DMCompiler.Compiler.DM {
 
             int bracketNesting = 0;
             StringBuilder? insideBrackets = null;
-            StringFormatTypes currentInterpolationType = StringFormatTypes.Stringify;
+            StringFormatEncoder.FormatSuffix currentInterpolationType = StringFormatEncoder.InterpolationDefault;
             string usedPrefixMacro = null; // A flag that is a macro's name if the macros \the, \a etc. are used in the string (macros that prefix the interpolation that they modify)
             for (int i = 0; i < tokenValue.Length; i++)
             {
@@ -142,11 +142,9 @@ namespace DMCompiler.Compiler.DM {
                                 {
                                     interpolationValues.Add(null);
                                 }
+                                stringBuilder.Append(StringFormatEncoder.Encode(currentInterpolationType));
 
-                                stringBuilder.Append(StringFormatCharacter);
-                                stringBuilder.Append((char)currentInterpolationType);
-
-                                currentInterpolationType = StringFormatTypes.Stringify;
+                                currentInterpolationType = StringFormatEncoder.InterpolationDefault;
                                 insideBrackets.Clear();
                             }
 
@@ -187,65 +185,67 @@ namespace DMCompiler.Compiler.DM {
                                         }
 
                                         skipSpaces = true;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append(escapeSequence == "proper" ? (char)StringFormatTypes.Proper : (char)StringFormatTypes.Improper);
+                                        if(escapeSequence == "proper")
+                                            stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.Proper));
+                                        else
+                                            stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.Improper));
                                         break;
 
                                     case "ref":
                                         // usedPrefixMacro = true; -- while ref is indeed a prefix macro, it DOES NOT ERROR if it fails to find what it's supposed to /ref.
                                         // TODO: Actually care about this when we add --noparity
-                                        currentInterpolationType = StringFormatTypes.Ref; break;
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.ReferenceOfValue; break;
 
                                     case "The":
                                         skipSpaces = true;
                                         usedPrefixMacro = "The";
-                                        currentInterpolationType = StringFormatTypes.UpperDefiniteArticle;
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperDefiniteArticle));
                                         break;
                                     case "the":
                                         skipSpaces = true;
                                         usedPrefixMacro = "the";
-                                        currentInterpolationType = StringFormatTypes.LowerDefiniteArticle;
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerDefiniteArticle));
                                         break;
 
                                     case "A":
                                     case "An":
                                         unimplemented = true;
                                         usedPrefixMacro = escapeSequence;
-                                        currentInterpolationType = StringFormatTypes.UpperIndefiniteArticle;
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle));
                                         break;
                                     case "a":
                                     case "an":
                                         unimplemented = true;
                                         usedPrefixMacro = escapeSequence;
-                                        currentInterpolationType = StringFormatTypes.LowerIndefiniteArticle;
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle));
                                         break;
 
                                     case "He":
                                     case "She":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.UpperSubjectPronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperSubjectPronoun));
                                         break;
                                     case "he":
                                     case "she":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.LowerSubjectPronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerSubjectPronoun));
                                         break;
 
                                     case "His":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "His")) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.UpperPossessiveAdjective);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective));
                                         break;
                                     case "his":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "his")) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.LowerPossessiveAdjective);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective));
                                         break;
 
                                     case "Him": // BYOND errors here but lets be nice!
@@ -254,8 +254,7 @@ namespace DMCompiler.Compiler.DM {
                                     case "him":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "him")) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.ObjectPronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ObjectPronoun));
                                         break;
 
                                     case "Her":
@@ -267,21 +266,18 @@ namespace DMCompiler.Compiler.DM {
                                     case "herself":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, escapeSequence)) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.ReflexivePronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ReflexivePronoun));
                                         break;
 
                                     case "Hers":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "Hers")) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.UpperPossessivePronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessivePronoun));
                                         break;
                                     case "hers":
                                         unimplemented = true;
                                         if (CheckInterpolation(interpolationValues, "hers")) break;
-                                        stringBuilder.Append(StringFormatCharacter);
-                                        stringBuilder.Append((char)StringFormatTypes.LowerPossessivePronoun);
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessivePronoun));
                                         break;
 
                                     default:
@@ -295,7 +291,7 @@ namespace DMCompiler.Compiler.DM {
                                             stringBuilder.Append('\t');
                                             stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                         }
-                                        else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence))
+                                        else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) // This only exists to allow unimplements to fallthrough w/o a direct error
                                         {
                                             Error($"Invalid escape sequence \"\\{escapeSequence}\"");
                                         }

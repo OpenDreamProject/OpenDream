@@ -12,7 +12,6 @@ using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
-        public const char StringFormatCharacter = (char)0xFF;
 
         private DreamPath _currentPath = DreamPath.Root;
 

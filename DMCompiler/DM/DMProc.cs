@@ -788,15 +788,10 @@ namespace DMCompiler.DM {
         public void FormatString(string value) {
             int formatCount = 0;
             for (int i = 0; i < value.Length; i++) {
-                if (value[i] == 0xFF) {
-                    StringFormatTypes formatType = (StringFormatTypes)value[++i];
-
-                    switch (formatType) {
-                        case StringFormatTypes.Stringify:
-                        case StringFormatTypes.Ref:
-                            formatCount++;
-                            break;
-                    }
+                if (StringFormatEncoder.Decode(value[i], out var formatType))
+                {
+                    if(StringFormatEncoder.IsInterpolation(formatType.Value))
+                        formatCount++;
                 }
             }
 

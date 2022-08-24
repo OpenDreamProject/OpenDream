@@ -188,34 +188,30 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < unformattedString.Length; i++) {
                 char c = unformattedString[i];
 
-                if (c == (char)0xFF) {
-                    c = unformattedString[++i];
-
-                    StringFormatTypes formatType = (StringFormatTypes) c;
+                if (StringFormatEncoder.Decode(c,out var formatType)) {
                     switch (formatType) {
-                        case StringFormatTypes.Stringify: {
+                        case StringFormatEncoder.FormatSuffix.StringifyWithArticle: {
                             DreamValue value = state.Pop();
 
                             formattedString.Append(value.Stringify());
                             break;
                         }
-                        case StringFormatTypes.Ref:
-                        {
+                        case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
                             var value = state.Pop();
                             formattedString.Append(state.DreamManager.CreateRef(value));
                             break;
                         }
-                        case StringFormatTypes.UpperDefiniteArticle:
-                        case StringFormatTypes.LowerDefiniteArticle: {
+                        case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
+                        {
                             DreamValue value = state.Pop();
                             if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                                formattedString.Append(dreamObject.GetDisplayName(formatType));
+                                formattedString.Append(dreamObject.GetDisplayName());
                             }
 
                             break;
                         }
                         default:
-                            if (Enum.IsDefined(typeof(StringFormatTypes), (byte)c)) {
+                            if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
                                 //Likely an unimplemented text macro, ignore it
                                 break;
                             }

@@ -280,7 +280,18 @@ namespace DMCompiler.Compiler.DM {
                                         if (CheckInterpolation(interpolationValues, "hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessivePronoun));
                                         break;
-
+                                    //Plurals, ordinals, etc
+                                    //(things that hug, as a suffix, the [] that they reference)
+                                    case "s":
+                                        unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "s")) break;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.PluralSuffix));
+                                        break;
+                                    case "th":
+                                        unimplemented = true;
+                                        if (CheckInterpolation(interpolationValues, "th")) break;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.OrdinalIndicator));
+                                        break;
                                     default:
                                         if (escapeSequence.StartsWith("n"))
                                         {

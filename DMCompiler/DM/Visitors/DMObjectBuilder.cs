@@ -126,6 +126,11 @@ namespace DMCompiler.DM.Visitors {
                 {
                     variable = varObject.GetVariable(varOverride.VarName);
                 }
+                else if (varObject.HasGlobalVariable(varOverride.VarName))
+                {
+                    variable = varObject.GetGlobalVariable(varOverride.VarName);
+                    DMCompiler.Error(new CompilerError(varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var"));
+                }
                 else // Shouldn't happen, ideally
                 {
                     DMCompiler.Warning(new CompilerWarning(varOverride.Location, $"Override of var {varOverride.VarName} found before variable declaration. This isn't supposed to happen!"));

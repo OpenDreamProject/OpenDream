@@ -6,8 +6,8 @@ using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
-    class DMObjectBuilder {
-        public void BuildObjectTree(DMASTFile astFile) {
+    static class DMObjectBuilder {
+        public static void BuildObjectTree(DMASTFile astFile) {
             DMObjectTree.Reset();
             ProcessFile(astFile);
 
@@ -22,11 +22,11 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.CreateGlobalInitProc();
         }
 
-        private void ProcessFile(DMASTFile file) {
+        private static void ProcessFile(DMASTFile file) {
             ProcessBlockInner(file.BlockInner, DMObjectTree.Root);
         }
 
-        private void ProcessBlockInner(DMASTBlockInner blockInner, DMObject currentObject) {
+        private static void ProcessBlockInner(DMASTBlockInner blockInner, DMObject currentObject) {
             foreach (DMASTStatement statement in blockInner.Statements) {
                 try {
                     ProcessStatement(statement, ref currentObject);
@@ -36,7 +36,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void ProcessStatement(DMASTStatement statement, ref DMObject currentObject) {
+        private static void ProcessStatement(DMASTStatement statement, ref DMObject currentObject) {
             switch (statement) {
                 case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition, ref currentObject); break;
 
@@ -56,14 +56,14 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition, ref DMObject currentObject) {
+        private static void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition, ref DMObject currentObject) {
 
             DMCompiler.VerbosePrint($"Generating {objectDefinition.Path}");
             currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
             if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, currentObject);
         }
 
-        private void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
+        private static void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
             DMVariable variable;
             DMObject varObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
@@ -102,7 +102,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
+        private static void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
             DMObject varObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
             try
@@ -143,7 +143,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
+        private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
             string procName = procDefinition.Name;
             DMObject dmObject = currentObject; // Default value if we can't discern its object
 
@@ -236,7 +236,7 @@ namespace DMCompiler.DM.Visitors {
         /// A snowflake helper proc which determines whether the given definition would be a duplication definition of global.vars.<br/>
         /// It exists because global.vars is not a "real" global but rather a construct indirectly implemented via PushGlobals et al.
         /// </summary>
-        private bool DoesOverrideGlobalVars(DMASTObjectVarDefinition varDefinition)
+        private static bool DoesOverrideGlobalVars(DMASTObjectVarDefinition varDefinition)
         {
             if (varDefinition == null) return false;
             return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
@@ -246,7 +246,7 @@ namespace DMCompiler.DM.Visitors {
         /// A filter proc above <see cref="SetVariableValue"/> <br/>
         /// which checks first to see if overriding this thing's value is valid (as in the case of const and <see cref="DMValueType.CompiletimeReadonly"/>)
         /// </summary>
-        private void OverrideVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
+        private static void OverrideVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
         {
             if(variable.IsConst)
             {
@@ -264,7 +264,7 @@ namespace DMCompiler.DM.Visitors {
         /// Handles setting a variable to a value (when called by itself, this assumes the statement is a declaration and not a re-assignment)
         /// </summary>
         /// <exception cref="CompileErrorException"></exception>
-        private void SetVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+        private static void SetVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
@@ -310,7 +310,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {
+        private static void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {
             if (variable.IsGlobal) {
                 int? globalId = currentObject.GetGlobalVariableId(variable.Name);
                 if (globalId == null) throw new Exception($"Invalid global {currentObject.Path}.{variable.Name}");

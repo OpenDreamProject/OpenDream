@@ -143,8 +143,7 @@ namespace DMCompiler {
             VerbosePrint("Constant folding");
             astSimplifier.SimplifyAST(astFile);
 
-            DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
-            dmObjectBuilder.BuildObjectTree(astFile);
+            DMObjectBuilder.BuildObjectTree(astFile);
 
             if (ErrorCount > 0) {
                 return false;

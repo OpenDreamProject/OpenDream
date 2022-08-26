@@ -70,12 +70,14 @@ namespace Content.Tests
             Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
             Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
 
-            (bool successfulRun, DreamValue returned) = RunTest();
+            (bool successfulRun, DreamValue returned, Exception? exception) = RunTest();
             if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
                 Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
             } else {
-                //TODO: This should use the runtime exception as the failure message
-                Assert.IsTrue(successfulRun, "A DM runtime exception was thrown");
+                if (exception != null)
+                    Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
+                else
+                    Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
             }
 
             if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
@@ -86,8 +88,8 @@ namespace Content.Tests
             Cleanup(compiledFile);
         }
 
-        private (bool Success, DreamValue Returned) RunTest() {
-            var prev = _dreamMan.DMExceptionCount;
+        private (bool Success, DreamValue Returned, Exception? except) RunTest() {
+            var prev = _dreamMan.LastException;
 
             var result = DreamThread.Run(async (state) => {
                 if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
@@ -97,8 +99,11 @@ namespace Content.Tests
                     return DreamValue.Null;
                 }
             });
-
-            return (_dreamMan.DMExceptionCount == prev, result);
+            bool retSuccess = _dreamMan.LastException == prev;
+            if (retSuccess)
+                return (retSuccess, result, null);
+            else
+                return (false, result, _dreamMan.LastException);
         }
 
         private static IEnumerable<object[]> GetTests()

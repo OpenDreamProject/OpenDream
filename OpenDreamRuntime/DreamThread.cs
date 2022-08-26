@@ -267,7 +267,7 @@ namespace OpenDreamRuntime {
                 state.ReturnPools();
             }
             var dreamMan = IoCManager.Resolve<IDreamManager>();
-            dreamMan.DMExceptionCount += 1;
+            dreamMan.LastException = exception;
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception Occured: {exception.Message}");

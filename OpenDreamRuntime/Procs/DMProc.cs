@@ -17,7 +17,7 @@ namespace OpenDreamRuntime.Procs {
             _maxStackSize = maxStackSize;
         }
 
-        public override DMProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
+        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments)
         {
             return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
         }
@@ -134,8 +134,10 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public DreamObject Instance;
-        public readonly DreamObject Usr;
+
+        /// <summary> This stores our 'src' value. May be null!</summary>
+        public DreamObject? Instance;
+        public readonly DreamObject? Usr;
         public readonly int ArgumentCount;
         private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
         public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
@@ -148,7 +150,9 @@ namespace OpenDreamRuntime.Procs {
         private readonly DMProc _proc;
         public override DreamProc Proc => _proc;
 
-        public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        /// <param name="instance">This is our 'src'.</param>
+        /// <exception cref="Exception"></exception>
+        public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments)
             : base(thread)
         {
             _proc = proc;
@@ -241,7 +245,7 @@ namespace OpenDreamRuntime.Procs {
             Result = value;
         }
 
-        public void Call(DreamProc proc, DreamObject src, DreamProcArguments arguments) {
+        public void Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
             var state = proc.CreateState(Thread, src, Usr, arguments);
             Thread.PushProcState(state);
         }
@@ -413,7 +417,7 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
             switch (reference.RefType) {
                 case DMReference.Type.Src: return new(Instance);
-                case DMReference.Type.Usr: return new(Usr);
+                case DMReference.Type.Usr: return Usr != null ? new(Usr) : DreamValue.Null;
                 case DMReference.Type.Self: return Result;
                 case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
                 case DMReference.Type.Argument: return _localVariables[reference.Index];
@@ -449,8 +453,10 @@ namespace OpenDreamRuntime.Procs {
                     return fieldValue;
                 }
                 case DMReference.Type.SrcField: {
+                    if (Instance == null)
+                        throw new Exception($"Cannot get field src.{reference.Name} in global proc");
                     if (!Instance.TryGetVariable(reference.Name, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
+                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;
                 }

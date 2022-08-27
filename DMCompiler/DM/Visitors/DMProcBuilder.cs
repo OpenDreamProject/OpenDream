@@ -8,8 +8,8 @@ using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
-        private DMObject _dmObject;
-        private DMProc _proc;
+        private readonly DMObject _dmObject;
+        private readonly DMProc _proc;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;

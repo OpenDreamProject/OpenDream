@@ -29,16 +29,16 @@ namespace DMCompiler.DM.Visitors {
         private static void ProcessBlockInner(DMASTBlockInner blockInner, DMObject currentObject) {
             foreach (DMASTStatement statement in blockInner.Statements) {
                 try {
-                    ProcessStatement(statement, ref currentObject);
+                    ProcessStatement(statement, currentObject);
                 } catch (CompileErrorException e) {
                     DMCompiler.Error(e.Error);
                 }
             }
         }
 
-        private static void ProcessStatement(DMASTStatement statement, ref DMObject currentObject) {
+        private static void ProcessStatement(DMASTStatement statement, DMObject currentObject) {
             switch (statement) {
-                case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition, ref currentObject); break;
+                case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition); break;
 
                 //The above are the only cases where the currentObject could be set to a novel, new() value.
                 //The rest can just have it be passed as mutable ref like normal.
@@ -56,11 +56,11 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private static void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition, ref DMObject currentObject) {
+        private static void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
 
             DMCompiler.VerbosePrint($"Generating {objectDefinition.Path}");
-            currentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
-            if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, currentObject);
+            DMObject newCurrentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
+            if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, newCurrentObject);
         }
 
         private static void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
@@ -145,12 +145,8 @@ namespace DMCompiler.DM.Visitors {
 
         private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
             string procName = procDefinition.Name;
-            DMObject dmObject = currentObject; // Default value if we can't discern its object
-
             try {
-                if (procDefinition.ObjectPath.HasValue) {
-                    dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath.Value));
-                }
+                DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
                     throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
@@ -158,7 +154,7 @@ namespace DMCompiler.DM.Visitors {
 
                 DMProc proc;
 
-                if (procDefinition.ObjectPath == null) {
+                if (procDefinition.ObjectPath == DreamPath.Root) {
                     if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
                         throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
                     }

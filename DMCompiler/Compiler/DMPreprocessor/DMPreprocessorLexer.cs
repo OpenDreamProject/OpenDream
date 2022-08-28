@@ -88,6 +88,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 break;
                             }
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "<="); break;
+                            case '>': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "<>"); break;
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '<'); break;
                         }
 

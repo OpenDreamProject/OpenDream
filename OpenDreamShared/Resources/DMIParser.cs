@@ -10,8 +10,9 @@ using System.Globalization;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
-        private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
+        /// <summary>This is the specific order that directional icon substates appear in within a DMI. </summary>
+        private static readonly AtomDirection[] DMIDirectionOrder = new AtomDirection[]
+        {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -21,23 +22,39 @@ namespace OpenDreamShared.Resources {
             AtomDirection.Northeast,
             AtomDirection.Northwest
         };
+        private static readonly byte[] PNGHeader = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
 
+        /// <summary>
+        /// This is what BYOND declares to be the "current version" of the DMI file format.
+        /// To keep parity, we should mimic this number.
+        /// </summary>
+        private const float CURRENT_DMI_VERSION = 4f;
+
+
+        /// <summary>
+        /// This data structure contains the metadata of a DMI or /icon.<br/>
+        /// It is held separate from DMIResource because /icon manipulations on a DMI may cause the underlying graphics to copy-on-write, but not the metadata.<br/>
+        /// Vice versa may occur in other instances, like with /icon.Insert()
+        /// </summary>
         public sealed class ParsedDMIDescription {
             public string Source;
             public float Version;
-            public int Width, Height;
+            /// <summary>
+            /// The height and width of each individual icon frame.<br/>
+            /// X is width, Y is height. Held in this format because DMIResource likes it this way
+            /// </summary>
+            public Vector2i Dimensions; 
             public Dictionary<string, ParsedDMIState> States;
 
             public static ParsedDMIDescription CreateEmpty(int width, int height) {
                 ParsedDMIFrame[] frames = { new() };
                 ParsedDMIState state = new();
-                state.Directions.Add(AtomDirection.South, frames);
+                state.Directions[(int)AtomDirection.South] = frames;
 
                 return new ParsedDMIDescription() {
                     Source = null,
-                    Version = 4f,
-                    Width = width,
-                    Height = height,
+                    Version = CURRENT_DMI_VERSION,
+                    Dimensions = { X= width, Y = height },
                     States = new() {
                         { "", state }
                     }
@@ -57,14 +74,33 @@ namespace OpenDreamShared.Resources {
 
         public sealed class ParsedDMIState {
             public string Name;
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
+            /// <remarks>
+            /// Stores specifically 12 because 11 is the maximum possible value of <see cref="AtomDirection"/>.<br/>
+            /// This means that we can index into this array with the AtomDirection directly, without indirecting through a Dictionary or something,<br/>
+            /// with probably equivalent memory overhead (hashtables are greedy about memory!) <br/>
+            /// Might be a micro-optimization but note that this also probably improves performance of deep-copying this ParsedDMIState during /icon ops.
+            /// </remarks>
+            public ParsedDMIFrame[][] Directions = new ParsedDMIFrame[12][];
             public bool Loop = true;
             public bool Rewind = false;
 
             public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
-                if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();
+                ParsedDMIFrame[]? frames = Directions[(int)direction];
+                if (frames != null)
+                    return frames;
+                return Directions[(int)AtomDirection.South];
+            }
 
-                return Directions[direction];
+            /// <summary>A smart iterator over Directions that better handles the fact that it's a sparsely-populated array. </summary>
+            public IEnumerable<KeyValuePair<AtomDirection, ParsedDMIFrame[]>> IterateDirections()
+            {
+                foreach(AtomDirection dir in DMIDirectionOrder) // Using this instead of Enum.GetValues to implicitly skip over AtomDirection.None
+                {
+                    ParsedDMIFrame[]? frames = Directions[(int)dir];
+                    if (frames == null)
+                        continue;
+                    yield return new KeyValuePair<AtomDirection, ParsedDMIFrame[]>(dir, frames);
+                }
             }
         }
 
@@ -156,37 +192,34 @@ namespace OpenDreamShared.Resources {
                             description.Version = float.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "width":
-                            description.Width = int.Parse(value);
+                            description.Dimensions.X = int.Parse(value);
                             break;
                         case "height":
-                            description.Height = int.Parse(value);
+                            description.Dimensions.Y = int.Parse(value);
                             break;
                         case "state":
                             string stateName = ParseString(value);
 
-                            if (currentState != null) {
-                                for (int i = 0; i < currentStateDirectionCount; i++) {
+                            if (currentState != null) { // If we already were working on a state, that means it's done and we should write its metadata to the description
+                                for(int d = 0; d < currentStateDirectionCount; d++)// For each direction in this icon_state
+                                {
                                     ParsedDMIFrame[] frames = new ParsedDMIFrame[currentStateFrameCount];
-                                    AtomDirection direction = DMIFrameDirections[i];
-
-                                    currentState.Directions[direction] = frames;
-                                }
-
-                                for (int i = 0; i < currentStateFrameCount; i++) {
-                                    for (int j = 0; j < currentStateDirectionCount; j++) {
-                                        AtomDirection direction = DMIFrameDirections[j];
-
+                                    AtomDirection direction = DMIDirectionOrder[d];
+                                    currentState.Directions[(int)direction] = frames;
+                                    for (int f = 0; f < currentStateFrameCount; f++)// For each frame in this direction
+                                    {
                                         ParsedDMIFrame frame = new ParsedDMIFrame();
 
                                         frame.X = currentFrameX;
                                         frame.Y = currentFrameY;
-                                        frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
+                                        frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[f] : 1;
                                         frame.Delay *= 100; //Convert from deciseconds to milliseconds
-                                        currentState.Directions[direction][i] = frame;
+                                        currentState.Directions[(int)direction][f] = frame;
 
-                                        currentFrameX += description.Width;
-                                        if (currentFrameX >= imageWidth) {
-                                            currentFrameY += description.Height;
+                                        currentFrameX += description.Dimensions.Y;
+                                        if (currentFrameX >= imageWidth)
+                                        {
+                                            currentFrameY += description.Dimensions.X;
                                             currentFrameX = 0;
                                         }
                                     }
@@ -235,29 +268,24 @@ namespace OpenDreamShared.Resources {
                     throw new Exception("Invalid line in DMI description: \"" + line + "\"");
                 }
             }
-
-            for (int i = 0; i < currentStateDirectionCount; i++) {
+            for (int d = 0; d < currentStateDirectionCount; d++) // for each direction
+            {
                 ParsedDMIFrame[] frames = new ParsedDMIFrame[currentStateFrameCount];
-                AtomDirection direction = DMIFrameDirections[i];
-
-                currentState.Directions[direction] = frames;
-            }
-
-            for (int i = 0; i < currentStateFrameCount; i++) {
-                for (int j = 0; j < currentStateDirectionCount; j++) {
-                    AtomDirection direction = DMIFrameDirections[j];
-
+                AtomDirection direction = DMIDirectionOrder[d];
+                currentState.Directions[(int)direction] = frames;
+                for (int f = 0; f < currentStateFrameCount; f++) // for each frame in the direciton
+                {
                     ParsedDMIFrame frame = new ParsedDMIFrame();
 
                     frame.X = currentFrameX;
                     frame.Y = currentFrameY;
-                    frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
+                    frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[f] : 1;
                     frame.Delay *= 100; //Convert from deciseconds to milliseconds
-                    currentState.Directions[direction][i] = frame;
+                    currentState.Directions[(int)direction][f] = frame;
 
-                    currentFrameX += description.Width;
+                    currentFrameX += description.Dimensions.X;
                     if (currentFrameX >= imageWidth) {
-                        currentFrameY += description.Height;
+                        currentFrameY += description.Dimensions.Y;
                         currentFrameX = 0;
                     }
                 }
@@ -275,11 +303,21 @@ namespace OpenDreamShared.Resources {
         }
 
         private static bool VerifyPNG(Stream stream) {
-            byte[] header = new byte[PngHeader.Length];
-            if (stream.Read(header, 0, header.Length) < header.Length) return false;
-
-            for (int i = 0; i < PngHeader.Length; i++) {
-                if (header[i] != PngHeader[i]) return false;
+            Span<byte> header = new byte[PNGHeader.Length];
+            if (stream.Read(header) < PNGHeader.Length) return false;
+            return VerifyPNG(header);
+        }
+        /// <summary>
+        /// Does a simple PNG verification by checking the first eight bytes for the PNG header.
+        /// </summary>
+        /// <returns>true if valid PNG file, false if not</returns>
+        public static bool VerifyPNG(Span<byte> header)
+        {
+            if (header.Length < PNGHeader.Length)
+                return false;
+            for (int i = 0; i < PNGHeader.Length; i++)
+            {
+                if (header[i] != PNGHeader[i]) return false;
             }
 
             return true;

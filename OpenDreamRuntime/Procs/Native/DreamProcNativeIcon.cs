@@ -7,14 +7,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Width(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
-            return new DreamValue(dreamIconObject.Description.Width);
+            return new DreamValue(dreamIconObject.Description.Dimensions.X);
         }
 
         [DreamProc("Height")]
         public static DreamValue NativeProc_Height(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
-            return new DreamValue(dreamIconObject.Description.Height);
+            return new DreamValue(dreamIconObject.Description.Dimensions.Y);
         }
 
 

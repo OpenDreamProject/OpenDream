@@ -2,23 +2,28 @@
 using System.Text;
 
 namespace OpenDreamRuntime.Resources {
+
+    /// <summary>
+    /// This is distinct from <see cref="OpenDreamShared.Resources.AbstractResource"/> insofar that, since we are the runtime, <br/>
+    /// we have direct file access to what this Resource is based off of, provided it is written to disk. <br/>
+    /// As such, this virtual class has several file I/O methods that AbstractResource cannot define nor implement.
+    /// </summary>
     [Virtual]
-    public class DreamResource {
-        public string ResourcePath;
-        public byte[] ResourceData {
+    public class DreamResource : OpenDreamShared.Resources.AbstractResource {
+        private string _filePath;
+        public new byte[] ResourceData { // This getter shadows the ResourceData in the base class so we can do this lazy eval thing
             get {
-                if (_resourceData == null && Exists()) {
-                    _resourceData = File.ReadAllBytes(_filePath);
+                if (base.ResourceData == null) {
+                    if(Exists())
+                        return base.ResourceData = File.ReadAllBytes(_filePath);
+                    return Array.Empty<byte>();
                 }
 
-                return _resourceData;
+                return base.ResourceData;
             }
         }
 
-        private string _filePath;
-        private byte[] _resourceData = null;
-
-        public DreamResource(string filePath, string resourcePath) {
+        public DreamResource(string filePath, string resourcePath) : base(resourcePath) {
             _filePath = filePath;
             ResourcePath = resourcePath;
         }
@@ -47,7 +52,7 @@ namespace OpenDreamRuntime.Resources {
 
                 CreateDirectory();
                 File.AppendAllText(filePath, text + "\r\n");
-                _resourceData = null;
+                base.ResourceData = null; // Invalidate this data
             } else {
                 throw new Exception("Invalid output operation on '" + ResourcePath + "'");
             }

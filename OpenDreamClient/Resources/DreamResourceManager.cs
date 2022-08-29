@@ -6,6 +6,7 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
+using OpenDreamShared.Resources;
 
 namespace OpenDreamClient.Resources
 {
@@ -15,14 +16,14 @@ namespace OpenDreamClient.Resources
         void Shutdown();
         ResourcePath CreateCacheFile(string filename, string data);
         ResourcePath CreateCacheFile(string filename, byte[] data);
-        void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource;
+        void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:AbstractResource;
         ResourcePath GetCacheFilePath(string filename);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager
     {
         private readonly Dictionary<string, LoadingResourceEntry> _loadingResources = new();
-        private readonly Dictionary<string, DreamResource> _resourceCache = new();
+        private readonly Dictionary<string, AbstractResource> _resourceCache = new();
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
@@ -70,10 +71,10 @@ namespace OpenDreamClient.Resources
         {
             if (_loadingResources.ContainsKey(message.ResourcePath)) {
                 LoadingResourceEntry entry = _loadingResources[message.ResourcePath];
-                DreamResource resource = (DreamResource)_typeFactory.CreateInstance(entry.ResourceType, new object[] { message.ResourcePath, message.ResourceData });
+                AbstractResource resource = (AbstractResource)_typeFactory.CreateInstance(entry.ResourceType, new object[] { message.ResourcePath, message.ResourceData });
 
                 _resourceCache[message.ResourcePath] = resource;
-                foreach (Action<DreamResource> callback in entry.LoadCallbacks) {
+                foreach (Action<AbstractResource> callback in entry.LoadCallbacks) {
                     try {
                         callback.Invoke(resource);
                     } catch (Exception e) {
@@ -87,8 +88,8 @@ namespace OpenDreamClient.Resources
             }
         }
 
-        public void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource {
-            DreamResource resource = GetCachedResource(resourcePath);
+        public void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:AbstractResource {
+            AbstractResource resource = GetCachedResource(resourcePath);
 
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourcePath)) {
@@ -106,7 +107,7 @@ namespace OpenDreamClient.Resources
                     });
                 }
 
-                _loadingResources[resourcePath].LoadCallbacks.Add((DreamResource resource) => {
+                _loadingResources[resourcePath].LoadCallbacks.Add((AbstractResource resource) => {
                     onLoadCallback.Invoke((T)resource);
                 });
             } else {
@@ -133,7 +134,7 @@ namespace OpenDreamClient.Resources
             return new ResourcePath(filename);
         }
 
-        private DreamResource GetCachedResource(string resourcePath) {
+        private AbstractResource GetCachedResource(string resourcePath) {
             if (_resourceCache.TryGetValue(resourcePath, out var cached)) {
                 return cached;
             } else {
@@ -143,11 +144,11 @@ namespace OpenDreamClient.Resources
 
         private struct LoadingResourceEntry {
             public Type ResourceType;
-            public List<Action<DreamResource>> LoadCallbacks;
+            public List<Action<AbstractResource>> LoadCallbacks;
 
             public LoadingResourceEntry(Type resourceType) {
                 ResourceType = resourceType;
-                LoadCallbacks = new List<Action<DreamResource>>();
+                LoadCallbacks = new List<Action<AbstractResource>>();
             }
         }
     }

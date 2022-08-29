@@ -7,8 +7,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
-    public sealed class DMIResource : DreamResource {
-        private readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+    public sealed class DMIResource : AbstractResource
+    {
 
         public Texture Texture;
         public Vector2i IconSize;

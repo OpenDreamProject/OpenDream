@@ -6,7 +6,8 @@ using Robust.Shared.Audio;
 namespace OpenDreamClient.Resources.ResourceTypes
 {
     // ReSharper disable once ClassNeverInstantiated.Global
-    public sealed class ResourceSound : DreamResource {
+    public sealed class ResourceSound : OpenDreamShared.Resources.AbstractResource
+    {
         private readonly AudioStream _stream;
 
         public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {

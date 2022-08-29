@@ -48,10 +48,11 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         }
 
         private bool IsValidPNG() {
-            if (Data.Length < _pngHeader.Length) return false;
+            Span<byte> pngHeader = stackalloc byte[] { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+            if (ResourceData.Length < pngHeader.Length) return false;
 
-            for (int i=0; i<_pngHeader.Length; i++) {
-                if (Data[i] != _pngHeader[i]) return false;
+            for (int i=0; i< pngHeader.Length; i++) {
+                if (ResourceData[i] != pngHeader[i]) return false;
             }
 
             return true;

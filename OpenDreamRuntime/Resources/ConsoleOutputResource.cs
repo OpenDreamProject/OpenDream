@@ -7,7 +7,7 @@ namespace OpenDreamRuntime.Resources
     sealed class ConsoleOutputResource : DreamResource {
         public ConsoleOutputResource() : base(null, null) { }
 
-        public override string ReadAsString() {
+        public override string? ReadAsString() {
             return null;
         }
 

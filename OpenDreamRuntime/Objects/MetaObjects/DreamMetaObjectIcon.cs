@@ -99,7 +99,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamIconObject dreamIconObject;
 
-            if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out DreamObject copyFrom)) {
+            if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out DreamObject? copyFrom)) {
                 dreamIconObject = ObjectToDreamIcon[copyFrom];
             } else if (icon.TryGetValueAsString(out string fileString))
             {

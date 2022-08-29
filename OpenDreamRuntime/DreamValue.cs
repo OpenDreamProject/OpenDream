@@ -90,7 +90,7 @@ namespace OpenDreamRuntime {
                 value = Type switch {
                     DreamValueType.String => "\"" + Value + "\"",
                     DreamValueType.DreamResource => "'" + ((DreamResource)Value).ResourcePath + "'",
-                    _ => Value.ToString()
+                    _ => Value.ToString() ?? String.Empty
                 };
 
             return "DreamValue(" + Type + ", " + value + ")";

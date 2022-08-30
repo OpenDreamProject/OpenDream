@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace OpenDreamClient.Resources.ResourceTypes {
     public sealed class DMIResource : AbstractResource
     {
-        public DMIParser.ParsedDMIDescription Description;
+        public DMIParser.DMIDescription Description;
         public Texture Texture;
         public Vector2i IconSize => Description.Dimensions;
         
@@ -21,7 +21,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             if (!DMIParser.VerifyPNG(ResourceData)) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
             Stream dmiStream = new MemoryStream(data);
-            DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
+            DMIParser.DMIDescription description = DMIParser.ParseDMI(dmiStream);
 
             dmiStream.Seek(0, SeekOrigin.Begin);
 

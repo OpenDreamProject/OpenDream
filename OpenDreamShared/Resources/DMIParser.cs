@@ -36,7 +36,7 @@ namespace OpenDreamShared.Resources {
         /// It is held separate from DMIResource because /icon manipulations on a DMI may cause the underlying graphics to copy-on-write, but not the metadata.<br/>
         /// Vice versa may occur in other instances, like with /icon.Insert()
         /// </summary>
-        public sealed class ParsedDMIDescription {
+        public sealed class DMIDescription {
             public string Source;
             public float Version;
             /// <summary>
@@ -46,12 +46,12 @@ namespace OpenDreamShared.Resources {
             public Vector2i Dimensions; 
             public Dictionary<string, ParsedDMIState> States;
 
-            public static ParsedDMIDescription CreateEmpty(int width, int height) {
+            public static DMIDescription CreateEmpty(int width, int height) {
                 ParsedDMIFrame[] frames = { new() };
                 ParsedDMIState state = new();
                 state.Directions[(int)AtomDirection.South] = frames;
 
-                return new ParsedDMIDescription() {
+                return new DMIDescription() {
                     Source = null,
                     Version = CURRENT_DMI_VERSION,
                     Dimensions = { X= width, Y = height },
@@ -109,7 +109,7 @@ namespace OpenDreamShared.Resources {
             public float Delay;
         }
 
-        public static ParsedDMIDescription ParseDMI(Stream stream) {
+        public static DMIDescription ParseDMI(Stream stream) {
             if (!VerifyPNG(stream)) throw new Exception("Provided stream was not a valid PNG");
 
             BinaryReader reader = new BinaryReader(stream);
@@ -162,8 +162,8 @@ namespace OpenDreamShared.Resources {
             throw new Exception("Could not find a DMI description");
         }
 
-        public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
-            ParsedDMIDescription description = new ParsedDMIDescription();
+        public static DMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
+            DMIDescription description = new DMIDescription();
             ParsedDMIState currentState = null;
             int currentFrameX = 0;
             int currentFrameY = 0;

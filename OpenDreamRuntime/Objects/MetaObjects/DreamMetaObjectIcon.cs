@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public struct DreamIconObject {
             // Actual DMI data
-            public DMIParser.ParsedDMIDescription Description; // TODO Eventually this should probably be removed in favor of just directly storing the data for the subset of the DMI that we actually care about
+            public DMIParser.DMIDescription Description; // TODO Eventually this should probably be removed in favor of just directly storing the data for the subset of the DMI that we actually care about
 
             // These vars correspond to the args in icon/new() and the resulting /icon obj, not the actual DMI data
             public string Icon;

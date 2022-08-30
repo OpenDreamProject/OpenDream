@@ -613,7 +613,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("bad icon");
             }
 
-            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+            DMIParser.DMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
 
             return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
         }

@@ -90,29 +90,30 @@ namespace OpenDreamClient.Resources
 
         public void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:AbstractResource {
             AbstractResource resource = GetCachedResource(resourcePath);
-
-            if (resource == null) {
-                if (!_loadingResources.ContainsKey(resourcePath)) {
-                    _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
-
-                    var msg = new MsgRequestResource() { ResourcePath = resourcePath };
-                    _netManager.ClientSendMessage(msg);
-
-                    var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
-                    Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
-                        if (_loadingResources.ContainsKey(resourcePath)) {
-                            _sawmill.Warning(
-                                $"Resource '{resourcePath}' was requested, but is still not received {timeout} seconds later.");
-                        }
-                    });
-                }
-
-                _loadingResources[resourcePath].LoadCallbacks.Add((AbstractResource resource) => {
-                    onLoadCallback.Invoke((T)resource);
-                });
-            } else {
+            if(resource != null) // We already got it cached :)
+            {
                 onLoadCallback.Invoke((T)resource);
+                return;
             }
+
+            if (!_loadingResources.ContainsKey(resourcePath)) {
+                _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
+
+                var msg = new MsgRequestResource() { ResourcePath = resourcePath };
+                _netManager.ClientSendMessage(msg);
+
+                var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
+                Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
+                    if (_loadingResources.ContainsKey(resourcePath)) {
+                        _sawmill.Warning(
+                            $"Resource '{resourcePath}' was requested, but is still not received {timeout} seconds later.");
+                    }
+                });
+            }
+
+            _loadingResources[resourcePath].LoadCallbacks.Add((AbstractResource resource) => {
+                onLoadCallback.Invoke((T)resource);
+            });
         }
 
         public ResourcePath GetCacheFilePath(string filename)

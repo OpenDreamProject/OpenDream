@@ -47,14 +47,11 @@ namespace OpenDreamShared.Resources {
 
             public void InsertIcon(ParsedDMIDescription icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
             {
-                List<ParsedDMIState> states;
-                if (icon_state is null)
-                {
-                    states = icon.States.Values.ToList();
-                }
-                else
-                {
-                    states = new List<ParsedDMIState>(1) { icon.States[icon_state] };
+                IEnumerable<ParsedDMIState> states;
+                if (icon_state is null) {
+                    states = icon.States.Values;
+                } else {
+                    states = new ParsedDMIState[] { icon.States[icon_state] };
                 }
 
                 foreach (var state in states)

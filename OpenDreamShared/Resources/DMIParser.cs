@@ -73,32 +73,9 @@ namespace OpenDreamShared.Resources {
                         foreach (var (direction, frames) in state.Directions)
                         {
                             state.Directions[direction] = new ParsedDMIFrame[1] { frames[goodFrame] };
-                            if (delay is not null)
-                            {
-                                if (delay > 0)
-                                {
-                                    state.Rewind = false;
-                                }
-                                else if(delay < 0)
-                                {
-                                    state.Rewind = true;
-                                }
-                                else
-                                {
-                                    if (States.Count == 0)
-                                    {
-                                        // TODO Delay should be 1 tick. Is this a tick?
-                                        frames[goodFrame].Delay = 1f;
-                                    }
-                                    else
-                                    {
-                                        // Delay of the nearest frame. Hopefully. Christ
-                                        var stateDirs = States.Last().Value.Directions;
-                                        frames[goodFrame].Delay = dir is null
-                                            ? stateDirs.First().Value.Last().Delay
-                                            : stateDirs[dir.Value].Last().Delay;
-                                    }
-                                }
+                            if (delay is not null or 0) {
+                                state.Rewind = delay < 0;
+                                frames[goodFrame].Delay = Math.Abs(delay.Value);
                             }
                         }
                     }

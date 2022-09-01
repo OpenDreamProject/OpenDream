@@ -52,7 +52,7 @@ namespace OpenDreamRuntime.Procs.Native {
             instanceIconObject.Description.InsertIcon(newIconObject.Description, icon_state, dir, frame, delay);
 
             instanceIconObject.Moving = moving ? DreamMetaObjectIcon.DreamIconMovingMode.Movement : DreamMetaObjectIcon.DreamIconMovingMode.NonMovement;
-            return new DreamValue(instanceIconObject);
+            return DreamValue.Null;
         }
     }
 }

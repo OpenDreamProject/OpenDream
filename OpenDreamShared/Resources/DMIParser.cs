@@ -85,14 +85,7 @@ namespace OpenDreamShared.Resources {
 
                 foreach (var state in states)
                 {
-                    if (States.ContainsKey(state.Name))
-                    {
-                        States[state.Name] = state;
-                    }
-                    else
-                    {
-                        States.Add(state.Name, state);
-                    }
+                    States[state.Name] = state;
                 }
             }
 

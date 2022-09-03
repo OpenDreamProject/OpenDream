@@ -48,6 +48,10 @@ namespace OpenDreamShared.Compiler {
             _currentToken = token;
         }
 
+        /// <summary>
+        /// Does an optional consume on the Current() token. If Current() is not of this type, it is not Advance()'d.
+        /// </summary>
+        /// <returns>true if Current() was of the given type.</returns>
         protected bool Check(TokenType type) {
             if (Current().Type == type) {
                 Advance();
@@ -69,6 +73,20 @@ namespace OpenDreamShared.Compiler {
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Does an optional consume on as many of this type as it can. Returns the amount consumed. Advance() is not called if it fails to consume any.
+        /// </summary>
+        protected int CheckMany(TokenType type)
+        {
+            int ret = 0;
+            while(Current().Type == type)
+            {
+                ++ret;
+                Advance();
+            }
+            return ret;
         }
 
         protected void Consume(TokenType type, string errorMessage) {

@@ -542,46 +542,37 @@ namespace DMCompiler.Compiler.DM {
             return procStatements;
         }
 
-        public DMASTProcStatement ProcStatement()
+        private DMASTProcStatement ProcStatementFromExpression(Location loc, DMASTExpression expression, int colonCount)
         {
-            var loc = Current().Location;
-            var leadingColon = Check(TokenType.DM_Colon);
-
-            DMASTExpression expression = null;
-            if (Current().Type != TokenType.DM_Var) {
-                expression = Expression();
-            }
-
-            if (leadingColon && expression is not DMASTIdentifier)
+            switch (expression)
             {
-                Error("Expected a label identifier");
-            }
-
-            if (expression != null)
-            {
-                switch (expression)
-                {
-                    case DMASTIdentifier identifier:
-                        Check(TokenType.DM_Colon);
-                        return Label(identifier);
-                    case DMASTLeftShift leftShift:
+                case DMASTIdentifier identifier:
+                    colonCount += CheckMany(TokenType.DM_Colon); // Consume any leftover colon tokens on the tail side of the label
+                    return Label(identifier);
+                case DMASTLeftShift leftShift:
                     {
                         DMASTProcCall procCall = leftShift.B as DMASTProcCall;
 
-                        if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier) {
-                            if (identifier.Identifier == "browse") {
+                        if (procCall != null && procCall.Callable is DMASTCallableProcIdentifier identifier)
+                        {
+                            if (identifier.Identifier == "browse")
+                            {
                                 if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse() requires 1 or 2 parameters");
 
                                 DMASTExpression body = procCall.Parameters[0].Value;
                                 DMASTExpression options = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
                                 return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                            } else if (identifier.Identifier == "browse_rsc") {
+                            }
+                            else if (identifier.Identifier == "browse_rsc")
+                            {
                                 if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) Error("browse_rsc() requires 1 or 2 parameters");
 
                                 DMASTExpression file = procCall.Parameters[0].Value;
                                 DMASTExpression filepath = (procCall.Parameters.Length == 2) ? procCall.Parameters[1].Value : new DMASTConstantNull(loc);
                                 return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                            } else if (identifier.Identifier == "output") {
+                            }
+                            else if (identifier.Identifier == "output")
+                            {
                                 if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
 
                                 DMASTExpression msg = procCall.Parameters[0].Value;
@@ -592,34 +583,56 @@ namespace DMCompiler.Compiler.DM {
 
                         break;
                     }
-                }
-
-                return new DMASTProcStatementExpression(loc, expression);
-            } else {
-                // These are sorted by frequency, except If() is moved to the end because it's really slow (relatively)
-                DMASTProcStatement procStatement = Return();
-                if (procStatement == null) procStatement = ProcVarDeclaration();
-                if (procStatement == null) procStatement = For();
-                if (procStatement == null) procStatement = Set();
-                if (procStatement == null) procStatement = Switch();
-                if (procStatement == null) procStatement = Continue();
-                if (procStatement == null) procStatement = Break();
-                if (procStatement == null) procStatement = Spawn();
-                if (procStatement == null) procStatement = While();
-                if (procStatement == null) procStatement = DoWhile();
-                if (procStatement == null) procStatement = Throw();
-                if (procStatement == null) procStatement = Del();
-                if (procStatement == null) procStatement = TryCatch();
-                if (procStatement == null) procStatement = Goto();
-                if (procStatement == null) procStatement = If();
-
-                if (procStatement != null) {
-                    Whitespace();
-                }
-
-
-                return procStatement;
             }
+
+            return new DMASTProcStatementExpression(loc, expression);
+        }
+
+
+        public DMASTProcStatement ProcStatement()
+        {
+            var loc = Current().Location;
+
+            //Lets check if this is a label
+            //Labels can start with 0 to INF colon tokens, for some reason?
+            var leadingColons = CheckMany(TokenType.DM_Colon);
+            if (Current().Type != TokenType.DM_Var) {
+                DMASTExpression? expression = Expression();
+                if (expression != null)
+                {
+                    if (leadingColons > 0 && expression is not DMASTIdentifier)
+                        Error($"Unexpected ':' character{(leadingColons > 1 ? "s" : "")} in proc statement"); // Doing interps like it's DM!
+                    return ProcStatementFromExpression(loc, expression, leadingColons);
+                }
+            }
+
+            if (leadingColons > 0) // We got some weird colons, yet 
+            {
+                Error("Expected a label identifier");
+            }
+
+            // These are sorted by frequency, except If() is moved to the end because it's really slow (relatively)
+            DMASTProcStatement procStatement = Return();
+            if (procStatement == null) procStatement = ProcVarDeclaration();
+            if (procStatement == null) procStatement = For();
+            if (procStatement == null) procStatement = Set();
+            if (procStatement == null) procStatement = Switch();
+            if (procStatement == null) procStatement = Continue();
+            if (procStatement == null) procStatement = Break();
+            if (procStatement == null) procStatement = Spawn();
+            if (procStatement == null) procStatement = While();
+            if (procStatement == null) procStatement = DoWhile();
+            if (procStatement == null) procStatement = Throw();
+            if (procStatement == null) procStatement = Del();
+            if (procStatement == null) procStatement = TryCatch();
+            if (procStatement == null) procStatement = Goto();
+            if (procStatement == null) procStatement = If();
+
+            if (procStatement != null) {
+                Whitespace();
+            }
+
+            return procStatement;
         }
 
         public DMASTProcStatement ProcVarDeclaration(bool allowMultiple = true) {
@@ -1491,7 +1504,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTExpression Expression() {
+        public DMASTExpression? Expression() {
             return ExpressionIn();
         }
 

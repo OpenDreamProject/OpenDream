@@ -192,6 +192,10 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
+            if(lhs.TryAsConstant(out var _) || ((lhs.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly))
+            {
+                DMCompiler.Error(new CompilerError(assign.Expression.Location, "Cannot write to const var"));
+            }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
 

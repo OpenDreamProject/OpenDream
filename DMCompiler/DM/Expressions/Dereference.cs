@@ -59,7 +59,7 @@ namespace DMCompiler.DM.Expressions {
             {
                 var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
                 var variable = obj.GetVariable(PropertyName);
-                if (variable.IsConst)
+                if (variable != null && variable.IsConst)
                 {
                     return variable.Value.TryAsConstant(out constant);
                 }

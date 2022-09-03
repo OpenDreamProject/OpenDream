@@ -1713,6 +1713,13 @@ namespace DMCompiler.Compiler.DM {
             Parameters = parameters;
         }
 
+        /// <summary>Helper constructor that converts the expression argument into a positional call parameter.</summary>
+        public DMASTProcCall(Location location, DMASTCallable callable, DMASTExpression paramExp) : base(location)
+        {
+            Callable = callable;
+            Parameters = new DMASTCallParameter[] { new DMASTCallParameter(paramExp.Location,paramExp)};
+        }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcCall(this);
         }

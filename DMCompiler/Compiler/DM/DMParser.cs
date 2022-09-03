@@ -544,10 +544,25 @@ namespace DMCompiler.Compiler.DM {
 
         private DMASTProcStatement ProcStatementFromExpression(Location loc, DMASTExpression expression, int colonCount)
         {
+            //Unconditionally consume whitespace upon return
+            using var _ = OpenDreamShared.Misc.Defer(() => Whitespace());
+
             switch (expression)
             {
                 case DMASTIdentifier identifier:
                     colonCount += CheckMany(TokenType.DM_Colon); // Consume any leftover colon tokens on the tail side of the label
+                    if(identifier.Identifier == "sleep") // Looks like a snowflake-grammar no-paren call to sleep!
+                    {
+                        Whitespace();
+                        DMASTExpression arg = Expression();
+                        if(arg is null || colonCount > 0)
+                        {
+                            Error("'sleep' cannot be used as a label - it is a reserved keyword"); // TODO: Add some other restricted words here!
+                            return Label(identifier);
+                        }
+                        var schleep = new DMASTCallableGlobalProc(identifier.Location, "sleep"); // NOTE: Might need to be changed if sleep ever stops being a proc
+                        return new DMASTProcStatementExpression(identifier.Location, new DMASTProcCall(identifier.Location, schleep, arg));
+                    }
                     return Label(identifier);
                 case DMASTLeftShift leftShift:
                     {

@@ -7,11 +7,40 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     static class DMObjectBuilder {
+
+        /// <summary>
+        /// In DM, the definition of a base class may occur way after the definition of (perhaps numerous) derived classes. <br/>
+        /// At the time that we first evaluate the derived class, we do not know some important information, like the implicit type of certain things.<br/>
+        /// This event allows for delaying variable override evaluation until after we know what it is. </summary>
+        /// <remarks>
+        /// Further, it just so happens to also act as a container that can enumerate all objects which were expecting a definition but never got one.
+        /// </remarks>
+        public static event EventHandler<DMVariable> VarDefined; // Fires if we define a new variable.
+
         public static void BuildObjectTree(DMASTFile astFile) {
-            DMObjectTree.Reset();
-            ProcessFile(astFile);
+            DMObjectTree.Reset(); // Blank the object tree
+
+            ProcessFile(astFile); // generate it
+
+            if (VarDefined != null) // This means some listeners are remaining, which means that variables were initialized but not defined! Bad!
+            {
+                foreach(var method in VarDefined.GetInvocationList()) // For every object listening
+                {
+                    object? obj = method.Target;
+                    DMObject? realObj = (DMObject?)obj;
+                    if(realObj != null)
+                    {
+                        Robust.Shared.Utility.DebugTools.Assert(realObj.danglingOverrides is not null);
+                        foreach(DMASTObjectVarOverride varOverride in realObj.danglingOverrides)
+                        {
+                            DMCompiler.Error(new CompilerError(varOverride.Location, $"var {varOverride.VarName} is initialized but not defined"));
+                        }
+                    }
+                }
+            }
 
             // TODO Nuke this pass
+            // (Note that VarDefined's lazy evaluation behaviour is dependent on happening BEFORE the the initialization proc statements are emitted)
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CreateInitializationProc();
             }
@@ -96,7 +125,8 @@ namespace DMCompiler.DM.Visitors {
             }
 
             try {
-                SetVariableValue(varObject, variable, varDefinition.Value, varDefinition.ValType);
+                SetVariableValue(varObject, ref variable, varDefinition.Value, varDefinition.ValType);
+                VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
             }
@@ -131,12 +161,19 @@ namespace DMCompiler.DM.Visitors {
                     variable = varObject.GetGlobalVariable(varOverride.VarName);
                     DMCompiler.Error(new CompilerError(varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var"));
                 }
-                else // Shouldn't happen, ideally
+                else // So this is an awkward point where we have to be a little bit silly.
                 {
-                    DMCompiler.Warning(new CompilerWarning(varOverride.Location, $"Override of var {varOverride.VarName} found before variable declaration. This isn't supposed to happen!"));
-                    variable = new DMVariable(null, varOverride.VarName, false, false);
+                    //So, this override cannot be emitted until we know what the heck the DMVariable is supposed to be.
+                    //To do that, we are now going to cache this var override and wait for our parent class to be defined, so we can know wtf it is and resume!
+                    if(varObject.Path == DreamPath.Root) // As per DM, we should just error out if a root global var is overwritten before it is defined.
+                    {
+                        DMCompiler.Error(new CompilerError(varOverride.Location, $"var \"{varOverride.VarName}\" is not declared"));
+                        return; // don't do the fancy event stuff if we're root
+                    }
+                    varObject.WaitForLateVarDefinition(varOverride);
+                    return;
                 }
-                OverrideVariableValue(varObject, variable, varOverride.Value);
+                OverrideVariableValue(varObject, ref variable, varOverride.Value);
                 varObject.VariableOverrides[variable.Name] = variable;
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
@@ -242,7 +279,10 @@ namespace DMCompiler.DM.Visitors {
         /// A filter proc above <see cref="SetVariableValue"/> <br/>
         /// which checks first to see if overriding this thing's value is valid (as in the case of const and <see cref="DMValueType.CompiletimeReadonly"/>)
         /// </summary>
-        private static void OverrideVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
+        /// <remarks>
+        /// This is bizarrely public instead of private because DMObject ends up calling it to handle late var definitions, and there's no 'friend' keyword in C#.
+        /// </remarks>
+        public static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
         {
             if(variable.IsConst)
             {
@@ -253,21 +293,22 @@ namespace DMCompiler.DM.Visitors {
             {
                 DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified"));
             }
-            SetVariableValue(currentObject, variable, value, valType);
+            SetVariableValue(currentObject, ref variable, value, valType);
         }
 
         /// <summary>
         /// Handles setting a variable to a value (when called by itself, this assumes the statement is a declaration and not a re-assignment)
         /// </summary>
+        /// <param name="variable">This parameter may be modified if a new variable had to be instantiated in the case of an override.</param>
         /// <exception cref="CompileErrorException"></exception>
-        private static void SetVariableValue(DMObject currentObject, DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
             expression.ValType = valType;
 
             if (expression.TryAsConstant(out var constant)) {
-                variable.Value = constant;
+                variable = variable.WriteToValue(constant);
                 return;
             }
 

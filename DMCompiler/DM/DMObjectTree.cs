@@ -53,32 +53,32 @@ namespace DMCompiler.DM {
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
-            } else {
-                if (!createIfNonexistent) return null;
-
-                DMObject parent = null;
-                if (path.Elements.Length > 1) {
-                    parent = GetDMObject(path.FromElements(0, -2), true);
-                } else if (path.Elements.Length == 1) {
-                    switch (path.LastElement) {
-                        case "client":
-                        case "datum":
-                        case "list":
-                        case "savefile":
-                        case "world":
-                            parent = GetDMObject(DreamPath.Root);
-                            break;
-                        default:
-                            parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
-                            break;
-                    }
-                }
-
-                DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
-                AllObjects.Add(dmObject);
-                _pathToTypeId[path] = dmObject.Id;
-                return dmObject;
             }
+            if (!createIfNonexistent) return null;
+
+            DMObject parent = null;
+            if (path.Elements.Length > 1) {
+                parent = GetDMObject(path.FromElements(0, -2), true); // Create all parent classes as dummies, if we're being dummy-created too
+            } else if (path.Elements.Length == 1) {
+                switch (path.LastElement) {
+                    case "client":
+                    case "datum":
+                    case "list":
+                    case "savefile":
+                    case "world":
+                        parent = GetDMObject(DreamPath.Root);
+                        break;
+                    default:
+                        parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                        break;
+                }
+            }
+            DebugTools.Assert(path == DreamPath.Root || parent != null); // Parent SHOULD NOT be null here! (unless we're root lol)
+
+            DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+            AllObjects.Add(dmObject);
+            _pathToTypeId[path] = dmObject.Id;
+            return dmObject;
         }
 
         public static bool TryGetGlobalProc(string name, [CanBeNull] out DMProc proc)

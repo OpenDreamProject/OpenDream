@@ -34,6 +34,7 @@
 
 	var/timezone
 
+	var/script as opendream_unimplemented
 	var/color = 0 as opendream_unimplemented
 	var/control_freak as opendream_unimplemented
 	var/mouse_pointer_icon as opendream_unimplemented

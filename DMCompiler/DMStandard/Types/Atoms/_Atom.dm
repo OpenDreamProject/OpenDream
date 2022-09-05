@@ -28,6 +28,7 @@
 	var/color = "#FFFFFF"
 	var/invisibility = 0
 	var/mouse_opacity = 1
+	var/infra_luminosity = 0 as opendream_unimplemented
 	var/luminosity = 0 as opendream_unimplemented
 	var/opacity = 0 as opendream_unimplemented
 	var/matrix/transform

@@ -1,6 +1,8 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectClient : IDreamMetaObject {
@@ -98,6 +100,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "key":
                 case "ckey":
                     return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                case "computer_id": // FIXME: This is not secure! Whenever RT implements a more robust (heh) method of uniquely identifying computers, replace this impl with that.
+                    MD5 md5 = MD5.Create();
+                    /// <remarks>Check on <see cref="Robust.Shared.Network.NetUserData.HWId"/> if you want to seed from how RT does user identification.
+                    /// We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.</remarks>
+                    byte[] brown = Encoding.UTF8.GetBytes(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                    byte[] hash = md5.ComputeHash(brown);
+                    string hashStr = BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0,15); // Extracting the first 15 digits to ensure it'll fit in a 64-bit number
+                    return new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 case "address":
                     return new(_dreamManager.GetSessionFromClient(dreamObject).ConnectedClient.RemoteEndPoint.Address.ToString());
                 case "inactivity":

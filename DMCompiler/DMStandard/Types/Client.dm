@@ -29,7 +29,7 @@
 	var/key
 	var/ckey
 	var/connection
-	var/computer_id = 0 as opendream_unimplemented
+	var/computer_id = 0
 	var/tick_lag = 0 as opendream_unimplemented
 
 	var/timezone

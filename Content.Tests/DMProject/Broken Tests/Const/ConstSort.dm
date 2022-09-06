@@ -19,4 +19,3 @@
 	ASSERT(o.ConstSortObj_c3 == 15)
 	ASSERT(o.ConstSortObj_a == 7)
 	ASSERT(o.ConstSortObj_b == 8)
-	return 1

@@ -1,5 +1,5 @@
 /proc/ArgProcs1(procs, procs2, procs3 = 3)
-	return procs
+	return procs3
 
 /proc/RunTest()
 	ASSERT(ArgProcs1(1,2) == 3)

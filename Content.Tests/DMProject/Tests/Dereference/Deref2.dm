@@ -1,4 +1,6 @@
-/world/proc/DerefTest2_Proc()
+#include "Shared/DerefTests.dm"
+
+/proc/RunTest()
     var/obj/DerefTest1/o2 = new /obj/DerefTest1
     ASSERT(o2.inner_proc().elefn() == 3)
     ASSERT(o2?.inner_proc()?.elefn() == 3)

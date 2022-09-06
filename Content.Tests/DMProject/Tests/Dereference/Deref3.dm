@@ -1,4 +1,6 @@
-/world/proc/DerefTest3_Proc()
+#include "Shared/DerefTests.dm"
+
+/proc/RunTest()
     var/list/l = newlist(/obj/DerefTest1)
     ASSERT(l[1].ele == 2)
     ASSERT(l[1].elefn() == 3)

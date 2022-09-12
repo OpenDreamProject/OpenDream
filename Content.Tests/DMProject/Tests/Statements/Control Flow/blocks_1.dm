@@ -4,8 +4,8 @@
 /proc/RunTest()
 	var/i = 0
 	label_name:
-		if(i < 1)
+		if(i < 2)
 			i += 1
 			goto label_name
 
-	ASSERT(i == 1)
+	ASSERT(i == 2)

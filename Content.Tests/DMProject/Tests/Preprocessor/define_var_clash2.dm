@@ -7,9 +7,9 @@
 var/const/A = 5
 
 /proc/nob()
-    world.log << (B)
+    ASSERT(B == 1)
 
 /proc/RunTest()
     var/const/B = 8
-    world.log << (A)
+    ASSERT(A == 1)
     nob()

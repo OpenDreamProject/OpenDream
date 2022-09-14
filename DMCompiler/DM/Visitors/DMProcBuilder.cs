@@ -357,7 +357,9 @@ namespace DMCompiler.DM.Visitors {
                 _proc.Jump(endLabel);
 
                 _proc.AddLabel(elseLabel);
+                _proc.StartScope();
                 ProcessBlockInner(statement.ElseBody);
+                _proc.EndScope();
                 _proc.AddLabel(endLabel);
             }
         }

@@ -430,6 +430,65 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(needleIndex + 1); //1-indexed
         }
 
+        [DreamProc("findtext_char")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findtext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            // TODO This is for handling nulls, check if it works right for other bad types
+            int failCount = 0;
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            {
+                failCount++;
+            }
+            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            {
+                failCount++;
+            }
+            if (failCount > 0)
+            {
+                return new DreamValue(failCount == 2 ? 1 : 0);
+            }
+
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int lengthInTextElements = new StringInfo(text).LengthInTextElements;
+
+            if (start <= 0 || start > lengthInTextElements || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > lengthInTextElements + 1) {
+                end = lengthInTextElements + 1;
+            }
+
+            int needleIndex = -1;
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
+            textElementEnumerator.Reset();
+            int idx = -1;
+            while (textElementEnumerator.MoveNext())
+            {
+                idx++;
+                if (idx < (start - 1))
+                {
+                    continue;
+                }
+                if (idx > (end - 1))
+                {
+                    break;
+                }
+                if (text.Substring(textElementEnumerator.ElementIndex).StartsWith(needle, StringComparison.OrdinalIgnoreCase))
+                {
+                    needleIndex = idx;
+                    break;
+                }
+            }
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
         [DreamProc("findtextEx")]
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
@@ -461,6 +520,65 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             int needleIndex = text.IndexOf(needle, start - 1, end - start);
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
+        [DreamProc("findtextEx_char")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findtextEx_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            // TODO This is for handling nulls, check if it works right for other bad types
+            int failCount = 0;
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            {
+                failCount++;
+            }
+            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            {
+                failCount++;
+            }
+            if (failCount > 0)
+            {
+                return new DreamValue(failCount == 2 ? 1 : 0);
+            }
+
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int lengthInTextElements = new StringInfo(text).LengthInTextElements;
+
+            if (start <= 0 || start > lengthInTextElements || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > lengthInTextElements + 1) {
+                end = lengthInTextElements + 1;
+            }
+
+            int needleIndex = -1;
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
+            textElementEnumerator.Reset();
+            int idx = -1;
+            while (textElementEnumerator.MoveNext())
+            {
+                idx++;
+                if (idx < (start - 1))
+                {
+                    continue;
+                }
+                if (idx > (end - 1))
+                {
+                    break;
+                }
+                if (text.Substring(textElementEnumerator.ElementIndex).StartsWith(needle))
+                {
+                    needleIndex = idx;
+                    break;
+                }
+            }
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -504,6 +622,67 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
+        [DreamProc("findlasttext_char")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findlasttext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            // TODO This is for handling nulls, check if it works right for other bad types
+            int failCount = 0;
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            {
+                failCount++;
+            }
+            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            {
+                failCount++;
+            }
+            if (failCount > 0)
+            {
+                return new DreamValue(failCount == 2 ? 1 : 0);
+            }
+
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int lengthInTextElements = new StringInfo(text).LengthInTextElements;
+
+            if (start <= 0 || start > lengthInTextElements || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > lengthInTextElements + 1) {
+                end = lengthInTextElements + 1;
+            }
+
+            int needleIndex = -1;
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
+            textElementEnumerator.Reset();
+            int idx = -1;
+            while (textElementEnumerator.MoveNext())
+            {
+                idx++;
+                if (idx < (start - 1))
+                {
+                    continue;
+                }
+                if (idx > (end - 1))
+                {
+                    break;
+                }
+                // The native BYOND implementation searches backwards.
+                // That's annoying to do with this, though, since the enumerator only goes one-way.
+                if (text.Substring(textElementEnumerator.ElementIndex).StartsWith(needle, StringComparison.OrdinalIgnoreCase))
+                {
+                    needleIndex = idx;
+                    continue;
+                }
+            }
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
         [DreamProc("findlasttextEx")]
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needle", Type = DreamValueType.String)]
@@ -533,6 +712,67 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             int needleIndex = text.LastIndexOf(needle, end - 1, end - start);
+            if (needleIndex != -1) {
+                return new DreamValue(needleIndex + 1); //1-indexed
+            } else {
+                return new DreamValue(0);
+            }
+        }
+
+        [DreamProc("findlasttextEx_char")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_findlasttextEx_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            // TODO This is for handling nulls, check if it works right for other bad types
+            int failCount = 0;
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            {
+                failCount++;
+            }
+            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            {
+                failCount++;
+            }
+            if (failCount > 0)
+            {
+                return new DreamValue(failCount == 2 ? 1 : 0);
+            }
+
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int lengthInTextElements = new StringInfo(text).LengthInTextElements;
+
+            if (start <= 0 || start > lengthInTextElements || end < 0) return new DreamValue(0);
+
+            if (end == 0 || end > lengthInTextElements + 1) {
+                end = lengthInTextElements + 1;
+            }
+
+            int needleIndex = -1;
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
+            textElementEnumerator.Reset();
+            int idx = -1;
+            while (textElementEnumerator.MoveNext())
+            {
+                idx++;
+                if (idx < (start - 1))
+                {
+                    continue;
+                }
+                if (idx > (end - 1))
+                {
+                    break;
+                }
+                // The native BYOND implementation searches backwards.
+                // That's annoying to do with this, though, since the enumerator only goes one-way.
+                if (text.Substring(textElementEnumerator.ElementIndex).StartsWith(needle))
+                {
+                    needleIndex = idx;
+                    continue;
+                }
+            }
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {

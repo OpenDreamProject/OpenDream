@@ -28,9 +28,13 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_file2text);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_filter);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtext_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtextEx);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findtextEx_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findlasttext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findlasttext_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findlasttextEx);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_findlasttextEx_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_flick);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_flist);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);

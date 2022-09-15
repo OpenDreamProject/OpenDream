@@ -8,10 +8,6 @@
 	set opendream_unimplemented = TRUE
 /proc/filter(type, parameter, ...)
 	set opendream_unimplemented = TRUE
-/proc/findlasttext_char(Haystack,Needle,Start=0,End=1)
-	set opendream_unimplemented = TRUE
-/proc/findtext_char(Haystack,Needle,Start=1,End=0)
-	set opendream_unimplemented = TRUE
 /proc/ftp(File, Name)
 	set opendream_unimplemented = TRUE
 /proc/gradient(Gradient, index)

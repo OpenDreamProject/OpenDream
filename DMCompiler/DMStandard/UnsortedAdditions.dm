@@ -32,8 +32,6 @@ proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/shell(command)
 	set opendream_unimplemented = TRUE
-/proc/spantext_char(Haystack,Needles,Start=1)
-	set opendream_unimplemented = TRUE
 /proc/splicetext(Text,Start=1,End=0,Insert="")
 	set opendream_unimplemented = TRUE
 /proc/walk_rand(Ref,Lag=0,Speed=0)

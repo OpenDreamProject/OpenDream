@@ -1688,7 +1688,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             while(textElementEnumerator.MoveNext()) 
             {
-                if(textElementEnumerator.ElementIndex >= start)
+                if(textElementEnumerator.ElementIndex >= start - 1)
                 {
                     bool found = false;
                     needlesElementEnumerator.Reset();
@@ -1706,7 +1706,6 @@ namespace OpenDreamRuntime.Procs.Native {
                         break;
                     }
                 }
-                start++;
             }
             return new DreamValue(result);
         }

@@ -143,6 +143,31 @@ namespace DMCompiler.Compiler.DM {
 
                                     if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
                                     if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
+
+                                    if (expression is DMASTExpressionConstant)
+                                    {
+                                        switch (expression) {
+                                            case DMASTConstantString constantString:
+                                                stringBuilder.Append(constantString.Value);
+                                                break;
+                                            case DMASTConstantInteger constantInteger:
+                                                stringBuilder.Append(constantInteger.Value);
+                                                break;
+                                            case DMASTConstantFloat constantFloat:
+                                                stringBuilder.Append(constantFloat.Value);
+                                                break;
+                                            case DMASTConstantPath constantPath:
+                                                stringBuilder.Append(constantPath.Value);
+                                                break;
+                                            case DMASTConstantResource constantResource:
+                                                stringBuilder.Append(constantResource.Path);
+                                                break;
+                                        }
+                                        currentInterpolationType = StringFormatEncoder.InterpolationDefault;
+                                        insideBrackets.Clear();
+                                        break;
+                                    }
+
                                     interpolationValues.Add(expression);
                                 }
                                 else
@@ -359,7 +384,7 @@ namespace DMCompiler.Compiler.DM {
             if (bracketNesting > 0) Error("Expected ']'");
 
             string stringValue = stringBuilder.ToString();
-            if (interpolationValues is null)
+            if (interpolationValues is null || !interpolationValues.Any())
             {
                 if (usedPrefixMacro != null) // FIXME: \the should not compiletime here, instead becoming a tab character followed by "he", when in parity mode
                     Error($"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");

@@ -1618,6 +1618,42 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(soundObject);
         }
 
+        [DreamProc("splicetext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float)]
+        [DreamProcParameter("End", Type = DreamValueType.Float)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            if (!arguments.GetArgument(0, "Text").TryGetValueAsString(out var text))
+            {
+                return new DreamValue(0);
+            }
+            if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start)) //0 is not valid, 
+            {
+                return new DreamValue(0);
+            }
+            if (!arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end)) //0 is not valid, 
+            {
+                return new DreamValue(0);
+            }
+            if (!arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text))
+            {
+                return new DreamValue(0);
+            }
+            return new DreamValue(0);
+        }
+
+        [DreamProc("splicetext_char")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float)]
+        [DreamProcParameter("End", Type = DreamValueType.Float)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
+        {
+            return new DreamValue(0);
+        }
+
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueType.String)]

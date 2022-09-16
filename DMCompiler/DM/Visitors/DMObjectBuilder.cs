@@ -39,6 +39,12 @@ namespace DMCompiler.DM.Visitors {
                 DMASTStatement statement = block.Statements[i];
                 switch (statement)
                 {
+                    case DMASTObjectDefinition objectDefinition:
+                        if(objectDefinition.Path == DreamPath.Root)
+                        {
+                            RegisterGlobals(objectDefinition.InnerBlock);
+                        }
+                        break;
                     // TODO Add support for global vars
                     case DMASTProcDefinition procDefinition:
                         if(procDefinition.ObjectPath != null) continue;

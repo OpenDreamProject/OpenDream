@@ -74,8 +74,7 @@ namespace Content.Tests
             if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
                 Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
             } else {
-                //TODO: This should use the runtime exception as the failure message
-                Assert.IsTrue(successfulRun, "A DM runtime exception was thrown");
+                Assert.IsTrue(successfulRun, "A DM runtime exception was thrown: "+(_dreamMan.DMLastException != null ? _dreamMan.DMLastException.Message : "None"));
             }
 
             if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
@@ -97,7 +96,6 @@ namespace Content.Tests
                     return DreamValue.Null;
                 }
             });
-
             return (_dreamMan.DMExceptionCount == prev, result);
         }
 

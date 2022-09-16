@@ -267,6 +267,8 @@ namespace OpenDreamRuntime {
                 state.ReturnPools();
             }
             var dreamMan = IoCManager.Resolve<IDreamManager>();
+
+            dreamMan.DMLastException = exception;
             dreamMan.DMExceptionCount += 1;
 
             StringBuilder builder = new();
@@ -280,7 +282,8 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-           dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+            
+            dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace OpenDreamRuntime {
         public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public int DMExceptionCount { get; set; }
-
+        public Exception DMLastException { get; set; }
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public DreamList WorldContentsList { get; set; }

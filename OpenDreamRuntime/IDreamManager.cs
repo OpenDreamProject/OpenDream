@@ -9,6 +9,8 @@ namespace OpenDreamRuntime {
         public DreamObject WorldInstance { get; }
         public int DMExceptionCount { get; set; }
 
+        public Exception DMLastException { get; set; }
+
         public List<DreamValue> Globals { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }

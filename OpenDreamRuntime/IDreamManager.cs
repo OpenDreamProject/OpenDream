@@ -55,8 +55,6 @@ namespace OpenDreamRuntime {
                 return Convert.ToInt32(string.Format("{0}{1}", 2, id));
             }
 
-
-
             throw new NotImplementedException();
         }
 

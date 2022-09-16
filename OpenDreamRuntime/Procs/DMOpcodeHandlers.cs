@@ -1480,7 +1480,7 @@ namespace OpenDreamRuntime.Procs {
                         case 1:
                         {
                             var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
-                            state.Push(obj is null ? DreamValue.Null : new DreamValue(obj));
+                            state.Push(new DreamValue(obj));
                             break;
                         }
                         // String

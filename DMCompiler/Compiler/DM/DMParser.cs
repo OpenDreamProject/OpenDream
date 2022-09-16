@@ -2063,6 +2063,30 @@ namespace DMCompiler.Compiler.DM {
                                         }
 
                                         if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
+
+                                        if (expression is DMASTExpressionConstant)
+                                        {
+                                            switch (expression) {
+                                                case DMASTConstantString constantString:
+                                                    stringBuilder.Append(constantString.Value);
+                                                    break;
+                                                case DMASTConstantInteger constantInteger:
+                                                    stringBuilder.Append(constantInteger.Value);
+                                                    break;
+                                                case DMASTConstantFloat constantFloat:
+                                                    stringBuilder.Append(constantFloat.Value);
+                                                    break;
+                                                case DMASTConstantPath constantPath:
+                                                    stringBuilder.Append(constantPath.Value);
+                                                    break;
+                                                case DMASTConstantResource constantResource:
+                                                    stringBuilder.Append(constantResource.Path);
+                                                    break;
+                                            }
+                                            currentInterpolationType = StringFormatTypes.Stringify;
+                                            insideBrackets.Clear();
+                                            break;
+                                        }
                                         interpolationValues.Add(expression);
                                     } else {
                                         interpolationValues.Add(null);
@@ -2240,7 +2264,7 @@ namespace DMCompiler.Compiler.DM {
                     if (bracketNesting > 0) Error("Expected ']'");
 
                     string stringValue = stringBuilder.ToString();
-                    if (interpolationValues is null) {
+                    if (interpolationValues is null || !interpolationValues.Any()) {
                         return new DMASTConstantString(constantToken.Location, stringValue);
                     } else {
                         return new DMASTStringFormat(constantToken.Location, stringValue, interpolationValues.ToArray());

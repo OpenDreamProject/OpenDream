@@ -1662,7 +1662,54 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Insert", Type = DreamValueType.String)]
         public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            return new DreamValue(0);
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);            
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
+
+            if(text == null) 
+                if(insert_text == null | insert_text == "")
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insert_text);
+            else if(text == "")
+                return new DreamValue(insert_text);
+
+            //runtime if start = 0 runtime error: bad text or out of bounds
+            
+            if(end == 0 || end > text.Length + 1)
+                end = text.Length+1;
+            if(start < 0)
+                start = Math.Max(start + text.Length + 1, 1);
+            if(end < 0)
+                end = Math.Min(end + text.Length + 1, text.Length);
+            
+            if(start == 0 || start > text.Length || start > end)
+                throw new Exception("bad text or out of bounds");
+                
+            
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
+            textElementEnumerator.Reset();
+
+            bool inserted = false;
+            int curindex = 0;
+            String result = "";            
+            while(textElementEnumerator.MoveNext()) 
+            {
+                curindex++;
+                if(curindex >= start && (curindex < end || (curindex == end && start == end)))
+                {
+                    if(!inserted)
+                        result += insert_text;
+                        inserted = true;
+                    continue;
+                }
+                else
+                {
+                    result += textElementEnumerator.Current;
+                }                
+            }
+            return new DreamValue(result);
         }
 
         [DreamProc("splittext")]

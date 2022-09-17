@@ -1620,28 +1620,20 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("splicetext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValueType.Float)]
-        [DreamProcParameter("End", Type = DreamValueType.Float)]
-        [DreamProcParameter("Insert", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
         public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            if (!arguments.GetArgument(0, "Text").TryGetValueAsString(out var text))
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start)) //0 is not valid, 
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end)) //0 is not valid, 
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text))
-            {
-                return new DreamValue(0);
-            }
-            return new DreamValue(0);
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);            
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
+            if(end == 0)
+                end = text.Length;
+            string result = text.Remove(start - 1, (start - end) - 1).Insert(start - 1, insert_text);
+
+            return new DreamValue(result);
         }
 
         [DreamProc("splicetext_char")]

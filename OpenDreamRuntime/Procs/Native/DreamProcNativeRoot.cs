@@ -1629,8 +1629,17 @@ namespace OpenDreamRuntime.Procs.Native {
             arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
             arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
+
+            if(text == null) 
+                if(insert_text == null | insert_text == "")
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insert_text);
+            else if(text == "")
+                return new DreamValue(insert_text);
+
             //runtime if start = 0 runtime error: bad text or out of bounds
-            //weirdly if Insert is non-default, it runtimes if start & end aren't defined - reasonably sure that's a mistake in BYOND
+            
             if(end == 0 || end > text.Length + 1)
                 end = text.Length+1;
             if(start < 0)
@@ -1641,8 +1650,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start == 0 || start > text.Length || start > end)
                 throw new Exception("bad text or out of bounds");
                 
-            string result = text.Remove(start - 1, (end-start));
-            result = result.Insert(start - 1, insert_text);
+            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insert_text);
 
             return new DreamValue(result);
         }

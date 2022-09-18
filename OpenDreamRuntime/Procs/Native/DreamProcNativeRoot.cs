@@ -1657,9 +1657,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("splicetext_char")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValueType.Float)]
-        [DreamProcParameter("End", Type = DreamValueType.Float)]
-        [DreamProcParameter("Insert", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
         public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
             arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);            
@@ -1667,7 +1667,7 @@ namespace OpenDreamRuntime.Procs.Native {
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
             arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
 
-            if(text == null) 
+            if(text == null) //this is for BYOND compat, and causes the function to ignore start/end if text is null or empty
                 if(insert_text == null | insert_text == "")
                     return DreamValue.Null;
                 else
@@ -1702,6 +1702,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     if(!inserted)
                         result += insert_text;
                         inserted = true;
+                    if(curindex == end && start == end) 
+                        result += textElementEnumerator.Current;
                     continue;
                 }
                 else

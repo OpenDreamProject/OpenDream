@@ -23,7 +23,6 @@
     ASSERT(splicetext_char("abcdef", 3) == "ab")
     ASSERT(splicetext_char("abcdef", 3, 5) == "abef")
     ASSERT(splicetext_char("abcdef", 3, 5, null) == "abef")
-    CRASH(splicetext_char("abcdef", -2, 5, "test"))
     ASSERT(splicetext_char("abcdef", -2, 5, "test") == "abcdtestef")
     ASSERT(splicetext_char("abcdef", -2, 7, "test") == "abcdtest")
     ASSERT(splicetext_char("abcdef", 3, -1, "test") == "abtestf")

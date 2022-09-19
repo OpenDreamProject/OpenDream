@@ -10,7 +10,11 @@
 	set opendream_unimplemented = TRUE
 /proc/findlasttext_char(Haystack,Needle,Start=0,End=1)
 	set opendream_unimplemented = TRUE
+/proc/findlasttextEx_char(Haystack,Needle,Start=1,End=0)
+	set opendream_unimplemented = TRUE
 /proc/findtext_char(Haystack,Needle,Start=1,End=0)
+	set opendream_unimplemented = TRUE
+/proc/findtextEx_char(Haystack,Needle,Start=1,End=0)
 	set opendream_unimplemented = TRUE
 /proc/ftp(File, Name)
 	set opendream_unimplemented = TRUE
@@ -33,6 +37,8 @@ proc/missile(Type, Start, End)
 /proc/shell(command)
 	set opendream_unimplemented = TRUE
 /proc/spantext_char(Haystack,Needles,Start=1)
+	set opendream_unimplemented = TRUE
+/proc/splicetext(Text,Start=1,End=0,Insert="")
 	set opendream_unimplemented = TRUE
 /proc/walk_rand(Ref,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE

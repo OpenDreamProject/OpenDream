@@ -10,7 +10,7 @@
 	var/gender = "neuter" as opendream_unimplemented
 	var/infra_luminosity = 0 as opendream_unimplemented
 	var/invisibility = 0 as opendream_unimplemented
-	var/list/filters = list() as opendream_unimplemented
+	var/list/filters = list()
 	var/layer = FLOAT_LAYER
 	var/luminosity = 0 as opendream_unimplemented
 	var/maptext = "i" as opendream_unimplemented

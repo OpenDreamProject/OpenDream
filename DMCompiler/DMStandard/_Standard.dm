@@ -23,6 +23,7 @@ proc/fdel(File)
 proc/fexists(File)
 proc/file(Path)
 proc/file2text(File)
+proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
@@ -113,6 +114,7 @@ proc/winset(player, control_id, params)
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
 #include "Types\World.dm"
+#include "Types\Filter.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"
 #include "Types\Atoms\Mob.dm"

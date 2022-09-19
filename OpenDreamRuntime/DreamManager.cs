@@ -126,6 +126,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
+            ObjectTree.SetMetaObject(DreamPath.Filter, new DreamMetaObjectFilter());
         }
 
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log")

@@ -84,6 +84,10 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
+	verb/outline_filter()
+		set category = "Test"
+		src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

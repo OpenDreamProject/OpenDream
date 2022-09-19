@@ -6,8 +6,6 @@
 	set opendream_unimplemented = TRUE
 /proc/copytext_char(T,Start=1,End=0)
 	set opendream_unimplemented = TRUE
-/proc/filter(type, parameter, ...)
-	set opendream_unimplemented = TRUE
 /proc/findlasttext_char(Haystack,Needle,Start=0,End=1)
 	set opendream_unimplemented = TRUE
 /proc/findlasttextEx_char(Haystack,Needle,Start=1,End=0)

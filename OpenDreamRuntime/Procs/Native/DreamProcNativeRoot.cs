@@ -381,9 +381,75 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("filter")]
-        [DreamProcParameter("type", Type = DreamValueType.String)]
+        [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
+        [DreamProcParameter("size", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("color", Type = DreamValueType.String, DefaultValue = "#FFFFF")] // Must be a valid color
+        [DreamProcParameter("flags", Type = DreamValueType.Float, DefaultValue = 0)] // No requirement to be a sane value, but will be rounded down to nearest integer*
+        [DreamProcParameter("x", Type = DreamValueType.Float)]
+        [DreamProcParameter("y", Type = DreamValueType.Float)]
+        [DreamProcParameter("offset", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)] // Color string.
+        [DreamProcParameter("alpha", Type = DreamValueType.Float, DefaultValue = 2255)]
+        [DreamProcParameter("space", Type = DreamValueType.Float)] // Color spaces for filters are integers. Default value is RGB
+        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)] // transformation matrix
+        [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("factor", Type = DreamValueType.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueType.Float)]
+        [DreamProcParameter("radius", Type = DreamValueType.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            return DreamValue.Null;
+
+            if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filter_type))
+                return DreamValue.Null;
+
+            switch(filter_type)
+            {
+                case "alpha":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "angular_blur":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "bloom":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "blur":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "color":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "displace":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "drop_shadow":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "layer":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "motion_blur":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "outline":
+                    int size;
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsInteger(out size)) //Width in pixels (defaults to 1)
+                        size = 1;
+                    string color_string;
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Outline color (defaults to black)
+                        color_string = "#000000";
+                    int flags;
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsInteger(out flags)) //Defaults to 0 
+                        flags = 0;
+                    DreamObject result = new DreamObject(new DreamObjectDefinition(DreamPath.Filter));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("color", new DreamValue(color_string));
+                    result.SetVariable("flags", new DreamValue(flags));
+                   
+                    return new DreamValue(result);                    
+                case "radial_blur":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "rays":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "ripple":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "wave":
+                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                default:
+                    return DreamValue.Null; //no valid type? You get a null
+            }
         }
 
         [DreamProc("findtext")]

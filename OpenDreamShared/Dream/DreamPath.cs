@@ -24,6 +24,7 @@ namespace OpenDreamShared.Dream {
         public static readonly DreamPath Movable = new DreamPath("/atom/movable");
         public static readonly DreamPath Obj = new DreamPath("/obj");
         public static readonly DreamPath Mob = new DreamPath("/mob");
+        public static readonly DreamPath Filter = new DreamPath("/filter");
 
         public enum PathType {
             Absolute,

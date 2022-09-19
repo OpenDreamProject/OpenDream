@@ -432,7 +432,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     int flags;
                     if(!arguments.GetArgument(1, "flags").TryGetValueAsInteger(out flags)) //Defaults to 0 
                         flags = 0;
-                    DreamObject result = new DreamObject(new DreamObjectDefinition(DreamPath.Filter.AddToPath(filter_type)));
+
+                    DreamObject result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
                     result.SetVariable("type", new DreamValue(filter_type));
                     result.SetVariable("size", new DreamValue(size));
                     result.SetVariable("color", new DreamValue(color_string));

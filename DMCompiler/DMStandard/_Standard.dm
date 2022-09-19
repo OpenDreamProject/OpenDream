@@ -101,6 +101,7 @@ proc/winset(player, control_id, params)
 
 #include "Defines.dm"
 #include "Types\Client.dm"
+#include "Types\Filter.dm"
 #include "Types\Datum.dm"
 #include "Types\Exception.dm"
 #include "Types\Generator.dm"
@@ -114,7 +115,6 @@ proc/winset(player, control_id, params)
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
 #include "Types\World.dm"
-#include "Types\Filter.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"
 #include "Types\Atoms\Mob.dm"

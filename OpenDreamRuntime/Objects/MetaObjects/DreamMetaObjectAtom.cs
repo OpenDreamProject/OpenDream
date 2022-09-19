@@ -157,6 +157,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dreamObject.SetVariableValue(varName, new DreamValue(underlayList));
                     break;
                 }
+                case "filters":
+                {
+                    DreamList filterList;
+                    if (!value.TryGetValueAsDreamList(out filterList)) {
+                        filterList = DreamList.Create();
+                        filterList.AddValue(value);
+                    }
+                    dreamObject.SetVariableValue(varName, new DreamValue(filterList));
+                    //also definitely call update appearance here TODO
+                    break;
+                }
             }
         }
 

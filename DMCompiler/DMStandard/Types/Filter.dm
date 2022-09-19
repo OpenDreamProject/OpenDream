@@ -1,3 +1,8 @@
+
 /filter
     var/type
-    var/parent_type
+    
+/filter/outline
+    var/size
+    var/color
+    var/flags

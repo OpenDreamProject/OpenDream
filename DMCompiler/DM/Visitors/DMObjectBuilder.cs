@@ -275,11 +275,9 @@ namespace DMCompiler.DM.Visitors {
                 Expressions.List => true,
                 Expressions.NewList => true,
                 Expressions.NewPath => true,
-                Expressions.GlobalField => variable.IsGlobal, // Global set to another global
-                Expressions.StringFormat => variable.IsGlobal,
-                Expressions.Add => variable.IsGlobal,
-                Expressions.Subtract => variable.IsGlobal,
-                _ => false
+                // TODO: Check for circular reference loops here
+                Expressions.GlobalField => variable.IsGlobal,
+                _ => variable.IsGlobal
             };
 
             if (isValid) {

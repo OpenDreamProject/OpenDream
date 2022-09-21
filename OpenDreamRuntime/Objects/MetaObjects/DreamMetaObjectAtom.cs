@@ -159,6 +159,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "filters":
                 {
+                    if(value == DreamValue.Null)
+                    {
+                        dreamObject.SetVariableValue(varName, DreamValue.Null);
+                        break;
+                    }
                     DreamList filterList;
                     if (!value.TryGetValueAsDreamList(out filterList)) {
                         filterList = DreamList.Create();

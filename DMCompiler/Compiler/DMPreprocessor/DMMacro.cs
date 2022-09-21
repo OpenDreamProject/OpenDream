@@ -49,7 +49,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                             tokenTextBuilder.Append('"');
                             foreach (Token parameterToken in parameter) {
-                                tokenTextBuilder.Append(parameterToken.Text);
+                                tokenTextBuilder.Append(parameterToken.Text.Replace("\\", "\\\\").Replace("\"", "\\\""));
                             }
                             tokenTextBuilder.Append('"');
 
@@ -70,7 +70,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
                     } else {
                         if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"\"{parameterName}\"", Location.Unknown, parameterName));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"\"{parameterName.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"", Location.Unknown, parameterName));
                         } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
                             expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName, Location.Unknown, null));
                         } else {

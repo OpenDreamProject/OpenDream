@@ -31,7 +31,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             TokenType.DM_Preproc_If,
             TokenType.DM_Preproc_Ifdef,
             TokenType.DM_Preproc_Ifndef,
-            TokenType.DM_Else,
+            TokenType.DM_Preproc_Else,
             TokenType.DM_Preproc_Warning,
             TokenType.DM_Preproc_Error,
             TokenType.DM_Preproc_EndIf
@@ -57,7 +57,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 break;
                             }
                         }
-                        
+
                         yield return token;
                         PushToken(afterWhitespace);
                         break;

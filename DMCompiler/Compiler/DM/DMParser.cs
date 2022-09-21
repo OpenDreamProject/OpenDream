@@ -2516,6 +2516,7 @@ namespace DMCompiler.Compiler.DM {
                         case "sound": type |= DMValueType.Sound; break;
                         case "icon": type |= DMValueType.Icon; break;
                         case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
+                        case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
 

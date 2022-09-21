@@ -1682,29 +1682,24 @@ namespace OpenDreamRuntime.Procs.Native {
             int result = 0;
             
             TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
-            
-            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
-            textElementEnumerator.Reset();
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
 
             while(textElementEnumerator.MoveNext()) 
             {
-                if(textElementEnumerator.ElementIndex >= start - 1)
-                {
-                    bool found = false;
-                    needlesElementEnumerator.Reset();
-                    while(needlesElementEnumerator.MoveNext()) //lol O(N*M)
-                    {
-                        if(textElementEnumerator.Current.Equals(needlesElementEnumerator.Current))
-                        {
-                            result++;
-                            found=true;
-                            break;
-                        }
-                    }
-                    if(!found)
-                    {
+                bool found = false;
+                needlesElementEnumerator.Reset();
+                
+                //lol O(N*M)
+                while (needlesElementEnumerator.MoveNext()) {
+                    if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
+                        result++;
+                        found = true;
                         break;
                     }
+                }
+
+                if (!found) {
+                    break;
                 }
             }
             return new DreamValue(result);

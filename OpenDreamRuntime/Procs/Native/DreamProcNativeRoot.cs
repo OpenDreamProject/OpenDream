@@ -1676,41 +1676,23 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(insert_text);
 
             //runtime if start = 0 runtime error: bad text or out of bounds
-            
-            if(end == 0 || end > text.Length + 1)
-                end = text.Length+1;
+            StringInfo textElements = new StringInfo(text);
+            if(end == 0 || end > textElements.LengthInTextElements + 1)
+                end = textElements.LengthInTextElements+1;
             if(start < 0)
-                start = Math.Max(start + text.Length + 1, 1);
+                start = Math.Max(start + textElements.LengthInTextElements + 1, 1);
             if(end < 0)
-                end = Math.Min(end + text.Length + 1, text.Length);
+                end = Math.Min(end + textElements.LengthInTextElements + 1, textElements.LengthInTextElements);
             
-            if(start == 0 || start > text.Length || start > end)
+            if(start == 0 || start > textElements.LengthInTextElements || start > end)
                 throw new Exception("bad text or out of bounds");
                 
             
-            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text);
-            textElementEnumerator.Reset();
+            String result = textElements.SubstringByTextElements(0, start - 1); 
+            result += insert_text;
+            if(end <= textElements.LengthInTextElements)
+                result += textElements.SubstringByTextElements(end - 1);
 
-            bool inserted = false;
-            int curindex = 0;
-            String result = "";            
-            while(textElementEnumerator.MoveNext()) 
-            {
-                curindex++;
-                if(curindex >= start && (curindex < end || (curindex == end && start == end)))
-                {
-                    if(!inserted)
-                        result += insert_text;
-                        inserted = true;
-                    if(curindex == end && start == end) 
-                        result += textElementEnumerator.Current;
-                    continue;
-                }
-                else
-                {
-                    result += textElementEnumerator.Current;
-                }                
-            }
             return new DreamValue(result);
         }
 

@@ -244,10 +244,7 @@ namespace OpenDreamRuntime.Procs {
                             continue;
                         }
                         case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
-                            DreamObject? refObject = interps[nextInterpIndex].GetValueAsDreamObject();
-                            if (refObject == null) continue;
-
-                            formattedString.Append(state.DreamManager.CreateRef(value));
+                            formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
                             nextInterpIndex++;
                             prevInterpIndex++;
                             continue;

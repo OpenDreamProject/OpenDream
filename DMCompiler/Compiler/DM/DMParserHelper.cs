@@ -108,7 +108,7 @@ namespace DMCompiler.Compiler.DM {
                                 insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
 
                                 string insideBracketsText = insideBrackets?.ToString();
-                                if (insideBracketsText != String.Empty)
+                                if (!String.IsNullOrWhiteSpace(insideBracketsText))
                                 {
                                     DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                     List<Token> preprocTokens = new();
@@ -129,12 +129,14 @@ namespace DMCompiler.Compiler.DM {
                                         expressionParser.Whitespace(true);
                                         expression = expressionParser.Expression();
                                         if (expression == null) Error("Expected an expression");
+                                        if (expressionParser.Current().Type != TokenType.EndOfFile) Error("Expected end of embedded statement");
                                     }
                                     catch (CompileErrorException e)
                                     {
                                         Errors.Add(e.Error);
                                     }
 
+                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
                                     if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
                                     interpolationValues.Add(expression);
                                 }

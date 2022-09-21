@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Procs {
         public override DreamProc Proc => _proc;
 
         /// <param name="instance">This is our 'src'.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown, at time of writing, when an invalid named arg is given</exception>
         public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments)
             : base(thread)
         {
@@ -417,7 +417,7 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
             switch (reference.RefType) {
                 case DMReference.Type.Src: return new(Instance);
-                case DMReference.Type.Usr: return Usr != null ? new(Usr) : DreamValue.Null;
+                case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
                 case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
                 case DMReference.Type.Argument: return _localVariables[reference.Index];

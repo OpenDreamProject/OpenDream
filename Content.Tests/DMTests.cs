@@ -89,7 +89,7 @@ namespace Content.Tests
         }
 
         private (bool Success, DreamValue Returned, Exception? except) RunTest() {
-            var prev = _dreamMan.LastException;
+            var prev = _dreamMan.LastDMException;
 
             var result = DreamThread.Run(async (state) => {
                 if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
@@ -99,11 +99,11 @@ namespace Content.Tests
                     return DreamValue.Null;
                 }
             });
-            bool retSuccess = _dreamMan.LastException == prev;
+            bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
             if (retSuccess)
                 return (retSuccess, result, null);
             else
-                return (false, result, _dreamMan.LastException);
+                return (false, result, _dreamMan.LastDMException);
         }
 
         private static IEnumerable<object[]> GetTests()

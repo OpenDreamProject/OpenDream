@@ -22,7 +22,7 @@ namespace DMCompiler.DM.Visitors {
 
             ProcessFile(astFile); // generate it
 
-            if (VarDefined != null) // This means some listeners are remaining, which means that variables were initialized but not defined! Bad!
+            if (VarDefined != null) // This means some listeners are remaining, which means that variables were overridden but not defined! Bad!
             {
                 foreach(var method in VarDefined.GetInvocationList()) // For every object listening
                 {
@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Visitors {
                         Robust.Shared.Utility.DebugTools.Assert(realObj.danglingOverrides is not null);
                         foreach(DMASTObjectVarOverride varOverride in realObj.danglingOverrides)
                         {
-                            DMCompiler.Error(new CompilerError(varOverride.Location, $"var {varOverride.VarName} is initialized but not defined"));
+                            DMCompiler.Error(new CompilerError(varOverride.Location, $"Cannot override undefined var {varOverride.VarName}"));
                         }
                     }
                 }
@@ -137,19 +137,24 @@ namespace DMCompiler.DM.Visitors {
 
             try
             {
-                switch (varOverride.VarName)
+                switch (varOverride.VarName) // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
                 {
                     case "parent_type":
                     {
                         DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
                         if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
-                            varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
+                        varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                         return;
                     }
                     case "tag":
-                        DMCompiler.Error(new CompilerError(varOverride.Location, "tag: may not be set at compile-time"));
-                        return;
+                    {
+                        if(varObject.IsSubtypeOf(DreamPath.Datum))
+                        {
+                            throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
+                        }
+                        break;
+                    }
                 }
                 DMVariable variable;
                 if (varObject.HasLocalVariable(varOverride.VarName))

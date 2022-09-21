@@ -11,7 +11,7 @@ namespace OpenDreamRuntime {
         /// <summary>
         /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
         /// </summary>
-        public Exception LastException { get; set; }
+        public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
         public DreamList WorldContentsList { get; set; }

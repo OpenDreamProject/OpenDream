@@ -1471,8 +1471,8 @@ namespace OpenDreamRuntime.Procs {
                 state.Pop(); //Fourth argument, should be null
             }
 
-            DreamObject clientObject;
-            if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject!)) {
+            DreamObject? clientObject;
+            if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                 DreamConnection connection = state.DreamManager.GetConnectionFromClient(clientObject);
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
 

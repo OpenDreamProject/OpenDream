@@ -144,7 +144,7 @@ namespace OpenDreamShared.Dream.Procs {
     }
     ///<summary>
     ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
-    ///is a [Flags] enum because it's hypothetically possible for something to have multiple values (especially with the quirky DMStandard ones)
+    ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)
     /// </summary>
     [Flags]
     public enum DMValueType {

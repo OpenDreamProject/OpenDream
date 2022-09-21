@@ -24,17 +24,7 @@ namespace OpenDreamRuntime {
 
         public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
-        public Exception LastException { get
-            {
-                if (_lastException == null) // Lazy init
-                    return _lastException = new Exception();
-                return _lastException;
-            }
-            set
-            {
-                _lastException = value;
-            }
-        }
+        public Exception? LastDMException { get; set; }
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
@@ -48,7 +38,6 @@ namespace OpenDreamRuntime {
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
         private DreamCompiledJson _compiledJson;
-        private Exception? _lastException;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {

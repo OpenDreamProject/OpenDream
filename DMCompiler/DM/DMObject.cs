@@ -25,7 +25,6 @@ namespace DMCompiler.DM {
         public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
         private bool _isSubscribedToVarDef = false;
         
-
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
             Path = path;
@@ -45,12 +44,11 @@ namespace DMCompiler.DM {
                 var varOverride = danglingOverrides[i];
                 if (varOverride.VarName == varDefined.Name) // FINALLY we can do this
                 {
-                    if (IsSubtypeOf(maybeAncestor.Path))
+                    if (IsSubtypeOf(maybeAncestor.Path)) // Resolves the ambiguous var override
                     {
                         // Thank god DMObjectBuilder is static, amirite?
                         DMObjectBuilder.OverrideVariableValue(this, ref varDefined, varOverride.Value); // I'd like to mark DMObjectBuilder as a friend class but that's not a thing in C# so
                         VariableOverrides[varDefined.Name] = varDefined;
-                        //DMCompiler.Warning(new CompilerWarning(varOverride.Location, $"Resolved ambiguous var override for {varOverride.VarName}"));
                         danglingOverrides.RemoveAt(i);
                         break;
                     }

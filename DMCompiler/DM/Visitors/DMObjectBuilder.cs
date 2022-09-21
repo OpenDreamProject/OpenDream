@@ -118,14 +118,14 @@ namespace DMCompiler.DM.Visitors {
                     return;
                 }
                 //otherwise create
-                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst);
+                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
             } else { // not static
-                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst);
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
                 varObject.Variables[variable.Name] = variable;
             }
 
             try {
-                SetVariableValue(varObject, ref variable, varDefinition.Value, varDefinition.ValType);
+                SetVariableValue(varObject, ref variable, varDefinition.Value);
                 VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
             } catch (CompileErrorException e) {
                 DMCompiler.Error(e.Error);
@@ -282,18 +282,18 @@ namespace DMCompiler.DM.Visitors {
         /// <remarks>
         /// This is bizarrely public instead of private because DMObject ends up calling it to handle late var definitions, and there's no 'friend' keyword in C#.
         /// </remarks>
-        public static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything)
+        public static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value)
         {
             if(variable.IsConst)
             {
                 DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is const and cannot be modified"));
                 return;
             }
-            if((valType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
+            if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
             {
                 DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified"));
             }
-            SetVariableValue(currentObject, ref variable, value, valType);
+            SetVariableValue(currentObject, ref variable, value);
         }
 
         /// <summary>
@@ -301,11 +301,10 @@ namespace DMCompiler.DM.Visitors {
         /// </summary>
         /// <param name="variable">This parameter may be modified if a new variable had to be instantiated in the case of an override.</param>
         /// <exception cref="CompileErrorException"></exception>
-        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value, DMValueType valType = DMValueType.Anything) {
+        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
-            expression.ValType = valType;
 
             if (expression.TryAsConstant(out var constant)) {
                 variable = variable.WriteToValue(constant);

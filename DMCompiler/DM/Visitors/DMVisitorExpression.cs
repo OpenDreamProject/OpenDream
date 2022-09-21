@@ -192,7 +192,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
-            if(lhs.TryAsConstant(out var _) || ((lhs.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly))
+            if(lhs.TryAsConstant(out var _))
             {
                 DMCompiler.Error(new CompilerError(assign.Expression.Location, "Cannot write to const var"));
             }
@@ -450,7 +450,7 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
                     DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {

@@ -1,19 +1,25 @@
 ﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     class DMVariable {
         public DreamPath? Type;
         public string Name;
         public bool IsGlobal;
+        /// <remarks>
+        /// NOTE: This DMVariable may be forced constant through opendream_compiletimereadonly. This only marks that the variable has the DM quality of /const/ness.
+        /// </remarks>
         public bool IsConst;
         public DMExpression Value;
+        public DMValueType ValType;
 
-        public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst) {
+        public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, DMValueType valType = DMValueType.Anything) {
             Type = type;
             Name = name;
             IsGlobal = isGlobal;
             IsConst = isConst;
             Value = null;
+            ValType = valType;
         }
 
 
@@ -29,7 +35,7 @@ namespace DMCompiler.DM {
                 Value = value;
                 return this;
             }
-            DMVariable clone = new DMVariable(Type,Name,IsGlobal,IsConst);
+            DMVariable clone = new DMVariable(Type,Name,IsGlobal,IsConst,ValType);
             clone.Value = value;
             return clone;
         }

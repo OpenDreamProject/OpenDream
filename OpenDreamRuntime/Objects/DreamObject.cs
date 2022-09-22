@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Objects {
 
             RefCount--;
             if(RefCount == 0){
-                Delete();
+                //Delete();
             }
         }
 

@@ -51,6 +51,11 @@ namespace OpenDreamRuntime.Procs {
                 
                 if(Usr is not null)
                     Usr.IncrementRefCount();
+                if(Arguments is not null){
+                    foreach(var arg in Arguments.GetAllArguments()){
+                        arg.IncrementDreamObjectRefCount();
+                    }
+                }
             }
 
             protected override ProcStatus InternalResume()

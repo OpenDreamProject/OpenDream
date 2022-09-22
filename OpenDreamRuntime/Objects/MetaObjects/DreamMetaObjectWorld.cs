@@ -122,6 +122,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         return new DreamValue(_viewRange.ToString());
                     }
                 }
+                case "vars":
+                    return new DreamValue(DreamListVars.Create(dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

@@ -162,13 +162,21 @@ namespace OpenDreamRuntime.Procs {
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             _localVariables = _dreamValuePool.Rent(256);
             
-            //Instance.IncrementRefCount(); // we do not clean up current object under no circumstances;
-            //Usr.IncrementRefCount(); // same here
+            if(Instance is not null)
+                Instance.IncrementRefCount(); // we do not clean up current object under no circumstances;
+            if(Usr is not null)
+                Usr.IncrementRefCount(); // same here
             
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
-                _localVariables[i] = (i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+                if(i < arguments.OrderedArguments.Count){
+                    _localVariables[i] = arguments.OrderedArguments[i];
+                    _localVariables[i].IncrementDreamObjectRefCount();
+                } else {
+                    _localVariables[i] = DreamValue.Null;
+                }
+                
             }
 
             //Named arguments
@@ -177,7 +185,7 @@ namespace OpenDreamRuntime.Procs {
                 if (argumentIndex == -1) {
                     throw new Exception($"Invalid argument name \"{argumentName}\"");
                 }
-
+                argumentValue.IncrementDreamObjectRefCount();
                 _localVariables[argumentIndex] = argumentValue;
             }
         }
@@ -195,8 +203,11 @@ namespace OpenDreamRuntime.Procs {
             ArgumentCount = other.ArgumentCount;
             _pc = other._pc;
             
-            //Instance.IncrementRefCount();
-            //Usr.IncrementRefCount();
+            if(Instance is not null)
+                Instance.IncrementRefCount();
+            
+            if(Usr is not null)
+                Usr.IncrementRefCount();
 
             _stack = _stackPool.Rent(other._stack.Length);
             Array.Copy(other._stack, _stack, _stack.Length);

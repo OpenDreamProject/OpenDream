@@ -7,6 +7,22 @@ namespace OpenDreamRuntime.Objects {
     public class DreamObject {
         public DreamObjectDefinition? ObjectDefinition { get; protected set; }
         public bool Deleted = false;
+        private ulong RefCount = 0;
+
+        public void IncrementRefCount(){
+            if(Deleted) throw new Exception("Invalid attempt at incrementing RefCount on a deleted DreamObject");
+            RefCount++;
+        }
+        
+        public void DecrementRefCount(){
+            if(Deleted) throw new Exception("Invalid attempt at decrementing RefCount on a deleted DreamObject");
+            if(RefCount == 0) throw new Exception("Invalid attempt at decrementing DreamObject's refcount when it is at 0");
+
+            RefCount--;
+            if(RefCount == 0){
+                Delete();
+            }
+        }
 
         private Dictionary<string, DreamValue> _variables = new();
 
@@ -54,15 +70,19 @@ namespace OpenDreamRuntime.Objects {
             return referenceID;
         }
 
-        public void Delete(IDreamManager manager) {
+        public virtual void Delete() {
             if (Deleted) return;
             ObjectDefinition?.MetaObject?.OnObjectDeleted(this);
             Deleted = true;
             //we release all relevant information, making this a very tiny object
-            _variables = null;
-            ObjectDefinition = null;
+            foreach(var value in _variables){
+                value.Value.DecrementDreamObjectRefCount(); 
+            }
 
-            manager.ReferenceIDs.Remove(this);
+            _variables.Clear();
+            ObjectDefinition = null;
+            
+            IoCManager.Resolve<IDreamManager>().ReferenceIDs.Remove(this);
         }
 
         public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {
@@ -124,8 +144,10 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot set variable on a deleted object!");
             }
+            value.IncrementDreamObjectRefCount();
             var oldValue = SetVariableValue(name, value);
             if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
+            oldValue.DecrementDreamObjectRefCount();
         }
 
         /// <summary>

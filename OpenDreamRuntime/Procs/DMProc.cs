@@ -161,7 +161,10 @@ namespace OpenDreamRuntime.Procs {
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             _localVariables = _dreamValuePool.Rent(256);
-
+            
+            Instance.IncrementRefCount(); // we do not clean up current object under no circumstances;
+            Usr.IncrementRefCount(); // same here
+            
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
@@ -191,6 +194,9 @@ namespace OpenDreamRuntime.Procs {
             Usr = other.Usr;
             ArgumentCount = other.ArgumentCount;
             _pc = other._pc;
+            
+            Instance.IncrementRefCount();
+            Usr.IncrementRefCount();
 
             _stack = _stackPool.Rent(other._stack.Length);
             Array.Copy(other._stack, _stack, _stack.Length);
@@ -215,7 +221,12 @@ namespace OpenDreamRuntime.Procs {
                     return status.Value;
                 }
             }
-
+            
+            foreach(var variable in _localVariables){
+                variable.DecrementDreamObjectRefCount();
+            }
+            Instance.DecrementRefCount();
+            Usr.DecrementRefCount();
             // TODO: This should be automatic (dispose pattern?)
             ReturnPools();
             return ProcStatus.Returned;
@@ -242,6 +253,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void SetReturn(DreamValue value) {
+            Result.DecrementDreamObjectRefCount();
+            value.IncrementDreamObjectRefCount();
             Result = value;
         }
 
@@ -381,11 +394,29 @@ namespace OpenDreamRuntime.Procs {
 
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
-                case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
-                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Index] = value; break;
-                case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
+                case DMReference.Type.Self:
+                    Result.DecrementDreamObjectRefCount();
+                    value.IncrementDreamObjectRefCount();
+                    Result = value;
+                    break;
+                case DMReference.Type.Argument:
+                    _localVariables[reference.Index].DecrementDreamObjectRefCount();
+                    value.IncrementDreamObjectRefCount();
+                    _localVariables[reference.Index] = value;
+                    break;
+                case DMReference.Type.Local:
+                    _localVariables[ArgumentCount + reference.Index].DecrementDreamObjectRefCount();
+                    value.IncrementDreamObjectRefCount();
+                    _localVariables[ArgumentCount + reference.Index] = value;
+                    break;
+                case DMReference.Type.SrcField:
+                    Instance.SetVariable(reference.Name, value);
+                    break;
+                case DMReference.Type.Global:
+                    DreamManager.Globals[reference.Index].DecrementDreamObjectRefCount();
+                    value.IncrementDreamObjectRefCount();
+                    DreamManager.Globals[reference.Index] = value; 
+                    break;
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
@@ -397,7 +428,7 @@ namespace OpenDreamRuntime.Procs {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
                         throw new Exception($"Cannot assign field \"{reference.Name}\" on {owner}");
-
+                    
                     ownerObj.SetVariable(reference.Name, value);
                     break;
                 }

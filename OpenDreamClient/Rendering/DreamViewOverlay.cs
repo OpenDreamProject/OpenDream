@@ -100,6 +100,7 @@ namespace OpenDreamClient.Rendering {
 
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                        
                         DrawIcon(handle, sprite.Icon, position + iconSize * (x, y));
                     }
                 }
@@ -108,7 +109,7 @@ namespace OpenDreamClient.Rendering {
 
         private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
             position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
-
+            handle.UseShader(icon.Filters.Count > 0 ? icon.Filters[0] : null); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
             foreach (DreamIcon underlay in icon.Underlays) {
                 DrawIcon(handle, underlay, position);
             }
@@ -121,6 +122,7 @@ namespace OpenDreamClient.Rendering {
             foreach (DreamIcon overlay in icon.Overlays) {
                 DrawIcon(handle, overlay, position);
             }
+            handle.UseShader(null);
         }
     }
 }

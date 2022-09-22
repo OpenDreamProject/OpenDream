@@ -1,11 +1,13 @@
 ﻿using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.Graphics;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
         private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
+        private readonly Dictionary<uint, ShaderInstance> _filterShaders = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
@@ -70,5 +72,13 @@ namespace OpenDreamClient.Rendering {
                 sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
             });
         }
+
+        public ShaderInstance GetFilterShader(uint filterId)
+        {
+            _filterShaders.TryGetValue(filterId, out ShaderInstance result);
+            
+            return result;
+        }
     }
 }
+

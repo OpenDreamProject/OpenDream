@@ -310,14 +310,14 @@ namespace OpenDreamRuntime {
         }
         
         public void IncrementDreamObjectRefCount(){
-            if(Type == DreamValueType.DreamObject){
+            if(Type == DreamValueType.DreamObject && Value != null){
                 DreamObject obj = (DreamObject)Value;
                 obj.IncrementRefCount();
             }
         }
 
         public void DecrementDreamObjectRefCount(){
-            if(Type == DreamValueType.DreamObject){
+            if(Type == DreamValueType.DreamObject && Value != null){
                 DreamObject obj = (DreamObject)Value;
                 obj.DecrementRefCount();
             }

@@ -51,7 +51,6 @@ namespace OpenDreamRuntime {
         public DreamValue(DreamObject? value) {
             Type = DreamValueType.DreamObject;
             Value = value;
-            value.IncrementRefCount();
         }
 
         public DreamValue(DreamPath value) {
@@ -82,7 +81,6 @@ namespace OpenDreamRuntime {
                 DreamProcArguments => DreamValueType.Reference,
                 _ => throw new ArgumentException("Invalid DreamValue value (" + value + ", " + value.GetType() + ")")
             };
-            IncrementDreamObjectRefCount();
         }
 
         public override string ToString() {

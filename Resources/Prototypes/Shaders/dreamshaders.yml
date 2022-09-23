@@ -1,5 +1,7 @@
+
 - type: shader
   id: outline
-  kind: canvas
-  light_mode: unshaded
+  kind: source
   path: "/Shaders/outline.swsl"
+  params:
+    outline_color: "#FF000055"

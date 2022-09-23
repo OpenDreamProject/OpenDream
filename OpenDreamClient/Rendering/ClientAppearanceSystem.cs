@@ -76,10 +76,15 @@ namespace OpenDreamClient.Rendering {
 
         public ShaderInstance GetFilterShader(uint filterId)
         {
-            var _protoManager = IoCManager.Resolve<IPrototypeManager>();
-            var instance = _protoManager.Index<ShaderPrototype>("outline").InstanceUnique();
-            instance.SetParameter("outline_width",10);
-            instance.SetParameter("outline_color", new Vector4(1.0f,0f,0f,0.5f));
+            ShaderInstance instance = null;
+            if(!_filterShaders.TryGetValue(filterId, out instance))
+            {
+                var _protoManager = IoCManager.Resolve<IPrototypeManager>();
+                instance = _protoManager.Index<ShaderPrototype>("outline").InstanceUnique();
+                instance.SetParameter("outline_width",10);
+                //instance.SetParameter("outline_color", new Vector4(1.0f,0f,0f,0.5f));
+                _filterShaders.Add(filterId, instance);
+            }
             return instance;
         }
     }

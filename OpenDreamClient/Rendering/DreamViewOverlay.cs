@@ -109,21 +109,25 @@ namespace OpenDreamClient.Rendering {
 
         private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
             position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
-            
-            handle.UseShader(icon.Filters.Count > 0 ? icon.Filters[0] : null); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
+
             foreach (DreamIcon underlay in icon.Underlays) {
                 DrawIcon(handle, underlay, position);
             }
-
+            if(icon.Filters.Count > 0)
+            {
+                handle.UseShader(icon.Filters[0]); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
+                handle.DrawRect(new Box2(0,0,1,1), Color.White);
+            }
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
                 handle.DrawTexture(frame, position, icon.Appearance.Color);
             }
+            handle.UseShader(null);
 
             foreach (DreamIcon overlay in icon.Overlays) {
                 DrawIcon(handle, overlay, position);
             }
-            handle.UseShader(null);
+
         }
     }
 }

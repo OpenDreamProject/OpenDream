@@ -104,7 +104,8 @@ namespace DMCompiler.DM.Visitors {
             }
             else if (varObject.HasLocalVariable(varDefinition.Name))
             {
-                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
+                if(!DoesDefineSnowflakeVars(varDefinition, varObject))
+                    DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
                 variable = varObject.GetVariable(varDefinition.Name);
             }
             //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
@@ -278,6 +279,20 @@ namespace DMCompiler.DM.Visitors {
         {
             if (varDefinition == null) return false;
             return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
+        }
+
+        /// <summary>
+        /// A snowflake helper proc which allows for ignoring variable duplication in the specific case that /world or /client are inheriting from /datum,<br/>
+        /// which would normally throw an error since all of these classes have their own var/vars definition.
+        /// </summary>
+        private static bool DoesDefineSnowflakeVars(DMASTObjectVarDefinition varDefinition, DMObject varObject) {
+            if (DMCompiler.Settings.NoStandard == false)
+                if (varDefinition != null)
+                    if (varDefinition.Name == "vars")
+                        if (varDefinition.ObjectPath == DreamPath.World || varDefinition.ObjectPath == DreamPath.Client)
+                            if (varObject.IsSubtypeOf(DreamPath.Datum))
+                                return true;
+            return false;
         }
 
         /// <summary>

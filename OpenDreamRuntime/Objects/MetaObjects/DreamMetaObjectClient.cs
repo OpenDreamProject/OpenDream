@@ -129,6 +129,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "connection":
                     return new DreamValue("seeker");
+                case "vars": // /client has this too!
+                    return new DreamValue(DreamListVars.Create(dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

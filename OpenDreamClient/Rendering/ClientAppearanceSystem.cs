@@ -1,7 +1,8 @@
 ﻿using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.Graphics;
-
+using OpenDreamClient.Resources;
+using Robust.Shared.Prototypes;
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
@@ -75,9 +76,11 @@ namespace OpenDreamClient.Rendering {
 
         public ShaderInstance GetFilterShader(uint filterId)
         {
-            _filterShaders.TryGetValue(filterId, out ShaderInstance result);
-            
-            return result;
+            var _protoManager = IoCManager.Resolve<IPrototypeManager>();
+            var instance = _protoManager.Index<ShaderPrototype>("outline").InstanceUnique();
+            instance.SetParameter("outline_width",10);
+            instance.SetParameter("outline_color", new Vector4(1.0f,0f,0f,0.5f));
+            return instance;
         }
     }
 }

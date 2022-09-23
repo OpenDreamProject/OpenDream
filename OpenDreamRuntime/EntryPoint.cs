@@ -5,7 +5,8 @@ using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Timing;
-
+using Robust.Shared.Prototypes;
+using Robust.Shared.Utility;
 namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
@@ -37,6 +38,9 @@ namespace OpenDreamRuntime {
             cfg.OverrideDefault(CVars.NetLogLateMsg, false); // Disable since disabling prediction causes timing errors otherwise.
             cfg.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
             cfg.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
+            var prototypeMan = IoCManager.Resolve<IPrototypeManager>();
+            prototypeMan.LoadDirectory(new ResourcePath("/Resources/Prototypes"));
+
         }
 
         public override void PostInit() {

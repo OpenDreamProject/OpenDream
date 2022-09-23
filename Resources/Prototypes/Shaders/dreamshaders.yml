@@ -1,0 +1,5 @@
+- type: shader
+  id: outline
+  kind: canvas
+  light_mode: unshaded
+  path: "/Shaders/outline.swsl"

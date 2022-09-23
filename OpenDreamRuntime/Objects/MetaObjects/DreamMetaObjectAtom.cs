@@ -162,15 +162,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if(value == DreamValue.Null)
                     {
                         dreamObject.SetVariableValue(varName, DreamValue.Null);
+                        _atomManager.UpdateAppearance(dreamObject, appearance => {
+                            appearance.Filters.Clear();
+                        });
                         break;
                     }
                     DreamList filterList;
                     if (!value.TryGetValueAsDreamList(out filterList)) {
                         filterList = DreamList.Create();
                         filterList.AddValue(value);
+                        _atomManager.UpdateAppearance(dreamObject, appearance => {
+                            appearance.Filters.Add(1);
+                        });
                     }
                     dreamObject.SetVariableValue(varName, new DreamValue(filterList));
                     //also definitely call update appearance here TODO
+                    
                     break;
                 }
             }
@@ -301,5 +308,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Underlays.Remove(underlayAppearanceId.Value);
             });
         }
+
     }
 }

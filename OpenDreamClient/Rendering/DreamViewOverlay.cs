@@ -109,6 +109,7 @@ namespace OpenDreamClient.Rendering {
 
         private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
             position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+            
             handle.UseShader(icon.Filters.Count > 0 ? icon.Filters[0] : null); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
             foreach (DreamIcon underlay in icon.Underlays) {
                 DrawIcon(handle, underlay, position);

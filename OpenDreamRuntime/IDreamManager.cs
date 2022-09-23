@@ -7,7 +7,11 @@ namespace OpenDreamRuntime {
     public interface IDreamManager {
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
-        public int DMExceptionCount { get; set; }
+
+        /// <summary>
+        /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
+        /// </summary>
+        public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
         public DreamList WorldContentsList { get; set; }

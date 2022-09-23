@@ -209,6 +209,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTObjectDefinition : DMASTStatement {
+        /// <summary> Unlike other Path variables stored by AST nodes, this path is guaranteed to be the real, absolute path of this object definition block. <br/>
+        /// That includes any inherited pathing from being tabbed into a different, base definition.
+        /// </summary>
         public DreamPath Path;
         public DMASTBlockInner InnerBlock;
 
@@ -224,7 +227,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcDefinition : DMASTStatement {
-        public DreamPath? ObjectPath;
+        public DreamPath ObjectPath;
         public string Name;
         public bool IsOverride = false;
         public bool IsVerb = false;
@@ -244,7 +247,7 @@ namespace DMCompiler.Compiler.DM {
 
             if (procElementIndex != -1) path = path.RemoveElement(procElementIndex);
 
-            ObjectPath = (path.Elements.Length > 1) ? path.FromElements(0, -2) : null;
+            ObjectPath = (path.Elements.Length > 1) ? path.FromElements(0, -2) : DreamPath.Root;
             Name = path.LastElement;
             Parameters = parameters;
             Body = body;
@@ -270,7 +273,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTObjectVarDefinition : DMASTStatement {
+        /// <summary>The path of the object that we are a property of.</summary>
         public DreamPath ObjectPath { get => _varDecl.ObjectPath; }
+        /// <summary>The actual type of the variable itself.</summary>
         public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
         public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;

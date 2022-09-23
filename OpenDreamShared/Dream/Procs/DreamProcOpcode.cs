@@ -142,7 +142,10 @@ namespace OpenDreamShared.Dream.Procs {
         Bold = 0x1B,
         Italic = 0x1C
     }
-
+    ///<summary>
+    ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
+    ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)
+    /// </summary>
     [Flags]
     public enum DMValueType {
         Anything = 0x0,
@@ -159,7 +162,9 @@ namespace OpenDreamShared.Dream.Procs {
         CommandText = 0x400,
         Sound = 0x800,
         Icon = 0x1000,
-        Unimplemented = 0x2000
+        //Byond here be dragons
+        Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+        CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     }
 
     public struct DMReference {

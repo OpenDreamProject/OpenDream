@@ -148,9 +148,13 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
             if (_expr is Dereference deref && deref.PropertyName == "vars") {
-                    deref.Expr.EmitPushValue(dmObject, proc);
-                    _index.EmitPushValue(dmObject, proc);
-                    proc.Initial();
+                deref.Expr.EmitPushValue(dmObject, proc);
+                _index.EmitPushValue(dmObject, proc);
+                proc.Initial();
+            } else if (_expr is Field) {
+                proc.PushReferenceValue(DMReference.Src);
+                _index.EmitPushValue(dmObject, proc);
+                proc.Initial();
             } else {
                 DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
                 EmitPushValue(dmObject, proc);

@@ -33,6 +33,7 @@ namespace OpenDreamRuntime
             _netManager.RegisterNetMessage<MsgBrowse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
             _netManager.RegisterNetMessage<MsgWinSet>();
+            _netManager.RegisterNetMessage<MsgWinExists>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();

@@ -142,31 +142,28 @@ namespace OpenDreamRuntime.Procs {
                 }
                 else
                 {
-                    throw new Exception("Attempted to create an object that is neither a path nor a path string");
+                    throw new Exception($"Cannot create object from invalid type {val}");
                 }
+            }
 
+            DreamObjectDefinition objectDef = state.DreamManager.ObjectTree.GetObjectDefinition(objectPath);
+            if (objectDef.IsSubtypeOf(DreamPath.Turf)) {
+                // Turfs are special. They're never created outside of map initialization
+                // So instead this will replace an existing turf's type and return that same turf
+                DreamValue loc = arguments.GetArgument(0, "loc");
+                if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turf))
+                    throw new Exception($"Invalid turf loc {loc}");
+
+                IDreamMapManager dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
+                dreamMapManager.SetTurf(turf, objectDef, arguments);
+
+                state.Push(loc);
+                return null;
             }
 
             DreamObject newObject = state.DreamManager.ObjectTree.CreateObject(objectPath);
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
-        }
-
-        public static ProcStatus? CreateMultidimensionalList(DMProcState state)
-        {
-            var count = state.ReadInt();
-
-            List<int> sizes = new List<int>(count);
-            foreach (var size in state.PopCount(count))
-            {
-                size.TryGetValueAsInteger(out var sizeInt);
-                sizes.Add(sizeInt);
-            }
-
-            var list = DreamList.CreateMultidimensional(sizes);
-
-            state.Push(new DreamValue(list));
-            return null;
         }
 
         public static ProcStatus? DestroyEnumerator(DMProcState state) {
@@ -194,7 +191,8 @@ namespace OpenDreamRuntime.Procs {
                 if (c == (char)0xFF) {
                     c = unformattedString[++i];
 
-                    switch ((StringFormatTypes)c) {
+                    StringFormatTypes formatType = (StringFormatTypes) c;
+                    switch (formatType) {
                         case StringFormatTypes.Stringify: {
                             DreamValue value = state.Pop();
 
@@ -205,6 +203,15 @@ namespace OpenDreamRuntime.Procs {
                             DreamObject refObject = state.Pop().GetValueAsDreamObject();
 
                             formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                            break;
+                        }
+                        case StringFormatTypes.UpperDefiniteArticle:
+                        case StringFormatTypes.LowerDefiniteArticle: {
+                            DreamValue value = state.Pop();
+                            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                                formattedString.Append(dreamObject.GetDisplayName(formatType));
+                            }
+
                             break;
                         }
                         default:
@@ -610,7 +617,12 @@ namespace OpenDreamRuntime.Procs {
                     default:
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                 }
+            } else if (first.TryGetValueAsInteger(out int firstInt)) {
+                state.Push(new DreamValue(firstInt));
+            } else {
+                throw new Exception("Invalid or operation on " + first + " and " + second);
             }
+
             return null;
         }
 
@@ -744,10 +756,11 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     throw new Exception("Invalid combine operation on " + first + " and " + second);
                 }
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                result = first;
             } else {
                 throw new Exception("Invalid combine operation on " + first + " and " + second);
             }
-
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -1419,9 +1432,9 @@ namespace OpenDreamRuntime.Procs {
                 return null;
             }
 
-            DreamObject client;
+            DreamObject? client;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                client = receiver.GetVariable("client").GetValueAsDreamObject();
+                receiver.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out client);
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
                 client = receiver;
             } else {
@@ -1435,12 +1448,14 @@ namespace OpenDreamRuntime.Procs {
                 connection.OutputControl((string)message.Value, control);
             }
 
+            // TODO: When errors are more strict (or a setting for it added), a null client should error
+
             return null;
         }
 
         public static ProcStatus? Prompt(DMProcState state) {
             DMValueType types = (DMValueType)state.ReadInt();
-            DreamObject recipientMob;
+            DreamObject? recipientMob;
             DreamValue title, message, defaultValue;
 
             DreamValue firstArg = state.Pop();
@@ -1456,7 +1471,7 @@ namespace OpenDreamRuntime.Procs {
                 state.Pop(); //Fourth argument, should be null
             }
 
-            DreamObject clientObject;
+            DreamObject? clientObject;
             if (recipientMob != null && recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out clientObject)) {
                 DreamConnection connection = state.DreamManager.GetConnectionFromClient(clientObject);
                 Task<DreamValue> promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
@@ -1478,7 +1493,8 @@ namespace OpenDreamRuntime.Procs {
             if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
                 z.TryGetValueAsInteger(out var zInt))
             {
-                state.Push(new DreamValue(IoCManager.Resolve<IDreamMapManager>().GetTurf(xInt, yInt, zInt)));
+                IoCManager.Resolve<IDreamMapManager>().TryGetTurfAt((xInt, yInt), zInt, out var turf);
+                state.Push(new DreamValue(turf));
             }
             else
             {
@@ -1610,6 +1626,20 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(picked);
+            return null;
+        }
+
+        public static ProcStatus? Prob(DMProcState state) {
+            DreamValue P = state.Pop();
+
+            if (P.TryGetValueAsFloat(out float probability)) {
+                int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
+
+                state.Push(new DreamValue(result));
+            } else {
+                state.Push(new DreamValue(0));
+            }
+
             return null;
         }
 

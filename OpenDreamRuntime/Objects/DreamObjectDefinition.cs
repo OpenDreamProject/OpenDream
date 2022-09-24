@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
@@ -15,7 +16,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly Dictionary<string, DreamValue> Variables = new();
         public readonly Dictionary<string, int> GlobalVariables = new();
 
-        private DreamObjectDefinition _parentObjectDefinition = null;
+        private readonly DreamObjectDefinition? _parentObjectDefinition = null;
 
         public DreamObjectDefinition(DreamPath type)
         {
@@ -73,14 +74,14 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamProc GetProc(string procName) {
-            if (TryGetProc(procName, out DreamProc proc)) {
+            if (TryGetProc(procName, out DreamProc? proc)) {
                 return proc;
             } else {
                 throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
             }
         }
 
-        public bool TryGetProc(string procName, out DreamProc proc) {
+        public bool TryGetProc(string procName, [NotNullWhen(true)] out DreamProc? proc) {
             if (OverridingProcs.TryGetValue(procName, out var procId))
             {
                 proc = _dreamMan.ObjectTree.Procs[procId];

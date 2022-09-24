@@ -129,6 +129,7 @@ namespace DMCompiler.Compiler.DM {
 
                                 case TokenType.DM_Preproc_Punctuator_LeftBracket:
                                     token = CreateToken(TokenType.DM_QuestionLeftBracket, "?[");
+                                    BracketNesting++;
                                     Advance();
                                     break;
 
@@ -173,6 +174,7 @@ namespace DMCompiler.Compiler.DM {
                                 case "=": token = CreateToken(TokenType.DM_Equals, c); break;
                                 case "==": token = CreateToken(TokenType.DM_EqualsEquals, c); break;
                                 case "!": token = CreateToken(TokenType.DM_Exclamation, c); break;
+                                case "<>": // This is syntactically equivalent to the below so why not the same token
                                 case "!=": token = CreateToken(TokenType.DM_ExclamationEquals, c); break;
                                 case "^": token = CreateToken(TokenType.DM_Xor, c); break;
                                 case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;

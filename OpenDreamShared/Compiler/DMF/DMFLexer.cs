@@ -125,8 +125,11 @@ namespace OpenDreamShared.Compiler.DMF {
             { "BUTTON", TokenType.DMF_Button },
             { "CHILD", TokenType.DMF_Child },
             { "center", TokenType.DMF_Center },
+            { "checkbox", TokenType.DMF_Checkbox },
             { "distort", TokenType.DMF_Distort },
             { "elem", TokenType.DMF_Elem },
+            { "GRID", TokenType.DMF_Grid },
+            { "horizontal", TokenType.DMF_Horizontal },
             { "INFO", TokenType.DMF_Info },
             { "INPUT", TokenType.DMF_Input },
             { "LABEL", TokenType.DMF_Label },
@@ -140,9 +143,11 @@ namespace OpenDreamShared.Compiler.DMF {
             { "OUTPUT", TokenType.DMF_Output },
             { "pushbox", TokenType.DMF_PushBox },
             { "pushbutton", TokenType.DMF_PushButton },
+            { "radio", TokenType.DMF_Radio },
             { "right", TokenType.DMF_Right },
             { "stretch", TokenType.DMF_Stretch },
             { "sunken", TokenType.DMF_Sunken },
+            { "TAB", TokenType.DMF_Tab },
             { "top", TokenType.DMF_Top },
             { "top-left", TokenType.DMF_TopLeft },
             { "top-right", TokenType.DMF_TopRight },
@@ -165,10 +170,11 @@ namespace OpenDreamShared.Compiler.DMF {
                         token = CreateToken(TokenType.Skip, c);
                         break;
                     }
+                    case ';': Advance(); token = CreateToken(TokenType.DMF_Semicolon, c); break;
                     case '=': Advance(); token = CreateToken(TokenType.DMF_Equals, c); break;
                     case '\'':
                     case '"': {
-                        string text = c.ToString();
+                        StringBuilder textBuilder = new StringBuilder(c.ToString());
 
                         while (Advance() != c && !AtEndOfSource) {
                             if (GetCurrent() == '\\') {
@@ -176,18 +182,20 @@ namespace OpenDreamShared.Compiler.DMF {
 
                                 switch (GetCurrent()) {
                                     case '"':
-                                    case '\\': text += GetCurrent(); break;
-                                    case 't': text += '\t'; break;
-                                    default: throw new Exception("Invalid escape sequence '\\" + GetCurrent() + "'");
+                                    case '\\': textBuilder.Append(GetCurrent()); break;
+                                    case 't': textBuilder.Append('\t'); break;
+                                    case 'n': textBuilder.Append('\n'); break;
+                                    default: throw new Exception($"Invalid escape sequence '\\{GetCurrent()}'");
                                 }
                             } else {
-                                text += GetCurrent();
+                                textBuilder.Append(GetCurrent());
                             }
                         }
-                        if (GetCurrent() != c) throw new Exception("Expected '" + c + "'");
-                        text += c;
+                        if (GetCurrent() != c) throw new Exception($"Expected '{c}'");
+                        textBuilder.Append(c);
                         Advance();
 
+                        string text = textBuilder.ToString();
                         if (c == '"') token = CreateToken(TokenType.DMF_String, text, text.Substring(1, text.Length - 2));
                         else if (c == '\'') token = CreateToken(TokenType.DMF_Resource, text, text.Substring(1, text.Length - 2));
                         break;

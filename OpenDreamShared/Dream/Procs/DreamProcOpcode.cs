@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
@@ -83,7 +84,7 @@ namespace OpenDreamShared.Dream.Procs {
         //0x4F,
         JumpIfNullDereference = 0x50,
         Pop = 0x51,
-        //0x52
+        Prob = 0x52,
         IsSaved = 0x53,
         PickUnweighted = 0x54,
         PickWeighted = 0x55,
@@ -95,7 +96,7 @@ namespace OpenDreamShared.Dream.Procs {
         IsInRange = 0x5B,
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
-        CreateMultidimensionalList = 0x5E,
+        //0x5E
         PushGlobalVars = 0x5F
     }
 
@@ -141,7 +142,10 @@ namespace OpenDreamShared.Dream.Procs {
         Bold = 0x1B,
         Italic = 0x1C
     }
-
+    ///<summary>
+    ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
+    ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)
+    /// </summary>
     [Flags]
     public enum DMValueType {
         Anything = 0x0,
@@ -158,7 +162,9 @@ namespace OpenDreamShared.Dream.Procs {
         CommandText = 0x400,
         Sound = 0x800,
         Icon = 0x1000,
-        Unimplemented = 0x2000
+        //Byond here be dragons
+        Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+        CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     }
 
     public struct DMReference {
@@ -248,4 +254,31 @@ namespace OpenDreamShared.Dream.Procs {
             }
         }
     }
+
+    // Dummy class-as-namespace because C# just kinda be like this
+    public static class OpcodeVerifier
+    {
+        /// <summary>
+        /// Validates that the opcodes in DreamProcOpcode are all unique, such that none resolve to the same byte.
+        /// </summary>
+        /// <returns>True if there are duplicate opcodes, false if not</returns>
+        public static bool AreOpcodesInvalid() // FIXME: Can this be made into something done during compiletime? Like, *this code's* compiletime? >:/
+        {
+            // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
+            // but since we're in OpenDreamShared I want each executable to be able to do what they want with this information.
+            
+            // Key is an int (or whatever the underlying type is) we're already using for an opcode
+            HashSet<DreamProcOpcode> bytePool = new();
+            foreach (DreamProcOpcode usedInt in Enum.GetValues(typeof(DreamProcOpcode)))
+            {
+                if(bytePool.Contains(usedInt))
+                {
+                    return true;
+                }
+                bytePool.Add(usedInt);
+            }
+            return false;
+        }
+    }
+   
 }

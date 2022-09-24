@@ -1,5 +1,6 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -64,9 +65,9 @@ namespace OpenDreamRuntime.Objects {
             manager.ReferenceIDs.Remove(this);
         }
 
-        public void CopyFrom(DreamObject from) {
-            ObjectDefinition = from.ObjectDefinition;
-            _variables = from._variables;
+        public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {
+            ObjectDefinition = objectDefinition;
+            _variables.Clear();
         }
 
         public bool IsSubtypeOf(DreamPath path) {
@@ -96,7 +97,8 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Cannot get variable names of a deleted object");
             }
             List<DreamValue> list = new(_variables.Count);
-            foreach (String key in _variables.Keys) {
+            // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
+            foreach (String key in ObjectDefinition!.Variables.Keys) { 
                 list.Add(new(key));
             }
             return list;
@@ -153,7 +155,7 @@ namespace OpenDreamRuntime.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject usr = null) {
+        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject? usr = null) {
             if(Deleted){
                 throw new Exception("Cannot spawn proc on a deleted object");
             }
@@ -161,14 +163,38 @@ namespace OpenDreamRuntime.Objects {
             return DreamThread.Run(proc, this, usr, arguments);
         }
 
-        public DreamValue SpawnProc(string procName) {
-            return SpawnProc(procName, new DreamProcArguments(null));
+        public DreamValue SpawnProc(string procName, DreamObject? usr = null) {
+            return SpawnProc(procName, new DreamProcArguments(null), usr);
+        }
+
+        public string GetDisplayName(StringFormatTypes? formatType = null) {
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+                return ObjectDefinition?.Type.ToString() ?? String.Empty;
+
+            bool isProper;
+            if (name.Length >= 2 && name[0] == 0xFF) {
+                StringFormatTypes type = (StringFormatTypes) name[1];
+                isProper = (type == StringFormatTypes.Proper);
+                name = name.Substring(2);
+            } else {
+                isProper = (name.Length == 0) || char.IsUpper(name[0]);
+            }
+
+            switch (formatType) {
+                case StringFormatTypes.UpperDefiniteArticle:
+                    return isProper ? name : $"The {name}";
+                case StringFormatTypes.LowerDefiniteArticle:
+                    return isProper ? name : $"the {name}";
+                default:
+                    return name;
+            }
         }
 
         public override string ToString() {
-            if(Deleted){
+            if(Deleted) {
                 return "DreamObject(DELETED)";
             }
+
             return "DreamObject(" + ObjectDefinition.Type + ")";
         }
     }

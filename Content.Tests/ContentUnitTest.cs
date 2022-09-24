@@ -4,6 +4,7 @@ using OpenDreamClient;
 using OpenDreamRuntime;
 using OpenDreamShared;
 using Robust.Shared.Analyzers;
+using Robust.Shared.IoC;
 using Robust.UnitTesting;
 using EntryPoint = OpenDreamRuntime.EntryPoint;
 
@@ -20,7 +21,8 @@ namespace Content.Tests
 
             if (Project == UnitTestProject.Server)
             {
-                ServerContentIoC.Register();
+                ServerContentIoC.Register(unitTests: true);
+                IoCManager.Register<IDreamMapManager, DummyDreamMapManager>();
             }
             else if (Project == UnitTestProject.Client)
             {

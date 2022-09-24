@@ -1,11 +1,11 @@
 ﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Rendering;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
-        private Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
+        private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
+        private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
@@ -18,6 +18,7 @@ namespace OpenDreamClient.Rendering {
         public override void Shutdown() {
             _appearances.Clear();
             _appearanceLoadCallbacks.Clear();
+            _turfIcons.Clear();
         }
 
         public void LoadAppearance(uint appearanceId, Action<IconAppearance> loadCallback) {
@@ -30,6 +31,17 @@ namespace OpenDreamClient.Rendering {
             }
 
             _appearanceLoadCallbacks[appearanceId].Add(loadCallback);
+        }
+
+        public DreamIcon GetTurfIcon(uint turfId) {
+            uint appearanceId = turfId - 1;
+
+            if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
+                icon = new DreamIcon(appearanceId);
+                _turfIcons.Add(appearanceId, icon);
+            }
+
+            return icon;
         }
 
         private void OnAllAppearances(AllAppearancesEvent e, EntitySessionEventArgs session) {

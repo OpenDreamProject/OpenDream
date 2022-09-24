@@ -81,7 +81,7 @@ namespace DMDisassembler {
                 Console.WriteLine("Invalid search type \"" + type + "\"");
             }
         }
-        
+
         private static void Select(string[] args) {
             if (args.Length < 2) {
                 Console.WriteLine("select [type]");
@@ -119,7 +119,7 @@ namespace DMDisassembler {
                 Console.WriteLine("Unimplemented");
             }
         }
-        
+
         private static void Decompile(string[] args) {
             if (args.Length < 2) {
                 Console.WriteLine("decompile [name]");
@@ -134,7 +134,7 @@ namespace DMDisassembler {
                 } else {
                     Console.WriteLine("There is no global init proc");
                 }
-                
+
                 return;
             }
 
@@ -169,6 +169,14 @@ namespace DMDisassembler {
 
             foreach (DreamTypeJson json in CompiledJson.Types) {
                 AllTypes.Add(new DreamPath(json.Path), new DMType(json));
+            }
+
+            //Add global procs to the root type
+            DMType globalType = AllTypes[DreamPath.Root];
+            foreach (int procId in CompiledJson.GlobalProcs) {
+                var proc = Procs[procId];
+
+                globalType.Procs.Add(proc.Name, proc);
             }
         }
     }

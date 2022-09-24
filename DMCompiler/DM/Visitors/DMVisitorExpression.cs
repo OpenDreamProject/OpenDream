@@ -126,6 +126,10 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
+            VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
+        }
+
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
             string name = globalIdentifier.Identifier;
 
@@ -188,6 +192,10 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
+            if(lhs.TryAsConstant(out var _))
+            {
+                DMCompiler.Error(new CompilerError(assign.Expression.Location, "Cannot write to const var"));
+            }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
 
@@ -442,7 +450,7 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(dereference.Location, $"Invalid property \"{dereference.Property}\" on type {dmObject.Path}");
                 }
 
-                if ((property.Value?.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
                     DMCompiler.UnimplementedWarning(dereference.Location, $"{dmObject.Path}.{dereference.Property} is not implemented and will have unexpected behavior");
                 }
             } else {
@@ -458,17 +466,6 @@ namespace DMCompiler.DM.Visitors {
         public void VisitNewPath(DMASTNewPath newPath) {
             var args = new ArgumentList(newPath.Location, _dmObject, _proc, newPath.Parameters, _inferredPath);
             Result = new Expressions.NewPath(newPath.Location, newPath.Path.Path, args);
-        }
-
-        public void VisitNewMultidimensionalList(DMASTNewMultidimensionalList newList)
-        {
-            DMExpression[] expressions = new DMExpression[newList.Dimensions.Length];
-            for (int i = 0; i < newList.Dimensions.Length; i++)
-            {
-                expressions[i] = DMExpression.Create(_dmObject, _proc, newList.Dimensions[i], _inferredPath);
-            }
-
-            Result = new Expressions.NewMultidimensionalList(newList.Location, expressions);
         }
 
         public void VisitNewInferred(DMASTNewInferred newInferred) {
@@ -605,6 +602,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.AddText(addText.Location, exp_arr);
         }
 
+        public void VisitProb(DMASTProb prob) {
+            DMExpression p = DMExpression.Create(_dmObject, _proc, prob.P);
+
+            Result = new Expressions.Prob(prob.Location, p);
+        }
+
         public void VisitInput(DMASTInput input) {
             Result = new Expressions.Input(input.Location, input);
         }
@@ -633,6 +636,9 @@ namespace DMCompiler.DM.Visitors {
                 DMASTPick.PickValue pickValue = pick.Values[i];
                 DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
                 DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
+
+                if (weight is Expressions.Prob prob) // pick(prob(50);x, prob(200);y) format
+                    weight = prob.P;
 
                 pickValues[i] = new Expressions.Pick.PickValue(weight, value);
             }

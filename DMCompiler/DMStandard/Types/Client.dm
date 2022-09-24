@@ -2,6 +2,7 @@
 	var/list/verbs = list()
 	var/list/screen = list()
 	var/list/images = list() as opendream_unimplemented
+	var/list/vars
 
 	var/atom/statobj
 	var/statpanel
@@ -19,6 +20,7 @@
 	var/pixel_z = 0 as opendream_unimplemented
 	var/pixel_w = 0 as opendream_unimplemented
 	var/show_popup_menus = 1 as opendream_unimplemented
+	var/show_verb_panel = 1 as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
@@ -28,10 +30,12 @@
 	var/key
 	var/ckey
 	var/connection
-	var/computer_id = 0 as opendream_unimplemented
+	var/computer_id = 0
+	var/tick_lag = 0 as opendream_unimplemented
 
 	var/timezone
 
+	var/script as opendream_unimplemented
 	var/color = 0 as opendream_unimplemented
 	var/control_freak as opendream_unimplemented
 	var/mouse_pointer_icon as opendream_unimplemented
@@ -40,6 +44,8 @@
 	var/dir = NORTH as opendream_unimplemented
 	var/gender = "neuter" as opendream_unimplemented
 	var/glide_size as opendream_unimplemented
+	var/virtual_eye as opendream_unimplemented
+
 	proc/SoundQuery()
 		set opendream_unimplemented = TRUE
 	proc/Export(file)

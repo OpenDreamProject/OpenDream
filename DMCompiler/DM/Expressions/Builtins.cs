@@ -77,22 +77,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    sealed class NewMultidimensionalList : DMExpression {
-        DMExpression[] Expressions;
-
-        public NewMultidimensionalList(Location location, DMExpression[] expressions) : base(location) {
-            Expressions = expressions;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            foreach (var expr in Expressions)
-            {
-                expr.EmitPushValue(dmObject, proc);
-            }
-            proc.CreateMultidimensionalList(Expressions.Length);
-        }
-    }
-
     // locate()
     class LocateInferred : DMExpression {
         DreamPath _path;
@@ -167,6 +151,7 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)
     class Pick : DMExpression {
@@ -246,6 +231,20 @@ namespace DMCompiler.DM.Expressions {
             }
 
             proc.MassConcatenation(parameters.Length);
+        }
+    }
+
+    // prob(P)
+    class Prob : DMExpression {
+        public DMExpression P;
+
+        public Prob(Location location, DMExpression p) : base(location) {
+            P = p;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            P.EmitPushValue(dmObject, proc);
+            proc.Prob();
         }
     }
 

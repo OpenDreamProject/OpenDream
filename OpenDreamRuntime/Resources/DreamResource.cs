@@ -7,7 +7,7 @@ namespace OpenDreamRuntime.Resources {
         public string ResourcePath;
         public byte[] ResourceData {
             get {
-                if (_resourceData == null && File.Exists(_filePath)) {
+                if (_resourceData == null && Exists()) {
                     _resourceData = File.ReadAllBytes(_filePath);
                 }
 
@@ -21,6 +21,10 @@ namespace OpenDreamRuntime.Resources {
         public DreamResource(string filePath, string resourcePath) {
             _filePath = filePath;
             ResourcePath = resourcePath;
+        }
+
+        public bool Exists() {
+            return File.Exists(_filePath);
         }
 
         public virtual string? ReadAsString() {

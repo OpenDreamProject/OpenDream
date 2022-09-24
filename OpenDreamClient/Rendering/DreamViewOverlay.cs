@@ -1,20 +1,25 @@
 ﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
-using JetBrains.Annotations;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Rendering {
     sealed class DreamViewOverlay : Overlay {
-        private IPlayerManager _playerManager = IoCManager.Resolve<IPlayerManager>();
-        private IEntitySystemManager _entitySystem = IoCManager.Resolve<IEntitySystemManager>();
-        private IEntityManager _entityManager = IoCManager.Resolve<IEntityManager>();
-        private IMapManager _mapManager = IoCManager.Resolve<IMapManager>();
-        private RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
-        [CanBeNull] private EntityLookupSystem _lookupSystem;
-        [CanBeNull] private SharedTransformSystem _transformSystem;
+        [Dependency] private readonly IPlayerManager _playerManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IMapManager _mapManager = default!;
 
-        public override OverlaySpace Space => OverlaySpace.WorldSpace;
+        private readonly RenderOrderComparer _renderOrderComparer = new RenderOrderComparer();
+        private EntityLookupSystem _lookupSystem;
+        private ClientAppearanceSystem _appearanceSystem;
+        private SharedTransformSystem _transformSystem;
+
+        public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+
+        public DreamViewOverlay() {
+            IoCManager.InjectDependencies(this);
+        }
 
         protected override void Draw(in OverlayDrawArgs args) {
             EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
@@ -28,8 +33,14 @@ namespace OpenDreamClient.Rendering {
         private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
             _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
             _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
+            _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
             var spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
             var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+
+            if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
+                return;
+
+            DrawTiles(args, eyeTransform);
 
             var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
             List<DMISpriteComponent> sprites = new(entities.Count + 1);
@@ -52,6 +63,18 @@ namespace OpenDreamClient.Rendering {
                     continue;
 
                 DrawIcon(args.WorldHandle, sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
+            }
+        }
+
+        private void DrawTiles(OverlayDrawArgs args, TransformComponent eyeTransform) {
+            if (!_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
+                return;
+
+            foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
+                MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
+                DreamIcon icon = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId);
+
+                DrawIcon(args.WorldHandle, icon, pos.Position - 1);
             }
         }
 

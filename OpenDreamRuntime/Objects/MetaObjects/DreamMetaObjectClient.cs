@@ -1,6 +1,8 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectClient : IDreamMetaObject {
@@ -98,6 +100,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "key":
                 case "ckey":
                     return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                case "computer_id": // FIXME: This is not secure! Whenever RT implements a more robust (heh) method of uniquely identifying computers, replace this impl with that.
+                    MD5 md5 = MD5.Create();
+                    /// <remarks>Check on <see cref="Robust.Shared.Network.NetUserData.HWId"/> if you want to seed from how RT does user identification.
+                    /// We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.</remarks>
+                    byte[] brown = Encoding.UTF8.GetBytes(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                    byte[] hash = md5.ComputeHash(brown);
+                    string hashStr = BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0,15); // Extracting the first 15 digits to ensure it'll fit in a 64-bit number
+                    return new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 case "address":
                     return new(_dreamManager.GetSessionFromClient(dreamObject).ConnectedClient.RemoteEndPoint.Address.ToString());
                 case "inactivity":
@@ -119,32 +129,36 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "connection":
                     return new DreamValue("seeker");
+                case "vars": // /client has this too!
+                    return new DreamValue(DreamListVars.Create(dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
         public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(a.GetValueAsDreamObjectOfType(DreamPath.Client));
+            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
+                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Client}");
 
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
             return new DreamValue(0);
         }
 
         private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue == DreamValue.Null) return;
+            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+                return;
 
-            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, atom);
+            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, movable);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (screenValue == DreamValue.Null) return;
+            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+                return;
 
-            DreamObject atom = screenValue.GetValueAsDreamObjectOfType(DreamPath.Movable);
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, atom);
+            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, movable);
         }
     }
 }

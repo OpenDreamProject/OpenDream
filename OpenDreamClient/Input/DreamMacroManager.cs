@@ -11,9 +11,6 @@ namespace OpenDreamClient.Input {
 
         private const string InputContextPrefix = "macroSet_";
 
-        // Macros with +REP that are currently held
-        private List<MacroDescriptor> _activeMacros = new();
-
         public void LoadMacroSets(List<MacroSetDescriptor> macroSets) {
             IInputContextContainer contexts = _inputManager.Contexts;
 
@@ -49,7 +46,6 @@ namespace OpenDreamClient.Input {
                     commandSystem.RunCommand(macro.Command);
                 }
             }
-
         }
 
         private void OnMacroRelease(MacroDescriptor macro) {
@@ -123,6 +119,21 @@ namespace OpenDreamClient.Input {
                 "7" => Key.Num7,
                 "8" => Key.Num8,
                 "9" => Key.Num9,
+                "F1" => Key.F1,
+                "F2" => Key.F2,
+                "F3" => Key.F3,
+                "F4" => Key.F4,
+                "F5" => Key.F5,
+                "F6" => Key.F6,
+                "F7" => Key.F7,
+                "F8" => Key.F8,
+                "F9" => Key.F9,
+                "F10" => Key.F10,
+                "F11" => Key.F11,
+                "F12" => Key.F12,
+                "F13" => Key.F13,
+                "F14" => Key.F14,
+                "F15" => Key.F15,
                 "NUMPAD0" => Key.NumpadNum0,
                 "NUMPAD1" => Key.NumpadNum1,
                 "NUMPAD2" => Key.NumpadNum2,

@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry GetTreeEntry(DreamPath path) {
-            if (!_pathToType.TryGetValue(path, out TreeEntry type)) {
+            if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
                 throw new Exception($"Object '{path}' does not exist");
             }
 

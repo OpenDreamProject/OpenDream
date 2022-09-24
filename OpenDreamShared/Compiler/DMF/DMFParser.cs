@@ -21,6 +21,8 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Sunken,
             TokenType.DMF_PushBox,
             TokenType.DMF_PushButton,
+            TokenType.DMF_Checkbox,
+            TokenType.DMF_Radio,
             TokenType.DMF_Distort,
             TokenType.DMF_Stretch,
             TokenType.DMF_Center,
@@ -32,6 +34,7 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Bottom,
             TokenType.DMF_BottomLeft,
             TokenType.DMF_BottomRight,
+            TokenType.DMF_Horizontal,
             TokenType.DMF_Vertical,
             TokenType.DMF_Line,
 
@@ -43,7 +46,9 @@ namespace OpenDreamShared.Compiler.DMF {
             TokenType.DMF_Info,
             TokenType.DMF_Map,
             TokenType.DMF_Browser,
-            TokenType.DMF_Label
+            TokenType.DMF_Label,
+            TokenType.DMF_Grid,
+            TokenType.DMF_Tab,
         };
 
         public DMFParser(DMFLexer lexer) : base(lexer) { }
@@ -142,12 +147,14 @@ namespace OpenDreamShared.Compiler.DMF {
                     "BUTTON" => typeof(ControlDescriptorButton),
                     "BROWSER" => typeof(ControlDescriptorBrowser),
                     "LABEL" => typeof(ControlDescriptorLabel),
+                    "GRID" => typeof(ControlDescriptorGrid),
+                    "TAB" => typeof(ControlDescriptorTab),
                     _ => null
                 };
 
                 if (descriptorType == null)
                 {
-                    Error("Invalid descriptor type '" + elementTypeValue.Value + "'");
+                    Error($"Invalid descriptor type '{elementTypeValue.Value}'");
                     return null;
                 }
 
@@ -238,7 +245,8 @@ namespace OpenDreamShared.Compiler.DMF {
                 }
 
                 Token attributeValue = Current();
-                if (!Check(ValidAttributeValueTypes)) Error("Invalid attribute value (" + attributeValue.Text + ")");
+                if (!Check(ValidAttributeValueTypes))
+                    Error($"Invalid attribute value ({attributeValue.Text})");
 
                 Newline();
                 key = attributeToken.Text;
@@ -256,11 +264,11 @@ namespace OpenDreamShared.Compiler.DMF {
             while (TryGetAttribute(out var key, out var value))
             {
                 if (value == "none") continue;
-
                 if (value[0] == '"')
                 {
                     value = value.Substring(1, value.Length - 2);
                 }
+
                 node.Add(key, value);
             }
 
@@ -268,15 +276,8 @@ namespace OpenDreamShared.Compiler.DMF {
         }
 
         public void Newline() {
-            while (Check(TokenType.Newline)) {
+            while (Check(TokenType.Newline) || Check(TokenType.DMF_Semicolon)) {
             }
-        }
-
-        public string Resource() {
-            Token resourceToken = Current();
-            Consume(TokenType.DMF_Resource, "Expected a resource");
-
-            return (string)resourceToken.Value;
         }
     }
 }

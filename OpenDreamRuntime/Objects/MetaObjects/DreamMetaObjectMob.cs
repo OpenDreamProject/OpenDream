@@ -57,14 +57,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (varName == "client") {
                 return new(_dreamManager.GetClientFromMob(dreamObject));
             } else {
-              return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
+                return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
         public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            DreamObject client = a.GetValueAsDreamObjectOfType(DreamPath.Mob).GetVariable("client").GetValueAsDreamObjectOfType(DreamPath.Client);
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
+            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out var mob))
+                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Mob}");
+            if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
+                throw new Exception($"Failed to get client from {mob}");
 
+            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
             return new DreamValue(0);
         }

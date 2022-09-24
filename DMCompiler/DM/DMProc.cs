@@ -584,12 +584,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
-        public void CreateMultidimensionalList(int count) {
-            ShrinkStack(count - 1);
-            WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
-            WriteInt(count);
-        }
-
         public void Not() {
             WriteOpcode(DreamProcOpcode.BooleanNot);
         }
@@ -850,6 +844,11 @@ namespace DMCompiler.DM {
             ShrinkStack(count - 1);
             WriteOpcode(DreamProcOpcode.PickUnweighted);
             WriteInt(count);
+        }
+
+        public void Prob() {
+            //Pops 1, pushes 1
+            WriteOpcode(DreamProcOpcode.Prob);
         }
 
         public void MassConcatenation(int count) {

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
@@ -21,7 +21,7 @@ namespace OpenDreamRuntime {
             Reference = 64
         }
 
-        public static readonly DreamValue Null = new DreamValue((DreamObject)null);
+        public static readonly DreamValue Null = new DreamValue((DreamObject?)null);
 
         public DreamValueType Type { get; private set; }
         public object Value { get; private set; }
@@ -47,7 +47,8 @@ namespace OpenDreamRuntime {
             Value = value;
         }
 
-        public DreamValue(DreamObject value) {
+        /// <remarks> This constructor is also how one creates nulls. </remarks>
+        public DreamValue(DreamObject? value) {
             Type = DreamValueType.DreamObject;
             Value = value;
         }
@@ -167,7 +168,7 @@ namespace OpenDreamRuntime {
         }
 
         [Obsolete("Deprecated. Use TryGetValueAsDreamObject() instead.")]
-        public DreamObject GetValueAsDreamObject() {
+        public DreamObject? GetValueAsDreamObject() {
             DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
 
             if (dreamObject?.Deleted == true) {
@@ -179,7 +180,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsDreamObject(out DreamObject dreamObject) {
+        public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
                 dreamObject = GetValueAsDreamObject();
                 return true;
@@ -189,18 +190,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamObjectOfType() instead.")]
-        public DreamObject GetValueAsDreamObjectOfType(DreamPath type) {
-            DreamObject value = GetValueAsDreamObject();
-
-            if (value?.IsSubtypeOf(type) == true) {
-                return value;
-            } else {
-                throw new Exception("Value " + this + " was not of type '" + type + "'");
-            }
-        }
-
-        public bool TryGetValueAsDreamObjectOfType(DreamPath type, out DreamObject dreamObject) {
+        public bool TryGetValueAsDreamObjectOfType(DreamPath type, [NotNullWhen(true)] out DreamObject? dreamObject) {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 
@@ -282,16 +272,12 @@ namespace OpenDreamRuntime {
                 case DreamValueType.DreamPath:
                     TryGetValueAsPath(out var path);
                     return path.PathString;
-                case DreamValueType.DreamObject when Value == null:
-                    return "";
                 case DreamValueType.DreamObject: {
-                    TryGetValueAsDreamObject(out var dreamObject);
-
-                    if (dreamObject.IsSubtypeOf(DreamPath.Atom)) {
-                        return dreamObject.GetVariable("name").Stringify();
-                    } else {
-                        return dreamObject.ObjectDefinition.Type.ToString();
+                    if (TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                        return dreamObject.GetDisplayName();
                     }
+
+                    return String.Empty;
                 }
                 default:
                     throw new NotImplementedException("Cannot stringify " + this);

@@ -226,6 +226,11 @@ namespace OpenDreamRuntime.Procs {
                 if (status != null) {
                     if (status == ProcStatus.Returned) {
                         // TODO: This should be automatic (dispose pattern?)
+                        foreach(var variable in _localVariables){
+                            variable.DecrementDreamObjectRefCount();
+                        }
+                        Instance?.DecrementRefCount();
+                        Usr?.DecrementRefCount();
                         ReturnPools();
                     }
 
@@ -236,8 +241,8 @@ namespace OpenDreamRuntime.Procs {
             foreach(var variable in _localVariables){
                 variable.DecrementDreamObjectRefCount();
             }
-            Instance.DecrementRefCount();
-            Usr.DecrementRefCount();
+            Instance?.DecrementRefCount();
+            Usr?.DecrementRefCount();
             // TODO: This should be automatic (dispose pattern?)
             ReturnPools();
             return ProcStatus.Returned;

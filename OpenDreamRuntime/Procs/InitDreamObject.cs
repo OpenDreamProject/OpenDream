@@ -77,6 +77,7 @@ namespace OpenDreamRuntime.Procs {
 
                 case Stage.Return:
                     Result = new DreamValue(_dreamObject);
+                    Result.IncrementDreamObjectRefCount();
                     return ProcStatus.Returned;
             }
 

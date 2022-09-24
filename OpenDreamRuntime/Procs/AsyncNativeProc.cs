@@ -169,6 +169,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
                         arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
+                        defaultArgumentValue.Value.IncrementDreamObjectRefCount();
                     }
                 }
             }

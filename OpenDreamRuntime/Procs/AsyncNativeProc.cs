@@ -34,6 +34,16 @@ namespace OpenDreamRuntime.Procs {
                 Src = src;
                 Usr = usr;
                 Arguments = arguments;
+
+                if(Src is not null){
+                    Src.IncrementRefCount();
+                }
+                if(Usr is not null){
+                    Usr.IncrementRefCount();
+                }
+                foreach(var arg in arguments.GetAllArguments()){
+                    arg.IncrementDreamObjectRefCount();
+                }
             }
 
             // Used to avoid reentrant resumptions in our proc

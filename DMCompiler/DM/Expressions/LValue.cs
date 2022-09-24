@@ -108,7 +108,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.Initial(Variable.Name);
+            proc.PushString(Variable.Name);
+            proc.Initial();
         }
 
         public void EmitPushIsSaved(DMProc proc) {
@@ -146,7 +147,7 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             return (DMReference.CreateGlobal(Id), false);
         }
-        
+
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
             DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a global returns the current value"));

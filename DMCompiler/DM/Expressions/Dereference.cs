@@ -14,6 +14,8 @@ namespace DMCompiler.DM.Expressions {
         public override DreamPath? Path => _path;
         DreamPath? _path;
 
+        internal DMExpression Expr => _expr;
+
         public static bool DirectConvertable(DMExpression expr, DMASTDereference astNode) {
             switch (astNode.Expression) {
                 case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
@@ -40,7 +42,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.Initial(PropertyName);
+            proc.PushString(PropertyName);
+            proc.Initial();
         }
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
@@ -144,12 +147,14 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
-            // TODO Support "vars" actually pushing initial() correctly
-            if (_expr is Dereference deref && deref.PropertyName != "vars")
-            {
+            if (_expr is Dereference deref && deref.PropertyName == "vars") {
+                    deref.Expr.EmitPushValue(dmObject, proc);
+                    _index.EmitPushValue(dmObject, proc);
+                    proc.Initial();
+            } else {
                 DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+                EmitPushValue(dmObject, proc);
             }
-            EmitPushValue(dmObject, proc);
         }
 
         public bool IsSaved()

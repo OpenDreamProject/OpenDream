@@ -555,9 +555,8 @@ namespace DMCompiler.DM {
             WriteInt((int)types);
         }
 
-        public void Initial(string propertyName) {
+        public void Initial() {
             WriteOpcode(DreamProcOpcode.Initial);
-            WriteString(propertyName);
         }
 
         public void Return() {

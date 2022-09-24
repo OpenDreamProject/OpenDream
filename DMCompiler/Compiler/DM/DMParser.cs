@@ -2360,8 +2360,6 @@ namespace DMCompiler.Compiler.DM {
                 if (pickValues != null) {
                     return new DMASTPick(identifier.Location, pickValues);
                 }
-            } else if (expression is DMASTDereference deref && deref.Expression is DMASTList) {
-                deref.Type = DereferenceType.Search;
             }
 
             DMASTCallParameter[] callParameters = ProcCall();

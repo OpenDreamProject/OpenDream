@@ -48,7 +48,8 @@ namespace DMCompiler.DM.Expressions {
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.IsSaved(PropertyName);
+            proc.PushString(PropertyName);
+            proc.IsSaved();
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -146,7 +147,6 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            // This happens silently in BYOND
             if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
                 derefExpr.EmitPushValue(dmObject, proc);
                 _index.EmitPushValue(dmObject, proc);
@@ -156,22 +156,27 @@ namespace DMCompiler.DM.Expressions {
                 _index.EmitPushValue(dmObject, proc);
                 proc.Initial();
             } else {
+                // This happens silently in BYOND
                 DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
                 EmitPushValue(dmObject, proc);
             }
         }
 
-        public bool IsSaved()
+        public void EmitPushIsSaved(DMObject dmObject, DMProc proc)
         {
-            // Silent in BYOND
-            // TODO Support "vars" actually pushing issaved() correctly
-            if (_expr is Dereference deref && deref.PropertyName != "vars")
-            {
+            if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
+                derefExpr.EmitPushValue(dmObject, proc);
+                _index.EmitPushValue(dmObject, proc);
+                proc.IsSaved();
+            } else if (_expr is Field { Variable: { Name: "vars" } }) {
+                proc.PushReferenceValue(DMReference.Src);
+                _index.EmitPushValue(dmObject, proc);
+                proc.IsSaved();
+            } else {
+                // Silent in BYOND
                 DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
-                return false;
+                proc.PushFloat(0);
             }
-
-            return true;
         }
     }
 }

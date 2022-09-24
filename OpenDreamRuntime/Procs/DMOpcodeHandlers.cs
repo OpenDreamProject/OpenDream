@@ -1674,8 +1674,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsSaved(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for issaved() call: " + key);
+            }
 
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {

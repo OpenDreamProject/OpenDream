@@ -114,7 +114,8 @@ namespace DMCompiler.DM.Expressions {
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.IsSaved(Variable.Name);
+            proc.PushString(Variable.Name);
+            proc.IsSaved();
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {

@@ -2040,7 +2040,7 @@ namespace DMCompiler.Compiler.DM {
                                     insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
 
                                     string insideBracketsText = insideBrackets?.ToString();
-                                    if (insideBracketsText != String.Empty) {
+                                    if (!String.IsNullOrWhiteSpace(insideBracketsText)) {
                                         DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                         List<Token> preprocTokens = new();
                                         Token preprocToken;
@@ -2058,10 +2058,11 @@ namespace DMCompiler.Compiler.DM {
                                             expressionParser.Whitespace(true);
                                             expression = expressionParser.Expression();
                                             if (expression == null) Error("Expected an expression");
-                                        } catch (CompileErrorException e) {
-                                            Errors.Add(e.Error);
+                                            if (expressionParser.Current().Type != TokenType.EndOfFile) Error("Expected end of embedded statement");
+                                        } catch (CompileErrorException) {
                                         }
 
+                                        if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
                                         if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
                                         interpolationValues.Add(expression);
                                     } else {
@@ -2515,6 +2516,7 @@ namespace DMCompiler.Compiler.DM {
                         case "sound": type |= DMValueType.Sound; break;
                         case "icon": type |= DMValueType.Icon; break;
                         case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
+                        case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
                         default: Error("Invalid value type '" + typeToken.Text + "'"); break;
                     }
 

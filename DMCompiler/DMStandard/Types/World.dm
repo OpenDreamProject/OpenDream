@@ -1,5 +1,6 @@
 ﻿/world
 	var/list/contents = list()
+	var/list/vars
 
 	var/log = null
 

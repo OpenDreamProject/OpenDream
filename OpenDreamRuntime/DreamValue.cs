@@ -21,7 +21,7 @@ namespace OpenDreamRuntime {
             Reference = 64
         }
 
-        public static readonly DreamValue Null = new DreamValue((DreamObject)null);
+        public static readonly DreamValue Null = new DreamValue((DreamObject?)null);
 
         public DreamValueType Type { get; private set; }
         public object Value { get; private set; }
@@ -47,7 +47,8 @@ namespace OpenDreamRuntime {
             Value = value;
         }
 
-        public DreamValue(DreamObject value) {
+        /// <remarks> This constructor is also how one creates nulls. </remarks>
+        public DreamValue(DreamObject? value) {
             Type = DreamValueType.DreamObject;
             Value = value;
         }

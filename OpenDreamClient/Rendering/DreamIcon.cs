@@ -262,7 +262,7 @@ namespace OpenDreamClient.Rendering {
             Underlays.Sort(LayerSort);
 
             Filters.Clear();
-            foreach (uint filterID in Appearance.Filters) {
+            foreach (var filterID in Appearance.Filters) {
                 ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();                
                 ShaderInstance this_shader_instance = appearanceSystem.GetFilterShader(filterID);
                 Filters.Add(this_shader_instance);

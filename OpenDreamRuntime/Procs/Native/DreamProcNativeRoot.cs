@@ -401,7 +401,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filter_type))
                 return DreamValue.Null;
-
+            DreamObject result;
             switch(filter_type)
             {
                 case "alpha":
@@ -433,7 +433,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     if(!arguments.GetArgument(1, "flags").TryGetValueAsInteger(out flags)) //Defaults to 0 
                         flags = 0;
 
-                    DreamObject result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
                     result.SetVariable("type", new DreamValue(filter_type));
                     result.SetVariable("size", new DreamValue(size));
                     result.SetVariable("color", new DreamValue(color_string));
@@ -448,6 +448,10 @@ namespace OpenDreamRuntime.Procs.Native {
                     throw new NotImplementedException("Filter type {filter_type} is not implemented");
                 case "wave":
                     throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                case "greyscale":
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    return new DreamValue(result); 
                 default:
                     return DreamValue.Null; //no valid type? You get a null
             }

@@ -17,7 +17,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
-        [ViewVariables] public List<uint> Filters = new();
+        [ViewVariables] public List<DreamFilter> Filters = new();
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,
                                                                     0, 1,
                                                                     0, 0 };
@@ -35,7 +35,7 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
-            Filters = new List<uint>(appearance.Filters);
+            Filters = new List<DreamFilter>(appearance.Filters);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];
@@ -95,8 +95,8 @@ namespace OpenDreamShared.Dream {
                 hashCode += underlay;
             }
 
-            foreach (int filter in Filters) {
-                hashCode += filter;
+            foreach (DreamFilter filter in Filters) {
+                hashCode += filter.GetHashCode();
             }
 
             for (int i = 0; i < 6; i++) {

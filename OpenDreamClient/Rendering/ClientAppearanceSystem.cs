@@ -1,14 +1,13 @@
 ﻿using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.Graphics;
-using OpenDreamClient.Resources;
 using Robust.Shared.Prototypes;
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
         private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
-        private readonly Dictionary<uint, ShaderInstance> _filterShaders = new();
+        private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
@@ -74,16 +73,24 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
-        public ShaderInstance GetFilterShader(uint filterId)
+        public ShaderInstance GetFilterShader(DreamFilter filter)
         {
             ShaderInstance instance = null;
-            if(!_filterShaders.TryGetValue(filterId, out instance))
+            if(!_filterShaders.TryGetValue(filter, out instance))
             {
                 var _protoManager = IoCManager.Resolve<IPrototypeManager>();
-                instance = _protoManager.Index<ShaderPrototype>("outline").InstanceUnique();
-                instance.SetParameter("outline_width",10);
+                instance = _protoManager.Index<ShaderPrototype>(filter.filter_type).InstanceUnique();
+                if(filter.filter_size != null) instance.SetParameter("size",(float) filter.filter_size);
+                if(filter.filter_flags != null) instance.SetParameter("flags",(float) filter.filter_flags);
+                if(filter.filter_color != null) 
+                {
+                    if (!ColorHelpers.TryParseColor(filter.filter_color, out var c)) {
+                        throw new Exception("bad color");
+                    }
+                    instance.SetParameter("color", c);
+                }
                 //instance.SetParameter("outline_color", new Vector4(1.0f,0f,0f,0.5f));
-                _filterShaders.Add(filterId, instance);
+                _filterShaders.Add(filter, instance);
             }
             return instance;
         }

@@ -116,7 +116,6 @@ namespace OpenDreamClient.Rendering {
             if(icon.Filters.Count > 0)
             {
                 handle.UseShader(icon.Filters[0]); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
-                handle.DrawRect(new Box2(0,0,1,1), Color.White);
             }
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {

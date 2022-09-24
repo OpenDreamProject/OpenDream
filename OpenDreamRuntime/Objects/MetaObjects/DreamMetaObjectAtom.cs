@@ -172,11 +172,37 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         filterList = DreamList.Create();
                         filterList.AddValue(value);
                         _atomManager.UpdateAppearance(dreamObject, appearance => {
-                            appearance.Filters.Add(1);
+                            DreamFilter newFilter = new DreamFilter(); //dreamfilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
+                            
+                            DreamObject DMFilterObject;
+                            if(!value.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out DMFilterObject))
+                                throw new Exception("Tried to add a non-filter object to a list of filters");
+                            DreamValue filterVarValue;
+                            
+                            if(DMFilterObject.TryGetVariable("type", out filterVarValue))
+                            {
+                                DreamPath typedVal;
+                                if(filterVarValue.TryGetValueAsPath(out typedVal))
+                                    newFilter.filter_type = typedVal.LastElement;
+                            }
+                            if(DMFilterObject.TryGetVariable("size", out filterVarValue))
+                            {
+                                float typedVal;
+                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                                    newFilter.filter_size = typedVal;
+                            }
+                            if(DMFilterObject.TryGetVariable("color", out filterVarValue))
+                            {
+                                string typedVal;
+                                if(filterVarValue.TryGetValueAsString(out typedVal))
+                                    newFilter.filter_color = typedVal;
+                            }
+                            
+                            
+                            appearance.Filters.Add(newFilter);
                         });
                     }
                     dreamObject.SetVariableValue(varName, new DreamValue(filterList));
-                    //also definitely call update appearance here TODO
                     
                     break;
                 }

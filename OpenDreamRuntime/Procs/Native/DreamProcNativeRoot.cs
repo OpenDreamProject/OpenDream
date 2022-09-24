@@ -1854,7 +1854,9 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = DreamList.Create();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
-                DreamPath typePath = type.GetValueAsPath();
+                if (!type.TryGetValueAsPath(out var typePath)) {
+                    continue;
+                }
 
                 if (typePath.LastElement == "proc") {
                     DreamPath objectTypePath = typePath.AddToPath("..");

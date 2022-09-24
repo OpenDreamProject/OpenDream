@@ -5,5 +5,5 @@
 	ASSERT(L1.len == 0)
 
 	var/list/L2 = typesof(5)
-    ASSERT(islist(L2))
-    ASSERT(L2.len == 0)
+	ASSERT(islist(L2))
+	ASSERT(L2.len == 0)

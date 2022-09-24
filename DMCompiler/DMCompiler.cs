@@ -26,6 +26,8 @@ namespace DMCompiler {
         private static DateTime _compileStartTime;
 
         public static bool Compile(DMCompilerSettings settings) {
+            ErrorCount = 0;
+            WarningCount = 0;
             Settings = settings;
             if (Settings.Files == null) return false;
 
@@ -37,20 +39,13 @@ namespace DMCompiler {
             if (settings.SuppressUnimplementedWarnings) {
                 Warning(new CompilerWarning(Location.Internal, "Unimplemented proc & var warnings are currently suppressed"));
             }
-
-            DMPreprocessor preprocessor = Preprocess(settings.Files);
-            if (settings.DumpPreprocessor) {
-                StringBuilder result = new();
-                foreach (Token t in preprocessor.GetResult()) {
-                    result.Append(t.Text);
-                }
-
-                string output = Path.Join(Path.GetDirectoryName(settings.Files?[0]) ?? AppDomain.CurrentDomain.BaseDirectory, "preprocessor_dump.dm");
-                File.WriteAllText(output, result.ToString());
-                Console.WriteLine($"Preprocessor output dumped to {output}");
+            if(OpenDreamShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
+            {
+                Error(new CompilerError(Location.Internal, "Some opcodes have the same byte value! Output assembly may be corrupted."));
             }
 
-            bool successfulCompile = preprocessor is not null && Compile(preprocessor.GetResult());
+            DMPreprocessor preprocessor = Preprocess(settings.Files);
+            bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
             if (successfulCompile)
             {
@@ -88,31 +83,42 @@ namespace DMCompiler {
 
         [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files) {
-            DMPreprocessor preprocessor = new DMPreprocessor(true, !Settings.SuppressUnimplementedWarnings);
-
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string dmStandardDirectory = Path.Combine(compilerDirectory ?? string.Empty, "DMStandard");
-                if (!File.Exists(Path.Combine(dmStandardDirectory, "_Standard.dm")))
+                string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
+
+                if (!File.Exists(dmStandard))
                 {
-                    Error(new CompilerError(Location.Unknown, "DMStandard not found."));
+                    Error(new CompilerError(Location.Internal, "DMStandard not found."));
                     return null;
                 }
-                preprocessor.IncludeFile(dmStandardDirectory, "_Standard.dm");
+
+                files.Add(dmStandard);
             }
 
-            VerbosePrint("Preprocessing");
-            foreach (string file in files) {
-                string directoryPath = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
+            if (Settings.DumpPreprocessor) {
+                //Preprocessing is done twice because the output is used up when dumping it
+                DMPreprocessor dumpPreproc = new DMPreprocessor(true);
+                dumpPreproc.IncludeFiles(files);
 
-                preprocessor.IncludeFile(directoryPath, fileName);
+                StringBuilder result = new();
+                foreach (Token t in dumpPreproc) {
+                    result.Append(t.Text);
+                }
+
+                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+
+                File.WriteAllText(outputPath, result.ToString());
+                Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
 
-            return preprocessor;
+            DMPreprocessor preproc = new DMPreprocessor(true);
+            preproc.IncludeFiles(files);
+            return preproc;
         }
 
-        private static bool Compile(List<Token> preprocessedTokens) {
+        private static bool Compile(IEnumerable<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
             DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
 
@@ -137,8 +143,7 @@ namespace DMCompiler {
             VerbosePrint("Constant folding");
             astSimplifier.SimplifyAST(astFile);
 
-            DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
-            dmObjectBuilder.BuildObjectTree(astFile);
+            DMObjectBuilder.BuildObjectTree(astFile);
 
             if (ErrorCount > 0) {
                 return false;
@@ -177,10 +182,10 @@ namespace DMCompiler {
             foreach (string mapPath in mapPaths) {
                 VerbosePrint($"Converting map {mapPath}");
 
-                DMPreprocessor preprocessor = new DMPreprocessor(false, !Settings.SuppressUnimplementedWarnings);
-                preprocessor.IncludeFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
+                DMPreprocessor preprocessor = new DMPreprocessor(false);
+                preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
 
-                DMLexer lexer = new DMLexer(mapPath, preprocessor.GetResult());
+                DMLexer lexer = new DMLexer(mapPath, preprocessor);
                 DMMParser parser = new DMMParser(lexer);
                 DreamMapJson map = parser.ParseMap();
 

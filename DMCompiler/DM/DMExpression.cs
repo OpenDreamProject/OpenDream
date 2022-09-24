@@ -25,7 +25,6 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
-        public DMValueType ValType = DMValueType.Anything;
         public Location Location;
 
         public DMExpression(Location location) {
@@ -91,8 +90,34 @@ namespace DMCompiler.DM {
 
             int idx = 0;
             foreach(var arg in arguments) {
-                var expr = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
-                Expressions[idx++] = (arg.Name, expr);
+                var value = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
+                var key = (arg.Key != null) ? DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
+                int argIndex = idx++;
+                string name = null;
+
+                switch (key) {
+                    case Expressions.String keyStr:
+                        name = keyStr.Value;
+                        break;
+                    case Expressions.Number keyNum:
+                        //Replaces an ordered argument
+                        argIndex = (int)keyNum.Value;
+                        break;
+                    case Expressions.Resource _:
+                    case Expressions.Path _:
+                        //The key becomes the value
+                        value = key;
+                        break;
+
+                    default:
+                        if (key != null) {
+                            DMCompiler.Error(new CompilerError(key.Location, "Invalid argument key"));
+                        }
+
+                        break;
+                }
+
+                Expressions[argIndex] = (name, value);
             }
         }
 

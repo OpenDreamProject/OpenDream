@@ -4,23 +4,23 @@ using Robust.Shared.IoC;
 using System.Linq;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    [Virtual]
-    class DreamMetaObjectDatum : DreamMetaObjectRoot {
-        public override bool ShouldCallNew => true;
+    sealed class DreamMetaObjectDatum : IDreamMetaObject {
+        public bool ShouldCallNew => true;
+        public IDreamMetaObject? ParentType { get; set; }
 
-        private IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
                 _dreamManager.Datums.Add(dreamObject);
             }
 
-            base.OnObjectCreated(dreamObject, creationArguments);
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
-        public override void OnObjectDeleted(DreamObject dreamObject) {
-            base.OnObjectDeleted(dreamObject);
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            ParentType?.OnObjectDeleted(dreamObject);
 
             if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
             {
@@ -32,27 +32,24 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             dreamObject.SpawnProc("Del");
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue)
-        {
-            return variableName switch
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            return varName switch
             {
                 "type" => new DreamValue(dreamObject.ObjectDefinition.Type),
                 "parent_type" => new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type)
                     .ParentEntry.ObjectDefinition.Type),
                 "vars" => new DreamValue(DreamListVars.Create(dreamObject)),
-                _ => base.OnVariableGet(dreamObject, variableName, variableValue)
+                _ => ParentType?.OnVariableGet(dreamObject, varName, value) ?? value
             };
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue,
-            DreamValue oldVariableValue)
-        {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            if (variableName == "tag")
+            if (varName == "tag")
             {
-                oldVariableValue.TryGetValueAsString(out var oldStr);
-                variableValue.TryGetValueAsString(out var tagStr);
+                oldValue.TryGetValueAsString(out var oldStr);
+                value.TryGetValueAsString(out var tagStr);
 
                 // Even if we're setting it to the same string we still need to remove it
                 if (!string.IsNullOrEmpty(oldStr))

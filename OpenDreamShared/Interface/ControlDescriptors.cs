@@ -87,4 +87,10 @@ namespace OpenDreamShared.Interface {
         [DataField("text")]
         public string Text = null;
     }
+
+    public sealed class ControlDescriptorGrid : ControlDescriptor {
+    }
+
+    public sealed class ControlDescriptorTab : ControlDescriptor {
+    }
 }

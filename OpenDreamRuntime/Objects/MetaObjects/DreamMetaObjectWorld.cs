@@ -6,23 +6,26 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectWorld : DreamMetaObjectRoot {
-        [Dependency] private IDreamManager _dreamManager = null;
-        [Dependency] private DreamResourceManager _dreamRscMan = null;
-        [Dependency] private IDreamMapManager _dreamMapManager = null;
-        [Dependency] private IGameTiming _gameTiming = null;
-        [Dependency] private IConfigurationManager _cfg = null;
+    sealed class DreamMetaObjectWorld : IDreamMetaObject {
+        public bool ShouldCallNew => false; // Gets called manually later
+        public IDreamMetaObject? ParentType { get; set; }
+
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamResourceManager _dreamRscMan = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
+        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
         private ViewRange _viewRange;
 
-        private double TickLag { get => _gameTiming.TickPeriod.TotalMilliseconds / 100; }
+        private double TickLag => _gameTiming.TickPeriod.TotalMilliseconds / 100;
 
         public DreamMetaObjectWorld() {
             IoCManager.InjectDependencies(this);
         }
 
-        public override void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            base.OnObjectCreated(dreamObject, creationArguments);
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
 
@@ -30,32 +33,44 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
-            if (fps.Value != null) {
-                _cfg.SetCVar(CVars.NetTickrate, fps.GetValueAsInteger());
+            if (fps.TryGetValueAsInteger(out var fpsValue)) {
+                _cfg.SetCVar(CVars.NetTickrate, fpsValue);
             }
 
             DreamValue view = dreamObject.ObjectDefinition.Variables["view"];
             if (view.TryGetValueAsString(out string viewString)) {
                 _viewRange = new ViewRange(viewString);
             } else {
-                _viewRange = new ViewRange(view.GetValueAsInteger());
+                if (!view.TryGetValueAsInteger(out var viewInt)) {
+                    Logger.Warning("world.view did not contain a valid value. A default of 5 is being used.");
+                    viewInt = 5;
+                }
+
+                _viewRange = new ViewRange(viewInt);
             }
         }
 
-        public override void OnVariableSet(DreamObject dreamObject, string variableName, DreamValue variableValue, DreamValue oldVariableValue) {
-            base.OnVariableSet(dreamObject, variableName, variableValue, oldVariableValue);
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            switch (variableName) {
+            switch (varName) {
                 case "fps":
-                    _cfg.SetCVar(CVars.NetTickrate, variableValue.GetValueAsInteger()); break;
+                    if (!value.TryGetValueAsInteger(out var fps))
+                        fps = 10;
+
+                    _cfg.SetCVar(CVars.NetTickrate, fps);
+                    break;
                 case "maxz":
-                    _dreamMapManager.SetZLevels(variableValue.GetValueAsInteger()); break;
+                    value.TryGetValueAsInteger(out var maxz);
+
+                    _dreamMapManager.SetZLevels(maxz);
+                    break;
                 case "log":
-                    if (variableValue.TryGetValueAsString(out var logStr))
+                    if (value.TryGetValueAsString(out var logStr))
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(_dreamRscMan.LoadResource(logStr)));
                     }
-                    else if(!variableValue.TryGetValueAsDreamResource(out _))
+                    else if(!value.TryGetValueAsDreamResource(out _))
                     {
                         dreamObject.SetVariableValue("log", new DreamValue(new ConsoleOutputResource()));
                     }
@@ -63,8 +78,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public override DreamValue OnVariableGet(DreamObject dreamObject, string variableName, DreamValue variableValue) {
-            switch (variableName) {
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            switch (varName) {
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":
@@ -101,14 +116,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "view": {
                     //Number if square & centerable, string representation otherwise
-                    return new DreamValue((_viewRange.IsSquare && _viewRange.IsCenterable) ? _viewRange.Width : _viewRange.ToString());
+                    if (_viewRange.IsSquare && _viewRange.IsCenterable) {
+                        return new DreamValue(_viewRange.Width);
+                    } else {
+                        return new DreamValue(_viewRange.ToString());
+                    }
                 }
+                case "vars":
+                    return new DreamValue(DreamListVars.Create(dreamObject));
                 default:
-                    return base.OnVariableGet(dreamObject, variableName, variableValue);
+                    return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
-        public override DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }

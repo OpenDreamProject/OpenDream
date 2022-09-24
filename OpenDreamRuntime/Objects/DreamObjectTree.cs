@@ -27,13 +27,14 @@ namespace OpenDreamRuntime.Objects {
         public List<string> Strings; //TODO: Store this somewhere else
 
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
+        private Dictionary<string, int> _globalProcIds;
 
         public void LoadJson(DreamCompiledJson json)
         {
             Strings = json.Strings;
 
             // Load procs first so types can set their init proc's super proc
-            LoadProcsFromJson(json.Procs);
+            LoadProcsFromJson(json.Types, json.Procs, json.GlobalProcs);
             LoadTypesFromJson(json.Types);
         }
 
@@ -42,7 +43,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public TreeEntry GetTreeEntry(DreamPath path) {
-            if (!_pathToType.TryGetValue(path, out TreeEntry type)) {
+            if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
                 throw new Exception($"Object '{path}' does not exist");
             }
 
@@ -59,6 +60,12 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamObjectDefinition GetObjectDefinition(int typeId) {
             return GetTreeEntry(typeId).ObjectDefinition;
+        }
+
+        public bool TryGetGlobalProc(string name, out DreamProc? globalProc) {
+            globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
+
+            return (globalProc != null);
         }
 
         public IEnumerable<TreeEntry> GetAllDescendants(DreamPath path) {
@@ -85,6 +92,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetMetaObject(DreamPath path, IDreamMetaObject metaObject) {
+            // TODO: Setting meta objects outside of their order of inheritance can break things.
+            metaObject.ParentType = GetTreeEntry(path).ParentEntry.ObjectDefinition.MetaObject;
+
             foreach (TreeEntry treeEntry in GetAllDescendants(path)) {
                 treeEntry.ObjectDefinition.MetaObject = metaObject;
             }
@@ -244,7 +254,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamProc LoadProcJson(ProcDefinitionJson procDefinition) {
+        public DreamProc LoadProcJson(DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
             byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
             List<string> argumentNames = new();
             List<DMValueType> argumentTypes = new();
@@ -259,34 +269,59 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
 
-            return new DMProc(procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
+            return new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
         }
 
-        private void LoadProcsFromJson(ProcDefinitionJson[] jsonProcs)
+        private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)
         {
             Procs = new(jsonProcs.Length);
             foreach (var proc in jsonProcs)
             {
-                Procs.Add(LoadProcJson(proc));
+                Procs.Add(LoadProcJson(types, proc));
+            }
+
+            if (jsonGlobalProcs != null) {
+                _globalProcIds = new(jsonGlobalProcs.Count);
+
+                foreach (var procId in jsonGlobalProcs) {
+                    var proc = Procs[procId];
+
+                    _globalProcIds.Add(proc.Name, procId);
+                }
             }
         }
 
-        public NativeProc CreateNativeProc(NativeProc.HandlerFn func, out int procId)
+        public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func, out int procId)
         {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+            var proc = new NativeProc(owningType, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
             procId = Procs.Count;
             Procs.Add(proc);
             return proc;
         }
 
-        public AsyncNativeProc CreateAsyncNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func, out int procId)
+        public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func, out int procId)
         {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
+            var proc = new AsyncNativeProc(owningType, name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
             procId = Procs.Count;
             Procs.Add(proc);
             return proc;
+        }
+
+        public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new NativeProc(DreamPath.Root, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+
+            Procs[_globalProcIds[name]] = proc;
+        }
+
+        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new AsyncNativeProc(DreamPath.Root, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+
+            Procs[_globalProcIds[name]] = proc;
         }
     }
 }

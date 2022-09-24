@@ -3,12 +3,13 @@ using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using OpenDreamShared.Dream;
 using System;
+using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
-        private DMObject _dmObject;
-        private DMProc _proc;
+        private readonly DMObject _dmObject;
+        private readonly DMProc _proc;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
@@ -103,10 +104,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
                 case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
                 case DMASTProcStatementIf statementIf: ProcessStatementIf(statementIf); break;
-                case DMASTProcStatementForStandard statementForStandard: ProcessStatementForStandard(statementForStandard); break;
-                case DMASTProcStatementForList statementForList: ProcessStatementForList(statementForList); break;
-                case DMASTProcStatementForRange statementForRange: ProcessStatementForRange(statementForRange); break;
-                case DMASTProcStatementForType statementForType: ProcessStatementForType(statementForType); break;
+                case DMASTProcStatementFor statementFor: ProcessStatementFor(statementFor); break;
                 case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
@@ -227,50 +225,36 @@ namespace DMCompiler.DM.Visitors {
                     }
                     break;
                 case "name":
-                    DMASTConstantString name = statementSet.Value as DMASTConstantString;
-                    if (name is null) throw new CompileErrorException(statementSet.Location, "bad text");
-                    _proc.VerbName = name.Value;
+                    if (constant is not Expressions.String nameStr) {
+                        throw new CompileErrorException(statementSet.Location, "name attribute must be a string");
+                    }
+
+                    _proc.VerbName = nameStr.Value;
                     break;
                 case "category":
-                    switch (statementSet.Value)
-                    {
-                        case DMASTConstantString category:
-                        {
-                            _proc.VerbCategory = category.Value;
-                            break;
-                        }
-                        case DMASTConstantNull:
-                            _proc.VerbCategory = null;
-                            break;
-                        default:
-                            throw new CompileErrorException(statementSet.Location, "bad text");
-                    }
+                    _proc.VerbCategory = constant switch {
+                        Expressions.String str => str.Value,
+                        Expressions.Null => null,
+                        _ => throw new CompileErrorException(statementSet.Location, "category attribute must be a string or null")
+                    };
 
                     break;
                 case "desc":
-                    DMASTConstantString desc = statementSet.Value as DMASTConstantString;
-                    if (desc is null) throw new CompileErrorException(statementSet.Location, "bad text");
-                    _proc.VerbDesc = desc.Value;
-
-                    if (!DMCompiler.Settings.SuppressUnimplementedWarnings) {
-                        DMCompiler.Warning(new CompilerWarning(statementSet.Location, "set desc is not implemented"));
+                    if (constant is not Expressions.String descStr) {
+                        throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
+
+                    _proc.VerbDesc = descStr.Value;
+                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    DMASTConstantFloat invisFloat = statementSet.Value as DMASTConstantFloat;
-                    if (invisFloat is null)
-                    {
-                        DMASTConstantInteger invisInt = statementSet.Value as DMASTConstantInteger;
-                        if(invisInt is null) throw new CompileErrorException(statementSet.Location, "bad num");
-                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(invisInt.Value, 0, 100));
-                    }
-                    else
-                    {
-                        _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisFloat.Value), 0, 100));
+                    if (constant is not Expressions.Number invisNum) {
+                        throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
@@ -290,11 +274,15 @@ namespace DMCompiler.DM.Visitors {
             string afterSpawnLabel = _proc.NewLabelName();
             _proc.Spawn(afterSpawnLabel);
 
-            ProcessBlockInner(statementSpawn.Body);
+            _proc.StartScope();
+            {
+                ProcessBlockInner(statementSpawn.Body);
 
-            //Prevent the new thread from executing outside its own code
-            _proc.PushNull();
-            _proc.Return();
+                //Prevent the new thread from executing outside its own code
+                _proc.PushNull();
+                _proc.Return();
+            }
+            _proc.EndScope();
 
             _proc.AddLabel(afterSpawnLabel);
         }
@@ -369,30 +357,129 @@ namespace DMCompiler.DM.Visitors {
                 _proc.Jump(endLabel);
 
                 _proc.AddLabel(elseLabel);
+                _proc.StartScope();
                 ProcessBlockInner(statement.ElseBody);
+                _proc.EndScope();
                 _proc.AddLabel(endLabel);
             }
         }
 
-        public void ProcessStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
+        public void ProcessStatementFor(DMASTProcStatementFor statementFor) {
             _proc.StartScope();
             {
-                if (statementForStandard.Initializer != null) {
-                    ProcessStatement(statementForStandard.Initializer);
+                foreach (var decl in FindVarDecls(statementFor.Expression1)) {
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null));
+                }
+
+                var initializer = statementFor.Expression1 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression1) : null;
+
+                if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                    var comparator = statementFor.Expression2 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression2) : null;
+                    var incrementor = statementFor.Expression3 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression3) : null;
+
+                    ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
+                } else {
+                    switch (statementFor.Expression1) {
+                        case DMASTAssign {Expression: DMASTVarDeclExpression decl, Value: DMASTExpressionInRange range}: {
+                            var identifier = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                            var outputVar = DMExpression.Create(_dmObject, _proc, identifier);
+
+                            var start = DMExpression.Create(_dmObject, _proc, range.StartRange);
+                            var end = DMExpression.Create(_dmObject, _proc, range.EndRange);
+                            var step = range.Step != null
+                                ? DMExpression.Create(_dmObject, _proc, range.Step)
+                                : new Number(range.Location, 1);
+
+                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            break;
+                        }
+                        case DMASTExpressionInRange exprRange: {
+                            DMASTVarDeclExpression decl = exprRange.Value as DMASTVarDeclExpression;
+                            decl ??= exprRange.Value is DMASTAssign assign
+                                ? assign.Expression as DMASTVarDeclExpression
+                                : null;
+
+                            DMASTExpression outputExpr;
+                            if (decl != null) {
+                                outputExpr = new DMASTIdentifier(exprRange.Value.Location, decl.DeclPath.Path.LastElement);
+                            } else {
+                                outputExpr = exprRange.Value;
+                            }
+
+                            var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
+
+                            var start = DMExpression.Create(_dmObject, _proc, exprRange.StartRange);
+                            var end = DMExpression.Create(_dmObject, _proc, exprRange.EndRange);
+                            var step = exprRange.Step != null
+                                ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
+                                : new Number(exprRange.Location, 1);
+
+                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            break;
+                        }
+                        case DMASTVarDeclExpression vd: {
+                            var declInfo = new ProcVarDeclInfo(vd.DeclPath.Path);
+                            var identifier = new DMASTIdentifier(vd.Location, declInfo.VarName);
+                            var outputVar = DMExpression.Create(_dmObject, _proc, identifier);
+
+                            ProcessStatementForType(initializer, outputVar, declInfo.TypePath, statementFor.Body);
+                            break;
+                        }
+                        case DMASTExpressionIn exprIn: {
+                            DMASTExpression outputExpr;
+                            if (exprIn.Value is DMASTVarDeclExpression decl) {
+                                outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                            } else {
+                                outputExpr = exprIn.Value;
+                            }
+
+                            var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
+                            var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
+
+                            ProcessStatementForList(list, outputVar, statementFor.Body);
+                            break;
+                        }
+                        default:
+                            DMCompiler.Error(new CompilerError(statementFor.Location, "Invalid expression in for"));
+                            break;
+                    }
+                }
+            }
+            _proc.EndScope();
+
+            IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression expr) {
+                if (expr is DMASTVarDeclExpression p) {
+                    yield return p;
+                }
+                foreach (var leaf in expr.Leaves()) {
+                    foreach(var decl in FindVarDecls(leaf)) {
+                        yield return decl;
+                    }
+                }
+            }
+        }
+
+        public void ProcessStatementForStandard(DMExpression initializer, DMExpression comparator, DMExpression incrementor, DMASTProcBlockInner body) {
+            _proc.StartScope();
+            {
+                if (initializer != null) {
+                    initializer.EmitPushValue(_dmObject, _proc);
+                    _proc.Pop();
                 }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression.Emit(_dmObject, _proc, statementForStandard.Comparator);
-                    _proc.BreakIfFalse();
+                    if (comparator != null) {
+                        comparator.EmitPushValue(_dmObject, _proc);
+                        _proc.BreakIfFalse();
+                    }
 
-                    ProcessBlockInner(statementForStandard.Body);
+                    ProcessBlockInner(body);
 
                     _proc.LoopContinue(loopLabel);
-                    if (statementForStandard.Incrementor != null)
-                    {
-                        DMExpression.Emit(_dmObject, _proc, statementForStandard.Incrementor);
+                    if (incrementor != null) {
+                        incrementor.EmitPushValue(_dmObject, _proc);
                         _proc.Pop();
                     }
                     _proc.LoopJumpToStart(loopLabel);
@@ -402,35 +489,32 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
-        public void ProcessStatementForList(DMASTProcStatementForList statementForList) {
-            DMASTProcStatementVarDeclaration varDeclaration = statementForList.Initializer as DMASTProcStatementVarDeclaration;
-
-            DMExpression.Emit(_dmObject, _proc, statementForList.List);
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMASTProcBlockInner body) {
+            list.EmitPushValue(_dmObject, _proc);
             _proc.CreateListEnumerator();
+
             _proc.StartScope();
             {
-                if (statementForList.Initializer != null) {
-                    ProcessStatement(statementForList.Initializer);
-                }
-
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForList.Variable);
-                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
-                    _proc.Enumerate(outputRef);
-                    _proc.BreakIfFalse();
+                    if (outputVar is Expressions.LValue lValue) {
+                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        _proc.Enumerate(outputRef);
+                        _proc.BreakIfFalse();
 
-                    if (varDeclaration != null && varDeclaration.Type != null)
-                    {
-                        DMExpression.Emit(_dmObject, _proc, statementForList.Variable);
-                        _proc.PushPath(varDeclaration.Type.Value);
-                        _proc.IsType();
+                        if (outputVar.Path != null) {
+                            outputVar.EmitPushValue(_dmObject, _proc);
+                            _proc.PushPath(lValue.Path.Value);
+                            _proc.IsType();
 
-                        _proc.ContinueIfFalse();
+                            _proc.ContinueIfFalse();
+                        }
+                    } else {
+                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
                     }
 
-                    ProcessBlockInner(statementForList.Body);
+                    ProcessBlockInner(body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -441,36 +525,36 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForType(DMASTProcStatementForType statementForType)
-        {
-            DMASTProcStatementVarDeclaration varDeclaration = statementForType.Initializer as DMASTProcStatementVarDeclaration;
-
-            if (varDeclaration?.Type != null)
-            {
-                _proc.PushPath(varDeclaration.Type.Value);
-                _proc.CreateTypeEnumerator();
-            }
-            else // This shouldn't happen, just to be safe
-            {
-                DMCompiler.Error(new CompilerError(varDeclaration.Location, "Attempted to create a type enumerator with a null type"));
+        public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
+            if (type == null) {
+                // This shouldn't happen, just to be safe
+                DMCompiler.Error(new CompilerError(initializer.Location,
+                    "Attempted to create a type enumerator with a null type"));
                 return;
             }
 
+            _proc.PushPath(type.Value);
+            _proc.CreateTypeEnumerator();
+
             _proc.StartScope();
             {
-                if (statementForType.Initializer != null) {
-                    ProcessStatement(statementForType.Initializer);
+                if (initializer != null) {
+                    initializer.EmitPushValue(_dmObject, _proc);
+                    _proc.Pop();
                 }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForType.Variable);
-                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
-                    _proc.Enumerate(outputRef);
-                    _proc.BreakIfFalse();
+                    if (outputVar is Expressions.LValue lValue) {
+                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        _proc.Enumerate(outputRef);
+                        _proc.BreakIfFalse();
+                    } else {
+                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                    }
 
-                    ProcessBlockInner(statementForType.Body);
+                    ProcessBlockInner(body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -481,26 +565,35 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForRange(DMASTProcStatementForRange statementForRange) {
-            DMExpression.Emit(_dmObject, _proc, statementForRange.RangeStart);
-            DMExpression.Emit(_dmObject, _proc, statementForRange.RangeEnd);
-            DMExpression.Emit(_dmObject, _proc, statementForRange.Step);
+        public void ProcessStatementForRange(DMExpression initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression step, DMASTProcBlockInner body) {
+            start.EmitPushValue(_dmObject, _proc);
+            end.EmitPushValue(_dmObject, _proc);
+            if (step != null) {
+                step.EmitPushValue(_dmObject, _proc);
+            } else {
+                _proc.PushFloat(1.0f);
+            }
+
             _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
-                if (statementForRange.Initializer != null) {
-                    ProcessStatement(statementForRange.Initializer);
+                if (initializer != null) {
+                    initializer.EmitPushValue(_dmObject, _proc);
+                    _proc.Pop();
                 }
 
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    DMExpression outputVariable = DMExpression.Create(_dmObject, _proc, statementForRange.Variable);
-                    (DMReference outputRef, _) = outputVariable.EmitReference(_dmObject, _proc);
-                    _proc.Enumerate(outputRef);
-                    _proc.BreakIfFalse();
+                    if (outputVar is Expressions.LValue lValue) {
+                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        _proc.Enumerate(outputRef);
+                        _proc.BreakIfFalse();
+                    } else {
+                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                    }
 
-                    ProcessBlockInner(statementForRange.Body);
+                    ProcessBlockInner(body);
 
                     _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
@@ -577,12 +670,37 @@ namespace DMCompiler.DM.Visitors {
                     string caseLabel = _proc.NewLabelName();
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
-                        if (value is DMASTSwitchCaseRange range) {
+                        if (value is DMASTSwitchCaseRange range) { // if(1 to 5) or something
                             if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeStart, out var lower))
                                 throw new CompileErrorException(new CompilerError(range.RangeStart.Location, "Expected a constant"));
                             if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeEnd, out var upper))
                                 throw new CompileErrorException(new CompilerError(range.RangeEnd.Location, "Expected a constant"));
-
+                            //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
+                            //We are deviating from parity here and just calling that a CompilerError.
+                            if(lower is not Number)
+                            {
+                                if (lower is Null) // We do a little null coercion, as a treat
+                                    {
+                                    lower = new Number(lower.Location, 0.0f);
+                                    DMCompiler.Warning(new CompilerWarning(range.RangeStart.Location, "Malformed range, lower bound is coerced from null to 0"));
+                                }
+                                else
+                                {
+                                    DMCompiler.Error(new CompilerError(range.RangeStart.Location, "Invalid range, lower bound is not a number"));
+                                }
+                            }
+                            if(upper is not Number)
+                            {
+                                if (upper is Null)
+                                {
+                                    upper = new Number(upper.Location, 0.0f);
+                                    DMCompiler.Warning(new CompilerWarning(range.RangeEnd.Location, "Malformed range, upper bound is coerced from null to 0"));
+                                }
+                                else
+                                {
+                                    DMCompiler.Error(new CompilerError(range.RangeEnd.Location, "Invalid range, upper bound is not a number"));
+                                }
+                            }
                             lower.EmitPushValue(_dmObject, _proc);
                             upper.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCaseRange(caseLabel);

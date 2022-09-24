@@ -98,6 +98,7 @@ namespace DMCompiler.DM {
         public ProcDefinitionJson GetJsonRepresentation() {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
 
+            procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
@@ -279,19 +280,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DestroyEnumerator);
         }
 
-        public void CreateList() {
-            GrowStack(1);
+        public void CreateList(int size) {
+            ShrinkStack(size - 1); //Shrinks by the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateList);
+            WriteInt(size);
         }
 
-        public void ListAppend() {
-            ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.ListAppend);
-        }
-
-        public void ListAppendAssociated() {
-            ShrinkStack(2);
-            WriteOpcode(DreamProcOpcode.ListAppendAssociated);
+        public void CreateAssociativeList(int size) {
+            ShrinkStack(size * 2 - 1); //Shrinks by twice the size of the list, grows by 1
+            WriteOpcode(DreamProcOpcode.CreateAssociativeList);
+            WriteInt(size);
         }
 
         public string NewLabelName() {
@@ -316,10 +314,14 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
             {
+                if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
+                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                }
+
                 PushFloat(-1);
                 DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
                 PushArguments(1, arr, null);
-                Call(DMReference.CreateGlobalProc("sleep"));
+                Call(DMReference.CreateGlobalProc(sleepProc.Id));
             }
         }
 
@@ -582,12 +584,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
-        public void CreateMultidimensionalList(int count) {
-            ShrinkStack(count - 1);
-            WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
-            WriteInt(count);
-        }
-
         public void Not() {
             WriteOpcode(DreamProcOpcode.BooleanNot);
         }
@@ -783,8 +779,28 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
+        public void PushGlobalVars()
+        {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushGlobalVars);
+        }
+
         public void FormatString(string value) {
-            ShrinkStack(value.Count((char c) => c == 0xFF) - 1); //Shrinks by the amount of formats in the string, grows 1
+            int formatCount = 0;
+            for (int i = 0; i < value.Length; i++) {
+                if (value[i] == 0xFF) {
+                    StringFormatTypes formatType = (StringFormatTypes)value[++i];
+
+                    switch (formatType) {
+                        case StringFormatTypes.Stringify:
+                        case StringFormatTypes.Ref:
+                            formatCount++;
+                            break;
+                    }
+                }
+            }
+
+            ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
         }
@@ -828,6 +844,11 @@ namespace DMCompiler.DM {
             ShrinkStack(count - 1);
             WriteOpcode(DreamProcOpcode.PickUnweighted);
             WriteInt(count);
+        }
+
+        public void Prob() {
+            //Pops 1, pushes 1
+            WriteOpcode(DreamProcOpcode.Prob);
         }
 
         public void MassConcatenation(int count) {
@@ -880,18 +901,29 @@ namespace DMCompiler.DM {
 
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
-                case DMReference.Type.Local: WriteByte((byte)reference.Index); break;
+                case DMReference.Type.Local:
+                    WriteByte((byte)reference.Index);
+                    break;
 
-                case DMReference.Type.Global: WriteInt(reference.Index); break;
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.Global:
+                    WriteInt(reference.Index);
+                    break;
 
                 case DMReference.Type.Field:
-                case DMReference.Type.Proc: WriteString(reference.Name); ShrinkStack(affectStack ? 1 : 0); break;
+                case DMReference.Type.Proc:
+                    WriteString(reference.Name);
+                    ShrinkStack(affectStack ? 1 : 0);
+                    break;
 
                 case DMReference.Type.SrcField:
-                case DMReference.Type.GlobalProc:
-                case DMReference.Type.SrcProc: WriteString(reference.Name); break;
+                case DMReference.Type.SrcProc:
+                    WriteString(reference.Name);
+                    break;
 
-                case DMReference.Type.ListIndex: ShrinkStack(affectStack ? 2 : 0); break;
+                case DMReference.Type.ListIndex:
+                    ShrinkStack(affectStack ? 2 : 0);
+                    break;
 
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.Src:
@@ -899,7 +931,9 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
                     break;
-                default: throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
+
+                default:
+                    throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
             }
         }
 

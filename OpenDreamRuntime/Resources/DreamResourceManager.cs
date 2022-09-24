@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using OpenDreamShared.Network.Messages;
-using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Resources
@@ -16,12 +15,15 @@ namespace OpenDreamRuntime.Resources
         // Terrible and temporary, see DreamManager
         public void Initialize(string jsonPath)
         {
-            RootPath = Path.GetDirectoryName(jsonPath);
-
-            Logger.DebugS("opendream.res", $"Resource root path is {RootPath}");
-
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
+        }
+
+        public void SetDirectory(string directory) {
+            RootPath = directory;
+            Directory.SetCurrentDirectory(RootPath);
+
+            Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");
         }
 
         public bool DoesFileExist(string resourcePath) {

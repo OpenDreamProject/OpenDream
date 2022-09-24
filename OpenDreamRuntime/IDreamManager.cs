@@ -7,10 +7,13 @@ namespace OpenDreamRuntime {
     public interface IDreamManager {
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
-        public int DMExceptionCount { get; set; }
+
+        /// <summary>
+        /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
+        /// </summary>
+        public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
-        public Dictionary<string, DreamProc> GlobalProcs { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, string> ReferenceIDs { get; set; }
@@ -22,6 +25,7 @@ namespace OpenDreamRuntime {
 
         public void Initialize(string? testingJson);
         public void Shutdown();
+        public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);
         DreamConnection GetConnectionFromClient(DreamObject client);
         public DreamObject GetClientFromMob(DreamObject mob);
@@ -29,8 +33,6 @@ namespace OpenDreamRuntime {
         DreamConnection GetConnectionBySession(IPlayerSession session);
         public void Update();
 
-        public void SetGlobalNativeProc(NativeProc.HandlerFn func);
-        public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
         public virtual string CreateRef(DreamValue value)

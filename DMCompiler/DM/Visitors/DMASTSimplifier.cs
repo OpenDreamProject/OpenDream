@@ -1,4 +1,3 @@
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using System;
 
@@ -64,32 +63,11 @@ namespace DMCompiler.DM.Visitors {
             statementIf.ElseBody?.Visit(this);
         }
 
-        public void VisitProcStatementForList(DMASTProcStatementForList statementForList) {
-            SimplifyExpression(ref statementForList.List);
-
-            statementForList.Initializer?.Visit(this);
-            statementForList.Body?.Visit(this);
-        }
-
-        public void VisitProcStatementForType(DMASTProcStatementForType statementForType) {
-            statementForType.Initializer?.Visit(this);
-            statementForType.Body?.Visit(this);
-        }
-
-        public void VisitProcStatementForRange(DMASTProcStatementForRange statementForRange) {
-            SimplifyExpression(ref statementForRange.RangeStart);
-            SimplifyExpression(ref statementForRange.RangeEnd);
-            SimplifyExpression(ref statementForRange.Step);
-
-            statementForRange.Initializer?.Visit(this);
-            statementForRange.Body?.Visit(this);
-        }
-
-        public void VisitProcStatementForStandard(DMASTProcStatementForStandard statementForStandard) {
-            statementForStandard.Initializer?.Visit(this);
-            if (statementForStandard.Comparator != null) SimplifyExpression(ref statementForStandard.Comparator);
-            if (statementForStandard.Incrementor != null) SimplifyExpression(ref statementForStandard.Incrementor);
-            statementForStandard.Body?.Visit(this);
+        public void VisitProcStatementFor(DMASTProcStatementFor statementFor) {
+            if (statementFor.Expression1 != null) SimplifyExpression(ref statementFor.Expression1);
+            if (statementFor.Expression2 != null) SimplifyExpression(ref statementFor.Expression2);
+            if (statementFor.Expression3 != null) SimplifyExpression(ref statementFor.Expression3);
+            statementFor.Body?.Visit(this);
         }
 
         public void VisitProcStatementWhile(DMASTProcStatementWhile statementWhile) {

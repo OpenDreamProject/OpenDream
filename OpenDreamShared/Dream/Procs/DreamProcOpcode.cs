@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
@@ -32,7 +32,7 @@ namespace OpenDreamShared.Dream.Procs {
         CreateRangeEnumerator = 0x1B,
         //0x1C
         CompareLessThanOrEqual = 0x1D,
-        //0x1E
+        CreateAssociativeList = 0x1E,
         Remove = 0x1F,
         DeleteObject = 0x20,
         PushResource = 0x21,
@@ -40,7 +40,7 @@ namespace OpenDreamShared.Dream.Procs {
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        ListAppend = 0x26,
+        //0x26
         Divide = 0x27,
         Multiply = 0x28,
         BitXorReference = 0x29,
@@ -54,7 +54,7 @@ namespace OpenDreamShared.Dream.Procs {
         CompareGreaterThanOrEqual = 0x31,
         SwitchCase = 0x32,
         Mask = 0x33,
-        ListAppendAssociated = 0x34,
+        //0x34
         Error = 0x35,
         IsInList = 0x36,
         PushArguments = 0x37,
@@ -84,7 +84,7 @@ namespace OpenDreamShared.Dream.Procs {
         //0x4F,
         JumpIfNullDereference = 0x50,
         Pop = 0x51,
-        //0x52
+        Prob = 0x52,
         IsSaved = 0x53,
         PickUnweighted = 0x54,
         PickWeighted = 0x55,
@@ -96,7 +96,8 @@ namespace OpenDreamShared.Dream.Procs {
         IsInRange = 0x5B,
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
-        CreateMultidimensionalList = 0x5E
+        //0x5E
+        PushGlobalVars = 0x5F
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -104,11 +105,47 @@ namespace OpenDreamShared.Dream.Procs {
         Unnamed = 0xFD
     }
 
-    public enum StringFormatTypes {
-        Stringify = 0x0,
-        Ref = 0x1
-    }
+    public enum StringFormatTypes : byte {
+        Stringify = 0x0,                //Plain []
+        Ref = 0x1,                      //\ref[]
 
+        UpperDefiniteArticle = 0x2,     //The
+        LowerDefiniteArticle = 0x3,     //the
+        UpperIndefiniteArticle = 0x4,   //A, An, Some
+        LowerIndefiniteArticle = 0x5,   //a, an, some
+        UpperSubjectPronoun = 0x6,      //He, She, They, It
+        LowerSubjectPronoun = 0x7,      //he, she, they, it
+        UpperPossessiveAdjective = 0x8, //His, Her, Their, Its
+        LowerPossessiveAdjective = 0x9, //his, her, their, its
+        ObjectPronoun = 0xA,            //him, her, them, it
+        ReflexivePronoun = 0xB,         //himself, herself, themself, it
+        UpperPossessivePronoun = 0xC,   //His, Hers, Theirs, Its
+        LowerPossessivePronoun = 0xD,   //his, hers, theirs, its
+
+        Proper = 0xE,                   //String represents a proper noun
+        Improper = 0xF,                 //String represents an improper noun
+
+        OrdinalIndicator = 0x10,        //1st, 2nd, 3rd, 4th, ...
+        PluralSuffix = 0x11,            //-s suffix at the end of a plural noun
+
+        Icon = 0x12,                    //Use an atom's icon
+
+        ColorRed = 0x13,
+        ColorBlue = 0x14,
+        ColorGreen = 0x15,
+        ColorBlack = 0x16,
+        ColorYellow = 0x17,
+        ColorNavy = 0x18,
+        ColorTeal = 0x19,
+        ColorCyan = 0x1A,
+
+        Bold = 0x1B,
+        Italic = 0x1C
+    }
+    ///<summary>
+    ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
+    ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)
+    /// </summary>
     [Flags]
     public enum DMValueType {
         Anything = 0x0,
@@ -125,7 +162,9 @@ namespace OpenDreamShared.Dream.Procs {
         CommandText = 0x400,
         Sound = 0x800,
         Icon = 0x1000,
-        Unimplemented = 0x2000
+        //Byond here be dragons
+        Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+        CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     }
 
     public struct DMReference {
@@ -155,10 +194,10 @@ namespace OpenDreamShared.Dream.Procs {
 
         public Type RefType;
 
-        //Argument, Local, Global
+        //Argument, Local, Global, GlobalProc
         public int Index;
 
-        //Field, SrcField, Proc, GlobalProc, SrcProc
+        //Field, SrcField, Proc, SrcProc
         public string Name;
 
         public static DMReference CreateArgument(int argId) {
@@ -189,8 +228,8 @@ namespace OpenDreamShared.Dream.Procs {
             return new DMReference() { RefType = Type.Proc, Name = procName };
         }
 
-        public static DMReference CreateGlobalProc(string procName) {
-            return new DMReference() { RefType = Type.GlobalProc, Name = procName };
+        public static DMReference CreateGlobalProc(int procId) {
+            return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
 
         public static DMReference CreateSrcProc(string procName) {
@@ -199,17 +238,47 @@ namespace OpenDreamShared.Dream.Procs {
 
         public override string ToString() {
             switch (RefType) {
-                case Type.Local: return $"{RefType} {Index}";
-                case Type.Global: return $"{RefType} {Index}";
-                case Type.Argument: return $"{RefType} {Index}";
+                case Type.Local:
+                case Type.Global:
+                case Type.Argument:
+                case Type.GlobalProc:
+                    return $"{RefType} {Index}";
+
                 case Type.SrcField:
                 case Type.Field:
-                    return $"{RefType} \"{Name}\"";
                 case Type.SrcProc:
                 case Type.Proc:
                     return $"{RefType} \"{Name}\"";
+
                 default: return RefType.ToString();
             }
         }
     }
+
+    // Dummy class-as-namespace because C# just kinda be like this
+    public static class OpcodeVerifier
+    {
+        /// <summary>
+        /// Validates that the opcodes in DreamProcOpcode are all unique, such that none resolve to the same byte.
+        /// </summary>
+        /// <returns>True if there are duplicate opcodes, false if not</returns>
+        public static bool AreOpcodesInvalid() // FIXME: Can this be made into something done during compiletime? Like, *this code's* compiletime? >:/
+        {
+            // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
+            // but since we're in OpenDreamShared I want each executable to be able to do what they want with this information.
+            
+            // Key is an int (or whatever the underlying type is) we're already using for an opcode
+            HashSet<DreamProcOpcode> bytePool = new();
+            foreach (DreamProcOpcode usedInt in Enum.GetValues(typeof(DreamProcOpcode)))
+            {
+                if(bytePool.Contains(usedInt))
+                {
+                    return true;
+                }
+                bytePool.Add(usedInt);
+            }
+            return false;
+        }
+    }
+   
 }

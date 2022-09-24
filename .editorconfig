@@ -8,6 +8,20 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
+[*.cs]
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents_when_block = false
+csharp_using_directive_placement = outside_namespace
+
 [*.csproj]
 indent_style = space
 indent_size = 2

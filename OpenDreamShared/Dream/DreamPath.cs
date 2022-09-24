@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
 
 namespace OpenDreamShared.Dream {
@@ -209,7 +208,12 @@ namespace OpenDreamShared.Dream {
         }
 
         public override int GetHashCode() {
-            return PathString.GetHashCode();
+            int hashCode = 0;
+            for (int i = 0; i < Elements.Length; i++) {
+                hashCode += Elements[i].GetHashCode();
+            }
+
+            return hashCode;
         }
 
         public static bool operator ==(DreamPath lhs, DreamPath rhs) => lhs.Equals(rhs);

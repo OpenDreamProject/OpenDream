@@ -7,6 +7,7 @@
 	var/channel = 0
 	var/volume = 100
 	var/frequency = 0
+	var/pan = 0 as opendream_unimplemented
 	var/falloff = 1 as opendream_unimplemented
 	var/x as opendream_unimplemented
 	var/y as opendream_unimplemented

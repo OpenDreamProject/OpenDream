@@ -9,7 +9,6 @@ using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Network;
 
 namespace OpenDreamRuntime
 {
@@ -58,8 +57,8 @@ namespace OpenDreamRuntime
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login");
-                        Session.AttachToEntity(_atomManager.GetAtomEntity(_mobDreamObject));
+                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject );
+                        Session.AttachToEntity(_atomManager.GetMovableEntity(_mobDreamObject));
                     }
                     else
                     {
@@ -304,6 +303,17 @@ namespace OpenDreamRuntime
             return task;
         }
 
+        public Task<DreamValue> WinExists(string controlId) {
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgWinExists() {
+                PromptId = promptId,
+                ControlId = controlId
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
 
         public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3)
         {
@@ -335,6 +345,9 @@ namespace OpenDreamRuntime
 
         public void BrowseResource(DreamResource resource, string filename)
         {
+            if (!resource.Exists())
+                return;
+
             var msg = new MsgBrowseResource() {
                 Filename = filename,
                 Data = resource.ResourceData

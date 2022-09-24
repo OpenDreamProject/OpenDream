@@ -99,7 +99,7 @@ namespace DMCompiler.DM.Expressions {
 
     // Identifier of field
     class Field : LValue {
-        DMVariable Variable;
+        public readonly DMVariable Variable;
 
         public Field(Location location, DMVariable variable)
             : base(location, variable.Type) {

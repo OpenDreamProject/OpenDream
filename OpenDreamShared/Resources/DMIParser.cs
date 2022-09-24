@@ -45,8 +45,26 @@ namespace OpenDreamShared.Resources {
                 };
             }
 
-            public void InsertIcon(ParsedDMIDescription icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
+            private static ParsedDMIDescription CloneDescription(ParsedDMIDescription original)
             {
+                Dictionary<string, ParsedDMIState> stateCopy = new(original.States.Count);
+                foreach (var key in original.States.Keys)
+                {
+                    stateCopy.Add(key, original.States[key]);
+                }
+
+                return new ParsedDMIDescription() {
+                    Source = original.Source,
+                    Version = original.Version,
+                    Width = original.Width,
+                    Height = original.Height,
+                    States = stateCopy
+                };
+            }
+
+            public void InsertIcon(ParsedDMIDescription original_icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
+            {
+                var icon = CloneDescription(original_icon);
                 IEnumerable<ParsedDMIState> states;
                 if (icon_state is null) {
                     states = icon.States.Values;

@@ -28,7 +28,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Insert(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            arguments.GetArgument(0, "new_icon").TryGetValueAsDreamObject(out var new_icon);
+            if (!arguments.GetArgument(0, "new_icon").TryGetValueAsDreamObject(out var new_icon))
+            {
+                // TODO: Implement this
+                if (arguments.GetArgument(0, "new_icon").TryGetValueAsDreamResource(out _))
+                {
+                    throw new NotImplementedException("icon.Insert() doesn't support DreamResources yet");
+                }
+            }
             arguments.GetArgument(1, "icon_state").TryGetValueAsString(out var icon_state);
             AtomDirection? dir = null;
             if (arguments.GetArgument(2, "dir").TryGetValueAsInteger(out var dirNum))
@@ -46,7 +53,7 @@ namespace OpenDreamRuntime.Procs.Native {
             {
                 delay = delayNum;
             }
-            
+
             DreamMetaObjectIcon.DreamIconObject instanceIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
             DreamMetaObjectIcon.DreamIconObject newIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[new_icon];
             instanceIconObject.Description.InsertIcon(newIconObject.Description, icon_state, dir, frame, delay);

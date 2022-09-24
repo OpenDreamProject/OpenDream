@@ -32,7 +32,7 @@ namespace OpenDreamRuntime {
         public Dictionary<string, DreamProc> GlobalProcs { get; set; } = new();
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
-        public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
+        public Dictionary<DreamObject, string> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
         public List<DreamObject> Clients { get; set; } = new();
         public List<DreamObject> Datums { get; set; } = new();

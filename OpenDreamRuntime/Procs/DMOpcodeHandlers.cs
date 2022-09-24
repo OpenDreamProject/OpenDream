@@ -1467,38 +1467,12 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString)) {
-                if(int.TryParse(refString, out var refID))
+            if (value.TryGetValueAsString(out string refString))
+            {
+                var locateRef = state.DreamManager.LocateRef(refString);
+                if(locateRef is not null)
                 {
-                    // The first digit is the type
-                    var typeId = int.Parse(refString.Substring(0, 1));
-                    refID = int.Parse(refString.Substring(1));
-
-                    switch (typeId)
-                    {
-                        // DreamObject
-                        case 1:
-                        {
-                            var obj = DreamObject.GetFromReferenceID(state.DreamManager, refID);
-                            state.Push(new DreamValue(obj));
-                            break;
-                        }
-                        // String
-                        case 2:
-                        {
-                            if (state.DreamManager.ObjectTree.Strings.Count > refID)
-                            {
-                                state.Push(new DreamValue(state.DreamManager.ObjectTree.Strings[refID]));
-                            }
-                            else
-                            {
-                                state.Push(DreamValue.Null);
-                            }
-                            break;
-                        }
-                        default:
-                            throw new NotImplementedException($"Unsupported reference type for ref {refString}");
-                    }
+                    state.Push(locateRef.Value);
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))
                 {

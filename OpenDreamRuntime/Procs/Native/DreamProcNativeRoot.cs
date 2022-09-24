@@ -401,36 +401,200 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filter_type))
                 return DreamValue.Null;
+                
             DreamObject result;
+
+            float x;
+            float y;
+            DreamResource icon;
+            DreamResource render_source;
+            float flags;
+            float size;
+            string color_string;
+            string threshold_color;
+            float threshold_strength;
+            float offset;
+            float alpha;
+            DreamList color_matrix = null;
+            float space;
+            DreamList transform;
+            float blend_mode;
+            float density;
+            float factor;
+            float repeat;
+            float radius;
+            float falloff;
+
             switch(filter_type)
             {
-                case "alpha":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "angular_blur":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "bloom":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "blur":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "color":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "displace":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "drop_shadow":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "layer":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "motion_blur":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
-                case "outline":
-                    int size;
-                    if(!arguments.GetArgument(1, "size").TryGetValueAsInteger(out size)) //Width in pixels (defaults to 1)
+                case "alpha":                    
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horizontal offset of mask (defaults to 0)
+                        x = 0;
+                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical offset of mask (defaults to 0)
+                        y = 0;
+                    
+                    if(!arguments.GetArgument(2, "icon").TryGetValueAsDreamResource(out icon)) //Outline color (defaults to black)
+                        icon = null; //TODO should this error?
+                    
+                    if(!arguments.GetArgument(2, "render_source").TryGetValueAsDreamResource(out render_source)) //Outline color (defaults to black)
+                        render_source = null; //TODO should this error?                   
+                    
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //Defaults to 0 
+                        flags = 0;
+
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("icon", new DreamValue(icon));
+                    result.SetVariable("render_source", new DreamValue(render_source));
+                    result.SetVariable("flags", new DreamValue(flags));
+                    return new DreamValue(result);   
+                case "angular_blur":                    
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horizontal offset of mask (defaults to 0)
+                        x = 0;
+                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical offset of mask (defaults to 0)
+                        y = 0;
+                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Width in pixels (defaults to 1)
                         size = 1;
-                    string color_string;
+                                        
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    return new DreamValue(result); 
+                case "bloom":
+                    if(!arguments.GetArgument(2, "threshold").TryGetValueAsString(out threshold_color)) //Color threshold for bloom 
+                        threshold_color = "#000000";
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Blur radius of bloom effect (see Gaussian blur)
+                        size = 1;   
+                    if(!arguments.GetArgument(1, "offset").TryGetValueAsFloat(out offset)) //Growth/outline radius of bloom effect before blur
+                        offset = 1;     
+                    if(!arguments.GetArgument(1, "alpha").TryGetValueAsFloat(out alpha)) //Opacity of effect (default is 255, max opacity)
+                        alpha = 255;                                              
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("threshold", new DreamValue(threshold_color));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("offset", new DreamValue(offset));
+                    result.SetVariable("alpha", new DreamValue(alpha));
+                    return new DreamValue(result); 
+                case "blur":
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Amount of blur (defaults to 1)
+                        size = 1; 
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("size", new DreamValue(size));
+                          
+                    return new DreamValue(result); 
+                case "color":
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsDreamList(out color_matrix)) //A color matrix
+                        color_matrix = DreamList.Create();
+                    if(!arguments.GetArgument(1, "space").TryGetValueAsFloat(out space)) //Value indicating color space: defaults to FILTER_COLOR_RGB
+                        space = 0; //#define FILTER_COLOR_RGB 0
+                                            
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("color", new DreamValue(color_matrix));
+                    result.SetVariable("space", new DreamValue(space));
+                    return new DreamValue(result); 
+                case "displace":
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horizontal offset of mask (defaults to 0)
+                        x = 0;
+                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical offset of mask (defaults to 0)
+                        y = 0;
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Maximum distortion, in pixels
+                        size = 1;                     
+                    if(!arguments.GetArgument(2, "icon").TryGetValueAsDreamResource(out icon)) //Icon to use as a displacement map
+                        icon = null; //TODO should this error?
+                    
+                    if(!arguments.GetArgument(2, "render_source").TryGetValueAsDreamResource(out render_source)) //render_target to use as a displacement map
+                        render_source = null; //TODO should this error?                   
+
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("icon", new DreamValue(icon));
+                    result.SetVariable("render_source", new DreamValue(render_source));
+
+                    return new DreamValue(result); 
+                case "drop_shadow":
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Shadow horizontal offset (defaults to 1)
+                        x = 1;                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Shadow horizontal offset (defaults to -1)
+                        y = -1;                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Blur amount (defaults to 1; negative values create inset shadows)
+                        size = 1;
+                    if(!arguments.GetArgument(1, "offset").TryGetValueAsFloat(out offset)) //Size increase before blur (defaults to 0)
+                        offset = 0;                        
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Shadow color (defaults to 50% transparent black)
+                        color_string = "#00000088";                                        
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("offset", new DreamValue(offset));
+                    result.SetVariable("color", new DreamValue(color_string));
+                    return new DreamValue(result); 
+                case "layer":
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horizontal offset of second image (defaults to 0)
+                        x = 0;                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical offset of second image (defaults to 0)
+                        y = 0;                   
+                    if(!arguments.GetArgument(2, "icon").TryGetValueAsDreamResource(out icon)) //Icon to use as a second image
+                        icon = null; //TODO should this error?                    
+                    if(!arguments.GetArgument(2, "render_source").TryGetValueAsDreamResource(out render_source)) //Icon to use as a second image
+                        render_source = null; //TODO should this error?      
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //FILTER_OVERLAY (default) or FILTER_UNDERLAY
+                        flags = 0; //#define FILTER_OVERLAY 0                                 
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Color or color matrix to apply to second image
+                        if(!arguments.GetArgument(2, "color").TryGetValueAsDreamList(out color_matrix)) //A color matrix
+                            color_matrix = DreamList.Create();  
+                        else
+                            color_string = "#00000088";        
+                    if(!arguments.GetArgument(2, "transform").TryGetValueAsDreamList(out transform)) //Transform to apply to second image
+                        color_matrix = DreamList.Create();
+                    if(!arguments.GetArgument(1, "blend_mode").TryGetValueAsFloat(out blend_mode)) //Blend mode to apply to the top image
+                        blend_mode = 0;         
+
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("icon", new DreamValue(icon));
+                    result.SetVariable("render_source", new DreamValue(render_source));
+                    result.SetVariable("flags", new DreamValue(flags));
+                    result.SetVariable("color", new DreamValue(color_matrix == null ? color_string : color_matrix));
+                    result.SetVariable("transform", new DreamValue(transform));
+                    result.SetVariable("blend_mode", new DreamValue(blend_mode));
+                    return new DreamValue(result); 
+                case "motion_blur":
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Blur vector on the X axis (defaults to 0)
+                        x = 0;
+                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Blur vector on the Y axis (defaults to 0)
+                        y = 0;
+                                        
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+
+                    return new DreamValue(result); 
+                case "outline":                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Width in pixels (defaults to 1)
+                        size = 1;                    
                     if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Outline color (defaults to black)
-                        color_string = "#000000";
-                    int flags;
-                    if(!arguments.GetArgument(1, "flags").TryGetValueAsInteger(out flags)) //Defaults to 0 
+                        color_string = "#000000";                    
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //Defaults to 0 
                         flags = 0;
 
                     result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
@@ -441,13 +605,99 @@ namespace OpenDreamRuntime.Procs.Native {
                    
                     return new DreamValue(result);                    
                 case "radial_blur":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horizontal center of effect, in pixels, relative to image center
+                        x = 0;
+                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical center of effect, in pixels, relative to image center
+                        y = 0;
+                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Amount of blur per pixel of distance (defaults to 0.01)
+                        size = 0.01f;
+                                        
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    return new DreamValue(result); 
                 case "rays":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horiztonal position of ray center, relative to image center (defaults to 0)
+                        x = 0;                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical position of ray center, relative to image center (defaults to 0)
+                        y = 0;
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Maximum length of rays (defaults to 1/2 tile width)
+                        size = 1;                    
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Ray color (defaults to white)
+                        color_string = "#FFFFFF";                      
+                    if(!arguments.GetArgument(1, "offset").TryGetValueAsFloat(out offset)) //"Time" offset of rays (defaults to 0, repeats after 1000)
+                        offset = 0;                
+                    if(!arguments.GetArgument(1, "density").TryGetValueAsFloat(out density)) //Higher values mean more, narrower rays (defaults to 10, must be whole number)
+                        density = 0;  
+                    if(!arguments.GetArgument(1, "threshold").TryGetValueAsFloat(out threshold_strength)) //Low-end cutoff for ray strength (defaults to 0.5, can be 0 to 1)
+                        threshold_strength = 0;  
+                    if(!arguments.GetArgument(1, "factor").TryGetValueAsFloat(out factor)) //How much ray strength is related to ray length (defaults to 0, can be 0 to 1)
+                        factor = 0; 
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //Defaults to FILTER_OVERLAY | FILTER_UNDERLAY 
+                        flags = 1;
+
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("color", new DreamValue(color_string));
+                    result.SetVariable("offset", new DreamValue(offset));
+                    result.SetVariable("density", new DreamValue(density));
+                    result.SetVariable("threshold", new DreamValue(threshold_strength));
+                    result.SetVariable("factor", new DreamValue(factor));                    
+                    result.SetVariable("flags", new DreamValue(flags));
+                    return new DreamValue(result);   
                 case "ripple":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horiztonal position of ripple center, relative to image center (defaults to 0)
+                        x = 1;                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical position of ripple center, relative to image center (defaults to 0)
+                        y = -1;                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Maximum distortion in pixels (defaults to 1)
+                        size = 1;
+                    if(!arguments.GetArgument(1, "repeat").TryGetValueAsFloat(out repeat)) //Wave period, in pixels (defaults to 2)
+                        repeat = 0;                        
+                    if(!arguments.GetArgument(1, "radius").TryGetValueAsFloat(out radius)) //Outer radius of ripple, in pixels (defaults to 0)
+                        radius = 0;     
+                    if(!arguments.GetArgument(1, "falloff").TryGetValueAsFloat(out falloff)) //How quickly ripples lose strength away from the outer edge (defaults to 1)
+                        falloff = 0;     
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //Defaults to 0; use WAVE_BOUNDED to keep distortion within the image  
+                        flags = 1;                                                                                       
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("repeat", new DreamValue(repeat));
+                    result.SetVariable("radius", new DreamValue(radius));
+                    result.SetVariable("falloff", new DreamValue(falloff));
+                    result.SetVariable("flags", new DreamValue(flags));
+
+                    return new DreamValue(result); 
                 case "wave":
-                    throw new NotImplementedException("Filter type {filter_type} is not implemented");
+                    if(!arguments.GetArgument(1, "x").TryGetValueAsFloat(out x)) //Horiztonal direction and period of wave
+                        x = 1;                    
+                    if(!arguments.GetArgument(1, "y").TryGetValueAsFloat(out y)) //Vertical direction and period of wave
+                        y = -1;                    
+                    if(!arguments.GetArgument(1, "size").TryGetValueAsFloat(out size)) //Maximum distortion in pixels (defaults to 1)
+                        size = 1;
+                    if(!arguments.GetArgument(1, "offset").TryGetValueAsFloat(out offset)) //Phase of wave, in periods (e.g., 0 to 1)
+                        offset = 0;                        
+                    if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //Defaults to 0; see below for other flags
+                        flags = 1;                                      
+                    result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
+                    result.SetVariable("type", new DreamValue(filter_type));
+                    result.SetVariable("x", new DreamValue(x));
+                    result.SetVariable("y", new DreamValue(y));
+                    result.SetVariable("size", new DreamValue(size));
+                    result.SetVariable("offset", new DreamValue(offset));
+                    result.SetVariable("flags", new DreamValue(flags));
+
+                    return new DreamValue(result); 
                 case "greyscale":
                     result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
                     result.SetVariable("type", new DreamValue(filter_type));

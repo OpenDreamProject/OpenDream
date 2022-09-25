@@ -9,9 +9,9 @@ namespace OpenDreamRuntime.Procs.Native
     {
         [DreamProc("Export")]
         [DreamProcParameter("Addr", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("File", Type = DreamValue.DreamValueType.DreamObject, DefaultValue = null)]
+        [DreamProcParameter("File", Type = DreamValue.DreamValueType.DreamObject)]
         [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
-        [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject, DefaultValue = null)]
+        [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
         public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state)
         {
             var addr = state.Arguments.GetArgument(0, "Addr").Stringify();
@@ -41,19 +41,19 @@ namespace OpenDreamRuntime.Procs.Native
 
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String, DefaultValue = null)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
         public static DreamValue NativeProc_GetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
-            var config_set = arguments.GetArgument(0, "config_set").Stringify();
+            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
             var param = arguments.GetArgument(1, "param");
 
             switch (config_set) {
                 case "env":
                     if (param == DreamValue.Null) {
                         // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
-                        // but apparently it's actually just null.
+                        // but apparently it's actually just null for "env".
                         return DreamValue.Null;
-                    } else if (Environment.GetEnvironmentVariable(param.Stringify()) is string strValue) {
+                    } else if (param.TryGetValueAsString(out string paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
                         return new DreamValue(strValue);
                     } else {
                         return DreamValue.Null;
@@ -72,20 +72,17 @@ namespace OpenDreamRuntime.Procs.Native
         [DreamProc("SetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("value", Type = DreamValue.DreamValueType.String, DefaultValue = null)]
+        [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
         public static DreamValue NativeProc_SetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
-            var config_set = arguments.GetArgument(0, "config_set").Stringify();
-            var param = arguments.GetArgument(1, "param").Stringify();
+            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            arguments.GetArgument(1, "param").TryGetValueAsString(out string param);
             var value = arguments.GetArgument(2, "value");
 
             switch (config_set) {
                 case "env":
-                    if (value == DreamValue.Null) {
-                        Environment.SetEnvironmentVariable(param, null);
-                    } else {
-                        Environment.SetEnvironmentVariable(param, value.Stringify());
-                    }
+                    value.TryGetValueAsString(out string valueString);
+                    Environment.SetEnvironmentVariable(param, valueString);
                     return DreamValue.Null;
                 case "admin":
                     throw new NotSupportedException("Unsupported SetConfig config_set: " + config_set);

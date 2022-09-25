@@ -20,7 +20,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-        
+
 
         public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
@@ -92,6 +92,7 @@ namespace OpenDreamRuntime {
 
             if (_compiledJson.Globals != null) {
                 var jsonGlobals = _compiledJson.Globals;
+                Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {

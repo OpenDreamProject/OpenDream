@@ -1828,10 +1828,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {
-            if (first.Value == null) {
+            if (first == DreamValue.Null) {
                 return new(0);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.GetValueAsFloat() / second.GetValueAsFloat());
+            } else if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
+                if (secondFloat == 0) {
+                    throw new Exception("Division by zero");
+                }
+                return new(firstFloat / secondFloat);
             } else {
                 throw new Exception("Invalid divide operation on " + first + " and " + second);
             }

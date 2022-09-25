@@ -21,7 +21,7 @@ namespace OpenDreamRuntime.Resources
 
         public void SetDirectory(string directory) {
             RootPath = directory;
-            //Directory.SetCurrentDirectory(RootPath);
+            Directory.SetCurrentDirectory(RootPath);
 
             Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");
         }

@@ -60,32 +60,38 @@ namespace Content.Tests
         [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags)
         {
-            string compiledFile = Compile(Path.Join(Directory.GetCurrentDirectory(), "Tests", sourceFile));
-            if (testFlags.HasFlag(DMTestFlags.CompileError)) {
-                Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+            string initialDirectory = Directory.GetCurrentDirectory();
+            try {
+                string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
+                if (testFlags.HasFlag(DMTestFlags.CompileError)) {
+                    Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+                    Cleanup(compiledFile);
+                    return;
+                }
+
+                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
+                Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+
+                (bool successfulRun, DreamValue returned, Exception? exception) = RunTest();
+                if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
+                    Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
+                } else {
+                    if (exception != null)
+                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
+                    else
+                        Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
+                }
+
+                if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
+                    returned.TryGetValueAsInteger(out int returnInt);
+                    Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
+                }
+
                 Cleanup(compiledFile);
-                return;
+            } finally {
+                // Restore the original CurrentDirectory, since loading a compiled JSON changes it.
+                Directory.SetCurrentDirectory(initialDirectory);
             }
-
-            Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
-            Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
-
-            (bool successfulRun, DreamValue returned, Exception? exception) = RunTest();
-            if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
-                Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
-            } else {
-                if (exception != null)
-                    Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
-                else
-                    Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
-            }
-
-            if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                returned.TryGetValueAsInteger(out int returnInt);
-                Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
-            }
-
-            Cleanup(compiledFile);
         }
 
         private (bool Success, DreamValue Returned, Exception? except) RunTest() {

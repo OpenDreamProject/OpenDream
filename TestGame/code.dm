@@ -84,12 +84,22 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
-	verb/outline_filter()
+	verb/demo_filters()
 		set category = "Test"
 		if(length(src.filters))
 			src.filters = null
+			usr << "Filters cleared"
 		else
-			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) in list("outline", "greyscale")
+			if(isnull(selected))
+				src.filters = null
+				usr << "No filter selected, filters cleared"
+			switch(selected)
+				if("outline")
+					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
+				if("greyscale")
+					src.filters = filter(type="greyscale")
+			usr << "Applied [selected] filter"
 
 /mob/Stat()
 	if (statpanel("Status"))
@@ -99,3 +109,4 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+ 

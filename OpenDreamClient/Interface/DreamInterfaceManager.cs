@@ -76,6 +76,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgOutput>(RxOutput);
             _netManager.RegisterNetMessage<MsgAlert>(RxAlert);
             _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
+            _netManager.RegisterNetMessage<MsgPromptList>(RxPromptList);
             _netManager.RegisterNetMessage<MsgPromptResponse>();
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
@@ -135,8 +136,8 @@ namespace OpenDreamClient.Interface {
                 message.Button1, message.Button2, message.Button3);
         }
 
-        public void OpenAlert(int promptId, string title, string message, string button1, string button2="", string button3="")
-        {
+        public void OpenAlert(int promptId, string title, string message, string button1, string button2 = "",
+            string button3 = "") {
             var alert = new AlertWindow(
                 promptId,
                 title,
@@ -147,7 +148,7 @@ namespace OpenDreamClient.Interface {
             alert.Show();
         }
 
-        public void RxPrompt(MsgPrompt pPrompt) {
+        private void RxPrompt(MsgPrompt pPrompt) {
             PromptWindow prompt = null;
             bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
 
@@ -160,9 +161,21 @@ namespace OpenDreamClient.Interface {
             }
 
             if (prompt != null) {
-                prompt.Owner = _clyde.MainWindow;
-                prompt.Show();
+                ShowPrompt(prompt);
             }
+        }
+
+        private void RxPromptList(MsgPromptList pPromptList) {
+            var prompt = new ListPrompt(
+                pPromptList.PromptId,
+                pPromptList.Title,
+                pPromptList.Message,
+                pPromptList.DefaultValue,
+                pPromptList.CanCancel,
+                pPromptList.Values
+            );
+
+            ShowPrompt(prompt);
         }
 
         private void RxBrowse(MsgBrowse pBrowse)
@@ -227,6 +240,11 @@ namespace OpenDreamClient.Interface {
             LoadInterfaceFromSource(message.InterfaceText);
 
             _netManager.ClientSendMessage(new MsgAckLoadInterface());
+        }
+
+        private void ShowPrompt(PromptWindow prompt) {
+            prompt.Owner = _clyde.MainWindow;
+            prompt.Show();
         }
 
         public void FrameUpdate(FrameEventArgs frameEventArgs)

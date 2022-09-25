@@ -609,7 +609,31 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitInput(DMASTInput input) {
-            Result = new Expressions.Input(input.Location, input);
+            DMExpression[] arguments = new DMExpression[input.Parameters.Length];
+            for (int i = 0; i < input.Parameters.Length; i++) {
+                DMASTCallParameter parameter = input.Parameters[i];
+
+                if (parameter.Key != null) {
+                    DMCompiler.Error(parameter.Location, "input() does not take named arguments");
+                }
+
+                arguments[i] = DMExpression.Create(_dmObject, _proc, parameter.Value);
+            }
+
+            DMExpression list = null;
+            if (input.List != null) {
+                list = DMExpression.Create(_dmObject, _proc, input.List);
+
+                DMValueType objectTypes = DMValueType.Null |DMValueType.Obj | DMValueType.Mob | DMValueType.Turf |
+                                          DMValueType.Area;
+
+                if (input.Types != DMValueType.Anything && (input.Types & objectTypes) == 0x0) {
+                    DMCompiler.Error(input.Location,
+                        $"Invalid input() filter \"{input.Types}\". Filter must be \"{DMValueType.Anything}\" or at least one of \"{objectTypes}\"");
+                }
+            }
+
+            Result = new Expressions.Input(input.Location, arguments, input.Types, list);
         }
 
         public void VisitInitial(DMASTInitial initial) {

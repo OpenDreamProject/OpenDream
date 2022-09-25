@@ -266,7 +266,7 @@ namespace OpenDreamShared.Dream.Procs {
         {
             // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
             // but since we're in OpenDreamShared I want each executable to be able to do what they want with this information.
-            
+
             // Key is an int (or whatever the underlying type is) we're already using for an opcode
             HashSet<DreamProcOpcode> bytePool = new();
             foreach (DreamProcOpcode usedInt in Enum.GetValues(typeof(DreamProcOpcode)))
@@ -280,5 +280,4 @@ namespace OpenDreamShared.Dream.Procs {
             return false;
         }
     }
-   
 }

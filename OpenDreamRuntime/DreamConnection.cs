@@ -299,8 +299,52 @@ namespace OpenDreamRuntime
             };
 
             Session.ConnectedClient.SendMessage(msg);
-
             return task;
+        }
+
+        public async Task<DreamValue> PromptList(DMValueType types, DreamList list, String title, String message, DreamValue defaultValue) {
+            List<DreamValue> listValues = list.GetValues();
+
+            List<string> promptValues = new(listValues.Count);
+            for (int i = 0; i < listValues.Count; i++) {
+                DreamValue value = listValues[i];
+
+                if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out _))
+                    continue;
+                if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out _))
+                    continue;
+                if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out _))
+                    continue;
+                if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Area, out _))
+                    continue;
+
+                promptValues.Add(value.Stringify());
+            }
+
+            if (promptValues.Count == 0)
+                return DreamValue.Null;
+
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgPromptList() {
+                PromptId = promptId,
+                Title = title,
+                Message = message,
+                CanCancel = (types & DMValueType.Null) == DMValueType.Null,
+                DefaultValue = defaultValue.Stringify(),
+                Values = promptValues.ToArray()
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            // The client returns the index of the selected item, this needs turned back into the DreamValue.
+            var selectedIndex = await task;
+            if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Count) {
+                return listValues[index];
+            }
+
+            // Client returned an invalid value.
+            // Return the first value in the list, or null if cancellable
+            return msg.CanCancel ? DreamValue.Null : listValues[0];
         }
 
         public Task<DreamValue> WinExists(string controlId) {

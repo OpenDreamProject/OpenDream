@@ -89,7 +89,7 @@
 		if(length(src.filters))
 			src.filters = null
 		else
-			src.filters = filter(type="greyscale")
+			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 
 /mob/Stat()
 	if (statpanel("Status"))

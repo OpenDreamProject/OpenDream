@@ -24,10 +24,10 @@ namespace OpenDreamClient.Rendering {
         protected override void Draw(in OverlayDrawArgs args) {
             EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
             if (eye == null) return;
-
+           
             DrawingHandleWorld handle = args.WorldHandle;
             DrawMap(args, eye.Value);
-            DrawScreenObjects(handle, eye.Value, args.WorldAABB);
+            DrawScreenObjects(handle, eye.Value, args.WorldAABB,  args.Viewport);
         }
 
         private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -78,7 +78,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB) {
+        private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB, IClydeViewport vp) {
             if (!_entityManager.TryGetComponent<TransformComponent>(eye, out var eyeTransform))
                 return;
 
@@ -99,9 +99,10 @@ namespace OpenDreamClient.Rendering {
                 Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
 
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                        
-                        DrawIcon(handle, sprite.Icon, position + iconSize * (x, y));
+                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {                        
+                        handle.RenderInRenderTarget(vp.RenderTarget,
+                            () => DrawIcon(handle, sprite.Icon, position + iconSize * (x, y))
+                        );
                     }
                 }
             }
@@ -117,6 +118,8 @@ namespace OpenDreamClient.Rendering {
             {
                 handle.UseShader(icon.Filters[0]); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
             }
+            
+
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
                 handle.DrawTexture(frame, position, icon.Appearance.Color);

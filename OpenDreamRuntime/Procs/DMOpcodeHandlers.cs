@@ -1418,6 +1418,9 @@ namespace OpenDreamRuntime.Procs {
             DreamObject dreamObject = state.Pop().GetValueAsDreamObject();
 
             dreamObject?.Delete(state.DreamManager);
+            if (dreamObject is not null && dreamObject == state.Instance) {
+                return ProcStatus.Cancelled;
+            }
             return null;
         }
 

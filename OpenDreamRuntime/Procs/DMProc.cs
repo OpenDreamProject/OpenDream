@@ -201,13 +201,18 @@ namespace OpenDreamRuntime.Procs {
 
         protected override ProcStatus InternalResume()
         {
+            if (Instance is not null && Instance.Deleted) {
+                ReturnPools();
+                return ProcStatus.Cancelled;
+            }
+
             while (_pc < _proc.Bytecode.Length) {
                 int opcode = _proc.Bytecode[_pc++];
 
                 var status = _opcodeHandlers[opcode].Invoke(this);
 
-                if (status != null) {
-                    if (status == ProcStatus.Returned) {
+                if (status != null ) {
+                    if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {
                         // TODO: This should be automatic (dispose pattern?)
                         ReturnPools();
                     }

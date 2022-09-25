@@ -60,7 +60,7 @@ namespace Content.Tests
         [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags)
         {
-            string compiledFile = Compile(sourceFile);
+            string compiledFile = Compile(Path.Join(Directory.GetCurrentDirectory(), "Tests", sourceFile));
             if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                 Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
                 Cleanup(compiledFile);
@@ -111,12 +111,13 @@ namespace Content.Tests
             Directory.SetCurrentDirectory(TestProject);
 
             foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
+                string sourceFile2 = sourceFile.Substring("Tests/".Length);
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;
 
                 yield return new object[] {
-                    Path.GetFullPath(sourceFile),
+                    sourceFile2,
                     testFlags
                 };
             }

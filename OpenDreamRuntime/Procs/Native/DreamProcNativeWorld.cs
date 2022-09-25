@@ -41,15 +41,22 @@ namespace OpenDreamRuntime.Procs.Native
 
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String, DefaultValue = null)]
         public static DreamValue NativeProc_GetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
         {
             var config_set = arguments.GetArgument(0, "config_set").Stringify();
-            var param = arguments.GetArgument(1, "param").Stringify();
+            var param = arguments.GetArgument(1, "param");
 
             switch (config_set) {
                 case "env":
-                    if (Environment.GetEnvironmentVariable(param) is string strValue) {
+                    if (param == DreamValue.Null) {
+                        var keys = Environment.GetEnvironmentVariables().Keys;
+                        var list = DreamList.Create(keys.Count);
+                        foreach (var key in keys) {
+                            list.AddValue(new DreamValue((string)key));
+                        }
+                        return new DreamValue(list);
+                    } else if (Environment.GetEnvironmentVariable(param.Stringify()) is string strValue) {
                         return new DreamValue(strValue);
                     } else {
                         return DreamValue.Null;

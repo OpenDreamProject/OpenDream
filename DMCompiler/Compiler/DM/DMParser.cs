@@ -955,7 +955,7 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, expr1, listExpr, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, GetForBody());
                 }
                 else if (!Check(ForSeparatorTypes)) {
                     Whitespace();

@@ -1419,7 +1419,7 @@ namespace OpenDreamRuntime.Procs {
 
             dreamObject?.Delete(state.DreamManager);
             if (dreamObject is not null && dreamObject == state.Instance) {
-                return ProcStatus.Cancelled;
+                return ProcStatus.Returned;
             }
             return null;
         }

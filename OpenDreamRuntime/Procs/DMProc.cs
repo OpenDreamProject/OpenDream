@@ -203,7 +203,7 @@ namespace OpenDreamRuntime.Procs {
         {
             if (Instance is not null && Instance.Deleted) {
                 ReturnPools();
-                return ProcStatus.Cancelled;
+                return ProcStatus.Returned;
             }
 
             while (_pc < _proc.Bytecode.Length) {

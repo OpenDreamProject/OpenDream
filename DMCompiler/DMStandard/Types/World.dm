@@ -52,9 +52,7 @@
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
 	proc/GetConfig(config_set,param)
-		set opendream_unimplemented = TRUE
 	proc/SetConfig(config_set,param,value)
-		set opendream_unimplemented = TRUE
 	proc/OpenPort(port)
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)

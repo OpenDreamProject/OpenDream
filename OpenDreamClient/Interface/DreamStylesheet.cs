@@ -152,6 +152,10 @@ namespace OpenDreamClient.Interface {
                 Element<LineEdit>().Pseudo(LineEdit.StylePseudoClassPlaceholder)
                     .Prop("font-color", Color.FromHex("#7d7d7d")),
 
+                // ItemList selected item
+                Element<ItemList>()
+                    .Prop(ItemList.StylePropertySelectedItemBackground, new StyleBoxFlat { BackgroundColor = Color.Blue }),
+
                 // TabContainer
                 Element<TabContainer>()
                     // Panel style

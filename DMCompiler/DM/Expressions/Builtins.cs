@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
@@ -408,29 +409,39 @@ namespace DMCompiler.DM.Expressions {
 
     // input(...)
     class Input : DMExpression {
-        // Lazy
-        DMASTInput _astNode;
+        private readonly DMExpression[] _arguments;
+        private readonly DMValueType _types;
+        [CanBeNull] private readonly DMExpression _list;
 
-        public Input(Location location, DMASTInput astNode) : base(location) {
-            _astNode = astNode;
+        public Input(Location location, DMExpression[] arguments, DMValueType types,
+            [CanBeNull] DMExpression list) : base(location) {
+            if (arguments.Length is 0 or > 4) {
+                throw new CompileErrorException(location, "input() must have 1 to 4 arguments");
+            }
+
+            _arguments = arguments;
+            _types = types;
+            _list = list;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_astNode.Parameters.Length == 0 || _astNode.Parameters.Length > 4) throw new CompileErrorException(_astNode.Location,"Invalid input() parameter count");
-
-            //Push input's four arguments, pushing null for the missing ones
+            // Push input's four arguments, pushing null for the missing ones
             for (int i = 3; i >= 0; i--) {
-                if (i < _astNode.Parameters.Length) {
-                    DMASTCallParameter parameter = _astNode.Parameters[i];
-
-                    if (parameter.Key != null) throw new CompileErrorException(parameter.Location,"input() does not take named arguments");
-                    DMExpression.Create(dmObject, proc, parameter.Value).EmitPushValue(dmObject, proc);
+                if (i < _arguments.Length) {
+                    _arguments[i].EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();
                 }
             }
 
-            proc.Prompt(_astNode.Types);
+            // The list of values to be selected from (or null for none)
+            if (_list != null) {
+                _list.EmitPushValue(dmObject, proc);
+            } else {
+                proc.PushNull();
+            }
+
+            proc.Prompt(_types);
         }
     }
 

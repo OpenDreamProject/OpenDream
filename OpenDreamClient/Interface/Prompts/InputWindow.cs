@@ -5,20 +5,15 @@ namespace OpenDreamClient.Interface.Prompts
 {
     [Virtual]
     class InputWindow : PromptWindow {
-        protected Control _inputControl;
-
         public InputWindow(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId, title, message) {
-            _inputControl = CreateInputControl(defaultValue);
-            InputControl.AddChild(_inputControl);
-
             CreateButton("Ok", true);
-            if (canCancel) CreateButton("Cancel", false);
-
-            _inputControl.GrabKeyboardFocus();
+            if (canCancel) CreateButton("Cancel", false);;
         }
 
-        protected virtual Control CreateInputControl(String defaultValue) {
-            return new Control();
+        protected void SetPromptControl(Control promptControl, bool grabKeyboard = true) {
+            InputControl.RemoveAllChildren();
+            InputControl.AddChild(promptControl);
+            if (grabKeyboard) promptControl.GrabKeyboardFocus();
         }
 
         protected override void ButtonClicked(string button) {

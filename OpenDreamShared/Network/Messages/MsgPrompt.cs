@@ -14,7 +14,6 @@ namespace OpenDreamShared.Network.Messages
         public string Message;
         public string DefaultValue;
 
-
         public override void ReadFromBuffer(NetIncomingMessage buffer)
         {
             PromptId = buffer.ReadVariableInt32();

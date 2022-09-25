@@ -19,6 +19,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
                 case DMASTProcCall when expr.Path == null:
                 case DMASTDereferenceProc:
+                case DMASTList:
                 case DMASTListIndex:
                 case DMASTTernary:
                 case DMASTBinaryAnd:

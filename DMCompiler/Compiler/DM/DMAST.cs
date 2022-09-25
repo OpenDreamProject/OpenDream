@@ -845,10 +845,10 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTInput : DMASTExpression {
         public DMASTCallParameter[] Parameters;
-        public DMValueType Types;
+        public DMValueType? Types;
         public DMASTExpression List;
 
-        public DMASTInput(Location location, DMASTCallParameter[] parameters, DMValueType types, DMASTExpression list) : base(location) {
+        public DMASTInput(Location location, DMASTCallParameter[] parameters, DMValueType? types, DMASTExpression list) : base(location) {
             Parameters = parameters;
             Types = types;
             List = list;

@@ -627,13 +627,18 @@ namespace DMCompiler.DM.Visitors {
                 DMValueType objectTypes = DMValueType.Null |DMValueType.Obj | DMValueType.Mob | DMValueType.Turf |
                                           DMValueType.Area;
 
+                // Default filter is "as anything" when there's a list
+                input.Types ??= DMValueType.Anything;
                 if (input.Types != DMValueType.Anything && (input.Types & objectTypes) == 0x0) {
                     DMCompiler.Error(input.Location,
                         $"Invalid input() filter \"{input.Types}\". Filter must be \"{DMValueType.Anything}\" or at least one of \"{objectTypes}\"");
                 }
+            } else {
+                // Default filter is "as text" when there's no list
+                input.Types ??= DMValueType.Text;
             }
 
-            Result = new Expressions.Input(input.Location, arguments, input.Types, list);
+            Result = new Expressions.Input(input.Location, arguments, input.Types.Value, list);
         }
 
         public void VisitInitial(DMASTInitial initial) {

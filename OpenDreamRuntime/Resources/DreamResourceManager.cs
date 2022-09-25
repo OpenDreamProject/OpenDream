@@ -21,6 +21,7 @@ namespace OpenDreamRuntime.Resources
 
         public void SetDirectory(string directory) {
             RootPath = directory;
+            // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
             Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");

@@ -1,8 +1,6 @@
 
 /proc/RunTest()
-	var/list/all = world.GetConfig("env")
-	ASSERT(islist(all))
-	ASSERT(all.len > 5)
+	ASSERT(isnull(world.GetConfig("env")))
 
 	var/path = world.GetConfig("env", "PATH")
 	ASSERT(istext(path) && length(path))

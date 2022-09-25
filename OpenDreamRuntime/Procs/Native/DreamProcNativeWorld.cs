@@ -50,12 +50,9 @@ namespace OpenDreamRuntime.Procs.Native
             switch (config_set) {
                 case "env":
                     if (param == DreamValue.Null) {
-                        var keys = Environment.GetEnvironmentVariables().Keys;
-                        var list = DreamList.Create(keys.Count);
-                        foreach (var key in keys) {
-                            list.AddValue(new DreamValue((string)key));
-                        }
-                        return new DreamValue(list);
+                        // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
+                        // but apparently it's actually just null.
+                        return DreamValue.Null;
                     } else if (Environment.GetEnvironmentVariable(param.Stringify()) is string strValue) {
                         return new DreamValue(strValue);
                     } else {

@@ -15,6 +15,7 @@ namespace OpenDreamClient.Rendering {
         private ClientAppearanceSystem _appearanceSystem;
         private SharedTransformSystem _transformSystem;
         private IClydeViewport _vp;
+        private Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new Dictionary<Vector2i, List<IRenderTexture>>();
         public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
 
         public DreamViewOverlay() {
@@ -107,6 +108,36 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
+
+        private IRenderTexture RentPingPongRenderTarget(Vector2i size)
+        {
+            List<IRenderTexture> listresult;
+            IRenderTexture result;
+            if(!_renderTargetCache.TryGetValue(size, out listresult))
+                result = IoCManager.Resolve<IClyde>().CreateRenderTarget(size, new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
+            else
+            {
+                if(listresult.Count > 0)
+                {
+                    result = listresult[0]; //pop a value
+                    listresult.Remove(result);
+                }
+                else
+                    result = IoCManager.Resolve<IClyde>().CreateRenderTarget(size, new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
+                _renderTargetCache[size] = listresult; //put the shorter list back
+            }
+            return result;
+        }
+
+        private void ReturnPingPongRenderTarget(IRenderTexture rental)
+        {
+            List<IRenderTexture> storeList;
+            if(!_renderTargetCache.TryGetValue(rental.Size, out storeList))
+                storeList = new List<IRenderTexture>();
+            storeList.Add(rental);
+            _renderTargetCache[rental.Size]=storeList;
+        }
+
         private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
             position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
@@ -116,10 +147,8 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-                IRenderTexture ping = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
-                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
-                IRenderTexture pong = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
-                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
+                IRenderTexture ping = RentPingPongRenderTarget(frame.Size);
+                IRenderTexture pong = RentPingPongRenderTarget(frame.Size);
                 IRenderTexture tmpHolder;
 
                 handle.RenderInRenderTarget(pong, () => {
@@ -140,6 +169,9 @@ namespace OpenDreamClient.Rendering {
                 }
 
                 handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);
+                ReturnPingPongRenderTarget(ping);
+                ReturnPingPongRenderTarget(pong);
+
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

@@ -330,8 +330,7 @@ namespace OpenDreamRuntime.Objects {
                 if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                     throw new Exception($"Cannot set value of undefined global \"{varName}\"");
                 }
-                if(_dreamMan.Globals.ContainsKey(globalId)) 
-                    _dreamMan.Globals[globalId].DecrementDreamObjectRefCount();
+                _dreamMan.Globals[globalId].DecrementDreamObjectRefCount();
                 _dreamMan.Globals[globalId] = value;
                 value.IncrementDreamObjectRefCount();
             } else {

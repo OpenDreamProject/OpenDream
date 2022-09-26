@@ -233,7 +233,6 @@ namespace OpenDreamRuntime.Procs {
                         Usr?.DecrementRefCount();
                         ReturnPools();
                     }
-
                     return status.Value;
                 }
             }
@@ -250,6 +249,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override void ReturnedInto(DreamValue value)
         {
+            value.IncrementDreamObjectRefCount();
             Push(value);
         }
 

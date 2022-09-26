@@ -90,7 +90,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) in list("outline", "greyscale")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) in list("outline", "greyscale","outline/grey", "grey/outline")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
@@ -99,6 +99,10 @@
 					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 				if("greyscale")
 					src.filters = filter(type="greyscale")
+				if("outline/grey")
+					src.filters = list(filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="greyscale"))
+				if("grey/outline")
+					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 			usr << "Applied [selected] filter"
 
 /mob/Stat()

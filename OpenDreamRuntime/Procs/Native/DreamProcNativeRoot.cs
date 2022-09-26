@@ -415,9 +415,9 @@ namespace OpenDreamRuntime.Procs.Native {
             float threshold_strength;
             float offset;
             float alpha;
-            DreamList color_matrix = null;
+            DreamObject color_matrix = null;
             float space;
-            DreamList transform;
+            DreamObject transform;
             float blend_mode;
             float density;
             float factor;
@@ -492,8 +492,8 @@ namespace OpenDreamRuntime.Procs.Native {
                           
                     return new DreamValue(result); 
                 case "color":
-                    if(!arguments.GetArgument(2, "color").TryGetValueAsDreamList(out color_matrix)) //A color matrix
-                        color_matrix = DreamList.Create();
+                    if(!arguments.GetArgument(2, "color").TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out color_matrix)) //A color matrix
+                        color_matrix = DreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
                     if(!arguments.GetArgument(1, "space").TryGetValueAsFloat(out space)) //Value indicating color space: defaults to FILTER_COLOR_RGB
                         space = 0; //#define FILTER_COLOR_RGB 0
                                             
@@ -556,12 +556,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     if(!arguments.GetArgument(1, "flags").TryGetValueAsFloat(out flags)) //FILTER_OVERLAY (default) or FILTER_UNDERLAY
                         flags = 0; //#define FILTER_OVERLAY 0                                 
                     if(!arguments.GetArgument(2, "color").TryGetValueAsString(out color_string)) //Color or color matrix to apply to second image
-                        if(!arguments.GetArgument(2, "color").TryGetValueAsDreamList(out color_matrix)) //A color matrix
-                            color_matrix = DreamList.Create();  
+                        if(!arguments.GetArgument(2, "color").TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out color_matrix)) //A color matrix
+                            color_matrix = DreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
                         else
                             color_string = "#00000088";        
-                    if(!arguments.GetArgument(2, "transform").TryGetValueAsDreamList(out transform)) //Transform to apply to second image
-                        color_matrix = DreamList.Create();
+                    if(!arguments.GetArgument(2, "transform").TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out transform)) //Transform to apply to second image
+                        transform = DreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
                     if(!arguments.GetArgument(1, "blend_mode").TryGetValueAsFloat(out blend_mode)) //Blend mode to apply to the top image
                         blend_mode = 0;         
 

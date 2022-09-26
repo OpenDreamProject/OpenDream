@@ -14,7 +14,7 @@ namespace OpenDreamClient.Rendering {
         private EntityLookupSystem _lookupSystem;
         private ClientAppearanceSystem _appearanceSystem;
         private SharedTransformSystem _transformSystem;
-
+        private IClydeViewport _vp;
         public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
 
         public DreamViewOverlay() {
@@ -26,8 +26,9 @@ namespace OpenDreamClient.Rendering {
             if (eye == null) return;
            
             DrawingHandleWorld handle = args.WorldHandle;
+            _vp = args.Viewport;
             DrawMap(args, eye.Value);
-            DrawScreenObjects(handle, eye.Value, args.WorldAABB,  args.Viewport);
+            DrawScreenObjects(handle, eye.Value, args.WorldAABB);
         }
 
         private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -78,7 +79,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB, IClydeViewport vp) {
+        private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB) {
             if (!_entityManager.TryGetComponent<TransformComponent>(eye, out var eyeTransform))
                 return;
 
@@ -100,7 +101,7 @@ namespace OpenDreamClient.Rendering {
 
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {                        
-                        handle.RenderInRenderTarget(vp.RenderTarget,
+                        handle.RenderInRenderTarget(_vp.RenderTarget,
                             () => DrawIcon(handle, sprite.Icon, position + iconSize * (x, y))
                         );
                     }
@@ -114,17 +115,35 @@ namespace OpenDreamClient.Rendering {
             foreach (DreamIcon underlay in icon.Underlays) {
                 DrawIcon(handle, underlay, position);
             }
-            if(icon.Filters.Count > 0)
-            {
-                handle.UseShader(icon.Filters[0]); //TEMPORARY TEMPORARY TEMPORARY DO NOT MERGE THIS
-            }
-            
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position, icon.Appearance.Color);
+
+                IRenderTexture ping = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
+                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
+                IRenderTexture pong = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
+                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));  
+                IRenderTexture tmpHolder;
+            
+                handle.RenderInRenderTarget(pong, () => {
+                    handle.DrawTexture(frame, Vector2.Zero, icon.Appearance.Color);
+                });
+                
+                foreach(ShaderInstance s in icon.Filters)
+                {
+                    handle.RenderInRenderTarget(ping, () => {
+                        handle.DrawRect(new Box2(Vector2.Zero, ping.Size), new Color());
+                        handle.UseShader(s);
+                        handle.DrawTexture(pong.Texture, Vector2.Zero);
+                        handle.UseShader(null);                    
+                        });
+                    tmpHolder = ping;
+                    ping = pong;
+                    pong = tmpHolder;                       
+                }
+                
+                handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);           
             }
-            handle.UseShader(null);
 
             foreach (DreamIcon overlay in icon.Overlays) {
                 DrawIcon(handle, overlay, position);

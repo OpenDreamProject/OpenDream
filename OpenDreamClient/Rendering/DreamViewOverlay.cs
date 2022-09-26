@@ -146,7 +146,12 @@ namespace OpenDreamClient.Rendering {
             }
 
             AtlasTexture frame = icon.CurrentFrame;
-            if (frame != null) {
+            if(frame != null && icon.Filters.Count == 0)
+            {
+                //faster path for rendering unshaded sprites
+                handle.DrawTexture(frame, position, icon.Appearance.Color);
+            }
+            else if (frame != null) {
                 IRenderTexture ping = RentPingPongRenderTarget(frame.Size);
                 IRenderTexture pong = RentPingPongRenderTarget(frame.Size);
                 IRenderTexture tmpHolder;
@@ -171,7 +176,6 @@ namespace OpenDreamClient.Rendering {
                 handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);
                 ReturnPingPongRenderTarget(ping);
                 ReturnPingPongRenderTarget(pong);
-
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

@@ -7,6 +7,11 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
+
+    /// <summary>
+    /// The master class for handling DM preprocessing.
+    /// This is an <see cref="IEnumerable"/>, and is usually accessed via its <see cref="Token"/> output in a for-loop.
+    /// </summary>
     public class DMPreprocessor : IEnumerable<Token> {
         public List<string> IncludedMaps = new();
         public string IncludedInterface;

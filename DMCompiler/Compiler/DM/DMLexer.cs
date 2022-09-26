@@ -61,6 +61,7 @@ namespace DMCompiler.Compiler.DM {
 
         private Stack<int> _indentationStack = new(new int[] { 0 });
 
+        /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
         public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {

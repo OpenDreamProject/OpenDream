@@ -181,6 +181,7 @@
     public sealed partial class Token {
         public TokenType Type;
         public Location Location;
+        /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
         public string Text;
         public object Value;
 

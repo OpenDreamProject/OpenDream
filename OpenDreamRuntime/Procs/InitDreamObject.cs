@@ -23,6 +23,13 @@ namespace OpenDreamRuntime.Procs {
             _dreamObject = dreamObject;
             _usr = usr;
             _arguments = arguments;
+            _dreamObject.IncrementRefCount();
+            if(usr is not null){
+                usr.IncrementRefCount();
+            }
+            foreach(var arg in _arguments.GetAllArguments()){
+                arg.IncrementDreamObjectRefCount();
+            }
         }
 
         private DreamObject _dreamObject;

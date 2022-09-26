@@ -111,7 +111,8 @@ namespace OpenDreamRuntime.Objects {
                 if (!ContainsValue(key)) _values.Add(key);
 
                 _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
-                _associativeValues[key].DecrementDreamObjectRefCount();
+                if(_associativeValues.ContainsKey(key))
+                    _associativeValues[key].DecrementDreamObjectRefCount();
                 _associativeValues[key] = value;
                 value.IncrementDreamObjectRefCount();
             }
@@ -329,8 +330,8 @@ namespace OpenDreamRuntime.Objects {
                 if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                     throw new Exception($"Cannot set value of undefined global \"{varName}\"");
                 }
-                
-                _dreamMan.Globals[globalId].DecrementDreamObjectRefCount();
+                if(_dreamMan.Globals.ContainsKey(globalId)) 
+                    _dreamMan.Globals[globalId].DecrementDreamObjectRefCount();
                 _dreamMan.Globals[globalId] = value;
                 value.IncrementDreamObjectRefCount();
             } else {

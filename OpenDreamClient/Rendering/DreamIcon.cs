@@ -11,7 +11,7 @@ namespace OpenDreamClient.Rendering {
 
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
-        public List<ShaderInstance> Filters { get; } = new();
+        public List<ShaderInstance> Filters { get; } = new(2);
         public event SizeChangedEventHandler SizeChanged;
 
         public DMIResource DMI {
@@ -263,7 +263,7 @@ namespace OpenDreamClient.Rendering {
 
             Filters.Clear();
             foreach (var filterID in Appearance.Filters) {
-                ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();                
+                ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
                 ShaderInstance this_shader_instance = appearanceSystem.GetFilterShader(filterID);
                 Filters.Add(this_shader_instance);
             }

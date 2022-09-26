@@ -133,7 +133,7 @@ namespace OpenDreamClient.Rendering {
         {
             List<IRenderTexture> storeList;
             if(!_renderTargetCache.TryGetValue(rental.Size, out storeList))
-                storeList = new List<IRenderTexture>();
+                storeList = new List<IRenderTexture>(4);
             storeList.Add(rental);
             _renderTargetCache[rental.Size]=storeList;
         }

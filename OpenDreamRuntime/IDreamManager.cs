@@ -27,7 +27,7 @@ namespace OpenDreamRuntime {
         public void Shutdown();
         public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);
-        DreamConnection GetConnectionFromClient(DreamObject client);
+        DreamConnection? GetConnectionFromClient(DreamObject client);
         public DreamObject GetClientFromMob(DreamObject mob);
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);

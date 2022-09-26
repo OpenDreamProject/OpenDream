@@ -28,6 +28,7 @@ namespace OpenDreamRuntime
             _netManager.RegisterNetMessage<MsgOutput>();
             _netManager.RegisterNetMessage<MsgAlert>();
             _netManager.RegisterNetMessage<MsgPrompt>();
+            _netManager.RegisterNetMessage<MsgPromptList>();
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
             _netManager.RegisterNetMessage<MsgBrowseResource>();
             _netManager.RegisterNetMessage<MsgBrowse>();
@@ -131,7 +132,7 @@ namespace OpenDreamRuntime
             return null;
         }
 
-        public DreamConnection GetConnectionFromClient(DreamObject client)
+        public DreamConnection? GetConnectionFromClient(DreamObject client)
         {
             foreach (var connection in _connections.Values)
             {

@@ -211,7 +211,7 @@ namespace OpenDreamRuntime.Procs {
 
                 var status = _opcodeHandlers[opcode].Invoke(this);
 
-                if (status != null ) {
+                if (status != null) {
                     if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {
                         // TODO: This should be automatic (dispose pattern?)
                         ReturnPools();

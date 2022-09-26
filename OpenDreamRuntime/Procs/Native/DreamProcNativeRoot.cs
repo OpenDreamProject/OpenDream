@@ -685,7 +685,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
-                if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
+                if (loc.TryGetValueAsDreamObject(out DreamObject? locObject) && locObject is not null) {
                     bool isLoc = locObject.IsSubtypeOf(DreamPath.Mob) || locObject.IsSubtypeOf(DreamPath.Obj) || locObject.IsSubtypeOf(DreamPath.Turf) || locObject.IsSubtypeOf(DreamPath.Area);
 
                     if (!isLoc) {

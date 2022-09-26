@@ -24,7 +24,7 @@ namespace OpenDreamClient.Rendering {
         protected override void Draw(in OverlayDrawArgs args) {
             EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
             if (eye == null) return;
-           
+
             DrawingHandleWorld handle = args.WorldHandle;
             _vp = args.Viewport;
             DrawMap(args, eye.Value);
@@ -100,10 +100,8 @@ namespace OpenDreamClient.Rendering {
                 Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
 
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {                        
-                        handle.RenderInRenderTarget(_vp.RenderTarget,
-                            () => DrawIcon(handle, sprite.Icon, position + iconSize * (x, y))
-                        );
+                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                        DrawIcon(handle, sprite.Icon, position + iconSize * (x, y));
                     }
                 }
             }
@@ -118,31 +116,30 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = icon.CurrentFrame;
             if (frame != null) {
-
                 IRenderTexture ping = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
                                     new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
                 IRenderTexture pong = IoCManager.Resolve<IClyde>().CreateRenderTarget(frame.Size,
-                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));  
+                                    new RenderTargetFormatParameters(RenderTargetColorFormat.Rgba8Srgb));
                 IRenderTexture tmpHolder;
-            
+
                 handle.RenderInRenderTarget(pong, () => {
-                    handle.DrawTexture(frame, Vector2.Zero, icon.Appearance.Color);
+                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size), icon.Appearance.Color);
                 });
-                
+
                 foreach(ShaderInstance s in icon.Filters)
                 {
                     handle.RenderInRenderTarget(ping, () => {
-                        handle.DrawRect(new Box2(Vector2.Zero, ping.Size), new Color());
+                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size), new Color());
                         handle.UseShader(s);
-                        handle.DrawTexture(pong.Texture, Vector2.Zero);
-                        handle.UseShader(null);                    
+                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size));
+                        handle.UseShader(null);
                         });
                     tmpHolder = ping;
                     ping = pong;
-                    pong = tmpHolder;                       
+                    pong = tmpHolder;
                 }
-                
-                handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);           
+
+                handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);
             }
 
             foreach (DreamIcon overlay in icon.Overlays) {

@@ -33,7 +33,26 @@ namespace OpenDreamShared.Dream {
 
         public bool Equals(DreamFilter filter) {
             if(filter.filter_type != filter_type) return false;
-
+            if(filter.filter_x != filter_x) return false;
+            if(filter.filter_y != filter_y) return false;
+            if(filter.filter_icon != filter_icon) return false;
+            if(filter.filter_render_source != filter_render_source) return false;
+            if(filter.filter_flags != filter_flags) return false;
+            if(filter.filter_size != filter_size) return false;
+            if(filter.filter_color_string != filter_color_string) return false;
+            if(filter.filter_threshold_color != filter_threshold_color) return false;
+            if(filter.filter_threshold_strength != filter_threshold_strength) return false;
+            if(filter.filter_offset != filter_offset) return false;
+            if(filter.filter_alpha != filter_alpha) return false;
+            if(filter.filter_color_matrix != filter_color_matrix) return false;
+            if(filter.filter_space != filter_space) return false;
+            if(filter.filter_transform != filter_transform) return false;
+            if(filter.filter_blend_mode != filter_blend_mode) return false;
+            if(filter.filter_density != filter_density) return false;
+            if(filter.filter_factor != filter_factor) return false;
+            if(filter.filter_repeat != filter_repeat) return false;
+            if(filter.filter_radius != filter_radius) return false;
+            if(filter.filter_falloff != filter_falloff) return false;
             return true;
         }
 

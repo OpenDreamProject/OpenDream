@@ -52,7 +52,42 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private static void ProcessFile(DMASTFile file) {
+            RegisterGlobals(file.BlockInner, DMObjectTree.Root);
             ProcessBlockInner(file.BlockInner, DMObjectTree.Root);
+        }
+
+        private static void RegisterGlobals(DMASTBlockInner block, DMObject currentObject)
+        {
+            for(var i = 0; i < block.Statements.Length; i++)
+            {
+                DMASTStatement statement = block.Statements[i];
+                switch(statement)
+                {
+                    case DMASTObjectDefinition objectDefinition:
+                        if(objectDefinition.Path == DreamPath.Root)
+                        {
+                            RegisterGlobals(objectDefinition.InnerBlock, currentObject);
+                        }
+                        break;
+                    // TODO: Add support for global vars
+                    case DMASTProcDefinition procDefinition:
+                        if(procDefinition.ObjectPath != DreamPath.Root) continue;
+                        RegisterGlobalProcDefinition(procDefinition, currentObject);
+                        break;
+                    default:
+                        continue;
+                }
+            }
+        }
+
+        private static void RegisterGlobalProcDefinition(DMASTProcDefinition procDef, DMObject currentObject)
+        {
+            if (DMObjectTree.TryGetGlobalProc(procDef.Name, out _)) {
+                throw new CompileErrorException(new CompilerError(procDef.Location, $"proc {procDef.Name} is already defined in global scope"));
+            }
+
+            var proc = DMObjectTree.CreateDMProc(currentObject, procDef);
+            DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
         }
 
         private static void ProcessBlockInner(DMASTBlockInner blockInner, DMObject currentObject) {
@@ -198,12 +233,9 @@ namespace DMCompiler.DM.Visitors {
                 DMProc proc;
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
-                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
+                    if (!DMObjectTree.TryGetGlobalProc(procDefinition.Name, out proc)) { // This should never fail, but better safe than sorry
+                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"failed to get global proc {procDefinition.Name}"));
                     }
-
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
-                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 } else {
                     proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);

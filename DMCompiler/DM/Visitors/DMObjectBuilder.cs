@@ -52,27 +52,27 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private static void ProcessFile(DMASTFile file) {
-            RegisterGlobals(file.BlockInner, DMObjectTree.Root);
+            RegisterGlobals(file.BlockInner);
             ProcessBlockInner(file.BlockInner, DMObjectTree.Root);
         }
 
-        private static void RegisterGlobals(DMASTBlockInner block, DMObject currentObject)
+        private static void RegisterGlobals(DMASTBlockInner block)
         {
             for(var i = 0; i < block.Statements.Length; i++)
             {
                 DMASTStatement statement = block.Statements[i];
                 switch(statement)
                 {
-                    case DMASTObjectDefinition objectDefinition:
-                        if(objectDefinition.Path == DreamPath.Root)
-                        {
-                            RegisterGlobals(objectDefinition.InnerBlock, currentObject);
-                        }
+                    case DMASTObjectDefinition objectDefinition when objectDefinition.InnerBlock is not null:
+                        RegisterGlobals(objectDefinition.InnerBlock);
                         break;
-                    // TODO: Add support for global vars
+                    case DMASTObjectVarDefinition varDefinition:
+                        if(varDefinition.ObjectPath != DreamPath.Root && !varDefinition.IsConst && !varDefinition.IsStatic) continue;
+                        RegisterGlobalVarDefinition(varDefinition, DMObjectTree.GetDMObject(varDefinition.ObjectPath));
+                        break;
                     case DMASTProcDefinition procDefinition:
                         if(procDefinition.ObjectPath != DreamPath.Root) continue;
-                        RegisterGlobalProcDefinition(procDefinition, currentObject);
+                        RegisterGlobalProcDefinition(procDefinition);
                         break;
                     default:
                         continue;
@@ -80,13 +80,30 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private static void RegisterGlobalProcDefinition(DMASTProcDefinition procDef, DMObject currentObject)
+        private static void RegisterGlobalVarDefinition(DMASTObjectVarDefinition varDefinition, DMObject currentObject)
+        {
+            DMVariable variable;
+            if (varDefinition.IsStatic) // global or static
+            {
+                variable = currentObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
+            } else { // not static
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
+                currentObject.Variables[variable.Name] = variable;
+            }
+            if (varDefinition.IsConst)
+            {
+                SetVariableValue(currentObject, ref variable, varDefinition.Value);
+            }
+
+        }
+
+        private static void RegisterGlobalProcDefinition(DMASTProcDefinition procDef)
         {
             if (DMObjectTree.TryGetGlobalProc(procDef.Name, out _)) {
                 throw new CompileErrorException(new CompilerError(procDef.Location, $"proc {procDef.Name} is already defined in global scope"));
             }
 
-            var proc = DMObjectTree.CreateDMProc(currentObject, procDef);
+            var proc = DMObjectTree.CreateDMProc(DMObjectTree.Root, procDef);
             DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
         }
 
@@ -134,12 +151,12 @@ namespace DMCompiler.DM.Visitors {
             //Lets check if we're duplicating a definition, first.
             if (varObject.HasGlobalVariable(varDefinition.Name))
             {
-                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\""));
+                // Don't warn; duplicates are caught elsewhere.
                 variable = varObject.GetGlobalVariable(varDefinition.Name);
             }
             else if (varObject.HasLocalVariable(varDefinition.Name))
             {
-                if(!DoesDefineSnowflakeVars(varDefinition, varObject))
+                if(!DoesDefineSnowflakeVars(varDefinition, varObject) && varDefinition.ObjectPath != DreamPath.Root && !varDefinition.IsConst)
                     DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
                 variable = varObject.GetVariable(varDefinition.Name);
             }

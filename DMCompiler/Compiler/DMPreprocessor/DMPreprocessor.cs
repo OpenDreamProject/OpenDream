@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using DMCompiler.Compiler.DM;
 using DMCompiler.DM;
 using OpenDreamShared.Compiler;
 using Robust.Shared.Utility;
@@ -356,6 +357,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// <summary>
         /// Reads in <see cref="Token"/>s to a List until it reads a grammatical line of them,
         /// handling newlines, macros, the preproc's wonky line-splicing.
+        /// These are DM tokens, not DM_Preproc ones!!
         /// </summary>
         private List<Token> GetLineOfTokens()
         {
@@ -373,7 +375,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                 }
             }
-            return tokens;
+            tokens.Add(new Token(TokenType.Newline, "\n", Location.Unknown, null));
+            DMLexer lexer = new(_lexerStack.Peek().SourceName,tokens);
+            List<Token> newTokens = new List<Token>();
+            for(Token token = lexer.GetNextToken(); !lexer.AtEndOfSource; token = lexer.GetNextToken()) {
+                newTokens.Add(token);
+            }
+            return newTokens;
         }
 
         /// <summary>If this <see cref="TokenType.DM_Preproc_Identifier"/> Token is a macro, pushes all of its tokens onto the queue.</summary>

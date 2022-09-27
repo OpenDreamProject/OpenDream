@@ -90,7 +90,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) in list("outline", "greyscale","outline/grey", "grey/outline")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("outline", "greyscale","outline/grey", "grey/outline")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"

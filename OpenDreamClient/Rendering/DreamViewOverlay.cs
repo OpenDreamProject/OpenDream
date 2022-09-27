@@ -159,7 +159,7 @@ namespace OpenDreamClient.Rendering {
                 handle.RenderInRenderTarget(pong, () => {
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size), icon.Appearance.Color);
                 });
-
+                bool rotate = true;
                 foreach(ShaderInstance s in icon.Filters)
                 {
                     handle.RenderInRenderTarget(ping, () => {
@@ -171,8 +171,18 @@ namespace OpenDreamClient.Rendering {
                     tmpHolder = ping;
                     ping = pong;
                     pong = tmpHolder;
+                    rotate = !rotate;
                 }
-
+                if(rotate) //this is so dumb
+                {
+                    handle.RenderInRenderTarget(ping, () => {
+                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size), new Color());
+                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size));
+                        });
+                    tmpHolder = ping;
+                    ping = pong;
+                    pong = tmpHolder;
+                }
                 handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);
                 ReturnPingPongRenderTarget(ping);
                 ReturnPingPongRenderTarget(pong);

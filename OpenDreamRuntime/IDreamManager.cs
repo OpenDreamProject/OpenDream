@@ -80,13 +80,14 @@ namespace OpenDreamRuntime {
 
             // The first digit is the type
             var typeId = (RefType)int.Parse(refString.Substring(0, 1));
-            refId = int.Parse(refString.Substring(1));
+            var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
+            refId = int.Parse(untypedRefString);
 
             switch (typeId)
             {
                 case RefType.DreamObject:
                 {
-                    var obj = DreamObject.GetFromReferenceID(this, refString.Substring(1));
+                    var obj = DreamObject.GetFromReferenceID(this, untypedRefString);
                     return new DreamValue(obj);
                 }
                 case RefType.String:

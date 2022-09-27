@@ -105,6 +105,15 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 			usr << "Applied [selected] filter"
 
+	verb/outline_change_test()
+		set category = "Test"
+		if(length(src.filters))
+			src.filters[1]:color = rgb(0,255,0)
+			usr << "color set"
+		else
+			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
+			usr << "filter created"
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

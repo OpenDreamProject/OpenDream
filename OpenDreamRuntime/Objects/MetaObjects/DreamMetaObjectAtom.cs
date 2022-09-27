@@ -172,14 +172,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         filterList = DreamList.Create();
                         filterList.AddValue(value);
                     }
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                            appearance.Filters.Clear();
+                        });
                     foreach(DreamValue listValue in filterList.GetValues())
                     {
+
+
                         _atomManager.UpdateAppearance(dreamObject, appearance => {
                             DreamFilter newFilter = new DreamFilter(); //dreamfilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
 
                             DreamObject DMFilterObject;
                             if(!listValue.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out DMFilterObject))
                                 throw new Exception("Tried to add a non-filter object to a list of filters");
+                            DreamMetaObjectFilter._FilterToDreamObject[DMFilterObject] = dreamObject;
                             DreamValue filterVarValue;
 
                             if(DMFilterObject.TryGetVariable("type", out filterVarValue))

@@ -340,6 +340,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 case "if": token = CreateToken(TokenType.DM_Preproc_If, "#if"); break;
                                 case "ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, "#ifdef"); break;
                                 case "ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, "#ifndef"); break;
+                                case "elif": token = CreateToken(TokenType.DM_Preproc_Elif, "#elif"); break;
                                 case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
                                 case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
                                 case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;

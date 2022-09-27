@@ -21,6 +21,7 @@
         DM_Preproc_If,
         DM_Preproc_Ifdef,
         DM_Preproc_Ifndef,
+        DM_Preproc_Elif,
         DM_Preproc_Include,
         DM_Preproc_LineSplice,
         DM_Preproc_Number,

@@ -86,7 +86,7 @@ namespace OpenDreamRuntime {
             {
                 case RefType.DreamObject:
                 {
-                    var obj = DreamObject.GetFromReferenceID(this, refString);
+                    var obj = DreamObject.GetFromReferenceID(this, refString.Substring(1));
                     return new DreamValue(obj);
                 }
                 case RefType.String:

@@ -331,20 +331,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         } else if (isConcat) {
                             token = CreateToken(TokenType.DM_Preproc_TokenConcat, $"##{text}", text);
                         } else {
-                            switch (text) {
-                                case "warn":
-                                case "warning": token = CreateToken(TokenType.DM_Preproc_Warning, "#warn"); break;
-                                case "include": token = CreateToken(TokenType.DM_Preproc_Include, "#include"); break;
-                                case "define": token = CreateToken(TokenType.DM_Preproc_Define, "#define"); break;
-                                case "undef": token = CreateToken(TokenType.DM_Preproc_Undefine, "#undef"); break;
-                                case "if": token = CreateToken(TokenType.DM_Preproc_If, "#if"); break;
-                                case "ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, "#ifdef"); break;
-                                case "ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, "#ifndef"); break;
-                                case "elif": token = CreateToken(TokenType.DM_Preproc_Elif, "#elif"); break;
-                                case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
-                                case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
-                                case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
-                                default: token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text); break;
+                            if(!TryMacroKeyword(text,out token)) { // if not macro (sets it here otherwise)
+                                token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text);
+                                string macroAttempt = text.ToLower();
+                                if (TryMacroKeyword(macroAttempt)) { // if they miscapitalized the keyword
+                                    DMCompiler.Warning(token.Location, $"#{macroAttempt} is not a valid macro keyword. Did you mean '#{text.ToLower()}'?");
+                                }
                             }
                         }
 
@@ -400,11 +392,57 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return token;
         }
 
-        //Lexes a string
-        //If it contains string interpolations, it splits the string tokens into parts and lexes the expressions as normal
-        //For example, "There are [amount] of them" becomes:
-        //    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String(" of them")
-        //If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
+        /// <returns>True if token was successfully set to a macro keyword token, false if not.</returns>
+        protected bool TryMacroKeyword(string text, out Token token) {
+            switch (text) {
+                case "warn":
+                case "warning": token = CreateToken(TokenType.DM_Preproc_Warning, "#warn"); break;
+                case "include": token = CreateToken(TokenType.DM_Preproc_Include, "#include"); break;
+                case "define": token = CreateToken(TokenType.DM_Preproc_Define, "#define"); break;
+                case "undef": token = CreateToken(TokenType.DM_Preproc_Undefine, "#undef"); break;
+                case "if": token = CreateToken(TokenType.DM_Preproc_If, "#if"); break;
+                case "ifdef": token = CreateToken(TokenType.DM_Preproc_Ifdef, "#ifdef"); break;
+                case "ifndef": token = CreateToken(TokenType.DM_Preproc_Ifndef, "#ifndef"); break;
+                case "elif": token = CreateToken(TokenType.DM_Preproc_Elif, "#elif"); break;
+                case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
+                case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
+                case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
+                default:
+                    token = null; // maybe should use ref instead of out?
+                    return false;
+            }
+            return true;
+        }
+        protected bool TryMacroKeyword(string text) {
+            switch (text) {
+                case "warn":
+                case "warning":
+                case "include":
+                case "define":
+                case "undef":
+                case "if":
+                case "ifdef":
+                case "ifndef":
+                case "elif":
+                case "else":
+                case "endif":
+                case "error":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+
+        ///<summary>
+        /// Lexes a string <br/>
+        ///</summary>
+        ///<remarks>
+        /// If it contains string interpolations, it splits the string tokens into parts and lexes the expressions as normal <br/>
+        /// For example, "There are [amount] of them" becomes: <br/>
+        ///    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String(" of them") <br/>
+        /// If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
+        /// </remarks>
         private Token LexString(bool isLong) {
             char terminator = GetCurrent();
             StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : char.ToString(terminator));

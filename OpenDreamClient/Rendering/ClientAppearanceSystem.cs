@@ -73,6 +73,23 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
+        public void ResetFilterUsageCounts()
+        {
+            foreach(DreamFilter key in _filterShaders.Keys)
+            {
+                key.used = false;
+            }
+        }
+
+        public void CleanUpUnusedFilters()
+        {
+            foreach(DreamFilter key in _filterShaders.Keys)
+            {
+                if(!key.used)
+                    _filterShaders.Remove(key);
+            }
+        }
+
         public ShaderInstance GetFilterShader(DreamFilter filter)
         {
             ShaderInstance instance = null;
@@ -113,8 +130,9 @@ namespace OpenDreamClient.Rendering {
                 if(filter.filter_repeat != null) instance.SetParameter("repeat", (float) filter.filter_repeat);
                 if(filter.filter_radius != null) instance.SetParameter("radius", (float) filter.filter_radius);
                 if(filter.filter_falloff != null) instance.SetParameter("falloff", (float) filter.filter_falloff);
-                _filterShaders.Add(filter, instance);
             }
+            filter.used = true;
+            _filterShaders[filter] = instance;
             return instance;
         }
     }

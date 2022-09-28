@@ -177,8 +177,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         });
                     foreach(DreamValue listValue in filterList.GetValues())
                     {
-
-
                         _atomManager.UpdateAppearance(dreamObject, appearance => {
                             DreamFilter newFilter = new DreamFilter(); //dreamfilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
 

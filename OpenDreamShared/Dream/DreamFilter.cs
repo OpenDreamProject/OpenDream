@@ -5,7 +5,7 @@ using System;
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class DreamFilter : IEquatable<DreamFilter> {
-        public int usageCount = 0; //this may not be the best way of doing this
+        public bool used = false; //this may not be the best way of doing this
         [ViewVariables] public string? filter_type = null;
         [ViewVariables] public float? filter_x = null;
         [ViewVariables] public float? filter_y = null;

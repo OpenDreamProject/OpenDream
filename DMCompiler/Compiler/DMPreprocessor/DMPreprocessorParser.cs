@@ -21,7 +21,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     PowerExp ::= UnaryExp [** PowerExp]
     UnaryExp ::= {!}SignExp
     SignExp ::= [-]Primary
-    Primary ::= '(' Expression ')' | Constant
+    Primary ::= '(' Expression ')' | DefinedExp | Constant
+    DefinedExp ::= 'defined(' MacroIdentifier ')'
     Constant ::= Integer | Float | Null
     */
 
@@ -31,11 +32,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     /// </summary>
     internal static class DMPreprocessorParser {
         private static List<Token> _tokens;
+        private static Dictionary<string, DMMacro> _defines;
         private static int _tokenIndex = 0;
 
-        public static DMExpression ExpressionFromTokens(List<Token> input) {
+        public static DMExpression ExpressionFromTokens(List<Token> input, Dictionary<string,DMMacro> defines) {
             _tokens = input;
-            return DMExpression.Create(null, null, Expression());
+            _defines = defines;
+            var ret = DMExpression.Create(null, null, Expression());
+            _tokens = null;
+            _defines = null;
+            return ret;
         }
 
         private static void Advance() {
@@ -229,15 +235,39 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return ExpressionPrimary();
         }
         public static DMASTExpression ExpressionPrimary() {
-            if (Check(TokenType.DM_LeftParenthesis)) {
-                DMASTExpression inner = Expression();
-                if (!Check(TokenType.DM_RightParenthesis)) {
-                    Error("Expected ')' to close expression");
-                }
-                return inner;
+            Token token = Current();
+            switch(token.Type) {
+                case TokenType.DM_LeftParenthesis:
+                    Advance();
+                    DMASTExpression inner = Expression();
+                    if (!Check(TokenType.DM_RightParenthesis)) {
+                        Error("Expected ')' to close expression");
+                    }
+                    return inner;
+                case TokenType.DM_Identifier:
+                    if(token.Text == "defined") {
+                        Advance();
+                        if(!Check(TokenType.DM_LeftParenthesis)) {
+                            Error("Expected '(' to begin defined() expression");
+                            return DegenerateValue(Current()?.Location);
+                        }
+                        Token definedInner = Current();
+                        if(definedInner.Type != TokenType.DM_Identifier) {
+                            Error($"Unexpected token {definedInner.PrintableText} - identifier expected");
+                            return DegenerateValue(Current()?.Location);
+                        }
+                        Advance();
+                        if (!Check(TokenType.DM_RightParenthesis)) {
+                            Error("Expected ')' to end defined() expression");
+                            //Electing to not return a degenerate value here since "defined(x" actually isn't an ambiguous grammar; we can figure out what they meant.
+                        }
+                        return new DMASTConstantInteger(definedInner.Location, _defines.ContainsKey(definedInner.Text) ? 1 : 0);
+                    }
+                    Error($"Unexpected identifier {token.PrintableText} in preprocessor expression");
+                    return DegenerateValue(Current().Location);
+                default:
+                    return Constant();
             }
-
-            return Constant();
         }
         public static DMASTExpression Constant() {
             Token constantToken = Current();
@@ -248,9 +278,14 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     
                 default: {
                     Error($"Token not accepted in preprocessor expression: {constantToken.PrintableText}");
-                    return new DMASTConstantInteger(constantToken.Location, 0); // Lets just be false, I guess.
+                    return DegenerateValue(constantToken.Location);
                 }
             }
+        }
+
+        private static DMASTExpression DegenerateValue(Location? loc) {
+            loc ??= Location.Unknown;
+            return new DMASTConstantInteger(loc.Value, 0); // Lets just be false, I guess.
         }
     }
 }

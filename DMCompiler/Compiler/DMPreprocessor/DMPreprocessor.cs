@@ -276,6 +276,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
+            if(defineIdentifier.Text == "defined") {
+                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Reserved keywrod 'defined' used as macro name"));
+            }
+
             List<string> parameters = null;
             List<Token> macroTokens = new(1);
 
@@ -362,13 +366,19 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private List<Token> GetLineOfTokens()
         {
             List<Token> tokens = new List<Token>();
+            bool tryIdentifiersAsMacros = true;
             for(Token token = GetNextToken(true); token.Type != TokenType.Newline; token = GetNextToken(true)) {
                 switch(token.Type) {
                     case TokenType.DM_Preproc_LineSplice:
                         continue;
-                    case (TokenType.DM_Preproc_Identifier):
-                        if (TryMacro(token))
+                    case TokenType.DM_Preproc_Identifier:
+                        if(token.Text == "defined") // need to be careful here to prevent macros in defined() expressions from being clobbered
+                            tryIdentifiersAsMacros = false;
+                        else if (tryIdentifiersAsMacros && TryMacro(token)) // feeding any novel macro tokens back into the pipeline here
                             continue;
+                        goto default; // Fallthrough!
+                    case TokenType.DM_Preproc_Punctuator_RightParenthesis:
+                        tryIdentifiersAsMacros = true; // may be ending a defined() sequence
                         goto default; // Fallthrough!
                     default:
                         tokens.Add(token);
@@ -430,7 +440,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 HandleDegenerateIf();
                 return;
             }
-            DMExpression expr = DMPreprocessorParser.ExpressionFromTokens(tokens);
+            DMExpression expr = DMPreprocessorParser.ExpressionFromTokens(tokens, _defines);
             if (!expr.TryAsConstant(out var value)) {
                 DMCompiler.Error(new CompilerError(expr.Location, "Expression is not constant"));
                 HandleDegenerateIf();

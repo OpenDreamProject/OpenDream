@@ -152,20 +152,20 @@ namespace OpenDreamClient.Rendering {
                 handle.DrawTexture(frame, position, icon.Appearance.Color);
             }
             else if (frame != null) {
-                IRenderTexture ping = RentPingPongRenderTarget(frame.Size);
-                IRenderTexture pong = RentPingPongRenderTarget(frame.Size);
+                IRenderTexture ping = RentPingPongRenderTarget(frame.Size*2);
+                IRenderTexture pong = RentPingPongRenderTarget(frame.Size*2);
                 IRenderTexture tmpHolder;
 
                 handle.RenderInRenderTarget(pong, () => {
-                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size), icon.Appearance.Color);
+                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero+(frame.Size/2), frame.Size+(frame.Size/2)), icon.Appearance.Color);
                 });
                 bool rotate = true;
                 foreach(ShaderInstance s in icon.Filters)
                 {
                     handle.RenderInRenderTarget(ping, () => {
-                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size), new Color());
+                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size*2), new Color());
                         handle.UseShader(s);
-                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size));
+                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size*2));
                         handle.UseShader(null);
                         });
                     tmpHolder = ping;
@@ -176,14 +176,14 @@ namespace OpenDreamClient.Rendering {
                 if(rotate) //this is so dumb
                 {
                     handle.RenderInRenderTarget(ping, () => {
-                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size), new Color());
-                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size));
+                        handle.DrawRect(new Box2(Vector2.Zero, frame.Size*2), new Color());
+                        handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size*2));
                         });
                     tmpHolder = ping;
                     ping = pong;
                     pong = tmpHolder;
                 }
-                handle.DrawTexture(pong.Texture, position, icon.Appearance.Color);
+                handle.DrawTexture(pong.Texture, position-((frame.Size/2)/(float)EyeManager.PixelsPerMeter), icon.Appearance.Color);
                 ReturnPingPongRenderTarget(ping);
                 ReturnPingPongRenderTarget(pong);
             }

@@ -109,7 +109,8 @@
 		set category = "Test"
 		if(length(src.filters))
 			src.filters[1]:color = rgb(0,255,0)
-			usr << "color set"
+			src.filters[1]:size = 4
+			usr << "color & size set"
 		else
 			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 			usr << "filter created"

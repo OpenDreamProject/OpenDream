@@ -33,10 +33,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// <summary>
         /// This stores previous evaluations of if-directives that have yet to find their #endif.<br/>
         /// We do this so that we can A.) Detect whether an #else or #endif is valid and B.) Remember what to do when we find that #else.
+        /// A null value indicates the last directive found was an #else that's waiting for an #endif.
         /// </summary>
-        private Stack<bool> _lastIfEvaluations = new(); 
+        private Stack<bool?> _lastIfEvaluations = new(); 
         private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above two vars are non-zero at exit
-        private int _danglingEndIfs = 0; // Some particular flow controls with the if-directives can make us look for missing end-ifs. THis keeps track of how many we want.
+        private Token _lastToken; // The last token emitted via GetNextToken().
 
         private static readonly TokenType[] DirectiveTypes =
         {
@@ -117,22 +118,18 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         HandleElifDirective(token);
                         break;
                     case TokenType.DM_Preproc_Else:
-                        if (!_lastIfEvaluations.TryPop(out bool wasTruthy))
+                        if (!_lastIfEvaluations.TryPop(out bool? wasTruthy) || wasTruthy is null)
                             DMCompiler.Error(new CompilerError(token.Location, "Unexpected #else"));
-                        if (wasTruthy)
+                        if (!wasTruthy.HasValue || wasTruthy.Value)
                             SkipIfBody(true);
                         else
-                            _danglingEndIfs++;
+                            _lastIfEvaluations.Push((bool?)null);
                         break;
                     case TokenType.DM_Preproc_Warning:
                     case TokenType.DM_Preproc_Error:
                         HandleErrorOrWarningDirective(token);
                         break;
                     case TokenType.DM_Preproc_EndIf:
-                        if(_danglingEndIfs > 0) {
-                            --_danglingEndIfs;
-                            break;
-                        }
                         if (!_lastIfEvaluations.TryPop(out var _))
                             DMCompiler.Error(new CompilerError(token.Location, "Unexpected #endif"));
                         break;
@@ -167,8 +164,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                 }
             }
-            if(_danglingEndIfs > 0)
-                DMCompiler.Error(new CompilerError(_lastSeenIf, "Missing #endif directive for associated #else directive")); // This location is probably very inaccurate :(
             if(_lastIfEvaluations.Any())
                 DMCompiler.Error(new CompilerError(_lastSeenIf, $"Missing {_lastIfEvaluations.Count} #endif directive{(_lastIfEvaluations.Count != 1 ? 's' : "")}"));
         }
@@ -486,15 +481,21 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             if (result) {
                 SkipIfBody();
             }
-            _lastIfEvaluations.Push(result);
+            _lastIfEvaluations.Push(!result);
         }
 
         private void HandleElifDirective(Token elifToken) {
-            if (!_lastIfEvaluations.TryPop(out bool wasTruthy))
+            if (!_lastIfEvaluations.TryPeek(out bool? wasTruthy))
                 DMCompiler.Error(new CompilerError(elifToken.Location, "Unexpected #elif"));
-            if (wasTruthy)
+            if (wasTruthy is null) {
+                DMCompiler.Error(new CompilerError(elifToken.Location, "Directive #elif cannot appear after #else in its flow control"));
                 SkipIfBody();
-            HandleIfDirective(elifToken);
+            } else if (wasTruthy.Value)
+                SkipIfBody();
+            else {
+                _lastIfEvaluations.Pop(); // There's a new evaluation in town
+                HandleIfDirective(elifToken);
+            }
         }
 
         private void HandleErrorOrWarningDirective(Token token) {
@@ -524,29 +525,26 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         private Token GetNextToken(bool ignoreWhitespace = false) {
-            if (_unprocessedTokens.Count > 0) {
-                Token nextToken = _unprocessedTokens.Pop();
-
-                if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) {
+            if (_unprocessedTokens.TryPop(out Token nextToken)) {
+                if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
                     nextToken = GetNextToken(true);
                 }
-
+                _lastToken = nextToken;
                 return nextToken;
             } else {
-                return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
+                _lastToken = ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
+                return _lastToken;
             }
         }
 
         /// <summary>Also used by #else sometimes to skip its body.</summary>
-        /// <remarks>WARNING: Consumes the #else or #endif token that it finds.</remarks>
+        /// <remarks>WARNING: DOES NOT CONSUME any #elif, #else, or #endif it finds.</remarks>
         /// <param name="noElseAllowed">This is used so that #else can operate this function while also forbidding it having its own #elses.</param>
         /// <returns>true if it stopped on an #else, false if it stopped in an #endif.</returns>
-        private bool SkipIfBody(bool noElseAllowed = false) {
+        private bool SkipIfBody(bool calledByElseDirective = false) {
             int ifStack = 1; // how many "ifs" deep we seem to be. We end when we reach 0.
-
-            Token token;
-            while ((token = GetNextToken()).Type != TokenType.EndOfFile) {
-                switch(token.Type) {
+            for (Token token = GetNextToken(true); token.Type != TokenType.EndOfFile; token = GetNextToken(true)) {
+                switch (token.Type) {
                     case TokenType.DM_Preproc_If:
                     case TokenType.DM_Preproc_Ifdef:
                     case TokenType.DM_Preproc_Ifndef:
@@ -556,19 +554,24 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         ifStack--;
                         break;
                     case TokenType.DM_Preproc_Else:
+                    case TokenType.DM_Preproc_Elif:
                         if (ifStack != 1)
                             break;
-                        if(noElseAllowed)
-                            DMCompiler.Error(new CompilerError(token.Location, "Unexpected #else directive"));
-                        _danglingEndIfs++;
+                        if (calledByElseDirective)
+                            DMCompiler.Error(new CompilerError(token.Location, $"Unexpected {token.PrintableText} directive"));
+                        _unprocessedTokens.Push(token); // Push it back onto the stack so we can interpret this later
                         return true;
                     default:
                         continue; // Don't need to do the ifStack check since it has not changed as a result of this token
                 }
-                if (ifStack == 0)
+                if (ifStack == 0) {
+                    if(!calledByElseDirective)
+                        _unprocessedTokens.Push(token); // Push it back onto the stack so we can interpret the entry in _lastIfEvaluations correctly.
                     return false;
+                }
             }
-            throw new Exception($"Reached unreachable code in DMPreprocessor.SkipIfBody()");
+            DMCompiler.Error(new CompilerError(Location.Unknown, "Missing #endif directive"));
+            return false;
         }
 
         private bool TryGetMacroParameters(out List<List<Token>> parameters) {

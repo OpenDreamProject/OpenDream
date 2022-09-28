@@ -41,6 +41,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             var ret = DMExpression.Create(null, null, Expression());
             _tokens = null;
             _defines = null;
+            _tokenIndex = 0;
             return ret;
         }
 
@@ -235,8 +236,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return ExpressionPrimary();
         }
         public static DMASTExpression ExpressionPrimary() {
-            Token token = Current();
-            switch(token.Type) {
+            Token? token = Current();
+            switch(token?.Type) {
                 case TokenType.DM_LeftParenthesis:
                     Advance();
                     DMASTExpression inner = Expression();
@@ -272,12 +273,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public static DMASTExpression Constant() {
             Token constantToken = Current();
 
-            switch (constantToken.Type) {
+            switch (constantToken?.Type) {
                 case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, (int)constantToken.Value);
                 case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, (float)constantToken.Value);
                     
                 default: {
-                    Error($"Token not accepted in preprocessor expression: {constantToken.PrintableText}");
+                    Error($"Token not accepted in preprocessor expression: {constantToken?.PrintableText}");
                     return DegenerateValue(constantToken.Location);
                 }
             }

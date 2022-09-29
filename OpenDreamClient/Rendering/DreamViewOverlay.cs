@@ -2,6 +2,7 @@
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamClient.Rendering {
     sealed class DreamViewOverlay : Overlay {
@@ -17,12 +18,14 @@ namespace OpenDreamClient.Rendering {
         private IClydeViewport _vp;
         private Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new Dictionary<Vector2i, List<IRenderTexture>>();
         public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+        private ClientAppearanceSystem appearanceSystem;
 
         public DreamViewOverlay() {
             IoCManager.InjectDependencies(this);
         }
 
         protected override void Draw(in OverlayDrawArgs args) {
+            appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
             EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
             if (eye == null) return;
 
@@ -30,6 +33,7 @@ namespace OpenDreamClient.Rendering {
             _vp = args.Viewport;
             DrawMap(args, eye.Value);
             DrawScreenObjects(handle, eye.Value, args.WorldAABB);
+
         }
 
         private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -107,7 +111,7 @@ namespace OpenDreamClient.Rendering {
                 }
             }
 
-            ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
+            
             appearanceSystem.CleanUpUnusedFilters();
             appearanceSystem.ResetFilterUsageCounts();            
         }
@@ -150,7 +154,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             AtlasTexture frame = icon.CurrentFrame;
-            if(frame != null && icon.Filters.Count == 0)
+            if(frame != null && icon.Appearance.Filters.Count == 0)
             {
                 //faster path for rendering unshaded sprites
                 handle.DrawTexture(frame, position, icon.Appearance.Color);
@@ -164,8 +168,9 @@ namespace OpenDreamClient.Rendering {
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero+(frame.Size/2), frame.Size+(frame.Size/2)), icon.Appearance.Color);
                 });
                 bool rotate = true;
-                foreach(ShaderInstance s in icon.Filters)
+                foreach(DreamFilter filterID in icon.Appearance.Filters)
                 {
+                    ShaderInstance s = appearanceSystem.GetFilterShader(filterID);
                     handle.RenderInRenderTarget(ping, () => {
                         handle.DrawRect(new Box2(Vector2.Zero, frame.Size*2), new Color());
                         handle.UseShader(s);

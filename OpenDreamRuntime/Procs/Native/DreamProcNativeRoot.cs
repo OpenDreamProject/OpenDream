@@ -1291,8 +1291,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
-            return new DreamValue(obj.CreateReferenceID(DreamManager));
+            return new DreamValue(DreamManager.CreateRef(arguments.GetArgument(0, "Object")));
         }
 
         [DreamProc("regex")]

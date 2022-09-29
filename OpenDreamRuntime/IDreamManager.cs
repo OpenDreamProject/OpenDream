@@ -16,7 +16,7 @@ namespace OpenDreamRuntime {
         public List<DreamValue> Globals { get; set; }
         public DreamList WorldContentsList { get; set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
-        public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
+        public Dictionary<DreamObject, string> ReferenceIDs { get; set; }
         public List<DreamObject> Mobs { get; set; }
         public List<DreamObject> Clients { get; set; }
         public List<DreamObject> Datums { get; set; }
@@ -35,6 +35,76 @@ namespace OpenDreamRuntime {
 
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
+        public virtual string CreateRef(DreamValue value)
+        {
+            // The first digit is the type, i.e. 1 for objects and 2 for strings
+
+            if(value.TryGetValueAsDreamObject(out var refObject))
+            {
+                var id = CreateReferenceId();
+                return string.Format("{0}{1}", (int)RefType.DreamObject, id);
+            }
+            if(value.TryGetValueAsString(out var refStr))
+            {
+                var idx = ObjectTree.Strings.IndexOf(refStr);
+                if (idx != -1)
+                {
+                    return string.Format("{0}{1}", (int)RefType.String, idx);
+                }
+
+                ObjectTree.Strings.Add(refStr);
+                var id = ObjectTree.Strings.Count - 1;
+                return string.Format("{0}{1}", (int)RefType.String, id);
+            }
+
+            throw new NotImplementedException();
+
+            string CreateReferenceId()
+            {
+                if(refObject.Deleted){
+                        throw new Exception("Cannot create reference ID for an object that is deleted"); // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
+                }
+
+                if (!ReferenceIDs.TryGetValue(refObject, out string? referenceId)) {
+                    referenceId = ReferenceIDs.Count.ToString();
+                    ReferenceIDs.Add(refObject, referenceId);
+                }
+
+                return referenceId;
+            }
+        }
+
+        public DreamValue? LocateRef(string refString)
+        {
+            if (!int.TryParse(refString, out var refId)) return null;
+
+            // The first digit is the type
+            var typeId = (RefType)int.Parse(refString.Substring(0, 1));
+            var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
+            refId = int.Parse(untypedRefString);
+
+            switch (typeId)
+            {
+                case RefType.DreamObject:
+                {
+                    var obj = DreamObject.GetFromReferenceID(this, untypedRefString);
+                    return new DreamValue(obj);
+                }
+                case RefType.String:
+                {
+                    return ObjectTree.Strings.Count > refId ? new DreamValue(ObjectTree.Strings[refId]) : DreamValue.Null;
+                }
+                default:
+                    throw new NotImplementedException($"Unsupported reference type for ref {refString}");
+            }
+        }
+
         IEnumerable<DreamConnection> Connections { get; }
+    }
+
+    public enum RefType : int
+    {
+        DreamObject = 1,
+        String = 2
     }
 }

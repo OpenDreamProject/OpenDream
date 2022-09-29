@@ -199,10 +199,10 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(value.Stringify());
                             break;
                         }
-                        case StringFormatTypes.Ref: {
-                            DreamObject refObject = state.Pop().GetValueAsDreamObject();
-
-                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                        case StringFormatTypes.Ref:
+                        {
+                            var value = state.Pop();
+                            formattedString.Append(state.DreamManager.CreateRef(value));
                             break;
                         }
                         case StringFormatTypes.UpperDefiniteArticle:
@@ -1538,10 +1538,12 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString)) {
-                if(int.TryParse(refString, out var refID))
+            if (value.TryGetValueAsString(out string refString))
+            {
+                var locateRef = state.DreamManager.LocateRef(refString);
+                if(locateRef is not null)
                 {
-                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+                    state.Push(locateRef.Value);
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))
                 {

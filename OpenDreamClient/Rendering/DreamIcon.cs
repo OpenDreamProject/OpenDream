@@ -263,12 +263,12 @@ namespace OpenDreamClient.Rendering {
 
             Filters.Clear();
             ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
-            appearanceSystem.ResetFilterUsageCounts();
+            
             foreach (DreamFilter filterID in Appearance.Filters) {
                 ShaderInstance this_shader_instance = appearanceSystem.GetFilterShader(filterID);
                 Filters.Add(this_shader_instance);
             }
-            appearanceSystem.CleanUpUnusedFilters();
+            
         }
 
         private void CheckSizeChange() {

@@ -106,6 +106,10 @@ namespace OpenDreamClient.Rendering {
                     }
                 }
             }
+
+            ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
+            appearanceSystem.CleanUpUnusedFilters();
+            appearanceSystem.ResetFilterUsageCounts();            
         }
 
 

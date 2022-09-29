@@ -54,7 +54,7 @@ namespace OpenDreamRuntime {
 
                 ObjectTree.Strings.Add(refStr);
                 var id = ObjectTree.Strings.Count - 1;
-                return string.Format("{0}{1}", 2, id);
+                return string.Format("{0}{1}", (int)RefType.String, id);
             }
 
             throw new NotImplementedException();

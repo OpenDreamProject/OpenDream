@@ -1855,7 +1855,11 @@ namespace OpenDreamRuntime.Procs.Native {
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 if (!type.TryGetValueAsPath(out var typePath)) {
-                    continue;
+                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null) {
+                        continue;
+                    }
+
+                    typePath = typeObj.ObjectDefinition.Type;
                 }
 
                 if (typePath.LastElement == "proc") {

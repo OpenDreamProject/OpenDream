@@ -53,15 +53,19 @@
 
 	var/atom/loc = null
 
-	New(icon, loc, icon_state, layer, dir)
+	// The ref does not mention the pixel_x and pixel_y args...
+	New(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
 		src.icon = icon
 		if (!istext(loc))
 			if (loc != null) src.loc = loc
 			if (icon_state != null) src.icon_state = icon_state
 			if (layer != null) src.layer = layer
 			if (dir != null) src.dir = dir
+			if (pixel_x != null) src.pixel_x = pixel_x
+			if (pixel_y != null) src.pixel_y = pixel_y
 		else
 			if (loc != null) src.icon_state = loc
 			if (icon_state != null) src.layer = icon_state
 			if (layer != null) src.dir = layer
-			if (dir != null) src.dir = dir
+			if (dir != null) src.pixel_x = dir
+			if (pixel_x != null) src.pixel_y = pixel_x

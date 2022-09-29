@@ -199,10 +199,10 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(value.Stringify());
                             break;
                         }
-                        case StringFormatTypes.Ref: {
-                            DreamObject refObject = state.Pop().GetValueAsDreamObject();
-
-                            formattedString.Append(refObject.CreateReferenceID(state.DreamManager));
+                        case StringFormatTypes.Ref:
+                        {
+                            var value = state.Pop();
+                            formattedString.Append(state.DreamManager.CreateRef(value));
                             break;
                         }
                         case StringFormatTypes.UpperDefiniteArticle:
@@ -1418,6 +1418,9 @@ namespace OpenDreamRuntime.Procs {
             DreamObject dreamObject = state.Pop().GetValueAsDreamObject();
 
             dreamObject?.Delete(state.DreamManager);
+            if (dreamObject is not null && dreamObject == state.Instance) {
+                return ProcStatus.Returned;
+            }
             return null;
         }
 
@@ -1535,10 +1538,12 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString)) {
-                if(int.TryParse(refString, out var refID))
+            if (value.TryGetValueAsString(out string refString))
+            {
+                var locateRef = state.DreamManager.LocateRef(refString);
+                if(locateRef is not null)
                 {
-                    state.Push(new DreamValue(DreamObject.GetFromReferenceID(state.DreamManager, refID)));
+                    state.Push(locateRef.Value);
                 }
                 else if (state.DreamManager.Tags.ContainsKey(refString))
                 {
@@ -1843,10 +1848,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {
-            if (first.Value == null) {
+            if (first == DreamValue.Null) {
                 return new(0);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.GetValueAsFloat() / second.GetValueAsFloat());
+            } else if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
+                if (secondFloat == 0) {
+                    throw new Exception("Division by zero");
+                }
+                return new(firstFloat / secondFloat);
             } else {
                 throw new Exception("Invalid divide operation on " + first + " and " + second);
             }

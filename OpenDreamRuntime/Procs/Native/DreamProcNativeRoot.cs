@@ -1006,7 +1006,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
-                if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
+                if (loc.TryGetValueAsDreamObject(out DreamObject? locObject) && locObject is not null) {
                     bool isLoc = locObject.IsSubtypeOf(DreamPath.Mob) || locObject.IsSubtypeOf(DreamPath.Obj) || locObject.IsSubtypeOf(DreamPath.Turf) || locObject.IsSubtypeOf(DreamPath.Area);
 
                     if (!isLoc) {
@@ -1612,8 +1612,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
-            return new DreamValue(obj.CreateReferenceID(DreamManager));
+            return new DreamValue(DreamManager.CreateRef(arguments.GetArgument(0, "Object")));
         }
 
         [DreamProc("regex")]

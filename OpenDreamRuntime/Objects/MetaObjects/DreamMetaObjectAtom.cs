@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
-
+            _atomManager.FiltersListToAtom.Remove(dreamObject.GetVariable("filters").GetValueAsDreamList());
             ParentType?.OnObjectDeleted(dreamObject);
         }
 
@@ -170,143 +170,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     DreamList filterList;
                     if (!value.TryGetValueAsDreamList(out filterList)) {
                         filterList = DreamList.Create();
+                        _atomManager.FiltersListToAtom[filterList] = dreamObject;  
+                        filterList.ValueAssigned += FiltersValueAssigned;
+                        filterList.BeforeValueRemoved += FiltersValueAssigned;
                         filterList.AddValue(value);
                     }
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                            appearance.Filters.Clear();
-                        });
-                    foreach(DreamValue listValue in filterList.GetValues())
+                    else
                     {
-                        _atomManager.UpdateAppearance(dreamObject, appearance => {
-                            DreamFilter newFilter = new DreamFilter(); //dreamfilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
-
-                            DreamObject DMFilterObject;
-                            if(!listValue.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out DMFilterObject))
-                                throw new Exception("Tried to add a non-filter object to a list of filters");
-                            DreamMetaObjectFilter._FilterToDreamObject[DMFilterObject] = dreamObject;
-                            DreamValue filterVarValue;
-
-                            if(DMFilterObject.TryGetVariable("type", out filterVarValue))
-                            {
-                                DreamPath typedVal;
-                                if(filterVarValue.TryGetValueAsPath(out typedVal))
-                                    newFilter.filter_type = typedVal.LastElement;
-                            }
-                            if(DMFilterObject.TryGetVariable("x", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_x = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("y", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_y = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("icon", out filterVarValue))
-                            {
-                                DreamObject typedVal;
-                                if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
-                                    newFilter.filter_icon = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("render_source", out filterVarValue))
-                            {
-                                DreamObject typedVal;
-                                if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
-                                    newFilter.filter_render_source = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("flags", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_flags = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("size", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_size = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("color", out filterVarValue))
-                            {
-                                string typedVal;
-                                if(filterVarValue.TryGetValueAsString(out typedVal))
-                                    newFilter.filter_color_string = typedVal;
-                                else if(filterVarValue.TryGetValueAsDreamObject(out var typedValObject))
-                                    newFilter.filter_color_matrix = typedValObject;
-                            }
-                            if(DMFilterObject.TryGetVariable("threshold", out filterVarValue))
-                            {
-                                string typedVal;
-                                if(filterVarValue.TryGetValueAsString(out typedVal))
-                                    newFilter.filter_threshold_color = typedVal;
-                                else if(filterVarValue.TryGetValueAsFloat(out var typedValObject))
-                                    newFilter.filter_threshold_strength = typedValObject;
-                            }
-                            if(DMFilterObject.TryGetVariable("offset", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_offset = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("alpha", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_alpha = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("space", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_space = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("transform", out filterVarValue))
-                            {
-                                DreamObject typedVal;
-                                if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
-                                    newFilter.filter_transform = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("blend_mode", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_blend_mode = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("density", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_density = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("factor", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_factor = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("repeat", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_repeat = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("radius", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_radius = typedVal;
-                            }
-                            if(DMFilterObject.TryGetVariable("falloff", out filterVarValue))
-                            {
-                                float typedVal;
-                                if(filterVarValue.TryGetValueAsFloat(out typedVal))
-                                    newFilter.filter_falloff = typedVal;
-                            }
-                            appearance.Filters.Add(newFilter);
-                        });
-                    }
+                        _atomManager.FiltersListToAtom[filterList] = dreamObject;  
+                        filterList.ValueAssigned += FiltersValueAssigned;
+                        filterList.BeforeValueRemoved += FiltersValueAssigned;
+                        if(filterList.GetLength() > 0)
+                            FiltersValueAssigned(filterList, value, value); //this is super hacky, but trigger the update behaviour here
+                    }                                     
                     dreamObject.SetVariableValue(varName, new DreamValue(filterList));
                     break;
                 }
@@ -437,6 +313,146 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _atomManager.UpdateAppearance(atom, appearance => {
                 appearance.Underlays.Remove(underlayAppearanceId.Value);
             });
+        }
+
+        private void FiltersValueAssigned(DreamList filterList, DreamValue key, DreamValue value)
+        {
+            DreamObject dreamObject = _atomManager.FiltersListToAtom[filterList];
+            _atomManager.UpdateAppearance(dreamObject, appearance => {
+                    appearance.Filters.Clear();
+            });
+            foreach(DreamValue listValue in filterList.GetValues())
+            {
+                _atomManager.UpdateAppearance(dreamObject, appearance => {
+                    DreamFilter newFilter = new DreamFilter(); //dreamfilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
+
+                    DreamObject DMFilterObject;
+                    if(!listValue.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out DMFilterObject))
+                        throw new Exception("Tried to add a non-filter object to a list of filters");
+                    DreamMetaObjectFilter._FilterToDreamObject[DMFilterObject] = dreamObject;
+                    DreamValue filterVarValue;
+
+                    if(DMFilterObject.TryGetVariable("type", out filterVarValue))
+                    {
+                        DreamPath typedVal;
+                        if(filterVarValue.TryGetValueAsPath(out typedVal))
+                            newFilter.filter_type = typedVal.LastElement;
+                    }
+                    if(DMFilterObject.TryGetVariable("x", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_x = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("y", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_y = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("icon", out filterVarValue))
+                    {
+                        DreamObject typedVal;
+                        if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
+                            newFilter.filter_icon = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("render_source", out filterVarValue))
+                    {
+                        DreamObject typedVal;
+                        if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
+                            newFilter.filter_render_source = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("flags", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_flags = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("size", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_size = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("color", out filterVarValue))
+                    {
+                        string typedVal;
+                        if(filterVarValue.TryGetValueAsString(out typedVal))
+                            newFilter.filter_color_string = typedVal;
+                        else if(filterVarValue.TryGetValueAsDreamObject(out var typedValObject))
+                            newFilter.filter_color_matrix = typedValObject;
+                    }
+                    if(DMFilterObject.TryGetVariable("threshold", out filterVarValue))
+                    {
+                        string typedVal;
+                        if(filterVarValue.TryGetValueAsString(out typedVal))
+                            newFilter.filter_threshold_color = typedVal;
+                        else if(filterVarValue.TryGetValueAsFloat(out var typedValObject))
+                            newFilter.filter_threshold_strength = typedValObject;
+                    }
+                    if(DMFilterObject.TryGetVariable("offset", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_offset = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("alpha", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_alpha = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("space", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_space = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("transform", out filterVarValue))
+                    {
+                        DreamObject typedVal;
+                        if(filterVarValue.TryGetValueAsDreamObject(out typedVal))
+                            newFilter.filter_transform = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("blend_mode", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_blend_mode = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("density", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_density = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("factor", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_factor = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("repeat", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_repeat = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("radius", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_radius = typedVal;
+                    }
+                    if(DMFilterObject.TryGetVariable("falloff", out filterVarValue))
+                    {
+                        float typedVal;
+                        if(filterVarValue.TryGetValueAsFloat(out typedVal))
+                            newFilter.filter_falloff = typedVal;
+                    }
+                    appearance.Filters.Add(newFilter);
+                });
+            }
         }
 
     }

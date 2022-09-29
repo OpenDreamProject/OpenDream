@@ -10,6 +10,7 @@ namespace OpenDreamRuntime {
         //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
+        public Dictionary<DreamList, DreamObject> FiltersListToAtom { get; } = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -169,6 +170,7 @@ namespace OpenDreamRuntime {
     internal interface IAtomManager {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
+        public Dictionary<DreamList, DreamObject> FiltersListToAtom { get; }
 
         public EntityUid GetMovableEntity(DreamObject movable);
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);

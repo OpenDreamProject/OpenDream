@@ -4,9 +4,17 @@
   kind: source
   path: "/Shaders/outline.swsl"
   params:
-    outline_color: "#FF000055"
+    color: "#FF000055"
+    size: 1
 
 - type: shader
   id: greyscale
   kind: source
   path: "/Shaders/greyscale.swsl"
+
+- type: shader
+  id: blur
+  kind: source
+  path: "/Shaders/blur.swsl"
+  params:
+    size: 1

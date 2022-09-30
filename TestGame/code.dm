@@ -100,13 +100,13 @@
 				if("greyscale")
 					src.filters = filter(type="greyscale")
 				if("blur")
-					src.filters = filter(type="blur", size=5)
+					src.filters = filter(type="blur", size=2)
 				if("outline/grey")
 					src.filters = list(filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="greyscale"))
 				if("grey/outline")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 				if("all")
-					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=5))
+					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
 			usr << "Applied [selected] filter"
 
 	verb/outline_change_test()

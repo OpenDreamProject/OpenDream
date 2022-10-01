@@ -575,7 +575,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         private bool TryGetMacroParameters(out List<List<Token>> parameters) {
-            Token leftParenToken = GetNextToken();
+            Token leftParenToken = GetNextToken(true);
 
             if (leftParenToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) {
                 parameters = new();

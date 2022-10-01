@@ -261,6 +261,16 @@ namespace DMCompiler.DM.Expressions {
         public Equal(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Equals(rhs);
+            return true;
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             LHS.EmitPushValue(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
@@ -277,6 +287,16 @@ namespace DMCompiler.DM.Expressions {
             LHS.EmitPushValue(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
             proc.NotEqual();
+        }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.NotEquals(rhs);
+            return true;
         }
     }
 

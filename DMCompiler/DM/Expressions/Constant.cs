@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.Localization;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -83,6 +84,14 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant BinaryOr(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
+
+        public virtual Constant Equals(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} == {rhs}\" is invalid");
+        }
+
+        public virtual Constant NotEquals(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} != {rhs}\" is invalid");
+        }
         #endregion
     }
 
@@ -99,6 +108,22 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             return true;
+        }
+
+        public override Constant Equals(Constant rhs) {
+            if (rhs is not Null) {
+                return new Number(Location, 0); // false
+            }
+
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant NotEquals(Constant rhs) {
+            if (rhs is not Null) {
+                return new Number(Location, 1); // true
+            }
+
+            return new Number(Location, 0); // false
         }
     }
 
@@ -223,6 +248,22 @@ namespace DMCompiler.DM.Expressions {
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
         }
+
+        public override Constant Equals(Constant rhs) {
+            if (rhs is not Number rhsNum || rhsNum.Value != Value) {
+                return new Number(Location, 0); // false
+            }
+
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant NotEquals(Constant rhs) {
+            if (rhs is not Number rhsNum || rhsNum.Value != Value) {
+                return new Number(Location, 1); // true
+            }
+
+            return new Number(Location, 0); // false
+        }
     }
 
     // "abc"
@@ -251,6 +292,22 @@ namespace DMCompiler.DM.Expressions {
 
             return new String(Location, Value + rhsString.Value);
         }
+
+        public override Constant Equals(Constant rhs) {
+            if (rhs is not String rhsString || rhsString.Value != Value) {
+                return new Number(Location, 0); // false
+            }
+
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant NotEquals(Constant rhs) {
+            if (rhs is not String rhsString || rhsString.Value != Value) {
+                return new Number(Location, 1); // true
+            }
+
+            return new Number(Location, 0); // false
+        }
     }
 
     // 'abc'
@@ -274,6 +331,22 @@ namespace DMCompiler.DM.Expressions {
             };
 
             return true;
+        }
+
+        public override Constant Equals(Constant rhs) {
+            if (rhs is not Resource rhsResource || rhsResource.Value != Value) {
+                return new Number(Location, 0); // false
+            }
+
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant NotEquals(Constant rhs) {
+            if (rhs is not Resource rhsResource || rhsResource.Value != Value) {
+                return new Number(Location, 1); // true
+            }
+
+            return new Number(Location, 0); // false
         }
     }
 
@@ -306,6 +379,22 @@ namespace DMCompiler.DM.Expressions {
             };
 
             return true;
+        }
+
+        public override Constant Equals(Constant rhs) {
+            if (rhs is not Path rhsPath || rhsPath.Value != Value) {
+                return new Number(Location, 0); // false
+            }
+
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant NotEquals(Constant rhs) {
+            if (rhs is not Path rhsPath || rhsPath.Value != Value) {
+                return new Number(Location, 1); // true
+            }
+
+            return new Number(Location, 0); // false
         }
     }
 }

@@ -4,6 +4,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using Robust.Shared.Localization;
+using Robust.Shared.Maths;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -250,7 +251,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant Equals(Constant rhs) {
-            if (rhs is not Number rhsNum || rhsNum.Value != Value) {
+            if (rhs is not Number rhsNum || MathHelper.CloseTo(rhsNum.Value, Value)) {
                 return new Number(Location, 0); // false
             }
 
@@ -258,7 +259,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Number rhsNum || rhsNum.Value != Value) {
+            if (rhs is not Number rhsNum || !MathHelper.CloseTo(rhsNum.Value, Value)) {
                 return new Number(Location, 1); // true
             }
 

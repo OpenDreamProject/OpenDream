@@ -435,13 +435,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 HandleDegenerateIf();
                 return;
             }
-            DMExpression expr = DMPreprocessorParser.ExpressionFromTokens(tokens, _defines);
-            if (!expr.TryAsConstant(out var value)) {
-                DMCompiler.Error(new CompilerError(expr.Location, "Expression is not constant"));
+            float? expr = DMPreprocessorParser.ExpressionFromTokens(tokens, _defines);
+            if(expr is null) {
+                DMCompiler.Error(new CompilerError(ifToken.Location, "Expression is invalid"));
                 HandleDegenerateIf();
                 return;
             }
-            bool result = value.IsTruthy();
+            bool result = expr != 0.0f;
             _lastIfEvaluations.Push(result);
             if (!result)
                 SkipIfBody();

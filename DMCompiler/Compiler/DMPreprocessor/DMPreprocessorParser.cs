@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace DMCompiler.Compiler.DMPreprocessor {
     /*
      * NOTE: Some operations are (as in BYOND) not implemented for preproc expressions.
@@ -31,14 +32,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     /// held separate from DMParser because of slightly different behaviour and far simpler implementation.
     /// </summary>
     internal static class DMPreprocessorParser {
-        private static List<Token> _tokens;
-        private static Dictionary<string, DMMacro> _defines;
+        private static List<Token>? _tokens;
+        private static Dictionary<string, DMMacro>? _defines;
         private static int _tokenIndex = 0;
+        private static readonly float DegenerateValue = 0.0f;
 
-        public static DMExpression ExpressionFromTokens(List<Token> input, Dictionary<string,DMMacro> defines) {
+        /// <returns>A float, because that is the only possible thing a well-formed preproc expression can evaluate to.</returns>
+        public static float? ExpressionFromTokens(List<Token> input, Dictionary<string,DMMacro> defines) {
             _tokens = input;
             _defines = defines;
-            var ret = DMExpression.Create(null, null, Expression());
+            var ret = Expression();
             _tokens = null;
             _defines = null;
             _tokenIndex = 0;
@@ -49,9 +52,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             ++_tokenIndex;
         }
         private static Token? Current() {
-            if (_tokenIndex >= _tokens.Count())
+            if (_tokenIndex >= _tokens!.Count())
                 return null;
-            return _tokens[_tokenIndex];
+            return _tokens![_tokenIndex];
         }
         private static bool Check(TokenType type) {
             if (Current()?.Type == type) {
@@ -70,177 +73,169 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return false;
         }
         private static void Error(string msg) {
-            DMCompiler.Error(new CompilerError(Current().Location, msg));
+            DMCompiler.Error(new CompilerError(Current()?.Location ?? Location.Unknown, msg));
         }
 
-        private static DMASTExpression Expression() {
+        private static float? Expression() {
             return ExpressionOr();
         }
-        private static DMASTExpression ExpressionOr() {
-            DMASTExpression a = ExpressionAnd();
-            if (a != null) {
-                var loc = Current()?.Location;
-                while (Check(TokenType.DM_BarBar)) {
-                    DMASTExpression b = ExpressionAnd();
-                    if (b == null) Error("Expected a second value");
-                    a = new DMASTOr(loc.Value, a, b);
+        private static float? ExpressionOr() {
+            float? a = ExpressionAnd()!.Value;
+            if (a is null) return a;
+
+            while (Check(TokenType.DM_BarBar)) {
+                float? b = ExpressionAnd();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
                 }
+                if (a != 0f || b != 0f)
+                    a = 1.0f;
+                else
+                    a = 0.0f;
             }
             return a;
         }
-        public static DMASTExpression ExpressionAnd() {
-            DMASTExpression a = ExpressionComparison();
-            if (a != null) {
-                var loc = Current()?.Location;
-                while (Check(TokenType.DM_AndAnd)) {
-                    DMASTExpression b = ExpressionComparison();
-                    if (b == null) Error("Expected a second value");
-                    a = new DMASTAnd(loc.Value, a, b);
+        public static float? ExpressionAnd() {
+            float? a = ExpressionComparison()!.Value;
+            if (a is null) return a;
+
+            while (Check(TokenType.DM_AndAnd)) {
+                float? b = ExpressionComparison();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
                 }
+                if (a != 0f && b != 0f)
+                    a = 1.0f;
+                else
+                    a = 0.0f;
             }
             return a;
         }
-        public static DMASTExpression ExpressionComparison() {
-            DMASTExpression a = ExpressionComparisonLtGt();
-
-            if (a != null) {
-                Token token = Current();
-                while (Check(DMParser.ComparisonTypes)) {
-                    DMASTExpression b = ExpressionComparisonLtGt();
-                    if (b == null) Error("Expected an expression to compare to");
-                    switch (token.Type) {
-                        case TokenType.DM_EqualsEquals: a = new DMASTEqual(token.Location, a, b); break;
-                        case TokenType.DM_ExclamationEquals: a = new DMASTNotEqual(token.Location, a, b); break;
-                        case TokenType.DM_TildeEquals: a = new DMASTEquivalent(token.Location, a, b); break;
-                        case TokenType.DM_TildeExclamation: a = new DMASTNotEquivalent(token.Location, a, b); break;
-                    }
-                    token = Current();
+        public static float? ExpressionComparison() {
+            float? a = ExpressionComparisonLtGt();
+            if(a is null) return a;
+            for (Token? token = Current(); token != null && Check(DMParser.ComparisonTypes); token = Current()) {
+                float? b = ExpressionComparisonLtGt();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
                 }
-            }
-
-            return a;
-        }
-        public static DMASTExpression ExpressionComparisonLtGt() {
-            DMASTExpression a = ExpressionAdditionSubtraction();
-
-            if (a != null) {
-                Token token = Current();
-                while (Check(DMParser.LtGtComparisonTypes)) {
-                    DMASTExpression b = ExpressionAdditionSubtraction();
-                    if (b == null) Error("Expected an expression");
-
-                    switch (token.Type) {
-                        case TokenType.DM_LessThan: a = new DMASTLessThan(token.Location, a, b); break;
-                        case TokenType.DM_LessThanEquals: a = new DMASTLessThanOrEqual(token.Location, a, b); break;
-                        case TokenType.DM_GreaterThan: a = new DMASTGreaterThan(token.Location, a, b); break;
-                        case TokenType.DM_GreaterThanEquals: a = new DMASTGreaterThanOrEqual(token.Location, a, b); break;
-                    }
-                    token = Current();
+                switch (token.Type) {
+                    case TokenType.DM_EqualsEquals: a = (a == b ? 1.0f : 0.0f); break;
+                    case TokenType.DM_ExclamationEquals: a = (a != b ? 1.0f : 0.0f); break;
+                    case TokenType.DM_TildeEquals: Error("'~=' is not valid in preprocessor expressions"); break;
+                    case TokenType.DM_TildeExclamation: Error("'~!' is not valid in preprocessor expressions"); break;
                 }
             }
 
             return a;
         }
-        public static DMASTExpression ExpressionAdditionSubtraction() {
-            DMASTExpression a = ExpressionMultiplicationDivisionModulus();
-
-            if (a != null) {
-                Token token = Current();
-                while (Check(DMParser.PlusMinusTypes)) {
-                    DMASTExpression b = ExpressionMultiplicationDivisionModulus();
-                    if (b == null) Error("Expected an expression");
-
-                    switch (token.Type) {
-                        case TokenType.DM_Plus: a = new DMASTAdd(token.Location, a, b); break;
-                        case TokenType.DM_Minus: a = new DMASTSubtract(token.Location, a, b); break;
-                    }
-
-                    token = Current();
+        public static float? ExpressionComparisonLtGt() {
+            float? a = ExpressionAdditionSubtraction();
+            if (a is null) return a;
+            for (Token? token = Current(); token != null && Check(DMParser.LtGtComparisonTypes); token = Current()) {
+                float? b = ExpressionAdditionSubtraction();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
+                }
+                switch (token.Type) {
+                    case TokenType.DM_LessThan: a = (a < b ? 1.0f : 0.0f); break;
+                    case TokenType.DM_LessThanEquals: a = (a <= b ? 1.0f : 0.0f); break;
+                    case TokenType.DM_GreaterThan: a = (a > b ? 1.0f : 0.0f); break;
+                    case TokenType.DM_GreaterThanEquals: a = (a >= b ? 1.0f : 0.0f); break;
                 }
             }
 
             return a;
         }
-        public static DMASTExpression ExpressionMultiplicationDivisionModulus() {
-            DMASTExpression a = ExpressionPower();
-
-            if (a != null) {
-                Token token = Current();
-                while (Check(DMParser.MulDivModTypes)) {
-                    DMASTExpression b = ExpressionPower();
-                    if (b == null) Error("Expected an expression");
-
-                    switch (token.Type) {
-                        case TokenType.DM_Star: a = new DMASTMultiply(token.Location, a, b); break;
-                        case TokenType.DM_Slash: a = new DMASTDivide(token.Location, a, b); break;
-                        case TokenType.DM_Modulus: a = new DMASTModulus(token.Location, a, b); break;
-                    }
-
-                    token = Current();
+        public static float? ExpressionAdditionSubtraction() {
+            float? a = ExpressionMultiplicationDivisionModulus();
+            if (a is null) return a;
+            for (Token? token = Current(); token != null && Check(DMParser.PlusMinusTypes); token = Current()) {
+                float? b = ExpressionMultiplicationDivisionModulus();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
+                }
+                switch (token.Type) {
+                    case TokenType.DM_Plus: a += b; break;
+                    case TokenType.DM_Minus: a -= b; break;
                 }
             }
 
             return a;
         }
-        public static DMASTExpression ExpressionPower() {
-            DMASTExpression a = ExpressionUnary();
-
-            if (a != null) {
-                var loc = Current()?.Location;
-                while (Check(TokenType.DM_StarStar)) {
-                    DMASTExpression b = ExpressionUnary();
-                    if (b == null) Error("Expected an expression");
-                    a = new DMASTPower(loc.Value, a, b);
+        public static float? ExpressionMultiplicationDivisionModulus() {
+            float? a = ExpressionPower();
+            if (a is null) return a;
+            for (Token? token = Current(); token != null && Check(DMParser.MulDivModTypes); token = Current()) {
+                float? b = ExpressionPower();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
+                }
+                switch (token.Type) {
+                    case TokenType.DM_Star: a *= b; break;
+                    case TokenType.DM_Slash: a /= b; break;
+                    case TokenType.DM_Modulus: a %= b; break;
                 }
             }
 
             return a;
         }
-        public static DMASTExpression ExpressionUnary() {
+        public static float? ExpressionPower() {
+            float? a = ExpressionUnary();
+            if (a is null) return a;
+            for (Token? token = Current(); token != null && Check(TokenType.DM_StarStar); token = Current()) {
+                float? b = ExpressionPower();
+                if (b is null) {
+                    Error("Expected a second value");
+                    break;
+                }
+                a = MathF.Pow(a.Value, b.Value);
+            }
+
+            return a;
+        }
+        public static float? ExpressionUnary() {
             var loc = Current()?.Location;
             if (Check(TokenType.DM_Exclamation)) {
-                DMASTExpression expression = ExpressionUnary();
-                if (expression == null) Error("Expected an expression");
+                float? expression = ExpressionUnary();
+                if (expression == null) {
+                    Error("Expected an expression");
+                    return null;
+                }
 
-                return new DMASTNot(loc.Value, expression);
+                return expression == 0.0f ? 1.0f : 0.0f;
             }
             return ExpressionSign();
         }
-        public static DMASTExpression ExpressionSign() {
-            Token token = Current();
+        public static float? ExpressionSign() {
+            Token? token = Current();
 
             if (Check(DMParser.PlusMinusTypes)) {
-                DMASTExpression expression = ExpressionSign();
+                float? expression = ExpressionSign();
 
-                if (expression == null) Error("Expected an expression");
-                if (token?.Type == TokenType.DM_Minus) {
-                    switch (expression) {
-                        case DMASTConstantInteger integer: {
-                            int value = integer.Value;
-
-                            return new DMASTConstantInteger(token.Location, -value);
-                        }
-                        case DMASTConstantFloat constantFloat: {
-                            float value = constantFloat.Value;
-
-                            return new DMASTConstantFloat(token.Location, -value);
-                        }
-                        default:
-                            return new DMASTNegate(token.Location, expression);
-                    }
-                } else {
-                    return expression;
+                if (expression is null) {
+                    Error("Expected an expression");
+                    return null;
                 }
+                if (token!.Type == TokenType.DM_Minus)
+                    expression = -expression;
+                return expression;
             }
 
             return ExpressionPrimary();
         }
-        public static DMASTExpression ExpressionPrimary() {
+        public static float? ExpressionPrimary() {
             Token? token = Current();
             switch(token?.Type) {
                 case TokenType.DM_LeftParenthesis:
                     Advance();
-                    DMASTExpression inner = Expression();
+                    float? inner = Expression();
                     if (!Check(TokenType.DM_RightParenthesis)) {
                         Error("Expected ')' to close expression");
                     }
@@ -250,43 +245,50 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         Advance();
                         if(!Check(TokenType.DM_LeftParenthesis)) {
                             Error("Expected '(' to begin defined() expression");
-                            return DegenerateValue(Current()?.Location);
+                            return DegenerateValue;
                         }
-                        Token definedInner = Current();
+                        Token? definedInner = Current();
+                        if(definedInner is null) {
+                            Error("Identifier expected for defined() expression");
+                            return DegenerateValue;
+                        }
                         if(definedInner.Type != TokenType.DM_Identifier) {
                             Error($"Unexpected token {definedInner.PrintableText} - identifier expected");
-                            return DegenerateValue(Current()?.Location);
+                            return DegenerateValue;
                         }
                         Advance();
                         if (!Check(TokenType.DM_RightParenthesis)) {
                             Error("Expected ')' to end defined() expression");
                             //Electing to not return a degenerate value here since "defined(x" actually isn't an ambiguous grammar; we can figure out what they meant.
                         }
-                        return new DMASTConstantInteger(definedInner.Location, _defines.ContainsKey(definedInner.Text) ? 1 : 0);
+                        return _defines!.ContainsKey(definedInner.Text) ? 1.0f : 0.0f;
                     }
                     Error($"Unexpected identifier {token.PrintableText} in preprocessor expression");
-                    return DegenerateValue(Current().Location);
+                    return DegenerateValue;
                 default:
                     return Constant();
             }
         }
-        public static DMASTExpression Constant() {
-            Token constantToken = Current();
+        public static float? Constant() {
+            Token? constantToken = Current();
 
             switch (constantToken?.Type) {
-                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, (int)constantToken.Value);
-                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, (float)constantToken.Value);
+                case TokenType.DM_Integer: Advance();return (float)((int)constantToken.Value);
+                case TokenType.DM_Float: Advance(); return (float)constantToken.Value;
+                case TokenType.DM_String: {
+                    Advance();
+                    Error("Strings are not valid in preprocessor expressions. Did you mean to use a define() here?");
+                    return DegenerateValue;
+                }
                     
                 default: {
                     Error($"Token not accepted in preprocessor expression: {constantToken?.PrintableText}");
-                    return DegenerateValue(constantToken.Location);
+                    return DegenerateValue;
                 }
             }
         }
 
-        private static DMASTExpression DegenerateValue(Location? loc) {
-            loc ??= Location.Unknown;
-            return new DMASTConstantInteger(loc.Value, 0); // Lets just be false, I guess.
-        }
+
     }
 }
+#nullable restore

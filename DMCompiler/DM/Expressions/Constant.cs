@@ -3,7 +3,6 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
-using Robust.Shared.Localization;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {

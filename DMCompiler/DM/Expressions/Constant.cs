@@ -250,7 +250,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant Equals(Constant rhs) {
-            if (rhs is not Number rhsNum || MathHelper.CloseTo(rhsNum.Value, Value)) {
+            if (rhs is not Number rhsNum || !MathHelper.CloseTo(rhsNum.Value, Value)) {
                 return new Number(Location, 0); // false
             }
 
@@ -258,7 +258,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Number rhsNum || !MathHelper.CloseTo(rhsNum.Value, Value)) {
+            if (rhs is not Number rhsNum || MathHelper.CloseTo(rhsNum.Value, Value)) {
                 return new Number(Location, 1); // true
             }
 

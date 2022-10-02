@@ -125,6 +125,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamObjectDefinition world = objectTree.GetObjectDefinition(DreamPath.World);
             world.SetNativeProc(DreamProcNativeWorld.NativeProc_Export);
+            world.SetNativeProc(DreamProcNativeWorld.NativeProc_GetConfig);
+            world.SetNativeProc(DreamProcNativeWorld.NativeProc_SetConfig);
         }
     }
 }

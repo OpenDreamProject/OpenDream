@@ -31,27 +31,12 @@ namespace OpenDreamRuntime.Objects {
             return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
-        public static DreamObject GetFromReferenceID(IDreamManager manager, int refID) {
-            foreach (KeyValuePair<DreamObject, int> referenceIDPair in manager.ReferenceIDs) {
-                if (referenceIDPair.Value == refID) return referenceIDPair.Key;
+        public static DreamObject? GetFromReferenceID(IDreamManager manager, string refId) {
+            foreach (KeyValuePair<DreamObject, string> referenceIdPair in manager.ReferenceIDs) {
+                if (referenceIdPair.Value == refId) return referenceIdPair.Key;
             }
 
             return null;
-        }
-
-        public int CreateReferenceID(IDreamManager manager) {
-            if(Deleted){
-                throw new Exception("Cannot create reference ID for an object that is deleted"); // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
-            }
-            int referenceID;
-
-            if (!manager.ReferenceIDs.TryGetValue(this, out referenceID)) {
-                referenceID = manager.ReferenceIDs.Count;
-
-                manager.ReferenceIDs.Add(this, referenceID);
-            }
-
-            return referenceID;
         }
 
         public void Delete(IDreamManager manager) {
@@ -97,7 +82,8 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Cannot get variable names of a deleted object");
             }
             List<DreamValue> list = new(_variables.Count);
-            foreach (String key in _variables.Keys) {
+            // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
+            foreach (String key in ObjectDefinition!.Variables.Keys) { 
                 list.Add(new(key));
             }
             return list;

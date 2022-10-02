@@ -71,6 +71,7 @@ namespace DMCompiler {
                     }
                 }
             }
+
             if (!successfulCompile) {
                 Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
             }
@@ -157,9 +158,17 @@ namespace DMCompiler {
             ErrorCount++;
         }
 
+        public static void Error(Location loc, string message) {
+            Error(new CompilerError(loc, message));
+        }
+
         public static void Warning(CompilerWarning warning) {
             Console.WriteLine(warning);
             WarningCount++;
+        }
+
+        public static void Warning(Location loc, string message) {
+            Warning(new CompilerWarning(loc, message));
         }
 
         public static void UnimplementedWarning(Location loc, string message) {

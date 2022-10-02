@@ -247,7 +247,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
 
             DMPreprocessorLexer currentLexer = _lexerStack.Peek();
-            string file = Path.Combine(Path.GetDirectoryName(currentLexer.SourceName), (string)includedFileToken.Value);
+            string file = Path.Combine(Path.GetDirectoryName(currentLexer.SourceName.Replace('\\', Path.DirectorySeparatorChar)), (string)includedFileToken.Value);
             string directory = currentLexer.IncludeDirectory;
 
             IncludeFile(directory, file, includedFrom: includeToken.Location);

@@ -159,7 +159,6 @@ namespace Content.Tests
             }
 
             foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
-                if(!File.Exists(sourceFile)) continue;
                 string sourceFile2 = sourceFile.Substring("Tests/".Length);
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))

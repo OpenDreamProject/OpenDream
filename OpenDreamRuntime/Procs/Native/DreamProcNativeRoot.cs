@@ -1855,7 +1855,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
                 if (!type.TryGetValueAsPath(out var typePath)) {
-                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null) {
+                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null || typeObj is DreamList) {
                         if (type.TryGetValueAsString(out var typeString)) {
                             var stringToPath = new DreamPath(typeString);
                             if (DreamManager.ObjectTree.HasTreeEntry(stringToPath)) {

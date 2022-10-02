@@ -44,7 +44,8 @@ namespace Content.Tests
 
         public string Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile }
+                Files = new() { sourceFile },
+                Silent = true
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;

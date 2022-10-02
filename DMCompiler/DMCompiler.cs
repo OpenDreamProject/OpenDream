@@ -64,7 +64,7 @@ namespace DMCompiler {
                     {
                         successfulCompile = false;
                     }
-                    else
+                    else if(!Settings.Silent)
                     {
                         Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
                         Console.WriteLine(output);
@@ -72,12 +72,14 @@ namespace DMCompiler {
                 }
             }
 
-            if (!successfulCompile) {
-                Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
-            }
+            if (!Settings.Silent) {
+                if (!successfulCompile) {
+                    Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
+                }
 
-            TimeSpan duration = DateTime.Now - _compileStartTime;
-            Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
+                TimeSpan duration = DateTime.Now - _compileStartTime;
+                Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
+            }
 
             return successfulCompile;
         }
@@ -154,7 +156,7 @@ namespace DMCompiler {
         }
 
         public static void Error(CompilerError error) {
-            Console.WriteLine(error);
+            if(!Settings.Silent) Console.WriteLine(error);
             ErrorCount++;
         }
 
@@ -163,7 +165,7 @@ namespace DMCompiler {
         }
 
         public static void Warning(CompilerWarning warning) {
-            Console.WriteLine(warning);
+            if(!Settings.Silent) Console.WriteLine(warning);
             WarningCount++;
         }
 
@@ -273,5 +275,6 @@ namespace DMCompiler {
         public bool DumpPreprocessor;
         public bool NoStandard;
         public bool Verbose;
+        public bool Silent;
     }
 }

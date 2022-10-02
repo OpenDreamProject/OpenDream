@@ -49,12 +49,12 @@
 	var/game_state as opendream_unimplemented
 	var/host as opendream_unimplemented
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
+	var/cache_lifespan = 30 as opendream_unimplemented
+
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
 	proc/GetConfig(config_set,param)
-		set opendream_unimplemented = TRUE
 	proc/SetConfig(config_set,param,value)
-		set opendream_unimplemented = TRUE
 	proc/OpenPort(port)
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)

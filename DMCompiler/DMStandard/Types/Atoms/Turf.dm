@@ -10,7 +10,7 @@
 			if (!content.Cross(O))
 				O.Bump(content)
 				return FALSE
-		
+
 		return TRUE
 
 	Exit(atom/movable/O, atom/newloc)
@@ -22,9 +22,9 @@
 		return 1
 
 	Entered(atom/movable/Obj, atom/OldLoc)
-		for (var/atom/crossed in src)
-			crossed.Crossed(Obj)
+		Crossed(Obj)
+		// /atom/movable/Move() is responsible for calling Crossed() on contents
 
 	Exited(atom/movable/Obj, atom/newloc)
-		for (var/atom/uncrossed in src)
-			uncrossed.Uncrossed(Obj)
+		Uncrossed(Obj)
+		// /atom/movable/Move() is responsible for calling Uncrossed() on contents

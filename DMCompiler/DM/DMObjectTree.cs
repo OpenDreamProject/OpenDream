@@ -35,6 +35,7 @@ namespace DMCompiler.DM {
         public static void Reset() {
             AllObjects.Clear();
             AllProcs.Clear();
+            Globals.Clear();
             GlobalProcs.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;

@@ -636,6 +636,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if(color.Item2 >= indx) {
                     right = color;
                     left = previous;
+                    break;
                 }
                 previous = color;
             }

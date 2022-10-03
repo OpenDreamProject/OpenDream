@@ -13,6 +13,10 @@
 		..()
 		loc = locate(5, 5, 1)
 
+	verb/update_gradient()
+		usr << "A"
+		usr << gradient(list(0, "#ff0000", 1, "#000000"), 0.5)
+
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)
 		sleep(2)

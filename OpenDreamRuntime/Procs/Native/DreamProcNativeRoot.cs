@@ -572,7 +572,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new ArgumentException("Found only 1 argument");
             }
 
-            /// TODO: Support "red", "black", 0.2
+            /// TODO: Fix space=HSV breaking the index arg
+            /// TODO: Support loop
 
             List<DreamValue> argslist = arguments.GetAllArguments();
 

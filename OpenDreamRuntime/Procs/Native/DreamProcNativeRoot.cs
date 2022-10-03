@@ -629,9 +629,9 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             /// None of these should be null however C# is "special"
-            Tuple<Color, float> left = new Tuple<Color, float>(new Color(), 0);
-            Tuple<Color, float> right = new Tuple<Color, float>(new Color(), 0);
-            Tuple<Color, float> previous = new Tuple<Color, float>(new Color(), 0);
+            Tuple<Color, float> left = new(new Color(), 0);
+            Tuple<Color, float> right = new(new Color(), 1);
+            Tuple<Color, float> previous = new(new Color(), 0);
             foreach (var color in colors) {
                 if(color.Item2 >= indx) {
                     right = color;
@@ -640,28 +640,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 previous = color;
             }
 
-            float rleft = left.Item1.R;
-            float gleft = left.Item1.G;
-            float bleft = left.Item1.B;
-            float aleft = left.Item1.A;
+            float index_max = Math.Max(left.Item2, right.Item2);
+            float index_min = Math.Min(left.Item2, right.Item2);
 
-            float rright = right.Item1.R;
-            float gright = right.Item1.G;
-            float bright = right.Item1.B;
-            float aright = right.Item1.A;
+            /// Convert the index to a 0-1 range
+            float normalized = (indx - index_min) / (index_max - index_min);
 
-
-            float _mx = Math.Max(left.Item2, right.Item2);
-            float _mn = Math.Min(left.Item2, right.Item2);
-
-            float normalized = (_mx - _mn) / (_mx - _mn) * (indx - _mx) + _mx;
-
-            Color returnval = new();
-            returnval.R = rleft + ((rright - rleft) * normalized / 2);
-            returnval.G = gleft + ((gright - gleft) * normalized / 2);
-            returnval.B = bleft + ((bright - bleft) * normalized / 2);
-            returnval.A = aleft + ((aright - aleft) * normalized / 2);
-
+            Color returnval = Color.InterpolateBetween(left.Item1, right.Item1, normalized);
+            if(returnval.A == 1) {
+                return new DreamValue(returnval.ToHexNoAlpha());
+            }
             return new DreamValue(returnval.ToHex());
         }
 

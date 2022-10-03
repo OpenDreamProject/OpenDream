@@ -15,6 +15,7 @@ using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using Robust.Shared.Utility;
 using Robust.Shared.Maths;
+using Linguini.Syntax.Ast;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -572,15 +573,24 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new ArgumentException("Found only 1 argument");
             }
 
-            /// TODO: Fix space=HSV breaking the index arg
+            /// TODO: Cleanup the index argument code
             /// TODO: Support loop
+            /// TODO: Add colorspaces
+
+            /// We dont want keyword arguments screwing with this
+            DreamValue index = new();
+            if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
+                index = argumentValue;
+            }
+            if (arguments.OrderedArguments.Count > arguments.OrderedArguments.Count - 1) {
+                index = arguments.OrderedArguments[^1];
+                arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
+            }
 
             List<DreamValue> argslist = arguments.GetAllArguments();
-
-            DreamValue index = arguments.GetArgument(argslist.Count - 1, "index");
             List<DreamValue> GradientList;
-            argslist.RemoveAt(argslist.Count - 1);
-            if(!arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
+
+            if (!arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
                 GradientList = argslist;
             }
             else {
@@ -594,6 +604,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<Tuple<Color, float>> colors = new();
 
             foreach (DreamValue value in GradientList) {
+                Console.WriteLine(value.ToString());
                 if (color_or_int) { // Int
                     if (value.TryGetValueAsFloat(out float flt)) {
                         color_or_int = false;
@@ -603,6 +614,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 /// Catch special things though these should actual be at the end of the list
+                /// TODO: Catch "Colorspace_HSV"
                 if (value.TryGetValueAsString(out string strvalue)) {
                     switch (strvalue) {
                         case "space":

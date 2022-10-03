@@ -234,113 +234,113 @@ namespace OpenDreamRuntime.Procs {
             
             foreach(char c in unformattedString)
             {
-                if (StringFormatEncoder.Decode(c,out var formatType)) {
-                    switch (formatType) {
-                        //Interp values
-                        case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
-                            formattedString.Append(interps[nextInterpIndex].Stringify());
-                            nextInterpIndex++;
-                            prevInterpIndex++;
-                            continue;
-                        }
-                        case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
-                            formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
-                            nextInterpIndex++;
-                            prevInterpIndex++;
-                            continue;
-                        }
-                        case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
-                        {
-                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                                formattedString.Append(dreamObject.GetNameUnformatted());
-                            }
-                            //Things that aren't objects just print nothing in this case
-                            nextInterpIndex++;
-                            prevInterpIndex++;
-                            continue;
-                        }
-                        //Macro values//
-                        //Prefix macros
-                        case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
-                        case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
-                        {
-                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
-                            {
-                                bool hasName = dreamObject.TryGetVariable("name", out var objectName);
-                                if (!hasName) continue;
-                                string nameStr = objectName.Stringify();
-                                if (!DreamObject.PropernessOfString(nameStr))
-                                {
-                                    formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
-                                }
-                            }
-                            continue;
-                        }
-                        case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
-                        case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
-                        {
-                            bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle; // saves some wordiness with the ternaries below
-                            if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
-                            {
-                                bool hasName = dreamObject.TryGetVariable("name", out var objectName);
-                                string nameStr = objectName.Stringify();
-                                if (!hasName) continue; // datums that lack a name var don't use articles
-                                if (DreamObject.PropernessOfString(nameStr)) continue; // Proper nouns don't need articles, I guess.
-
-                                if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
-                                {
-                                    if (gender.Stringify() == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
-                                    {
-                                        formattedString.Append(wasCapital ? "Some" : "some");
-                                        continue;
-                                    }
-                                }
-                                if (DreamObject.StringStartsWithVowel(nameStr))
-                                {
-                                    formattedString.Append(wasCapital ? "An " : "an ");
-                                    continue;
-                                }
-                                formattedString.Append(wasCapital ? "A " : "a ");
-                                continue;
-                            }
-                            continue;
-                        }
-                        //Suffix macros
-                        case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "He", "She", "They", "Tt" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "he", "she", "they", "it" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Her", "Their", "Its" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "her", "their", "its" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.ObjectPronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "him", "her", "them", "it" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "himself", "herself", "themself", "itself" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Hers", "Theirs", "Its" });
-                            break;
-                        case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
-                            HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
-                            break;
-                        default:
-                            if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
-                                //Likely an unimplemented text macro, ignore it
-                                break;
-                            }
-
-                            throw new Exception("Invalid special character");
-                    }
+                if (!StringFormatEncoder.Decode(c, out var formatType)) {
+                    formattedString.Append(c);
                     continue;
                 }
-                formattedString.Append(c);
+                switch (formatType) {
+                    //Interp values
+                    case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                        formattedString.Append(interps[nextInterpIndex].Stringify());
+                        nextInterpIndex++;
+                        prevInterpIndex++;
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
+                        formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
+                        nextInterpIndex++;
+                        prevInterpIndex++;
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
+                    {
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                            formattedString.Append(dreamObject.GetNameUnformatted());
+                        }
+                        //Things that aren't objects just print nothing in this case
+                        nextInterpIndex++;
+                        prevInterpIndex++;
+                        continue;
+                    }
+                    //Macro values//
+                    //Prefix macros
+                    case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
+                    case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
+                    {
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                        {
+                            bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                            if (!hasName) continue;
+                            string nameStr = objectName.Stringify();
+                            if (!DreamObject.PropernessOfString(nameStr))
+                            {
+                                formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
+                            }
+                        }
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
+                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
+                    {
+                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle; // saves some wordiness with the ternaries below
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                        {
+                            bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                            string nameStr = objectName.Stringify();
+                            if (!hasName) continue; // datums that lack a name var don't use articles
+                            if (DreamObject.PropernessOfString(nameStr)) continue; // Proper nouns don't need articles, I guess.
+
+                            if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
+                            {
+                                if (gender.Stringify() == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
+                                {
+                                    formattedString.Append(wasCapital ? "Some" : "some");
+                                    continue;
+                                }
+                            }
+                            if (DreamObject.StringStartsWithVowel(nameStr))
+                            {
+                                formattedString.Append(wasCapital ? "An " : "an ");
+                                continue;
+                            }
+                            formattedString.Append(wasCapital ? "A " : "a ");
+                            continue;
+                        }
+                        continue;
+                    }
+                    //Suffix macros
+                    case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "He", "She", "They", "Tt" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "he", "she", "they", "it" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Her", "Their", "Its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "her", "their", "its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.ObjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "him", "her", "them", "it" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "himself", "herself", "themself", "itself" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Hers", "Theirs", "Its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
+                        break;
+                    default:
+                        if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
+                            //Likely an unimplemented text macro, ignore it
+                            break;
+                        }
+
+                        throw new Exception("Invalid special character");
+                }
             }
 
             state.Push(new DreamValue(formattedString.ToString()));

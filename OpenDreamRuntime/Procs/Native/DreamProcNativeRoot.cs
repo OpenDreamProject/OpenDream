@@ -615,22 +615,25 @@ namespace OpenDreamRuntime.Procs.Native {
                     colors.Add(new Tuple<Color, float>(color, workingfloat));
                 }
             }
-            if (colors.Count == 1) {
+
+            if (!index.TryGetValueAsFloat(out float indx)) {
+                throw new Exception("Failed to parse index as float");
+            }
+            indx = Math.Max(0, indx);
+
+            if (colors.Count == 1 || indx == 0) {
                 return new DreamValue(colors[0].ToValueTuple().Item1.ToHex());
             }
             if (colors.Count == 0) {
                 throw new Exception("Failed to find any colors");
             }
 
-            if (!index.TryGetValueAsFloat(out float indx)) {
-                throw new Exception("Failed to parse index as float");
-            }
             /// None of these should be null however C# is "special"
             Tuple<Color, float> left = new Tuple<Color, float>(new Color(), 0);
             Tuple<Color, float> right = new Tuple<Color, float>(new Color(), 0);
             Tuple<Color, float> previous = new Tuple<Color, float>(new Color(), 0);
             foreach (var color in colors) {
-                if(color.Item2 > indx) {
+                if(color.Item2 >= indx) {
                     right = color;
                     left = previous;
                 }

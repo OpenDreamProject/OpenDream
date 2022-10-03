@@ -8,13 +8,22 @@
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
+	var/gradient_index = 0.5
 
 	New()
 		..()
 		loc = locate(5, 5, 1)
 
+	verb/increment_gradient()
+		gradient_index += 0.1
+		usr << "Gradient index increased to [gradient_index]"
+
+	verb/decrement_gradient()
+		gradient_index -= 0.1
+		usr << "Gradient index decreased to [gradient_index]"
+
 	verb/update_gradient()
-		usr << gradient(list(0, "#ff0000", 1, "#000000"), 0.5)
+		usr << gradient(list(0, "#ff0000", 0.5, "#00ff00", 1, "#000000"), gradient_index)
 
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)

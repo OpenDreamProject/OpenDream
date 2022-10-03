@@ -610,9 +610,11 @@ namespace OpenDreamRuntime.Procs.Native {
                             throw new Exception("Loops not supported yet");
                     }
                 }
-                if (ColorHelpers.TryParseColor(strvalue, out Color color, defaultAlpha: null) && !color_or_int) {
-                    color_or_int = true;
+                if (ColorHelpers.TryParseColor(strvalue, out Color color, defaultAlpha: null)) {
                     colors.Add(new Tuple<Color, float>(color, workingfloat));
+                    if (color_or_int)
+                        workingfloat = 1;
+                    color_or_int = true;
                 }
             }
 

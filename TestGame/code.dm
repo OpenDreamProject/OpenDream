@@ -14,7 +14,6 @@
 		loc = locate(5, 5, 1)
 
 	verb/update_gradient()
-		usr << "A"
 		usr << gradient(list(0, "#ff0000", 1, "#000000"), 0.5)
 
 	verb/shake()

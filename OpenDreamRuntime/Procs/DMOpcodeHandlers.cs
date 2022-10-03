@@ -272,7 +272,7 @@ namespace OpenDreamRuntime.Procs {
                             bool hasName = dreamObject.TryGetVariable("name", out var objectName);
                             if (!hasName) continue;
                             string nameStr = objectName.Stringify();
-                            if (!DreamObject.PropernessOfString(nameStr))
+                            if (!DreamObject.StringIsProper(nameStr))
                             {
                                 formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
                             }
@@ -288,7 +288,7 @@ namespace OpenDreamRuntime.Procs {
                             bool hasName = dreamObject.TryGetVariable("name", out var objectName);
                             string nameStr = objectName.Stringify();
                             if (!hasName) continue; // datums that lack a name var don't use articles
-                            if (DreamObject.PropernessOfString(nameStr)) continue; // Proper nouns don't need articles, I guess.
+                            if (DreamObject.StringIsProper(nameStr)) continue; // Proper nouns don't need articles, I guess.
 
                             if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
                             {

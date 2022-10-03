@@ -153,7 +153,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         /// <returns>true if /proper noun formatting should be used, false if \improper</returns>
-        public static bool PropernessOfString(string str) // This could probably be placed elsewhere. Not sure where tho
+        public static bool StringIsProper(string str) // This could probably be placed elsewhere. Not sure where tho
         {
             if (str.Length == 0)
                 return true;
@@ -169,6 +169,8 @@ namespace OpenDreamRuntime.Objects {
                         break;
                 }
             }
+            if (char.IsWhiteSpace(str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
+                return true;
             return char.IsUpper(str[0]);
         }
 
@@ -196,7 +198,7 @@ namespace OpenDreamRuntime.Objects {
         public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
-            bool isProper = PropernessOfString(name);
+            bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
             if(!isProper)
             {

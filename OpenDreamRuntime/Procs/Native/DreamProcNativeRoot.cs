@@ -574,7 +574,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             /// TODO: Cleanup the index argument code
-            /// TODO: Support loop
             /// TODO: Add colorspaces
 
             /// We dont want keyword arguments screwing with this

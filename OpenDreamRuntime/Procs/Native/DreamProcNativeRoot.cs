@@ -589,28 +589,14 @@ namespace OpenDreamRuntime.Procs.Native {
             /// true: look for int: false look for color
             bool color_or_int = true;
 
-            Color gradient_left = new();
-            float gradient_left_num = 0;
-            Color gradient_right = new();
-            float gradient_right_num = 1;
-
-            float lastnum = 0;
-            List<Color> colors = new();
+            float workingfloat = 0;
+            List<Tuple<Color, float>> colors = new();
 
             foreach (DreamValue value in GradientList) {
                 if (color_or_int) { // Int
                     if (value.TryGetValueAsFloat(out float flt)) {
                         color_or_int = false;
-                        if (index.TryGetValueAsFloat(out float _i)) {
-                            if (flt > _i) {
-                                gradient_right = colors.LastOrDefault();
-                                gradient_right_num = flt;
-                                gradient_left = colors.ElementAtOrDefault(colors.Count - 2);
-                                gradient_left_num = lastnum;
-                                break;
-                            }
-                        }
-                        lastnum = flt;
+                        workingfloat = flt;
                         continue; // Succesful parse
                     }
                 }
@@ -626,33 +612,44 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
                 if (ColorHelpers.TryParseColor(strvalue, out Color color, defaultAlpha: null) && !color_or_int) {
                     color_or_int = true;
-                    colors.Add(color);
+                    colors.Add(new Tuple<Color, float>(color, workingfloat));
                 }
             }
             if (colors.Count == 1) {
-                return new DreamValue("one color");
-                return new DreamValue(colors[0].ToHex());
+                return new DreamValue(colors[0].ToValueTuple().Item1.ToHex());
             }
             if (colors.Count == 0) {
-                return new DreamValue("No colors");
+                throw new Exception("Failed to find any colors");
             }
-
-            float rleft = gradient_left.R;
-            float gleft = gradient_left.G;
-            float bleft = gradient_left.B;
-            float aleft = gradient_left.A;
-
-            float rright = gradient_right.R;
-            float gright = gradient_right.G;
-            float bright = gradient_right.B;
-            float aright = gradient_right.A;
 
             if (!index.TryGetValueAsFloat(out float indx)) {
                 throw new Exception("Failed to parse index as float");
             }
+            /// None of these should be null however C# is "special"
+            Tuple<Color, float> left = new Tuple<Color, float>(new Color(), 0);
+            Tuple<Color, float> right = new Tuple<Color, float>(new Color(), 0);
+            Tuple<Color, float> previous = new Tuple<Color, float>(new Color(), 0);
+            foreach (var color in colors) {
+                if(color.Item2 > indx) {
+                    right = color;
+                    left = previous;
+                }
+                previous = color;
+            }
 
-            float _mx = Math.Max(gradient_left_num, gradient_right_num);
-            float _mn = Math.Min(gradient_left_num, gradient_right_num);
+            float rleft = left.Item1.R;
+            float gleft = left.Item1.G;
+            float bleft = left.Item1.B;
+            float aleft = left.Item1.A;
+
+            float rright = right.Item1.R;
+            float gright = right.Item1.G;
+            float bright = right.Item1.B;
+            float aright = right.Item1.A;
+
+
+            float _mx = Math.Max(left.Item2, right.Item2);
+            float _mn = Math.Min(left.Item2, right.Item2);
 
             float normalized = (_mx - _mn) / (_mx - _mn) * (indx - _mx) + _mx;
 

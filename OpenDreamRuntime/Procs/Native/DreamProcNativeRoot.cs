@@ -579,12 +579,25 @@ namespace OpenDreamRuntime.Procs.Native {
 
             /// We dont want keyword arguments screwing with this
             DreamValue index = new();
+
+            int colorspace = 0;
+            bool loop = false;
+            float maxvalue = 1;
+
             if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
                 index = argumentValue;
             }
             if (arguments.OrderedArguments.Count > arguments.OrderedArguments.Count - 1) {
                 index = arguments.OrderedArguments[^1];
                 arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
+            }
+
+            foreach(KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
+                switch(value.Key) {
+                    case "space":
+                        throw new Exception("Colorspaces are not supported");
+
+                }
             }
 
             List<DreamValue> argslist = arguments.GetAllArguments();
@@ -604,11 +617,11 @@ namespace OpenDreamRuntime.Procs.Native {
             List<Tuple<Color, float>> colors = new();
 
             foreach (DreamValue value in GradientList) {
-                Console.WriteLine(value.ToString());
                 if (color_or_int) { // Int
                     if (value.TryGetValueAsFloat(out float flt)) {
                         color_or_int = false;
                         workingfloat = flt;
+                        maxvalue = Math.Max(maxvalue, flt);
                         continue; // Succesful parse
                     }
                 }
@@ -617,10 +630,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 /// TODO: Catch "Colorspace_HSV"
                 if (value.TryGetValueAsString(out string strvalue)) {
                     switch (strvalue) {
-                        case "space":
-                            throw new Exception("Colorspaces are not supported");
                         case "loop":
-                            throw new Exception("Loops not supported yet");
+                            loop = true;
+                            continue;
                     }
                 }
                 if (ColorHelpers.TryParseColor(strvalue, out Color color, defaultAlpha: null)) {
@@ -641,6 +653,10 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             if (colors.Count == 0) {
                 throw new Exception("Failed to find any colors");
+            }
+
+            if (loop && maxvalue < indx) {
+                indx %= maxvalue;
             }
 
             /// None of these should be null however C# is "special"

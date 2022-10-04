@@ -1011,8 +1011,10 @@ namespace OpenDreamRuntime.Procs.Native {
             for (int i = 1; i < values.Count; i++) {
                 DreamValue value = values[i];
 
-                if (value == DreamValue.Null) {
+                if (max == DreamValue.Null) {
                     max = value;
+                } else if (value == DreamValue.Null) {
+                    continue;
                 } else if (value.TryGetValueAsFloat(out var lFloat) && max.TryGetValueAsFloat(out float rFloat)) {
                     if (lFloat > rFloat) max = value;
                 } else if (value.TryGetValueAsString(out var lString) && max.TryGetValueAsString(out var rString)) {

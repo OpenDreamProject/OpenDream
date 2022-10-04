@@ -584,8 +584,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
                 index = argumentValue;
-            }
-            if (arguments.OrderedArguments.Count > arguments.OrderedArguments.Count - 1) {
+                arguments.NamedArguments.Remove("index");
+            } else if (arguments.OrderedArguments.Count > arguments.OrderedArguments.Count - 1) {
                 index = arguments.OrderedArguments[^1];
                 arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
             }
@@ -593,19 +593,18 @@ namespace OpenDreamRuntime.Procs.Native {
             foreach(KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
                 switch(value.Key) {
                     case "space":
+                        arguments.NamedArguments.Remove(value.Key);
                         throw new Exception("Colorspaces are not supported");
-
                 }
             }
 
             List<DreamValue> argslist = arguments.GetAllArguments();
             List<DreamValue> GradientList;
 
-            if (!arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
-                GradientList = argslist;
-            }
-            else {
+            if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
                 GradientList = gradlist.GetValues();
+            } else {
+                GradientList = argslist;
             }
 
             /// true: look for int: false look for color

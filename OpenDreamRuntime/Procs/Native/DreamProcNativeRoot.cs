@@ -602,6 +602,15 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> GradientList;
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
+                DreamValue colorspacelookup = gradlist.GetValue(new DreamValue("space"));
+                if (colorspacelookup.TryGetValueAsInteger(out int space)) {
+                    colorspace = space;
+                    gradlist.RemoveValue(new DreamValue("space"));
+                    throw new Exception("Colorspaces are not supported");
+                }
+                else if (colorspacelookup != DreamValue.Null) {
+                    throw new Exception("Unknown colorspace " + colorspacelookup);
+                }
                 GradientList = gradlist.GetValues();
             } else {
                 GradientList = argslist;

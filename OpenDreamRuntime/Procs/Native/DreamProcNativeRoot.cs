@@ -1858,11 +1858,17 @@ namespace OpenDreamRuntime.Procs.Native {
                     if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null || typeObj is DreamList) {
                         if (type.TryGetValueAsString(out var typeString)) {
                             var stringToPath = new DreamPath(typeString);
-                            if (DreamManager.ObjectTree.HasTreeEntry(stringToPath)) {
-                                typePath = stringToPath;
-                            } else {
+                            if (stringToPath.LastElement == "proc") {
+                                DreamPath objectPath = stringToPath.AddToPath("..");
+                                if (!DreamManager.ObjectTree.HasTreeEntry(objectPath))
+                                {
+                                    continue;
+                                }
+                            }
+                            else if (!DreamManager.ObjectTree.HasTreeEntry(stringToPath)) {
                                 continue;
                             }
+                            typePath = stringToPath;
                         } else {
                             continue;
                         }

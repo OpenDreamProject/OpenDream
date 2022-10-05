@@ -14,7 +14,6 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using Robust.Shared.Utility;
-using Robust.Shared.Maths;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {

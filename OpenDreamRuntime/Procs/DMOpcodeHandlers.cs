@@ -242,14 +242,14 @@ namespace OpenDreamRuntime.Procs {
                     //Interp values
                     case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
                         formattedString.Append(interps[nextInterpIndex].Stringify());
+                        prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
-                        prevInterpIndex++;
                         continue;
                     }
                     case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
                         formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
+                        //suffix macro marker is not updated because suffixes do not point to \ref[] interpolations
                         nextInterpIndex++;
-                        prevInterpIndex++;
                         continue;
                     }
                     case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
@@ -258,8 +258,8 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(dreamObject.GetNameUnformatted());
                         }
                         //Things that aren't objects just print nothing in this case
+                        prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
-                        prevInterpIndex++;
                         continue;
                     }
                     //Macro values//

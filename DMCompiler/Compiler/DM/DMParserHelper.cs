@@ -56,13 +56,17 @@ namespace DMCompiler.Compiler.DM {
 
         /// <summary> Small helper function for <see cref="ExpressionFromString"/>, for macros that require a preceding expression in the string.</summary>
         /// <returns><see langword="true"/> if error occurs.</returns>
-        private bool CheckInterpolation(List<DMASTExpression>? interpolationValues, string mack)
+        private bool CheckInterpolation(bool hasSeenNonRefInterpolation, List<DMASTExpression>? interpolationValues, string mack)
         {
-            if (interpolationValues == null || interpolationValues.Count == 0)
-            {
+            if (interpolationValues == null || interpolationValues.Count == 0) {
                 Error($"Macro \"\\{mack}\" requires preceding interpolated expression");
                 return true;
             }
+            if(!hasSeenNonRefInterpolation) { // More elaborate error for a more elaborate situation
+                Error($"Macro \"\\{mack}\" requires preceding interpolated expression that is not a reference");
+                return true;
+            }
+
             return false;
         }
 
@@ -82,6 +86,7 @@ namespace DMCompiler.Compiler.DM {
             StringBuilder? insideBrackets = null;
             StringFormatEncoder.FormatSuffix currentInterpolationType = StringFormatEncoder.InterpolationDefault;
             string usedPrefixMacro = null; // A string holding the name of the last prefix macro (\the, \a etc.) used, for error presentation poipoises
+            bool hasSeenNonRefInterpolation = false;
             for (int i = 0; i < tokenValue.Length; i++)
             {
                 char c = tokenValue[i];
@@ -144,6 +149,7 @@ namespace DMCompiler.Compiler.DM {
                                 {
                                     interpolationValues.Add(null);
                                 }
+                                hasSeenNonRefInterpolation = hasSeenNonRefInterpolation || currentInterpolationType != StringFormatEncoder.FormatSuffix.ReferenceOfValue;
                                 stringBuilder.Append(StringFormatEncoder.Encode(currentInterpolationType));
 
                                 currentInterpolationType = StringFormatEncoder.InterpolationDefault;
@@ -229,21 +235,21 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "He":
                                     case "She":
-                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperSubjectPronoun));
                                         break;
                                     case "he":
                                     case "she":
-                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerSubjectPronoun));
                                         break;
 
                                     case "His":
-                                        if (CheckInterpolation(interpolationValues, "His")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "His")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective));
                                         break;
                                     case "his":
-                                        if (CheckInterpolation(interpolationValues, "his")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "his")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective));
                                         break;
 
@@ -251,7 +257,7 @@ namespace DMCompiler.Compiler.DM {
                                         Warning("\"\\Him\" is not an available text macro. Coercing macro into \"\\him\"");
                                         goto case "him"; // Fallthrough!
                                     case "him":
-                                        if (CheckInterpolation(interpolationValues, "him")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "him")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ObjectPronoun));
                                         break;
 
@@ -262,28 +268,28 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "himself":
                                     case "herself":
-                                        if (CheckInterpolation(interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ReflexivePronoun));
                                         break;
 
                                     case "Hers":
-                                        if (CheckInterpolation(interpolationValues, "Hers")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "Hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessivePronoun));
                                         break;
                                     case "hers":
-                                        if (CheckInterpolation(interpolationValues, "hers")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessivePronoun));
                                         break;
                                     //Plurals, ordinals, etc
                                     //(things that hug, as a suffix, the [] that they reference)
                                     case "s":
                                         unimplemented = true;
-                                        if (CheckInterpolation(interpolationValues, "s")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "s")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.PluralSuffix));
                                         break;
                                     case "th":
                                         unimplemented = true;
-                                        if (CheckInterpolation(interpolationValues, "th")) break;
+                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "th")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.OrdinalIndicator));
                                         break;
                                     default:

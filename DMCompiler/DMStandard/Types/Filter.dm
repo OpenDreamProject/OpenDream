@@ -25,45 +25,45 @@
 
 
 /dm_filter/angular_blur
-	type = "angular_blur"
+	const/type = "angular_blur"
 
 
 /dm_filter/bloom
-	type = "bloom"
+	const/type = "bloom"
 
 /dm_filter/blur //gaussian blur
-	type = "blur"
+	const/type = "blur"
 
 /dm_filter/color
-	type = "color"
+	const/type = "color"
 
 
 /dm_filter/displace
-	type = "displace"
+	const/type = "displace"
 
 /dm_filter/drop_shadow
-	type = "drop_shadow"
+	const/type = "drop_shadow"
 
 /dm_filter/layer
-	type = "layer"
+	const/type = "layer"
 
 /dm_filter/motion_blur
-	type = "motion_blur"
+	const/type = "motion_blur"
 
 /dm_filter/outline
-	type = "outline"
+	const/type = "outline"
 
 /dm_filter/radial_blur
-	type = "radial_blur"
+	const/type = "radial_blur"
 
 /dm_filter/rays
-	type = "rays"
+	const/type = "rays"
 
 /dm_filter/ripple
-	type = "ripple"
+	const/type = "ripple"
 
 /dm_filter/wave
-	type = "wave"
+	const/type = "wave"
 
 /dm_filter/greyscale //OD exclusive filter, definitely not just for debugging
-	type = "greyscale"
+	const/type = "greyscale"

@@ -1,110 +1,69 @@
 
-/filter
-    var/type
+/dm_filter
+	var/type
+	var/x
+	var/y 
+	var/icon
+	var/render_source
+	var/flags
+	var/size
+	var/threshold
+	var/offset
+	var/alpha
+	var/color
+	var/space
+	var/transform
+	var/blend_mode
+	var/factor
+	var/density
+	var/repeat
+	var/radius
+	var/falloff
 
-/filter/alpha
-    type = "alpha"
-    var/x
-    var/y 
-    var/icon
-    var/render_source
-    var/flags
+/dm_filter/alpha
+	const/type = "alpha"
 
-/filter/angular_blur
-    type = "angular_blur"
-    var/x
-    var/y 
-    var/size
 
-/filter/bloom
-    type = "bloom"
-    var/threshold
-    var/size
-    var/offset
-    var/alpha
+/dm_filter/angular_blur
+	type = "angular_blur"
 
-/filter/blur //gaussian blur
-    type = "blur"
-    var/size
 
-/filter/color
-    type = "color"
-    var/color
-    var/space
+/dm_filter/bloom
+	type = "bloom"
 
-/filter/displace
-    type = "displace"
-    var/x
-    var/y
-    var/size
-    var/icon
-    var/render_source
+/dm_filter/blur //gaussian blur
+	type = "blur"
 
-/filter/drop_shadow
-    type = "drop_shadow"
-    var/x
-    var/y
-    var/size
-    var/offset
-    var/color
+/dm_filter/color
+	type = "color"
 
-/filter/layer
-    type = "layer"
-    var/x
-    var/y
-    var/icon
-    var/render_source
-    var/flags
-    var/color
-    var/transform
-    var/blend_mode
-        
-/filter/motion_blur
-    type = "motion_blur"
-    var/x        
-    var/y
 
-/filter/outline
-    type = "outline"
-    var/size
-    var/color
-    var/flags
+/dm_filter/displace
+	type = "displace"
 
-/filter/radial_blur
-    type = "radial_blur"
-    var/x 
-    var/y
-    var/size
+/dm_filter/drop_shadow
+	type = "drop_shadow"
 
-/filter/rays
-    type = "rays"
-    var/x
-    var/y
-    var/size
-    var/color
-    var/offset
-    var/density
-    var/threshold
-    var/factor
-    var/flags
+/dm_filter/layer
+	type = "layer"
 
-/filter/ripple
-    type = "ripple"
-    var/x
-    var/y
-    var/size
-    var/repeat
-    var/radius
-    var/falloff
-    var/flags
+/dm_filter/motion_blur
+	type = "motion_blur"
 
-/filter/wave
-    type = "wave"
-    var/x
-    var/y
-    var/size
-    var/offset
-    var/flags
-        
-/filter/greyscale //OD exclusive filter, definitely not just for debugging
-    type = "greyscale"
+/dm_filter/outline
+	type = "outline"
+
+/dm_filter/radial_blur
+	type = "radial_blur"
+
+/dm_filter/rays
+	type = "rays"
+
+/dm_filter/ripple
+	type = "ripple"
+
+/dm_filter/wave
+	type = "wave"
+
+/dm_filter/greyscale //OD exclusive filter, definitely not just for debugging
+	type = "greyscale"

@@ -112,8 +112,9 @@
 	verb/outline_change_test()
 		set category = "Test"
 		if(length(src.filters))
-			src.filters[1]:color = rgb(0,255,0)
-			src.filters[1]:size = 4
+			var/dm_filter/F = src.filters[1]
+			F.color = rgb(0,255,0)
+			F.size = 4
 			usr << "color & size set"
 		else
 			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))

@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using System.Globalization;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -152,7 +153,7 @@ namespace OpenDreamRuntime.Objects {
             return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
-        /// <returns>true if /proper noun formatting should be used, false if \improper</returns>
+        /// <returns>true if \proper noun formatting should be used, false if \improper</returns>
         public static bool StringIsProper(string str) // This could probably be placed elsewhere. Not sure where tho
         {
             if (str.Length == 0)
@@ -178,8 +179,8 @@ namespace OpenDreamRuntime.Objects {
         {
             if (str.Length == 0)
                 return false;
-            char start = str.Substring(0, 1).ToLower()[0];
-            switch(start)
+            char start = char.ToLower(str[0], CultureInfo.InvariantCulture);
+            switch (start)
             {
                 case 'a':
                 case 'e':

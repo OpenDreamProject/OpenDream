@@ -209,7 +209,7 @@ namespace OpenDreamRuntime.Procs {
             while (_pc < _proc.Bytecode.Length) {
                 int opcode = _proc.Bytecode[_pc++];
                 if (_opcodeHandlers[opcode] is null)
-                    throw new Exception($"Attempted to call non-existant Opcode method for opcode #{opcode}");
+                    throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
                 ProcStatus? status = _opcodeHandlers[opcode].Invoke(this);
                 if (status != null) {
                     if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {

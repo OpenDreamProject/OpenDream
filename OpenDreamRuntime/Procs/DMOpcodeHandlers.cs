@@ -197,12 +197,14 @@ namespace OpenDreamRuntime.Procs {
             {
                 return;
             }
-            bool hasGender = dreamObject.TryGetVariable("gender", out var objectName); // NOTE: in DM, this has to be a native property.
+            bool hasGender = dreamObject.TryGetVariable("gender", out var objectGender); // NOTE: in DM, this has to be a native property.
             if (!hasGender)
             {
                 return;
             }
-            string genderStr = objectName.Stringify(); // FIXME: We should be more supportive of invalid values for var/gender.
+            if (!objectGender.TryGetValueAsString(out var genderStr))
+                return;
+
             switch(genderStr)
             {
                 case "male":
@@ -292,7 +294,7 @@ namespace OpenDreamRuntime.Procs {
 
                             if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
                             {
-                                if (gender.Stringify() == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
+                                if (gender.TryGetValueAsString(out var str) && str == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
                                 {
                                     formattedString.Append(wasCapital ? "Some" : "some");
                                     continue;

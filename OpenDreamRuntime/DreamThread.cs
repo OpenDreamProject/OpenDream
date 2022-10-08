@@ -61,6 +61,7 @@ namespace OpenDreamRuntime {
         }
 
         public DreamValue GetField(string field) {
+            // TODO: Figure out what byond does when these are null
             switch (field) {
                 case "name":
                     return new DreamValue(VerbName);

@@ -667,14 +667,28 @@ namespace OpenDreamRuntime.Procs.Native {
             /// None of these should be null however C# is "special"
             Tuple<Color, float> left = new(new Color(), 0);
             Tuple<Color, float> right = new(new Color(), 1);
-            Tuple<Color, float> previous = new(new Color(), 0);
+
+            bool leftexists = false;
+            bool rightexists = false;
+
             foreach (var color in colors) {
                 if(color.Item2 >= indx) {
                     right = color;
-                    left = previous;
+                    rightexists = true;
+
                     break;
                 }
-                previous = color;
+                left = color;
+                leftexists = true;
+            }
+
+
+            // Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
+            if (!leftexists) {
+                left = right;
+            }
+            else if(!rightexists) {
+                right = left;
             }
 
             float index_max = Math.Max(left.Item2, right.Item2);

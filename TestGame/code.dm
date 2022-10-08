@@ -25,7 +25,7 @@
 		usr << "Gradient index decreased to [gradient_index]"
 
 	verb/update_gradient()
-		usr << gradient(0, "#ff0000", 0.5, "#00ff00", 1, "loop", "#000000", index=gradient_index)
+		usr << gradient(list(0, "#ff0000", 0.99, "#00ff00", 1, "#cece00"), gradient_index)
 
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)

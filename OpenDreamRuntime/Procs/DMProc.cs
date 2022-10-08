@@ -450,9 +450,27 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
-                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
-                    if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
+                    DreamValue fieldValue;
+                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null) {
+                        if (!owner.TryGetValueAsPath(out var ownerPath) ||
+                            !ownerPath.SplitObjAndProc(out var obj, out var procName) || obj is null || procName is null) {
+                            throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                        }
+
+                        DreamProc proc;
+
+                        if (obj == DreamPath.Root) {
+                            if (!DreamManager.ObjectTree.TryGetGlobalProc(procName, out proc)) {
+                                throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                            }
+                        } else {
+                            var objDef = DreamManager.ObjectTree.GetObjectDefinition(obj.Value);
+                            proc = objDef.GetProc(procName);
+                        }
+
+                        fieldValue = proc!.GetField(reference.Name);
+                    }
+                    else if (!ownerObj.TryGetVariable(reference.Name, out fieldValue))
                         throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
                     return fieldValue;

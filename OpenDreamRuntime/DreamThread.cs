@@ -59,6 +59,21 @@ namespace OpenDreamRuntime {
             context.PushProcState(state);
             return context.Resume();
         }
+
+        public DreamValue GetField(string field) {
+            switch (field) {
+                case "name":
+                    return new DreamValue(VerbName);
+                case "category":
+                    return new DreamValue(VerbCategory);
+                case "description":
+                    return new DreamValue(VerbDesc);
+                case "invisibility":
+                    return new DreamValue(Invisibility);
+                default:
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+            }
+        }
     }
 
     sealed class CancellingRuntime : Exception {

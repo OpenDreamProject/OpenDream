@@ -683,7 +683,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
 
-            // Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
+            /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists) {
                 if (right.Item1.A == 1) {
                     return new DreamValue(right.Item1.ToHexNoAlpha());

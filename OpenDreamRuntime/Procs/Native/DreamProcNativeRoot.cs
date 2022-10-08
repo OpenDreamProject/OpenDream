@@ -653,9 +653,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             indx = Math.Max(0, indx);
 
-            if (colors.Count == 1 || indx == 0) {
-                return new DreamValue(colors[0].ToValueTuple().Item1.ToHex());
-            }
             if (colors.Count == 0) {
                 throw new Exception("Failed to find any colors");
             }
@@ -685,10 +682,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists) {
-                left = right;
+                if (right.Item1.A == 1) {
+                    return new DreamValue(right.Item1.ToHexNoAlpha());
+                }
+                return new DreamValue(right.Item1.ToHex());
             }
             else if(!rightexists) {
-                right = left;
+
+                if (left.Item1.A == 1) {
+                    return new DreamValue(left.Item1.ToHexNoAlpha());
+                }
+                return new DreamValue(left.Item1.ToHex());
             }
 
             float index_max = Math.Max(left.Item2, right.Item2);

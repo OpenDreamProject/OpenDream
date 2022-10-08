@@ -579,7 +579,6 @@ namespace OpenDreamRuntime.Procs.Native {
 
             int colorspace = 0;
             bool loop = false;
-            float maxvalue = 1;
 
             if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
                 index = argumentValue;
@@ -619,6 +618,9 @@ namespace OpenDreamRuntime.Procs.Native {
             bool color_or_int = true;
 
             float workingfloat = 0;
+            float maxvalue = 1;
+            float minvalue = 0;
+
             List<Tuple<Color, float>> colors = new();
 
             foreach (DreamValue value in GradientList) {
@@ -627,6 +629,7 @@ namespace OpenDreamRuntime.Procs.Native {
                         color_or_int = false;
                         workingfloat = flt;
                         maxvalue = Math.Max(maxvalue, flt);
+                        minvalue = Math.Min(minvalue, flt);
                         continue; // Succesful parse
                     }
                 }
@@ -651,7 +654,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!index.TryGetValueAsFloat(out float indx)) {
                 throw new Exception("Failed to parse index as float");
             }
-            indx = Math.Max(0, indx);
+            indx = Math.Max(minvalue, indx);
 
             if (colors.Count == 0) {
                 throw new Exception("Failed to find any colors");

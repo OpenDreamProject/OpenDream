@@ -1777,6 +1777,15 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
+            if (first.Value == null) {
+                // nulls are equal to each other
+                if (second.Value == null)
+                    return true;
+                // null != 0 or ""
+                if (second.Type is DreamValue.DreamValueType.Float or DreamValue.DreamValueType.String) {
+                    return false;
+                }
+            }
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
         }
 
@@ -1810,6 +1819,9 @@ namespace OpenDreamRuntime.Procs {
                     if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                         return 0 > second.GetValueAsFloat();
                     }
+                    if (second.Value == null) {
+                        return false;
+                    }
                     throw new Exception("Invalid greater than comparison on " + first + " and " + second);
                 }
             }
@@ -1826,6 +1838,9 @@ namespace OpenDreamRuntime.Procs {
                 default: {
                     if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
                         return 0 < second.GetValueAsFloat();
+                    }
+                    if (second.Value == null) {
+                        return false;
                     }
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }

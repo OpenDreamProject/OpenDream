@@ -1,9 +1,5 @@
 
 /proc/RunTest()
-	var/n = null
-	var/one = 1
-	var/two = 2
-
 	// nulls
 	ASSERT((null > 1)		== FALSE)
 	ASSERT((null > 0)		== FALSE)

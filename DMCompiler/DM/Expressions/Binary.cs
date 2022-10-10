@@ -617,7 +617,11 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             proc.PushReferenceValue(reference);
-            RHS.EmitPushValue(dmObject, proc);
+            if (RHS.TryAsConstant(out Constant constValue)) { // RHS could be a const-evaluable expr
+                constValue.EmitPushValue(dmObject, proc);
+            } else {
+                RHS.EmitPushValue(dmObject, proc);
+            }
             proc.BitShiftLeft();
             proc.Assign(reference);
         }

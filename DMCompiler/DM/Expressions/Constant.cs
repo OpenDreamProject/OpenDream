@@ -83,6 +83,22 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant BinaryOr(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
+
+        public virtual Constant GreaterThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} > {rhs}\" is invalid");
+        }
+
+        public virtual Constant GreaterThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} >= {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} < {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        }
         #endregion
     }
 
@@ -99,6 +115,28 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             return true;
+        }
+
+        public override Constant GreaterThan(Constant rhs) {
+            return new Number(Location, 0); // false
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            if (rhs.IsTruthy()) {
+                return new Number(Location, 0); // false
+            }
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant LessThan(Constant rhs) {
+            if (rhs.IsTruthy()) {
+                return new Number(Location, 1); // true
+            }
+            return new Number(Location, 0); // false
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            return new Number(Location, 1); // true
         }
     }
 
@@ -222,6 +260,29 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
+        }
+
+        public override Constant GreaterThan(Constant rhs) {
+            if (rhs.IsTruthy()) {
+                return new Number(Location, 0); // false
+            }
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            return new Number(Location, 1); // true
+        }
+
+        public override Constant LessThan(Constant rhs) {
+
+            return new Number(Location, 0); // false
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            if (rhs.IsTruthy()) {
+                return new Number(Location, 1); // true
+            }
+            return new Number(Location, 0); // false
         }
     }
 

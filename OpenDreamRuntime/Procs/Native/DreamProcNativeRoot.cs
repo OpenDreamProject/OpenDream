@@ -591,8 +591,14 @@ namespace OpenDreamRuntime.Procs.Native {
             foreach(KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
                 switch(value.Key) {
                     case "space":
-                        arguments.NamedArguments.Remove(value.Key);
-                        throw new Exception("Colorspaces are not supported");
+                        if (value.Value.TryGetValueAsInteger(out int space)) {
+                            colorspace = space;
+                            arguments.NamedArguments.Remove("space");
+                            throw new Exception("Colorspaces are not supported");
+                        } else if (value.Value != DreamValue.Null) {
+                            throw new Exception("Unknown colorspace " + space);
+                        }
+                        continue;
                 }
             }
 

@@ -90,7 +90,9 @@ namespace OpenDreamRuntime.Resources
 
         public bool CopyFile(string sourceFilePath, string destinationFilePath) {
             try {
-                File.Copy(Path.Combine(RootPath, sourceFilePath), Path.Combine(RootPath, destinationFilePath));
+                var dest = Path.Combine(RootPath, destinationFilePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                File.Copy(Path.Combine(RootPath, sourceFilePath), dest);
             } catch (Exception) {
                 return false;
             }

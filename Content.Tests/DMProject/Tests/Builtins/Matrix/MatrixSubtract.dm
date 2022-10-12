@@ -1,4 +1,3 @@
-﻿#include "Shared/MatrixEquals.dm"
 
 /proc/RunTest()
 	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
@@ -6,5 +5,5 @@
 
 	M.Subtract(N)
 
-	if(!M.Equals(matrix(-6, -6, -6, -6, -6, -6)))
+	if(M ~! matrix(-6, -6, -6, -6, -6, -6))
 		CRASH("Unexpected matrix/Subtract result: [json_encode(M)]")

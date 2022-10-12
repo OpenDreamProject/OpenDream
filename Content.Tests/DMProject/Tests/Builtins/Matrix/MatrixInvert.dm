@@ -9,9 +9,9 @@
 	M.Invert()
 
 	if(!M.Equals(matrix(-1.6666667, 0.6666667, 1, 1.3333334, -0.33333334, -2)))
-		CRASH("Unexpected matrix/Invert result [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+		CRASH("Unexpected matrix/Invert result: [json_encode(M)]")
 
 	M.Invert()
 
 	if(!M.Equals(matrix(1, 2, 3, 4, 5, 6)))
-		CRASH("Unexpected matrix/Invert result2 [M.a] [M.b] [M.c] [M.d] [M.e] [M.f]")
+		CRASH("Unexpected matrix/Invert result2: [json_encode(M)]")

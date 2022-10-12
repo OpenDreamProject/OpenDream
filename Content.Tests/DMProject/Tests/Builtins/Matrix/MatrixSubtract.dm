@@ -7,4 +7,4 @@
 	M.Subtract(N)
 
 	if(!M.Equals(matrix(-6, -6, -6, -6, -6, -6)))
-		CRASH("Unexpected matrix/Subtract result")
+		CRASH("Unexpected matrix/Subtract result: [json_encode(M)]")

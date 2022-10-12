@@ -7,4 +7,4 @@
 	M.Add(N)
 
 	if(!M.Equals(matrix(8, 10, 12, 14, 16, 18)))
-		CRASH("Unexpected matrix/Add result")
+		CRASH("Unexpected matrix/Add result: [json_encode(M)]")

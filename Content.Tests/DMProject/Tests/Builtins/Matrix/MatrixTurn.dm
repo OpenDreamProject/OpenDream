@@ -6,4 +6,4 @@
 	M.Turn(90)
 
 	if(!M.Equals(matrix(4, 5, 6, -1, -2, -3)))
-		CRASH("Unexpected matrix/Turn result")
+		CRASH("Unexpected matrix/Turn result: [json_encode(M)]")

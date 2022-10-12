@@ -6,4 +6,4 @@
 	M.Translate(2)
 
 	if(!M.Equals(matrix(1, 2, 5, 4, 5, 8)))
-		CRASH("Unexpected matrix/Translate result")
+		CRASH("Unexpected matrix/Translate result: [json_encode(M)]")

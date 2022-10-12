@@ -6,4 +6,4 @@
 	M.Scale(2)
 
 	if(!M.Equals(matrix(2, 4, 6, 8, 10, 12)))
-		CRASH("Unexpected matrix/Scale result")
+		CRASH("Unexpected matrix/Scale result: [json_encode(M)]")

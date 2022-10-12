@@ -996,8 +996,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
+            if (first.TryGetValueAsFloat(out var floatFirst) && second.TryGetValueAsFloat(out var floatSecond)) {
+                state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
             } else {
                 throw new Exception("Invalid power operation on " + first + " and " + second);
             }

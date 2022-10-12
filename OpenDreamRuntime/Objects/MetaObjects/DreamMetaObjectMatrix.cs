@@ -95,5 +95,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorMultiply(a, b);
         }
+
+        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+            if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
+                string elements = "abcdef";
+                for (int i = 0; i < elements.Length; i++) {
+                    left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
+                    right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
+                    if (leftValue != rightValue)
+                        return DreamValue.False;
+                }
+                return DreamValue.True;
+            }
+            return a.Equals(b) ? DreamValue.True : DreamValue.False;
+        }
     }
 }

@@ -1899,21 +1899,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out var firstList) && second.TryGetValueAsDreamList(out var secondList))
-            {
-                if (firstList.GetLength() != secondList.GetLength()) return false;
-                var firstValues = firstList.GetValues();
-                var secondValues = secondList.GetValues();
-                for(var i = 0; i < firstValues.Count; i++)
-                {
-                    if (!firstValues[i].Equals(secondValues[i])) return false;
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject!.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second).IsTruthy();
                 }
-
-                return true;
             }
-
-
-            throw new NotImplementedException("Equivalence comparison for " + first + " and " + second + " is not implemented");
+            // Behaviour is otherwise equivalent (pun intended) to ==
+            return IsEqual(first, second);
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

@@ -47,14 +47,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
                             StringBuilder tokenTextBuilder = new StringBuilder();
 
-                            tokenTextBuilder.Append('"');
+                            // Use a raw string. Use '#' because that can't appear in an expression.
+                            tokenTextBuilder.Append("@#");
                             foreach (Token parameterToken in parameter) {
-                                tokenTextBuilder.Append(parameterToken.Text.Replace("\\", "\\\\").Replace("\"", "\\\""));
+                                tokenTextBuilder.Append(parameterToken.Text);
                             }
-                            tokenTextBuilder.Append('"');
+                            tokenTextBuilder.Append('#');
 
                             string tokenText = tokenTextBuilder.ToString();
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, Location.Unknown, tokenText.Substring(1, tokenText.Length - 2)));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, Location.Unknown, tokenText.Substring(2, tokenText.Length - 3)));
                         } else {
                             foreach (Token parameterToken in parameter) {
                                 expandedTokens.Add(parameterToken);
@@ -70,7 +71,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
                     } else {
                         if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"\"{parameterName.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"", Location.Unknown, parameterName));
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"@#{parameterName}#", Location.Unknown, parameterName));
                         } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
                             expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName, Location.Unknown, null));
                         } else {

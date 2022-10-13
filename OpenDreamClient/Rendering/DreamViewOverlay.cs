@@ -32,6 +32,8 @@ sealed class DreamViewOverlay : Overlay {
         if (eye == null) return;
 
         DrawMap(args, eye.Value);
+        _appearanceSystem.CleanUpUnusedFilters();
+        _appearanceSystem.ResetFilterUsageCounts();   
     }
 
     private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -80,38 +82,6 @@ sealed class DreamViewOverlay : Overlay {
 
             DrawIcon(args.WorldHandle, icon, pos.Position - 1);
         }
-    }
-
-    private void DrawScreenObjects(DrawingHandleWorld handle, EntityUid eye, Box2 worldAABB) {
-        if (!_entityManager.TryGetComponent<TransformComponent>(eye, out var eyeTransform))
-            return;
-
-        ClientScreenOverlaySystem screenOverlaySystem = EntitySystem.Get<ClientScreenOverlaySystem>();
-
-        Vector2 viewOffset = eyeTransform.WorldPosition - (worldAABB.Size / 2f);
-
-        List<DMISpriteComponent> sprites = new();
-        foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
-            if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager)) continue;
-
-            sprites.Add(sprite);
-        }
-
-        sprites.Sort(_renderOrderComparer);
-        foreach (DMISpriteComponent sprite in sprites) {
-            Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
-            Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-
-            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    DrawIcon(handle, sprite.Icon, position + iconSize * (x, y));
-                }
-            }
-        }
-
-        
-        _appearanceSystem.CleanUpUnusedFilters();
-        _appearanceSystem.ResetFilterUsageCounts();            
     }
 
 

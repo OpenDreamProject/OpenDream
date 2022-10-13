@@ -84,7 +84,7 @@ namespace OpenDreamRuntime.Objects {
             }
             List<DreamValue> list = new(_variables.Count);
             // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
-            foreach (String key in ObjectDefinition!.Variables.Keys) { 
+            foreach (String key in ObjectDefinition!.Variables.Keys) {
                 list.Add(new(key));
             }
             return list;

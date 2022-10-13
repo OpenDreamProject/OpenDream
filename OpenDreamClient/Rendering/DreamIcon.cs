@@ -174,6 +174,26 @@ namespace OpenDreamClient.Rendering {
             return false;
         }
 
+        /// <summary>
+        /// Render this icon using a given world rendering handle and position
+        /// </summary>
+        public void Draw(DrawingHandleWorld handle, Vector2 position) {
+            position += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+
+            foreach (DreamIcon underlay in Underlays) {
+                underlay.Draw(handle, position);
+            }
+
+            AtlasTexture frame = CurrentFrame;
+            if (frame != null) {
+                handle.DrawTexture(frame, position, Appearance.Color);
+            }
+
+            foreach (DreamIcon overlay in Overlays) {
+                overlay.Draw(handle, position);
+            }
+        }
+
         private void UpdateAnimation() {
             DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);

@@ -1,6 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime {
@@ -74,9 +73,16 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamValue? LocateRef(string refString)
+        public DreamValue LocateRef(string refString)
         {
-            if (!int.TryParse(refString, out var refId)) return null;
+            if (!int.TryParse(refString, out var refId)) {
+                // If the ref is not an integer, it may be a tag
+                if (Tags.TryGetValue(refString, out var tagList)) {
+                    return new DreamValue(tagList.First());
+                }
+
+                return DreamValue.Null;
+            }
 
             // The first digit is the type
             var typeId = (RefType)int.Parse(refString.Substring(0, 1));

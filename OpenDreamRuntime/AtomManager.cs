@@ -111,6 +111,10 @@ namespace OpenDreamRuntime {
                 appearance.Invisibility = invisibility;
             }
 
+            if (atom.GetVariable("opacity").TryGetValueAsInteger(out int opacity)) {
+                appearance.Opacity = (opacity != 0);
+            }
+
             if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
                 appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
             }

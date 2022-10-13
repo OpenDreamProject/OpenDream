@@ -103,6 +103,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        /* NOTE ABOUT THE TRIG FUNCTIONS:
+         * If you have a sharp eye, you may notice that our trignometry functions make use of the *double*-precision versions of those functions,
+         * even though this is a single-precision language.
+         * 
+         * DO NOT replace them with the single-precision ones in MathF!!!
+         * 
+         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
+         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
+         */
+
         [DreamProc("arccos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_arccos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

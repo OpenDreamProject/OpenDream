@@ -14,6 +14,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public Color Color = Color.White;
         [ViewVariables] public float Layer;
         [ViewVariables] public int Invisibility;
+        [ViewVariables] public bool Opacity;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
@@ -32,6 +33,7 @@ namespace OpenDreamShared.Dream {
             Color = appearance.Color;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
+            Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
@@ -54,6 +56,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Invisibility != Invisibility) return false;
+            if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
             if (appearance.Underlays.Count != Underlays.Count) return false;
@@ -85,6 +88,7 @@ namespace OpenDreamShared.Dream {
             hashCode += Color.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Invisibility;
+            hashCode += Opacity.GetHashCode();
             hashCode += MouseOpacity.GetHashCode();
 
             foreach (int overlay in Overlays) {

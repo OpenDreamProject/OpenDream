@@ -30,10 +30,24 @@
 			var/area/newarea = NewLoc.loc
 			loc = NewLoc
 
-			oldloc.Exited(src, loc)
-			loc.Entered(src, oldloc)
+			// First, call Exited() on the old location
 			if (newarea != oldarea)
 				oldarea.Exited(src, loc)
+
+			// Second, call Exited() and Uncrossed() on the old turf and its contents
+			oldloc.Exited(src, loc)
+			for (var/atom/movable/uncrossed in oldloc)
+				uncrossed.Exited(src, loc)
+				uncrossed.Uncrossed(src)
+
+			// Third, call Entered() and Crossed() on the new turf and its contents
+			loc.Entered(src, oldloc)
+			for (var/atom/movable/crossed in loc)
+				crossed.Entered(src, oldloc)
+				crossed.Crossed(src)
+
+			// Fourth, call Entered() on the new area
+			if (newarea != oldarea)
 				newarea.Entered(src, oldloc)
 
 			return TRUE

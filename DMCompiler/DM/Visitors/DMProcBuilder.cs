@@ -247,7 +247,7 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
-                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":

@@ -41,7 +41,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_ModulusEquals
         };
 
-        private static readonly TokenType[] ComparisonTypes =
+        /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
+        public static readonly TokenType[] ComparisonTypes =
         {
             TokenType.DM_EqualsEquals,
             TokenType.DM_ExclamationEquals,
@@ -49,7 +50,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_TildeExclamation
         };
 
-        private static readonly TokenType[] LtGtComparisonTypes =
+        public static readonly TokenType[] LtGtComparisonTypes =
         {
             TokenType.DM_LessThan,
             TokenType.DM_LessThanEquals,
@@ -63,13 +64,13 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_RightShift
         };
 
-        private static readonly TokenType[] PlusMinusTypes =
+        public static readonly TokenType[] PlusMinusTypes =
         {
             TokenType.DM_Plus,
             TokenType.DM_Minus,
         };
 
-        private static readonly TokenType[] MulDivModTypes =
+        public static readonly TokenType[] MulDivModTypes =
         {
             TokenType.DM_Star,
             TokenType.DM_Slash,

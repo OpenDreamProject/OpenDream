@@ -334,8 +334,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             if(!TryMacroKeyword(text,out token)) { // if not macro (sets it here otherwise)
                                 token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text);
                                 string macroAttempt = text.ToLower();
-                                if (TryMacroKeyword(macroAttempt)) { // if they miscapitalized the keyword
-                                    DMCompiler.Warning(token.Location, $"#{macroAttempt} is not a valid macro keyword. Did you mean '#{text.ToLower()}'?");
+                                if (TryMacroKeyword(macroAttempt, out _)) { // if they miscapitalized the keyword
+                                    DMCompiler.Warning(token.Location, $"#{text} is not a valid macro keyword. Did you mean '#{text.ToLower()}'?");
                                 }
                             }
                         }
@@ -412,25 +412,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     return false;
             }
             return true;
-        }
-        protected bool TryMacroKeyword(string text) {
-            switch (text) {
-                case "warn":
-                case "warning":
-                case "include":
-                case "define":
-                case "undef":
-                case "if":
-                case "ifdef":
-                case "ifndef":
-                case "elif":
-                case "else":
-                case "endif":
-                case "error":
-                    return true;
-                default:
-                    return false;
-            }
         }
 
 

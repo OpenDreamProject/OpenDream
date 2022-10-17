@@ -36,8 +36,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// A null value indicates the last directive found was an #else that's waiting for an #endif.
         /// </summary>
         private Stack<bool?> _lastIfEvaluations = new(); 
-        private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above two vars are non-zero at exit
-        private Token _lastToken; // The last token emitted via GetNextToken().
+        private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
 
         private static readonly TokenType[] DirectiveTypes =
         {
@@ -120,7 +119,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Else:
                         if (!_lastIfEvaluations.TryPop(out bool? wasTruthy) || wasTruthy is null)
                             DMCompiler.Error(new CompilerError(token.Location, "Unexpected #else"));
-                        if (!wasTruthy.HasValue || wasTruthy.Value)
+                        if (wasTruthy.Value)
                             SkipIfBody(true);
                         else
                             _lastIfEvaluations.Push((bool?)null);
@@ -272,7 +271,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return;
             }
             if(defineIdentifier.Text == "defined") {
-                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Reserved keywrod 'defined' used as macro name"));
+                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name"));
             }
 
             List<string> parameters = null;
@@ -529,11 +528,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
                     nextToken = GetNextToken(true);
                 }
-                _lastToken = nextToken;
                 return nextToken;
             } else {
-                _lastToken = ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
-                return _lastToken;
+                return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
             }
         }
 

@@ -28,8 +28,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     */
 
     /// <summary>
-    /// An extremely simple parser that acts on Preproc tokens, <br/>
-    /// held separate from DMParser because of slightly different behaviour and far simpler implementation.
+    /// An extremely simple parser that acts on a sliver of tokens that have been DM-lexed for evaluation in a preprocessor directive, <br/>
+    /// held separate from DMParser because of slightly different behaviour, far simpler implementation, and (<see langword="TODO"/>) possible statelessness.
     /// </summary>
     internal static class DMPreprocessorParser {
         private static List<Token>? _tokens;
@@ -73,7 +73,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return false;
         }
         private static void Error(string msg) {
-            DMCompiler.Error(new CompilerError(Current()?.Location ?? Location.Unknown, msg));
+            DMCompiler.Error(Current()?.Location ?? Location.Unknown, msg);
         }
 
         private static float? Expression() {

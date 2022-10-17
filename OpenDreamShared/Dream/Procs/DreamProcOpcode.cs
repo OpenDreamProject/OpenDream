@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace OpenDreamShared.Dream.Procs {
     public enum DreamProcOpcode {
@@ -105,43 +107,119 @@ namespace OpenDreamShared.Dream.Procs {
         Unnamed = 0xFD
     }
 
-    public enum StringFormatTypes : byte {
-        Stringify = 0x0,                //Plain []
-        Ref = 0x1,                      //\ref[]
+    /// <summary>
+    /// Handles how we write format data into our strings.
+    /// </summary>
+    public static class StringFormatEncoder
+    {
+        /// <summary>
+        /// This is the upper byte of the 2-byte markers we use for storing formatting data within our UTF16 strings.<br/>
+        /// </summary>
+        /// <remarks>
+        /// It is not const because (<see langword="TODO"/>) eventually it would be desirable to make it something else<br/>
+        /// (even though doing so would slightly break parity)<br/>
+        /// because 0xFFxx actually maps to meaningful Unicode code points under UTF16<br/>
+        /// (DM uses this because it uses UTF8 and 0xFF is just an invalid character in that encoding, no biggie)<br/>
+        /// See: "Halfwidth and Fullwidth Forms" on https://en.wikibooks.org/wiki/Unicode/Character_reference/F000-FFFF
+        /// </remarks>
+        public static UInt16 FormatPrefix = 0xFF00;
 
-        UpperDefiniteArticle = 0x2,     //The
-        LowerDefiniteArticle = 0x3,     //the
-        UpperIndefiniteArticle = 0x4,   //A, An, Some
-        LowerIndefiniteArticle = 0x5,   //a, an, some
-        UpperSubjectPronoun = 0x6,      //He, She, They, It
-        LowerSubjectPronoun = 0x7,      //he, she, they, it
-        UpperPossessiveAdjective = 0x8, //His, Her, Their, Its
-        LowerPossessiveAdjective = 0x9, //his, her, their, its
-        ObjectPronoun = 0xA,            //him, her, them, it
-        ReflexivePronoun = 0xB,         //himself, herself, themself, it
-        UpperPossessivePronoun = 0xC,   //His, Hers, Theirs, Its
-        LowerPossessivePronoun = 0xD,   //his, hers, theirs, its
+        /// <summary>
+        /// The lower byte of the aforementioned formatting marker thingies we stuff into our UTF16 strings.<br/>
+        /// To avoid clashing with the (ALREADY ASSIGNED!) 0xFFxx code point space, these values should not exceed 0x005e (94)
+        /// </summary>
+        /// <remarks>
+        /// <see langword="DO NOT CAST TO CHAR!"/> This requires FormatPrefix to be added to it in order to be a useful formatting character!!
+        /// </remarks>
+        public enum FormatSuffix : UInt16
+        {
+            //States that Interpolated values can have (the [] thingies)
+            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary            
+            StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
+            ReferenceOfValue = 0x2,        //\ref[]
 
-        Proper = 0xE,                   //String represents a proper noun
-        Improper = 0xF,                 //String represents an improper noun
+            //States that macros can have
+            //(these can have any arbitrary value as long as compiler/server/cilent all agree)
+            //(Some of these values may not align with what they are internally in BYOND; too bad!!)
+            UpperDefiniteArticle,     //The
+            LowerDefiniteArticle,     //the
+            UpperIndefiniteArticle,   //A, An, Some
+            LowerIndefiniteArticle,   //a, an, some
+            UpperSubjectPronoun,      //He, She, They, It
+            LowerSubjectPronoun,      //he, she, they, it
+            UpperPossessiveAdjective, //His, Her, Their, Its
+            LowerPossessiveAdjective, //his, her, their, its
+            ObjectPronoun,            //him, her, them, it
+            ReflexivePronoun,         //himself, herself, themself, it
+            UpperPossessivePronoun,   //His, Hers, Theirs, Its
+            LowerPossessivePronoun,   //his, hers, theirs, its
 
-        OrdinalIndicator = 0x10,        //1st, 2nd, 3rd, 4th, ...
-        PluralSuffix = 0x11,            //-s suffix at the end of a plural noun
+            Proper,                   //String represents a proper noun
+            Improper,                 //String represents an improper noun
 
-        Icon = 0x12,                    //Use an atom's icon
+            OrdinalIndicator,        //1st, 2nd, 3rd, 4th, ...
+            PluralSuffix,            //-s suffix at the end of a plural noun
 
-        ColorRed = 0x13,
-        ColorBlue = 0x14,
-        ColorGreen = 0x15,
-        ColorBlack = 0x16,
-        ColorYellow = 0x17,
-        ColorNavy = 0x18,
-        ColorTeal = 0x19,
-        ColorCyan = 0x1A,
+            Icon,                    //Use an atom's icon
 
-        Bold = 0x1B,
-        Italic = 0x1C
+            ColorRed,
+            ColorBlue,
+            ColorGreen,
+            ColorBlack,
+            ColorYellow,
+            ColorNavy,
+            ColorTeal,
+            ColorCyan,
+            Bold,
+            Italic
+        }
+
+        /// <summary>The default stringification state of a [] within a DM string.</summary>
+        public static FormatSuffix InterpolationDefault => FormatSuffix.StringifyWithArticle;
+
+        /// <returns>The UTF16 character we should be actually storing to articulate this format marker.</returns>
+        public static char Encode(FormatSuffix suffix)
+        {
+            return (char)(FormatPrefix | ((UInt16)suffix));
+        }
+
+        /// <returns>true if the input character was actually a formatting codepoint. false if not.</returns>
+        public static bool Decode(char c, [NotNullWhen(true)] out FormatSuffix? suffix)
+        {
+            UInt16 bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
+            suffix = null;
+            if((bytes & FormatPrefix) != FormatPrefix)
+                return false;
+            suffix = (FormatSuffix)(bytes & 0x00FF); // 0xFFab & 0x00FF == 0x00ab
+            return true;
+        }
+        public static bool Decode(char c)
+        {
+            UInt16 bytes = c;
+            return (bytes & FormatPrefix) == FormatPrefix; // Could also check that the lower byte is a valid enum but... ehhhhh
+        }
+
+        /// <returns>true if argument is a marker for an interpolated value, one of them [] things. false if not.</returns>
+        public static bool IsInterpolation(FormatSuffix suffix)
+        {
+            //This logic requires that all the interpolated-value enums keep separated from the others.
+            //I'd write some type-engine code to catch a discrepancy in that but alas, this language is just not OOPy enough.
+            return suffix <= FormatSuffix.ReferenceOfValue;
+        }
+
+        /// <returns>A new verison of the string, with all formatting characters removed.</returns>
+        public static string RemoveFormatting(string input)
+        {
+            StringBuilder ret = new StringBuilder(input.Length); // Trying to keep it to one malloc here
+            foreach(char c in input)
+            {
+                if(!Decode(c))
+                    ret.Append(c);
+            }
+            return ret.ToString();
+        }
     }
+
     ///<summary>
     ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
     ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)

@@ -193,16 +193,16 @@ namespace OpenDreamRuntime
         public void HandleMsgTopic(MsgTopic pTopic) {
             DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-            DreamObject src = null;
+            DreamValue src = DreamValue.Null;
 
-            if (srcRefValue.Value != null && srcRefValue.TryGetValueAsString(out var srcRef)) {
-                src = DreamObject.GetFromReferenceID(_dreamManager, srcRef);
+            if (srcRefValue.TryGetValueAsString(out var srcRef)) {
+                src = _dreamManager.LocateRef(srcRef);
             }
 
             DreamProcArguments topicArguments = new DreamProcArguments(new() {
                 new DreamValue(pTopic.Query),
                 new DreamValue(hrefList),
-                new DreamValue(src)
+                src
             });
 
             ClientDreamObject?.SpawnProc("Topic", topicArguments, MobDreamObject);

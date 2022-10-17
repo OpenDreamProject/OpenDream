@@ -51,9 +51,14 @@ namespace OpenDreamClient {
         }
 
         public override void PostInit() {
-            IoCManager.Resolve<ILightManager>().Enabled = false;
+            ILightManager lightManager = IoCManager.Resolve<ILightManager>();
+            lightManager.Enabled = true;
+            lightManager.DrawLighting = false;
+            lightManager.DrawShadows = true;
 
-            IoCManager.Resolve<IOverlayManager>().AddOverlay(new DreamViewOverlay());
+            IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+            overlayManager.AddOverlay(new DreamViewOverlay());
+            overlayManager.AddOverlay(new DreamScreenOverlay());
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();

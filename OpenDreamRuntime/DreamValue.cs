@@ -306,6 +306,21 @@ namespace OpenDreamRuntime {
         public static bool operator !=(DreamValue a, DreamValue b) {
             return !a.Equals(b);
         }
+        
+        public void IncrementDreamObjectRefCount(){
+            if(Type == DreamValueType.DreamObject && Value != null){
+                DreamObject obj = (DreamObject)Value;
+                obj.IncrementRefCount();
+            }
+        }
+
+        public void DecrementDreamObjectRefCount(){
+            if(Type == DreamValueType.DreamObject && Value != null){
+                DreamObject obj = (DreamObject)Value;
+                obj.DecrementRefCount();
+            }
+        }
+
     }
 
     public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {

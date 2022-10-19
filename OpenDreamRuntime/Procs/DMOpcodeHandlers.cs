@@ -369,7 +369,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? IsNull(DMProcState state) {
             DreamValue value = state.Pop();
 
-            state.Push(new DreamValue((value == DreamValue.Null) ? 1 : 0));
+            state.Push(new DreamValue((value == DreamValue.Null)  ? 1 : 0));
             return null;
         }
 
@@ -1535,7 +1535,8 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? DeleteObject(DMProcState state) {
             DreamObject dreamObject = state.Pop().GetValueAsDreamObject();
 
-            dreamObject?.Delete(state.DreamManager);
+
+            dreamObject?.Delete();
             if (dreamObject is not null && dreamObject == state.Instance) {
                 return ProcStatus.Returned;
             }

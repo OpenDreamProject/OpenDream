@@ -62,6 +62,9 @@
 	proc/DblClick(location, control, params)
 		set opendream_unimplemented = TRUE
 
+	proc/MouseDown(location, control, params)
+		set opendream_unimplemented = TRUE
+
 	proc/MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
 		set opendream_unimplemented = TRUE
 

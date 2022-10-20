@@ -229,11 +229,11 @@ namespace OpenDreamRuntime.Procs {
             StringBuilder formattedString = new StringBuilder();
 
             int interpCount = state.ReadInt();
-            
+
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
             int prevInterpIndex = -1; // If we find a suffix macro, this is what it points to (treating -1 as a 'null' state here)
-            
+
             foreach(char c in unformattedString)
             {
                 if (!StringFormatEncoder.Decode(c, out var formatType)) {
@@ -1656,22 +1656,8 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString))
-            {
-                var locateRef = state.DreamManager.LocateRef(refString);
-                if(locateRef is not null)
-                {
-                    state.Push(locateRef.Value);
-                }
-                else if (state.DreamManager.Tags.ContainsKey(refString))
-                {
-                    state.Push(new DreamValue(state.DreamManager.Tags[refString].First()));
-                }
-                else
-                {
-                    state.Push(DreamValue.Null);
-                }
-
+            if (value.TryGetValueAsString(out string refString)) {
+                state.Push(state.DreamManager.LocateRef(refString));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);

@@ -922,8 +922,7 @@ namespace DMCompiler.Compiler.DM {
 
                 _allowVarDeclExpression = true;
                 DMASTExpression expr1 = Expression();
-                Whitespace();
-                AsTypes(); //TODO: Correctly handle
+                DMValueType? dmTypes = AsTypes();
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
@@ -933,6 +932,7 @@ namespace DMCompiler.Compiler.DM {
                         Error("Expected 1st expression in for");
                     }
                 }
+
                 if (Check(TokenType.DM_To)) {
                     if (expr1 is DMASTAssign assign) {
                         DMASTExpression endRange = null, step = null;
@@ -940,14 +940,12 @@ namespace DMCompiler.Compiler.DM {
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
                         Whitespace();
                         Newline();
-                        return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, GetForBody());
+                        return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, dmTypes, GetForBody());
                     } else {
                         Error("Expected = before to in for");
                     }
                 }
-                Whitespace();
-                AsTypes(); //TODO: Correctly handle
-                Whitespace();
+
                 if (Check(TokenType.DM_In)) {
                     Whitespace();
                     DMASTExpression listExpr = Expression();
@@ -955,23 +953,24 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
                 }
-                else if (!Check(ForSeparatorTypes)) {
-                    Whitespace();
+
+                if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, expr1, null, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
+
                 if (Check(TokenType.DM_RightParenthesis)) {
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, expr1, null, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
+
                 Whitespace();
                 DMASTExpression expr2 = Expression();
-                Whitespace();
                 if (expr2 == null) {
                     if (ForSeparatorTypes.Contains(Current().Type)) {
                         expr2 = new DMASTConstantInteger(loc, 1);
@@ -979,20 +978,22 @@ namespace DMCompiler.Compiler.DM {
                         Error("Expected 2nd expression in for");
                     }
                 }
+
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, expr1, expr2, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
+
                 if (Check(TokenType.DM_RightParenthesis)) {
                     Whitespace();
                     Newline();
-                    return new DMASTProcStatementFor(loc, expr1, expr2, null, GetForBody());
+                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
+
                 Whitespace();
                 DMASTExpression expr3 = Expression();
-                Whitespace();
                 if (expr3 == null) {
                     if (Current().Type == TokenType.DM_RightParenthesis) {
                         expr3 = new DMASTConstantNull(loc);
@@ -1000,10 +1001,11 @@ namespace DMCompiler.Compiler.DM {
                         Error("Expected 3nd expression in for");
                     }
                 }
+
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
                 Whitespace();
                 Newline();
-                return new DMASTProcStatementFor(loc, expr1, expr2, expr3, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
             }
 
             return null;
@@ -1181,8 +1183,8 @@ namespace DMCompiler.Compiler.DM {
                     if (expression == null) {
                         if (expressions.Count == 0) {
                             Error("Expected an expression");
-                        } else //Eat a trailing comma if there's at least 1 expression
-                          {
+                        } else {
+                            //Eat a trailing comma if there's at least 1 expression
                             break;
                         }
                     }
@@ -1932,8 +1934,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression ExpressionPrimary(bool allowParentheses = true) {
-            if (allowParentheses && Check(TokenType.DM_LeftParenthesis))
-            {
+            if (allowParentheses && Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
                 DMASTExpression inner = Expression();
                 BracketWhitespace();
@@ -1946,6 +1947,7 @@ namespace DMCompiler.Compiler.DM {
             if (Current().Type == TokenType.DM_Var && _allowVarDeclExpression) {
                 return new DMASTVarDeclExpression( loc, Path() );
             }
+
             DMASTExpression primary = Constant();
             if (primary == null) {
                 DMASTPath path = Path(true);

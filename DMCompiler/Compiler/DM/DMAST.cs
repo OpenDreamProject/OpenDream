@@ -342,16 +342,16 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementVarDeclaration : DMASTProcStatement {
-        public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
-        public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;
-        private ProcVarDeclInfo _varDecl;
 
-        public bool IsGlobal { get => _varDecl.IsStatic; }
-        public bool IsConst { get => _varDecl.IsConst; }
+        public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
+        public string Name => _varDecl.VarName;
+        public bool IsGlobal => _varDecl.IsStatic;
+        public bool IsConst => _varDecl.IsConst;
 
-        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location)
-        {
+        private readonly ProcVarDeclInfo _varDecl;
+
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location) {
             _varDecl = new ProcVarDeclInfo(path.Path);
             Value = value;
         }
@@ -494,12 +494,14 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementFor : DMASTProcStatement {
         public DMASTExpression Expression1, Expression2, Expression3;
+        public DMValueType? DMTypes;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMASTProcBlockInner body) : base(location) {
+        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMValueType? dmTypes, DMASTProcBlockInner body) : base(location) {
             Expression1 = expr1;
             Expression2 = expr2;
             Expression3 = expr3;
+            DMTypes = dmTypes;
             Body = body;
         }
 

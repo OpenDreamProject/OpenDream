@@ -254,6 +254,29 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(text.Substring(start - 1, end - start));
         }
 
+        [DreamProc("copytext_char")]
+        [DreamProcParameter("T", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_copytext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
+
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string text))
+                return (end == 0) ? DreamValue.Null : new DreamValue("");
+            if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
+                return new DreamValue("");
+
+            StringInfo textElements = new StringInfo(text);
+
+            if (end <= 0) end += textElements.LengthInTextElements + 1;
+            else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
+
+            if (start == 0) return new DreamValue("");
+            else if (start < 0) start += textElements.LengthInTextElements + 1;
+
+            return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
+        }
+
         [DreamProc("cos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_cos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

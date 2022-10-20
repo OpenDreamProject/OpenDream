@@ -106,9 +106,9 @@ namespace OpenDreamRuntime.Procs.Native {
         /* NOTE ABOUT THE TRIG FUNCTIONS:
          * If you have a sharp eye, you may notice that our trignometry functions make use of the *double*-precision versions of those functions,
          * even though this is a single-precision language.
-         * 
+         *
          * DO NOT replace them with the single-precision ones in MathF!!!
-         * 
+         *
          * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
          * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
          */
@@ -603,23 +603,19 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("icon_states")]
         [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
-            if (mode != 0)
-            {
+            if (mode != 0) {
                 throw new NotImplementedException("Only mode 0 is implemented");
             }
 
             var arg = arguments.GetArgument(0, "Icon");
 
-            if (arg.Equals(DreamValue.Null))
-            {
+            if (arg.Equals(DreamValue.Null)) {
                 return DreamValue.Null;
             }
 
-            if (!arg.TryGetValueAsDreamResource(out var resource))
-            {
+            if (!arg.TryGetValueAsDreamResource(out var resource)) {
                 throw new Exception("bad icon");
             }
 

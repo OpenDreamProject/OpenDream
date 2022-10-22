@@ -92,6 +92,7 @@
 	proc/Crossed(atom/movable/O)
 
 	proc/Cross(atom/movable/O)
+		// Allow crossing only if not both atoms are dense
 		return !(src.density && O.density)
 
 	proc/Uncross(atom/movable/O)

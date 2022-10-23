@@ -39,6 +39,7 @@ namespace OpenDreamRuntime {
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
         private DreamCompiledJson _compiledJson;
+        private bool _initialized = false;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void Initialize(string jsonPath) {
@@ -53,14 +54,17 @@ namespace OpenDreamRuntime {
             //TODO: Move to LoadJson()
             _dreamMapManager.LoadMaps(_compiledJson.Maps);
             WorldInstance.SpawnProc("New");
+            _initialized = true;
         }
 
         public void Shutdown() {
-
+            _initialized = false;
         }
 
-        public void Update()
-        {
+        public void Update() {
+            if (!_initialized)
+                return;
+
             _procScheduler.Process();
             UpdateStat();
             _dreamMapManager.UpdateTiles();
@@ -138,9 +142,9 @@ namespace OpenDreamRuntime {
                 Logger.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
             }
 
-            if (logRsc is ConsoleOutputResource) // Output() on ConsoleOutputResource uses LogLevel.Info
+            if (logRsc is ConsoleOutputResource consoleOut) // Output() on ConsoleOutputResource uses LogLevel.Info
             {
-                Logger.LogS(level, sawmill, message);
+                consoleOut.WriteConsole(level, sawmill, message);
             }
             else
             {

@@ -249,6 +249,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
+        public void DebugSource(string source) {
+            WriteOpcode(DreamProcOpcode.DebugSource);
+            WriteString(source);
+        }
+
+        public void DebugLine(int line) {
+            WriteOpcode(DreamProcOpcode.DebugLine);
+            WriteInt(line);
+        }
+
         public void PushReferenceValue(DMReference reference) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushReferenceValue);

@@ -66,10 +66,16 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            _proc.DebugSource(block.Location.SourceFile);
+
             foreach (DMASTProcStatement statement in block.Statements) {
                 // see above
                 if (statement is DMASTProcStatementSet) {
                     continue;
+                }
+
+                if (statement.Location.Line != null) {
+                    _proc.DebugLine(statement.Location.Line.Value);
                 }
 
                 try {

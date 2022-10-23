@@ -71,8 +71,8 @@ namespace OpenDreamShared.Dream.Procs {
         BitShiftRight = 0x40,
         //0x41
         Power = 0x42,
-        //0x43
-        //0x44
+        DebugSource = 0x43,
+        DebugLine = 0x44,
         Prompt = 0x45,
         PushProcArguments = 0x46,
         Initial = 0x47,
@@ -134,7 +134,7 @@ namespace OpenDreamShared.Dream.Procs {
         public enum FormatSuffix : UInt16
         {
             //States that Interpolated values can have (the [] thingies)
-            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary            
+            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
             StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
             ReferenceOfValue = 0x2,        //\ref[]
 

@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -101,8 +102,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BitShiftRight,
             null, //0x41
             DMOpcodeHandlers.Power,
-            null, //0x43
-            null, //0x44
+            DMOpcodeHandlers.DebugSource,
+            DMOpcodeHandlers.DebugLine,
             DMOpcodeHandlers.Prompt,
             DMOpcodeHandlers.PushProcArguments,
             DMOpcodeHandlers.Initial,
@@ -134,11 +135,13 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
+        public readonly IDreamDebugManager DebugManager = IoCManager.Resolve<IDreamDebugManager>();
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;
         public readonly DreamObject? Usr;
         public readonly int ArgumentCount;
+        public string CurrentSource;
         private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
         public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 

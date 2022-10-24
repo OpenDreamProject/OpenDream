@@ -404,20 +404,22 @@ namespace OpenDreamRuntime
             string? window = null;
             Vector2i size = (480, 480);
 
-            string[] separated = (options ?? "").Split(',', ';', '&');
-            foreach (string option in separated) {
-                string optionTrimmed = option.Trim();
+            if (options != null) {
+                foreach (string option in options.Split(',', ';', '&')) {
+                    string optionTrimmed = option.Trim();
 
-                if (optionTrimmed != String.Empty) {
-                    string[] optionSeparated = optionTrimmed.Split("=");
-                    string key = optionSeparated[0];
-                    string value = optionSeparated[1];
+                    if (optionTrimmed != String.Empty) {
+                        string[] optionSeparated = optionTrimmed.Split("=", 2);
+                        string key = optionSeparated[0];
+                        string value = optionSeparated[1];
 
-                    if (key == "window") window = value;
-                    if (key == "size") {
-                        string[] sizeSeparated = value.Split("x");
+                        if (key == "window") {
+                            window = value;
+                        } else if (key == "size") {
+                            string[] sizeSeparated = value.Split("x", 2);
 
-                        size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                            size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                        }
                     }
                 }
             }

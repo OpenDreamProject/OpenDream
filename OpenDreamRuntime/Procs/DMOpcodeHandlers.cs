@@ -1491,7 +1491,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             foreach (DreamObject client in clients) {
-                state.DreamManager.GetConnectionFromClient(client)?.Browse(browseValue, options ?? "");
+                state.DreamManager.GetConnectionFromClient(client)?.Browse(browseValue, options);
             }
 
             return null;

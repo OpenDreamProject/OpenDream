@@ -400,11 +400,11 @@ namespace OpenDreamRuntime
             Session.ConnectedClient.SendMessage(msg);
         }
 
-        public void Browse(string body, string options) {
-            string window = null;
+        public void Browse(string body, string? options) {
+            string? window = null;
             Vector2i size = (480, 480);
 
-            string[] separated = options.Split(',', ';', '&');
+            string[] separated = (options ?? "").Split(',', ';', '&');
             foreach (string option in separated) {
                 string optionTrimmed = option.Trim();
 

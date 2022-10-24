@@ -110,7 +110,7 @@ namespace OpenDreamRuntime {
             return (string)GetValueExpectingType(DreamValueType.String);
         }
 
-        public bool TryGetValueAsString(out string value) {
+        public bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
             if (Type == DreamValueType.String) {
                 value = (string)Value;
                 return true;

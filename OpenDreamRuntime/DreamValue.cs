@@ -84,17 +84,16 @@ namespace OpenDreamRuntime {
         }
 
         public override string ToString() {
-            string value;
+            string strValue;
             if (Value == null) {
-                value = "null";
-            } else
-                value = Type switch {
-                    DreamValueType.String => "\"" + Value + "\"",
-                    DreamValueType.DreamResource => "'" + ((DreamResource)Value).ResourcePath + "'",
-                    _ => Value.ToString()
-                };
+                strValue = "null";
+            } else if (Type == DreamValueType.String) {
+                strValue = $"\"{Value}\"";
+            } else {
+                strValue = Value.ToString() ?? "<ToString() = null>";
+            }
 
-            return "DreamValue(" + Type + ", " + value + ")";
+            return "DreamValue(" + Type + ", " + strValue + ")";
         }
 
         [Obsolete("Deprecated. Use the relevant TryGetValueAs[Type]() instead.")]

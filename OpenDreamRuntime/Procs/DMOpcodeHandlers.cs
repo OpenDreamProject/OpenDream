@@ -1470,13 +1470,13 @@ namespace OpenDreamRuntime.Procs {
             DreamValue body = state.Pop();
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
-            IEnumerable<DreamObject> clients;
+            IEnumerable<DreamConnection> clients;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                clients = new[] { receiver.GetVariable("client").GetValueAsDreamObject() };
+                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
-                clients = new[] { receiver };
+                clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
             } else if (receiver == state.DreamManager.WorldInstance) {
-                clients = state.DreamManager.Clients;
+                clients = state.DreamManager.Connections;
             } else {
                 throw new Exception($"Invalid browse() recipient: expected mob, client, or world, got {receiver}");
             }
@@ -1490,8 +1490,8 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception($"Invalid browse() body: expected resource or string, got {body}");
             }
 
-            foreach (DreamObject client in clients) {
-                state.DreamManager.GetConnectionFromClient(client)?.Browse(browseValue, options);
+            foreach (DreamConnection client in clients) {
+                client?.Browse(browseValue, options);
             }
 
             return null;

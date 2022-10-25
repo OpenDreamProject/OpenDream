@@ -49,12 +49,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         {
             get
             {
-                NetManager? net = (NetManager?)_netManager;
-                if(net == null) // This may be the case if we're on IntegrationNetManager instead of NetManager.
-                { // If so, I don't really know how to force RT to fess up about what our IP is, since it's all hidden behind privates at time of writing.
-                    return null;
-                }
-                return net.ServerChannel?.RemoteEndPoint.Address;
+                return null; //TODO: Implement this!
             }
         }
 

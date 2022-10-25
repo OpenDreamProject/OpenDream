@@ -1466,30 +1466,32 @@ namespace OpenDreamRuntime.Procs {
 
         #region Others
         public static ProcStatus? Browse(DMProcState state) {
-            string options = state.Pop().GetValueAsString();
+            state.Pop().TryGetValueAsString(out string? options);
             DreamValue body = state.Pop();
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
-            DreamObject client;
+            IEnumerable<DreamConnection> clients;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                client = receiver.GetVariable("client").GetValueAsDreamObject();
+                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
-                client = receiver;
+                clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
+            } else if (receiver == state.DreamManager.WorldInstance) {
+                clients = state.DreamManager.Connections;
             } else {
-                throw new Exception("Invalid browse() recipient");
+                throw new Exception($"Invalid browse() recipient: expected mob, client, or world, got {receiver}");
             }
 
-            if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
+            string? browseValue;
+            if (body.TryGetValueAsDreamResource(out var resource)) {
+                browseValue = resource.ReadAsString();
+            } else if (body.TryGetValueAsString(out browseValue)) {
+                // Got it.
+            } else {
+                throw new Exception($"Invalid browse() body: expected resource or string, got {body}");
+            }
 
-                string browseValue;
-                if (body.Type == DreamValue.DreamValueType.DreamResource) {
-                    browseValue = body.GetValueAsDreamResource().ReadAsString();
-                } else {
-                    browseValue = (string)body.Value;
-                }
-
-                connection.Browse(browseValue, options);
+            foreach (DreamConnection client in clients) {
+                client?.Browse(browseValue, options);
             }
 
             return null;

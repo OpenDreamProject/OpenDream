@@ -183,7 +183,8 @@ namespace DMCompiler.DM.Expressions {
             }
 
             // BYOND docs say that A %% B is equivalent to B * fract(A/B)
-            var fraction = MathF.Truncate(Value / rhsNum.Value);
+            var fraction = Value / rhsNum.Value;
+            fraction -= MathF.Truncate(fraction);
             return new Number(Location, fraction * rhsNum.Value);
         }
 

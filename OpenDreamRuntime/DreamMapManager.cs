@@ -28,8 +28,8 @@ namespace OpenDreamRuntime {
             }
 
             public void SetArea(Vector2i pos, DreamObject area) {
-                if (area.GetVariable("x").GetValueAsInteger() > pos.X) area.SetVariable("x", new DreamValue(pos.X));
-                if (area.GetVariable("y").GetValueAsInteger() > pos.Y) area.SetVariable("y", new DreamValue(pos.Y));
+                if (area.GetVariable("x").TryGetValueAsInteger(out var xD) && xD > pos.X) area.SetVariable("x", new DreamValue(pos.X));
+                if (area.GetVariable("y").TryGetValueAsInteger(out var xY) && xY > pos.Y) area.SetVariable("y", new DreamValue(pos.Y));
 
                 Cells[pos.X - 1, pos.Y - 1].Area = area;
             }

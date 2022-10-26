@@ -26,8 +26,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _atomManager.DeleteMovableEntity(dreamObject);
             _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
 
-            _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
-            _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
+            if (dreamObject.GetVariable("overlays").TryGetValueAsDreamList(out var overlay)) _atomManager.OverlaysListToAtom.Remove(overlay);
+            if (dreamObject.GetVariable("underlays").TryGetValueAsDreamList(out var underlay))  _atomManager.UnderlaysListToAtom.Remove(underlay);
 
             ParentType?.OnObjectDeleted(dreamObject);
         }
@@ -221,7 +221,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     ? colorString
                     : "#FFFFFF"; // Defaults to white
                 appearance.SetColor(color);
-                appearance.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
+                appearance.Direction = (image.GetVariable("dir").TryGetValueAsInteger(out var dir) ? (AtomDirection) dir : AtomDirection.None);
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);

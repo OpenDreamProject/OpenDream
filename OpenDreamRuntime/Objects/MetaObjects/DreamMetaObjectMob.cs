@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
             if (varName == "key" || varName == "ckey") {
-                if (_playerManager.TryGetSessionByUsername(value.GetValueAsString(), out var session)) {
+                if (value.TryGetValueAsString(out var username) && _playerManager.TryGetSessionByUsername(username, out var session)) {
                     var connection = _dreamManager.GetConnectionBySession(session);
 
                     connection.MobDreamObject = dreamObject;
@@ -36,8 +36,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else if (varName == "see_invisible") {
                //TODO
             } else if (varName == "client" && value != oldValue) {
-                var newClient = value.GetValueAsDreamObject();
-                var oldClient = oldValue.GetValueAsDreamObject();
+                if(!value.TryGetValueAsDreamObject(out var newClient)) {
+                    Logger.Warning("mob's client set to invalid value");
+                }
+                DreamObject oldClient = oldValue.GetValueAsDreamObject();
 
                 if (newClient != null) {
                     _dreamManager.GetConnectionFromClient(newClient).MobDreamObject = dreamObject;

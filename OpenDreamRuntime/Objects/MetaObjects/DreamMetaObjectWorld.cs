@@ -27,7 +27,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+            if (!dreamObject.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
+                Logger.Warning("world.contents did not contain a valid value. A default of list() is being used.");
+                contentsList = DreamList.Create();
+            }
+            _dreamManager.WorldContentsList = contentsList;
+
+            if (dreamObject.ObjectDefinition == null) {
+                Logger.Error("world's definition was null somehow.");
+                return;
+            }
 
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);
@@ -38,7 +47,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             DreamValue view = dreamObject.ObjectDefinition.Variables["view"];
-            if (view.TryGetValueAsString(out string viewString)) {
+            if (view.TryGetValueAsString(out var viewString) && viewString != null) {
                 _viewRange = new ViewRange(viewString);
             } else {
                 if (!view.TryGetValueAsInteger(out var viewInt)) {

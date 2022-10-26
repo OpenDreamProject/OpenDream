@@ -83,13 +83,16 @@ namespace OpenDreamRuntime
             _availableVerbs.Clear();
             List<(string, string, string)>? verbs = null;
 
-            if (MobDreamObject != null)
+            if (MobDreamObject != null && MobDreamObject.GetVariable("verbs").TryGetValueAsDreamList(out var mobVerbPathsD))
             {
-                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+                List<DreamValue> mobVerbPaths = mobVerbPathsD.GetValues();
                 verbs = new List<(string, string, string)>(mobVerbPaths.Count);
                 foreach (DreamValue mobVerbPath in mobVerbPaths)
                 {
-                    DreamPath path = mobVerbPath.GetValueAsPath();
+                    if (!mobVerbPath.TryGetValueAsPath(out var path))
+                    {
+                        continue;
+                    }
                     if (path.LastElement is null) continue;
                     var proc = MobDreamObject.GetProc(path.LastElement);
                     _availableVerbs.Add(path.LastElement, proc);
@@ -210,30 +213,29 @@ namespace OpenDreamRuntime
 
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject outputObject = value.GetValueAsDreamObject();
-
+            if (value.Type == DreamValue.DreamValueType.DreamObject && value.TryGetValueAsDreamObject(out var outputObject)) {
                 if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
-                    UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
-                    UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
-                    DreamValue file = outputObject.GetVariable("file");
+                    if (outputObject.GetVariable("channel").TryGetValueAsInteger(out var channelD)
+                        && outputObject.GetVariable("volume").TryGetValueAsInteger(out var volumeD)) {
+                        DreamValue file = outputObject.GetVariable("file");
 
-                    var msg = new MsgSound() {
-                        Channel = channel,
-                        Volume = volume
-                    };
+                        var msg = new MsgSound() {
+                            Channel = (UInt16) channelD,
+                            Volume = (UInt16) volumeD
+                        };
 
-                    if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
-                        msg.File = (string)file.Value;
-                    } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
-                        msg.File = resource.ResourcePath;
-                    } else {
-                        throw new ArgumentException("Cannot output " + value, nameof(value));
+                        if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
+                            msg.File = (string)file.Value;
+                        } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
+                            msg.File = resource.ResourcePath;
+                        } else {
+                            throw new ArgumentException("Cannot output " + value, nameof(value));
+                        }
+
+                        Session.ConnectedClient.SendMessage(msg);
+
+                        return;
                     }
-
-                    Session.ConnectedClient.SendMessage(msg);
-
-                    return;
                 }
             }
 

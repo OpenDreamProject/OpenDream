@@ -114,7 +114,7 @@ namespace OpenDreamRuntime
         {
             foreach (DreamObject client in _clientToConnection.Keys)
             {
-                if (client.GetVariable("mob").GetValueAsDreamObject() == mob)
+                if (client.GetVariable("mob").TryGetValueAsDreamObject(out var mobD) && mobD == mob)
                     return client;
             }
 

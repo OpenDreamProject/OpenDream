@@ -18,9 +18,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             _dreamManager.Clients.Add(dreamObject);
 
-            ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
-            if (perspective != ClientPerspective.Mob) {
-                //Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
+            if (dreamObject.GetVariable("perspective").TryGetValueAsInteger(out var perspective) && (ClientPerspective) perspective != ClientPerspective.Mob) {
+                //Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, (ClientPerspective) perspective);
             }
         }
 
@@ -34,22 +33,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             switch (varName) {
                 case "eye": {
-                    string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-                    DreamObject eye = value.GetValueAsDreamObject();
-
-                    //Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
+                    /*if(dreamObject.GetVariable("ckey").TryGetValueAsString(out var ckey) && variableValue.TryGetValueAsDreamObject(out var eye)) {
+                        Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
+                    }*/
                     break;
                 }
                 case "perspective": {
-                    string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-
-                    //Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
+                    /*if(dreamObject.GetVariable("ckey").TryGetValueAsString(out var ckey) && variableValue.TryGetValueAsInteger(out var perspective)) {
+                        Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective) perspective);
+                    }*/
                     break;
                 }
                 case "mob": {
-                    DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
-
-                    connection.MobDreamObject = value.GetValueAsDreamObject();
+                    DreamConnection? connection = _dreamManager.GetConnectionFromClient(dreamObject);
+                    if (connection != null && value.TryGetValueAsDreamObject(out var valueDreamObject) && valueDreamObject != null) {
+                        connection.MobDreamObject = valueDreamObject;
+                    }
                     break;
                 }
                 case "screen": {
@@ -86,9 +85,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "statpanel": {
-                    //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-
-                    //connection.SelectedStatPanel = variableValue.GetValueAsString();
+                    /*DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
+                    if(variableValue.TryGetValueAsString(out var variableValueD)) {
+                        connection.SelectedStatPanel = variableValueD;
+                    }*/
                     break;
                 }
             }

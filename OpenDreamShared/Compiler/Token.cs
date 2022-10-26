@@ -90,6 +90,8 @@
         DM_MinusMinus,
         DM_Modulus,
         DM_ModulusEquals,
+        DM_ModulusModulus,
+        DM_ModulusModulusEquals,
         DM_New,
         DM_Null,
         DM_Period,

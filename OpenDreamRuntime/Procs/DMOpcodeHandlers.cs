@@ -951,11 +951,35 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? ModulusModulus(DMProcState state) {
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
+
+            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+                state.Push(ModulusModulusValues(first, second));
+            } else {
+                throw new Exception("Invalid modulusmodulus operation on " + first + " and " + second);
+            }
+
+            return null;
+        }
+
         public static ProcStatus? ModulusReference(DMProcState state) {
             DreamValue second = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = ModulusValues(first, second);
+
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
+        public static ProcStatus? ModulusModulusReference(DMProcState state) {
+            DreamValue second = state.Pop();
+            DMReference reference = state.ReadReference();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = ModulusModulusValues(first, second);
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -2001,6 +2025,15 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }
+        }
+
+        private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
+                // BYOND docs say that A %% B is equivalent to B * fract(A/B)
+                var fraction = MathF.Truncate(firstFloat / secondFloat);
+                return new DreamValue(fraction * secondFloat);
+            }
+            throw new Exception("Invalid modulusmodulus operation on " + first + " and " + second);
         }
         #endregion Helpers
     }

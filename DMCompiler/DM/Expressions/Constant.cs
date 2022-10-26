@@ -60,6 +60,10 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
         }
 
+        public virtual Constant ModuloModulo(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
+        }
+
         public virtual Constant Power(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} ** {rhs}\" is invalid");
         }
@@ -171,6 +175,16 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, Value % rhsNum.Value);
+        }
+
+        public override Constant ModuloModulo(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.Add(rhs);
+            }
+
+            // BYOND docs say that A %% B is equivalent to B * fract(A/B)
+            var fraction = MathF.Truncate(Value / rhsNum.Value);
+            return new Number(Location, fraction * rhsNum.Value);
         }
 
         public override Constant Power(Constant rhs) {

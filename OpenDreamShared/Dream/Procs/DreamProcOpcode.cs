@@ -99,7 +99,9 @@ namespace OpenDreamShared.Dream.Procs {
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
         //0x5E
-        PushGlobalVars = 0x5F
+        PushGlobalVars = 0x5F,
+        ModulusModulus = 0x60,
+        ModulusModulusReference = 0x61
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -134,7 +136,7 @@ namespace OpenDreamShared.Dream.Procs {
         public enum FormatSuffix : UInt16
         {
             //States that Interpolated values can have (the [] thingies)
-            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary            
+            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
             StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
             ReferenceOfValue = 0x2,        //\ref[]
 

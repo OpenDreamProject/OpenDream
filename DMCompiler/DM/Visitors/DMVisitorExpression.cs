@@ -244,6 +244,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Modulo(modulus.Location, lhs, rhs);
         }
 
+        public void VisitModulusModulus(DMASTModulusModulus modulusModulus) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulus.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulus.B, _inferredPath);
+            Result = new Expressions.ModuloModulo(modulusModulus.Location, lhs, rhs);
+        }
+
         public void VisitPower(DMASTPower power) {
             var lhs = DMExpression.Create(_dmObject, _proc, power.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, power.B, _inferredPath);
@@ -319,6 +325,12 @@ namespace DMCompiler.DM.Visitors {
             var lhs = DMExpression.Create(_dmObject, _proc, modulusAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, modulusAssign.B);
             Result = new Expressions.ModulusAssign(modulusAssign.Location, lhs, rhs);
+        }
+
+        public void VisitModulusModulusAssign(DMASTModulusModulusAssign modulusModulusAssign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.A);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B);
+            Result = new Expressions.ModulusModulusAssign(modulusModulusAssign.Location, lhs, rhs);
         }
 
         public void VisitLeftShift(DMASTLeftShift leftShift) {

@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime {

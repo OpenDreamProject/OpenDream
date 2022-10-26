@@ -176,7 +176,6 @@ namespace DMCompiler.Compiler.DM {
                                 }
                                 i--;
 
-                                bool unimplemented = false;
                                 bool skipSpaces = false;
                                 bool consumeSpaceCharacter = false;
                                 switch (escapeSequence)
@@ -310,10 +309,6 @@ namespace DMCompiler.Compiler.DM {
                                         break;
                                 }
 
-                                if (unimplemented)
-                                {
-                                    DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
-                                }
                                 if (skipSpaces)
                                 {
                                     // Note that some macros in BYOND require a single/zero space between them and the []

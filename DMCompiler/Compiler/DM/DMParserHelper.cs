@@ -283,13 +283,12 @@ namespace DMCompiler.Compiler.DM {
                                     //Plurals, ordinals, etc
                                     //(things that hug, as a suffix, the [] that they reference)
                                     case "s":
-                                        unimplemented = true;
                                         if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "s")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.PluralSuffix));
                                         break;
                                     case "th":
-                                        unimplemented = true;
                                         if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "th")) break;
+                                        // TODO: this should error if not DIRECTLY after an expression ([]\s vs []AA\s)
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.OrdinalIndicator));
                                         break;
                                     default:

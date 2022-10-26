@@ -335,6 +335,34 @@ namespace OpenDreamRuntime.Procs {
                     case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
                         break;
+                    case StringFormatEncoder.FormatSuffix.PluralSuffix:
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber == 1)
+                        {
+                            continue;
+                        }
+                        formattedString.Append("s");
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
+                        // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var ordinalNumber)) {
+                            switch (ordinalNumber) {
+                                case 1:
+                                    formattedString.Append("st");
+                                    break;
+                                case 2:
+                                    formattedString.Append("nd");
+                                    break;
+                                case 3:
+                                    formattedString.Append("rd");
+                                    break;
+                                default:
+                                    formattedString.Append("th");
+                                    break;
+                            }
+                        } else {
+                            formattedString.Append("th");
+                        }
+                        continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
                             //Likely an unimplemented text macro, ignore it

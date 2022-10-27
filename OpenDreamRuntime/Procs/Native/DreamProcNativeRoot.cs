@@ -1542,20 +1542,21 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            string? text;
+            byte[]? bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+                bytes = resource.ResourceData;
 
-                if (text == null)
+                if (bytes == null)
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             SHA1 sha1 = SHA1.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = sha1.ComputeHash(input);
+            byte[] output = sha1.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);

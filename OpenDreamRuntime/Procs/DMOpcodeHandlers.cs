@@ -349,7 +349,7 @@ namespace OpenDreamRuntime.Procs {
                             /// For some mystical reason byond converts \th to integers
                             interps[prevInterpIndex].TryGetValueAsFloat(out var temp);
                             /// This is slightly hacky but the only reliable way I know how to replace the number
-                            formattedString.Remove(formattedString.Length - temp.ToString().Length, temp.ToString().Length);
+                            formattedString.Length -= temp.ToString().Length;
                             formattedString.Append(ordinalNumber);
                             switch (ordinalNumber) {
                                 case 1:

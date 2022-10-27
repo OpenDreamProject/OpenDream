@@ -1060,19 +1060,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
 
-            string? text;
-            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+            byte[] bytes;
 
-                if (text == null)
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                byte[]? filebytes = resource.ResourceData;
+
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             MD5 md5 = MD5.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = md5.ComputeHash(input);
+            byte[] output = md5.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
@@ -1542,13 +1547,16 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            byte[]? bytes;
+            byte[] bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                bytes = resource.ResourceData;
+                byte[]? filebytes = resource.ResourceData;
 
-                if (bytes == null)
+                if (filebytes == null) {
                     return DreamValue.Null;
+                }
+
+                bytes = filebytes;
             } else if (arg.TryGetValueAsString(out string? textdata)) {
                 bytes = Encoding.UTF8.GetBytes(textdata);
             } else {

@@ -176,7 +176,6 @@ namespace DMCompiler.Compiler.DM {
                                 }
                                 i--;
 
-                                bool unimplemented = false;
                                 bool skipSpaces = false;
                                 bool consumeSpaceCharacter = false;
                                 switch (escapeSequence)
@@ -283,13 +282,12 @@ namespace DMCompiler.Compiler.DM {
                                     //Plurals, ordinals, etc
                                     //(things that hug, as a suffix, the [] that they reference)
                                     case "s":
-                                        unimplemented = true;
                                         if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "s")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.PluralSuffix));
                                         break;
                                     case "th":
-                                        unimplemented = true;
                                         if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "th")) break;
+                                        // TODO: this should error if not DIRECTLY after an expression ([]\s vs []AA\s)
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.OrdinalIndicator));
                                         break;
                                     default:
@@ -311,10 +309,6 @@ namespace DMCompiler.Compiler.DM {
                                         break;
                                 }
 
-                                if (unimplemented)
-                                {
-                                    DMCompiler.UnimplementedWarning(constantToken.Location, $"Unimplemented escape sequence \"{escapeSequence}\"");
-                                }
                                 if (skipSpaces)
                                 {
                                     // Note that some macros in BYOND require a single/zero space between them and the []

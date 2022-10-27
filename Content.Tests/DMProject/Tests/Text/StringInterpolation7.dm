@@ -13,6 +13,10 @@
 	ASSERT(text == "4th")
 	text = "[-1]\th"
 	ASSERT(text == "-1th")
+	text = "[4.52]\th"
+	ASSERT(text == "4th")
+	text = "the fitness [1.7]\th is a"
+	ASSERT(text == "the fitness 1st is a")
 	// TODO: this should assert/eval to 0th
 	text = "[null]\th"
 	ASSERT(findtextEx(text,"th") != 0)

@@ -150,6 +150,22 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
+        [DreamProc("ceil")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if (float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                if (float.IsNaN(floatnum)) {
+                    return arg;
+                }
+                return new DreamValue((int)Math.Ceiling(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]
         public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -593,6 +609,22 @@ namespace OpenDreamRuntime.Procs.Native {
             var listing = resourceManager.EnumerateListing(path);
             DreamList list = DreamList.Create(listing);
             return new DreamValue(list);
+        }
+
+        [DreamProc("floor")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_floor(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if (float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                if (float.IsNaN(floatnum)) {
+                    return arg;
+                }
+                return new DreamValue((int)Math.Floor(floatnum));
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("fract")]

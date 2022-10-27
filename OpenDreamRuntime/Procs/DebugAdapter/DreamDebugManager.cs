@@ -18,11 +18,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
         public int Line;
     }
 
-    public void Initialize() {
+    public void Initialize(int port) {
+        Console.WriteLine("DreamDebugManager.Initialize");
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;
-        _adapter.StartListening();
+        //_adapter.StartListening();
+        _adapter.ConnectOut(port: port);
     }
 
     public void Update() {
@@ -63,10 +65,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void OnClientConnected(DebugAdapterClient client) {
+        Console.WriteLine("OnClientConnected: " + client);
         client.OnRequest += OnRequest;
     }
 
     private void OnRequest(DebugAdapterClient client, Request req) {
+        Console.WriteLine("OnRequest: " + req);
         switch (req) {
             case RequestInitialize reqInit:
                 HandleRequestInitialize(client, reqInit);
@@ -104,8 +108,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        reqLaunch.Respond(client);
         _dreamManager.Initialize(reqLaunch.Arguments.JsonPath);
+        reqLaunch.Respond(client);
     }
 
     private void HandleRequestDisconnect(DebugAdapterClient client, RequestDisconnect reqDisconnect) {
@@ -153,7 +157,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 }
 
 interface IDreamDebugManager {
-    public void Initialize();
+    public void Initialize(int port);
     public void Update();
     public void Shutdown();
 

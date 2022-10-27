@@ -13,7 +13,7 @@ namespace OpenDreamShared {
         public static readonly CVarDef<bool> AlwaysShowExceptions =
             CVarDef.Create("opendream.always_show_exceptions", false, CVar.SERVERONLY);
 
-        public static readonly CVarDef<bool> DebugAdapter =
-            CVarDef.Create("opendream.debug_adapter", false, CVar.SERVERONLY);
+        public static readonly CVarDef<int> DebugAdapterLaunched =
+            CVarDef.Create("opendream.debug_adapter_launched", 0, CVar.SERVERONLY);
     }
 }

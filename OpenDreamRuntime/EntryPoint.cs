@@ -44,12 +44,12 @@ namespace OpenDreamRuntime {
         public override void PostInit() {
             _commandSystem = EntitySystem.Get<DreamCommandSystem>();
 
-            bool runningDebugAdapter = _configManager.GetCVar(OpenDreamCVars.DebugAdapter);
-            if (!runningDebugAdapter) {
+            int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
+            if (debugAdapterPort == 0) {
                 _dreamManager.Initialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
             } else {
                 // The debug manager is responsible for running _dreamManager.Initialize()
-                _debugManager.Initialize();
+                _debugManager.Initialize(debugAdapterPort);
             }
         }
 

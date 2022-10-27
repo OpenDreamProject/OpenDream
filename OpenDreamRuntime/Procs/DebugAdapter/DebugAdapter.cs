@@ -9,27 +9,34 @@ public sealed class DebugAdapter {
 
     public event OnClientConnectedHandler? OnClientConnected;
 
-    private readonly TcpListener _listener;
+    private TcpListener? _listener;
     private readonly List<DebugAdapterClient> _clients = new();
 
-    public DebugAdapter(string? host = null, int? port = null) {
+    public DebugAdapter() {
+    }
+
+    public void StartListening(string? host = null, int? port = null) {
         if (!IPAddress.TryParse(host, out IPAddress? hostAddress)) {
             hostAddress = IPAddress.Any;
         }
-
         _listener = new TcpListener(hostAddress, port ?? 25567);
-    }
-
-    public void StartListening() {
         _listener.Start();
     }
 
-    public void HandleMessages() {
-        while (_listener.Pending()) {
-            var client = new DebugAdapterClient(_listener.AcceptTcpClient());
+    public void ConnectOut(string? host = null, int? port = null) {
+        var client = new DebugAdapterClient(new TcpClient(host ?? "127.0.0.1", port ?? 25567));
+        _clients.Add(client);
+        OnClientConnected?.Invoke(client);
+    }
 
-            _clients.Add(client);
-            OnClientConnected?.Invoke(client);
+    public void HandleMessages() {
+        if (_listener != null) {
+            while (_listener.Pending()) {
+                var client = new DebugAdapterClient(_listener.AcceptTcpClient());
+
+                _clients.Add(client);
+                OnClientConnected?.Invoke(client);
+            }
         }
 
         for (int i = 0; i < _clients.Count; i++) {

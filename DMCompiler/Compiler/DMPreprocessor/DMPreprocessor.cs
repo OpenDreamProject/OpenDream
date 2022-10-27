@@ -35,7 +35,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// We do this so that we can A.) Detect whether an #else or #endif is valid and B.) Remember what to do when we find that #else.
         /// A null value indicates the last directive found was an #else that's waiting for an #endif.
         /// </summary>
-        private Stack<bool?> _lastIfEvaluations = new(); 
+        private Stack<bool?> _lastIfEvaluations = new();
         private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
 
         private static readonly TokenType[] DirectiveTypes =
@@ -402,9 +402,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
 
             List<Token> expandedTokens = macro.Expand(token, parameters);
-            expandedTokens.Reverse();
-
-            foreach (Token expandedToken in expandedTokens) {
+            for (int i = expandedTokens.Count - 1; i >= 0; i--) {
+                Token expandedToken = expandedTokens[i];
                 expandedToken.Location = token.Location;
 
                 // These tokens are pushed so that nested macros get processed
@@ -427,7 +426,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             _lastSeenIf = ifToken.Location;
             if (!VerifyDirectiveUsage(ifToken))
                 return;
-                
+
             var tokens = GetLineOfTokens();
             if (!tokens.Any()) { // If empty
                 DMCompiler.Error(new CompilerError(ifToken.Location, "Expression expected for #if"));

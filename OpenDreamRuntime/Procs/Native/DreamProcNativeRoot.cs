@@ -595,6 +595,22 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
+        [DreamProc("fract")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_fract(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if (float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                if(float.IsNaN(floatnum)) {
+                    return arg;
+                }
+                return new DreamValue(floatnum - (int)floatnum);
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("hascall")]
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueType.String)]
@@ -701,6 +717,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
+        [DreamProc("isinf")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isinf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if(arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsInfinity(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("islist")]
         [DreamProcParameter("Object")]
         public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -753,6 +778,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(1);
+        }
+
+        [DreamProc("isnan")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isnan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsNaN(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("isnull")]
@@ -1874,6 +1908,22 @@ namespace OpenDreamRuntime.Procs.Native {
             format = format.Replace("mm", time.Minute.ToString("00"));
             format = format.Replace("ss", time.Second.ToString("00"));
             return new DreamValue(format);
+        }
+
+        [DreamProc("trunc")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_trunc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if (float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                if (float.IsNaN(floatnum)) {
+                    return arg;
+                }
+                return new DreamValue((int)floatnum);
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("typesof")]

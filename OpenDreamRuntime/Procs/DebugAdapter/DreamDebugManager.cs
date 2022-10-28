@@ -113,10 +113,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestDisconnect(DebugAdapterClient client, RequestDisconnect reqDisconnect) {
-        if (reqDisconnect.Arguments.Restart) {
-            reqDisconnect.RespondError(client, "Restarts are not supported");
-        }
-
         // TODO: Don't terminate if launch type was "attach"
         reqDisconnect.Respond(client);
         _server.Shutdown("A shutdown was initiated by the debug adapter");

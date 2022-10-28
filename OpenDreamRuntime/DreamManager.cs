@@ -80,7 +80,8 @@ namespace OpenDreamRuntime {
 
             _compiledJson = json;
             _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
-
+            if(!_dreamResourceManager.DoesFileExist(_compiledJson.Interface))            
+                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
             ObjectTree.LoadJson(json);
 
             SetMetaObjects();

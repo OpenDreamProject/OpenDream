@@ -19,6 +19,7 @@ public class Request : ProtocolMessage {
             case "launch": return json.Deserialize<RequestLaunch>();
             case "disconnect": return json.Deserialize<RequestDisconnect>();
             case "setBreakpoints": return json.Deserialize<RequestSetBreakpoints>();
+            case "setFunctionBreakpoints": return json.Deserialize<RequestSetFunctionBreakpoints>();
             case "configurationDone": return json.Deserialize<RequestConfigurationDone>();
             default: return request;  // Caller will fail to recognize it and can respond with `success: false`;
         }

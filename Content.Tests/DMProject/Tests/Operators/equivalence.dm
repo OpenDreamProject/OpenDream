@@ -29,7 +29,14 @@
 	ASSERT((m3 ~= m2) == FALSE)
 	ASSERT((m3 ~= m3) == TRUE)
 
+	var/matrix/m4 = matrix(1,2,3,4,5,6)
+	ASSERT((m1 ~= m4) == TRUE)
+	ASSERT((m2 ~= m4) == FALSE)
+	ASSERT((m3 ~= m4) == FALSE)
+	ASSERT((m4 ~= m4) == TRUE)
+
 	ASSERT(("apple" ~= m1) == FALSE)
 	ASSERT(("apple" ~! m1))
+	ASSERT(m1 ~! "apple")
 	ASSERT(m1 ~! m2)
 	ASSERT(1 ~= 1)

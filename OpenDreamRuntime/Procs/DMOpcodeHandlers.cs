@@ -1900,7 +1900,7 @@ namespace OpenDreamRuntime.Procs {
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
             if(first.TryGetValueAsDreamObject(out var firstObject)) {
-                if(firstObject!.ObjectDefinition?.MetaObject is not null) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
                     return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second).IsTruthy();
                 }
             }

@@ -156,7 +156,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 return DreamValue.True;
             }
-            return a.Equals(b) ? DreamValue.True : DreamValue.False;
+            return DreamValue.False; // This will never be true, because reaching this line means b is not a list, while a will always be.
         }
 
         public DreamValue OperatorCombine(DreamValue a, DreamValue b) {

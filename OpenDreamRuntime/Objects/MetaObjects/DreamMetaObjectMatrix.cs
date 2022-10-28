@@ -98,7 +98,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
-                string elements = "abcdef";
+                const string elements = "abcdef";
                 for (int i = 0; i < elements.Length; i++) {
                     left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
                     right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
@@ -107,7 +107,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 return DreamValue.True;
             }
-            return a.Equals(b) ? DreamValue.True : DreamValue.False;
+            return DreamValue.False; // This will never be true, because reaching this line means b is not a matrix, while a will always be.
         }
     }
 }

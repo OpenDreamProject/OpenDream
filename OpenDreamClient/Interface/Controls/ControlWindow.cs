@@ -63,6 +63,10 @@ namespace OpenDreamClient.Interface.Controls
             window.Children.Add(UIElement);
             window.SetWidth = _controlDescriptor.Size?.X ?? 640;
             window.SetHeight = _controlDescriptor.Size?.Y ?? 440;
+            if(_controlDescriptor.Size?.X == 0) 
+                window.SetWidth = window.MaxWidth;
+            if(_controlDescriptor.Size?.Y == 0) 
+                window.SetHeight = window.MaxHeight;
             window.Closing += _ => { _openWindows.Remove((window, null)); };
 
             _openWindows.Add((window, null));
@@ -79,15 +83,37 @@ namespace OpenDreamClient.Interface.Controls
 
         public void UpdateAnchors()
         {
-            foreach (InterfaceControl control in ChildControls)
+            for(int i = 0; i < ChildControls.Count; i++)
             {
+                InterfaceControl control = ChildControls[i];
                 var element = control.UIElement;
+                var elementPos = control.Pos.GetValueOrDefault();
+                var windowSize = Size.GetValueOrDefault();
+                var elementSize = control.Size.GetValueOrDefault();
+
+                if(control.Size?.X == 0) 
+                {
+                    elementSize.X = (int) (windowSize.X - elementPos.X);
+                    if(ChildControls.Count - 1 > i)
+                    {
+                        var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
+                        elementSize.X = nextElementPos.X - elementPos.X;
+                    }
+                    element.SetWidth = elementSize.X;
+                }
+                if(control.Size?.Y == 0) 
+                {
+                    elementSize.Y = (int) (windowSize.Y - elementPos.Y);
+                    if(ChildControls.Count - 1 > i)
+                    {
+                        var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
+                        elementSize.Y = nextElementPos.Y - elementPos.Y;
+                    }
+                    element.SetHeight = elementSize.Y;                    
+                }
 
                 if (control.Anchor1.HasValue)
                 {
-                    var elementPos = control.Pos.GetValueOrDefault();
-                    var windowSize = Size.GetValueOrDefault();
-
                     var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
                     var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
                     var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
@@ -97,8 +123,6 @@ namespace OpenDreamClient.Interface.Controls
 
                     if (control.Anchor2.HasValue)
                     {
-                        var elementSize = control.Size.GetValueOrDefault();
-
                         var offset2X = (elementPos.X + elementSize.X) -
                                        (windowSize.X * control.Anchor2.Value.X / 100);
                         var offset2Y = (elementPos.Y + elementSize.Y) -
@@ -109,6 +133,10 @@ namespace OpenDreamClient.Interface.Controls
                         element.SetHeight = Math.Max(height, 0);
                     }
                 }
+            }
+            foreach (InterfaceControl control in ChildControls) //second pass to correct overlaps
+            {
+                
             }
         }
 

@@ -14,6 +14,11 @@ public sealed class Breakpoint {
     [JsonPropertyName("instructionReference")] public string? InstructionReference { get; set; }
     [JsonPropertyName("offset")] public int? Offset { get; set; }
 
+    public Breakpoint(int id, bool verified) {
+        Id = id;
+        Verified = true;
+    }
+
     public Breakpoint(int id, Source source, int line, int column) {
         Id = id;
         Verified = true;

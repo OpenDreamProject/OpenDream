@@ -202,11 +202,14 @@ namespace OpenDreamRuntime.Procs {
             Array.Copy(other._localVariables, _localVariables, 256);
         }
 
-        protected override ProcStatus InternalResume()
-        {
+        protected override ProcStatus InternalResume() {
             if (Instance is not null && Instance.Deleted) {
                 ReturnPools();
                 return ProcStatus.Returned;
+            }
+
+            if (_pc == 0) {
+                DebugManager.HandleProcStart(this);
             }
 
             while (_pc < _proc.Bytecode.Length) {

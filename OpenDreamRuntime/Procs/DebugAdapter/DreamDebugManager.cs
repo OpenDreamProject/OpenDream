@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System.IO;
+using System.Linq;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
 using Robust.Server;
@@ -14,6 +15,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
     private string? jsonPath;
     private int _breakpointIdCounter;
+
+    private ILookup<(string Type, string Proc), FunctionBreakpoint>? functionBreakpoints;
 
     private struct Breakpoint {
         public int Line;
@@ -56,11 +59,26 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         foreach (Breakpoint breakpoint in breakpoints) {
             if (breakpoint.Line == line) {
-                Logger.Debug($"Breakpoint hit at {state.CurrentSource}:{line}");
+                Logger.Info($"Breakpoint hit at {state.CurrentSource}:{line}");
                 HandleOutput(LogLevel.Info, $"Breakpoint hit at {state.CurrentSource}:{line}");
 
                 return;
             }
+        }
+    }
+
+    public void HandleProcStart(DMProcState state) {
+        bool breakHere = false;
+        if (functionBreakpoints != null) {
+            foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
+                if (true /* could implement Condition and HitCondition here */) {
+                    breakHere = true;
+                    break;
+                }
+            }
+        }
+        if (breakHere) {
+            Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name} -> {state.CurrentSource}");
         }
     }
 
@@ -86,6 +104,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestConfigurationDone reqConfigDone:
                 HandleRequestConfigurationDone(client, reqConfigDone);
                 break;
+            case RequestSetFunctionBreakpoints reqFuncBreakpoints:
+                HandleRequestSetFunctionBreakpoints(client, reqFuncBreakpoints);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -104,7 +125,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         reqInit.Respond(client, new Capabilities {
             SupportsConfigurationDoneRequest = true,
-            //SupportsFunctionBreakpoints = true,
+            SupportsFunctionBreakpoints = true,
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -165,6 +186,35 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         reqSetBreakpoints.Respond(client, responseBreakpoints);
     }
+
+    private void HandleRequestSetFunctionBreakpoints(DebugAdapterClient client, RequestSetFunctionBreakpoints reqFuncBreakpoints) {
+        var input = reqFuncBreakpoints.Arguments.Breakpoints;
+        var output = new Protocol.Breakpoint[input.Length];
+
+        if (input.Length == 0) {
+            this.functionBreakpoints = null;
+        } else {
+            var toSave = new List<(string Type, string Proc, FunctionBreakpoint Breakpoint)>();
+
+            for (int i = 0; i < input.Length; ++i) {
+                var bp = input[i];
+
+                string name = bp.Name.Replace("/proc/", "/").Replace("/verb/", "/");
+                int last = name.LastIndexOf('/');
+                string type = name[..last];
+                string proc = name[(last + 1)..];
+                if (type == "") {
+                    type = "/";
+                }
+                toSave.Add((type, proc, bp));
+
+                output[i] = new(_breakpointIdCounter++, verified: true);
+            }
+
+            this.functionBreakpoints = toSave.ToLookup(triplet => (triplet.Type, triplet.Proc), triplet => triplet.Breakpoint);
+        }
+        reqFuncBreakpoints.Respond(client, output);
+    }
 }
 
 interface IDreamDebugManager {
@@ -173,5 +223,6 @@ interface IDreamDebugManager {
     public void Shutdown();
 
     public void HandleOutput(LogLevel logLevel, string message);
+    public void HandleProcStart(DMProcState state);
     public void HandleLineChange(DMProcState state, int line);
 }

@@ -24,20 +24,20 @@ public sealed class DebugAdapterClient {
     public DebugAdapterClient(TcpClient client) {
         _client = client;
         _netStream = _client.GetStream();
-        _netReader = new StreamReader(_netStream);
-        _netWriter = new StreamWriter(_netStream);
+        _netReader = new StreamReader(_netStream, Encoding.ASCII);
+        _netWriter = new StreamWriter(_netStream, Encoding.ASCII);
 
         _sawmill = Logger.GetSawmill("opendream.debug_adapter");
         _sawmill.Info($"Accepted debug adapter client {_client.Client.RemoteEndPoint?.Serialize()}");
     }
 
     public void HandleMessages() {
-        while (_client.Connected && _netStream.DataAvailable) {
+        while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0 || _netReader.Peek() != -1)) {
             ProtocolMessage? message = ReadRequest();
             if (message == null)
                 continue;
 
-            _sawmill.Debug($"Received message type {message.Type}, ID {message.Seq}");
+            _sawmill.Debug($"Parsed {message}");
             _seqCounter = message.Seq + 1;
             switch (message) {
                 case Request req:
@@ -57,7 +57,7 @@ public sealed class DebugAdapterClient {
         string body = JsonSerializer.Serialize(message);
         string header = $"Content-Length: {body.Length}\r\n\r\n";
 
-        _sawmill.Debug($"Sending {body}");
+        _sawmill.Debug($"Sending {body.Length} {body}");
         _netWriter.BaseStream.Write(Encoding.ASCII.GetBytes(header));
         _netWriter.BaseStream.Write(Encoding.UTF8.GetBytes(body));
     }
@@ -141,7 +141,7 @@ public sealed class DebugAdapterClient {
         }
 
         string content = new String(buffer);
-        _sawmill.Debug($"Received {content}");
+        _sawmill.Debug($"Received {contentLength} {content}");
 
         return content;
     }

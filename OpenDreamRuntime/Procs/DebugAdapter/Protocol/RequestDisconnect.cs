@@ -11,11 +11,7 @@ public sealed class RequestDisconnect : Request {
         [JsonPropertyName("suspendDebuggee")] public bool SuspendDebuggee { get; set; }
     }
 
-    private sealed class DisconnectResponse : Response {
-        public DisconnectResponse(Request respondingTo) : base(respondingTo, true) { }
-    }
-
     public void Respond(DebugAdapterClient client) {
-        client.SendMessage(new DisconnectResponse(this));
+        client.SendMessage(Response.NewSuccess(this));
     }
 }

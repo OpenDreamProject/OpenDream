@@ -11,15 +11,7 @@ public sealed class RequestSetBreakpoints : Request {
         [JsonPropertyName("sourceModified")] public bool SourceModified { get; set; }
     }
 
-    private sealed class SetBreakpointsResponse : Response {
-        public SetBreakpointsResponse(Request respondingTo, Breakpoint[] breakpoints) : base(respondingTo, false) {
-            Body = new Dictionary<string, object?> {
-                {"breakpoints", breakpoints}
-            };
-        }
-    }
-
     public void Respond(DebugAdapterClient client, Breakpoint[] breakpoints) {
-        client.SendMessage(new SetBreakpointsResponse(this, breakpoints));
+        client.SendMessage(Response.NewSuccess(this, new { breakpoints = breakpoints }));
     }
 }

@@ -19,19 +19,12 @@ public class Request : ProtocolMessage {
             case "launch": return json.Deserialize<RequestLaunch>();
             case "disconnect": return json.Deserialize<RequestDisconnect>();
             case "setBreakpoints": return json.Deserialize<RequestSetBreakpoints>();
-            default: throw new InvalidOperationException($"Unrecognized \"command\" value: {request.Command}");
+            case "configurationDone": return json.Deserialize<RequestConfigurationDone>();
+            default: return request;  // Caller will fail to recognize it and can respond with `success: false`;
         }
     }
 
-    private sealed class ErrorResponse : Response {
-        public ErrorResponse(Request respondingTo, string error) : base(respondingTo, false) {
-            Body = new Dictionary<string, object?> {
-                {"error", new Message(error, showUser: true)}
-            };
-        }
-    }
-
-    public void RespondError(DebugAdapterClient client, string error) {
-        client.SendMessage(new ErrorResponse(this, error));
+    public void RespondError(DebugAdapterClient client, string errorText) {
+        client.SendMessage(Response.NewError(this, new { error = new Message(errorText, showUser: true) }, errorText));
     }
 }

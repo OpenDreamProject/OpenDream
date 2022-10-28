@@ -23,15 +23,7 @@ public sealed class RequestInitialize : Request {
         [JsonPropertyName("supportsArgsCanBeInterpretedByShell")] public bool SupportsArgsCanBeInterpretedByShell { get; set; }
     }
 
-    private sealed class InitializeResponse : Response {
-        public InitializeResponse(Request respondingTo) : base(respondingTo, true) {
-            Body = new Dictionary<string, object?> {
-
-            };
-        }
-    }
-
-    public void Respond(DebugAdapterClient client) {
-        client.SendMessage(new InitializeResponse(this));
+    public void Respond(DebugAdapterClient client, Capabilities body) {
+        client.SendMessage(Response.NewSuccess(this, body));
     }
 }

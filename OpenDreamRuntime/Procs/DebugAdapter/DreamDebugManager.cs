@@ -12,6 +12,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private DebugAdapter? _adapter;
     private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
+    private string? jsonPath;
     private int _breakpointIdCounter;
 
     private struct Breakpoint {
@@ -19,7 +20,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void Initialize(int port) {
-        Console.WriteLine("DreamDebugManager.Initialize");
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;
@@ -65,12 +65,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void OnClientConnected(DebugAdapterClient client) {
-        Console.WriteLine("OnClientConnected: " + client);
         client.OnRequest += OnRequest;
     }
 
     private void OnRequest(DebugAdapterClient client, Request req) {
-        Console.WriteLine("OnRequest: " + req);
+        // TODO: try/catch here?
         switch (req) {
             case RequestInitialize reqInit:
                 HandleRequestInitialize(client, reqInit);
@@ -83,6 +82,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestSetBreakpoints reqSetBreakpoints:
                 HandleRequestSetBreakpoints(client, reqSetBreakpoints);
+                break;
+            case RequestConfigurationDone reqConfigDone:
+                HandleRequestConfigurationDone(client, reqConfigDone);
+                break;
+            default:
+                req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
         }
     }
@@ -97,7 +102,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        reqInit.Respond(client);
+        reqInit.Respond(client, new Capabilities {
+            SupportsConfigurationDoneRequest = true,
+            //SupportsFunctionBreakpoints = true,
+        });
+        // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
     }
 
@@ -108,8 +117,14 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        _dreamManager.Initialize(reqLaunch.Arguments.JsonPath);
+        jsonPath = reqLaunch.Arguments.JsonPath;
         reqLaunch.Respond(client);
+    }
+
+    private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
+        _dreamManager.Initialize(jsonPath);
+        reqConfigDone.Respond(client);
+        client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
     }
 
     private void HandleRequestDisconnect(DebugAdapterClient client, RequestDisconnect reqDisconnect) {

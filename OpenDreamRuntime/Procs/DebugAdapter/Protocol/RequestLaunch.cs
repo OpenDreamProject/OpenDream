@@ -13,17 +13,7 @@ public sealed class RequestLaunch : Request {
         [JsonPropertyName("json_path")] public string? JsonPath { get; set; }
     }
 
-    public sealed class LaunchResponseBody {
-        [JsonPropertyName("$opendream/port")] public int Port { get; set; }
-    }
-
-    private sealed class LaunchResponse : Response {
-        public LaunchResponse(Request respondingTo) : base(respondingTo, true) {
-            Body = new LaunchResponseBody { Port = IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port };
-        }
-    }
-
     public void Respond(DebugAdapterClient client) {
-        client.SendMessage(new LaunchResponse(this));
+        client.SendMessage(Response.NewSuccess(this));
     }
 }

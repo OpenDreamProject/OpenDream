@@ -134,10 +134,6 @@ namespace OpenDreamClient.Interface.Controls
                     }
                 }
             }
-            foreach (InterfaceControl control in ChildControls) //second pass to correct overlaps
-            {
-                
-            }
         }
 
         private void UpdateWindowAttributes(

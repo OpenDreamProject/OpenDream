@@ -60,7 +60,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
 
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);

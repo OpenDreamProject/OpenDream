@@ -41,9 +41,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
                         return;
 
-                    int x = (varName == "x") ? value.GetValueAsInteger() : (int)transform.WorldPosition.X;
-                    int y = (varName == "y") ? value.GetValueAsInteger() : (int)transform.WorldPosition.Y;
-                    int z = (varName == "z") ? value.GetValueAsInteger() : (int)transform.MapID;
+                    int x = (varName == "x") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.X;
+                    int y = (varName == "y") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.Y;
+                    int z = (varName == "z") ? value.MustGetValueAsInteger() : (int)transform.MapID;
 
                     _dreamMapManager.TryGetTurfAt((x, y), z, out var newLoc);
                     dreamObject.SetVariable("loc", new DreamValue(newLoc));

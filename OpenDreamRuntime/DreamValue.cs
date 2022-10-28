@@ -96,18 +96,9 @@ namespace OpenDreamRuntime {
             return "DreamValue(" + Type + ", " + strValue + ")";
         }
 
-        [Obsolete("Deprecated. Use the relevant TryGetValueAs[Type]() instead.")]
-        private object GetValueExpectingType(DreamValueType type) {
-            if (Type == type) {
-                return Value;
-            }
-
-            throw new Exception("Value " + this + " was not the expected type of " + type + "");
-        }
-
-        [Obsolete("Deprecated. Use TryGetValueAsString() instead.")]
+        [Obsolete("Deprecated. Use TryGetValueAsString() or MustGetValueAsString() instead.")]
         public string GetValueAsString() {
-            return (string)GetValueExpectingType(DreamValueType.String);
+            return MustGetValueAsString();
         }
 
         public bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
@@ -120,10 +111,18 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public string MustGetValueAsString() {
+            if (Type != DreamValueType.String) {
+                throw new Exception("Value " + this + " was not the expected type of string");
+            }
+
+            return (string)Value;
+        }
+
         //Casts a float value to an integer
-        [Obsolete("Deprecated. Use TryGetValueAsInteger() instead.")]
+        [Obsolete("Deprecated. Use TryGetValueAsInteger() or MustGetValueAsInteger() instead.")]
         public int GetValueAsInteger() {
-            return (int)(float)GetValueExpectingType(DreamValueType.Float);
+            return MustGetValueAsInteger();
         }
 
         public bool TryGetValueAsInteger(out int value) {
@@ -136,9 +135,17 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsFloat() instead.")]
+        public int MustGetValueAsInteger() {
+            if (Type != DreamValueType.Float) {
+                throw new Exception("Value " + this + " was not the expected type of integer");
+            }
+
+            return (int)(float)Value;
+        }
+
+        [Obsolete("Deprecated. Use TryGetValueAsFloat() or MustGetValueAsFloat() instead.")]
         public float GetValueAsFloat() {
-            return (float)GetValueExpectingType(DreamValueType.Float);
+            return MustGetValueAsFloat();
         }
 
         public bool TryGetValueAsFloat(out float value) {
@@ -151,9 +158,12 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamResource() instead.")]
-        public DreamResource GetValueAsDreamResource() {
-            return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
+        public float MustGetValueAsFloat() {
+            if (Type != DreamValueType.Float) {
+                throw new Exception("Value " + this + " was not the expected type of float");
+            }
+
+            return (float)Value;
         }
 
         public bool TryGetValueAsDreamResource(out DreamResource value) {
@@ -166,9 +176,17 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamObject() instead.")]
+        public DreamResource MustGetValueAsDreamResource() {
+            if (Type != DreamValueType.DreamResource) {
+                throw new Exception("Value " + this + " was not the expected type of DreamResource");
+            }
+
+            return (DreamResource)Value;
+        }
+
+        [Obsolete("Deprecated. Use TryGetValueAsDreamObject() or MustGetValueAsDreamObject() instead.")]
         public DreamObject? GetValueAsDreamObject() {
-            DreamObject dreamObject = (DreamObject)GetValueExpectingType(DreamValueType.DreamObject);
+            DreamObject dreamObject = MustGetValueAsDreamObject();
 
             if (dreamObject?.Deleted == true) {
                 Value = null;
@@ -181,7 +199,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
-                dreamObject = GetValueAsDreamObject();
+                dreamObject = MustGetValueAsDreamObject();
                 return true;
             } else {
                 dreamObject = null;
@@ -189,13 +207,21 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public DreamObject MustGetValueAsDreamObject() {
+            if (Type != DreamValueType.DreamObject) {
+                throw new Exception("Value " + this + " was not the expected type of DreamObject");
+            }
+
+            return (DreamObject)Value;
+        }
+
         public bool TryGetValueAsDreamObjectOfType(DreamPath type, [NotNullWhen(true)] out DreamObject? dreamObject) {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamList() instead.")]
+        [Obsolete("Deprecated. Use TryGetValueAsDreamList() or MustGetValueAsDreamList() instead.")]
         public DreamList GetValueAsDreamList() {
-            return (DreamList)GetValueAsDreamObject();
+            return (DreamList)MustGetValueAsDreamObject();
         }
 
         public bool TryGetValueAsDreamList(out DreamList list) {
@@ -210,9 +236,12 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsPath() instead.")]
-        public DreamPath GetValueAsPath() {
-            return (DreamPath)GetValueExpectingType(DreamValueType.DreamPath);
+        public DreamList MustGetValueAsDreamList() {
+            if (!TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
+                throw new Exception("Value " + this + " was not the expected type of DreamList");
+            }
+
+            return (DreamList)listObject;
         }
 
         public bool TryGetValueAsPath(out DreamPath path) {
@@ -227,6 +256,14 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public DreamPath MustGetValueAsPath() {
+            if (Type != DreamValueType.DreamPath) {
+                throw new Exception("Value " + this + " was not the expected type of DreamPath");
+            }
+
+            return (DreamPath)Value;
+        }
+
         public bool TryGetValueAsProc(out DreamProc proc) {
             if (Type == DreamValueType.DreamProc) {
                 proc = (DreamProc)Value;
@@ -237,6 +274,14 @@ namespace OpenDreamRuntime {
 
                 return false;
             }
+        }
+
+        public DreamProc MustGetValueAsProc() {
+            if (Type != DreamValueType.DreamProc) {
+                throw new Exception("Value " + this + " was not the expected type of DreamProc");
+            }
+
+            return (DreamProc)Value;
         }
 
         public bool IsTruthy() {

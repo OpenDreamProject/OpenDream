@@ -2,12 +2,18 @@
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
-[Virtual]
-public class Event : ProtocolMessage {
+public sealed class Event : ProtocolMessage, IEvent {
     [JsonPropertyName("event")] public string EventName { get; set; }
     [JsonPropertyName("body")] public object? Body { get; set; }
 
-    protected Event(string eventName) : base("event") {
+    public Event(string eventName, object? body = null) : base("event") {
         EventName = eventName;
+        Body = body;
     }
+
+    Event IEvent.ToEvent() => this;
+}
+
+public interface IEvent {
+    public Event ToEvent();
 }

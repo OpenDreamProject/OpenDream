@@ -1,5 +1,5 @@
 ﻿namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
-public sealed class InitializedEvent : Event {
-    public InitializedEvent() : base("initialized") { }
+public sealed class InitializedEvent : IEvent {
+    Event IEvent.ToEvent() => new Event("initialized");
 }

@@ -63,4 +63,6 @@ public sealed class DebugAdapter {
             client.SendMessage(message);
         }
     }
+
+    public void SendAll(IEvent evt) => SendAll(evt.ToEvent());
 }

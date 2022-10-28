@@ -1,10 +1,15 @@
-﻿namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
+﻿using System.Text.Json.Serialization;
 
-public sealed class OutputEvent : Event {
-    public OutputEvent(string category, string output) : base("output") {
-        Body = new Dictionary<string, object?> {
-            {"category", category},
-            {"output", output}
-        };
+namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
+
+public sealed class OutputEvent : IEvent {
+    Event IEvent.ToEvent() => new("output", this);
+
+    [JsonPropertyName("category")] public string Category { get; set; }
+    [JsonPropertyName("output")] public string Output { get; set; }
+
+    public OutputEvent(string category, string output) {
+        Category = category;
+        Output = output;
     }
 }

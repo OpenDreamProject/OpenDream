@@ -62,6 +62,8 @@ public sealed class DebugAdapterClient {
         _netWriter.BaseStream.Write(Encoding.UTF8.GetBytes(body));
     }
 
+    public void SendMessage(IEvent evt) => SendMessage(evt.ToEvent());
+
     private ProtocolMessage? ReadRequest() {
         ProtocolHeader? header = ReadProtocolMessageHeader();
         if (header == null)

@@ -223,7 +223,7 @@ namespace DMCompiler {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
-            compiledDream.Interface = Path.GetRelativePath(Path.GetDirectoryName(outputFile), interfaceFile);
+            compiledDream.Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(outputFile), interfaceFile);
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
             compiledDream.Types = jsonRep.Item1;
             compiledDream.Procs = jsonRep.Item2;

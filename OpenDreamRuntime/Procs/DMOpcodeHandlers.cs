@@ -335,6 +335,34 @@ namespace OpenDreamRuntime.Procs {
                     case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
                         break;
+                    case StringFormatEncoder.FormatSuffix.PluralSuffix:
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber == 1)
+                        {
+                            continue;
+                        }
+                        formattedString.Append("s");
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
+                        // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var ordinalNumber)) {
+                            switch (ordinalNumber) {
+                                case 1:
+                                    formattedString.Append("st");
+                                    break;
+                                case 2:
+                                    formattedString.Append("nd");
+                                    break;
+                                case 3:
+                                    formattedString.Append("rd");
+                                    break;
+                                default:
+                                    formattedString.Append("th");
+                                    break;
+                            }
+                        } else {
+                            formattedString.Append("th");
+                        }
+                        continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
                             //Likely an unimplemented text macro, ignore it
@@ -1466,30 +1494,32 @@ namespace OpenDreamRuntime.Procs {
 
         #region Others
         public static ProcStatus? Browse(DMProcState state) {
-            string options = state.Pop().GetValueAsString();
+            state.Pop().TryGetValueAsString(out string? options);
             DreamValue body = state.Pop();
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
-            DreamObject client;
+            IEnumerable<DreamConnection> clients;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                client = receiver.GetVariable("client").GetValueAsDreamObject();
+                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
-                client = receiver;
+                clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
+            } else if (receiver == state.DreamManager.WorldInstance) {
+                clients = state.DreamManager.Connections;
             } else {
-                throw new Exception("Invalid browse() recipient");
+                throw new Exception($"Invalid browse() recipient: expected mob, client, or world, got {receiver}");
             }
 
-            if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
+            string? browseValue;
+            if (body.TryGetValueAsDreamResource(out var resource)) {
+                browseValue = resource.ReadAsString();
+            } else if (body.TryGetValueAsString(out browseValue)) {
+                // Got it.
+            } else {
+                throw new Exception($"Invalid browse() body: expected resource or string, got {body}");
+            }
 
-                string browseValue;
-                if (body.Type == DreamValue.DreamValueType.DreamResource) {
-                    browseValue = body.GetValueAsDreamResource().ReadAsString();
-                } else {
-                    browseValue = (string)body.Value;
-                }
-
-                connection.Browse(browseValue, options);
+            foreach (DreamConnection client in clients) {
+                client?.Browse(browseValue, options);
             }
 
             return null;
@@ -1885,21 +1915,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out var firstList) && second.TryGetValueAsDreamList(out var secondList))
-            {
-                if (firstList.GetLength() != secondList.GetLength()) return false;
-                var firstValues = firstList.GetValues();
-                var secondValues = secondList.GetValues();
-                for(var i = 0; i < firstValues.Count; i++)
-                {
-                    if (!firstValues[i].Equals(secondValues[i])) return false;
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second).IsTruthy();
                 }
-
-                return true;
             }
-
-
-            throw new NotImplementedException("Equivalence comparison for " + first + " and " + second + " is not implemented");
+            // Behaviour is otherwise equivalent (pun intended) to ==
+            return IsEqual(first, second);
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

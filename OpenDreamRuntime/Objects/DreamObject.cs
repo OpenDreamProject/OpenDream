@@ -32,14 +32,6 @@ namespace OpenDreamRuntime.Objects {
             return new InitDreamObjectState(thread, this, usr, arguments);
         }
 
-        public static DreamObject? GetFromReferenceID(IDreamManager manager, string refId) {
-            foreach (KeyValuePair<DreamObject, string> referenceIdPair in manager.ReferenceIDs) {
-                if (referenceIdPair.Value == refId) return referenceIdPair.Key;
-            }
-
-            return null;
-        }
-
         public void Delete(IDreamManager manager) {
             if (Deleted) return;
             ObjectDefinition?.MetaObject?.OnObjectDeleted(this);

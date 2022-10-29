@@ -116,7 +116,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         float[] matrixArray = value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out var matrix)
-                            ? DreamMetaObjectMatrix.MatrixToFloatArray(matrix)
+                            ? DreamMetaObjectMatrix.MatrixToTransformFloatArray(matrix)
                             : DreamMetaObjectMatrix.IdentityMatrixArray;
 
                         appearance.Transform = matrixArray;

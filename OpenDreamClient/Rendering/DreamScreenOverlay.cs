@@ -1,5 +1,6 @@
 ﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
+using Robust.Shared.Console;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 
@@ -12,6 +13,11 @@ public sealed class DreamScreenOverlay : Overlay {
     // Drawn in world space instead of screen space so that it scales the same as everything else
     public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
+    /// <summary>
+    /// Whether or not this overlay should draw anything. Controlled by the "togglescreenoverlay" command.
+    /// </summary>
+    public bool Enabled = true;
+
     private readonly RenderOrderComparer _renderOrderComparer = new();
 
     [Dependency] private readonly IPlayerManager _playerManager = default!;
@@ -20,6 +26,10 @@ public sealed class DreamScreenOverlay : Overlay {
 
     public DreamScreenOverlay() {
         IoCManager.InjectDependencies(this);
+    }
+
+    protected override bool BeforeDraw(in OverlayDrawArgs args) {
+        return Enabled;
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -52,6 +62,25 @@ public sealed class DreamScreenOverlay : Overlay {
                     sprite.Icon.Draw(worldHandle, position + iconSize * (x, y));
                 }
             }
+        }
+    }
+}
+
+public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
+    public string Command => "togglescreenoverlay";
+    public string Description => "Toggle rendering of screen objects";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamScreenOverlay), out var overlay) &&
+            overlay is DreamScreenOverlay screenOverlay) {
+            screenOverlay.Enabled = !screenOverlay.Enabled;
         }
     }
 }

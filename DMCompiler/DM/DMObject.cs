@@ -8,6 +8,11 @@ using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
+    /// <remarks>
+    /// This doesn't represent a particular, specific instance of an object, <br/>
+    /// but rather stores the compiletime information necessary to describe a certain object definition, <br/>
+    /// including its procs, vars, path, parent, etc.
+    /// </remarks>
     class DMObject {
         public int Id;
         public DreamPath Path;

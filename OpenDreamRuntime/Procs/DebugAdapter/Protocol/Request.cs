@@ -24,6 +24,7 @@ public class Request : ProtocolMessage {
             case "threads": return json.Deserialize<RequestThreads>();
             case "continue": return json.Deserialize<RequestContinue>();
             case "pause": return json.Deserialize<RequestPause>();
+            case "stackTrace": return json.Deserialize<RequestStackTrace>();
             default: return request;  // Caller will fail to recognize it and can respond with `success: false`;
         }
     }

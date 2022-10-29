@@ -1,0 +1,37 @@
+using System.Text.Json.Serialization;
+
+namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
+
+public sealed class RequestStackTrace : Request {
+    [JsonPropertyName("arguments")] public RequestSetBreakpointsArguments Arguments { get; set; }
+
+    public sealed class RequestSetBreakpointsArguments {
+        /**
+         * Retrieve the stacktrace for this thread.
+         */
+        [JsonPropertyName("threadId")] public int ThreadId { get; set; }
+
+        /**
+         * The index of the first frame to return; if omitted frames start at 0.
+         */
+        [JsonPropertyName("startFrame")] public int? StartFrame { get; set; }
+
+        /**
+         * The maximum number of frames to return. If levels is not specified or 0,
+         * all frames are returned.
+         */
+        [JsonPropertyName("levels")] public int? Levels { get; set; }
+
+        /**
+         * Specifies details on how to format the stack frames.
+         * The attribute is only honored by a debug adapter if the corresponding
+         * capability `supportsValueFormattingOptions` is true.
+         */
+        [JsonPropertyName("format")] public StackFrameFormat? Format { get; set; }
+    }
+
+    // If we ever need to offer pagination of stack frames, change the signature of this method.
+    public void Respond(DebugAdapterClient client, StackFrame[] stackFrames) {
+        client.SendMessage(Response.NewSuccess(this, new { stackFrames, totalFrames = stackFrames.Length }));
+    }
+}

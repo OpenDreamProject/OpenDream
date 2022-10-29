@@ -88,10 +88,6 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant Equals(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} == {rhs}\" is invalid");
         }
-
-        public virtual Constant NotEquals(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} != {rhs}\" is invalid");
-        }
         #endregion
     }
 
@@ -116,14 +112,6 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, 1); // true
-        }
-
-        public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Null) {
-                return new Number(Location, 1); // true
-            }
-
-            return new Number(Location, 0); // false
         }
     }
 
@@ -256,14 +244,6 @@ namespace DMCompiler.DM.Expressions {
 
             return new Number(Location, 1); // true
         }
-
-        public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Number rhsNum || MathHelper.CloseTo(rhsNum.Value, Value)) {
-                return new Number(Location, 1); // true
-            }
-
-            return new Number(Location, 0); // false
-        }
     }
 
     // "abc"
@@ -300,14 +280,6 @@ namespace DMCompiler.DM.Expressions {
 
             return new Number(Location, 1); // true
         }
-
-        public override Constant NotEquals(Constant rhs) {
-            if (rhs is not String rhsString || rhsString.Value != Value) {
-                return new Number(Location, 1); // true
-            }
-
-            return new Number(Location, 0); // false
-        }
     }
 
     // 'abc'
@@ -339,14 +311,6 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, 1); // true
-        }
-
-        public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Resource rhsResource || rhsResource.Value != Value) {
-                return new Number(Location, 1); // true
-            }
-
-            return new Number(Location, 0); // false
         }
     }
 
@@ -387,14 +351,6 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, 1); // true
-        }
-
-        public override Constant NotEquals(Constant rhs) {
-            if (rhs is not Path rhsPath || rhsPath.Value != Value) {
-                return new Number(Location, 1); // true
-            }
-
-            return new Number(Location, 0); // false
         }
     }
 }

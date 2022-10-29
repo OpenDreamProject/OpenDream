@@ -1,6 +1,7 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Maths;
 
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
@@ -295,7 +296,9 @@ namespace DMCompiler.DM.Expressions {
                 return false;
             }
 
-            constant = lhs.NotEquals(rhs);
+            constant = lhs.Equals(rhs);
+            // We're always going 0 -> 1 or 1 -> 0 so we can do this to avoid branching
+            constant.Value = Math.Abs(constant.Value - 1);
             return true;
         }
     }

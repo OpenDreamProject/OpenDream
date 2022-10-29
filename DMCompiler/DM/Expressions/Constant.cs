@@ -1,6 +1,7 @@
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using Robust.Shared.Utility;
 using System;
 using System.Collections.Generic;
 
@@ -65,11 +66,24 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} << {rhs}\" is invalid");
+            DebugTools.Assert(this is not Number);
+            if(rhs is Number) { // Slightly different phrasing depending on how stupid this is
+                DMCompiler.Warning(Location, "Left operand of '<<' operation is not a number and will be coerced to 0");
+            } else {
+                DMCompiler.Warning(Location, "Neither operand of '<<' operation is a number - expression will evaluate to 0");
+            }
+            
+            return new Number(Location, 0f); // 0 << (anything) is 0.
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} >> {rhs}\" is invalid");
+            DebugTools.Assert(this is not Number);
+            if (rhs is Number) {
+                DMCompiler.Warning(Location, "Left operand of '>>' operation is not a number and will be coerced to 0");
+            } else {
+                DMCompiler.Warning(Location, "Neither operand of '<<' operation is a number - expression will evaluate to 0");
+            }
+            return new Number(Location, 0f); // 0 >> (anything) is 0.
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
@@ -143,7 +157,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Subtract(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.Subtract(rhs);
             }
 
             return new Number(Location, Value - rhsNum.Value);
@@ -151,7 +165,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Multiply(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.Multiply(rhs);
             }
 
             return new Number(Location, Value * rhsNum.Value);
@@ -159,7 +173,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Divide(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.Divide(rhs);
             }
 
             return new Number(Location, Value / rhsNum.Value);
@@ -167,7 +181,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Modulo(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.Modulo(rhs);
             }
 
             return new Number(Location, Value % rhsNum.Value);
@@ -175,7 +189,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Power(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.Power(rhs);
             }
 
             return new Number(Location, MathF.Pow(Value, rhsNum.Value));
@@ -183,7 +197,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant LeftShift(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                DMCompiler.Warning(rhs.Location, "Right operand of '<<' operation is not a number and will be coerced to 0");
+                return this; // x << 0 == x
             }
 
             return new Number(Location, ((int)Value) << ((int)rhsNum.Value));
@@ -191,7 +206,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant RightShift(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                DMCompiler.Warning(rhs.Location, "Right operand of '>>' operation is not a number and will be coerced to 0");
+                return this; // x >> 0 == x
             }
 
             return new Number(Location, ((int)Value) >> ((int)rhsNum.Value));
@@ -200,7 +216,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant BinaryAnd(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.BinaryAnd(rhs);
             }
 
             return new Number(Location, ((int)Value) & ((int)rhsNum.Value));
@@ -209,7 +225,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant BinaryXor(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.BinaryXor(rhs);
             }
 
             return new Number(Location, ((int)Value) ^ ((int)rhsNum.Value));
@@ -218,7 +234,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant BinaryOr(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.BinaryOr(rhs);
             }
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));

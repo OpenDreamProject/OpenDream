@@ -1,13 +1,15 @@
-﻿using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
-        public int DMExceptionCount { get; set; }
+
+        /// <summary>
+        /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
+        /// </summary>
+        public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
         public DreamList WorldContentsList { get; set; }
@@ -23,7 +25,7 @@ namespace OpenDreamRuntime {
         public void Shutdown();
         public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);
-        DreamConnection GetConnectionFromClient(DreamObject client);
+        DreamConnection? GetConnectionFromClient(DreamObject client);
         public DreamObject GetClientFromMob(DreamObject mob);
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);
@@ -31,6 +33,18 @@ namespace OpenDreamRuntime {
 
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
 
+        public string CreateRef(DreamValue value);
+        public DreamValue LocateRef(string refString);
+
         IEnumerable<DreamConnection> Connections { get; }
+    }
+
+    // TODO: Could probably use DreamValueType instead
+    public enum RefType : int {
+        Null = 0,
+        DreamObject = 1,
+        String = 2,
+        DreamPath = 3,
+        DreamResource = 4
     }
 }

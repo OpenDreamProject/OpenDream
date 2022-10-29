@@ -19,6 +19,7 @@ namespace DMCompiler.DM {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
+        public static DMObject Root => GetDMObject(DreamPath.Root);
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
@@ -28,17 +29,25 @@ namespace DMCompiler.DM {
 
         static DMObjectTree() {
             Reset();
-            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
+        /// <summary>
+        /// A thousand curses upon you if you add a new member to this thing without deleting it here.
+        /// </summary>
         public static void Reset() {
             AllObjects.Clear();
             AllProcs.Clear();
+
+            Globals.Clear();
             GlobalProcs.Clear();
+            StringTable.Clear();
+            StringToStringID.Clear();
+
+            _globalInitAssigns.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
             _dmProcIdCounter = 0;
-            GetDMObject(DreamPath.Root);
+            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
         public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
@@ -52,32 +61,32 @@ namespace DMCompiler.DM {
         public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
-            } else {
-                if (!createIfNonexistent) return null;
-
-                DMObject parent = null;
-                if (path.Elements.Length > 1) {
-                    parent = GetDMObject(path.FromElements(0, -2), true);
-                } else if (path.Elements.Length == 1) {
-                    switch (path.LastElement) {
-                        case "client":
-                        case "datum":
-                        case "list":
-                        case "savefile":
-                        case "world":
-                            parent = GetDMObject(DreamPath.Root);
-                            break;
-                        default:
-                            parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
-                            break;
-                    }
-                }
-
-                DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
-                AllObjects.Add(dmObject);
-                _pathToTypeId[path] = dmObject.Id;
-                return dmObject;
             }
+            if (!createIfNonexistent) return null;
+
+            DMObject parent = null;
+            if (path.Elements.Length > 1) {
+                parent = GetDMObject(path.FromElements(0, -2), true); // Create all parent classes as dummies, if we're being dummy-created too
+            } else if (path.Elements.Length == 1) {
+                switch (path.LastElement) {
+                    case "client":
+                    case "datum":
+                    case "list":
+                    case "savefile":
+                    case "world":
+                        parent = GetDMObject(DreamPath.Root);
+                        break;
+                    default:
+                        parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                        break;
+                }
+            }
+            DebugTools.Assert(path == DreamPath.Root || parent != null); // Parent SHOULD NOT be null here! (unless we're root lol)
+
+            DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+            AllObjects.Add(dmObject);
+            _pathToTypeId[path] = dmObject.Id;
+            return dmObject;
         }
 
         public static bool TryGetGlobalProc(string name, [CanBeNull] out DMProc proc)
@@ -131,10 +140,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst) {
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
             int id = Globals.Count;
 
-            global = new DMVariable(type, name, true, isConst);
+            global = new DMVariable(type, name, true, isConst, valType);
             Globals.Add(global);
             return id;
         }

@@ -31,6 +31,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (flagsString.Contains("g")) regex.IsGlobal = true;
                 }
 
+                // TODO Make this more Robust(TM)
+                var anyLetterIdx = patternString.IndexOf("\\l"); // From the ref: \l = Any letter A through Z, case-insensitive
+                while (anyLetterIdx >= 0) {
+                    if (anyLetterIdx == 0 || patternString[anyLetterIdx - 1] != '\\') { // TODO Need to make this handle an arbitrary number of escape chars
+                            patternString = patternString.Remove(anyLetterIdx, 2).Insert(anyLetterIdx, "[A-Za-z]");
+                    }
+
+                    var nextIdx = anyLetterIdx + 1;
+                    if(nextIdx >= patternString.Length) break;
+
+                    anyLetterIdx = patternString.IndexOf("\\l", nextIdx);
+                }
+
                 regex.Regex = new Regex(patternString, options);
             } else {
                 throw new System.Exception("Invalid regex pattern " + pattern);

@@ -5,7 +5,7 @@ namespace OpenDreamRuntime.Resources {
     [Virtual]
     public class DreamResource {
         public string ResourcePath;
-        public byte[] ResourceData {
+        public byte[]? ResourceData {
             get {
                 if (_resourceData == null && Exists()) {
                     _resourceData = File.ReadAllBytes(_filePath);
@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         private string _filePath;
-        private byte[] _resourceData = null;
+        private byte[]? _resourceData = null;
 
         public DreamResource(string filePath, string resourcePath) {
             _filePath = filePath;
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public virtual string? ReadAsString() {
-            if (!File.Exists(_filePath)) return null;
+            if (ResourceData == null) return null;
 
             string resourceString = Encoding.ASCII.GetString(ResourceData);
 
@@ -42,7 +42,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public virtual void Output(DreamValue value) {
-            if (value.TryGetValueAsString(out string text)) {
+            if (value.TryGetValueAsString(out string? text)) {
                 string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
 
                 CreateDirectory();
@@ -55,6 +55,10 @@ namespace OpenDreamRuntime.Resources {
 
         private void CreateDirectory() {
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
+        }
+
+        public override string? ToString() {
+            return $"'{ResourcePath}'";
         }
     }
 }

@@ -5,10 +5,10 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
     class DMMacro {
-        private List<string> _parameters;
-        private List<Token> _tokens;
-        private string _overflowParameter = null;
-        private int _overflowParameterIndex;
+        private readonly List<string> _parameters;
+        private readonly List<Token> _tokens;
+        private readonly string _overflowParameter;
+        private readonly int _overflowParameterIndex;
 
         public DMMacro(List<string> parameters, List<Token> tokens) {
             _parameters = parameters;
@@ -26,59 +26,87 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     }
                 }
             }
+
+            if (_tokens != null) {
+                // Concat tokens cause any whitespace directly before them to be ignored
+                for (int i = 1; i < _tokens.Count; i++) {
+                    Token token = _tokens[i];
+                    Token lastToken = _tokens[i - 1];
+
+                    if (token.Type == TokenType.DM_Preproc_TokenConcat &&
+                        lastToken.Type == TokenType.DM_Preproc_Whitespace) {
+                        _tokens.RemoveAt(--i);
+                    }
+                }
+            }
         }
 
         public bool HasParameters() {
             return _parameters != null;
         }
 
+        /// <summary>
+        /// Takes given parameters and creates a list of tokens representing the expanded macro
+        /// </summary>
+        /// <param name="replacing">The identifier being replaced with this macro</param>
+        /// <param name="parameters">Parameters for macro expansion. Null if none given.</param>
+        /// <returns>A list of tokens replacing the identifier</returns>
+        /// <exception cref="ArgumentException">Thrown if no parameters were given but are required</exception>
+        // TODO: Convert this to an IEnumerator<Token>? Could cut down on allocations.
         public virtual List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-            if (parameters == null && HasParameters()) throw new ArgumentException("This macro requires parameters");
+            // If this macro has no parameters then we can just return our list of tokens
+            if (!HasParameters())
+                return _tokens;
 
-            List<Token> expandedTokens = new();
+            // If we have parameters but weren't given any, throw an exception
+            if (parameters == null)
+                throw new ArgumentException("This macro requires parameters");
+
+            List<Token> expandedTokens = new(_tokens.Count);
             foreach (Token token in _tokens) {
-                if (HasParameters()) {
-                    string parameterName = (token.Type == TokenType.DM_Preproc_TokenConcat || token.Type == TokenType.DM_Preproc_ParameterStringify) ? (string)token.Value : token.Text;
-                    int parameterIndex = _parameters.IndexOf(parameterName);
+                string parameterName =
+                    token.Type is TokenType.DM_Preproc_TokenConcat or TokenType.DM_Preproc_ParameterStringify
+                        ? (string) token.Value
+                        : token.Text;
+                int parameterIndex = _parameters.IndexOf(parameterName);
 
-                    if (parameterIndex != -1 && parameters.Count > parameterIndex) {
-                        List<Token> parameter = parameters[parameterIndex];
+                if (parameterIndex != -1 && parameters.Count > parameterIndex) {
+                    List<Token> parameter = parameters[parameterIndex];
 
-                        if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
-                            StringBuilder tokenTextBuilder = new StringBuilder();
+                    if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
+                        StringBuilder tokenTextBuilder = new StringBuilder();
 
-                            tokenTextBuilder.Append('"');
-                            foreach (Token parameterToken in parameter) {
-                                tokenTextBuilder.Append(parameterToken.Text);
-                            }
-                            tokenTextBuilder.Append('"');
-
-                            string tokenText = tokenTextBuilder.ToString();
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText, Location.Unknown, tokenText.Substring(1, tokenText.Length - 2)));
-                        } else {
-                            foreach (Token parameterToken in parameter) {
-                                expandedTokens.Add(parameterToken);
-                            }
+                        // Use a raw string. Use '#' because that can't appear in an expression.
+                        // this does mean, however, that a '#' inside the string will make the preprocessor dump produce invalid code
+                        tokenTextBuilder.Append("@#");
+                        foreach (Token parameterToken in parameter) {
+                            tokenTextBuilder.Append(parameterToken.Text);
                         }
-                    } else if (_overflowParameter != null && parameterName == _overflowParameter) {
-                        for (int i = _overflowParameterIndex; i < parameters.Count; i++) {
-                            foreach (Token parameterToken in parameters[i]) {
-                                expandedTokens.Add(parameterToken);
-                            }
 
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
-                        }
+                        tokenTextBuilder.Append('#');
+
+                        string tokenText = tokenTextBuilder.ToString();
+                        expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText,
+                            Location.Unknown, tokenText.Substring(2, tokenText.Length - 3)));
                     } else {
-                        if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"\"{parameterName}\"", Location.Unknown, parameterName));
-                        } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
-                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName, Location.Unknown, null));
-                        } else {
-                            expandedTokens.Add(token);
-                        }
+                        expandedTokens.AddRange(parameter);
+                    }
+                } else if (_overflowParameter != null && parameterName == _overflowParameter) {
+                    for (int i = _overflowParameterIndex; i < parameters.Count; i++) {
+                        expandedTokens.AddRange(parameters[i]);
+                        expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown,
+                            null));
                     }
                 } else {
-                    expandedTokens.Add(token);
+                    if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
+                        expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"@#{parameterName}#",
+                            Location.Unknown, parameterName));
+                    } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
+                        expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName,
+                            Location.Unknown, null));
+                    } else {
+                        expandedTokens.Add(token);
+                    }
                 }
             }
 

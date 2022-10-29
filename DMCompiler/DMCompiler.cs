@@ -71,6 +71,7 @@ namespace DMCompiler {
                     }
                 }
             }
+
             if (!successfulCompile) {
                 Console.WriteLine($"Compilation failed with {ErrorCount} errors and {WarningCount} warnings");
             }
@@ -143,8 +144,7 @@ namespace DMCompiler {
             VerbosePrint("Constant folding");
             astSimplifier.SimplifyAST(astFile);
 
-            DMObjectBuilder dmObjectBuilder = new DMObjectBuilder();
-            dmObjectBuilder.BuildObjectTree(astFile);
+            DMObjectBuilder.BuildObjectTree(astFile);
 
             if (ErrorCount > 0) {
                 return false;
@@ -158,9 +158,17 @@ namespace DMCompiler {
             ErrorCount++;
         }
 
+        public static void Error(Location loc, string message) {
+            Error(new CompilerError(loc, message));
+        }
+
         public static void Warning(CompilerWarning warning) {
             Console.WriteLine(warning);
             WarningCount++;
+        }
+
+        public static void Warning(Location loc, string message) {
+            Warning(new CompilerWarning(loc, message));
         }
 
         public static void UnimplementedWarning(Location loc, string message) {
@@ -215,7 +223,7 @@ namespace DMCompiler {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
-            compiledDream.Interface = interfaceFile;
+            compiledDream.Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(outputFile), interfaceFile);
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
             compiledDream.Types = jsonRep.Item1;
             compiledDream.Procs = jsonRep.Item2;

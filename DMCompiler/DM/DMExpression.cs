@@ -25,7 +25,6 @@ namespace DMCompiler.DM {
             Conditional,
         }
 
-        public DMValueType ValType = DMValueType.Anything;
         public Location Location;
 
         public DMExpression(Location location) {

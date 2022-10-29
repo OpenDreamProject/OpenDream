@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
@@ -30,8 +31,7 @@ public sealed class RequestStackTrace : Request {
         [JsonPropertyName("format")] public StackFrameFormat? Format { get; set; }
     }
 
-    // If we ever need to offer pagination of stack frames, change the signature of this method.
-    public void Respond(DebugAdapterClient client, StackFrame[] stackFrames) {
-        client.SendMessage(Response.NewSuccess(this, new { stackFrames, totalFrames = stackFrames.Length }));
+    public void Respond(DebugAdapterClient client, IEnumerable<StackFrame> stackFrames, int? totalFrames = null) {
+        client.SendMessage(Response.NewSuccess(this, new { stackFrames, totalFrames }));
     }
 }

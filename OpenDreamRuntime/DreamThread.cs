@@ -282,5 +282,14 @@ namespace OpenDreamRuntime {
 
            dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
         }
+
+        public IEnumerable<ProcState> InspectStack() {
+            if (_current is not null) {
+                yield return _current;
+            }
+            foreach (var entry in _stack) {
+                yield return entry;
+            }
+        }
     }
 }

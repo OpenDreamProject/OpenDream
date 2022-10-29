@@ -22,6 +22,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public bool Stopped { get; private set; }
 
+    private string RootPath => _resourceManager.RootPath ?? Path.GetDirectoryName(jsonPath) ?? throw new Exception("No RootPath yet!");
+
     private struct Breakpoint {
         public int Id;
         public int Line;
@@ -110,7 +112,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
         stoppedEvent.ThreadId = 0;
         _adapter.SendAll(stoppedEvent);
 
+        stoppedProcState = state;
         Stopped = true;
+
+        // We have to block the DM runtime no matter where we are in its call
+        // stack. Unfortunately this also blocks the Robust engine.
+        while (Stopped) {
+            Update();
+            System.Threading.Thread.Sleep(50);
+        }
     }
 
     private void OnClientConnected(DebugAdapterClient client) {
@@ -146,6 +156,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestPause reqPause:
                 HandleRequestPause(client, reqPause);
+                break;
+            case RequestStackTrace requestStackTrace:
+                HandleRequestStackTrace(client, requestStackTrace);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -202,7 +215,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        sourcePath = Path.GetRelativePath(_resourceManager.RootPath, sourcePath);
+        sourcePath = Path.GetRelativePath(RootPath, sourcePath);
         if (!_breakpoints.TryGetValue(sourcePath, out var breakpoints)) {
             breakpoints = new List<Breakpoint>();
             _breakpoints.Add(sourcePath, breakpoints);
@@ -283,6 +296,22 @@ sealed class DreamDebugManager : IDreamDebugManager {
             Reason = StoppedEvent.ReasonPause,
             Description = "Paused by request",
         });
+    }
+
+    private void HandleRequestStackTrace(DebugAdapterClient client, RequestStackTrace reqStackTrace) {
+        if (stoppedProcState is null) {
+            reqStackTrace.RespondError(client, "Stack trace not available for Pause yet");
+            return;
+        }
+
+        var thread = stoppedProcState.Thread;
+        var output = new List<StackFrame>();
+        foreach (var frame in thread.InspectStack()) {
+            output.Add(new StackFrame {
+                Name = frame.Proc?.Name ?? "<native>",
+            });
+        }
+        reqStackTrace.Respond(client, output, output.Count);
     }
 }
 

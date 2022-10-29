@@ -13,6 +13,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using OpenDreamRuntime.Objects.MetaObjects;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -905,6 +906,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             if (value.Type == DreamValueType.DreamObject) {
                 if (value.Value == null) return null;
+                if(value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix,out var matrix)) { // Special behaviour for /matrix values
+                    StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
+                    builder.Append('[');
+                    builder.AppendJoin(',',DreamMetaObjectMatrix.EnumerateMatrix(matrix));
+                    builder.Append(']');
+                    return builder.ToString();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                }
                 return value.Stringify();
             }
             if(value.Type == DreamValueType.DreamResource) {

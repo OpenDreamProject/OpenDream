@@ -22,6 +22,8 @@ namespace OpenDreamRuntime {
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject?)null);
+        public static DreamValue True { get => new DreamValue(1f); }
+        public static DreamValue False { get => new DreamValue(0f); }
 
         public DreamValueType Type { get; private set; }
         public object Value { get; private set; }

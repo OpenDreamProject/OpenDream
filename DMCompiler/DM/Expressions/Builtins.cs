@@ -18,8 +18,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            for (int i = Expressions.Length - 1; i >= 0; i--) {
-                Expressions[i].EmitPushValue(dmObject, proc);
+            foreach (DMExpression expression in Expressions) {
+                expression.EmitPushValue(dmObject, proc);
             }
 
             proc.FormatString(Value);

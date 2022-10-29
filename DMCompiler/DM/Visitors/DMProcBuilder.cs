@@ -247,7 +247,7 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
-                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
@@ -429,7 +429,7 @@ namespace DMCompiler.DM.Visitors {
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
                             var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
 
-                            ProcessStatementForList(list, outputVar, statementFor.Body);
+                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
                         }
                         default:
@@ -482,7 +482,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             list.EmitPushValue(_dmObject, _proc);
             _proc.CreateListEnumerator();
 
@@ -496,9 +496,20 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
 
-                        if (outputVar.Path != null) {
+                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+                        DreamPath? implicitTypeCheck = null;
+                        if (dmTypes == null) {
+                            // No "as" means the var's type will be used
+                            implicitTypeCheck = lValue.Path;
+                        } else if (dmTypes != DMValueType.Anything) {
+                            // "as anything" performs no check. Other values are unimplemented.
+                            DMCompiler.UnimplementedWarning(outputVar.Location,
+                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+                        }
+
+                        if (implicitTypeCheck != null) {
                             outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(lValue.Path.Value);
+                            _proc.PushPath(implicitTypeCheck.Value);
                             _proc.IsType();
 
                             _proc.ContinueIfFalse();

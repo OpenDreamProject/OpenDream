@@ -13,12 +13,14 @@ namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {
         public sealed class TreeEntry {
             public DreamPath Path;
+            public readonly int Id;
             public DreamObjectDefinition ObjectDefinition;
             public TreeEntry ParentEntry;
             public List<int> InheritingTypes = new();
 
-            public TreeEntry(DreamPath path) {
+            public TreeEntry(DreamPath path, int id) {
                 Path = path;
+                Id = id;
             }
         }
 
@@ -29,8 +31,7 @@ namespace OpenDreamRuntime.Objects {
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
         private Dictionary<string, int> _globalProcIds;
 
-        public void LoadJson(DreamCompiledJson json)
-        {
+        public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
 
             // Load procs first so types can set their init proc's super proc
@@ -172,7 +173,7 @@ namespace OpenDreamRuntime.Objects {
             for (int i = 0; i < Types.Length; i++) {
                 DreamPath path = new DreamPath(types[i].Path);
 
-                Types[i] = new TreeEntry(path);
+                Types[i] = new TreeEntry(path, i);
                 _pathToType[path] = Types[i];
                 pathToTypeId[path] = i;
             }

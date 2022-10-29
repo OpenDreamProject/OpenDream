@@ -39,7 +39,14 @@ namespace DMDisassembler {
                 text.Append(" ");
 
                 switch (opcode) {
-                    case DreamProcOpcode.FormatString:
+                    case DreamProcOpcode.FormatString: {
+                        text.Append('"');
+                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append('"');
+                        binaryReader.ReadInt32(); // This is some metadata FormatString has that we can't really render
+
+                        break;
+                    }
                     case DreamProcOpcode.PushString: {
                         text.Append('"');
                         text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);

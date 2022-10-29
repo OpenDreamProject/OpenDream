@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using System.Globalization;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -29,14 +30,6 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Cannot init proc on a deleted object");
             }
             return new InitDreamObjectState(thread, this, usr, arguments);
-        }
-
-        public static DreamObject? GetFromReferenceID(IDreamManager manager, string refId) {
-            foreach (KeyValuePair<DreamObject, string> referenceIdPair in manager.ReferenceIDs) {
-                if (referenceIdPair.Value == refId) return referenceIdPair.Key;
-            }
-
-            return null;
         }
 
         public void Delete(IDreamManager manager) {
@@ -83,7 +76,7 @@ namespace OpenDreamRuntime.Objects {
             }
             List<DreamValue> list = new(_variables.Count);
             // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
-            foreach (String key in ObjectDefinition!.Variables.Keys) { 
+            foreach (String key in ObjectDefinition!.Variables.Keys) {
                 list.Add(new(key));
             }
             return list;
@@ -152,27 +145,77 @@ namespace OpenDreamRuntime.Objects {
             return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
-        public string GetDisplayName(StringFormatTypes? formatType = null) {
+        /// <returns>true if \proper noun formatting should be used, false if \improper</returns>
+        public static bool StringIsProper(string str) // This could probably be placed elsewhere. Not sure where tho
+        {
+            if (str.Length == 0)
+                return true;
+            if(StringFormatEncoder.Decode(str[0], out var propermaybe))
+            {
+                switch (propermaybe)
+                {
+                    case StringFormatEncoder.FormatSuffix.Proper:
+                        return true;
+                    case StringFormatEncoder.FormatSuffix.Improper:
+                        return false;
+                    default:
+                        break;
+                }
+            }
+            if (char.IsWhiteSpace(str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
+                return true;
+            return char.IsUpper(str[0]);
+        }
+
+        public static bool StringStartsWithVowel(string str)
+        {
+            if (str.Length == 0)
+                return false;
+            char start = char.ToLower(str[0], CultureInfo.InvariantCulture);
+            switch (start)
+            {
+                case 'a':
+                case 'e':
+                case 'i':
+                case 'o':
+                case 'u':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
+        /// </summary>
+        public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
-
-            bool isProper;
-            if (name.Length >= 2 && name[0] == 0xFF) {
-                StringFormatTypes type = (StringFormatTypes) name[1];
-                isProper = (type == StringFormatTypes.Proper);
-                name = name.Substring(2);
-            } else {
-                isProper = (name.Length == 0) || char.IsUpper(name[0]);
+            bool isProper = StringIsProper(name);
+            name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
+            if(!isProper)
+            {
+                return name;
             }
-
-            switch (formatType) {
-                case StringFormatTypes.UpperDefiniteArticle:
+            switch(suffix)
+            {
+                case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
                     return isProper ? name : $"The {name}";
-                case StringFormatTypes.LowerDefiniteArticle:
+                case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
                     return isProper ? name : $"the {name}";
                 default:
                     return name;
             }
+        }
+
+        /// <summary>
+        /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
+        /// </summary>
+        public string GetNameUnformatted()
+        {
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+                return ObjectDefinition?.Type.ToString() ?? String.Empty;
+            return StringFormatEncoder.RemoveFormatting(name);
         }
 
         public override string ToString() {

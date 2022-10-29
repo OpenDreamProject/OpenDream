@@ -29,7 +29,7 @@ namespace OpenDreamClient.Interface.Controls {
         {
             var msg = new FormattedMessage(2);
             msg.PushColor(Color.Black);
-            msg.AddText(value);
+            msg.AddText(value.Replace("\t", "        "));
             _textBox.AddMessage(msg);
         }
     }

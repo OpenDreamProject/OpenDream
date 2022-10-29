@@ -461,7 +461,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTConstantInteger aInteger = power.A as DMASTConstantInteger;
                 DMASTConstantInteger bInteger = power.B as DMASTConstantInteger;
 
-                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, (int)Math.Pow(aInteger.Value, bInteger.Value));
+                if (aInteger != null && bInteger != null) expression = new DMASTConstantInteger(expression.Location, (int)MathF.Pow(aInteger.Value, bInteger.Value));
 
                 return;
             }

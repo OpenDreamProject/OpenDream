@@ -66,6 +66,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorOr(a, b);
         }
 
+        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+            if (ParentType == null)
+                return a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f);
+
+            return ParentType.OperatorEquivalent(a, b);
+        }
+
         public DreamValue OperatorCombine(DreamValue a, DreamValue b) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot combine {a} and {b}");

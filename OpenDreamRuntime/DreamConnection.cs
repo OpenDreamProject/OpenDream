@@ -193,16 +193,16 @@ namespace OpenDreamRuntime
         public void HandleMsgTopic(MsgTopic pTopic) {
             DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-            DreamObject src = null;
+            DreamValue src = DreamValue.Null;
 
-            if (srcRefValue.Value != null && srcRefValue.TryGetValueAsString(out var srcRef)) {
-                src = DreamObject.GetFromReferenceID(_dreamManager, srcRef);
+            if (srcRefValue.TryGetValueAsString(out var srcRef)) {
+                src = _dreamManager.LocateRef(srcRef);
             }
 
             DreamProcArguments topicArguments = new DreamProcArguments(new() {
                 new DreamValue(pTopic.Query),
                 new DreamValue(hrefList),
-                new DreamValue(src)
+                src
             });
 
             ClientDreamObject?.SpawnProc("Topic", topicArguments, MobDreamObject);
@@ -400,24 +400,26 @@ namespace OpenDreamRuntime
             Session.ConnectedClient.SendMessage(msg);
         }
 
-        public void Browse(string body, string options) {
-            string window = null;
+        public void Browse(string body, string? options) {
+            string? window = null;
             Vector2i size = (480, 480);
 
-            string[] separated = options.Split(',', ';', '&');
-            foreach (string option in separated) {
-                string optionTrimmed = option.Trim();
+            if (options != null) {
+                foreach (string option in options.Split(',', ';', '&')) {
+                    string optionTrimmed = option.Trim();
 
-                if (optionTrimmed != String.Empty) {
-                    string[] optionSeparated = optionTrimmed.Split("=");
-                    string key = optionSeparated[0];
-                    string value = optionSeparated[1];
+                    if (optionTrimmed != String.Empty) {
+                        string[] optionSeparated = optionTrimmed.Split("=", 2);
+                        string key = optionSeparated[0];
+                        string value = optionSeparated[1];
 
-                    if (key == "window") window = value;
-                    if (key == "size") {
-                        string[] sizeSeparated = value.Split("x");
+                        if (key == "window") {
+                            window = value;
+                        } else if (key == "size") {
+                            string[] sizeSeparated = value.Split("x", 2);
 
-                        size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                            size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                        }
                     }
                 }
             }

@@ -138,6 +138,20 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public bool TryGetValueAsBitty(out uint b) {
+            if (TryGetValueAsInteger(out var i)) {
+                b = (uint)i;
+                if (b < 0) {
+                    b = 0x1000000 + b;
+                } else {
+                    b = 0xFFFFFF & b;
+                }
+                return true;
+            }
+            b = 0;
+            return false;
+        }
+
         [Obsolete("Deprecated. Use TryGetValueAsFloat() instead.")]
         public float GetValueAsFloat() {
             return (float)GetValueExpectingType(DreamValueType.Float);

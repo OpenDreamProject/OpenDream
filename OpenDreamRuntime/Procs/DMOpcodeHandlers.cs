@@ -711,24 +711,41 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 state.Push(new DreamValue(newList));
-            } else if (first.Value != null && second.Value != null) {
-                state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
-            } else {
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                if (first.TryGetValueAsBitty(out var v1)) {
+                    if (second.TryGetValueAsBitty(out var v2)) {
+                        state.Push(new DreamValue(v1 & v2));
+                    } else if (second == DreamValue.Null) {
+                        state.Push(new DreamValue(0));
+                    } else {
+                        throw new Exception("Invalid or operation on " + first + " and " + second);
+
+                    }
+                } else {
+                    if (second.TryGetValueAsBitty(out var v2)) {
+                        state.Push(new DreamValue(v2));
+                    } else {
+                        throw new Exception("Invalid or operation on " + first + " and " + second);
+                    }
+                }
+            } else if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));
+            } else {
+                throw new Exception("Invalid or operation on " + first + " and " + second);
             }
 
             return null;
         }
 
-        public static ProcStatus? BitNot(DMProcState state)
-        {
+        public static ProcStatus? BitNot(DMProcState state) {
             var input = state.Pop();
-            if (input.TryGetValueAsInteger(out var value))
-            {
-                state.Push(new DreamValue((~value) & 0xFFFFFF));
-            }
-            else
-            {
+            if (input.TryGetValueAsInteger(out var value)) {
+                if (value < 0) {
+                    state.Push(new DreamValue(0xFFFFFF));
+                } else {
+                    state.Push(new DreamValue((~value) & 0xFFFFFF));
+                }
+            } else {
                 if (input.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out _)) // TODO ~ on /matrix
                 {
                     throw new NotImplementedException("/matrix does not support the '~' operator yet");
@@ -744,7 +761,13 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if (first.Type == DreamValue.DreamValueType.DreamObject) {              // Object | y
-                if (first.Value != null) {
+                if (first == DreamValue.Null) {
+                    if (second.Type == DreamValue.DreamValueType.Float || second.Type == DreamValue.DreamValueType.String || second == DreamValue.Null) {
+                        state.Push(second);
+                    } else {
+                        state.Push(new DreamValue(0));
+                    }
+                } else if (first.Value != null) {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
@@ -753,18 +776,24 @@ namespace OpenDreamRuntime.Procs {
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                     }
                 } else {
-                    state.Push(DreamValue.Null);
+                    state.Push(new DreamValue(second));
                 }
-            } else if (second.Value != null) {                                      // Non-Object | y
-                switch (first.Type) {
-                    case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                        state.Push(new DreamValue(first.GetValueAsInteger() | second.GetValueAsInteger()));
-                        break;
-                    default:
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                if (first.TryGetValueAsBitty(out var v1)) {
+                    if (second.TryGetValueAsBitty(out var v2)) {
+                        state.Push(new DreamValue(v1 | v2));
+                    } else if (second == DreamValue.Null) {
+                        state.Push(new DreamValue(v1));
+                    } else {
                         throw new Exception("Invalid or operation on " + first + " and " + second);
+                    }
+                } else {
+                    if (second.TryGetValueAsBitty(out var v2)) {
+                        state.Push(new DreamValue(v2));
+                    } else {
+                        throw new Exception("Invalid or operation on " + first + " and " + second);
+                    }
                 }
-            } else if (first.TryGetValueAsInteger(out int firstInt)) {
-                state.Push(new DreamValue(firstInt));
             } else {
                 throw new Exception("Invalid or operation on " + first + " and " + second);
             }
@@ -796,9 +825,25 @@ namespace OpenDreamRuntime.Procs {
 
                     state.Push(DreamValue.Null);
                     break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
+                case DreamValue.DreamValueType.Float:
+                    first.TryGetValueAsFloat(out var f1);
+                    if (f1 < 0) {
+                        state.Push(new DreamValue(0));
+                    } else if (first.TryGetValueAsBitty(out var v1)) {
+                        if (second.TryGetValueAsInteger(out var v2)) {
+                            if (v2 >= 0) {
+                                state.Push(new DreamValue((v1 << v2) & 0xFFFFFF));
+                            } else {
+                                state.Push(new DreamValue(v1));
+                            }
+                        } else {
+                            state.Push(new DreamValue(v1));
+                        }
+                    } else {
+                        state.Push(new DreamValue(v1));
+                    }
                     break;
+                case DreamValue.DreamValueType.String: state.Push(new DreamValue(0)); break;
                 default:
                     throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
             }
@@ -815,8 +860,22 @@ namespace OpenDreamRuntime.Procs {
 
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                if (first.TryGetValueAsBitty(out var v1)) {
+                    if (second.TryGetValueAsInteger(out var v2)) {
+                        if (v2 < 0) {
+                            state.Push(new DreamValue(v1));
+                        } else {
+                            state.Push(new DreamValue((v1 >> v2) & 0xFFFFFF));
+                        }
+                    } else {
+                        state.Push(new DreamValue(v1));
+                    }
+                } else {
+                    state.Push(new DreamValue(v1));
+                }
+            } else if (first.Type == DreamValue.DreamValueType.String) {
+                state.Push(new DreamValue(0));
             } else {
                 throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
             }
@@ -2010,8 +2069,25 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 return new DreamValue(newList);
+            } else if (first.Type == DreamValue.DreamValueType.Float) {
+                if (first.TryGetValueAsBitty(out var v1)) {
+                    if (second.TryGetValueAsBitty(out var v2)) {
+                        return new DreamValue(v1 ^ v2);
+                    } else if (second.Type == DreamValue.DreamValueType.String) {
+                        throw new Exception("Invalid xor operation on " + first + " and " + second);
+                    } else {
+                        return new DreamValue(v1);
+                    }
+                }
+                return DreamValue.Null;
+            } else if (first == DreamValue.Null) {
+                if (second == DreamValue.Null) {
+                    return DreamValue.Null;
+                } else {
+                    return second;
+                }
             } else {
-                return new DreamValue(first.GetValueAsInteger() ^ second.GetValueAsInteger());
+                throw new Exception("Invalid xor operation on " + first + " and " + second);
             }
         }
 

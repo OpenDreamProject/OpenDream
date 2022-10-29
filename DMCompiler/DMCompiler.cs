@@ -161,10 +161,6 @@ namespace DMCompiler {
                 return false;
             }
 
-            DMASTSimplifier astSimplifier = new DMASTSimplifier();
-            VerbosePrint("Constant folding");
-            astSimplifier.SimplifyAST(astFile);
-
             DMObjectBuilder.BuildObjectTree(astFile);
 
             return ErrorCount == 0;

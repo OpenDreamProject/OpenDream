@@ -422,18 +422,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
-                constant = lhs;
-                return true;
+            if (LHS.TryAsConstant(out var lhs)) { // Short-circuiting!!
+                if(lhs.IsTruthy()) {
+                    constant = lhs;
+                    return true;
+                }
+                if(RHS.TryAsConstant(out var rhs)) {
+                    constant = rhs;
+                    return true;
+                }
             }
 
-            if (RHS.TryAsConstant(out var rhs)) {
-                constant = rhs;
-                return true;
-            }
-
-            constant = null;
-            return false;
+            return base.TryAsConstant(out constant);
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -452,18 +452,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
-                constant = lhs;
-                return true;
+            if (LHS.TryAsConstant(out var lhs)) { // Short-circuiting!!
+                if (!lhs.IsTruthy()) {
+                    constant = lhs;
+                    return true;
+                }
+                if (RHS.TryAsConstant(out var rhs)) {
+                    constant = rhs;
+                    return true;
+                }
             }
 
-            if (RHS.TryAsConstant(out var rhs)) {
-                constant = rhs;
-                return true;
-            }
-
-            constant = null;
-            return false;
+            return base.TryAsConstant(out constant);
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

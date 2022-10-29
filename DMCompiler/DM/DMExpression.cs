@@ -58,7 +58,7 @@ namespace DMCompiler.DM {
             return expr.TryAsConstant(out constant);
         }
 
-        // Attempt to convert this expression into a Constant expression
+        /// <summary> Attempt to convert this expression into a Constant expression. </summary>
         public virtual bool TryAsConstant(out Expressions.Constant constant) {
             constant = null;
             return false;

@@ -15,6 +15,8 @@ public sealed class DebugAdapter {
     public DebugAdapter() {
     }
 
+    public bool AnyClientsConnected() => _clients.Count > 0;
+
     public void StartListening(string? host = null, int? port = null) {
         if (!IPAddress.TryParse(host, out IPAddress? hostAddress)) {
             hostAddress = IPAddress.Any;

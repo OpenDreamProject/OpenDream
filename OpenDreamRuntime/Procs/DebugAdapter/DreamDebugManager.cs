@@ -14,12 +14,23 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private DebugAdapter? _adapter;
     private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
     private string? jsonPath;
-    private int _breakpointIdCounter;
+    private int _breakpointIdCounter = 1;
 
-    private ILookup<(string Type, string Proc), FunctionBreakpoint>? functionBreakpoints;
+    private DMProcState? stoppedProcState;
+
+    private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
+
+    public bool Stopped { get; private set; }
 
     private struct Breakpoint {
+        public int Id;
         public int Line;
+    }
+
+    private struct ActiveFunctionBreakpoint {
+        public int Id;
+        public string? Condition;
+        public string? HitCondition;
     }
 
     public void Initialize(int port) {
@@ -57,29 +68,49 @@ sealed class DreamDebugManager : IDreamDebugManager {
         if (!_breakpoints.TryGetValue(state.CurrentSource, out var breakpoints))
             return;
 
+        var hit = new List<int>();
         foreach (Breakpoint breakpoint in breakpoints) {
             if (breakpoint.Line == line) {
                 Logger.Info($"Breakpoint hit at {state.CurrentSource}:{line}");
-                HandleOutput(LogLevel.Info, $"Breakpoint hit at {state.CurrentSource}:{line}");
-
+                hit.Add(breakpoint.Id);
                 return;
             }
+        }
+        if (hit.Any()) {
+            Stop(state, new StoppedEvent {
+                Reason = StoppedEvent.ReasonBreakpoint,
+                HitBreakpointIds = hit,
+            });
         }
     }
 
     public void HandleProcStart(DMProcState state) {
-        bool breakHere = false;
+        var hit = new List<int>();
         if (functionBreakpoints != null) {
             foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
-                if (true /* could implement Condition and HitCondition here */) {
-                    breakHere = true;
+                if (bp.Condition is null && bp.HitCondition is null) {
+                    hit.Add(bp.Id);
                     break;
                 }
             }
         }
-        if (breakHere) {
-            Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name} -> {state.CurrentSource}");
+        if (hit.Any()) {
+            Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Stop(state, new StoppedEvent {
+                Reason = StoppedEvent.ReasonFunctionBreakpoint,
+                HitBreakpointIds = hit,
+            });
         }
+    }
+
+    private void Stop(DMProcState? state, StoppedEvent stoppedEvent) {
+        if (_adapter == null || !_adapter.AnyClientsConnected())
+            return;
+
+        stoppedEvent.ThreadId = 0;
+        _adapter.SendAll(stoppedEvent);
+
+        Stopped = true;
     }
 
     private void OnClientConnected(DebugAdapterClient client) {
@@ -106,6 +137,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestSetFunctionBreakpoints reqFuncBreakpoints:
                 HandleRequestSetFunctionBreakpoints(client, reqFuncBreakpoints);
+                break;
+            case RequestThreads reqThreads:
+                HandleRequestThreads(client, reqThreads);
+                break;
+            case RequestContinue reqContinue:
+                HandleRequestContinue(client, reqContinue);
+                break;
+            case RequestPause reqPause:
+                HandleRequestPause(client, reqPause);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -174,13 +214,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var responseBreakpoints = new Protocol.Breakpoint[setBreakpoints?.Length ?? 0];
         if (setBreakpoints != null) {
             for (int i = 0; i < setBreakpoints.Length; i++) {
+                int id = ++_breakpointIdCounter;
                 SourceBreakpoint breakpoint = setBreakpoints[i];
 
                 breakpoints.Add(new Breakpoint {
-                    Line = breakpoint.Line
+                    Id = id,
+                    Line = breakpoint.Line,
                 });
 
-                responseBreakpoints[i] = new(_breakpointIdCounter++, source, breakpoint.Line, breakpoint.Column ?? 0);
+                responseBreakpoints[i] = new(id, source, breakpoint.Line, breakpoint.Column ?? 0);
             }
         }
 
@@ -194,7 +236,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         if (input.Length == 0) {
             this.functionBreakpoints = null;
         } else {
-            var toSave = new List<(string Type, string Proc, FunctionBreakpoint Breakpoint)>();
+            var toSave = new List<(string Type, string Proc, ActiveFunctionBreakpoint Breakpoint)>();
 
             for (int i = 0; i < input.Length; ++i) {
                 var bp = input[i];
@@ -206,18 +248,47 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 if (type == "") {
                     type = "/";
                 }
-                toSave.Add((type, proc, bp));
 
-                output[i] = new(_breakpointIdCounter++, verified: true);
+                int id = ++_breakpointIdCounter;
+                output[i] = new(id, verified: true);
+                toSave.Add((type, proc, new ActiveFunctionBreakpoint {
+                    Id = id,
+                    Condition = bp.Condition,
+                    HitCondition = bp.HitCondition,
+                }));
             }
 
             this.functionBreakpoints = toSave.ToLookup(triplet => (triplet.Type, triplet.Proc), triplet => triplet.Breakpoint);
         }
         reqFuncBreakpoints.Respond(client, output);
     }
+
+    private void HandleRequestThreads(DebugAdapterClient client, RequestThreads reqThreads) {
+        if (!Stopped) {
+            reqThreads.Respond(client, Array.Empty<Thread>());
+        } else {
+            reqThreads.Respond(client, new[] { new Thread(0, "Current") });
+        }
+    }
+
+    private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
+        Stopped = false;
+        reqContinue.Respond(client, allThreadsContinued: true);
+    }
+
+    private void HandleRequestPause(DebugAdapterClient client, RequestPause reqPause) {
+        // "The debug adapter first sends the response and then a stopped event (with reason pause) after the thread has been paused successfully."
+        reqPause.Respond(client);
+        Stop(null, new StoppedEvent {
+            Reason = StoppedEvent.ReasonPause,
+            Description = "Paused by request",
+        });
+    }
 }
 
 interface IDreamDebugManager {
+    bool Stopped { get; }
+
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

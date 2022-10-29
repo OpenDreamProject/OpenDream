@@ -21,6 +21,9 @@ public class Request : ProtocolMessage {
             case "setBreakpoints": return json.Deserialize<RequestSetBreakpoints>();
             case "setFunctionBreakpoints": return json.Deserialize<RequestSetFunctionBreakpoints>();
             case "configurationDone": return json.Deserialize<RequestConfigurationDone>();
+            case "threads": return json.Deserialize<RequestThreads>();
+            case "continue": return json.Deserialize<RequestContinue>();
+            case "pause": return json.Deserialize<RequestPause>();
             default: return request;  // Caller will fail to recognize it and can respond with `success: false`;
         }
     }

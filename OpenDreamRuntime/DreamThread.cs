@@ -74,6 +74,9 @@ namespace OpenDreamRuntime {
     }
 
     public abstract class ProcState {
+        private static int _idCounter = 0;
+        public int Id { get; } = _idCounter;
+
         public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
 
@@ -99,8 +102,9 @@ namespace OpenDreamRuntime {
             }
         }
 
-        // May be null
-        public abstract DreamProc Proc { get; }
+        public virtual (string?, int?) SourceLine => (null, null);
+
+        public abstract DreamProc? Proc { get; }
 
         protected abstract ProcStatus InternalResume();
 
@@ -111,6 +115,9 @@ namespace OpenDreamRuntime {
     }
 
     public sealed class DreamThread {
+        private static int _idCounter = 0;
+        public int Id { get; } = _idCounter++;
+
         private const int MaxStackDepth = 256;
 
         private ProcState? _current;

@@ -306,9 +306,16 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         var thread = stoppedProcState.Thread;
         var output = new List<StackFrame>();
+        var nameBuilder = new System.Text.StringBuilder();
         foreach (var frame in thread.InspectStack()) {
+            var (source, line) = frame.SourceLine;
+            nameBuilder.Clear();
+            frame.AppendStackFrame(nameBuilder);
             output.Add(new StackFrame {
-                Name = frame.Proc?.Name ?? "<native>",
+                Id = frame.Id,
+                Source = source is null ? null : new Source(Path.GetFileName(source), Path.Join(RootPath, source)),
+                Line = line ?? 0,
+                Name = nameBuilder.ToString(),
             });
         }
         reqStackTrace.Respond(client, output, output.Count);

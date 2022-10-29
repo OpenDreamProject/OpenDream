@@ -1501,6 +1501,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? DebugLine(DMProcState state) {
             int line = state.ReadInt();
 
+            state.CurrentLine = line;
             state.DebugManager.HandleLineChange(state, line);
             return null;
         }

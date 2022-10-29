@@ -251,7 +251,7 @@ namespace DMCompiler.DM {
 
         public void DebugSource(string source) {
             WriteOpcode(DreamProcOpcode.DebugSource);
-            WriteString(source);
+            WriteString(source.Replace("\\", "/"));
         }
 
         public void DebugLine(int line) {

@@ -29,18 +29,25 @@ namespace DMCompiler.DM {
 
         static DMObjectTree() {
             Reset();
-            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
+        /// <summary>
+        /// A thousand curses upon you if you add a new member to this thing without deleting it here.
+        /// </summary>
         public static void Reset() {
             AllObjects.Clear();
             AllProcs.Clear();
+
             Globals.Clear();
             GlobalProcs.Clear();
+            StringTable.Clear();
+            StringToStringID.Clear();
+
+            _globalInitAssigns.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
             _dmProcIdCounter = 0;
-            GetDMObject(DreamPath.Root);
+            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
         public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)

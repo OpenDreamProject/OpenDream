@@ -145,6 +145,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return new DreamValue(list);
         }
 
+        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+            if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
+                if (firstList.GetLength() != secondList.GetLength()) return DreamValue.False;
+                var firstValues = firstList.GetValues();
+                var secondValues = secondList.GetValues();
+                for (var i = 0; i < firstValues.Count; i++) {
+                    if (!firstValues[i].Equals(secondValues[i])) return DreamValue.False;
+                }
+
+                return DreamValue.True;
+            }
+            return DreamValue.False; // This will never be true, because reaching this line means b is not a list, while a will always be.
+        }
+
         public DreamValue OperatorCombine(DreamValue a, DreamValue b) {
             DreamList list = a.GetValueAsDreamList();
 

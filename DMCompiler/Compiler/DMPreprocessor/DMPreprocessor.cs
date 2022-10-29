@@ -209,7 +209,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     }                    
                     
-                    IncludedInterface = Path.GetRelativePath(topLevelDirectory, filePath);                    
+                    IncludedInterface = filePath;                   
                     break;
                 case ".dms":
                     // Webclient interface file. Probably never gonna be supported.

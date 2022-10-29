@@ -37,6 +37,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// </summary>
         private Stack<bool?> _lastIfEvaluations = new();
         private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
+
         private static readonly TokenType[] DirectiveTypes =
         {
             TokenType.DM_Preproc_Include,
@@ -205,9 +206,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     if (IncludedInterface != null) {
                         DMCompiler.Error(new CompilerError(includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})"));
                         break;
-                    }                    
-                    
-                    IncludedInterface = filePath;                   
+                    }
+
+                    IncludedInterface = filePath;
                     break;
                 case ".dms":
                     // Webclient interface file. Probably never gonna be supported.

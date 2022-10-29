@@ -172,7 +172,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         public void IncludeFiles(IEnumerable<string> files) {
-            
             foreach (string file in files) {
                 string includeDir = Path.GetDirectoryName(file);
                 if(topLevelDirectory == null) topLevelDirectory = includeDir; //the first element in files is the .dme

@@ -34,14 +34,25 @@ namespace DMCompiler.DM {
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
             expression.Visit(instance);
+            if (instance.Result.TryAsConstant(out var constant)) // This is an entire const-rolling operation.
+                return constant;
             return instance.Result;
         }
 
+
+        /// <summary>
+        /// Rolls <see cref="Create(DMObject, DMProc, DMASTExpression, DreamPath?)"/> and <see cref="EmitPushValue(DMObject, DMProc)"/> into one action.
+        /// </summary>
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
             expr.EmitPushValue(dmObject, proc);
         }
 
+        /// <summary>
+        /// Rolls <see cref="Create(DMObject, DMProc, DMASTExpression, DreamPath?)"/> and <see cref="TryAsConstant(out Expressions.Constant)"/> into one action. <br/>
+        /// Tries to create a Constant Expression from the given AST. Tosses it out if it fails to be const
+        /// </summary>
+        /// <returns>True if the resulting expression was constant, false if not.</returns>
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {
             var expr = Create(dmObject, proc, expression, null);
             return expr.TryAsConstant(out constant);

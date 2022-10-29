@@ -467,6 +467,11 @@ namespace DMCompiler.DM.Expressions {
 
         public Initial(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            if (_expr is not LValue) {
+                // We do this check here on-construction,
+                // because our expression may poof into a non-LValue later on, after const folding.
+                DMCompiler.Error(Location, $"Cannot get initial value of {_expr}");
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -474,8 +479,15 @@ namespace DMCompiler.DM.Expressions {
                 lValue.EmitPushInitial(dmObject, proc);
                 return;
             }
+            _expr.EmitPushValue(dmObject, proc);
+        }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
+        public override bool TryAsConstant(out Constant constant) {
+            if(_expr.TryAsConstant(out Constant expressionConstant)) {
+                constant = expressionConstant;
+                return true;
+            }
+            return base.TryAsConstant(out constant);
         }
     }
 

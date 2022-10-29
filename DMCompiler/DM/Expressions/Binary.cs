@@ -288,6 +288,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.Equal();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.Equal(rhs);
+            return true;
+        }
     }
 
     // x != y
@@ -299,6 +309,16 @@ namespace DMCompiler.DM.Expressions {
             LHS.EmitPushValue(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
             proc.NotEqual();
+        }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.NotEqual(rhs);
+            return true;
         }
     }
 

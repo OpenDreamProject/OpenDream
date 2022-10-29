@@ -94,6 +94,42 @@ namespace DMCompiler.DM.Expressions {
 
         public virtual Constant LessThanOrEqual(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        // Not a virtual because it'd be very annoying to write this for every Constant subtype
+        public Constant Equal(Constant rhs) {
+            switch (this) {
+                case Expressions.Null nil:
+                    if (rhs is Expressions.Null) {
+                        return Number.True(Location);
+                    }
+                    break;
+                case Expressions.Number lhsNumber:
+                    if (rhs is Expressions.Number rhsNumber) {
+                        return Number.BoolToNumber(Location, lhsNumber.Value == rhsNumber.Value);
+                    }
+                    break;
+                case Expressions.String lhsString:
+                    if (rhs is Expressions.String rhsString) {
+                        return Number.BoolToNumber(Location, lhsString.Value == rhsString.Value);
+                    }
+                    break;
+                case Expressions.Resource lhsResource:
+                    if (rhs is Expressions.Resource rhsResource) {
+                        return Number.BoolToNumber(Location, lhsResource.Value == rhsResource.Value);
+                    }
+                    break;
+                case Expressions.Path lhsPath:
+                    if (rhs is Expressions.Path rhsPath) {
+                        return Number.BoolToNumber(Location, lhsPath.Value == rhsPath.Value);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return Number.False(Location);
+        }
+
+        public Constant NotEqual(Constant rhs) {
+            return Number.BoolToNumber(Location, !this.Equal(rhs).IsTruthy());
         }
         #endregion
     }
@@ -152,6 +188,24 @@ namespace DMCompiler.DM.Expressions {
 
         public Number(Location location, float value) : base(location) {
             Value = value;
+        }
+
+        /// <summary> Makes a TRUE. </summary>
+        public static Number True(Location location) {
+            return new Number(location, 1f);
+        }
+
+        /// <summary> Makes a FALSE. </summary>
+        public static Number False(Location location) {
+            return new Number(location, 0f);
+        }
+
+        public static Number BoolToNumber(Location location, bool value) {
+            if(value) {
+                return True(location);
+            } else {
+                return False(location);
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -334,7 +388,7 @@ namespace DMCompiler.DM.Expressions {
 
     // 'abc'
     class Resource : Constant {
-        string Value { get; }
+        public string Value { get; }
 
         public Resource(Location location, string value) : base(location) {
             Value = value;

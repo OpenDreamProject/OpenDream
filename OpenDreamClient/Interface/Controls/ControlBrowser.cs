@@ -116,24 +116,18 @@ namespace OpenDreamClient.Interface.Controls
         }
     }
 
-    public sealed class BrowseWinCommand : IConsoleCommand
-    {
+    public sealed class BrowseWinCommand : IConsoleCommand {
         public string Command => "browsewin";
         public string Description => "";
         public string Help => "";
 
-        public void Execute(IConsoleShell shell, string argStr, string[] args)
-        {
-            if (args.Length != 1)
-            {
+        public void Execute(IConsoleShell shell, string argStr, string[] args) {
+            if (args.Length != 1) {
                 shell.WriteError("Incorrect amount of arguments! Must be a single one.");
                 return;
             }
 
-            var parameters = new BrowserWindowCreateParameters(1280, 720)
-            {
-                Url = args[0]
-            };
+            var parameters = new BrowserWindowCreateParameters(1280, 720) {Url = args[0]};
 
             var cef = IoCManager.Resolve<IWebViewManager>();
             cef.CreateBrowserWindow(parameters);

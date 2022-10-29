@@ -12,7 +12,7 @@
     sealed class DreamProcParameterAttribute : Attribute {
         public string Name;
         public DreamValue.DreamValueType Type;
-        public object DefaultValue;
+        public object? DefaultValue;
 
         public DreamProcParameterAttribute(string name) {
             Name = name;

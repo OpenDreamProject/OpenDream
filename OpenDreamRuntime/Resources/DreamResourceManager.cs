@@ -21,6 +21,7 @@ namespace OpenDreamRuntime.Resources
 
         public void SetDirectory(string directory) {
             RootPath = directory;
+            // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
             Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");
@@ -33,7 +34,7 @@ namespace OpenDreamRuntime.Resources
         public DreamResource LoadResource(string resourcePath) {
             if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
 
-            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource resource)) {
+            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource? resource)) {
                 resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
                 _resourceCache.Add(resourcePath, resource);
             }
@@ -44,8 +45,7 @@ namespace OpenDreamRuntime.Resources
         public void RxRequestResource(MsgRequestResource pRequestResource) {
             DreamResource resource = LoadResource(pRequestResource.ResourcePath);
 
-            if (resource.ResourceData != null)
-            {
+            if (resource.ResourceData != null) {
                 var msg = new MsgResource() {
                     ResourcePath = resource.ResourcePath,
                     ResourceData = resource.ResourceData
@@ -89,7 +89,9 @@ namespace OpenDreamRuntime.Resources
 
         public bool CopyFile(string sourceFilePath, string destinationFilePath) {
             try {
-                File.Copy(Path.Combine(RootPath, sourceFilePath), Path.Combine(RootPath, destinationFilePath));
+                var dest = Path.Combine(RootPath, destinationFilePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                File.Copy(Path.Combine(RootPath, sourceFilePath), dest);
             } catch (Exception) {
                 return false;
             }

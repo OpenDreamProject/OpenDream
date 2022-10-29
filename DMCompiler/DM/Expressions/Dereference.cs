@@ -19,6 +19,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
                 case DMASTProcCall when expr.Path == null:
                 case DMASTDereferenceProc:
+                case DMASTList:
                 case DMASTListIndex:
                 case DMASTTernary:
                 case DMASTBinaryAnd:
@@ -59,9 +60,15 @@ namespace DMCompiler.DM.Expressions {
             {
                 var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
                 var variable = obj.GetVariable(PropertyName);
-                if (variable.IsConst)
+                if (variable != null)
                 {
-                    return variable.Value.TryAsConstant(out constant);
+                    if(variable.IsConst)
+                        return variable.Value.TryAsConstant(out constant);
+                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
+                    {
+                        variable.Value.TryAsConstant(out constant);
+                        return true; // MUST be true.
+                    }
                 }
             }
 

@@ -62,6 +62,9 @@
 	proc/DblClick(location, control, params)
 		set opendream_unimplemented = TRUE
 
+	proc/MouseDown(location, control, params)
+		set opendream_unimplemented = TRUE
+
 	proc/MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
 		set opendream_unimplemented = TRUE
 
@@ -89,6 +92,7 @@
 	proc/Crossed(atom/movable/O)
 
 	proc/Cross(atom/movable/O)
+		// Allow crossing only if not both atoms are dense
 		return !(src.density && O.density)
 
 	proc/Uncross(atom/movable/O)

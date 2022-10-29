@@ -8,8 +8,8 @@ using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
-        private DMObject _dmObject;
-        private DMProc _proc;
+        private readonly DMObject _dmObject;
+        private readonly DMProc _proc;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
@@ -50,44 +50,37 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessBlockInner(DMASTProcBlockInner block) {
             // TODO ProcessStatementSet() needs to be before any loops but this is nasty
-            foreach (var stmt in block.Statements)
-            {
-                if (stmt is DMASTProcStatementSet set)
-                {
-                    try
-                    {
+            foreach (var stmt in block.Statements) {
+                if (stmt is DMASTProcStatementSet set) {
+                    try {
                         ProcessStatementSet(set);
-                    }
-                    catch (CompileAbortException e)
-                    {
+                    } catch (CompileAbortException e) {
                         // The statement's location info isn't passed all the way down so change the error to make it more accurate
                         e.Error.Location = set.Location;
                         DMCompiler.Error(e.Error);
                         return; // Don't spam the error that will continue to exist
-                    }
-                    catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                    } catch (CompileErrorException e) {
+                        //Retreat from the statement when there's an error
                         DMCompiler.Error(e.Error);
                     }
                 }
             }
+
             foreach (DMASTProcStatement statement in block.Statements) {
-                try
-                {
-                    // see above
-                    if (statement is DMASTProcStatementSet)
-                    {
-                        continue;
-                    }
-                    ProcessStatement(statement);
+                // see above
+                if (statement is DMASTProcStatementSet) {
+                    continue;
                 }
-                catch (CompileAbortException e)
-                {
+
+                try {
+                    ProcessStatement(statement);
+                } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = statement.Location;
                     DMCompiler.Error(e.Error);
                     return; // Don't spam the error that will continue to exist
-                }
-                catch (CompileErrorException e) { //Retreat from the statement when there's an error
+                } catch (CompileErrorException e) {
+                    //Retreat from the statement when there's an error
                     DMCompiler.Error(e.Error);
                 }
             }
@@ -254,7 +247,7 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
-                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
@@ -436,7 +429,7 @@ namespace DMCompiler.DM.Visitors {
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
                             var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
 
-                            ProcessStatementForList(list, outputVar, statementFor.Body);
+                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
                         }
                         default:
@@ -489,7 +482,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             list.EmitPushValue(_dmObject, _proc);
             _proc.CreateListEnumerator();
 
@@ -503,9 +496,20 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
 
-                        if (outputVar.Path != null) {
+                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+                        DreamPath? implicitTypeCheck = null;
+                        if (dmTypes == null) {
+                            // No "as" means the var's type will be used
+                            implicitTypeCheck = lValue.Path;
+                        } else if (dmTypes != DMValueType.Anything) {
+                            // "as anything" performs no check. Other values are unimplemented.
+                            DMCompiler.UnimplementedWarning(outputVar.Location,
+                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+                        }
+
+                        if (implicitTypeCheck != null) {
                             outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(lValue.Path.Value);
+                            _proc.PushPath(implicitTypeCheck.Value);
                             _proc.IsType();
 
                             _proc.ContinueIfFalse();
@@ -670,43 +674,49 @@ namespace DMCompiler.DM.Visitors {
                     string caseLabel = _proc.NewLabelName();
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
+                        Constant GetCaseValue(DMASTExpression expression) {
+                            Constant constant = null;
+
+                            try {
+                                if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
+                                    DMCompiler.Error(expression.Location, "Expected a constant");
+                            } catch (CompileErrorException e) {
+                                DMCompiler.Error(e.Error);
+                            }
+
+                            // Return 0 if unsuccessful so that we can continue compiling
+                            return constant ?? new Number(expression.Location, 0.0f);
+                        }
+
                         if (value is DMASTSwitchCaseRange range) { // if(1 to 5) or something
-                            if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeStart, out var lower))
-                                throw new CompileErrorException(new CompilerError(range.RangeStart.Location, "Expected a constant"));
-                            if (!DMExpression.TryConstant(_dmObject, _proc, range.RangeEnd, out var upper))
-                                throw new CompileErrorException(new CompilerError(range.RangeEnd.Location, "Expected a constant"));
-                            //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
-                            //We are deviating from parity here and just calling that a CompilerError.
-                            if(lower is not Number)
-                            {
-                                if (lower is Null) // We do a little null coercion, as a treat
-                                    {
-                                    lower = new Number(lower.Location, 0.0f);
-                                    DMCompiler.Warning(new CompilerWarning(range.RangeStart.Location, "Malformed range, lower bound is coerced from null to 0"));
+                            Constant lower = GetCaseValue(range.RangeStart);
+                            Constant upper = GetCaseValue(range.RangeEnd);
+
+                            Constant CoerceBound(Constant bound) {
+                                if (bound is Null) { // We do a little null coercion, as a treat
+                                    DMCompiler.Warning(range.RangeStart.Location,
+                                        "Malformed range, lower bound is coerced from null to 0");
+                                    return new Number(lower.Location, 0.0f);
                                 }
-                                else
-                                {
-                                    DMCompiler.Error(new CompilerError(range.RangeStart.Location, "Invalid range, lower bound is not a number"));
+
+                                //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
+                                //We are deviating from parity here and just calling that a CompilerError.
+                                if (bound is not Number) {
+                                    DMCompiler.Error(range.RangeStart.Location,
+                                        "Invalid range, lower bound is not a number");
                                 }
+
+                                return bound;
                             }
-                            if(upper is not Number)
-                            {
-                                if (upper is Null)
-                                {
-                                    upper = new Number(upper.Location, 0.0f);
-                                    DMCompiler.Warning(new CompilerWarning(range.RangeEnd.Location, "Malformed range, upper bound is coerced from null to 0"));
-                                }
-                                else
-                                {
-                                    DMCompiler.Error(new CompilerError(range.RangeEnd.Location, "Invalid range, upper bound is not a number"));
-                                }
-                            }
+
+                            lower = CoerceBound(lower);
+                            upper = CoerceBound(upper);
+
                             lower.EmitPushValue(_dmObject, _proc);
                             upper.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCaseRange(caseLabel);
                         } else {
-                            if (!DMExpression.TryConstant(_dmObject, _proc, value, out var constant))
-                                throw new CompileErrorException(new CompilerError(value.Location, "Expected a constant"));
+                            Constant constant = GetCaseValue(value);
 
                             constant.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCase(caseLabel);

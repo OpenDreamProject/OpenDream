@@ -60,34 +60,42 @@ namespace Content.Tests
         [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags)
         {
-            string compiledFile = Compile(sourceFile);
-            if (testFlags.HasFlag(DMTestFlags.CompileError)) {
-                Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+            string initialDirectory = Directory.GetCurrentDirectory();
+            try {
+                string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
+                if (testFlags.HasFlag(DMTestFlags.CompileError)) {
+                    Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+                    Cleanup(compiledFile);
+                    return;
+                }
+
+                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
+                Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+
+                (bool successfulRun, DreamValue returned, Exception? exception) = RunTest();
+                if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
+                    Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
+                } else {
+                    if (exception != null)
+                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
+                    else
+                        Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
+                }
+
+                if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
+                    returned.TryGetValueAsInteger(out int returnInt);
+                    Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
+                }
+
                 Cleanup(compiledFile);
-                return;
+            } finally {
+                // Restore the original CurrentDirectory, since loading a compiled JSON changes it.
+                Directory.SetCurrentDirectory(initialDirectory);
             }
-
-            Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
-            Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
-
-            (bool successfulRun, DreamValue returned) = RunTest();
-            if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
-                Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
-            } else {
-                //TODO: This should use the runtime exception as the failure message
-                Assert.IsTrue(successfulRun, "A DM runtime exception was thrown");
-            }
-
-            if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                returned.TryGetValueAsInteger(out int returnInt);
-                Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
-            }
-
-            Cleanup(compiledFile);
         }
 
-        private (bool Success, DreamValue Returned) RunTest() {
-            var prev = _dreamMan.DMExceptionCount;
+        private (bool Success, DreamValue Returned, Exception? except) RunTest() {
+            var prev = _dreamMan.LastDMException;
 
             var result = DreamThread.Run(async (state) => {
                 if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
@@ -97,8 +105,11 @@ namespace Content.Tests
                     return DreamValue.Null;
                 }
             });
-
-            return (_dreamMan.DMExceptionCount == prev, result);
+            bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
+            if (retSuccess)
+                return (retSuccess, result, null);
+            else
+                return (false, result, _dreamMan.LastDMException);
         }
 
         private static IEnumerable<object[]> GetTests()
@@ -106,12 +117,13 @@ namespace Content.Tests
             Directory.SetCurrentDirectory(TestProject);
 
             foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
+                string sourceFile2 = sourceFile.Substring("Tests/".Length);
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;
 
                 yield return new object[] {
-                    Path.GetFullPath(sourceFile),
+                    sourceFile2,
                     testFlags
                 };
             }

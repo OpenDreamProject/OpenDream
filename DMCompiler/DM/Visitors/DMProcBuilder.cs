@@ -719,10 +719,10 @@ namespace DMCompiler.DM.Visitors {
                             Constant lower = GetCaseValue(range.RangeStart);
                             Constant upper = GetCaseValue(range.RangeEnd);
 
-                            Constant CoerceBound(Constant bound) {
+                            Constant CoerceBound(Constant bound, string word) {
                                 if (bound is Null) { // We do a little null coercion, as a treat
                                     DMCompiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
-                                        "Malformed range, lower bound is coerced from null to 0");
+                                        $"Malformed range, {word} bound is coerced from null to 0");
                                     return new Number(lower.Location, 0.0f);
                                 }
 
@@ -730,15 +730,14 @@ namespace DMCompiler.DM.Visitors {
                                 //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                                 if (bound is not Number) {
                                     DMCompiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
-                                        "Invalid range, lower bound is not a number");
-                                    bound = new Number(bound.Location, 0.0f);
+                                        $"Invalid range, {word} bound is not a number");
                                 }
 
                                 return bound;
                             }
 
-                            lower = CoerceBound(lower);
-                            upper = CoerceBound(upper);
+                            lower = CoerceBound(lower,"lower");
+                            upper = CoerceBound(upper,"upper");
 
                             lower.EmitPushValue(_dmObject, _proc);
                             upper.EmitPushValue(_dmObject, _proc);

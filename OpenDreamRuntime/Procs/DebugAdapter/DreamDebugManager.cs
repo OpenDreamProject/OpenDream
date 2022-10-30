@@ -28,6 +28,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         return id;
     }
 
+    private Exception? _exception;
+
     public bool Stopped { get; private set; }
 
     private string RootPath => _resourceManager.RootPath ?? Path.GetDirectoryName(jsonPath) ?? throw new Exception("No RootPath yet!");
@@ -120,6 +122,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
+    public void HandleException(DreamThread thread, Exception exception) {
+        _exception = exception;
+        Stop(new StoppedEvent {
+            Reason = StoppedEvent.ReasonException,
+            ThreadId = thread.Id,
+            AllThreadsStopped = true,
+        });
+    }
+
     private void Stop(StoppedEvent stoppedEvent) {
         if (_adapter == null || !_adapter.AnyClientsConnected())
             return;
@@ -179,6 +190,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestVariables requestVariables:
                 HandleRequestVariables(client, requestVariables);
                 break;
+            case RequestExceptionInfo requestExceptionInfo:
+                HandleRequestExceptionInfo(client, requestExceptionInfo);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -198,6 +212,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         reqInit.Respond(client, new Capabilities {
             SupportsConfigurationDoneRequest = true,
             SupportsFunctionBreakpoints = true,
+            SupportsExceptionInfoRequest = true,
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -327,6 +342,19 @@ sealed class DreamDebugManager : IDreamDebugManager {
         });
     }
 
+    private void HandleRequestExceptionInfo(DebugAdapterClient client, RequestExceptionInfo requestExceptionInfo) {
+        if (_exception is null) {
+            requestExceptionInfo.RespondError(client, "No exception");
+            return;
+        }
+
+        // VSC shows exceptionId, description, stackTrace in that order.
+        requestExceptionInfo.Respond(client, new RequestExceptionInfo.ExceptionInfoResponse {
+            ExceptionId = _exception.Message,
+            BreakMode = RequestExceptionInfo.ExceptionInfoResponse.BreakModeAlways,
+        });
+    }
+
     private void HandleRequestStackTrace(DebugAdapterClient client, RequestStackTrace reqStackTrace) {
         var thread = InspectThreads().FirstOrDefault(t => t.Id == reqStackTrace.Arguments.ThreadId);
         if (thread is null) {
@@ -416,4 +444,5 @@ interface IDreamDebugManager {
     public void HandleOutput(LogLevel logLevel, string message);
     public void HandleProcStart(DMProcState state);
     public void HandleLineChange(DMProcState state, int line);
+    public void HandleException(DreamThread dreamThread, Exception exception);
 }

@@ -296,15 +296,15 @@ namespace OpenDreamRuntime {
 
         public void HandleException(Exception exception)
         {
-            if(_current is DMProcState state)
-            {
+            if (_current is DMProcState state) {
                 state.ReturnPools();
             }
+
             var dreamMan = IoCManager.Resolve<IDreamManager>();
             dreamMan.LastDMException = exception;
 
             StringBuilder builder = new();
-            builder.AppendLine($"Exception Occured: {exception.Message}");
+            builder.AppendLine($"Exception occurred: {exception.Message}");
 
             builder.AppendLine("=DM StackTrace=");
             AppendStackTrace(builder);
@@ -314,7 +314,9 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-           dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+            dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+
+            IoCManager.Resolve<Procs.DebugAdapter.IDreamDebugManager>()?.HandleException(this, exception);
         }
 
         public IEnumerable<ProcState> InspectStack() {

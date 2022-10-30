@@ -20,8 +20,10 @@ namespace DMCompiler.DM.Expressions {
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
-
-            throw new CompileErrorException(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            
+            DMCompiler.Error(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            //Just... pretend there is one for the sake of argument.
+            return (DMReference.CreateSrcProc(_identifier), false);
         }
 
         public DMProc GetProc(DMObject dmObject)
@@ -31,6 +33,10 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    /// <remarks>
+    /// This doesn't actually contain the GlobalProc itself;
+    /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
+    /// </remarks>
     class GlobalProc : DMExpression {
         string _name;
 
@@ -39,7 +45,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
+            DMCompiler.Error(Location, $"Attempt to use proc \"{_name}\" as value");
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -50,15 +56,18 @@ namespace DMCompiler.DM.Expressions {
 
         public DMProc GetProc() {
             if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
-                throw new CompileErrorException(Location, $"No global proc named \"{_name}\"");
+                DMCompiler.Error(Location, $"No global proc named \"{_name}\"");
+                return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
 
             return globalProc;
         }
     }
 
-    // .
-    // This is an LValue _and_ a proc
+    /// <summary>
+    /// . <br/>
+    /// This is an LValue _and_ a proc!
+    /// </summary>
     class ProcSelf : LValue {
         public ProcSelf(Location location)
             : base(location, null)

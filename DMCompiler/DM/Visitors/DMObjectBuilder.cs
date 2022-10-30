@@ -335,8 +335,20 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(value.Location, "Value of const var must be a constant");
             }
 
-            //Whether this should be initialized at runtime
-            bool isValid = expression switch {
+            if (!IsValidRighthandSide(currentObject, variable, expression)) {
+                throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
+            }
+
+            variable = variable.WriteToValue(new Expressions.Null(Location.Internal));
+            EmitInitializationAssign(currentObject, variable, expression);
+        }
+
+        /// <param name="expression">This expression should have already been processed by TryAsConstant.</param>
+        /// <returns>true if the expression given can be used to initialize the given variable. false if not.</returns>
+        private static bool IsValidRighthandSide(DMObject currentObject, DMVariable variable, DMExpression expression) {
+            if (variable.IsGlobal) // Have to back out early like this because if we are a static set by a ProcCall, it might be underdefined right now (and so error in the switch)
+                return true;
+            return expression switch {
                 //TODO: A better way of handling procs evaluated at compile time
                 Expressions.ProcCall procCall => procCall.GetTargetProc(currentObject).Proc?.Name switch {
                     "rgb" => true,
@@ -345,23 +357,17 @@ namespace DMCompiler.DM.Visitors {
                     "icon" => true,
                     "file" => true,
                     "sound" => true,
-                    _ => variable.IsGlobal
+                    _ => false
                 },
 
                 Expressions.List => true,
                 Expressions.NewList => true,
                 Expressions.NewPath => true,
                 // TODO: Check for circular reference loops here
-                Expressions.GlobalField => variable.IsGlobal,
-                _ => variable.IsGlobal
+                // (Note that we do accidentally support global-field access somewhat when it gets const-folded by TryAsConstant before we get here)
+                Expressions.GlobalField => false,
+                _ => false
             };
-
-            if (isValid) {
-                variable.Value = new Expressions.Null(Location.Internal);
-                EmitInitializationAssign(currentObject, variable, expression);
-            } else {
-                throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
-            }
         }
 
         private static void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {

@@ -13,6 +13,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using OpenDreamRuntime.Objects.MetaObjects;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -638,13 +639,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            if (!arg.TryGetValueAsDreamResource(out var resource)) {
-                throw new Exception("bad icon");
+            DMIParser.ParsedDMIDescription dmiDescription;
+            if (arg.TryGetValueAsDreamResource(out var resource)) {
+                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+            } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+            } else {
+                throw new Exception($"Bad icon {arg}");
             }
 
-            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
-
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
+            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -905,6 +909,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             if (value.Type == DreamValueType.DreamObject) {
                 if (value.Value == null) return null;
+                if(value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix,out var matrix)) { // Special behaviour for /matrix values
+                    StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
+                    builder.Append('[');
+                    builder.AppendJoin(',',DreamMetaObjectMatrix.EnumerateMatrix(matrix));
+                    builder.Append(']');
+                    return builder.ToString();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                }
                 return value.Stringify();
             }
             if(value.Type == DreamValueType.DreamResource) {
@@ -1060,19 +1073,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
 
-            string? text;
-            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+            byte[] bytes;
 
-                if (text == null)
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                byte[]? filebytes = resource.ResourceData;
+
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             MD5 md5 = MD5.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = md5.ComputeHash(input);
+            byte[] output = md5.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
@@ -1542,20 +1560,24 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            string? text;
+            byte[] bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+                byte[]? filebytes = resource.ResourceData;
 
-                if (text == null)
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             SHA1 sha1 = SHA1.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = sha1.ComputeHash(input);
+            byte[] output = sha1.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);

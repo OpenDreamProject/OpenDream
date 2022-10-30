@@ -1,4 +1,3 @@
-﻿#include "Shared/MatrixEquals.dm"
 
 /proc/RunTest()
 	var/matrix/M = matrix(1, 2, 3, 4, 5, 6)
@@ -6,5 +5,5 @@
 
 	M.Multiply(N)
 
-	if(!M.Equals(matrix(39, 54, 78, 54, 75, 108)))
+	if(M ~! matrix(39, 54, 78, 54, 75, 108))
 		CRASH("Unexpected matrix/Multiply result")

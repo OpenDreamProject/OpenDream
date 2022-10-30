@@ -100,6 +100,8 @@ namespace DMCompiler.DM {
 
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
+            procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
+            procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {

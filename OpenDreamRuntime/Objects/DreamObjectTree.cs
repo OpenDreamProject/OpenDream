@@ -271,7 +271,10 @@ namespace OpenDreamRuntime.Objects {
             }
 
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            return new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            proc.Source = procDefinition.Source;
+            proc.Line = procDefinition.Line;
+            return proc;
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)

@@ -11,6 +11,9 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
+        public string? Source { get; set; }
+        public int Line { get; set; }
+
         public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
@@ -167,6 +170,8 @@ namespace OpenDreamRuntime.Procs {
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             _localVariables = _dreamValuePool.Rent(256);
+            CurrentSource = proc.Source;
+            CurrentLine = proc.Line;
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments

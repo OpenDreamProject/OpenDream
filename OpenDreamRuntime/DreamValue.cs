@@ -179,15 +179,14 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsDreamObject([NotNullWhen(true)] out DreamObject? dreamObject) {
+        public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
-                dreamObject = (DreamObject)Value;
-                if (dreamObject != null && !dreamObject.Deleted) {
-                    return true;
-                }
+                dreamObject = GetValueAsDreamObject();
+                return true;
+            } else {
+                dreamObject = null;
+                return false;
             }
-            dreamObject = null;
-            return false;
         }
 
         public bool TryGetValueAsDreamObjectOfType(DreamPath type, [NotNullWhen(true)] out DreamObject? dreamObject) {

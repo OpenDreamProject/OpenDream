@@ -107,7 +107,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 {
                     args.Add(new DreamValue(group.Value));
                 }
-                var result = DreamThread.Run(async(state) => await state.Call(proc, instance, null, new DreamProcArguments(args)));
+                var result = DreamThread.Run("regex.Replace", async(state) => await state.Call(proc, instance, null, new DreamProcArguments(args)));
                 if (result.TryGetValueAsString(out var replacement))
                 {
                     return DoTextReplace(replacement);

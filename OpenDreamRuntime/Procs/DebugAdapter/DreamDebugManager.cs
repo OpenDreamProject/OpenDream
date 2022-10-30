@@ -9,14 +9,13 @@ namespace OpenDreamRuntime.Procs.DebugAdapter;
 sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IDreamManager _dreamManager = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+    [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
     private DebugAdapter? _adapter;
     private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
     private string? jsonPath;
     private int _breakpointIdCounter = 1;
-
-    private DMProcState? stoppedProcState;
 
     private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
 
@@ -79,8 +78,10 @@ sealed class DreamDebugManager : IDreamDebugManager {
             }
         }
         if (hit.Any()) {
-            Stop(state, new StoppedEvent {
+            Stop(new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
+                ThreadId = state.Thread.Id,
+                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
@@ -98,21 +99,21 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
         if (hit.Any()) {
             Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-            Stop(state, new StoppedEvent {
+            Stop(new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
+                ThreadId = state.Thread.Id,
+                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
     }
 
-    private void Stop(DMProcState? state, StoppedEvent stoppedEvent) {
+    private void Stop(StoppedEvent stoppedEvent) {
         if (_adapter == null || !_adapter.AnyClientsConnected())
             return;
 
-        stoppedEvent.ThreadId = 0;
         _adapter.SendAll(stoppedEvent);
 
-        stoppedProcState = state;
         Stopped = true;
 
         // We have to block the DM runtime no matter where we are in its call
@@ -276,12 +277,19 @@ sealed class DreamDebugManager : IDreamDebugManager {
         reqFuncBreakpoints.Respond(client, output);
     }
 
+    private IEnumerable<DreamThread> InspectThreads() {
+        return DreamThread.InspectExecutingThreads().Concat(_procScheduler.InspectThreads());
+    }
+
     private void HandleRequestThreads(DebugAdapterClient client, RequestThreads reqThreads) {
-        if (!Stopped) {
-            reqThreads.Respond(client, Array.Empty<Thread>());
-        } else {
-            reqThreads.Respond(client, new[] { new Thread(0, "Current") });
+        var threads = new List<Thread>();
+        foreach (var thread in InspectThreads().Distinct()) {
+            threads.Add(new Thread(thread.Id, thread.Name));
         }
+        if (!threads.Any()) {
+            threads.Add(new Thread(0, "Nothing"));
+        }
+        reqThreads.Respond(client, threads);
     }
 
     private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
@@ -292,19 +300,20 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private void HandleRequestPause(DebugAdapterClient client, RequestPause reqPause) {
         // "The debug adapter first sends the response and then a stopped event (with reason pause) after the thread has been paused successfully."
         reqPause.Respond(client);
-        Stop(null, new StoppedEvent {
+        Stop(new StoppedEvent {
             Reason = StoppedEvent.ReasonPause,
+            AllThreadsStopped = true,
             Description = "Paused by request",
         });
     }
 
     private void HandleRequestStackTrace(DebugAdapterClient client, RequestStackTrace reqStackTrace) {
-        if (stoppedProcState is null) {
-            reqStackTrace.RespondError(client, "Stack trace not available for Pause yet");
+        var thread = InspectThreads().FirstOrDefault(t => t.Id == reqStackTrace.Arguments.ThreadId);
+        if (thread is null) {
+            reqStackTrace.RespondError(client, $"No thread with ID {reqStackTrace.Arguments.ThreadId}");
             return;
         }
 
-        var thread = stoppedProcState.Thread;
         var output = new List<StackFrame>();
         var nameBuilder = new System.Text.StringBuilder();
         foreach (var frame in thread.InspectStack()) {

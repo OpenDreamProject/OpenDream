@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Procs {
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task _task;
 
-            private ProcState _callProcNotify;
+            private ProcState? _callProcNotify;
             private TaskCompletionSource<DreamValue> _callTcs;
             private DreamValue? _callResult;
 
@@ -84,10 +84,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    _task.ContinueWith(
-                        _ => procScheduler.ScheduleAsyncNative(this),
-                        TaskScheduler.FromCurrentSynchronizationContext()
-                    );
+                    procScheduler.ScheduleAsyncNative(this, _task);
                 }
 
                 while (_callProcNotify != null || _callResult != null)

@@ -265,7 +265,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamThread Spawn() {
-            var thread = new DreamThread();
+            var thread = new DreamThread(this.Proc.ToString());
 
             var state = new DMProcState(this, thread);
             thread.PushProcState(state);

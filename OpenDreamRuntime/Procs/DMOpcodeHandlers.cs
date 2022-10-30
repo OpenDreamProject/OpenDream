@@ -1136,8 +1136,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
-            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1157,8 +1158,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
-            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1933,8 +1935,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) > 0;
                 default: {
-                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                        return 0 > second.GetValueAsFloat();
+                    if (first == DreamValue.Null) {
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 > second.GetValueAsFloat();
+                        if (second.TryGetValueAsString(out var s)) return false;
+                        if (second.Value == null) return false;
                     }
                     throw new Exception("Invalid greater than comparison on " + first + " and " + second);
                 }
@@ -1950,8 +1954,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) < 0;
                 default: {
-                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                        return 0 < second.GetValueAsFloat();
+                    if (first == DreamValue.Null) {
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 < second.GetValueAsFloat();
+                        if (second.TryGetValueAsString(out var s)) return s != "";
+                        if (second.Value == null) return false;
                     }
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }

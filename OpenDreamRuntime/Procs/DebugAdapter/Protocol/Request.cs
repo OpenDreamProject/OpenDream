@@ -14,21 +14,23 @@ public class Request : ProtocolMessage {
         if (request == null)
             return null;
 
-        switch (request.Command) {
-            case "initialize": return json.Deserialize<RequestInitialize>();
-            case "launch": return json.Deserialize<RequestLaunch>();
-            case "disconnect": return json.Deserialize<RequestDisconnect>();
-            case "setBreakpoints": return json.Deserialize<RequestSetBreakpoints>();
-            case "setFunctionBreakpoints": return json.Deserialize<RequestSetFunctionBreakpoints>();
-            case "configurationDone": return json.Deserialize<RequestConfigurationDone>();
-            case "threads": return json.Deserialize<RequestThreads>();
-            case "continue": return json.Deserialize<RequestContinue>();
-            case "pause": return json.Deserialize<RequestPause>();
-            case "stackTrace": return json.Deserialize<RequestStackTrace>();
-            case "scopes": return json.Deserialize<RequestScopes>();
-            case "variables": return json.Deserialize<RequestVariables>();
-            default: return request;  // Caller will fail to recognize it and can respond with `success: false`;
-        }
+        return request.Command switch {
+            "initialize" => json.Deserialize<RequestInitialize>(),
+            "launch" => json.Deserialize<RequestLaunch>(),
+            "disconnect" => json.Deserialize<RequestDisconnect>(),
+            "setBreakpoints" => json.Deserialize<RequestSetBreakpoints>(),
+            "setFunctionBreakpoints" => json.Deserialize<RequestSetFunctionBreakpoints>(),
+            "configurationDone" => json.Deserialize<RequestConfigurationDone>(),
+            "threads" => json.Deserialize<RequestThreads>(),
+            "continue" => json.Deserialize<RequestContinue>(),
+            "pause" => json.Deserialize<RequestPause>(),
+            "stackTrace" => json.Deserialize<RequestStackTrace>(),
+            "scopes" => json.Deserialize<RequestScopes>(),
+            "variables" => json.Deserialize<RequestVariables>(),
+            "exceptionInfo" => json.Deserialize<RequestExceptionInfo>(),
+            // Caller will fail to recognize it and can respond with `success: false`.
+            _ => request,
+        };
     }
 
     public void RespondError(DebugAdapterClient client, string errorText) {

@@ -517,5 +517,16 @@ namespace OpenDreamRuntime.Procs {
             }
         }
         #endregion References
+
+        public IEnumerable<(string, DreamValue)> InspectLocals() {
+            for (int i = 0; i < _localVariables.Length; ++i) {
+                string name = i.ToString();
+                if (Proc.ArgumentNames != null && i < Proc.ArgumentNames.Count) {
+                    name = Proc.ArgumentNames[i];
+                }
+                DreamValue value = _localVariables[i];
+                yield return (name, value);
+            }
+        }
     }
 }

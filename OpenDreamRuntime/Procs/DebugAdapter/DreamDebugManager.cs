@@ -18,6 +18,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private int _breakpointIdCounter = 1;
 
     private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
+    private Dictionary<int, WeakReference<ProcState>> stackFramesById = new();
+
+    private int _variablesIdCounter = 0;
+    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> variableReferences = new();
+    private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
+        int id = ++_variablesIdCounter;
+        variableReferences[id] = func;
+        return id;
+    }
 
     public bool Stopped { get; private set; }
 
@@ -44,6 +53,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void Update() {
         _adapter?.HandleMessages();
+        if (_adapter == null || !_adapter.AnyClientsConnected()) {
+            Stopped = false;
+        }
     }
 
     public void Shutdown() {
@@ -160,6 +172,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestStackTrace requestStackTrace:
                 HandleRequestStackTrace(client, requestStackTrace);
+                break;
+            case RequestScopes requestScopes:
+                HandleRequestScopes(client, requestScopes);
+                break;
+            case RequestVariables requestVariables:
+                HandleRequestVariables(client, requestVariables);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -294,6 +312,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
         Stopped = false;
+        stackFramesById.Clear();
+        variableReferences.Clear();
         reqContinue.Respond(client, allThreadsContinued: true);
     }
 
@@ -326,8 +346,63 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 Line = line ?? 0,
                 Name = nameBuilder.ToString(),
             });
+            stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
         reqStackTrace.Respond(client, output, output.Count);
+    }
+
+    private void HandleRequestScopes(DebugAdapterClient client, RequestScopes requestScopes) {
+        if (!stackFramesById.TryGetValue(requestScopes.Arguments.FrameId, out var weak) || !weak.TryGetTarget(out var frame)) {
+            requestScopes.RespondError(client, $"No frame with ID {requestScopes.Arguments.FrameId}");
+            return;
+        }
+
+        if (frame is not DMProcState dmFrame) {
+            requestScopes.RespondError(client, $"Cannot inspect native frame");
+            return;
+        }
+
+        requestScopes.Respond(client, new[] {
+            new Scope {
+                Name = "Locals",
+                VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
+            },
+        });
+    }
+
+    private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
+        if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
+            yield return DescribeValue("src", new(dmFrame.Instance));
+        }
+        yield return DescribeValue("usr", new(dmFrame.Usr));
+        foreach (var (name, value) in dmFrame.InspectLocals()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private Variable DescribeValue(string name, DreamValue value) {
+        var varDesc = new Variable { Name = name };
+        varDesc.Value = value.ToString();
+        if (value.TryGetValueAsDreamObject(out var obj)) {
+            varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
+            varDesc.IndexedVariables = obj.GetVariableNames().Count;
+        }
+        return varDesc;
+    }
+
+    private IEnumerable<Variable> ExpandObject(RequestVariables req, Objects.DreamObject obj) {
+        foreach (var (name, value) in obj.GetAllVariables()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private void HandleRequestVariables(DebugAdapterClient client, RequestVariables requestVariables) {
+        if (!variableReferences.TryGetValue(requestVariables.Arguments.VariablesReference, out var varFunc)) {
+            requestVariables.RespondError(client, $"No variables reference with ID {requestVariables.Arguments.VariablesReference}");
+            return;
+        }
+
+        requestVariables.Respond(client, varFunc(requestVariables));
     }
 }
 

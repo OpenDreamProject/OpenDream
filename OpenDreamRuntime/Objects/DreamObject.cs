@@ -70,6 +70,8 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        public IReadOnlyDictionary<string, DreamValue> GetAllVariables() => _variables;
+
         public List<DreamValue> GetVariableNames() {
             if(Deleted){
                 throw new Exception("Cannot get variable names of a deleted object");

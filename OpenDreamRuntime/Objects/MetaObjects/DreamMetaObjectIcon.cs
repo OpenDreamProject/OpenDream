@@ -37,10 +37,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             public byte? Frame; //1-indexed. Specific frame. Null is all frames.
             public DreamIconMovingMode Moving;
 
-            public DreamIconObject(DreamResource rsc, DreamValue state, DreamValue dir, DreamValue frame, DreamValue moving)
-            {
-                if (Path.GetExtension(rsc.ResourcePath) != ".dmi")
-                {
+            public DreamIconObject(DreamResource rsc, DreamValue state, DreamValue dir, DreamValue frame,
+                DreamValue moving) {
+                if (Path.GetExtension(rsc.ResourcePath) != ".dmi") {
                     throw new Exception("Invalid icon file");
                 }
 
@@ -51,38 +50,26 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 state.TryGetValueAsString(out State);
 
-                if (dir.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
-                {
-                    Direction = (AtomDirection)dirVal;
-                }
-                else
-                {
+                if (dir.TryGetValueAsInteger(out var dirVal) && (AtomDirection) dirVal != AtomDirection.None) {
+                    Direction = (AtomDirection) dirVal;
+                } else {
                     Direction = null;
                 }
 
-                if (frame.TryGetValueAsInteger(out var frameVal))
-                {
+                if (frame.TryGetValueAsInteger(out var frameVal)) {
                     //TODO: Figure out how many frames an icon can have and see if this needs to be bigger than a byte
                     Frame = Convert.ToByte(frameVal - 1); //1-indexed
-                }
-                else
-                {
+                } else {
                     Frame = null;
                 }
 
-                if (moving != DreamValue.Null)
-                {
-                    if (moving.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
-                    {
+                if (moving != DreamValue.Null) {
+                    if (moving.TryGetValueAsInteger(out var movingVal) && movingVal == 0) {
                         Moving = DreamIconMovingMode.NonMovement;
-                    }
-                    else
-                    {
+                    } else {
                         Moving = DreamIconMovingMode.Movement;
                     }
-                }
-                else
-                {
+                } else {
                     Moving = DreamIconMovingMode.Both;
                 }
             }

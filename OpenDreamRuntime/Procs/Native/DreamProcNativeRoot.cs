@@ -1369,43 +1369,66 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
+        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments) {
+            DreamValue haystack = arguments.GetArgument(0, "Haystack");
+            DreamValue needle = arguments.GetArgument(1, "Needle");
+            DreamValue replacementArg = arguments.GetArgument(2, "Replacement");
+            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (needle.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out var regexObject)) {
+                // According to the docs, this is the same as /regex.Replace()
+                return DreamProcNativeRegex.RegexReplace(regexObject, haystack, replacementArg, start, end);
+            }
+
+            if (!haystack.TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
 
-            var arg3 = arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            //TODO: Regex support
-            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
             if (end == 0) {
                 end = text.Length + 1;
             }
 
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.OrdinalIgnoreCase));
+            if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
+                if (!arg3) { // No change if no Replacement was given
+                    return new DreamValue(text);
+                }
+
+                // A Start of 2 is the same as 1. This only happens when Needle is null.
+                if (start == 1)
+                    start = 2;
+
+                // End cannot reach the last char
+                end = Math.Min(end, text.Length);
+
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < text.Length; i++) {
+                    result.Append(text[i]);
+                    if (i >= start - 2 && i < end - 1)
+                        result.Append(replacement);
+                }
+
+                return new DreamValue(result.ToString());
+            }
+
+            if (needle.TryGetValueAsString(out var needleStr)) {
+                string before = text.Substring(0, start - 1);
+                string after = text.Substring(end - 1);
+                string textSub = text.Substring(start - 1, end - start);
+                string replaced = textSub.Replace(needleStr, replacement, StringComparison.OrdinalIgnoreCase);
+
+                StringBuilder newTextBuilder = new();
+                newTextBuilder.Append(before);
+                newTextBuilder.Append(replaced);
+                newTextBuilder.Append(after);
+
+                return new DreamValue(newTextBuilder.ToString());
+            }
+
+            throw new Exception($"Invalid needle {needle}");
         }
 
         [DreamProc("rgb")]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
@@ -63,7 +64,7 @@ namespace OpenDreamRuntime.Objects {
             return GetTreeEntry(typeId).ObjectDefinition;
         }
 
-        public bool TryGetGlobalProc(string name, out DreamProc? globalProc) {
+        public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc) {
             globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
 
             return (globalProc != null);

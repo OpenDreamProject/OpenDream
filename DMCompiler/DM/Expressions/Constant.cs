@@ -134,9 +134,20 @@ namespace DMCompiler.DM.Expressions {
         #endregion
     }
 
-    // null
-    class Null : Constant {
-        public Null(Location location) : base(location) { }
+    /// <summary>
+    /// Stores a literal null.
+    /// </summary>
+    /// <remarks>
+    /// The reason we inherit from Number here is that, in all arithmetic operations, Null behaves identically to a numeric value of 0.
+    /// </remarks>
+    class Null : Number {
+        public override float Value {
+            get {
+                EmitNullWarning();
+                return base.Value;
+            }
+        }
+        public Null(Location location) : base(location, 0f) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
@@ -176,11 +187,22 @@ namespace DMCompiler.DM.Expressions {
             }
             return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
         }
+        void EmitNullWarning() {
+            DMCompiler.ForcedWarning(Location, "Null value is coerced to 0 by this operation");
+        }
+
+        public override Constant Add(Constant rhs) {
+            if (rhs is String rhsString) {
+                DMCompiler.ForcedWarning(Location, "Null value is ignored in addition with string");
+                return rhsString;
+            }
+            return base.Add(rhs);
+        }
     }
 
     // 4.0, -4.0
     class Number : Constant {
-        public float Value { get; }
+        public virtual float Value { get; }
 
         public Number(Location location, int value) : base(location) {
             Value = value;
@@ -379,6 +401,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant Add(Constant rhs) {
             if (rhs is not String rhsString) {
+                if(rhs is Expressions.Null) {
+                    DMCompiler.Warning(rhs.Location, "Null value is ignored in addition with string");
+                    return this;
+                }
                 return base.Add(rhs);
             }
 

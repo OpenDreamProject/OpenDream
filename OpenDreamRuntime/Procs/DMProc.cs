@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -101,8 +102,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BitShiftRight,
             null, //0x41
             DMOpcodeHandlers.Power,
-            null, //0x43
-            null, //0x44
+            DMOpcodeHandlers.OutputReference,
+            DMOpcodeHandlers.Output,
             DMOpcodeHandlers.Prompt,
             DMOpcodeHandlers.PushProcArguments,
             DMOpcodeHandlers.Initial,
@@ -112,7 +113,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Locate,
             DMOpcodeHandlers.IsNull,
             DMOpcodeHandlers.Spawn,
-            null, //0x4E
+            DMOpcodeHandlers.Input,
             null, //0x4F
             DMOpcodeHandlers.JumpIfNullDereference,
             DMOpcodeHandlers.Pop,
@@ -384,6 +385,20 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
+        /// <summary>
+        /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
+        /// as well as what it's being indexed with.
+        /// </summary>
+        /// <param name="reference">A ListIndex DMReference</param>
+        public (DreamValue indexing, DreamValue index) GetIndexReferenceValues(DMReference reference, bool peek = false) {
+            if (reference.RefType != DMReference.Type.ListIndex)
+                throw new ArgumentException("Reference was not a ListIndex type");
+
+            DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
+            DreamValue indexing = peek ? _stack[_stackIndex - 2] : Pop();
+            return (indexing, index);
+        }
+
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
@@ -407,12 +422,18 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DMReference.Type.ListIndex: {
-                    DreamValue index = Pop();
-                    DreamValue list = Pop();
-                    if (!list.TryGetValueAsDreamList(out var listObj))
-                        throw new Exception($"Cannot assign to index {index} of {list}");
+                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
 
-                    listObj.SetValue(index, value);
+                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
+                        listObj.SetValue(index, value);
+                    } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
+                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
+                        if (metaObject != null)
+                            metaObject.OperatorIndexAssign(dreamObject!, index, value);
+                    } else {
+                        throw new Exception($"Cannot assign to index {index} of {indexing}");
+                    }
+
                     break;
                 }
                 default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
@@ -466,20 +487,27 @@ namespace OpenDreamRuntime.Procs {
                     return fieldValue;
                 }
                 case DMReference.Type.ListIndex: {
-                    DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
-                    DreamValue indexing = peek ? _stack[_stackIndex - 2] : Pop();
+                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference, peek);
 
                     if (indexing.TryGetValueAsDreamList(out var listObj)) {
                         return listObj.GetValue(index);
-                    } else if (indexing.TryGetValueAsString(out string strValue)) {
+                    }
+
+                    if (indexing.TryGetValueAsString(out string? strValue)) {
                         if (!index.TryGetValueAsInteger(out int strIndex))
                             throw new Exception($"Attempted to index string with {index}");
 
                         char c = strValue[strIndex - 1];
                         return new DreamValue(Convert.ToString(c));
-                    } else {
-                        throw new Exception($"Cannot get index {index} of {indexing}");
                     }
+
+                    if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
+                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
+                        if (metaObject != null)
+                            return metaObject.OperatorIndex(dreamObject, index);
+                    }
+
+                    throw new Exception($"Cannot get index {index} of {indexing}");
                 }
                 default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
             }

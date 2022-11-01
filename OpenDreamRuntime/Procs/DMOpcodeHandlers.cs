@@ -1514,7 +1514,7 @@ namespace OpenDreamRuntime.Procs {
             string? browseValue;
             if (body.TryGetValueAsDreamResource(out var resource)) {
                 browseValue = resource.ReadAsString();
-            } else if (body.TryGetValueAsString(out browseValue)) {
+            } else if (body.TryGetValueAsString(out browseValue) || body == DreamValue.Null) {
                 // Got it.
             } else {
                 throw new Exception($"Invalid browse() body: expected resource or string, got {body}");

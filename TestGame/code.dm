@@ -16,12 +16,10 @@
 
 	verb/increment_gradient()
 		gradient_index += 0.05
-		gradient_index = round(gradient_index, 0.01)
 		usr << "Gradient index increased to [gradient_index]"
 
 	verb/decrement_gradient()
 		gradient_index -= 0.05
-		gradient_index = round(gradient_index, 0.01)
 		usr << "Gradient index decreased to [gradient_index]"
 
 	verb/update_gradient()

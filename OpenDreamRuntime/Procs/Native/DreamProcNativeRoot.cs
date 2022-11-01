@@ -678,7 +678,7 @@ namespace OpenDreamRuntime.Procs.Native {
                         continue; // Succesful parse
                     }
                 }
-                if (value.TryGetValueAsString(out string strvalue)) {
+                if (value.TryGetValueAsString(out string? strvalue)) {
                     if (ColorHelpers.TryParseColor(strvalue, out Color color)) {
                         colors.Add(new Tuple<Color, float>(color, workingfloat));
                         if (color_or_int)

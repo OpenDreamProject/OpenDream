@@ -661,7 +661,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitInitial(DMASTInitial initial) {
-            var expr = DMExpression.Create(_dmObject, _proc, initial.Expression, _inferredPath);
+            var expr = DMExpression.CreateNoFolding(_dmObject, _proc, initial.Expression, _inferredPath);
             Result = new Expressions.Initial(initial.Location, expr);
         }
 

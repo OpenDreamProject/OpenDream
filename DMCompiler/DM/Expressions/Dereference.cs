@@ -6,8 +6,7 @@ using OpenDreamShared.Dream.Procs;
 namespace DMCompiler.DM.Expressions {
     // x.y.z
     class Dereference : LValue {
-        // Kind of a lazy port
-        DMExpression _expr;
+        public DMExpression _expr { get; private set; }
         public readonly string PropertyName;
         bool _conditional;
 

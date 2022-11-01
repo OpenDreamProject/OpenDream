@@ -483,9 +483,34 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsConstant(out Constant constant) {
-            if(_expr.TryAsConstant(out Constant expressionConstant)) {
+            //If the inner expression itself can prove its const-ness
+            if(_expr.TryAsConstant(out Constant expressionConstant)) { // then why not
                 constant = expressionConstant;
                 return true;
+            }
+            switch (_expr) {
+                case GlobalField global: {
+                    DMVariable globalVar = DMObjectTree.Globals[global.Id];
+                    if(globalVar.Value != null) {
+                        return globalVar.Value.TryAsConstant(out constant);
+                    }
+                    break;
+                }
+                case Field field: {
+                    if (field.Variable.Value != null) {
+                        return field.Variable.Value.TryAsConstant(out constant);
+                    }
+                    break;
+                }
+                case Dereference memberAccess: {
+                    var obj = DMObjectTree.GetDMObject(memberAccess._expr.Path.GetValueOrDefault());
+                    var variable = obj.GetVariable(memberAccess.PropertyName);
+                    if (variable != null && variable.Value != null) {
+                        return variable.Value.TryAsConstant(out constant);
+                    }
+                    break;
+                }
+                // TODO: Make sure that all LValues have a chance at getting const-folded here.
             }
             return base.TryAsConstant(out constant);
         }

@@ -39,6 +39,16 @@ namespace DMCompiler.DM {
             return instance.Result;
         }
 
+        /// <summary>
+        /// Should be identical to <see cref="Create(DMObject, DMProc, DMASTExpression, DreamPath?)"/>, except it does not attempt constant-folding. <br/>
+        /// This should be used very seldomly, and the caller should ensure that the expression still does get const-folded later on in evaluation.
+        /// </summary>
+        public static DMExpression CreateNoFolding(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
+            expression.Visit(instance);
+            return instance.Result;
+        }
+
 
         /// <summary>
         /// Rolls <see cref="Create(DMObject, DMProc, DMASTExpression, DreamPath?)"/> and <see cref="EmitPushValue(DMObject, DMProc)"/> into one action.

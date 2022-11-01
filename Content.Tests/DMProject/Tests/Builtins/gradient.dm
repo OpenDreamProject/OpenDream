@@ -2,6 +2,7 @@
 
 /proc/RunTest()
 	var/list/gradlist = list(0, "#ff0000", 1, "#00ff00")
+	ASSERT(gradient("#ff0000", "#00ff00", 0.5) == "#7f7f00")
 	ASSERT(gradient(gradlist, 0.5) == "#7f7f00")
 	ASSERT(gradient(gradlist, 0) == "#ff0000")
 	ASSERT(gradient(gradlist, 1) == "#00ff00")

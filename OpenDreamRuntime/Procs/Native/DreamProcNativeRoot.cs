@@ -631,7 +631,7 @@ namespace OpenDreamRuntime.Procs.Native {
                             colorspace = space;
                             arguments.NamedArguments.Remove("space");
                         } else if (value.Value != DreamValue.Null) {
-                            throw new Exception("Unknown colorspace " + space);
+                            throw new NotSupportedException("Unknown colorspace " + space);
                         }
                         continue;
                 }
@@ -648,7 +648,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     gradlist.RemoveValue(new DreamValue("space"));
                 }
                 else if (colorspacelookup != DreamValue.Null) {
-                    throw new Exception("Unknown colorspace " + colorspacelookup);
+                    throw new NotSupportedException("Unknown colorspace " + colorspacelookup);
                 }
 
                 if(gradlist.ContainsValue(new DreamValue("loop"))) {
@@ -669,32 +669,31 @@ namespace OpenDreamRuntime.Procs.Native {
             List<Tuple<Color, float>> colors = new();
 
             foreach (DreamValue value in GradientList) {
-                if (color_or_int) { // Int
-                    if (value.TryGetValueAsFloat(out float flt)) {
-                        color_or_int = false;
-                        workingfloat = flt;
-                        maxvalue = Math.Max(maxvalue, flt);
-                        minvalue = Math.Min(minvalue, flt);
-                        continue; // Succesful parse
-                    }
+                if (color_or_int && value.TryGetValueAsFloat(out float flt)) { // Int
+                    color_or_int = false;
+                    workingfloat = flt;
+                    maxvalue = Math.Max(maxvalue, flt);
+                    minvalue = Math.Min(minvalue, flt);
+                    continue; // Succesful parse
                 }
-                if (value.TryGetValueAsString(out string? strvalue)) {
-                    if (ColorHelpers.TryParseColor(strvalue, out Color color)) {
-                        colors.Add(new Tuple<Color, float>(color, workingfloat));
-                        if (color_or_int)
-                            workingfloat = 1;
-                        color_or_int = true;
+
+                if (value.TryGetValueAsString(out string? strvalue) && ColorHelpers.TryParseColor(strvalue, out Color color)) {
+                    colors.Add(new Tuple<Color, float>(color, workingfloat));
+                    if (color_or_int) {
+                        workingfloat = 1;
                     }
+
+                    color_or_int = true;
                 }
             }
 
             if (!index.TryGetValueAsFloat(out float indx)) {
-                throw new Exception("Failed to parse index as float");
+                throw new FormatException("Failed to parse index as float");
             }
             indx = Math.Max(minvalue, indx);
 
             if (colors.Count == 0) {
-                throw new Exception("Failed to find any colors");
+                throw new InvalidOperationException("Failed to find any colors");
             }
 
             if (loop && maxvalue <= indx) {
@@ -776,7 +775,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     returnval = Color.FromHsv(holder);
                     break;
                 default:
-                    throw new Exception("Cannot interpolate colorspace");
+                    throw new NotSupportedException("Cannot interpolate colorspace");
             }
 
             if(returnval.A == 1) {

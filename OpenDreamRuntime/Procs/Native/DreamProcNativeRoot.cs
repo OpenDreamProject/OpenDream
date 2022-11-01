@@ -605,11 +605,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new ArgumentException("Found only 1 argument");
             }
 
-            /// TODO: Cleanup the index argument code
-            /// TODO: Add colorspaces
-
             /// We dont want keyword arguments screwing with this
-            DreamValue index = new();
+            DreamValue index;
 
             int colorspace = 0;
             bool loop = false;

@@ -63,7 +63,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Modulus,
             DMOpcodeHandlers.Append,
             DMOpcodeHandlers.CreateRangeEnumerator,
-            null, //0x1C
+            DMOpcodeHandlers.Input,
             DMOpcodeHandlers.CompareLessThanOrEqual,
             DMOpcodeHandlers.CreateAssociativeList,
             DMOpcodeHandlers.Remove,
@@ -102,8 +102,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BitShiftRight,
             null, //0x41
             DMOpcodeHandlers.Power,
-            DMOpcodeHandlers.OutputReference,
-            DMOpcodeHandlers.Output,
+            null, //0x43
+            null, //0x44
             DMOpcodeHandlers.Prompt,
             DMOpcodeHandlers.PushProcArguments,
             DMOpcodeHandlers.Initial,
@@ -113,8 +113,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.Locate,
             DMOpcodeHandlers.IsNull,
             DMOpcodeHandlers.Spawn,
-            DMOpcodeHandlers.Input,
-            null, //0x4F
+            DMOpcodeHandlers.OutputReference,
+            DMOpcodeHandlers.Output,
             DMOpcodeHandlers.JumpIfNullDereference,
             DMOpcodeHandlers.Pop,
             DMOpcodeHandlers.Prob,

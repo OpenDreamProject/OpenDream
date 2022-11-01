@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
@@ -50,85 +51,89 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        [DreamProc("Replace")]
-        [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
+        public static DreamValue RegexReplace(DreamObject regexInstance, DreamValue haystack, DreamValue replace,
+            int start, int end) {
+            DreamRegex regex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
 
-            DreamValue haystack = arguments.GetArgument(0, "haystack");
-            DreamValue replace = arguments.GetArgument(1, "replacement");
-            int start = arguments.GetArgument(2, "Start").GetValueAsInteger();
-            int end = arguments.GetArgument(3, "End").GetValueAsInteger();
-
-            if (!haystack.TryGetValueAsString(out var haystackString))
-            {
-                if (haystack == DreamValue.Null)
-                {
+            if (!haystack.TryGetValueAsString(out var haystackString)) {
+                if (haystack == DreamValue.Null) {
                     return DreamValue.Null;
                 }
+
                 //TODO Check what actually happens
                 throw new ArgumentException("Bad regex haystack");
             }
+
             string haystackSubstring = haystackString;
             if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
             if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
                 return DoProcReplace(replaceProc);
             }
-            if (replace.TryGetValueAsString(out string replaceString))
-            {
+
+            if (replace.TryGetValueAsString(out var replaceString)) {
                 return DoTextReplace(replaceString);
             }
 
-            if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null)
-            {
+            if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null) {
                 var dreamMan = IoCManager.Resolve<IDreamManager>();
-                if (dreamMan.ObjectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc))
-                {
+                if (dreamMan.ObjectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc)) {
                     return DoProcReplace(proc);
                 }
             }
 
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
-            DreamValue DoProcReplace(DreamProc proc)
-            {
-                if(dreamRegex.IsGlobal)
-                {
+            DreamValue DoProcReplace(DreamProc proc) {
+                if (regex.IsGlobal) {
                     throw new NotImplementedException("Proc global regex replacements are not implemented");
                 }
-                var match = dreamRegex.Regex.Match(haystackSubstring);
+
+                var match = regex.Regex.Match(haystackSubstring);
                 var groups = match.Groups;
                 List<DreamValue> args = new List<DreamValue>(groups.Count);
-                foreach (Group group in groups)
-                {
+                foreach (Group group in groups) {
                     args.Add(new DreamValue(group.Value));
                 }
-                var result = DreamThread.Run("regex.Replace", async(state) => await state.Call(proc, instance, null, new DreamProcArguments(args)));
-                if (result.TryGetValueAsString(out var replacement))
-                {
+
+                var result = DreamThread.Run("regex.Replace", async state =>
+                    await state.Call(proc, regexInstance, null, new DreamProcArguments(args)));
+
+                if (result.TryGetValueAsString(out var replacement)) {
                     return DoTextReplace(replacement);
                 }
+
                 //TODO Confirm this behavior
-                if (result == DreamValue.Null)
-                {
+                if (result == DreamValue.Null) {
                     return new DreamValue(haystackSubstring);
                 }
+
                 throw new ArgumentException("Replacement is not a string");
             }
 
-            DreamValue DoTextReplace(string replacement)
-            {
-                string replaced = dreamRegex.Regex.Replace(haystackSubstring, replacement, dreamRegex.IsGlobal ? -1 : 1, start - 1);
+            DreamValue DoTextReplace(string replacement) {
+                string replaced = regex.Regex.Replace(haystackSubstring, replacement, regex.IsGlobal ? -1 : 1,
+                    start - 1);
 
-                if(end != 0) replaced += haystackString.Substring(end - start + 1);
+                if (end != 0) replaced += haystackString.Substring(end - start + 1);
 
-                instance.SetVariable("text", new DreamValue(replaced));
+                regexInstance.SetVariable("text", new DreamValue(replaced));
                 return new DreamValue(replaced);
             }
+        }
+
+        [DreamProc("Replace")]
+        [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
+        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue haystack = arguments.GetArgument(0, "haystack");
+            DreamValue replacement = arguments.GetArgument(1, "replacement");
+            int start = arguments.GetArgument(2, "Start").GetValueAsInteger();
+            int end = arguments.GetArgument(3, "End").GetValueAsInteger();
+
+            return RegexReplace(instance, haystack, replacement, start, end);
         }
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal) {

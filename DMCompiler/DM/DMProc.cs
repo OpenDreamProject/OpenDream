@@ -383,6 +383,23 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void OutputReference(DMReference leftRef) {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.OutputReference);
+            WriteReference(leftRef);
+        }
+
+        public void Output() {
+            ShrinkStack(2);
+            WriteOpcode(DreamProcOpcode.Output);
+        }
+
+        public void Input(DMReference leftRef, DMReference rightRef) {
+            WriteOpcode(DreamProcOpcode.Input);
+            WriteReference(leftRef);
+            WriteReference(rightRef);
+        }
+
         public void Spawn(string jumpTo) {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Spawn);

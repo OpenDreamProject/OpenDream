@@ -84,7 +84,7 @@ namespace OpenDreamRuntime {
 
             _compiledJson = json;
             _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
-            if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))            
+            if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
             //TODO: Empty or invalid _compiledJson.Interface should return default interface - see issue #851
             ObjectTree.LoadJson(json);
@@ -135,6 +135,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
+            ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile());
         }
 
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log") {

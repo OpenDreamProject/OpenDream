@@ -32,7 +32,7 @@ namespace OpenDreamShared.Dream.Procs {
         Modulus = 0x19,
         Append = 0x1A,
         CreateRangeEnumerator = 0x1B,
-        //0x1C
+        Input = 0x1C,
         CompareLessThanOrEqual = 0x1D,
         CreateAssociativeList = 0x1E,
         Remove = 0x1F,
@@ -82,8 +82,8 @@ namespace OpenDreamShared.Dream.Procs {
         Locate = 0x4B,
         IsNull = 0x4C,
         Spawn = 0x4D,
-        //0x4E
-        //0x4F,
+        OutputReference = 0x4E,
+        Output = 0x4F,
         JumpIfNullDereference = 0x50,
         Pop = 0x51,
         Prob = 0x52,

@@ -28,6 +28,9 @@ public class Request : ProtocolMessage {
             "scopes" => json.Deserialize<RequestScopes>(),
             "variables" => json.Deserialize<RequestVariables>(),
             "exceptionInfo" => json.Deserialize<RequestExceptionInfo>(),
+            "next" => json.Deserialize<RequestNext>(),
+            "stepIn" => json.Deserialize<RequestStepIn>(),
+            "stepOut" => json.Deserialize<RequestStepOut>(),
             // Caller will fail to recognize it and can respond with `success: false`.
             _ => request,
         };

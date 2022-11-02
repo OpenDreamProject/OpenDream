@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
 using Robust.Server;
@@ -428,15 +429,37 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name };
         varDesc.Value = value.ToString();
-        if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
+        if (value.TryGetValueAsDreamList(out var list) && list != null) {
+            varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
+            if (list.IsAssociative) {
+                varDesc.NamedVariables = 2 * list.GetLength();
+            } else {
+                varDesc.IndexedVariables = list.GetLength();
+            }
+        } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
-            varDesc.IndexedVariables = obj.GetVariableNames().Count;
+            varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
         }
         return varDesc;
     }
 
-    private IEnumerable<Variable> ExpandObject(RequestVariables req, Objects.DreamObject obj) {
-        foreach (var (name, value) in obj.GetAllVariables()) {
+    private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
+        if (list.IsAssociative) {
+            var assoc = list.GetAssociativeValues();
+            foreach (var (i, key) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
+                assoc.TryGetValue(key, out var value);
+                yield return DescribeValue($"keys[{i}]", key);
+                yield return DescribeValue($"vals[{i}]", value);
+            }
+        } else {
+            foreach (var (i, value) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
+                yield return DescribeValue($"[{i}]", value);
+            }
+        }
+    }
+
+    private IEnumerable<Variable> ExpandObject(RequestVariables req, DreamObject obj) {
+        foreach (var (name, value) in obj.GetAllVariables().OrderBy(kvp => kvp.Key)) {
             yield return DescribeValue(name, value);
         }
     }

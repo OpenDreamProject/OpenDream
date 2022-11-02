@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Globalization;
+using System.Linq;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -67,7 +68,11 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public IReadOnlyDictionary<string, DreamValue> GetAllVariables() => _variables;
+        public IEnumerable<KeyValuePair<string, DreamValue>> GetAllVariables() {
+            return _variables
+                .Concat(ObjectDefinition?.Variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
+                .DistinctBy(kvp => kvp.Key);
+        }
 
         public List<DreamValue> GetVariableNames() {
             if(Deleted){

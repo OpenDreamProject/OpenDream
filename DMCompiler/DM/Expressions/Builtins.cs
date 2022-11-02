@@ -491,21 +491,26 @@ namespace DMCompiler.DM.Expressions {
             switch (_expr) {
                 case GlobalField global: {
                     DMVariable globalVar = DMObjectTree.Globals[global.Id];
-                    if(globalVar.Value != null) {
+                    if(globalVar.SafeToTakeAsConstant()) {
                         return globalVar.Value.TryAsConstant(out constant);
                     }
                     break;
                 }
                 case Field field: {
                     if (field.Variable.Value != null) {
-                        return field.Variable.Value.TryAsConstant(out constant);
+                        // So, an issue we have here.
+                        // This Variable we have stored does not really account for if the src caller is a child of this proc's owner.
+                        // If it were a child, then this variable value may be wrong.
+                        if (field.Variable.SafeToTakeAsConstant()) {
+                            return field.Variable.Value.TryAsConstant(out constant);
+                        }
                     }
                     break;
                 }
                 case Dereference memberAccess: {
                     var obj = DMObjectTree.GetDMObject(memberAccess._expr.Path.GetValueOrDefault());
                     var variable = obj.GetVariable(memberAccess.PropertyName);
-                    if (variable != null && variable.Value != null) {
+                    if (variable != null && variable.SafeToTakeAsConstant()) {
                         return variable.Value.TryAsConstant(out constant);
                     }
                     break;

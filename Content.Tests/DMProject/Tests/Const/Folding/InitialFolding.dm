@@ -3,7 +3,7 @@
 
 /datum/a
 	var/const/explicitly_const = 10
-	var/not_as_const = "apples"
+	var/static/not_as_const = "apples"
 
 /datum/a/field_test()
 	var/const/x = initial(not_as_const)

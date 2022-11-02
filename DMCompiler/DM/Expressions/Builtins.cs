@@ -510,6 +510,9 @@ namespace DMCompiler.DM.Expressions {
                 case Dereference memberAccess: {
                     var obj = DMObjectTree.GetDMObject(memberAccess._expr.Path.GetValueOrDefault());
                     var variable = obj.GetVariable(memberAccess.PropertyName);
+                    if(variable == null) {
+                        variable = obj.GetGlobalVariable(memberAccess.PropertyName);
+                    }
                     if (variable != null && variable.SafeToTakeAsConstant()) {
                         return variable.Value.TryAsConstantWithLocation(out constant, Location);
                     }

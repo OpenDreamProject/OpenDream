@@ -13,13 +13,6 @@ namespace DMCompiler.DM {
         public DMExpression Value;
         public DMValueType ValType;
 
-        /// <summary>
-        /// This is something necessary for <see cref="Expressions.Initial.TryAsConstant(out Expressions.Constant)"/> to work correctly. <br/>
-        /// If a variable has a constant value, and is overridden with a new value, an initial() call is ambiguous, as it may refer to the old value or the new one, <br/>
-        /// depending on whether the src caller is of the child type or the parent type.
-        /// </summary>
-        bool _wasOverriddenWithNewConstant = false;
-
         public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, DMValueType valType = DMValueType.Anything) {
             Type = type;
             Name = name;
@@ -39,14 +32,19 @@ namespace DMCompiler.DM {
                 Value = value;
                 return this;
             }
-            _wasOverriddenWithNewConstant = true;
             DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, ValType);
             clone.Value = value;
             return clone;
         }
 
+        /// <remarks>
+        /// Most variables are not safe to take as a constant-value, even in initial(), <br/>
+        /// because we may be arriving here from a member access that doesn't actually access this DMVariable. <br/>
+        /// Instead, it may be accessing (through duck-typing) a member someplace here.
+        /// Check the wording of the ref and read it very carefully: https://www.byond.com/docs/ref/#/operator/%2e
+        /// </remarks>
         public bool SafeToTakeAsConstant() {
-            return Value != null && (IsConst || !_wasOverriddenWithNewConstant);
+            return Value != null && (IsConst || IsGlobal); // with statics and consts, the type is "dominant" over the value can can just be taken as constant sometimes.
         }
 
         public bool TryAsJsonRepresentation(out object valueJson) {

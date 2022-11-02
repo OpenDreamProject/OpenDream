@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -9,6 +10,9 @@ namespace OpenDreamRuntime.Procs {
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
+
+        public string? Source { get; set; }
+        public int Line { get; set; }
 
         public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
@@ -33,7 +37,7 @@ namespace OpenDreamRuntime.Procs {
 
         #region Opcode Handlers
         //In the same order as the DreamProcOpcode enum
-        private static readonly OpcodeHandler[] _opcodeHandlers = {
+        private static readonly OpcodeHandler?[] _opcodeHandlers = {
             null, //0x0
             DMOpcodeHandlers.BitShiftLeft,
             DMOpcodeHandlers.PushType,
@@ -101,8 +105,8 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BitShiftRight,
             null, //0x41
             DMOpcodeHandlers.Power,
-            null, //0x43
-            null, //0x44
+            DMOpcodeHandlers.DebugSource,
+            DMOpcodeHandlers.DebugLine,
             DMOpcodeHandlers.Prompt,
             DMOpcodeHandlers.PushProcArguments,
             DMOpcodeHandlers.Initial,
@@ -134,11 +138,14 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
+        public readonly IDreamDebugManager DebugManager = IoCManager.Resolve<IDreamDebugManager>();
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;
         public readonly DreamObject? Usr;
         public readonly int ArgumentCount;
+        public string? CurrentSource;
+        public int CurrentLine;
         private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
         public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 
@@ -149,6 +156,8 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly DMProc _proc;
         public override DreamProc Proc => _proc;
+
+        public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
         /// <param name="instance">This is our 'src'.</param>
         /// <exception cref="Exception">Thrown, at time of writing, when an invalid named arg is given</exception>
@@ -161,6 +170,8 @@ namespace OpenDreamRuntime.Procs {
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
             _localVariables = _dreamValuePool.Rent(256);
+            CurrentSource = proc.Source;
+            CurrentLine = proc.Line;
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
@@ -199,18 +210,22 @@ namespace OpenDreamRuntime.Procs {
             Array.Copy(other._localVariables, _localVariables, 256);
         }
 
-        protected override ProcStatus InternalResume()
-        {
+        protected override ProcStatus InternalResume() {
             if (Instance is not null && Instance.Deleted) {
                 ReturnPools();
                 return ProcStatus.Returned;
             }
 
+            if (_pc == 0) {
+                DebugManager.HandleProcStart(this);
+            }
+
             while (_pc < _proc.Bytecode.Length) {
                 int opcode = _proc.Bytecode[_pc++];
-                if (_opcodeHandlers[opcode] is null)
+                var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
+                if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
-                ProcStatus? status = _opcodeHandlers[opcode].Invoke(this);
+                ProcStatus? status = handler.Invoke(this);
                 if (status != null) {
                     if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {
                         // TODO: This should be automatic (dispose pattern?)
@@ -239,7 +254,6 @@ namespace OpenDreamRuntime.Procs {
             }
 
             builder.Append(Proc.Name);
-            builder.Append("(...)");
         }
 
         public void Jump(int position) {
@@ -256,7 +270,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamThread Spawn() {
-            var thread = new DreamThread();
+            var thread = new DreamThread(this.Proc.ToString());
 
             var state = new DMProcState(this, thread);
             thread.PushProcState(state);
@@ -508,5 +522,16 @@ namespace OpenDreamRuntime.Procs {
             }
         }
         #endregion References
+
+        public IEnumerable<(string, DreamValue)> InspectLocals() {
+            for (int i = 0; i < _localVariables.Length; ++i) {
+                string name = i.ToString();
+                if (Proc.ArgumentNames != null && i < Proc.ArgumentNames.Count) {
+                    name = Proc.ArgumentNames[i];
+                }
+                DreamValue value = _localVariables[i];
+                yield return (name, value);
+            }
+        }
     }
 }

@@ -1492,6 +1492,21 @@ namespace OpenDreamRuntime.Procs {
             state.Jump(jumpTo);
             return null;
         }
+
+        public static ProcStatus? DebugSource(DMProcState state) {
+            string source = state.ReadString();
+
+            state.CurrentSource = source;
+            return null;
+        }
+
+        public static ProcStatus? DebugLine(DMProcState state) {
+            int line = state.ReadInt();
+
+            state.CurrentLine = line;
+            state.DebugManager.HandleLineChange(state, line);
+            return null;
+        }
         #endregion Flow
 
         #region Others

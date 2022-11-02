@@ -62,7 +62,7 @@ namespace OpenDreamRuntime.Procs {
                     return;
                 }
 
-                builder.Append($"{_proc.Name}(...)");
+                builder.Append($"{_proc.Name}");
             }
         }
 

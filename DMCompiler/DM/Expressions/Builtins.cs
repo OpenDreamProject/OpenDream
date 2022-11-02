@@ -484,7 +484,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsConstant(out Constant constant) {
             //If the inner expression itself can prove its const-ness
-            if(_expr.TryAsConstant(out Constant expressionConstant)) { // then why not
+            if(_expr.TryAsConstantWithLocation(out Constant expressionConstant, Location)) { // then why not
                 constant = expressionConstant;
                 return true;
             }
@@ -492,7 +492,7 @@ namespace DMCompiler.DM.Expressions {
                 case GlobalField global: {
                     DMVariable globalVar = DMObjectTree.Globals[global.Id];
                     if(globalVar.SafeToTakeAsConstant()) {
-                        return globalVar.Value.TryAsConstant(out constant);
+                        return globalVar.Value.TryAsConstantWithLocation(out constant, Location);
                     }
                     break;
                 }
@@ -502,7 +502,7 @@ namespace DMCompiler.DM.Expressions {
                         // This Variable we have stored does not really account for if the src caller is a child of this proc's owner.
                         // If it were a child, then this variable value may be wrong.
                         if (field.Variable.SafeToTakeAsConstant()) {
-                            return field.Variable.Value.TryAsConstant(out constant);
+                            return field.Variable.Value.TryAsConstantWithLocation(out constant, Location);
                         }
                     }
                     break;
@@ -511,7 +511,7 @@ namespace DMCompiler.DM.Expressions {
                     var obj = DMObjectTree.GetDMObject(memberAccess._expr.Path.GetValueOrDefault());
                     var variable = obj.GetVariable(memberAccess.PropertyName);
                     if (variable != null && variable.SafeToTakeAsConstant()) {
-                        return variable.Value.TryAsConstant(out constant);
+                        return variable.Value.TryAsConstantWithLocation(out constant, Location);
                     }
                     break;
                 }

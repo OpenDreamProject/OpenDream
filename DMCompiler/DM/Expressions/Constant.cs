@@ -14,6 +14,8 @@ namespace DMCompiler.DM.Expressions {
             return true;
         }
 
+        public abstract Constant CopyWithNewLocation(Location loc);
+
         public abstract bool IsTruthy();
 
         #region Unary Operations
@@ -140,7 +142,7 @@ namespace DMCompiler.DM.Expressions {
     /// <remarks>
     /// The reason we inherit from Number here is that, in all arithmetic operations, Null behaves identically to a numeric value of 0.
     /// </remarks>
-    class Null : Number {
+    sealed class Null : Number {
         public override float Value {
             get {
                 EmitNullWarning();
@@ -151,6 +153,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
+        }
+
+        public override Constant CopyWithNewLocation(Location loc) {
+            return new Null(loc);
         }
 
         public override bool IsTruthy() => false;
@@ -233,6 +239,11 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushFloat(Value);
         }
+
+        public override Constant CopyWithNewLocation(Location loc) {
+            return new Number(loc,Value);
+        }
+
 
         public override bool IsTruthy() => Value != 0;
 
@@ -392,6 +403,11 @@ namespace DMCompiler.DM.Expressions {
             proc.PushString(Value);
         }
 
+
+        public override Constant CopyWithNewLocation(Location loc) {
+            return new String(loc, Value);
+        }
+
         public override bool IsTruthy() => Value.Length != 0;
 
         public override bool TryAsJsonRepresentation(out object json) {
@@ -422,6 +438,10 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushResource(Value);
+        }
+
+        public override Constant CopyWithNewLocation(Location loc) {
+            return new Resource(loc, Value);
         }
 
         public override bool IsTruthy() => true;
@@ -480,6 +500,14 @@ namespace DMCompiler.DM.Expressions {
                     DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
                     break;
             }
+        }
+
+        /// <summary>
+        /// This is used to make sure that Constants properly remember their context, <br/>
+        /// even as they get folded about the place, into various locations in the source code.
+        /// </summary>
+        public override Constant CopyWithNewLocation(Location loc) {
+            return new Path(loc, Value);
         }
 
         public override bool IsTruthy() => true;

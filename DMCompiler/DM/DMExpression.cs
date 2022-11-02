@@ -74,6 +74,14 @@ namespace DMCompiler.DM {
             return false;
         }
 
+        public bool TryAsConstantWithLocation(out Expressions.Constant constant, Location loc) {
+            bool ret = TryAsConstant(out constant);
+            if(ret) {
+                constant = constant.CopyWithNewLocation(loc);
+            }
+            return ret;
+        }
+
         // Attempt to create a json-serializable version of this expression
         public virtual bool TryAsJsonRepresentation(out object json) {
             json = null;

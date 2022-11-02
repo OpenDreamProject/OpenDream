@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread("init " + this);
+            var thread = new DreamThread("new " + ObjectDefinition?.Type);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
             thread.Resume();

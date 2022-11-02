@@ -227,9 +227,10 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
-                    Expressions.Field field = new Expressions.Field(Location.Unknown, dmObject.GetVariable("verbs"));
+                    var initLoc = procDefinition.Location;
+                    Expressions.Field field = new Expressions.Field(initLoc, dmObject.GetVariable("verbs"));
                     DreamPath procPath = new DreamPath(".proc/" + procName);
-                    Expressions.Append append = new Expressions.Append(Location.Unknown, field, new Expressions.Path(Location.Unknown, procPath));
+                    Expressions.Append append = new Expressions.Append(initLoc, field, new Expressions.Path(initLoc, procPath));
 
                     dmObject.InitializationProcExpressions.Add(append);
                 }
@@ -377,8 +378,9 @@ namespace DMCompiler.DM.Visitors {
 
                 DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
             } else {
-                Expressions.Field field = new Expressions.Field(Location.Unknown, variable);
-                Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
+                var initLoc = expression.Location;
+                Expressions.Field field = new Expressions.Field(initLoc, variable);
+                Expressions.Assignment assign = new Expressions.Assignment(initLoc, field, expression);
 
                 currentObject.InitializationProcExpressions.Add(assign);
             }

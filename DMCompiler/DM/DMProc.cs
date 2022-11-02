@@ -48,7 +48,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public Location Location = Location.Unknown;
         public ProcAttributes Attributes;
-        public string Name { get => _astDefinition?.Name; }
+        public string Name { get => _astDefinition?.Name ?? "<init>"; }
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 

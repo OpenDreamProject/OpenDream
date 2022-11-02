@@ -1470,6 +1470,21 @@ namespace OpenDreamRuntime.Procs {
             state.Jump(jumpTo);
             return null;
         }
+
+        public static ProcStatus? DebugSource(DMProcState state) {
+            string source = state.ReadString();
+
+            state.CurrentSource = source;
+            return null;
+        }
+
+        public static ProcStatus? DebugLine(DMProcState state) {
+            int line = state.ReadInt();
+
+            state.CurrentLine = line;
+            state.DebugManager.HandleLineChange(state, line);
+            return null;
+        }
         #endregion Flow
 
         #region Others
@@ -1559,7 +1574,7 @@ namespace OpenDreamRuntime.Procs {
             string? browseValue;
             if (body.TryGetValueAsDreamResource(out var resource)) {
                 browseValue = resource.ReadAsString();
-            } else if (body.TryGetValueAsString(out browseValue)) {
+            } else if (body.TryGetValueAsString(out browseValue) || body == DreamValue.Null) {
                 // Got it.
             } else {
                 throw new Exception($"Invalid browse() body: expected resource or string, got {body}");

@@ -200,7 +200,7 @@ namespace OpenDreamRuntime {
             return (DreamList)GetValueAsDreamObject();
         }
 
-        public bool TryGetValueAsDreamList(out DreamList list) {
+        public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList list) {
             if (TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
                 list = (DreamList)listObject;
 

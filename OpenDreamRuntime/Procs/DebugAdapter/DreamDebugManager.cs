@@ -13,30 +13,16 @@ sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
+    // Setup
     private DebugAdapter? _adapter;
-    private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
+    private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
 
-    private int _breakpointIdCounter = 1;
-
-    private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
-    private Dictionary<int, WeakReference<ProcState>> stackFramesById = new();
-
-    private int _variablesIdCounter = 0;
-    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> variableReferences = new();
-    private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
-        int id = ++_variablesIdCounter;
-        variableReferences[id] = func;
-        return id;
-    }
-
-    private Exception? _exception;
-
+    // State
     public bool Stopped { get; private set; }
     private bool _terminated = false;
 
-    private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
-
-    private struct Breakpoint {
+    // Breakpoint storage
+    private struct ActiveBreakpoint {
         public int Id;
         public int Line;
     }
@@ -47,6 +33,25 @@ sealed class DreamDebugManager : IDreamDebugManager {
         public string? HitCondition;
     }
 
+    private int _breakpointIdCounter = 1;
+    private readonly Dictionary<string, List<ActiveBreakpoint>> _breakpoints = new();
+
+    private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
+
+    // Temporary data for a given Stop
+    private Exception? _exception;
+
+    private Dictionary<int, WeakReference<ProcState>> stackFramesById = new();
+
+    private int _variablesIdCounter = 0;
+    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> variableReferences = new();
+    private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
+        int id = ++_variablesIdCounter;
+        variableReferences[id] = func;
+        return id;
+    }
+
+    // Lifecycle
     public void Initialize(int port) {
         _adapter = new DebugAdapter();
 
@@ -68,17 +73,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
         _adapter?.Shutdown();
     }
 
+    // Callbacks from the runtime
     public void HandleOutput(LogLevel logLevel, string message) {
-        if (_adapter == null)
-            return;
-
         string category = logLevel switch {
-            LogLevel.Fatal => "stderr",
-            LogLevel.Error => "stderr",
-            _ => "stdout"
+            LogLevel.Fatal or LogLevel.Error => OutputEvent.CategoryStderr,
+            _ => OutputEvent.CategoryStdout,
         };
-
-        _adapter.SendAll(new OutputEvent(category, $"{message}\n"));
+        Output(message, category);
     }
 
     public void HandleLineChange(DMProcState state, int line) {
@@ -86,9 +87,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
 
         var hit = new List<int>();
-        foreach (Breakpoint breakpoint in breakpoints) {
+        foreach (ActiveBreakpoint breakpoint in breakpoints) {
             if (breakpoint.Line == line) {
-                Logger.Info($"Breakpoint hit at {state.CurrentSource}:{line}");
+                Output($"Breakpoint hit at {state.CurrentSource}:{line}");
                 hit.Add(breakpoint.Id);
                 return;
             }
@@ -114,7 +115,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             }
         }
         if (hit.Any()) {
-            Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
             Stop(new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
                 ThreadId = state.Thread.Id,
@@ -126,11 +127,17 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void HandleException(DreamThread thread, Exception exception) {
         _exception = exception;
+        Output("Stopped on exception");
         Stop(new StoppedEvent {
             Reason = StoppedEvent.ReasonException,
             ThreadId = thread.Id,
             AllThreadsStopped = true,
         });
+    }
+
+    // Utilities
+    private void Output(string message, string category = OutputEvent.CategoryConsole) {
+        _adapter?.SendAll(new OutputEvent(category, $"{message}\n"));
     }
 
     private bool CanStop() => _adapter != null && _adapter.AnyClientsConnected() && !_terminated;
@@ -151,6 +158,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
+    // DAP request handlers
     private void OnClientConnected(DebugAdapterClient client) {
         client.OnRequest += OnRequest;
     }
@@ -257,7 +265,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         sourcePath = Path.GetRelativePath(RootPath, sourcePath);
         if (!_breakpoints.TryGetValue(sourcePath, out var breakpoints)) {
-            breakpoints = new List<Breakpoint>();
+            breakpoints = new List<ActiveBreakpoint>();
             _breakpoints.Add(sourcePath, breakpoints);
         }
 
@@ -270,7 +278,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 int id = ++_breakpointIdCounter;
                 SourceBreakpoint breakpoint = setBreakpoints[i];
 
-                breakpoints.Add(new Breakpoint {
+                breakpoints.Add(new ActiveBreakpoint {
                     Id = id,
                     Line = breakpoint.Line,
                 });

@@ -180,12 +180,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamValue a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }
-
-            return new DreamValue(0);
         }
     }
 }

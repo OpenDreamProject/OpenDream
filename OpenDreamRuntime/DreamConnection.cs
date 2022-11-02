@@ -129,7 +129,7 @@ namespace OpenDreamRuntime
             _currentlyUpdatingStat = true;
             _statPanels.Clear();
 
-            DreamThread.Run(async (state) =>
+            DreamThread.Run("Stat", async (state) =>
             {
                 try
                 {
@@ -265,7 +265,7 @@ namespace OpenDreamRuntime
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out DreamProc verb)) {
-                        DreamThread.Run(async (state) => {
+                        DreamThread.Run(command, async (state) => {
                             Dictionary<String, DreamValue> arguments = new();
 
                             // TODO: this should probably be done on the client, shouldn't it?

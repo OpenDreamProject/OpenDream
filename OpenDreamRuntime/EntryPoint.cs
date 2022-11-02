@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
 using Robust.Server.ServerStatus;
 using Robust.Shared;
@@ -10,6 +11,7 @@ namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
+        [Dependency] private readonly IDreamDebugManager _debugManager = default!;
 
         private DreamCommandSystem _commandSystem;
 
@@ -41,17 +43,27 @@ namespace OpenDreamRuntime {
 
         public override void PostInit() {
             _commandSystem = EntitySystem.Get<DreamCommandSystem>();
-            _dreamManager.Initialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
+
+            int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
+            if (debugAdapterPort == 0) {
+                _dreamManager.Initialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
+            } else {
+                // The debug manager is responsible for running _dreamManager.Initialize()
+                _debugManager.Initialize(debugAdapterPort);
+            }
         }
 
         protected override void Dispose(bool disposing) {
             _dreamManager.Shutdown();
+            _debugManager.Shutdown();
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
             if (level == ModUpdateLevel.PostEngine) {
                 _commandSystem.RunRepeatingCommands();
-                _dreamManager.Update();
+                if (!_debugManager.Stopped)
+                    _dreamManager.Update();
+                _debugManager.Update();
             }
         }
     }

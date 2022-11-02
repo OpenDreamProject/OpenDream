@@ -776,31 +776,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (first == DreamValue.Null) {
-                        state.Push(new DreamValue(0));
-                    } else {
-                        IDreamMetaObject metaObject = first.MustGetValueAsDreamObject().ObjectDefinition.MetaObject;
-
-                        state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
-                    }
-
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamResource:
-                    first.MustGetValueAsDreamResource().Output(second);
-
-                    state.Push(DreamValue.Null);
-                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;
                 default:
-                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
             return null;
@@ -810,15 +791,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
-
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger()));
             } else {
-                throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
+                throw new Exception($"Invalid bit shift right operation on {first} and {second}");
             }
 
             return null;
@@ -1492,9 +1470,91 @@ namespace OpenDreamRuntime.Procs {
             state.Jump(jumpTo);
             return null;
         }
+
+        public static ProcStatus? DebugSource(DMProcState state) {
+            string source = state.ReadString();
+
+            state.CurrentSource = source;
+            return null;
+        }
+
+        public static ProcStatus? DebugLine(DMProcState state) {
+            int line = state.ReadInt();
+
+            state.CurrentLine = line;
+            state.DebugManager.HandleLineChange(state, line);
+            return null;
+        }
         #endregion Flow
 
         #region Others
+
+        private static void PerformOutput(DreamValue a, DreamValue b) {
+            if (a == DreamValue.Null)
+                return;
+
+            if (a.TryGetValueAsDreamResource(out var resource)) {
+                resource.Output(b);
+            } else if (a.TryGetValueAsDreamObject(out var dreamObject)) {
+                IDreamMetaObject? metaObject = dreamObject!.ObjectDefinition?.MetaObject;
+
+                metaObject?.OperatorOutput(a, b);
+            } else {
+                throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
+            }
+        }
+
+        public static ProcStatus? OutputReference(DMProcState state) {
+            DMReference leftRef = state.ReadReference();
+            DreamValue right = state.Pop();
+
+            if (leftRef.RefType == DMReference.Type.ListIndex) {
+                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+
+                if (indexing.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                    // Savefiles get some special treatment.
+                    // "savefile[A] << B" is the same as "savefile[A] = B"
+
+                    state.AssignReference(leftRef, right);
+                    return null;
+                }
+            }
+
+            PerformOutput(state.GetReferenceValue(leftRef), right);
+            return null;
+        }
+
+        public static ProcStatus? Output(DMProcState state) {
+            DreamValue right = state.Pop();
+            DreamValue left = state.Pop();
+
+            PerformOutput(left, right);
+            return null;
+        }
+
+        public static ProcStatus? Input(DMProcState state) {
+            DMReference leftRef = state.ReadReference();
+            DMReference rightRef = state.ReadReference();
+
+            if (leftRef.RefType == DMReference.Type.ListIndex) {
+                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+
+                if (indexing.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                    // Savefiles get some special treatment.
+                    // "savefile[A] >> B" is the same as "B = savefile[A]"
+
+                    state.AssignReference(rightRef, state.GetReferenceValue(leftRef));
+                    return null;
+                } else {
+                    // Pop the reference's stack values
+                    state.GetReferenceValue(leftRef);
+                    state.GetReferenceValue(rightRef);
+                }
+            }
+
+            throw new NotImplementedException($"Input operation is unimplemented for {leftRef} and {rightRef}");
+        }
+
         public static ProcStatus? Browse(DMProcState state) {
             state.Pop().TryGetValueAsString(out string? options);
             DreamValue body = state.Pop();
@@ -1514,7 +1574,7 @@ namespace OpenDreamRuntime.Procs {
             string? browseValue;
             if (body.TryGetValueAsDreamResource(out var resource)) {
                 browseValue = resource.ReadAsString();
-            } else if (body.TryGetValueAsString(out browseValue)) {
+            } else if (body.TryGetValueAsString(out browseValue) || body == DreamValue.Null) {
                 // Got it.
             } else {
                 throw new Exception($"Invalid browse() body: expected resource or string, got {body}");

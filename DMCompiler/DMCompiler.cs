@@ -115,7 +115,7 @@ namespace DMCompiler {
                 DMPreprocessor dumpPreproc = build();
 
                 StringBuilder result = new();
-                foreach (Token t in dumpPreproc) {
+                foreach (Token t in build()) {
                     result.Append(t.Text);
                 }
 

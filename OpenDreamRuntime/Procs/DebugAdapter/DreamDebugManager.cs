@@ -375,13 +375,25 @@ sealed class DreamDebugManager : IDreamDebugManager {
             frame.AppendStackFrame(nameBuilder);
             output.Add(new StackFrame {
                 Id = frame.Id,
-                Source = source is null ? null : new Source(Path.GetFileName(source), Path.Join(RootPath, source)),
+                Source = TranslateSource(source),
                 Line = line ?? 0,
                 Name = nameBuilder.ToString(),
             });
             stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
         reqStackTrace.Respond(client, output, output.Count);
+    }
+
+    private Source? TranslateSource(string? source) {
+        if (source is null)
+            return null;
+
+        var fname = Path.GetFileName(source);
+        if (Path.IsPathRooted(source)) {
+            return new Source(fname, source);
+        } else {
+            return new Source(fname, Path.Join(RootPath, source));
+        }
     }
 
     private void HandleRequestScopes(DebugAdapterClient client, RequestScopes requestScopes) {

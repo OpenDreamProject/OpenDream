@@ -31,6 +31,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private Exception? _exception;
 
     public bool Stopped { get; private set; }
+    private bool _terminated = false;
 
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
 
@@ -55,7 +56,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void Update() {
         _adapter?.HandleMessages();
-        if (_adapter == null || !_adapter.AnyClientsConnected()) {
+        if (!CanStop()) {
             Stopped = false;
         }
     }
@@ -131,8 +132,10 @@ sealed class DreamDebugManager : IDreamDebugManager {
         });
     }
 
+    private bool CanStop() => _adapter != null && _adapter.AnyClientsConnected() && !_terminated;
+
     private void Stop(StoppedEvent stoppedEvent) {
-        if (_adapter == null || !_adapter.AnyClientsConnected())
+        if (!CanStop())
             return;
 
         _adapter.SendAll(stoppedEvent);
@@ -239,6 +242,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         // TODO: Don't terminate if launch type was "attach"
         reqDisconnect.Respond(client);
         _server.Shutdown("A shutdown was initiated by the debug adapter");
+        _terminated = true;
+        Stopped = false;
     }
 
     private void HandleRequestSetBreakpoints(DebugAdapterClient client, RequestSetBreakpoints reqSetBreakpoints) {

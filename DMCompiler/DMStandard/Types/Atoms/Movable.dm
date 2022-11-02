@@ -18,12 +18,19 @@
 	proc/Bump(atom/Obstacle)
 
 	proc/Move(atom/NewLoc, Dir=0)
-		if (isnull(NewLoc)) return
+		if (isnull(NewLoc) || loc == NewLoc)
+			return
 
 		if (Dir != 0)
 			dir = Dir
 
-		if (loc == NewLoc || !loc.Exit(src, NewLoc)) return FALSE
+		if (!loc.Exit(src, NewLoc))
+			return FALSE
+		// Ensure the atoms on the turf also permit this exit
+		for (var/atom/movable/exiting in loc)
+			if (!exiting.Exit(src, NewLoc))
+				return FALSE
+
 		if (NewLoc.Enter(src, loc))
 			var/atom/oldloc = loc
 			var/area/oldarea = oldloc.loc

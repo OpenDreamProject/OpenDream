@@ -34,6 +34,8 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementBrowse(DMASTProcStatementBrowse statementBrowse) { throw new NotImplementedException(); }
         public void VisitProcStatementBrowseResource(DMASTProcStatementBrowseResource statementBrowseResource) { throw new NotImplementedException(); }
         public void VisitProcStatementOutputControl(DMASTProcStatementOutputControl statementOutputControl) { throw new NotImplementedException(); }
+        public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) { throw new NotImplementedException(); }
+        public void VisitProcStatementInput(DMASTProcStatementInput statementInput) { throw new NotImplementedException(); }
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
@@ -342,16 +344,16 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementVarDeclaration : DMASTProcStatement {
-        public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
-        public string Name { get => _varDecl.VarName; }
         public DMASTExpression Value;
-        private ProcVarDeclInfo _varDecl;
 
-        public bool IsGlobal { get => _varDecl.IsStatic; }
-        public bool IsConst { get => _varDecl.IsConst; }
+        public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
+        public string Name => _varDecl.VarName;
+        public bool IsGlobal => _varDecl.IsStatic;
+        public bool IsConst => _varDecl.IsConst;
 
-        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location)
-        {
+        private readonly ProcVarDeclInfo _varDecl;
+
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location) {
             _varDecl = new ProcVarDeclInfo(path.Path);
             Value = value;
         }
@@ -494,12 +496,14 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementFor : DMASTProcStatement {
         public DMASTExpression Expression1, Expression2, Expression3;
+        public DMValueType? DMTypes;
         public DMASTProcBlockInner Body;
 
-        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMASTProcBlockInner body) : base(location) {
+        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMValueType? dmTypes, DMASTProcBlockInner body) : base(location) {
             Expression1 = expr1;
             Expression2 = expr2;
             Expression3 = expr3;
+            DMTypes = dmTypes;
             Body = body;
         }
 
@@ -627,6 +631,32 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementOutputControl(this);
+        }
+    }
+
+    public class DMASTProcStatementOutput : DMASTProcStatement {
+        public DMASTExpression A, B;
+
+        public DMASTProcStatementOutput(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
+            A = a;
+            B = b;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementOutput(this);
+        }
+    }
+
+    public class DMASTProcStatementInput : DMASTProcStatement {
+        public DMASTExpression A, B;
+
+        public DMASTProcStatementInput(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
+            A = a;
+            B = b;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementInput(this);
         }
     }
 

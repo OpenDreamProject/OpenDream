@@ -181,49 +181,195 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        /// <summary>
+        /// Helper function of <see cref="FormatString"/> to handle text macros that are "suffix" (coming after the noun) pronouns
+        /// </summary>
+        /// <param name="pronouns">This should be in MALE,FEMALE,PLURAL,NEUTER order.</param>
+        private static void HandleSuffixPronoun(ref StringBuilder formattedString, ReadOnlySpan<DreamValue> interps, int prevInterpIndex, string[] pronouns)
+        {
+            DreamObject? dreamObject;
+            if (prevInterpIndex == -1 || prevInterpIndex >= interps.Length) // We should probably be throwing here
+            {
+                return;
+            }
+            interps[prevInterpIndex].TryGetValueAsDreamObject(out dreamObject);
+            if (dreamObject == null)
+            {
+                return;
+            }
+            bool hasGender = dreamObject.TryGetVariable("gender", out var objectGender); // NOTE: in DM, this has to be a native property.
+            if (!hasGender)
+            {
+                return;
+            }
+            if (!objectGender.TryGetValueAsString(out var genderStr))
+                return;
+
+            switch(genderStr)
+            {
+                case "male":
+                    formattedString.Append(pronouns[0]);
+                    return;
+                case "female":
+                    formattedString.Append(pronouns[1]);
+                    return;
+                case "plural":
+                    formattedString.Append(pronouns[2]);
+                    return;
+                case "neuter":
+                    formattedString.Append(pronouns[3]);
+                    return;
+                default:
+                    return;
+            }
+
+        }
         public static ProcStatus? FormatString(DMProcState state) {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
 
-            for (int i = 0; i < unformattedString.Length; i++) {
-                char c = unformattedString[i];
+            int interpCount = state.ReadInt();
 
-                if (c == (char)0xFF) {
-                    c = unformattedString[++i];
+            ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
+            int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
+            int prevInterpIndex = -1; // If we find a suffix macro, this is what it points to (treating -1 as a 'null' state here)
 
-                    StringFormatTypes formatType = (StringFormatTypes) c;
-                    switch (formatType) {
-                        case StringFormatTypes.Stringify: {
-                            DreamValue value = state.Pop();
-
-                            formattedString.Append(value.Stringify());
-                            break;
-                        }
-                        case StringFormatTypes.Ref:
-                        {
-                            var value = state.Pop();
-                            formattedString.Append(state.DreamManager.CreateRef(value));
-                            break;
-                        }
-                        case StringFormatTypes.UpperDefiniteArticle:
-                        case StringFormatTypes.LowerDefiniteArticle: {
-                            DreamValue value = state.Pop();
-                            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                                formattedString.Append(dreamObject.GetDisplayName(formatType));
-                            }
-
-                            break;
-                        }
-                        default:
-                            if (Enum.IsDefined(typeof(StringFormatTypes), (byte)c)) {
-                                //Likely an unimplemented text macro, ignore it
-                                break;
-                            }
-
-                            throw new Exception("Invalid special character");
-                    }
-                } else {
+            foreach(char c in unformattedString)
+            {
+                if (!StringFormatEncoder.Decode(c, out var formatType)) {
                     formattedString.Append(c);
+                    continue;
+                }
+                switch (formatType) {
+                    //Interp values
+                    case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                        formattedString.Append(interps[nextInterpIndex].Stringify());
+                        prevInterpIndex = nextInterpIndex;
+                        nextInterpIndex++;
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
+                        formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
+                        //suffix macro marker is not updated because suffixes do not point to \ref[] interpolations
+                        nextInterpIndex++;
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
+                    {
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                            formattedString.Append(dreamObject.GetNameUnformatted());
+                        }
+                        //Things that aren't objects just print nothing in this case
+                        prevInterpIndex = nextInterpIndex;
+                        nextInterpIndex++;
+                        continue;
+                    }
+                    //Macro values//
+                    //Prefix macros
+                    case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
+                    case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
+                    {
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                        {
+                            bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                            if (!hasName) continue;
+                            string nameStr = objectName.Stringify();
+                            if (!DreamObject.StringIsProper(nameStr))
+                            {
+                                formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
+                            }
+                        }
+                        continue;
+                    }
+                    case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
+                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
+                    {
+                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle; // saves some wordiness with the ternaries below
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
+                        {
+                            bool hasName = dreamObject.TryGetVariable("name", out var objectName);
+                            string nameStr = objectName.Stringify();
+                            if (!hasName) continue; // datums that lack a name var don't use articles
+                            if (DreamObject.StringIsProper(nameStr)) continue; // Proper nouns don't need articles, I guess.
+
+                            if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
+                            {
+                                if (gender.TryGetValueAsString(out var str) && str == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
+                                {
+                                    formattedString.Append(wasCapital ? "Some" : "some");
+                                    continue;
+                                }
+                            }
+                            if (DreamObject.StringStartsWithVowel(nameStr))
+                            {
+                                formattedString.Append(wasCapital ? "An " : "an ");
+                                continue;
+                            }
+                            formattedString.Append(wasCapital ? "A " : "a ");
+                            continue;
+                        }
+                        continue;
+                    }
+                    //Suffix macros
+                    case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "He", "She", "They", "Tt" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "he", "she", "they", "it" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Her", "Their", "Its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "her", "their", "its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.ObjectPronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "him", "her", "them", "it" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "himself", "herself", "themself", "itself" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "His", "Hers", "Theirs", "Its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new string[] { "his", "hers", "theirs", "its" });
+                        break;
+                    case StringFormatEncoder.FormatSuffix.PluralSuffix:
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber == 1)
+                        {
+                            continue;
+                        }
+                        formattedString.Append("s");
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
+                        // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
+                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var ordinalNumber)) {
+                            switch (ordinalNumber) {
+                                case 1:
+                                    formattedString.Append("st");
+                                    break;
+                                case 2:
+                                    formattedString.Append("nd");
+                                    break;
+                                case 3:
+                                    formattedString.Append("rd");
+                                    break;
+                                default:
+                                    formattedString.Append("th");
+                                    break;
+                            }
+                        } else {
+                            formattedString.Append("th");
+                        }
+                        continue;
+                    default:
+                        if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
+                            //Likely an unimplemented text macro, ignore it
+                            break;
+                        }
+
+                        throw new Exception("Invalid special character");
                 }
             }
 
@@ -630,31 +776,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] << ..." is the same as "savefile["entry"] = ..."
-
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject: { //Output operation
-                    if (first == DreamValue.Null) {
-                        state.Push(new DreamValue(0));
-                    } else {
-                        IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
-
-                        state.Push(metaObject?.OperatorOutput(first, second) ?? DreamValue.Null);
-                    }
-
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamResource:
-                    first.GetValueAsDreamResource().Output(second);
-
-                    state.Push(DreamValue.Null);
-                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger()));
                     break;
                 default:
-                    throw new Exception("Invalid bit shift left operation on " + first + " and " + second);
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
             return null;
@@ -664,15 +791,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            //TODO: Savefiles get special treatment
-            //"savefile["entry"] >> ..." is the same as "... = savefile["entry"]"
-
             if (first == DreamValue.Null) {
                 state.Push(new DreamValue(0));
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 state.Push(new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger()));
             } else {
-                throw new Exception("Invalid bit shift right operation on " + first + " and " + second);
+                throw new Exception($"Invalid bit shift right operation on {first} and {second}");
             }
 
             return null;
@@ -878,8 +1002,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue((float)Math.Pow(first.GetValueAsFloat(), second.GetValueAsFloat())));
+            if (first.TryGetValueAsFloat(out var floatFirst) && second.TryGetValueAsFloat(out var floatSecond)) {
+                state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
             } else {
                 throw new Exception("Invalid power operation on " + first + " and " + second);
             }
@@ -990,8 +1114,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
-            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1011,8 +1136,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsInteger(out int firstInt) && firstInt == 0 && second == DreamValue.Null) result = new DreamValue(1);
-            else if (first == DreamValue.Null && second.TryGetValueAsInteger(out int secondInt) && secondInt == 0) result = new DreamValue(1);
+            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
+            else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1344,34 +1470,118 @@ namespace OpenDreamRuntime.Procs {
             state.Jump(jumpTo);
             return null;
         }
+
+        public static ProcStatus? DebugSource(DMProcState state) {
+            string source = state.ReadString();
+
+            state.CurrentSource = source;
+            return null;
+        }
+
+        public static ProcStatus? DebugLine(DMProcState state) {
+            int line = state.ReadInt();
+
+            state.CurrentLine = line;
+            state.DebugManager.HandleLineChange(state, line);
+            return null;
+        }
         #endregion Flow
 
         #region Others
+
+        private static void PerformOutput(DreamValue a, DreamValue b) {
+            if (a == DreamValue.Null)
+                return;
+
+            if (a.TryGetValueAsDreamResource(out var resource)) {
+                resource.Output(b);
+            } else if (a.TryGetValueAsDreamObject(out var dreamObject)) {
+                IDreamMetaObject? metaObject = dreamObject!.ObjectDefinition?.MetaObject;
+
+                metaObject?.OperatorOutput(a, b);
+            } else {
+                throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
+            }
+        }
+
+        public static ProcStatus? OutputReference(DMProcState state) {
+            DMReference leftRef = state.ReadReference();
+            DreamValue right = state.Pop();
+
+            if (leftRef.RefType == DMReference.Type.ListIndex) {
+                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+
+                if (indexing.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                    // Savefiles get some special treatment.
+                    // "savefile[A] << B" is the same as "savefile[A] = B"
+
+                    state.AssignReference(leftRef, right);
+                    return null;
+                }
+            }
+
+            PerformOutput(state.GetReferenceValue(leftRef), right);
+            return null;
+        }
+
+        public static ProcStatus? Output(DMProcState state) {
+            DreamValue right = state.Pop();
+            DreamValue left = state.Pop();
+
+            PerformOutput(left, right);
+            return null;
+        }
+
+        public static ProcStatus? Input(DMProcState state) {
+            DMReference leftRef = state.ReadReference();
+            DMReference rightRef = state.ReadReference();
+
+            if (leftRef.RefType == DMReference.Type.ListIndex) {
+                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+
+                if (indexing.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                    // Savefiles get some special treatment.
+                    // "savefile[A] >> B" is the same as "B = savefile[A]"
+
+                    state.AssignReference(rightRef, state.GetReferenceValue(leftRef));
+                    return null;
+                } else {
+                    // Pop the reference's stack values
+                    state.GetReferenceValue(leftRef);
+                    state.GetReferenceValue(rightRef);
+                }
+            }
+
+            throw new NotImplementedException($"Input operation is unimplemented for {leftRef} and {rightRef}");
+        }
+
         public static ProcStatus? Browse(DMProcState state) {
-            string options = state.Pop().GetValueAsString();
+            state.Pop().TryGetValueAsString(out string? options);
             DreamValue body = state.Pop();
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
-            DreamObject client;
+            IEnumerable<DreamConnection> clients;
             if (receiver.IsSubtypeOf(DreamPath.Mob)) {
-                client = receiver.GetVariable("client").GetValueAsDreamObject();
+                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
             } else if (receiver.IsSubtypeOf(DreamPath.Client)) {
-                client = receiver;
+                clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
+            } else if (receiver == state.DreamManager.WorldInstance) {
+                clients = state.DreamManager.Connections;
             } else {
-                throw new Exception("Invalid browse() recipient");
+                throw new Exception($"Invalid browse() recipient: expected mob, client, or world, got {receiver}");
             }
 
-            if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
+            string? browseValue;
+            if (body.TryGetValueAsDreamResource(out var resource)) {
+                browseValue = resource.ReadAsString();
+            } else if (body.TryGetValueAsString(out browseValue) || body == DreamValue.Null) {
+                // Got it.
+            } else {
+                throw new Exception($"Invalid browse() body: expected resource or string, got {body}");
+            }
 
-                string browseValue;
-                if (body.Type == DreamValue.DreamValueType.DreamResource) {
-                    browseValue = body.GetValueAsDreamResource().ReadAsString();
-                } else {
-                    browseValue = (string)body.Value;
-                }
-
-                connection.Browse(browseValue, options);
+            foreach (DreamConnection client in clients) {
+                client?.Browse(browseValue, options);
             }
 
             return null;
@@ -1538,22 +1748,8 @@ namespace OpenDreamRuntime.Procs {
                 containerList = container as DreamList;
             }
 
-            if (value.TryGetValueAsString(out string refString))
-            {
-                var locateRef = state.DreamManager.LocateRef(refString);
-                if(locateRef is not null)
-                {
-                    state.Push(locateRef.Value);
-                }
-                else if (state.DreamManager.Tags.ContainsKey(refString))
-                {
-                    state.Push(new DreamValue(state.DreamManager.Tags[refString].First()));
-                }
-                else
-                {
-                    state.Push(DreamValue.Null);
-                }
-
+            if (value.TryGetValueAsString(out string refString)) {
+                state.Push(state.DreamManager.LocateRef(refString));
             } else if (value.TryGetValueAsPath(out DreamPath type)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);
@@ -1781,21 +1977,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out var firstList) && second.TryGetValueAsDreamList(out var secondList))
-            {
-                if (firstList.GetLength() != secondList.GetLength()) return false;
-                var firstValues = firstList.GetValues();
-                var secondValues = secondList.GetValues();
-                for(var i = 0; i < firstValues.Count; i++)
-                {
-                    if (!firstValues[i].Equals(secondValues[i])) return false;
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second).IsTruthy();
                 }
-
-                return true;
             }
-
-
-            throw new NotImplementedException("Equivalence comparison for " + first + " and " + second + " is not implemented");
+            // Behaviour is otherwise equivalent (pun intended) to ==
+            return IsEqual(first, second);
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {
@@ -1807,8 +1995,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) > 0;
                 default: {
-                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                        return 0 > second.GetValueAsFloat();
+                    if (first == DreamValue.Null) {
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 > second.GetValueAsFloat();
+                        if (second.TryGetValueAsString(out var s)) return false;
+                        if (second.Value == null) return false;
                     }
                     throw new Exception("Invalid greater than comparison on " + first + " and " + second);
                 }
@@ -1824,8 +2014,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) < 0;
                 default: {
-                    if (first.Value == null && second.Type == DreamValue.DreamValueType.Float) {
-                        return 0 < second.GetValueAsFloat();
+                    if (first == DreamValue.Null) {
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 < second.GetValueAsFloat();
+                        if (second.TryGetValueAsString(out var s)) return s != "";
+                        if (second.Value == null) return false;
                     }
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }

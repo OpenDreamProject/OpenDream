@@ -33,13 +33,21 @@ namespace DMDisassembler {
             BinaryReader binaryReader = new BinaryReader(stream);
             long position = 0;
             DreamProcOpcode opcode;
-            while ((opcode = (DreamProcOpcode)stream.ReadByte()) != (DreamProcOpcode)(-1)) {
+            while ((opcode = (DreamProcOpcode) stream.ReadByte()) != (DreamProcOpcode) (-1)) {
                 StringBuilder text = new StringBuilder();
                 text.Append(opcode);
                 text.Append(" ");
 
                 switch (opcode) {
-                    case DreamProcOpcode.FormatString:
+                    case DreamProcOpcode.FormatString: {
+                        text.Append('"');
+                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append('"');
+                        binaryReader
+                            .ReadInt32(); // This is some metadata FormatString has that we can't really render
+
+                        break;
+                    }
                     case DreamProcOpcode.PushString: {
                         text.Append('"');
                         text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
@@ -56,9 +64,13 @@ namespace DMDisassembler {
                         break;
                     }
 
-                    case DreamProcOpcode.Prompt: text.Append((DMValueType)binaryReader.ReadInt32()); break;
+                    case DreamProcOpcode.Prompt:
+                        text.Append((DMValueType) binaryReader.ReadInt32());
+                        break;
 
-                    case DreamProcOpcode.PushFloat: text.Append(binaryReader.ReadSingle()); break;
+                    case DreamProcOpcode.PushFloat:
+                        text.Append(binaryReader.ReadSingle());
+                        break;
 
                     case DreamProcOpcode.Call:
                     case DreamProcOpcode.Assign:
@@ -72,12 +84,22 @@ namespace DMDisassembler {
                     case DreamProcOpcode.DivideReference:
                     case DreamProcOpcode.BitXorReference:
                     case DreamProcOpcode.Enumerate:
-                    case DreamProcOpcode.PushReferenceValue: text.Append(ReadReference(binaryReader).ToString()); break;
+                    case DreamProcOpcode.OutputReference:
+                    case DreamProcOpcode.PushReferenceValue:
+                        text.Append(ReadReference(binaryReader).ToString());
+                        break;
+
+                    case DreamProcOpcode.Input:
+                        text.Append(ReadReference(binaryReader).ToString());
+                        text.Append(ReadReference(binaryReader).ToString());
+                        break;
 
                     case DreamProcOpcode.CreateList:
                     case DreamProcOpcode.CreateAssociativeList:
                     case DreamProcOpcode.PickWeighted:
-                    case DreamProcOpcode.PickUnweighted: text.Append(binaryReader.ReadInt32()); break;
+                    case DreamProcOpcode.PickUnweighted:
+                        text.Append(binaryReader.ReadInt32());
+                        break;
 
                     case DreamProcOpcode.JumpIfNullDereference: {
                         DMReference reference = ReadReference(binaryReader);
@@ -92,7 +114,9 @@ namespace DMDisassembler {
 
                     case DreamProcOpcode.Initial:
                     case DreamProcOpcode.IsSaved:
-                    case DreamProcOpcode.PushPath: text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]); break;
+                    case DreamProcOpcode.PushPath:
+                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        break;
 
                     case DreamProcOpcode.Spawn:
                     case DreamProcOpcode.BooleanOr:
@@ -109,7 +133,9 @@ namespace DMDisassembler {
                         break;
                     }
 
-                    case DreamProcOpcode.PushType: text.Append(Program.CompiledJson.Types[binaryReader.ReadInt32()].Path); break;
+                    case DreamProcOpcode.PushType:
+                        text.Append(Program.CompiledJson.Types[binaryReader.ReadInt32()].Path);
+                        break;
 
                     case DreamProcOpcode.PushArguments: {
                         int argCount = binaryReader.ReadInt32();
@@ -119,7 +145,8 @@ namespace DMDisassembler {
                         for (int i = 0; i < argCount; i++) {
                             text.Append(" ");
 
-                            DreamProcOpcodeParameterType argType = (DreamProcOpcodeParameterType)binaryReader.ReadByte();
+                            DreamProcOpcodeParameterType argType =
+                                (DreamProcOpcodeParameterType) binaryReader.ReadByte();
                             if (argType == DreamProcOpcodeParameterType.Named) {
                                 string argName = Program.CompiledJson.Strings[binaryReader.ReadInt32()];
 

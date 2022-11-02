@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
@@ -13,12 +14,14 @@ namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {
         public sealed class TreeEntry {
             public DreamPath Path;
+            public readonly int Id;
             public DreamObjectDefinition ObjectDefinition;
             public TreeEntry ParentEntry;
             public List<int> InheritingTypes = new();
 
-            public TreeEntry(DreamPath path) {
+            public TreeEntry(DreamPath path, int id) {
                 Path = path;
+                Id = id;
             }
         }
 
@@ -29,8 +32,7 @@ namespace OpenDreamRuntime.Objects {
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
         private Dictionary<string, int> _globalProcIds;
 
-        public void LoadJson(DreamCompiledJson json)
-        {
+        public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
 
             // Load procs first so types can set their init proc's super proc
@@ -62,7 +64,7 @@ namespace OpenDreamRuntime.Objects {
             return GetTreeEntry(typeId).ObjectDefinition;
         }
 
-        public bool TryGetGlobalProc(string name, out DreamProc? globalProc) {
+        public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc) {
             globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
 
             return (globalProc != null);
@@ -172,7 +174,7 @@ namespace OpenDreamRuntime.Objects {
             for (int i = 0; i < Types.Length; i++) {
                 DreamPath path = new DreamPath(types[i].Path);
 
-                Types[i] = new TreeEntry(path);
+                Types[i] = new TreeEntry(path, i);
                 _pathToType[path] = Types[i];
                 pathToTypeId[path] = i;
             }
@@ -270,7 +272,10 @@ namespace OpenDreamRuntime.Objects {
             }
 
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            return new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            proc.Source = procDefinition.Source;
+            proc.Line = procDefinition.Line;
+            return proc;
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)

@@ -66,10 +66,16 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            _proc.DebugSource(block.Location.SourceFile);
+
             foreach (DMASTProcStatement statement in block.Statements) {
                 // see above
                 if (statement is DMASTProcStatementSet) {
                     continue;
+                }
+
+                if (statement.Location.Line != null) {
+                    _proc.DebugLine(statement.Location.Line.Value);
                 }
 
                 try {
@@ -105,6 +111,8 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
+                case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
@@ -247,7 +255,7 @@ namespace DMCompiler.DM.Visitors {
                         throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
                     }
 
-                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(Math.Floor(invisNum.Value), 0, 100));
+                    _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
@@ -429,7 +437,7 @@ namespace DMCompiler.DM.Visitors {
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
                             var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
 
-                            ProcessStatementForList(list, outputVar, statementFor.Body);
+                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
                         }
                         default:
@@ -482,7 +490,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             list.EmitPushValue(_dmObject, _proc);
             _proc.CreateListEnumerator();
 
@@ -496,9 +504,20 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
 
-                        if (outputVar.Path != null) {
+                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+                        DreamPath? implicitTypeCheck = null;
+                        if (dmTypes == null) {
+                            // No "as" means the var's type will be used
+                            implicitTypeCheck = lValue.Path;
+                        } else if (dmTypes != DMValueType.Anything) {
+                            // "as anything" performs no check. Other values are unimplemented.
+                            DMCompiler.UnimplementedWarning(outputVar.Location,
+                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+                        }
+
+                        if (implicitTypeCheck != null) {
                             outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(lValue.Path.Value);
+                            _proc.PushPath(implicitTypeCheck.Value);
                             _proc.IsType();
 
                             _proc.ContinueIfFalse();
@@ -760,6 +779,48 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementOutput.A);
+            DMExpression right = DMExpression.Create(_dmObject, _proc, statementOutput.B);
+
+            if (left is LValue) {
+                // An LValue on the left needs a special opcode so that its reference can be used
+                // This allows for special operations like "savefile[...] << ..."
+
+                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                right.EmitPushValue(_dmObject, _proc);
+
+                _proc.OutputReference(leftRef);
+            } else {
+                left.EmitPushValue(_dmObject, _proc);
+                right.EmitPushValue(_dmObject, _proc);
+                _proc.Output();
+            }
+        }
+
+        public void ProcessStatementInput(DMASTProcStatementInput statementInput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementInput.A);
+            DMExpression right = DMExpression.Create(_dmObject, _proc, statementInput.B);
+
+            // The left-side value of an input operation must be an LValue
+            // (I think? I haven't found an exception but there could be one)
+            if (left is not LValue) {
+                DMCompiler.Error(left.Location, "Left side must be an l-value");
+                return;
+            }
+
+            // The right side must also be an LValue. Because where else would the value go?
+            if (right is not LValue) {
+                DMCompiler.Error(left.Location, "Right side must be an l-value");
+                return;
+            }
+
+            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
+            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+
+            _proc.Input(leftRef, rightRef);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

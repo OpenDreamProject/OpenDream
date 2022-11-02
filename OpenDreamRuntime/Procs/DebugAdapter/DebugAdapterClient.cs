@@ -39,7 +39,7 @@ public sealed class DebugAdapterClient {
             if (message == null)
                 continue;
 
-            _sawmill.Debug($"Parsed {message}");
+            _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
             _seqCounter = message.Seq + 1;
             switch (message) {
                 case Request req:
@@ -59,7 +59,7 @@ public sealed class DebugAdapterClient {
         string body = JsonSerializer.Serialize(message);
         string header = $"Content-Length: {body.Length}\r\n\r\n";
 
-        _sawmill.Debug($"Sending {body.Length} {body}");
+        _sawmill.Log(LogLevel.Verbose, $"Sending {body.Length} {body}");
         _netWriter.BaseStream.Write(Encoding.ASCII.GetBytes(header));
         _netWriter.BaseStream.Write(Encoding.UTF8.GetBytes(body));
     }
@@ -145,7 +145,7 @@ public sealed class DebugAdapterClient {
         }
 
         string content = new String(buffer);
-        _sawmill.Debug($"Received {contentLength} {content}");
+        _sawmill.Log(LogLevel.Verbose, $"Received {contentLength} {content}");
 
         return content;
     }

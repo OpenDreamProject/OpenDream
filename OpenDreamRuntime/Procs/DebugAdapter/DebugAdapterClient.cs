@@ -32,6 +32,8 @@ public sealed class DebugAdapterClient {
     }
 
     public void HandleMessages() {
+        // `_netStream.DataAvailable` goes to false as soon as there is one Read call.
+        // `_client` and `_netReader` each keep buffers and we have to loop until they are all drained.
         while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0 || _netReader.Peek() != -1)) {
             ProtocolMessage? message = ReadRequest();
             if (message == null)

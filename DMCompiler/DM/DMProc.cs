@@ -100,6 +100,8 @@ namespace DMCompiler.DM {
 
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
+            procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
+            procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {
@@ -249,6 +251,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
+        public void DebugSource(string source) {
+            WriteOpcode(DreamProcOpcode.DebugSource);
+            WriteString(source.Replace("\\", "/"));
+        }
+
+        public void DebugLine(int line) {
+            WriteOpcode(DreamProcOpcode.DebugLine);
+            WriteInt(line);
+        }
+
         public void PushReferenceValue(DMReference reference) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushReferenceValue);
@@ -369,6 +381,23 @@ namespace DMCompiler.DM {
         public void OutputControl() {
             ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.OutputControl);
+        }
+
+        public void OutputReference(DMReference leftRef) {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.OutputReference);
+            WriteReference(leftRef);
+        }
+
+        public void Output() {
+            ShrinkStack(2);
+            WriteOpcode(DreamProcOpcode.Output);
+        }
+
+        public void Input(DMReference leftRef, DMReference rightRef) {
+            WriteOpcode(DreamProcOpcode.Input);
+            WriteReference(leftRef);
+            WriteReference(rightRef);
         }
 
         public void Spawn(string jumpTo) {

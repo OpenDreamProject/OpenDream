@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread();
+            var thread = new DreamThread("init " + this);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
 
@@ -69,6 +69,8 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Variable " + name + " doesn't exist");
             }
         }
+
+        public IReadOnlyDictionary<string, DreamValue> GetAllVariables() => _variables;
 
         public List<DreamValue> GetVariableNames() {
             if(Deleted){

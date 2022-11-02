@@ -1,3 +1,5 @@
+using OpenDreamRuntime.Procs.DebugAdapter;
+
 namespace OpenDreamRuntime.Resources
 {
     /// <summary>
@@ -11,8 +13,13 @@ namespace OpenDreamRuntime.Resources
             return null;
         }
 
+        public void WriteConsole(LogLevel logLevel, string sawmill, string message) {
+            IoCManager.Resolve<IDreamDebugManager>().HandleOutput(logLevel, message);
+            Logger.LogS(logLevel, sawmill, message);
+        }
+
         public override void Output(DreamValue value) {
-            Logger.LogS(LogLevel.Info, "world.log", value.Stringify());
+            WriteConsole(LogLevel.Info, "world.log", value.Stringify());
         }
     }
 }

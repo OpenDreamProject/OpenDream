@@ -606,25 +606,29 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             /// We dont want keyword arguments screwing with this
-            DreamValue index;
+            DreamValue indx;
 
             int colorspace = 0;
             bool loop = false;
 
             if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
-                index = argumentValue;
+                indx = argumentValue;
                 arguments.NamedArguments.Remove("index");
             } else {
-                index = arguments.OrderedArguments[^1];
+                indx = arguments.OrderedArguments[^1];
                 arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
             }
 
-            if(arguments.OrderedArguments.Contains(new DreamValue("loop"))) {
+            if (!indx.TryGetValueAsFloat(out float index)) {
+                throw new FormatException("Failed to parse index as float");
+            }
+
+            if (arguments.OrderedArguments.Contains(new DreamValue("loop"))) {
                 loop = true;
             }
 
-            foreach(KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
-                switch(value.Key) {
+            foreach (KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
+                switch (value.Key) {
                     case "space":
                         // TODO Check for 0-4
                         if (value.Value.TryGetValueAsInteger(out int space)) {
@@ -634,6 +638,9 @@ namespace OpenDreamRuntime.Procs.Native {
                             throw new NotSupportedException("Unknown colorspace " + space);
                         }
                         continue;
+                    case "loop":
+                        loop = true;
+                        continue;
                 }
             }
 
@@ -641,17 +648,17 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> GradientList;
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
-                DreamValue colorspacelookup = gradlist.GetValue(new DreamValue("space"));
                 // TODO Check for 0-4
-                if (colorspacelookup.TryGetValueAsInteger(out int space)) {
-                    colorspace = space;
-                    gradlist.RemoveValue(new DreamValue("space"));
-                }
-                else if (colorspacelookup != DreamValue.Null) {
-                    throw new NotSupportedException("Unknown colorspace " + colorspacelookup);
+                if (gradlist.GetAssociativeValues().TryGetValue(new DreamValue("space"), out DreamValue value)) {
+                    if (value.TryGetValueAsInteger(out int space)) {
+                        colorspace = space;
+                        gradlist.RemoveValue(new DreamValue("space"));
+                    } else {
+                        throw new NotSupportedException("Unknown colorspace " + value);
+                    }
                 }
 
-                if(gradlist.ContainsValue(new DreamValue("loop"))) {
+                if (gradlist.ContainsValue(new DreamValue("loop"))) {
                     loop = true;
                 }
                 GradientList = gradlist.GetValues();
@@ -666,9 +673,18 @@ namespace OpenDreamRuntime.Procs.Native {
             float maxvalue = 1;
             float minvalue = 0;
 
-            List<Tuple<Color, float>> colors = new();
+            /// None of these should be null however C# is "special"
+            Color left = new();
+            Color right = new();
+
+
+            bool leftexists = false;
+            bool rightexists = false;
+
 
             foreach (DreamValue value in GradientList) {
+                float _internal_index = index;
+
                 if (color_or_int && value.TryGetValueAsFloat(out float flt)) { // Int
                     color_or_int = false;
                     workingfloat = flt;
@@ -678,7 +694,22 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 if (value.TryGetValueAsString(out string? strvalue) && ColorHelpers.TryParseColor(strvalue, out Color color)) {
-                    colors.Add(new Tuple<Color, float>(color, workingfloat));
+
+                    if(loop && _internal_index >= maxvalue) {
+                        _internal_index %= maxvalue;
+                    }
+
+                    if(workingfloat >= _internal_index) {
+                        right = color;
+                        rightexists = true;
+                        index = _internal_index;
+                        break;
+                    }
+                    else {
+                        left = color;
+                        leftexists = true;
+                    }
+
                     if (color_or_int) {
                         workingfloat = 1;
                     }
@@ -687,67 +718,37 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (!index.TryGetValueAsFloat(out float indx)) {
-                throw new FormatException("Failed to parse index as float");
-            }
-            indx = Math.Max(minvalue, indx);
 
-            if (colors.Count == 0) {
+            if (!leftexists && !rightexists) {
                 throw new InvalidOperationException("Failed to find any colors");
-            }
-
-            if (loop && maxvalue <= indx) {
-                indx %= maxvalue;
-            }
-
-            /// None of these should be null however C# is "special"
-            Tuple<Color, float> left = new(new Color(), 0);
-            Tuple<Color, float> right = new(new Color(), 1);
-
-            bool leftexists = false;
-            bool rightexists = false;
-
-            foreach (var color in colors) {
-                if(color.Item2 >= indx) {
-                    right = color;
-                    rightexists = true;
-
-                    break;
-                }
-                left = color;
-                leftexists = true;
             }
 
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists) {
-                if (right.Item1.A == 1) {
-                    return new DreamValue(right.Item1.ToHexNoAlpha().ToLower());
+                if (right.A == 1) {
+                    return new DreamValue(right.ToHexNoAlpha().ToLower());
                 }
-                return new DreamValue(right.Item1.ToHex().ToLower());
-            }
-            else if(!rightexists) {
+                return new DreamValue(right.ToHex().ToLower());
+            } else if (!rightexists) {
 
-                if (left.Item1.A == 1) {
-                    return new DreamValue(left.Item1.ToHexNoAlpha().ToLower());
+                if (left.A == 1) {
+                    return new DreamValue(left.ToHexNoAlpha().ToLower());
                 }
-                return new DreamValue(left.Item1.ToHex().ToLower());
+                return new DreamValue(left.ToHex().ToLower());
             }
-
-            float index_max = Math.Max(left.Item2, right.Item2);
-            float index_min = Math.Min(left.Item2, right.Item2);
 
             /// Convert the index to a 0-1 range
-            float normalized = (indx - index_min) / (index_max - index_min);
+            float normalized = (index - minvalue) / (maxvalue - minvalue);
 
             Color returnval;
             switch (colorspace) {
                 case 0: // RGB
-                    returnval = Color.InterpolateBetween(left.Item1, right.Item1, normalized);
+                    returnval = Color.InterpolateBetween(left, right, normalized);
                     break;
                 case 1 or 2: // HSV/HSL
-                    Vector4 vect1 = new(Color.ToHsv(left.Item1));
-                    Vector4 vect2 = new(Color.ToHsv(right.Item1));
+                    Vector4 vect1 = new(Color.ToHsv(left));
+                    Vector4 vect2 = new(Color.ToHsv(right));
 
                     float newhue;
                     float delta = vect2.X - vect1.X;
@@ -760,9 +761,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     {
                         vect1.X += 1; // 360deg
                         newhue = (vect1.X + normalized * (vect2.X - vect1.X)) % 1; // 360deg
-                    }
-                    else
-                    {
+                    } else {
                         newhue = vect1.X + normalized * delta;
                     }
 
@@ -778,7 +777,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     throw new NotSupportedException("Cannot interpolate colorspace");
             }
 
-            if(returnval.A == 1) {
+            if (returnval.A == 1) {
                 return new DreamValue(returnval.ToHexNoAlpha().ToLower());
             }
             return new DreamValue(returnval.ToHex().ToLower());

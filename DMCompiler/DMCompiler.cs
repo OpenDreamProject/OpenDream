@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
+using DMCompiler.Compiler;
 
 namespace DMCompiler {
     //TODO: Make this not a static class
@@ -23,6 +24,7 @@ namespace DMCompiler {
         public static int WarningCount = 0;
         public static DMCompilerSettings Settings;
 
+        private static DMCompilerConfiguration Config;
         private static DateTime _compileStartTime;
 
         public static bool Compile(DMCompilerSettings settings) {
@@ -30,6 +32,7 @@ namespace DMCompiler {
             WarningCount = 0;
             Settings = settings;
             if (Settings.Files == null) return false;
+            Config = new();
 
             //TODO: Only use InvariantCulture where necessary instead of it being the default
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -100,13 +103,30 @@ namespace DMCompiler {
 
                     preproc.IncludeFile(includeDir, fileName);
                 }
-
+                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+                string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
                 // Push DMStandard to the top of the stack, prioritizing it.
                 if (!Settings.NoStandard) {
-                    string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string dmStandardDirectory = Path.Join(compilerDirectory ?? string.Empty, "DMStandard");
+
+
                     preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
                 }
+                // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
+                string pragmaName;
+                string pragmaDirectory;
+                if(Settings.PragmaFileOverride is not null) {
+                    pragmaDirectory = Path.GetDirectoryName(Settings.PragmaFileOverride);
+                    pragmaName = Path.GetFileName(Settings.PragmaFileOverride);
+                } else {
+                    pragmaDirectory = dmStandardDirectory;
+                    pragmaName = "DefaultPragmaConfig.dm";
+                }
+                if(!File.Exists(pragmaFile)) {
+                    Error(new CompilerError(Location.Internal, $"Configuration file '{pragmaName}' not found."));
+                    return null;
+                }
+                preproc.IncludeFile(pragmaDirectory,pragmaName);
+                CheckAllPragmasWereSet();
                 return preproc;
             }
 
@@ -125,7 +145,6 @@ namespace DMCompiler {
                 File.WriteAllText(outputPath, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
-
             return build();
         }
 
@@ -175,6 +194,22 @@ namespace DMCompiler {
 
         public static void Warning(Location loc, string message) {
             Warning(new CompilerWarning(loc, message));
+        }
+
+        /// <summary>
+        /// To be used when the compiler MUST ALWAYS give a warning. <br/>
+        /// Completely ignores the warning configuration. Use wisely!
+        /// </summary>
+        public static void ForcedWarning(string message) {
+            Console.WriteLine(new CompilerWarning(Location.Internal, message));
+            WarningCount++;
+        }
+
+        /// <inheritdoc cref="ForcedWarning(string)"/>
+        public static void ForcedWarning(Location loc, string message)
+        {
+            Console.WriteLine(new CompilerWarning(loc, message));
+            WarningCount++;
         }
 
         public static void UnimplementedWarning(Location loc, string message) {
@@ -271,6 +306,15 @@ namespace DMCompiler {
             }
             return string.Empty;
         }
+
+        static void CheckAllPragmasWereSet() {
+            foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
+                if(!Config.errorConfig.ContainsKey(code)) {
+                    ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
+                    Config.errorConfig.Add(code, ErrorLevel.Disabled);
+                }
+            }
+        }
     }
 
     public struct DMCompilerSettings {
@@ -280,5 +324,15 @@ namespace DMCompiler {
         public bool NoStandard;
         public bool Verbose;
         public Dictionary<string, string> MacroDefines;
+        /// <summary> A user-provided pragma config file, if one was provided. </summary>
+        public string? PragmaFileOverride;
+    }
+
+    class DMCompilerConfiguration
+    {
+        public Dictionary<WarningCode, ErrorLevel> errorConfig;
+        public DMCompilerConfiguration() {
+            errorConfig = new(Enum.GetValues<WarningCode>().Length);
+        }
     }
 }

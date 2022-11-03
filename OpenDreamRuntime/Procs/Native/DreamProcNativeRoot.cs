@@ -601,70 +601,37 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("A", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("index", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_gradient(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (arguments.ArgumentCount == 1) {
-                throw new ArgumentException("Found only 1 argument");
+            if (arguments.ArgumentCount <= 1) {
+                throw new IndexOutOfRangeException("Not enough arguments");
             }
 
             /// We dont want keyword arguments screwing with this
-            DreamValue indx;
+            DreamValue indx = arguments.GetArgument(arguments.OrderedArguments.Count - 1, "index");
 
             int colorspace = 0;
             bool loop = false;
-
-            if (arguments.NamedArguments.TryGetValue("index", out DreamValue argumentValue)) {
-                indx = argumentValue;
-                arguments.NamedArguments.Remove("index");
-            } else {
-                indx = arguments.OrderedArguments[^1];
-                arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
-            }
 
             if (!indx.TryGetValueAsFloat(out float index)) {
                 throw new FormatException("Failed to parse index as float");
             }
 
-            if (arguments.OrderedArguments.Contains(new DreamValue("loop"))) {
-                loop = true;
-            }
-
-            foreach (KeyValuePair<string, DreamValue> value in arguments.NamedArguments) {
-                switch (value.Key) {
-                    case "space":
-                        // TODO Check for 0-4
-                        if (value.Value.TryGetValueAsInteger(out int space)) {
-                            colorspace = space;
-                            arguments.NamedArguments.Remove("space");
-                        } else if (value.Value != DreamValue.Null) {
-                            throw new NotSupportedException("Unknown colorspace " + space);
-                        }
-                        continue;
-                    case "loop":
-                        loop = true;
-                        continue;
-                }
-            }
-
-            List<DreamValue> argslist = arguments.GetAllArguments();
             List<DreamValue> GradientList;
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
-                // TODO Check for 0-4
-                if (gradlist.GetAssociativeValues().TryGetValue(new DreamValue("space"), out DreamValue value)) {
-                    if (value.TryGetValueAsInteger(out int space)) {
-                        colorspace = space;
-                        gradlist.RemoveValue(new DreamValue("space"));
-                    } else {
-                        throw new NotSupportedException("Unknown colorspace " + value);
-                    }
-                }
-
-                if (gradlist.ContainsValue(new DreamValue("loop"))) {
-                    loop = true;
-                }
                 GradientList = gradlist.GetValues();
+
+                if (gradlist.ContainsValue(new DreamValue("loop"))) { loop = true; }
+
+                DreamValue dictspace = gradlist.GetValue(new("space"));
+                if (dictspace != DreamValue.Null && dictspace.TryGetValueAsInteger(out int dictlookup)) { colorspace = dictlookup; }
+
             } else {
-                GradientList = argslist;
+                GradientList = arguments.GetAllArguments();
             }
+
+            if (arguments.OrderedArguments.Contains(new("loop"))) { loop = true; }
+
+            if (arguments.NamedArguments.TryGetValue("space", out DreamValue namedlookup) && namedlookup.TryGetValueAsInteger(out int space)) { colorspace = space; }
 
             /// true: look for int: false look for color
             bool color_or_int = true;

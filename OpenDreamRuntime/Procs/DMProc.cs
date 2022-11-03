@@ -1,10 +1,12 @@
 using System.Buffers;
+using System.Linq;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Json;
 
 namespace OpenDreamRuntime.Procs {
     sealed class DMProc : DreamProc {
@@ -12,14 +14,39 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public string? Source { get; set; }
-        public int Line { get; set; }
+        public string? Source { get; }
+        public int Line { get; }
+        public IReadOnlyList<string> LocalNames { get; }
 
-        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
+        public DMProc(DreamPath owningType, OpenDreamShared.Json.ProcDefinitionJson json, string? name = null)
+            : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
         {
-            Bytecode = bytecode;
-            _maxStackSize = maxStackSize;
+            Bytecode = json.Bytecode ?? Array.Empty<byte>();
+            _maxStackSize = json.MaxStackSize;
+
+            Source = json.Source;
+            Line = json.Line;
+            LocalNames = json.Locals;
+        }
+
+        private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
+            if (json.Arguments == null) {
+                return new();
+            } else {
+                var argumentNames = new List<string>(json.Arguments.Count);
+                argumentNames.AddRange(json.Arguments.Select(a => a.Name).ToArray());
+                return argumentNames;
+            }
+        }
+
+        private static List<DMValueType>? GetArgumentTypes(ProcDefinitionJson json) {
+            if (json.Arguments == null) {
+                return new();
+            } else {
+                var argumentTypes = new List<DMValueType>(json.Arguments.Count);
+                argumentTypes.AddRange(json.Arguments.Select(a => a.Type));
+                return argumentTypes;
+            }
         }
 
         public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments)
@@ -172,7 +199,7 @@ namespace OpenDreamRuntime.Procs {
             Instance = instance;
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
-            _localVariables = _dreamValuePool.Rent(256);
+            _localVariables = _dreamValuePool.Rent(ArgumentCount + (proc.LocalNames?.Count ?? 0));
             CurrentSource = proc.Source;
             CurrentLine = proc.Line;
             WaitFor = _proc != null ? (_proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
@@ -212,8 +239,8 @@ namespace OpenDreamRuntime.Procs {
             _stack = _stackPool.Rent(other._stack.Length);
             Array.Copy(other._stack, _stack, _stack.Length);
 
-            _localVariables = _dreamValuePool.Rent(256);
-            Array.Copy(other._localVariables, _localVariables, 256);
+            _localVariables = _dreamValuePool.Rent(other._localVariables.Length);
+            Array.Copy(other._localVariables, _localVariables, other._localVariables.Length);
 
             WaitFor = other.WaitFor;
         }
@@ -559,13 +586,18 @@ namespace OpenDreamRuntime.Procs {
         #endregion References
 
         public IEnumerable<(string, DreamValue)> InspectLocals() {
-            for (int i = 0; i < _localVariables.Length; ++i) {
-                string name = i.ToString();
+            int numArgs = ArgumentCount;
+            int numLocals = _proc.LocalNames?.Count ?? 0;
+            for (int i = 0; i < numArgs + numLocals; ++i) {
+                string name;
                 if (Proc.ArgumentNames != null && i < Proc.ArgumentNames.Count) {
                     name = Proc.ArgumentNames[i];
+                } else if (_proc.LocalNames != null && numArgs <= i && i < numArgs + numLocals) {
+                    name = _proc.LocalNames[i - numArgs];
+                } else {
+                    name = i.ToString();
                 }
-                DreamValue value = _localVariables[i];
-                yield return (name, value);
+                yield return (name, _localVariables[i]);
             }
         }
     }

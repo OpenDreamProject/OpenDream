@@ -61,7 +61,7 @@ namespace OpenDreamRuntime {
 
             // Call global <init> with waitfor=FALSE
             if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, initProcDef.Bytecode, initProcDef.MaxStackSize, initProcDef.Attributes, initProcDef.VerbName, initProcDef.VerbCategory, initProcDef.VerbDesc, initProcDef.Invisibility);
+                var globalInitProc = new DMProc(DreamPath.Root, initProcDef, name: "<global init>");
                 globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
             }
 

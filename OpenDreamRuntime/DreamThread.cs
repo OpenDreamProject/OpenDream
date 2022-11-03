@@ -19,7 +19,7 @@ namespace OpenDreamRuntime {
         public string Name { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
-        public DreamProc SuperProc { set; get; }
+        public DreamProc? SuperProc { set; get; }
 
         public ProcAttributes Attributes { get; }
 
@@ -31,7 +31,7 @@ namespace OpenDreamRuntime {
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(DreamPath owningType, string name, DreamProc superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
             OwningType = owningType;
             Name = name;
             SuperProc = superProc;

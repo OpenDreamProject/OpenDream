@@ -8,6 +8,7 @@ namespace OpenDreamShared.Json {
         public string Name { get; set; }
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }
+        public List<string> Locals { get; set; }
         public ProcAttributes Attributes { get; set; } = ProcAttributes.None;
         public string Source { get; set; }
         public int Line { get; set; }

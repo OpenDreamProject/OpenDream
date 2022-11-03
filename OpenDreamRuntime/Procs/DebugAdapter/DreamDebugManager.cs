@@ -453,18 +453,30 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         requestScopes.Respond(client, new[] {
             new Scope {
+                Name = "Arguments",
+                PresentationHint = Scope.PresentationHintArguments,
+                VariablesReference = AllocVariableRef(req => ExpandArguments(req, dmFrame)),
+            },
+            new Scope {
                 Name = "Locals",
+                PresentationHint = Scope.PresentationHintLocals,
                 VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
             },
         });
     }
 
-    private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
+    private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
         if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
         yield return DescribeValue("usr", new(dmFrame.Usr));
-        foreach (var (name, value) in dmFrame.InspectLocals()) {
+        foreach (var (name, value) in dmFrame.DebugArguments()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
+        foreach (var (name, value) in dmFrame.DebugLocals()) {
             yield return DescribeValue(name, value);
         }
     }

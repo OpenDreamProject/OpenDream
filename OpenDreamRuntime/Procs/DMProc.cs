@@ -185,7 +185,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamValue[] _localVariables;
 
         private readonly DMProc _proc;
-        public override DreamProc Proc => _proc;
+        public override DMProc Proc => _proc;
 
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
@@ -585,20 +585,33 @@ namespace OpenDreamRuntime.Procs {
         }
         #endregion References
 
-        public IEnumerable<(string, DreamValue)> InspectLocals() {
-            int numArgs = ArgumentCount;
-            int numLocals = _proc.LocalNames?.Count ?? 0;
-            for (int i = 0; i < numArgs + numLocals; ++i) {
-                string name;
-                if (Proc.ArgumentNames != null && i < Proc.ArgumentNames.Count) {
-                    name = Proc.ArgumentNames[i];
-                } else if (_proc.LocalNames != null && numArgs <= i && i < numArgs + numLocals) {
-                    name = _proc.LocalNames[i - numArgs];
-                } else {
-                    name = i.ToString();
+        public IEnumerable<(string, DreamValue)> DebugArguments() {
+            int i = 0;
+            if (_proc.ArgumentNames != null) {
+                while (i < _proc.ArgumentNames.Count) {
+                    yield return (_proc.ArgumentNames[i], _localVariables[i]);
+                    ++i;
                 }
-                yield return (name, _localVariables[i]);
             }
+            // Callers can supply extra arguments beyond those named.
+            while (i < ArgumentCount) {
+                yield return (i.ToString(), _localVariables[i]);
+                ++i;
+            }
+        }
+
+        public IEnumerable<(string, DreamValue)> DebugLocals() {
+            int i = 0, j = ArgumentCount;
+            if (_proc.LocalNames != null) {
+                while (i < _proc.LocalNames.Count) {
+                    yield return (_proc.LocalNames[i], _localVariables[j]);
+                    ++i;
+                    ++j;
+                }
+            }
+            // _localVariables.Length is pool-allocated so its length may go up
+            // to some round power of two or similar without anything actually
+            // being there, so just stop after the named locals.
         }
     }
 }

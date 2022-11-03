@@ -699,7 +699,7 @@ namespace OpenDreamRuntime.Procs.Native {
                         _internal_index %= maxvalue;
                     }
 
-                    if(workingfloat >= _internal_index) {
+                    if (workingfloat >= _internal_index) {
                         right = color;
                         rightexists = true;
                         index = _internal_index;
@@ -731,7 +731,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(left.ToHex().ToLower());
-            } else {
+            } else if (!leftexists && !rightexists) {
                 throw new InvalidOperationException("Failed to find any colors");
             }
 

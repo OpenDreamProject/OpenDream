@@ -719,11 +719,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
 
-            if (!leftexists && !rightexists) {
-                throw new InvalidOperationException("Failed to find any colors");
-            }
-
-
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists) {
                 if (right.A == 1) {
@@ -736,6 +731,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(left.ToHex().ToLower());
+            } else {
+                throw new InvalidOperationException("Failed to find any colors");
             }
 
             /// Convert the index to a 0-1 range

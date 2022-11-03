@@ -3,6 +3,7 @@ using Robust.Server.Player;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
+        public bool Initialized { get; }
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
 
@@ -12,7 +13,7 @@ namespace OpenDreamRuntime {
         public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
-        public DreamList WorldContentsList { get; set; }
+        public DreamList WorldContentsList { get; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public List<DreamObject> Mobs { get; set; }

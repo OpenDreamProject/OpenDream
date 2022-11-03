@@ -21,11 +21,11 @@ namespace OpenDreamRuntime.Objects {
             thread.PushProcState(procState);
 
             if (thread.Resume() == DreamValue.Null) {
-                thread.HandleException(new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!"));
+                //thread.HandleException(new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!"));
             }
         }
 
-        public ProcState InitProc(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
+        public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
             if(Deleted){
                 throw new Exception("Cannot init proc on a deleted object");
             }

@@ -149,7 +149,7 @@ namespace OpenDreamRuntime {
             Name = name;
         }
 
-        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, DreamProcArguments? arguments) {
             var context = new DreamThread(proc.ToString());
             var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
             context.PushProcState(state);

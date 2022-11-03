@@ -18,9 +18,8 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
-        protected DreamList(int size = 0) : base(null) {
+        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List)) {
             _values = new List<DreamValue>(size);
-            ObjectDefinition = _listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List);
         }
 
         public static DreamList CreateUninitialized(int size = 0) {
@@ -180,6 +179,11 @@ namespace OpenDreamRuntime.Objects {
             }
 
             return newList;
+        }
+
+        public override string ToString() {
+            string assoc = IsAssociative ? ", assoc" : "";
+            return $"/list{{len={GetLength()}{assoc}}}";
         }
     }
 

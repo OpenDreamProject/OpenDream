@@ -473,8 +473,10 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var varDesc = new Variable { Name = name };
         varDesc.Value = value.ToString();
         if (value.TryGetValueAsDreamList(out var list) && list != null) {
-            varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
-            varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);
+            if (list.GetLength() > 0) {
+                varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
+                varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);
+            }
         } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;

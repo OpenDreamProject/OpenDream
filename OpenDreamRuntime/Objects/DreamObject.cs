@@ -7,12 +7,12 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition? ObjectDefinition { get; protected set; }
-        public bool Deleted = false;
+        public DreamObjectDefinition? ObjectDefinition { get; private set; }
+        public bool Deleted { get; private set; } = false;
 
         private Dictionary<string, DreamValue> _variables = new();
 
-        public DreamObject(DreamObjectDefinition? objectDefinition) {
+        public DreamObject(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
         }
 
@@ -223,11 +223,17 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override string ToString() {
-            if(Deleted) {
-                return "DreamObject(DELETED)";
+            if (Deleted) {
+                return "<deleted>";
+            } else if (ObjectDefinition is null) {
+                return GetType().Name;
             }
 
-            return "DreamObject(" + ObjectDefinition.Type + ")";
+            string name = GetNameUnformatted();
+            if (!string.IsNullOrEmpty(name)) {
+                return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
+            }
+            return ObjectDefinition.Type.ToString();
         }
     }
 }

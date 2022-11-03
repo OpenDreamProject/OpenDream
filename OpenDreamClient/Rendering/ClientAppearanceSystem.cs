@@ -107,44 +107,21 @@ namespace OpenDreamClient.Rendering {
                 var _protoManager = IoCManager.Resolve<IPrototypeManager>();
                 instance = _protoManager.Index<ShaderPrototype>(filter.filter_type).InstanceUnique();
 
-                if(filter.filter_x != null) instance.SetParameter("x", (float) filter.filter_x);
-                if(filter.filter_y != null) instance.SetParameter("y", (float) filter.filter_y);
-                if(filter.filter_icon != null) instance.SetParameter("icon", (float) filter.filter_icon);
-                if(filter.filter_render_source != null) instance.SetParameter("render_source", (float) filter.filter_render_source);
-                if(filter.filter_flags != null) instance.SetParameter("flags", (float) filter.filter_flags);
-                if(filter.filter_size != null) instance.SetParameter("size", (float) filter.filter_size);
-                if(filter.filter_color_string != null)
-                {
-                    if (!ColorHelpers.TryParseColor(filter.filter_color_string, out var c)) {
-                        throw new Exception("bad color");
-                    }
-                    instance.SetParameter("color", c);
+                foreach(string key in filter.parameters.Keys)
+                    instance.SetParameter(key, filter.parameters[key]);
+
+                /*
+                if (!ColorHelpers.TryParseColor(filter.filter_color_string, out var c)) {
+                    throw new Exception("bad color");
                 }
-                if(filter.filter_threshold_color != null)
-                {
-                    if (!ColorHelpers.TryParseColor(filter.filter_threshold_color, out var c)) {
-                        throw new Exception("bad color");
-                    }
-                    instance.SetParameter("color", c);
-                }
-                if(filter.filter_threshold_strength != null) instance.SetParameter("threshold_strength", (float) filter.filter_threshold_strength);
-                if(filter.filter_offset != null) instance.SetParameter("offset", (float) filter.filter_offset);
-                if(filter.filter_alpha != null) instance.SetParameter("alpha", (float) filter.filter_alpha);
-                if(filter.filter_color_matrix != null) instance.SetParameter("color_matrix", (float) filter.filter_color_matrix);
-                if(filter.filter_space != null) instance.SetParameter("space", (float) filter.filter_space);
-                if(filter.filter_transform != null) instance.SetParameter("transform", (float) filter.filter_transform);
-                if(filter.filter_blend_mode != null) instance.SetParameter("blend_mode", (float) filter.filter_blend_mode);
-                if(filter.filter_density != null) instance.SetParameter("density", (float) filter.filter_density);
-                if(filter.filter_factor != null) instance.SetParameter("factor", (float) filter.filter_factor);
-                if(filter.filter_repeat != null) instance.SetParameter("repeat", (float) filter.filter_repeat);
-                if(filter.filter_radius != null) instance.SetParameter("radius", (float) filter.filter_radius);
-                if(filter.filter_falloff != null) instance.SetParameter("falloff", (float) filter.filter_falloff);
+                instance.SetParameter("color", c); */
+
             }
             filter.used = true;
             _filterShaders[filter] = instance;
             return instance;
         }
-        
+
         private void OnGridModified(GridModifiedEvent e) {
             foreach (var modified in e.Modified) {
                 UpdateTurfOpacity(e.Grid, modified.position, modified.tile);

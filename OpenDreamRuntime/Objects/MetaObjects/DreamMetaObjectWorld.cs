@@ -120,7 +120,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.CurTick.Value * TickLag);
+                    return new DreamValue((_gameTiming.CurTick.Value - _dreamManager.InitializedTick.Value) * TickLag);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {

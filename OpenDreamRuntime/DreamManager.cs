@@ -13,6 +13,7 @@ using Robust.Server;
 using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     partial class DreamManager : IDreamManager {
@@ -41,6 +42,7 @@ namespace OpenDreamRuntime {
         private DreamCompiledJson _compiledJson;
         private bool _initialized = false;
         public bool Initialized => _initialized;
+        public GameTick InitializedTick { get; private set; }
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string jsonPath) {
@@ -56,6 +58,7 @@ namespace OpenDreamRuntime {
         public void StartWorld() {
             // It is now OK to call user code, like /New procs.
             _initialized = true;
+            InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
 
             // Call global <init> with waitfor=FALSE
             if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {

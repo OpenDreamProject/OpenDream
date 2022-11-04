@@ -1,9 +1,11 @@
 using OpenDreamRuntime.Objects;
 using Robust.Server.Player;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
         public bool Initialized { get; }
+        public GameTick InitializedTick { get; }
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
 

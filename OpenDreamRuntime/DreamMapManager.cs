@@ -47,15 +47,16 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        private ServerAppearanceSystem? _appearanceSystem;
+        private ServerAppearanceSystem _appearanceSystem = default!;  // set in Initialize
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
 
         private readonly List<Level> _levels = new();
         private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();
-        private readonly Dictionary<DreamPath, DreamObject> _areas = new();
-        private DreamPath _defaultArea, _defaultTurf;
+        private readonly Dictionary<MapObjectJson, DreamObject> _areas = new();
+        private MapObjectJson _defaultArea = default!;  // set in Initialize
+        private DreamPath _defaultTurf;
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -66,16 +67,15 @@ namespace OpenDreamRuntime {
             // Default area
             if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area))
             {
-
                 if(!_dreamManager.ObjectTree.GetObjectDefinition(area).IsSubtypeOf(DreamPath.Area)) throw new Exception("bad area");
-                _defaultArea = area;
 
+                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(area).Id);
             }
             else if (worldDefinition.Variables["area"] == DreamValue.Null ||
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0)
             {
                 //TODO: Properly handle disabling default area
-                _defaultArea = DreamPath.Area;
+                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(DreamPath.Area).Id);
             }
             else
             {
@@ -117,8 +117,7 @@ namespace OpenDreamRuntime {
 
         public void LoadAreasAndTurfs(List<DreamMapJson> maps) {
             if (maps.Count == 0) throw new ArgumentException("No maps were given");
-            if (maps.Count > 1)
-            {
+            if (maps.Count > 1) {
                 Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
 
@@ -234,11 +233,12 @@ namespace OpenDreamRuntime {
 
         //Returns an area loaded by a DMM
         //Does not include areas created by DM code
-        private DreamObject GetArea(DreamPath type) {
-            if (!_areas.TryGetValue(type, out DreamObject? area)) {
-                area = _dreamManager.ObjectTree.CreateObject(type);
-                area.InitSpawn(new(null));
-                _areas.Add(type, area);
+        private DreamObject GetOrCreateArea(MapObjectJson prototype) {
+            if (!_areas.TryGetValue(prototype, out DreamObject? area)) {
+                var definition = CreateMapObjectDefinition(prototype);
+                area = new DreamObject(definition);
+                area.InitSpawn(new());
+                _areas.Add(prototype, area);
             }
 
             return area;
@@ -253,7 +253,7 @@ namespace OpenDreamRuntime {
         public void SetZLevels(int levels) {
             if (levels > Levels) {
                 DreamObjectDefinition defaultTurfDef = _dreamManager.ObjectTree.GetObjectDefinition(_defaultTurf);
-                DreamObject defaultArea = GetArea(_defaultArea);
+                DreamObject defaultArea = GetOrCreateArea(_defaultArea);
 
                 for (int z = Levels + 1; z <= levels; z++) {
                     MapId mapId = new(z);
@@ -293,8 +293,7 @@ namespace OpenDreamRuntime {
 
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
-                DreamPath areaType = cellDefinition.Area != null ? _dreamManager.ObjectTree.Types[cellDefinition.Area.Type].Path : _defaultArea;
-                DreamObject area = GetArea(areaType);
+                DreamObject area = GetOrCreateArea(cellDefinition.Area ?? _defaultArea);
 
                 Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
                 Level level = _levels[block.Z - 1];

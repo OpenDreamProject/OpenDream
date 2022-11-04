@@ -40,8 +40,7 @@ namespace OpenDreamRuntime {
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
         private DreamCompiledJson _compiledJson;
-        private bool _initialized = false;
-        public bool Initialized => _initialized;
+        public bool Initialized { get; private set; }
         public GameTick InitializedTick { get; private set; }
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
@@ -57,7 +56,7 @@ namespace OpenDreamRuntime {
 
         public void StartWorld() {
             // It is now OK to call user code, like /New procs.
-            _initialized = true;
+            Initialized = true;
             InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
 
             // Call global <init> with waitfor=FALSE
@@ -75,11 +74,11 @@ namespace OpenDreamRuntime {
         }
 
         public void Shutdown() {
-            _initialized = false;
+            Initialized = false;
         }
 
         public void Update() {
-            if (!_initialized)
+            if (!Initialized)
                 return;
 
             _procScheduler.Process();

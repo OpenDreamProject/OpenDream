@@ -439,10 +439,10 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObject result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
             if(DreamFilter.filterParameters.ContainsKey(DreamPath.Filter.AddToPath(filter_type)))
             {
-                Dictionary<string, Tuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(filter_type)];
+                Dictionary<string, ValueTuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(filter_type)];
                 foreach(string varName in variableDict.Keys)
                 {
-                    Tuple<Type, bool, Object> varInfo = variableDict[varName];
+                    ValueTuple<Type, bool, Object> varInfo = variableDict[varName];
                     if(varInfo.Item1 == typeof(float))
                     {
                         float varValue;

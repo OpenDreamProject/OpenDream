@@ -12,7 +12,7 @@ namespace OpenDreamShared.Dream {
         public bool used = false;
         [ViewVariables] public string? filter_type = null;
         /// Stores parameters, defaults, and mandatory flags for filters
-        public static Dictionary<DreamPath, Dictionary<string, Tuple<Type, Boolean, Object>>> filterParameters; //filter type => dictionary(variable name => tuple(type, mandatory, default))
+        public static Dictionary<DreamPath, Dictionary<string, ValueTuple<Type, Boolean, Object>>> filterParameters; //filter type => dictionary(variable name => tuple(type, mandatory, default))
         public Dictionary<string, Object> parameters = new Dictionary<string, object>();
 
         static DreamFilter() {
@@ -93,18 +93,20 @@ namespace OpenDreamShared.Dream {
             createVarEntry("wave", "flags", typeof(float), false, 0);
 
             //no parameters for the greyscale filter
-            filterParameters[DreamPath.Filter.AddToPath("greyscale")] = new Dictionary<string, Tuple<Type, bool, Object>>();
+            filterParameters[DreamPath.Filter.AddToPath("greyscale")] = new Dictionary<string, ValueTuple<Type, bool, Object>>();
 
         }
         private static void createVarEntry(string filterType, string varName, Type varType, bool mandatory, Object defaultVal)
         {
-            Dictionary<string, Tuple<Type, bool, Object>> varEntries;
+            if(filterParameters == null)
+                filterParameters = new();
+            Dictionary<string, ValueTuple<Type, bool, Object>> varEntries;
             if(filterParameters.ContainsKey(DreamPath.Filter.AddToPath(filterType)))
                 varEntries = filterParameters[DreamPath.Filter.AddToPath(filterType)];
             else
                 varEntries = new();
 
-            varEntries[varName] = new Tuple<Type, bool, object>(varType, mandatory, defaultVal);
+            varEntries[varName] = new ValueTuple<Type, bool, object>(varType, mandatory, defaultVal);
             filterParameters[DreamPath.Filter.AddToPath(filterType)] = varEntries;
         }
         public DreamFilter() { }

@@ -344,10 +344,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         if(filterVarValue.TryGetValueAsPath(out typedVal))
                             newFilter.filter_type = typedVal.LastElement;
                     }
-                    Dictionary<string, Tuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(newFilter.filter_type)];
+                    Dictionary<string, ValueTuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(newFilter.filter_type)];
                     foreach(string varName in variableDict.Keys)
                     {
-                        Tuple<Type, bool, Object> varInfo = variableDict[varName];
+                        ValueTuple<Type, bool, Object> varInfo = variableDict[varName];
                         if(varInfo.Item1 == typeof(float))
                         {
                             float varValue;

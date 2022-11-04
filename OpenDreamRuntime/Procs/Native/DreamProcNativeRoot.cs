@@ -715,8 +715,9 @@ namespace OpenDreamRuntime.Procs.Native {
                     Vector4 vect2 = new(Color.ToHsv(right));
 
                     /// Some precision is lost when coverting back to HSV at very small values this fixes that issue
-                    if(normalized < 0.05)
+                    if(normalized < 0.05) {
                         normalized += 0.0000001f;
+                    }
 
                     float newhue;
                     float delta = vect2.X - vect1.X;

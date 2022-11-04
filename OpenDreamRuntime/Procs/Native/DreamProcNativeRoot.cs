@@ -416,16 +416,16 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("filter")]
         [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
-        [DreamProcParameter("size", Type = DreamValueType.Float, DefaultValue = 1)]
-        [DreamProcParameter("color", Type = DreamValueType.String, DefaultValue = "#FFFFF")] // Must be a valid color
-        [DreamProcParameter("flags", Type = DreamValueType.Float, DefaultValue = 0)] // No requirement to be a sane value, but will be rounded down to nearest integer*
+        [DreamProcParameter("size", Type = DreamValueType.Float)]
+        [DreamProcParameter("color", Type = DreamValueType.String)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
         [DreamProcParameter("x", Type = DreamValueType.Float)]
         [DreamProcParameter("y", Type = DreamValueType.Float)]
         [DreamProcParameter("offset", Type = DreamValueType.Float)]
-        [DreamProcParameter("threshold", Type = DreamValueType.String)] // Color string.
-        [DreamProcParameter("alpha", Type = DreamValueType.Float, DefaultValue = 2255)]
-        [DreamProcParameter("space", Type = DreamValueType.Float)] // Color spaces for filters are integers. Default value is RGB
-        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)] // transformation matrix
+        [DreamProcParameter("threshold", Type = DreamValueType.String)]
+        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
+        [DreamProcParameter("space", Type = DreamValueType.Float)]
+        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
         [DreamProcParameter("factor", Type = DreamValueType.Float)]
         [DreamProcParameter("repeat", Type = DreamValueType.Float)]
@@ -447,7 +447,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     {
                         float varValue;
                         if(!arguments.GetArgument(1, varName).TryGetValueAsFloat(out varValue))
-                            if(!varInfo.Item2)
+                            if(varInfo.Item2)
                                 throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
                             else
                                 varValue = (float) varInfo.Item3;
@@ -457,7 +457,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     {
                         string varValue;
                         if(!arguments.GetArgument(1, varName).TryGetValueAsString(out varValue))
-                            if(!varInfo.Item2)
+                            if(varInfo.Item2)
                                 throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
                             else
                                 varValue = (string) varInfo.Item3;
@@ -467,7 +467,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     {
                         string varValue;
                         if(!arguments.GetArgument(1, varName).TryGetValueAsString(out varValue))
-                            if(!varInfo.Item2)
+                            if(varInfo.Item2)
                                 throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
                             else
                                 varValue = ((Color) varInfo.Item3).ToHex();
@@ -479,7 +479,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     {
                         DreamObject varValue;
                         if(!arguments.GetArgument(1, varName).TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out varValue))
-                            if(!varInfo.Item2)
+                            if(varInfo.Item2)
                                 throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
                             else
                             {

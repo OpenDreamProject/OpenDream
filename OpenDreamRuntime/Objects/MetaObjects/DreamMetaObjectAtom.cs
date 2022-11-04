@@ -352,7 +352,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         {
                             float varValue;
                             if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsFloat(out varValue))
-                                if(!varInfo.Item2)
+                                if(varInfo.Item2)
                                     throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
                                 else
                                     varValue = (float) varInfo.Item3;
@@ -362,7 +362,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         {
                             string varValue;
                             if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsString(out varValue))
-                                if(!varInfo.Item2)
+                                if(varInfo.Item2)
                                     throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
                                 else
                                     varValue = (string) varInfo.Item3;
@@ -373,7 +373,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                             string colorString;
                             Color varValue;
                             if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsString(out colorString))
-                                if(!varInfo.Item2)
+                                if(varInfo.Item2)
                                     throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
                                 else
                                     varValue = (Color) varInfo.Item3;

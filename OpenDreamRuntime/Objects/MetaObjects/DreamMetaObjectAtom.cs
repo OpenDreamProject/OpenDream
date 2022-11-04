@@ -17,7 +17,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            _dreamManager.WorldContentsList.UnionValue(new DreamValue(dreamObject));
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }

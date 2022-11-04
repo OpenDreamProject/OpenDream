@@ -133,10 +133,34 @@ namespace OpenDreamRuntime {
         }
 
         public void InitializeAtoms(List<DreamMapJson> maps) {
-            // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If global <init> created any /area, call New a SECOND TIME
-            foreach (var areaOrTurf in _dreamManager.WorldContentsList.GetValues()) {
-                if (areaOrTurf.TryGetValueAsDreamObject(out var obj) && obj != null) {
-                    obj.SpawnProc("New");
+            // Call New() on all /area in this particular order, each with waitfor=FALSE
+            var seenAreas = new HashSet<DreamObject>();
+            for (var z = 1; z <= Levels; ++z) {
+                for (var y = 1; y <= Size.Y; ++y) {
+                    for (var x = 1; x <= Size.X; ++x) {
+                        var area = _levels[z - 1].Cells[x - 1, y - 1].Area;
+                        if (seenAreas.Add(area)) {
+                            area.SpawnProc("New");
+                        }
+                    }
+                }
+            }
+            // Also call New() on all /area not in the grid.
+            // This may call New() a SECOND TIME. This is intentional.
+            foreach (var thing in _dreamManager.WorldContentsList.GetValues()) {
+                if (thing.TryGetValueAsDreamObjectOfType(DreamPath.Area, out var area)) {
+                    if (seenAreas.Add(area)) {
+                        area.SpawnProc("New");
+                    }
+                }
+            }
+
+            // Call New() on all /turf in the grid, each with waitfor=FALSE
+            for (var z = 1; z <= Levels; ++z) {
+                for (var y = Size.Y; y >= 1; --y) {
+                    for (var x = Size.X; x >= 1; --x) {
+                        _levels[z - 1].Cells[x - 1, y - 1].Turf?.SpawnProc("New");
+                    }
                 }
             }
 
@@ -147,7 +171,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        private void SetTurf(Vector2i pos, Level level, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+        private DreamObject SetTurf(Vector2i pos, Level level, DreamObjectDefinition type, DreamProcArguments creationArguments) {
             if (IsInvalidCoordinate(pos, level.Z)) throw new ArgumentException("Invalid coordinates");
 
             Cell cell = level.Cells[pos.X - 1, pos.Y - 1];
@@ -156,9 +180,11 @@ namespace OpenDreamRuntime {
             } else {
                 cell.Turf = new DreamObject(type);
                 _turfToTilePos.Add(cell.Turf, (pos, level));
+                cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
             }
 
             cell.Turf.InitSpawn(creationArguments);
+            return cell.Turf;
         }
 
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments) {
@@ -273,8 +299,9 @@ namespace OpenDreamRuntime {
                 Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
                 Level level = _levels[block.Z - 1];
 
-                level.SetArea(pos, area);
-                SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new(null));
+                var turf = SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new());
+                // The following calls level.SetArea via an event on the area's `contents` var.
+                area.GetVariable("contents").MustGetValueAsDreamList().UnionValue(new(turf));
 
                 blockX++;
                 if (blockX > block.Width) {

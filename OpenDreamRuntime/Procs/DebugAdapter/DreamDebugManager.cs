@@ -16,6 +16,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     // Setup
     private DebugAdapter? _adapter;
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
+    private bool _stopOnEntry = false;
 
     // State
     private bool Stopped = false;
@@ -113,6 +114,16 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleProcStart(DMProcState state) {
+        if (_stopOnEntry) {
+            _stopOnEntry = false;
+            Stop(new StoppedEvent {
+                Reason = StoppedEvent.ReasonEntry,
+                ThreadId = state.Thread.Id,
+                AllThreadsStopped = true,
+            });
+            return;
+        }
+
         var hit = new List<int>();
         if (functionBreakpoints != null) {
             foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
@@ -247,11 +258,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
-
         _possibleBreakpoints = IteratePossibleBreakpoints()
             .GroupBy(pair => pair.Source, pair => pair.Line)
             .ToDictionary(group => group.Key, group => group.ToDictionary(line => line, _ => new FileBreakpointSlot()));
 
+        _stopOnEntry = reqLaunch.Arguments.StopOnEntry is true;
         reqLaunch.Respond(client);
     }
 
@@ -264,7 +275,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
         _dreamManager.StartWorld();
         reqConfigDone.Respond(client);
-        client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
+        if (!_terminated) {
+            client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
+        }
     }
 
     private void HandleRequestDisconnect(DebugAdapterClient client, RequestDisconnect reqDisconnect) {

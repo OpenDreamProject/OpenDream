@@ -14,7 +14,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private DebugAdapter? _adapter;
     private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
-    private string? jsonPath;
+
     private int _breakpointIdCounter = 1;
 
     private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
@@ -32,7 +32,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public bool Stopped { get; private set; }
 
-    private string RootPath => _resourceManager.RootPath ?? Path.GetDirectoryName(jsonPath) ?? throw new Exception("No RootPath yet!");
+    private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
 
     private struct Breakpoint {
         public int Id;

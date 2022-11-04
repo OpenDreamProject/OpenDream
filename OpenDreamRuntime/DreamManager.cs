@@ -30,6 +30,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public IReadOnlyList<string>? GlobalNames { get; private set; }
         public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -118,6 +119,7 @@ namespace OpenDreamRuntime {
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);

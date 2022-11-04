@@ -475,6 +475,10 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 PresentationHint = Scope.PresentationHintLocals,
                 VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
             },
+            new Scope {
+                Name = "Globals",
+                VariablesReference = AllocVariableRef(req => ExpandGlobals(req)),
+            },
         });
     }
 
@@ -490,6 +494,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
         foreach (var (name, value) in dmFrame.DebugLocals()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
+        foreach (var (name, value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals)) {
             yield return DescribeValue(name, value);
         }
     }

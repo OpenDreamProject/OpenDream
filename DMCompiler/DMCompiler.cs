@@ -242,12 +242,15 @@ namespace DMCompiler {
             if (DMObjectTree.Globals.Count > 0) {
                 GlobalListJson globalListJson = new GlobalListJson();
                 globalListJson.GlobalCount = DMObjectTree.Globals.Count;
+                globalListJson.Names = new List<string>(globalListJson.GlobalCount);
 
                 // Approximate capacity (4/285 in tgstation, ~3%)
                 globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
 
                 for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                     DMVariable global = DMObjectTree.Globals[i];
+                    globalListJson.Names.Add(global.Name);
+
                     if (!global.TryAsJsonRepresentation(out var globalJson))
                         DMCompiler.Error(new CompilerError(global.Value.Location, $"Failed to serialize global {global.Name}"));
 

@@ -225,12 +225,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        jsonPath = reqLaunch.Arguments.JsonPath;
+        _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
         reqLaunch.Respond(client);
     }
 
     private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
-        _dreamManager.Initialize(jsonPath);
+        _dreamManager.StartWorld();
         reqConfigDone.Respond(client);
         client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
     }

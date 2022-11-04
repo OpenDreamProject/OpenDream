@@ -344,7 +344,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text);
                                 string macroAttempt = text.ToLower();
                                 if (TryMacroKeyword(macroAttempt, out _)) { // if they miscapitalized the keyword
-                                    DMCompiler.Warning(token.Location, $"#{text} is not a valid macro keyword. Did you mean '#{text.ToLower()}'?");
+                                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, token.Location, $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                                 }
                             }
                         }

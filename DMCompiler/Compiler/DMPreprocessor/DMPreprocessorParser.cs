@@ -73,7 +73,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return false;
         }
         private static void Error(string msg) {
-            DMCompiler.Error(Current()?.Location ?? Location.Unknown, msg);
+            DMCompiler.Emit(WarningCode.BadDirective, Current()?.Location ?? Location.Unknown, msg);
         }
 
         private static float? Expression() {
@@ -258,7 +258,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
                         Advance();
                         if (!Check(TokenType.DM_RightParenthesis)) {
-                            Error("Expected ')' to end defined() expression");
+                            DMCompiler.Emit(WarningCode.DefinedMissingParen, token.Location, "Expected ')' to end defined() expression");
                             //Electing to not return a degenerate value here since "defined(x" actually isn't an ambiguous grammar; we can figure out what they meant.
                         }
                         return _defines!.ContainsKey(definedInner.Text) ? 1.0f : 0.0f;

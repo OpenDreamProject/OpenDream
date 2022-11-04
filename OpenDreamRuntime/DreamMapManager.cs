@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
@@ -163,7 +164,7 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
+            // new() up /objs and /mobs from compiled-in maps
             DreamMapJson map = maps[0];
             foreach (MapBlockJson block in map.Blocks) {
                 LoadMapObjectsAndMobs(block, map.CellDefinitions);
@@ -291,6 +292,7 @@ namespace OpenDreamRuntime {
             int blockX = 1;
             int blockY = 1;
 
+            // Order here doesn't really matter because it's not observable.
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
                 DreamObject area = GetOrCreateArea(cellDefinition.Area ?? _defaultArea);
@@ -311,29 +313,25 @@ namespace OpenDreamRuntime {
         }
 
         private void LoadMapObjectsAndMobs(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions) {
-            int blockX = 1;
-            int blockY = 1;
+            // The order we call New() here should be (1,1), (2,1), (1,2), (2,2)
+            int blockY = block.Y;
+            foreach (var row in block.Cells.Chunk(block.Width).Reverse()) {
+                int blockX = block.X;
+                foreach (var cell in row) {
+                    CellDefinitionJson cellDefinition = cellDefinitions[cell];
 
-            foreach (string cell in block.Cells) {
-                CellDefinitionJson cellDefinition = cellDefinitions[cell];
+                    if (TryGetTurfAt((blockX, blockY), block.Z, out var turf)) {
+                        foreach (MapObjectJson mapObject in cellDefinition.Objects) {
+                            var objDef = CreateMapObjectDefinition(mapObject);
+                            var obj = new DreamObject(objDef);
 
-                Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
-                Level level = _levels[block.Z - 1];
-
-                if (TryGetTurfAt(pos, level.Z, out var turf)) {
-                    foreach (MapObjectJson mapObject in cellDefinition.Objects) {
-                        var objDef = CreateMapObjectDefinition(mapObject);
-                        var obj = new DreamObject(objDef);
-
-                        obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
+                            obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
+                        }
                     }
-                }
 
-                blockX++;
-                if (blockX > block.Width) {
-                    blockX = 1;
-                    blockY++;
+                    ++blockX;
                 }
+                ++blockY;
             }
         }
 

@@ -108,14 +108,19 @@ namespace OpenDreamClient.Rendering {
                 instance = _protoManager.Index<ShaderPrototype>(filter.filter_type).InstanceUnique();
 
                 foreach(string key in filter.parameters.Keys)
-                    instance.SetParameter(key, filter.parameters[key]);
-
-                /*
-                if (!ColorHelpers.TryParseColor(filter.filter_color_string, out var c)) {
-                    throw new Exception("bad color");
+                {
+                    Type paramType = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(filter.filter_type)][key].Item1;
+                    if(paramType == typeof(float))
+                        instance.SetParameter(key, (float) filter.parameters[key]);
+                    if(paramType == typeof(Color))
+                        instance.SetParameter(key, (Color) filter.parameters[key]);   
+                    if(paramType == typeof(Matrix3))
+                        instance.SetParameter(key, (Matrix3) filter.parameters[key]); 
+                    if(paramType == typeof(string))
+                        continue; //special render_source processing goes here?
+                    if(paramType == typeof(Object))
+                        continue; //special icon processing goes here?                                                                             
                 }
-                instance.SetParameter("color", c); */
-
             }
             filter.used = true;
             _filterShaders[filter] = instance;

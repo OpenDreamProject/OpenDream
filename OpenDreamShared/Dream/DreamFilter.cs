@@ -2,7 +2,7 @@ using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
-using OpenDreamRuntime.Resources;
+using Robust.Shared.Maths;
 
 namespace OpenDreamShared.Dream {
     /// DreamFilter is basically just an object describing type and vars so the client doesn't have to make a shaderinstance for shaders with the same params
@@ -18,50 +18,50 @@ namespace OpenDreamShared.Dream {
         static DreamFilter() {
             createVarEntry("alpha", "x", typeof(float), false, 0);
             createVarEntry("alpha", "y", typeof(float), false, 0);
-            createVarEntry("alpha", "icon", typeof(DreamResource), false, 0);
-            createVarEntry("alpha", "render_source", typeof(DreamResource), false, 0);
+            createVarEntry("alpha", "icon", typeof(Object), false, null); //icon type?
+            createVarEntry("alpha", "render_source", typeof(string), false, null); //string that will require special processing
             createVarEntry("alpha", "flags", typeof(float), false, 0);
 
             createVarEntry("angular_blur", "x", typeof(float), false, 0);
             createVarEntry("angular_blur", "y", typeof(float), false, 0);
             createVarEntry("angular_blur", "size", typeof(float), false, 1);
 
-            createVarEntry("bloom", "threshold", typeof(string), false, "#000000");
+            createVarEntry("bloom", "threshold", typeof(Color), false, Color.Black);
             createVarEntry("bloom", "size", typeof(float), false, 1);
             createVarEntry("bloom", "offset", typeof(float), false, 1);
             createVarEntry("bloom", "alpha", typeof(float), false, 255);
 
             createVarEntry("blur", "size", typeof(float), false, 1);
 
-            createVarEntry("color", "color", typeof(DreamObject), true, null);
-            createVarEntry("color", "space", typeof(float), false, 0);
+            createVarEntry("color", "color", typeof(Object), true, null); //color matrix TODO
+            createVarEntry("color", "space", typeof(float), false, 0); //default is FILTER_COLOR_RGB = 0
 
             createVarEntry("displace", "x", typeof(float), false, 0);
             createVarEntry("displace", "y", typeof(float), false, 0);
             createVarEntry("displace", "size", typeof(float), false, 1);
-            createVarEntry("displace", "icon", typeof(DreamResource), true, null);
-            createVarEntry("displace", "render_source", typeof(DreamResource), true, null);
+            createVarEntry("displace", "icon", typeof(Object), false, null); //icon type?
+            createVarEntry("displace", "render_source", typeof(string), false, null); //string that will require special processing
 
             createVarEntry("drop_shadow", "x", typeof(float), false, 1);
             createVarEntry("drop_shadow", "y", typeof(float), false, -1);
             createVarEntry("drop_shadow", "size", typeof(float), false, 1);
             createVarEntry("drop_shadow", "offset", typeof(float), false, 0);
-            createVarEntry("drop_shadow", "color", typeof(string), false, "#00000088");
+            createVarEntry("drop_shadow", "color", typeof(Color), false, Color.Black.WithAlpha(128));
 
             createVarEntry("layer", "x", typeof(float), false, 0);
             createVarEntry("layer", "y", typeof(float), false, 0);
-            createVarEntry("layer", "icon", typeof(DreamResource), true, null);
-            createVarEntry("layer", "render_source", typeof(DreamResource), true, null);
-            createVarEntry("layer", "flags", typeof(float), false, 0);
-            createVarEntry("layer", "color", typeof(string), false, "#00000088"); //shit needs to be string or matrix
-            createVarEntry("layer", "transform", typeof(DreamObject), false, 0);
+            createVarEntry("layer", "icon", typeof(Object), false, null); //icon type?
+            createVarEntry("layer", "render_source", typeof(string), false, null); //string that will require special processing
+            createVarEntry("layer", "flags", typeof(float), false, 0); //default is FILTER_OVERLAY = 0
+            createVarEntry("layer", "color", typeof(Color), false, Color.Black.WithAlpha(128)); //shit needs to be string or color matrix, because of course one has to be special
+            createVarEntry("layer", "transform", typeof(Matrix3), false, Matrix3.Identity);
             createVarEntry("layer", "blend_mode", typeof(float), false, 0);
 
             createVarEntry("motion_blur", "x", typeof(float), false, 0);
             createVarEntry("motion_blur", "y", typeof(float), false, 0);
 
             createVarEntry("outline", "size", typeof(float), false, 1);
-            createVarEntry("outline", "color", typeof(string), false, "#000000");
+            createVarEntry("outline", "color", typeof(Color), false, Color.Black);
             createVarEntry("outline", "flags", typeof(float), false, 0);
 
             createVarEntry("radial_blur", "x", typeof(float), false, 0);
@@ -70,24 +70,24 @@ namespace OpenDreamShared.Dream {
 
             createVarEntry("rays", "x", typeof(float), false, 0);
             createVarEntry("rays", "y", typeof(float), false, 0);
-            createVarEntry("rays", "size", typeof(float), false, 1);
-            createVarEntry("rays", "color", typeof(string), false, "#FFFFFF");
+            createVarEntry("rays", "size", typeof(float), false, 16); //defaults to half tile width
+            createVarEntry("rays", "color", typeof(Color), false, Color.White);
             createVarEntry("rays", "offset", typeof(float), false, 0);
-            createVarEntry("rays", "density", typeof(float), false, 0);
-            createVarEntry("rays", "threshold", typeof(float), false, 0);
+            createVarEntry("rays", "density", typeof(float), false, 10);
+            createVarEntry("rays", "threshold", typeof(float), false, 0.5);
             createVarEntry("rays", "factor", typeof(float), false, 0);
-            createVarEntry("rays", "flags", typeof(float), false, 0);
+            createVarEntry("rays", "flags", typeof(float), false, 1); //defaults to FILTER_OVERLAY | FILTER_UNDERLAY
 
-            createVarEntry("ripple", "x", typeof(float), false, 1);
-            createVarEntry("ripple", "y", typeof(float), false, -1);
+            createVarEntry("ripple", "x", typeof(float), false, 0);
+            createVarEntry("ripple", "y", typeof(float), false, 0);
             createVarEntry("ripple", "size", typeof(float), false, 1);
-            createVarEntry("ripple", "repeat", typeof(float), false, 0);
+            createVarEntry("ripple", "repeat", typeof(float), false, 2);
             createVarEntry("ripple", "radius", typeof(float), false, 0);
-            createVarEntry("ripple", "falloff", typeof(float), false, 0);
-            createVarEntry("ripple", "flags", typeof(float), false, 1);
+            createVarEntry("ripple", "falloff", typeof(float), false, 1);
+            createVarEntry("ripple", "flags", typeof(float), false, 0);
 
-            createVarEntry("wave", "x", typeof(float), false, 1);
-            createVarEntry("wave", "y", typeof(float), false, -1);
+            createVarEntry("wave", "x", typeof(float), false, 0);
+            createVarEntry("wave", "y", typeof(float), false, 0);
             createVarEntry("wave", "size", typeof(float), false, 1);
             createVarEntry("wave", "offset", typeof(float), false, 0);
             createVarEntry("wave", "flags", typeof(float), false, 0);

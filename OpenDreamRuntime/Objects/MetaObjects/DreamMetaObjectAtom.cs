@@ -356,17 +356,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                                     throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
                                 else
                                     varValue = (float) varInfo.Item3;
-                            newFilter.parameters[varName] = new DreamValue(varValue);
-                        }
-                        if(varInfo.Item1 == typeof(DreamResource))
-                        {
-                            DreamResource varValue;
-                            if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsDreamResource(out varValue))
-                                if(!varInfo.Item2)
-                                    throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
-                                else
-                                    varValue = (DreamResource) varInfo.Item3;
-                            newFilter.parameters[varName] = new DreamValue(varValue);
+                            newFilter.parameters[varName] = varValue;
                         }
                         if(varInfo.Item1 == typeof(string))
                         {
@@ -376,7 +366,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                                     throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
                                 else
                                     varValue = (string) varInfo.Item3;
-                            newFilter.parameters[varName] = new DreamValue(varValue);
+                            newFilter.parameters[varName] = varValue;
+                        }
+                        if(varInfo.Item1 == typeof(Color))
+                        {
+                            string colorString;
+                            Color varValue;
+                            if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsString(out colorString))
+                                if(!varInfo.Item2)
+                                    throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
+                                else
+                                    varValue = (Color) varInfo.Item3;
+                            else if(!ColorHelpers.TryParseColor(colorString, out varValue))
+                                throw new Exception($"Invalid color: {colorString}");
+                            newFilter.parameters[varName] = varValue;
                         }
                     }
                     appearance.Filters.Add(newFilter);

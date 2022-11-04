@@ -453,16 +453,6 @@ namespace OpenDreamRuntime.Procs.Native {
                                 varValue = (float) varInfo.Item3;
                         result.SetVariableValue(varName, new DreamValue(varValue));
                     }
-                    if(varInfo.Item1 == typeof(DreamResource))
-                    {
-                        DreamResource varValue;
-                        if(!arguments.GetArgument(1, varName).TryGetValueAsDreamResource(out varValue))
-                            if(!varInfo.Item2)
-                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
-                            else
-                                varValue = (DreamResource) varInfo.Item3;
-                        result.SetVariableValue(varName, new DreamValue(varValue));
-                    }
                     if(varInfo.Item1 == typeof(string))
                     {
                         string varValue;
@@ -473,6 +463,39 @@ namespace OpenDreamRuntime.Procs.Native {
                                 varValue = (string) varInfo.Item3;
                         result.SetVariableValue(varName, new DreamValue(varValue));
                     }
+                    if(varInfo.Item1 == typeof(Color)) //leave Colors as string for the DreamObject, They get converted to Color by the meta object
+                    {
+                        string varValue;
+                        if(!arguments.GetArgument(1, varName).TryGetValueAsString(out varValue))
+                            if(!varInfo.Item2)
+                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
+                            else
+                                varValue = ((Color) varInfo.Item3).ToHex();
+                        if(!ColorHelpers.TryParseColor(varValue, out var _)) //do sanity check them though
+                            throw new Exception($"Invalid color: {varValue}");
+                        result.SetVariableValue(varName, new DreamValue(varValue));
+                    }
+                    if(varInfo.Item1 == typeof(Matrix3)) //Matrix3 except not really because DM matrix is actually 3x2
+                    {
+                        DreamObject varValue;
+                        if(!arguments.GetArgument(1, varName).TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out varValue))
+                            if(!varInfo.Item2)
+                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
+                            else
+                            {
+                                varValue = DreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
+                                Matrix3 defaultVal = (Matrix3) varInfo.Item3;
+                                varValue.SetVariable("a", new DreamValue(defaultVal.R0C0));
+                                varValue.SetVariable("d", new DreamValue(defaultVal.R1C0));
+                                varValue.SetVariable("b", new DreamValue(defaultVal.R2C0));
+                                varValue.SetVariable("e", new DreamValue(defaultVal.R0C1));
+                                varValue.SetVariable("c", new DreamValue(defaultVal.R1C1));
+                                varValue.SetVariable("f", new DreamValue(defaultVal.R2C1));
+
+                            }
+                        result.SetVariableValue(varName, new DreamValue(varValue));
+                    }
+                    //TODO icons
                 }
                 return new DreamValue(result);
             }

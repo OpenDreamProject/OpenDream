@@ -24,7 +24,7 @@ namespace OpenDreamShared.Compiler {
             }
         }
         protected void Fatal(string error) {
-            foreach (var err in Errors) {
+            foreach (var err in Emissions) {
                 Logger.Fatal(err.ToString());
 
             }

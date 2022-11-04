@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Compiler {
     [Virtual]
     public partial class Parser<SourceType> {
-        // Note: These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings.
-        public readonly List<CompilerError> Errors = new(4);
-        public readonly List<CompilerWarning> Warnings = new(4);
+        /// <summary> Includes errors and warnings acccumulated by this parser. </summary>
+        /// <remarks> These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings. </remarks>
+        public List<CompilerEmission> Emissions = new(8);
 
         protected Lexer<SourceType> _lexer;
         private Token _currentToken;
@@ -87,15 +87,16 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected void Error(string message, bool throwException = true) {
-            CompilerError error = new CompilerError(_currentToken, message);
+            CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
 
-            Errors.Add(error);
-            if (throwException) throw new CompileErrorException(error);
+            Emissions.Add(error);
+            if (throwException)
+                throw new CompileErrorException(error);
         }
 
         protected void Warning(string message, Token token = null) {
             token ??= _currentToken;
-            Warnings.Add(new CompilerWarning(token, message));
+            Emissions.Add(new CompilerEmission(ErrorLevel.Warning, token?.Location, message));
         }
     }
 }

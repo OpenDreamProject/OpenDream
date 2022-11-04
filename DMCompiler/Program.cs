@@ -86,10 +86,14 @@ namespace DMCompiler {
                         }
                         (settings.MacroDefines ??= new())[parts[0]] = parts.Length > 1 ? parts[1] : "";
                         break;
+                    case "wall":
+                    case "notices-enabled":
+                        settings.NoticesEnabled = true;
+                        break;
                     case "pragma-config": {
                             if(arg.Value is null || !HasValidDMExtension(arg.Value)) {
                                 if(skipBad) {
-                                    DMCompiler.Warning(new CompilerWarning(Location.Internal, $"Compiler arg 'pragma-config' requires filename of valid DM file, skipping"));
+                                    DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
                                     continue;
                                 }
                                 Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
@@ -107,7 +111,7 @@ namespace DMCompiler {
                             break;
                         }
                         if(skipBad) {
-                            DMCompiler.Warning(new CompilerWarning(Location.Internal, $"Invalid compiler arg '{arg.Value}', skipping"));
+                            DMCompiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
                         } else {
                             Console.WriteLine($"Invalid arg '{arg}'");
                             return false;
@@ -117,7 +121,7 @@ namespace DMCompiler {
                     }
                     default: {
                         if (skipBad) {
-                            DMCompiler.Warning(new CompilerWarning(Location.Internal, $"Unknown compiler arg '{arg.Name}', skipping"));
+                            DMCompiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");
                             break;
                         } else {
                             Console.WriteLine($"Unknown arg '{arg}'");

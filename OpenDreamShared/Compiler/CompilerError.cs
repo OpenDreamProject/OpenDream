@@ -10,11 +10,36 @@ namespace OpenDreamShared.Compiler {
     {
         // 0 - 999 are reserved for giving codes to fatal errors which cannot reasonably be demoted to a warning/notice/disable.
         Unknown = 0,
-        // 1000 - 1999 are reserved for compiler configuration of actual behaviour.
+        BadToken = 1,
+        BadDirective = 10,
+        BadLabel = 19,
+        InvalidReference = 50,
+        BadArgument = 100,
+        InvalidArgumentKey = 101,
+        ArglistOnlyArgument = 102,
+        HardReservedKeyword = 200, // For keywords that CANNOT be un-reserved.
+        ItemDoesntExist = 404,
+        IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
+        WriteToConstant = 501,
+        InvalidInclusion = 900,
+        // 1000 - 1999 are reserved for preprocessor configuration.
+        FileAlreadyIncluded = 1000,
+        MissingIncludedFile = 1001,
+        MisplacedDirective = 1100,
+        UndefineMissingDirective = 1101,
+        DefinedMissingParen = 1150,
+        ErrorDirective = 1200,
+        WarningDirective = 1201,
+        MiscapitalizedDirective = 1300,
 
-        // 2000 - 2999 are reserved for stylistic configuration.
+        // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
+        SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
+        DuplicateVariable = 2100,
+        TooManyArguments = 2200,
 
-        // 3000 - 3999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
+        // 3000 - 3999 are reserved for stylistic configuration.
+
+        // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }
 
     public enum ErrorLevel
@@ -26,65 +51,66 @@ namespace OpenDreamShared.Compiler {
         Error // An error is always emitted.
     }
 
-    public struct CompilerError {
+    /// <summary>
+    /// Stores the location and message of a notice/warning/error.
+    /// </summary>
+    public struct CompilerEmission {
+        public ErrorLevel Level;
+        public WarningCode Code;
         public Location Location;
         public string Message;
 
-        public CompilerError(Token token, string message) {
-            Location = token?.Location ?? Compiler.Location.Unknown;
+        public CompilerEmission(ErrorLevel level, Location? location, string message) {
+            Level = level;
+            Code = WarningCode.Unknown;
+            Location = location ?? Location.Unknown;
             Message = message;
         }
 
-        public CompilerError(Location location, string message) {
-            Location = location;
+        public CompilerEmission(ErrorLevel level, WarningCode code, Location? location, string message) {
+            Level = level;
+            Code = code;
+            Location = location ?? Location.Unknown;
             Message = message;
         }
 
-        public override string ToString() {
-            return $"Error at {Location.ToString()}: {Message}";
-        }
-    }
-
-    public struct CompilerWarning {
-
-        public Location Location;
-        public string Message;
-
-        public CompilerWarning(Token token, string message) {
-            Location = token?.Location ?? Compiler.Location.Unknown;
-            Message = message;
-        }
-
-        public CompilerWarning(Location location, string message) {
-            Location = location;
-            Message = message;
-        }
-
-        public override string ToString() {
-            return $"Warning at {Location.ToString()}: {Message}";
-        }
+        public override string ToString() => Level switch {
+            ErrorLevel.Disabled => "",
+            ErrorLevel.Notice => $"Notice OD{(int)Code:d4} at {Location.ToString()}: {Message}",
+            ErrorLevel.Warning => $"Warning OD{(int)Code:d4} at {Location.ToString()}: {Message}",
+            ErrorLevel.Error => $"Error OD{(int)Code:d4} at {Location.ToString()}: {Message}",
+            _ => "",
+        };
     }
 
     [Virtual]
-    [Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an EmitWarning() otherwise.")]
+    [Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an DMCompiler.Emit() otherwise.")]
     public class CompileErrorException : Exception {
-        public CompilerError Error;
-        public CompileErrorException(CompilerError error) : base(error.Message)
+        public CompilerEmission Error;
+        public CompileErrorException(CompilerEmission error) : base(error.Message)
         {
             Error = error;
         }
         public CompileErrorException(Location location, string message) : base(message) {
-            Error = new CompilerError(location, message);
+            Error = new CompilerEmission(ErrorLevel.Error, location, message);
+        }
+
+        public CompileErrorException(string message) {
+            Error = new CompilerEmission(ErrorLevel.Error, Location.Unknown, message);
         }
     }
 
 
     /// <summary>
-    /// Represents an internal compiler error that should cause parsing for a particular block to cease.
+    /// Represents an internal compiler error that should cause parsing for a particular block to cease. <br/>
+    /// This should be ideally used for exceptions that are the fault of the compiler itself, <br/>
+    /// like an abnormal state being reached or something.
     /// </summary>
     public sealed class CompileAbortException : CompileErrorException
     {
-        public CompileAbortException(CompilerError error) : base(error) {}
+        public CompileAbortException(CompilerEmission error) : base(error) {}
         public CompileAbortException(Location location, string message) : base(location, message) {}
+
+        public CompileAbortException(string message) : base(message) {}
     }
 }

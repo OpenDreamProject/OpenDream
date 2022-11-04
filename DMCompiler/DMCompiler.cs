@@ -40,11 +40,11 @@ namespace DMCompiler {
             _compileStartTime = DateTime.Now;
 
             if (settings.SuppressUnimplementedWarnings) {
-                Warning(new CompilerWarning(Location.Internal, "Unimplemented proc & var warnings are currently suppressed"));
+                ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
             }
             if(OpenDreamShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
             {
-                Error(new CompilerError(Location.Internal, "Some opcodes have the same byte value! Output assembly may be corrupted."));
+                ForcedError("Some opcodes have the same byte value! Output assembly may be corrupted.");
             }
 
             DMPreprocessor preprocessor = Preprocess(settings.Files, settings.MacroDefines);
@@ -107,8 +107,6 @@ namespace DMCompiler {
                 string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
                 // Push DMStandard to the top of the stack, prioritizing it.
                 if (!Settings.NoStandard) {
-
-
                     preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
                 }
                 // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
@@ -122,7 +120,7 @@ namespace DMCompiler {
                     pragmaName = "DefaultPragmaConfig.dm";
                 }
                 if(!File.Exists(pragmaFile)) {
-                    Error(new CompilerError(Location.Internal, $"Configuration file '{pragmaName}' not found."));
+                    ForcedError($"Configuration file '{pragmaName}' not found.");
                     return null;
                 }
                 preproc.IncludeFile(pragmaDirectory,pragmaName);
@@ -155,19 +153,14 @@ namespace DMCompiler {
             VerbosePrint("Parsing");
             DMASTFile astFile = dmParser.File();
 
-            if (dmParser.Warnings.Count > 0) {
-                foreach (CompilerWarning warning in dmParser.Warnings) {
-                    Warning(warning);
-                }
+            foreach (CompilerEmission warning in dmParser.Emissions) {
+                Emit(warning);
             }
 
-            if (dmParser.Errors.Count > 0) {
-                foreach (CompilerError error in dmParser.Errors) {
-                    Error(error);
-                }
+            if (astFile is null) {
+                VerbosePrint("Parsing failed, exiting compilation");
+                return false;
             }
-
-            if (astFile == null) return false;
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
             VerbosePrint("Constant folding");
@@ -178,22 +171,43 @@ namespace DMCompiler {
             return ErrorCount == 0;
         }
 
-        public static void Error(CompilerError error) {
-            Console.WriteLine(error);
+        public static void Emit(CompilerEmission emission) {
+            Console.WriteLine(emission);
+            return;
+        }
+
+        public static void Emit(WarningCode code, Location loc, string message) {
+            ErrorLevel level = Config.errorConfig[code];
+            switch (level) {
+                case ErrorLevel.Disabled:
+                    return;
+                case ErrorLevel.Notice:
+                    if (!Settings.NoticesEnabled)
+                        return;
+                    break;
+                case ErrorLevel.Warning:
+                    ++WarningCount;
+                    return;
+                case ErrorLevel.Error:
+                    ++ErrorCount;
+                    return;
+            }
+            Emit(new CompilerEmission(level, code, loc, message));
+        }
+
+        /// <summary>
+        /// To be used when the compiler MUST ALWAYS give an error. <br/>
+        /// Completely ignores the warning configuration. Use wisely!
+        /// </summary>
+
+        public static void ForcedError(string message) {
+            ForcedError(Location.Internal, message);
+        }
+
+        /// <inheritdoc cref="ForcedError(string)"/>
+        public static void ForcedError(Location loc, string message) {
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message));
             ErrorCount++;
-        }
-
-        public static void Error(Location loc, string message) {
-            Error(new CompilerError(loc, message));
-        }
-
-        public static void Warning(CompilerWarning warning) {
-            Console.WriteLine(warning);
-            WarningCount++;
-        }
-
-        public static void Warning(Location loc, string message) {
-            Warning(new CompilerWarning(loc, message));
         }
 
         /// <summary>
@@ -201,14 +215,14 @@ namespace DMCompiler {
         /// Completely ignores the warning configuration. Use wisely!
         /// </summary>
         public static void ForcedWarning(string message) {
-            Console.WriteLine(new CompilerWarning(Location.Internal, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message));
             WarningCount++;
         }
 
         /// <inheritdoc cref="ForcedWarning(string)"/>
         public static void ForcedWarning(Location loc, string message)
         {
-            Console.WriteLine(new CompilerWarning(loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message));
             WarningCount++;
         }
 
@@ -216,7 +230,7 @@ namespace DMCompiler {
             if (Settings.SuppressUnimplementedWarnings)
                 return;
 
-            Warning(new CompilerWarning(loc, message));
+            ForcedWarning(loc, message);
         }
 
         public static void VerbosePrint(string message) {
@@ -239,18 +253,12 @@ namespace DMCompiler {
                 DMMParser parser = new DMMParser(lexer);
                 DreamMapJson map = parser.ParseMap();
 
-                if (parser.Errors.Count > 0) {
-                    foreach (CompilerError error in parser.Errors) {
-                        Error(error);
+                if (parser.Emissions.Count > 0) {
+                    foreach (CompilerEmission error in parser.Emissions) {
+                        Emit(error);
                     }
 
                     continue;
-                }
-
-                if (parser.Warnings.Count > 0) {
-                    foreach (CompilerWarning warning in parser.Warnings) {
-                        Warning(warning);
-                    }
                 }
 
                 maps.Add(map);
@@ -280,7 +288,7 @@ namespace DMCompiler {
                 for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                     DMVariable global = DMObjectTree.Globals[i];
                     if (!global.TryAsJsonRepresentation(out var globalJson))
-                        DMCompiler.Error(new CompilerError(global.Value.Location, $"Failed to serialize global {global.Name}"));
+                        ForcedError(global.Value.Location, $"Failed to serialize global {global.Name}");
 
                     if (globalJson != null) {
                         globalListJson.Globals.Add(i, globalJson);
@@ -307,9 +315,16 @@ namespace DMCompiler {
             return string.Empty;
         }
 
+        /// <summary>
+        /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
+        /// </summary>
         static void CheckAllPragmasWereSet() {
             foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
-                if(!Config.errorConfig.ContainsKey(code)) {
+                if ((int)code < 1000) {
+                    Config.errorConfig[code] = ErrorLevel.Error; // Overwriting assignment
+                }
+                else if (!Config.errorConfig.ContainsKey(code)) {
+
                     ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                     Config.errorConfig.Add(code, ErrorLevel.Disabled);
                 }
@@ -320,6 +335,7 @@ namespace DMCompiler {
     public struct DMCompilerSettings {
         public List<string> Files;
         public bool SuppressUnimplementedWarnings;
+        public bool NoticesEnabled;
         public bool DumpPreprocessor;
         public bool NoStandard;
         public bool Verbose;

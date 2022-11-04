@@ -138,11 +138,10 @@ namespace DMCompiler.Compiler.DM {
                                     }
                                     catch (CompileErrorException e)
                                     {
-                                        Errors.Add(e.Error);
+                                        Emissions.Add(e.Error);
                                     }
 
-                                    if (expressionParser.Errors.Count > 0) Errors.AddRange(expressionParser.Errors);
-                                    if (expressionParser.Warnings.Count > 0) Warnings.AddRange(expressionParser.Warnings);
+                                    if (expressionParser.Emissions.Count > 0) Emissions.AddRange(expressionParser.Emissions);
                                     interpolationValues.Add(expression);
                                 }
                                 else

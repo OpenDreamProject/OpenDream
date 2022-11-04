@@ -10,3 +10,4 @@
 	ASSERT(gradient(gradlist, "loop", 1.1) == "#e51900")
 	ASSERT(gradient(gradlist, "loop", 2) == "#ff0000")
 	ASSERT(gradient(gradlist, "loop", 1) == "#ff0000")
+	ASSERT(gradient("#ff0000", "#00ff00", space=COLORSPACE_HSV, 0.5) == "#ffff00")

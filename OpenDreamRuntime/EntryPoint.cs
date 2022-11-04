@@ -62,8 +62,7 @@ namespace OpenDreamRuntime {
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
             if (level == ModUpdateLevel.PostEngine) {
                 _commandSystem.RunRepeatingCommands();
-                if (!_debugManager.Stopped)
-                    _dreamManager.Update();
+                _dreamManager.Update();
                 _debugManager.Update();
             }
         }

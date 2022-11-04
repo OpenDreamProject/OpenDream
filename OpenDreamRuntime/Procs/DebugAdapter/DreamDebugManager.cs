@@ -18,25 +18,34 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
 
     // State
-    public bool Stopped { get; private set; }
+    private bool Stopped = false;
     private bool _terminated = false;
 
     // Breakpoint storage
-    private struct ActiveBreakpoint {
-        public int Id;
-        public int Line;
+    private struct FileBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints;
+        public DMProc Proc;
+        public int BytecodeOffset;
     }
 
-    private struct ActiveFunctionBreakpoint {
+    private struct FunctionBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints;
+    }
+
+    private struct ActiveBreakpoint {
         public int Id;
         public string? Condition;
         public string? HitCondition;
+        public string? LogMessage;
     }
 
     private int _breakpointIdCounter = 1;
-    private readonly Dictionary<string, List<ActiveBreakpoint>> _breakpoints = new();
+    private readonly Dictionary<string, List<FileBreakpointSlot>> _breakpoints = new();
 
-    private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
+    private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
+    //private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
+
+    private ILookup<(string Type, string Proc), ActiveBreakpoint>? functionBreakpoints;
 
     // Temporary data for a given Stop
     private Exception? _exception;
@@ -83,18 +92,17 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleLineChange(DMProcState state, int line) {
-        if (!_breakpoints.TryGetValue(state.CurrentSource, out var breakpoints))
+        if (state.CurrentSource is null || _possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(state.CurrentSource, out var fileSlots))
             return;
 
         var hit = new List<int>();
-        foreach (ActiveBreakpoint breakpoint in breakpoints) {
-            if (breakpoint.Line == line) {
-                Output($"Breakpoint hit at {state.CurrentSource}:{line}");
-                hit.Add(breakpoint.Id);
-                return;
+        foreach (var bp in fileSlots[line].Breakpoints ?? Enumerable.Empty<ActiveBreakpoint>()) {
+            if (TestBreakpoint(bp)) {
+                hit.Add(bp.Id);
             }
         }
         if (hit.Any()) {
+            Output($"Breakpoint hit at {state.CurrentSource}:{line}");
             Stop(new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
                 ThreadId = state.Thread.Id,
@@ -108,9 +116,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var hit = new List<int>();
         if (functionBreakpoints != null) {
             foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
-                if (bp.Condition is null && bp.HitCondition is null) {
+                if (TestBreakpoint(bp)) {
                     hit.Add(bp.Id);
-                    break;
                 }
             }
         }
@@ -135,6 +142,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         });
     }
 
+    private bool TestBreakpoint(ActiveBreakpoint bp) => bp.Condition is null && bp.HitCondition is null;
+
     // Utilities
     private void Output(string message, string category = OutputEvent.CategoryConsole) {
         _adapter?.SendAll(new OutputEvent(category, $"{message}\n"));
@@ -143,7 +152,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private bool CanStop() => _adapter != null && _adapter.AnyClientsConnected() && !_terminated;
 
     private void Stop(StoppedEvent stoppedEvent) {
-        if (!CanStop())
+        if (_adapter == null || !CanStop())
             return;
 
         _adapter.SendAll(stoppedEvent);
@@ -238,7 +247,18 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
+
+        _possibleBreakpoints = IteratePossibleBreakpoints()
+            .GroupBy(pair => pair.Source, pair => pair.Line)
+            .ToDictionary(group => group.Key, group => group.ToDictionary(line => line, _ => new FileBreakpointSlot()));
+
         reqLaunch.Respond(client);
+    }
+
+    private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
+        foreach (var proc in _dreamManager.ObjectTree.Procs) {
+        }
+        yield break;
     }
 
     private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
@@ -263,27 +283,41 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        sourcePath = Path.GetRelativePath(RootPath, sourcePath);
-        if (!_breakpoints.TryGetValue(sourcePath, out var breakpoints)) {
-            breakpoints = new List<ActiveBreakpoint>();
-            _breakpoints.Add(sourcePath, breakpoints);
-        }
-
-        breakpoints.Clear();
-
         var setBreakpoints = reqSetBreakpoints.Arguments.Breakpoints;
         var responseBreakpoints = new Protocol.Breakpoint[setBreakpoints?.Length ?? 0];
+
+        sourcePath = Path.GetRelativePath(RootPath, sourcePath);
+        if (_possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(sourcePath, out var fileSlots)) {
+            // File isn't known - every breakpoint is invalid.
+            for (int i = 0; i < responseBreakpoints.Length; ++i) {
+                responseBreakpoints[i] = new Breakpoint($"Unknown file \"{sourcePath}\"");
+            }
+            reqSetBreakpoints.Respond(client, responseBreakpoints);
+            return;
+        }
+
+        foreach (var slot in fileSlots.Values) {
+            slot.Breakpoints.Clear();
+        }
+
+        // We've unset old breakpoints, so set new ones if needed.
         if (setBreakpoints != null) {
             for (int i = 0; i < setBreakpoints.Length; i++) {
-                int id = ++_breakpointIdCounter;
-                SourceBreakpoint breakpoint = setBreakpoints[i];
+                SourceBreakpoint setBreakpoint = setBreakpoints[i];
+                if (fileSlots.TryGetValue(setBreakpoint.Line, out var slot)) {
+                    int id = ++_breakpointIdCounter;
 
-                breakpoints.Add(new ActiveBreakpoint {
-                    Id = id,
-                    Line = breakpoint.Line,
-                });
+                    slot.Breakpoints.Add(new ActiveBreakpoint {
+                        Id = id,
+                        Condition = setBreakpoint.Condition,
+                        HitCondition = setBreakpoint.HitCondition,
+                        LogMessage = setBreakpoint.LogMessage,
+                    });
 
-                responseBreakpoints[i] = new(id, source, breakpoint.Line, breakpoint.Column ?? 0);
+                    responseBreakpoints[i] = new(id, source, setBreakpoint.Line);
+                } else {
+                    responseBreakpoints[i] = new($"No breakpoint slot on line {setBreakpoint.Line}");
+                }
             }
         }
 
@@ -297,7 +331,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         if (input.Length == 0) {
             this.functionBreakpoints = null;
         } else {
-            var toSave = new List<(string Type, string Proc, ActiveFunctionBreakpoint Breakpoint)>();
+            var toSave = new List<(string Type, string Proc, ActiveBreakpoint Breakpoint)>();
 
             for (int i = 0; i < input.Length; ++i) {
                 var bp = input[i];
@@ -311,8 +345,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 }
 
                 int id = ++_breakpointIdCounter;
+                // TODO: refuse verification for breakpoints for procs that don't exist
                 output[i] = new(id, verified: true);
-                toSave.Add((type, proc, new ActiveFunctionBreakpoint {
+                toSave.Add((type, proc, new ActiveBreakpoint {
                     Id = id,
                     Condition = bp.Condition,
                     HitCondition = bp.HitCondition,
@@ -479,8 +514,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
 }
 
 interface IDreamDebugManager {
-    bool Stopped { get; }
-
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

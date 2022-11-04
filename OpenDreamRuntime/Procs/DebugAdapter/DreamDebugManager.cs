@@ -21,6 +21,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
     // State
     private bool Stopped = false;
     private bool _terminated = false;
+    private DreamThread? stoppedThread;
+
+    private enum StepMode {
+        None,
+        StepOver,  // aka "next"
+        StepIn,
+        StepOut,
+    }
+    private readonly Dictionary<int, StepMode> threadStepModes = new();
 
     // Breakpoint storage
     private struct FileBreakpointSlot {
@@ -95,10 +104,18 @@ sealed class DreamDebugManager : IDreamDebugManager {
     public void HandleLineChange(DMProcState state, int line) {
         if (_stopOnEntry) {
             _stopOnEntry = false;
-            Stop(new StoppedEvent {
+            stoppedThread = state.Thread;
+            Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonEntry,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
+            });
+            return;
+        }
+
+        if (threadStepModes.GetValueOrDefault(state.Thread.Id) == StepMode.StepIn) {
+            threadStepModes.Remove(state.Thread.Id);
+            stoppedThread = state.Thread;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonStep,
             });
             return;
         }
@@ -114,10 +131,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
         if (hit.Any()) {
             Output($"Breakpoint hit at {state.CurrentSource}:{line}");
-            Stop(new StoppedEvent {
+            Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
@@ -134,10 +149,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
         if (hit.Any()) {
             Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-            Stop(new StoppedEvent {
+            Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
@@ -146,10 +159,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
     public void HandleException(DreamThread thread, Exception exception) {
         _exception = exception;
         Output("Stopped on exception");
-        Stop(new StoppedEvent {
+        Stop(thread, new StoppedEvent {
             Reason = StoppedEvent.ReasonException,
-            ThreadId = thread.Id,
-            AllThreadsStopped = true,
         });
     }
 
@@ -162,10 +173,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private bool CanStop() => _adapter != null && _adapter.AnyClientsConnected() && !_terminated;
 
-    private void Stop(StoppedEvent stoppedEvent) {
+    private void Stop(DreamThread? thread, StoppedEvent stoppedEvent) {
         if (_adapter == null || !CanStop())
             return;
 
+        stoppedThread = thread;
+        stoppedEvent.ThreadId = thread?.Id;
+        stoppedEvent.AllThreadsStopped = true;
         _adapter.SendAll(stoppedEvent);
 
         Stopped = true;
@@ -176,6 +190,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
             Update();
             System.Threading.Thread.Sleep(50);
         }
+    }
+
+    private void Resume() {
+        Stopped = false;
+        stackFramesById.Clear();
+        variableReferences.Clear();
     }
 
     // DAP request handlers
@@ -224,6 +244,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestExceptionInfo requestExceptionInfo:
                 HandleRequestExceptionInfo(client, requestExceptionInfo);
+                break;
+            case RequestStepIn requestStepIn:
+                HandleRequestStepIn(client, requestStepIn);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -387,21 +410,26 @@ sealed class DreamDebugManager : IDreamDebugManager {
         reqThreads.Respond(client, threads);
     }
 
-    private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
-        Stopped = false;
-        stackFramesById.Clear();
-        variableReferences.Clear();
-        reqContinue.Respond(client, allThreadsContinued: true);
-    }
-
     private void HandleRequestPause(DebugAdapterClient client, RequestPause reqPause) {
         // "The debug adapter first sends the response and then a stopped event (with reason pause) after the thread has been paused successfully."
         reqPause.Respond(client);
-        Stop(new StoppedEvent {
+        Stop(null, new StoppedEvent {
             Reason = StoppedEvent.ReasonPause,
-            AllThreadsStopped = true,
             Description = "Paused by request",
         });
+    }
+
+    private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
+        Resume();
+        reqContinue.Respond(client, allThreadsContinued: true);
+    }
+
+    private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
+        if (stoppedThread != null) {
+            threadStepModes[stoppedThread.Id] = StepMode.StepIn;
+        }
+        Resume();
+        requestStepIn.Respond(client);
     }
 
     private void HandleRequestExceptionInfo(DebugAdapterClient client, RequestExceptionInfo requestExceptionInfo) {

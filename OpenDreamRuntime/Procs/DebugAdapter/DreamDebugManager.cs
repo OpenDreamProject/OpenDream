@@ -93,6 +93,16 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleLineChange(DMProcState state, int line) {
+        if (_stopOnEntry) {
+            _stopOnEntry = false;
+            Stop(new StoppedEvent {
+                Reason = StoppedEvent.ReasonEntry,
+                ThreadId = state.Thread.Id,
+                AllThreadsStopped = true,
+            });
+            return;
+        }
+
         if (state.CurrentSource is null || _possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(state.CurrentSource, out var fileSlots))
             return;
 
@@ -114,16 +124,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleProcStart(DMProcState state) {
-        if (_stopOnEntry) {
-            _stopOnEntry = false;
-            Stop(new StoppedEvent {
-                Reason = StoppedEvent.ReasonEntry,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
-            });
-            return;
-        }
-
         var hit = new List<int>();
         if (functionBreakpoints != null) {
             foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {

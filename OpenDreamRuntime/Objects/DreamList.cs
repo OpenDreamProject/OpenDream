@@ -205,7 +205,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override List<DreamValue> GetValues() {
-            return _dreamObject.GetVariableNames();
+            return _dreamObject.GetVariableNames().Select(name => new DreamValue(name)).ToList();
         }
 
         public override bool ContainsKey(DreamValue value) {

@@ -74,16 +74,11 @@ namespace OpenDreamRuntime.Objects {
                 .DistinctBy(kvp => kvp.Key);
         }
 
-        public List<DreamValue> GetVariableNames() {
-            if(Deleted){
+        public IEnumerable<string> GetVariableNames() {
+            if (Deleted) {
                 throw new Exception("Cannot get variable names of a deleted object");
             }
-            List<DreamValue> list = new(_variables.Count);
-            // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
-            foreach (String key in ObjectDefinition!.Variables.Keys) {
-                list.Add(new(key));
-            }
-            return list;
+            return ObjectDefinition!.Variables.Keys;
         }
 
         public bool TryGetVariable(string name, out DreamValue variableValue) {

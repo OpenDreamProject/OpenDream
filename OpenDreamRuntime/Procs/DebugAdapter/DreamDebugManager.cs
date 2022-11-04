@@ -563,8 +563,18 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandObject(RequestVariables req, DreamObject obj) {
-        foreach (var (name, value) in obj.GetAllVariables().OrderBy(kvp => kvp.Key)) {
-            yield return DescribeValue(name, value);
+        foreach (var name in obj.GetVariableNames().OrderBy(k => k)) {
+            Variable described;
+            try {
+                described = DescribeValue(name, obj.GetVariable(name));
+            } catch (Exception ex) {
+                Logger.ErrorS("debug", ex, $"Error in GetVariable({name})");
+                described = new Variable {
+                    Name = name,
+                    Value = $"<error: {ex.Message}>",
+                };
+            }
+            yield return described;
         }
     }
 

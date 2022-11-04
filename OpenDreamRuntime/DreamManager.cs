@@ -42,7 +42,7 @@ namespace OpenDreamRuntime {
         private bool _initialized = false;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
-        public void Initialize(string jsonPath) {
+        public void PreInitialize(string jsonPath) {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize(jsonPath);
 
@@ -53,6 +53,9 @@ namespace OpenDreamRuntime {
 
             //TODO: Move to LoadJson()
             _dreamMapManager.LoadMaps(_compiledJson.Maps);
+        }
+
+        public void StartWorld() {
             WorldInstance.SpawnProc("New");
             _initialized = true;
         }

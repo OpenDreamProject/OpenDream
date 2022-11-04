@@ -39,7 +39,8 @@ namespace Content.Tests
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             Compile(InitializeEnvironment);
-            _dreamMan.Initialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.StartWorld();
         }
 
         public string Compile(string sourceFile) {

@@ -21,7 +21,8 @@ namespace OpenDreamRuntime {
         public Random Random { get; set; }
         public Dictionary<string, List<DreamObject>> Tags { get; set; }
 
-        public void Initialize(string? testingJson);
+        public void PreInitialize(string? testingJson);
+        public void StartWorld();
         public void Shutdown();
         public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);

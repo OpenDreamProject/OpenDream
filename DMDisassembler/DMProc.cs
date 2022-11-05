@@ -29,11 +29,10 @@ namespace DMDisassembler {
             List<DecompiledOpcode> decompiled = new();
             HashSet<int> labeledPositions = new();
 
-            MemoryStream stream = new MemoryStream(Bytecode);
-            BinaryReader binaryReader = new BinaryReader(stream);
-            long position = 0;
-            DreamProcOpcode opcode;
-            while ((opcode = (DreamProcOpcode) stream.ReadByte()) != (DreamProcOpcode) (-1)) {
+            var decoder = new ProcDecoder(Program.CompiledJson.Strings, Bytecode);
+            while (decoder.Remaining > 0) {
+                long position = decoder.Offset;
+                var opcode = decoder.ReadOpcode();
                 StringBuilder text = new StringBuilder();
                 text.Append(opcode);
                 text.Append(" ");
@@ -41,16 +40,15 @@ namespace DMDisassembler {
                 switch (opcode) {
                     case DreamProcOpcode.FormatString: {
                         text.Append('"');
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append(decoder.ReadString());
                         text.Append('"');
-                        binaryReader
-                            .ReadInt32(); // This is some metadata FormatString has that we can't really render
+                        decoder.ReadInt(); // This is some metadata FormatString has that we can't really render
 
                         break;
                     }
                     case DreamProcOpcode.PushString: {
                         text.Append('"');
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append(decoder.ReadString());
                         text.Append('"');
 
                         break;
@@ -58,18 +56,18 @@ namespace DMDisassembler {
 
                     case DreamProcOpcode.PushResource: {
                         text.Append('\'');
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append(decoder.ReadString());
                         text.Append('\'');
 
                         break;
                     }
 
                     case DreamProcOpcode.Prompt:
-                        text.Append((DMValueType) binaryReader.ReadInt32());
+                        text.Append(decoder.ReadValueType());
                         break;
 
                     case DreamProcOpcode.PushFloat:
-                        text.Append(binaryReader.ReadSingle());
+                        text.Append(decoder.ReadFloat());
                         break;
 
                     case DreamProcOpcode.Call:
@@ -86,24 +84,24 @@ namespace DMDisassembler {
                     case DreamProcOpcode.Enumerate:
                     case DreamProcOpcode.OutputReference:
                     case DreamProcOpcode.PushReferenceValue:
-                        text.Append(ReadReference(binaryReader).ToString());
+                        text.Append(decoder.ReadReference());
                         break;
 
                     case DreamProcOpcode.Input:
-                        text.Append(ReadReference(binaryReader).ToString());
-                        text.Append(ReadReference(binaryReader).ToString());
+                        text.Append(decoder.ReadReference());
+                        text.Append(decoder.ReadReference());
                         break;
 
                     case DreamProcOpcode.CreateList:
                     case DreamProcOpcode.CreateAssociativeList:
                     case DreamProcOpcode.PickWeighted:
                     case DreamProcOpcode.PickUnweighted:
-                        text.Append(binaryReader.ReadInt32());
+                        text.Append(decoder.ReadInt());
                         break;
 
                     case DreamProcOpcode.JumpIfNullDereference: {
-                        DMReference reference = ReadReference(binaryReader);
-                        int jumpPosition = binaryReader.ReadInt32();
+                        DMReference reference = decoder.ReadReference();
+                        int jumpPosition = decoder.ReadInt();
 
                         labeledPositions.Add(jumpPosition);
                         text.Append(reference.ToString());
@@ -115,7 +113,7 @@ namespace DMDisassembler {
                     case DreamProcOpcode.Initial:
                     case DreamProcOpcode.IsSaved:
                     case DreamProcOpcode.PushPath:
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
+                        text.Append(decoder.ReadString());
                         break;
 
                     case DreamProcOpcode.Spawn:
@@ -126,7 +124,7 @@ namespace DMDisassembler {
                     case DreamProcOpcode.Jump:
                     case DreamProcOpcode.JumpIfFalse:
                     case DreamProcOpcode.JumpIfTrue: {
-                        int jumpPosition = binaryReader.ReadInt32();
+                        int jumpPosition = decoder.ReadInt();
 
                         labeledPositions.Add(jumpPosition);
                         text.Append(jumpPosition);
@@ -134,21 +132,20 @@ namespace DMDisassembler {
                     }
 
                     case DreamProcOpcode.PushType:
-                        text.Append(Program.CompiledJson.Types[binaryReader.ReadInt32()].Path);
+                        text.Append(Program.CompiledJson.Types[decoder.ReadInt()].Path);
                         break;
 
                     case DreamProcOpcode.PushArguments: {
-                        int argCount = binaryReader.ReadInt32();
-                        int namedCount = binaryReader.ReadInt32();
+                        int argCount = decoder.ReadInt();
+                        int namedCount = decoder.ReadInt();
 
                         text.Append(argCount);
                         for (int i = 0; i < argCount; i++) {
                             text.Append(" ");
 
-                            DreamProcOpcodeParameterType argType =
-                                (DreamProcOpcodeParameterType) binaryReader.ReadByte();
+                            DreamProcOpcodeParameterType argType = decoder.ReadParameterType();
                             if (argType == DreamProcOpcodeParameterType.Named) {
-                                string argName = Program.CompiledJson.Strings[binaryReader.ReadInt32()];
+                                string argName = decoder.ReadString();
 
                                 text.Append("Named(" + argName + ")");
                             } else {
@@ -161,7 +158,6 @@ namespace DMDisassembler {
                 }
 
                 decompiled.Add(new DecompiledOpcode(position, text.ToString()));
-                position = stream.Position;
             }
 
             StringBuilder result = new StringBuilder();
@@ -173,22 +169,6 @@ namespace DMDisassembler {
             }
 
             return result.ToString();
-        }
-
-        private DMReference ReadReference(BinaryReader reader) {
-            DMReference.Type refType = (DMReference.Type)reader.ReadByte();
-
-            switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(reader.ReadByte());
-                case DMReference.Type.Local: return DMReference.CreateLocal(reader.ReadByte());
-                case DMReference.Type.Global: return DMReference.CreateGlobal(reader.ReadInt32());
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(reader.ReadInt32());
-                case DMReference.Type.Field: return DMReference.CreateField(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.SrcField: return DMReference.CreateSrcField(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.Proc: return DMReference.CreateProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                default: return new DMReference() { RefType = refType };
-            }
         }
     }
 }

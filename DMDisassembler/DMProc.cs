@@ -8,10 +8,10 @@ using System.Text;
 namespace DMDisassembler {
     class DMProc {
         private class DecompiledOpcode {
-            public long Position;
+            public int Position;
             public string Text;
 
-            public DecompiledOpcode(long position, string text) {
+            public DecompiledOpcode(int position, string text) {
                 Position = position;
                 Text = text;
             }
@@ -30,8 +30,8 @@ namespace DMDisassembler {
             HashSet<int> labeledPositions = new();
 
             var decoder = new ProcDecoder(Program.CompiledJson.Strings, Bytecode);
-            while (decoder.Remaining > 0) {
-                long position = decoder.Offset;
+            while (decoder.Remaining) {
+                int position = decoder.Offset;
                 var opcode = decoder.ReadOpcode();
                 StringBuilder text = new StringBuilder();
                 text.Append(opcode);
@@ -155,6 +155,13 @@ namespace DMDisassembler {
 
                         break;
                     }
+
+                    case DreamProcOpcode.DebugSource:
+                        text.Append(decoder.ReadString());
+                        break;
+                    case DreamProcOpcode.DebugLine:
+                        text.Append(decoder.ReadInt());
+                        break;
                 }
 
                 decompiled.Add(new DecompiledOpcode(position, text.ToString()));
@@ -162,10 +169,17 @@ namespace DMDisassembler {
 
             StringBuilder result = new StringBuilder();
             foreach (DecompiledOpcode decompiledOpcode in decompiled) {
-                if (labeledPositions.Contains((int)decompiledOpcode.Position)) result.Append(decompiledOpcode.Position);
-
+                if (labeledPositions.Contains(decompiledOpcode.Position)) {
+                    result.Append(decompiledOpcode.Position);
+                }
                 result.Append('\t');
                 result.AppendLine(decompiledOpcode.Text);
+            }
+
+            if (labeledPositions.Contains(decoder.Offset)) {
+                // In case of a Jump off the end of the proc.
+                result.Append(decoder.Offset);
+                result.AppendLine();
             }
 
             return result.ToString();

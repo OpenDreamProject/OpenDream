@@ -14,7 +14,7 @@ public struct ProcDecoder {
         Offset = 0;
     }
 
-    public int Remaining => Bytecode.Length - Offset;
+    public bool Remaining => Offset < Bytecode.Length;
 
     public int ReadByte() {
         return Bytecode[Offset++];

@@ -2,7 +2,6 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace DMDisassembler {
@@ -22,7 +21,7 @@ namespace DMDisassembler {
 
         public DMProc(ProcDefinitionJson json) {
             Name = json.Name;
-            Bytecode = (json.Bytecode != null) ? json.Bytecode : Array.Empty<byte>();
+            Bytecode = json.Bytecode ?? Array.Empty<byte>();
         }
 
         public string Decompile() {

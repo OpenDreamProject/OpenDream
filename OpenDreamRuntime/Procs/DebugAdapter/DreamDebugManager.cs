@@ -319,7 +319,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             if (source != null) {
                 yield return (source, proc.Line);
             }
-            foreach (var instruction in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+            foreach (var (_, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
                 switch (instruction) {
                     case (DreamProcOpcode.DebugSource, string newSource):
                         source = newSource;

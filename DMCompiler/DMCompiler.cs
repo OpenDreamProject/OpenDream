@@ -172,13 +172,7 @@ namespace DMCompiler {
         }
 
         public static void Emit(CompilerEmission emission) {
-            Console.WriteLine(emission);
-            return;
-        }
-
-        public static void Emit(WarningCode code, Location loc, string message) {
-            ErrorLevel level = Config.errorConfig[code];
-            switch (level) {
+            switch (emission.Level) {
                 case ErrorLevel.Disabled:
                     return;
                 case ErrorLevel.Notice:
@@ -187,11 +181,18 @@ namespace DMCompiler {
                     break;
                 case ErrorLevel.Warning:
                     ++WarningCount;
-                    return;
+                    break;
                 case ErrorLevel.Error:
                     ++ErrorCount;
-                    return;
+                    break;
             }
+            Console.WriteLine(emission);
+            return;
+        }
+
+        /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
+        public static void Emit(WarningCode code, Location loc, string message) {
+            ErrorLevel level = Config.errorConfig[code];
             Emit(new CompilerEmission(level, code, loc, message));
         }
 

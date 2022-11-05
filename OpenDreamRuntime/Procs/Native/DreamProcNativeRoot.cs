@@ -644,14 +644,10 @@ namespace OpenDreamRuntime.Procs.Native {
             Color left = new();
             Color right = new();
 
-
             bool leftexists = false;
             bool rightexists = false;
 
-
             foreach (DreamValue value in GradientList) {
-                float _internal_index = index;
-
                 if (color_or_int && value.TryGetValueAsFloat(out float flt)) { // Int
                     color_or_int = false;
                     workingfloat = flt;
@@ -662,14 +658,13 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (value.TryGetValueAsString(out string? strvalue) && ColorHelpers.TryParseColor(strvalue, out Color color)) {
 
-                    if(loop && _internal_index >= maxvalue) {
-                        _internal_index %= maxvalue;
+                    if(loop && index >= maxvalue) {
+                        index %= maxvalue;
                     }
 
-                    if (workingfloat >= _internal_index) {
+                    if (workingfloat >= index) {
                         right = color;
                         rightexists = true;
-                        index = _internal_index;
                         break;
                     }
                     else {
@@ -684,7 +679,6 @@ namespace OpenDreamRuntime.Procs.Native {
                     color_or_int = true;
                 }
             }
-
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists) {

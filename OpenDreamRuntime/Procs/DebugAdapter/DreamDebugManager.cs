@@ -33,6 +33,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private readonly Dictionary<int, (StepMode Mode, int FrameId)> threadStepModes = new();
 
     // Breakpoint storage
+    private const string ExceptionFilterRuntimes = "runtimes";
+    private bool breakOnRuntimes = true;
+
     private class FileBreakpointSlot {
         public List<ActiveBreakpoint> Breakpoints = new();
         //public DMProc Proc;
@@ -172,11 +175,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleException(DreamThread thread, Exception exception) {
-        _exception = exception;
-        Output("Stopped on exception");
-        Stop(thread, new StoppedEvent {
-            Reason = StoppedEvent.ReasonException,
-        });
+        if (breakOnRuntimes) {
+            _exception = exception;
+            Output("Stopped on exception");
+            Stop(thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonException,
+            });
+        }
     }
 
     private bool TestBreakpoint(ActiveBreakpoint bp) => bp.Condition is null && bp.HitCondition is null;
@@ -233,11 +238,14 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestSetBreakpoints reqSetBreakpoints:
                 HandleRequestSetBreakpoints(client, reqSetBreakpoints);
                 break;
-            case RequestConfigurationDone reqConfigDone:
-                HandleRequestConfigurationDone(client, reqConfigDone);
-                break;
             case RequestSetFunctionBreakpoints reqFuncBreakpoints:
                 HandleRequestSetFunctionBreakpoints(client, reqFuncBreakpoints);
+                break;
+            case RequestSetExceptionBreakpoints requestSetExceptionBreakpoints:
+                HandleRequestSetExceptionBreakpoints(client, requestSetExceptionBreakpoints);
+                break;
+            case RequestConfigurationDone reqConfigDone:
+                HandleRequestConfigurationDone(client, reqConfigDone);
                 break;
             case RequestThreads reqThreads:
                 HandleRequestThreads(client, reqThreads);
@@ -289,6 +297,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             SupportsConfigurationDoneRequest = true,
             SupportsFunctionBreakpoints = true,
             SupportsExceptionInfoRequest = true,
+            ExceptionBreakpointFilters = new[] {
+                new ExceptionBreakpointsFilter(ExceptionFilterRuntimes, "Runtime errors") { Default = true },
+            },
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -436,6 +447,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         reqFuncBreakpoints.Respond(client, output);
+    }
+
+    private void HandleRequestSetExceptionBreakpoints(DebugAdapterClient client, RequestSetExceptionBreakpoints requestSetExceptionBreakpoints) {
+        breakOnRuntimes = requestSetExceptionBreakpoints.Arguments.Filters.Contains(ExceptionFilterRuntimes);
+        requestSetExceptionBreakpoints.Respond(client, null);
     }
 
     private IEnumerable<DreamThread> InspectThreads() {

@@ -50,7 +50,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             TokenType.DM_Preproc_Else,
             TokenType.DM_Preproc_Warning,
             TokenType.DM_Preproc_Error,
-            TokenType.DM_Preproc_EndIf
+            TokenType.DM_Preproc_EndIf,
+            TokenType.DM_Preproc_Pragma
         };
 
         public DMPreprocessor(bool enableDirectives) {
@@ -128,6 +129,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Error:
                         HandleErrorOrWarningDirective(token);
                         break;
+                    case TokenType.DM_Preproc_Pragma:
+                        HandlePragmaDirective(token);
+                        break;
                     case TokenType.DM_Preproc_EndIf:
                         if (!_lastIfEvaluations.TryPop(out var _))
                             DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Unexpected #endif");
@@ -165,6 +169,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
             if(_lastIfEvaluations.Any())
                 DMCompiler.Emit(WarningCode.BadDirective, _lastSeenIf, $"Missing {_lastIfEvaluations.Count} #endif directive{(_lastIfEvaluations.Count != 1 ? 's' : "")}");
+            DMCompiler.CheckAllPragmasWereSet();
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
@@ -546,6 +551,68 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return nextToken;
             } else {
                 return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
+            }
+        }
+
+        private void HandlePragmaDirective(Token pragmaDirective) {
+            Token warningNameToken = GetNextToken(true);
+            WarningCode warningCode;
+            switch(warningNameToken.Type) {
+                case TokenType.DM_Preproc_Identifier: {
+                    if(!Enum.TryParse<WarningCode>(warningNameToken.Text, out warningCode)) {
+                        DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning '{warningNameToken.PrintableText}' does not exist");
+                        GetLineOfTokens(); // consume what's on this line and leave
+                        return;
+                    }
+                    break;
+                }
+                case TokenType.DM_Preproc_Number: {
+                    if(!Int32.TryParse(warningNameToken.Text, out var intValue)) {
+                        DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{warningNameToken.PrintableText} does not exist");
+                        GetLineOfTokens();
+                        return;
+                    }
+                    warningCode = (WarningCode)intValue;
+                    break;
+                }
+                default: {
+                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Invalid warning identifier '{warningNameToken.PrintableText}'");
+                    GetLineOfTokens();
+                    return;
+                }
+            }
+            DebugTools.AssertNotNull(warningCode);
+            if((int)warningCode < 1000) {
+                DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{(int)warningCode:d4} cannot be set - it must always be an error");
+                GetLineOfTokens();
+                return;
+            }
+
+            Token warningTypeToken = GetNextToken(true);
+            if (warningTypeToken.Type != TokenType.DM_Preproc_Identifier) {
+                DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+                return;
+            }
+            switch(warningTypeToken.Text.ToLower()) {
+                case "disabled":
+                case "disable":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Disabled);
+                    break;
+                case "notice":
+                case "pedantic":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Notice);
+                    break;
+                case "warning":
+                case "warn":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Warning);
+                    break;
+                case "error":
+                case "err":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Error);
+                    break;
+                default:
+                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+                    return;
             }
         }
 

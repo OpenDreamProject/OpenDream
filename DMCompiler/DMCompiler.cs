@@ -127,6 +127,14 @@ namespace DMCompiler {
                 CheckAllPragmasWereSet();
                 return preproc;
             }
+            //Do the compiler configuration file first!
+            string pragmaName = Settings.PragmaFileOverride ?? "DefaultPragmaConfig.dm";
+            string pragmaFile = Path.Join(compilerDirectory, "DMStandard", pragmaName);
+            if (!File.Exists(pragmaFile)) {
+                ForcedError($"Configuration file '{pragmaName}' not found.");
+                return null;
+            }
+            files.Add(pragmaFile);
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
@@ -319,7 +327,7 @@ namespace DMCompiler {
         /// <summary>
         /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
         /// </summary>
-        static void CheckAllPragmasWereSet() {
+        public static void CheckAllPragmasWereSet() {
             foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
                 if ((int)code < 1000) {
                     Config.errorConfig[code] = ErrorLevel.Error; // Overwriting assignment
@@ -330,6 +338,10 @@ namespace DMCompiler {
                     Config.errorConfig.Add(code, ErrorLevel.Disabled);
                 }
             }
+        }
+
+        public static void SetPragma(WarningCode code, ErrorLevel level) {
+            Config.errorConfig[code] = level;
         }
     }
 

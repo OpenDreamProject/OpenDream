@@ -416,6 +416,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
                 case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
                 case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
+                //OD-specific directives
+                case "pragma": token = CreateToken(TokenType.DM_Preproc_Pragma, "#pragma"); break;
                 default:
                     token = null; // maybe should use ref instead of out?
                     return false;

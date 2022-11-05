@@ -3,6 +3,7 @@ using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream.Procs;
 using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
@@ -32,14 +33,17 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private readonly Dictionary<int, (StepMode Mode, int FrameId)> threadStepModes = new();
 
     // Breakpoint storage
-    private struct FileBreakpointSlot {
-        public List<ActiveBreakpoint> Breakpoints;
-        public DMProc Proc;
-        public int BytecodeOffset;
+    private class FileBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints = new();
+        //public DMProc Proc;
+        //public int BytecodeOffset;
+
+        public FileBreakpointSlot() {}
     }
 
-    private struct FunctionBreakpointSlot {
-        public List<ActiveBreakpoint> Breakpoints;
+    private class FunctionBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints = new();
+        public FunctionBreakpointSlot() {}
     }
 
     private struct ActiveBreakpoint {
@@ -53,9 +57,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private readonly Dictionary<string, List<FileBreakpointSlot>> _breakpoints = new();
 
     private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
-    //private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
-
-    private ILookup<(string Type, string Proc), ActiveBreakpoint>? functionBreakpoints;
+    private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
 
     // Temporary data for a given Stop
     private Exception? _exception;
@@ -153,8 +155,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void HandleProcStart(DMProcState state) {
         var hit = new List<int>();
-        if (functionBreakpoints != null) {
-            foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
+        if (_possibleFunctionBreakpoints?.GetValueOrDefault((state.Proc.OwningType.PathString, state.Proc.Name)) is FunctionBreakpointSlot slot) {
+            foreach (var bp in slot.Breakpoints) {
                 if (TestBreakpoint(bp)) {
                     hit.Add(bp.Id);
                 }
@@ -302,16 +304,38 @@ sealed class DreamDebugManager : IDreamDebugManager {
         _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
         _possibleBreakpoints = IteratePossibleBreakpoints()
             .GroupBy(pair => pair.Source, pair => pair.Line)
-            .ToDictionary(group => group.Key, group => group.ToDictionary(line => line, _ => new FileBreakpointSlot()));
+            .ToDictionary(group => group.Key, group => group.Distinct().ToDictionary(line => line, _ => new FileBreakpointSlot()));
+        _possibleFunctionBreakpoints = IterateProcs()
+            .Distinct()
+            .ToDictionary(t => t, _ => new FunctionBreakpointSlot());
 
         _stopOnEntry = reqLaunch.Arguments.StopOnEntry is true;
         reqLaunch.Respond(client);
     }
 
     private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
-        foreach (var proc in _dreamManager.ObjectTree.Procs) {
+        foreach (var proc in _dreamManager.ObjectTree.Procs.OfType<DMProc>()) {
+            string? source = proc.Source;
+            if (source != null) {
+                yield return (source, proc.Line);
+            }
+            foreach (var instruction in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+                switch (instruction) {
+                    case (DreamProcOpcode.DebugSource, string newSource):
+                        source = newSource;
+                        break;
+                    case (DreamProcOpcode.DebugLine, int line):
+                        yield return (source!, line);
+                        break;
+                }
+            }
         }
-        yield break;
+    }
+
+    private IEnumerable<(string Type, string Proc)> IterateProcs() {
+        foreach (var proc in _dreamManager.ObjectTree.Procs) {
+            yield return (proc.OwningType.PathString, proc.Name);
+        }
     }
 
     private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
@@ -345,7 +369,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         if (_possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(sourcePath, out var fileSlots)) {
             // File isn't known - every breakpoint is invalid.
             for (int i = 0; i < responseBreakpoints.Length; ++i) {
-                responseBreakpoints[i] = new Breakpoint($"Unknown file \"{sourcePath}\"");
+                responseBreakpoints[i] = new Breakpoint(message: $"Unknown file \"{sourcePath}\"");
             }
             reqSetBreakpoints.Respond(client, responseBreakpoints);
             return;
@@ -371,7 +395,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
                     responseBreakpoints[i] = new(id, source, setBreakpoint.Line);
                 } else {
-                    responseBreakpoints[i] = new($"No breakpoint slot on line {setBreakpoint.Line}");
+                    responseBreakpoints[i] = new(message: $"No code on line {setBreakpoint.Line}") { Line = setBreakpoint.Line };
                 }
             }
         }
@@ -383,34 +407,34 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var input = reqFuncBreakpoints.Arguments.Breakpoints;
         var output = new Protocol.Breakpoint[input.Length];
 
-        if (input.Length == 0) {
-            this.functionBreakpoints = null;
-        } else {
-            var toSave = new List<(string Type, string Proc, ActiveBreakpoint Breakpoint)>();
+        foreach (var v in _possibleFunctionBreakpoints!.Values) {
+            v.Breakpoints.Clear();
+        }
 
-            for (int i = 0; i < input.Length; ++i) {
-                var bp = input[i];
+        for (int i = 0; i < input.Length; ++i) {
+            var bp = input[i];
 
-                string name = bp.Name.Replace("/proc/", "/").Replace("/verb/", "/");
-                int last = name.LastIndexOf('/');
-                string type = name[..last];
-                string proc = name[(last + 1)..];
-                if (type == "") {
-                    type = "/";
-                }
+            string name = bp.Name.Replace("/proc/", "/").Replace("/verb/", "/");
+            int last = name.LastIndexOf('/');
+            string type = name[..last];
+            string proc = name[(last + 1)..];
+            if (type == "") {
+                type = "/";
+            }
 
+            if (_possibleFunctionBreakpoints.GetValueOrDefault((type, proc)) is FunctionBreakpointSlot slot) {
                 int id = ++_breakpointIdCounter;
-                // TODO: refuse verification for breakpoints for procs that don't exist
                 output[i] = new(id, verified: true);
-                toSave.Add((type, proc, new ActiveBreakpoint {
+                slot.Breakpoints.Add(new ActiveBreakpoint {
                     Id = id,
                     Condition = bp.Condition,
                     HitCondition = bp.HitCondition,
-                }));
+                });
+            } else {
+                output[i] = new(message: $"No proc {type}::{proc}");
             }
-
-            this.functionBreakpoints = toSave.ToLookup(triplet => (triplet.Type, triplet.Proc), triplet => triplet.Breakpoint);
         }
+
         reqFuncBreakpoints.Respond(client, output);
     }
 

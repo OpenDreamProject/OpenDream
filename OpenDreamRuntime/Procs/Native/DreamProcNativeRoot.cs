@@ -684,12 +684,12 @@ namespace OpenDreamRuntime.Procs.Native {
             float normalized = (index - minvalue) / (maxvalue - minvalue);
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
-            if (!leftexists || (rightexists && normalized == 1)) {
+            if (!leftexists || (rightexists && normalized == 1) || (rightexists && normalized == 0)) {
                 if (right.A == 1) {
                     return new DreamValue(right.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(right.ToHex().ToLower());
-            } else if (!rightexists || (leftexists && normalized == 0)) {
+            } else if (!rightexists) {
 
                 if (left.A == 1) {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());

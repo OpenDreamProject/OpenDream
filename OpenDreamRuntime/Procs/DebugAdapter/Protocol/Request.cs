@@ -20,6 +20,7 @@ public class Request : ProtocolMessage {
             "disconnect" => json.Deserialize<RequestDisconnect>(),
             "setBreakpoints" => json.Deserialize<RequestSetBreakpoints>(),
             "setFunctionBreakpoints" => json.Deserialize<RequestSetFunctionBreakpoints>(),
+            "setExceptionBreakpoints" => json.Deserialize<RequestSetExceptionBreakpoints>(),
             "configurationDone" => json.Deserialize<RequestConfigurationDone>(),
             "threads" => json.Deserialize<RequestThreads>(),
             "continue" => json.Deserialize<RequestContinue>(),

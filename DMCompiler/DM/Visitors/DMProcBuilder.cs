@@ -37,7 +37,7 @@ namespace DMCompiler.DM.Visitors {
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                     _proc.Assign(parameterRef);
                     _proc.Pop();
@@ -59,11 +59,11 @@ namespace DMCompiler.DM.Visitors {
                     } catch (CompileAbortException e) {
                         // The statement's location info isn't passed all the way down so change the error to make it more accurate
                         e.Error.Location = set.Location;
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                         return; // Don't spam the error that will continue to exist
                     } catch (CompileErrorException e) {
                         //Retreat from the statement when there's an error
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                 }
             }
@@ -83,11 +83,11 @@ namespace DMCompiler.DM.Visitors {
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = statement.Location;
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     return; // Don't spam the error that will continue to exist
                 } catch (CompileErrorException e) {
                     //Retreat from the statement when there's an error
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                 }
             }
         }
@@ -123,7 +123,7 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 }
-                default: throw new ArgumentException("Invalid proc statement");
+                default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
             }
         }
 
@@ -296,7 +296,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
                 } catch (CompileErrorException e) {
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     value = new Expressions.Null(varDeclaration.Location);
                 }
             } else {
@@ -306,7 +306,7 @@ namespace DMCompiler.DM.Visitors {
             bool successful;
             if (varDeclaration.IsConst) {
                 if (!value.TryAsConstant(out var constValue)) {
-                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
+                    DMCompiler.Emit(WarningCode.HardConstContext, varDeclaration.Location, "Const var must be set to a constant");
                     return;
                 }
 
@@ -316,7 +316,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (!successful) {
-                DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, varDeclaration.Location, $"Duplicate var {varDeclaration.Name}");
                 return;
             }
 
@@ -441,7 +441,7 @@ namespace DMCompiler.DM.Visitors {
                             break;
                         }
                         default:
-                            DMCompiler.Error(new CompilerError(statementFor.Location, "Invalid expression in for"));
+                            DMCompiler.Emit(WarningCode.BadExpression, statementFor.Location, "Invalid expression in for");
                             break;
                     }
                 }
@@ -523,7 +523,7 @@ namespace DMCompiler.DM.Visitors {
                             _proc.ContinueIfFalse();
                         }
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
@@ -540,8 +540,8 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
             if (type == null) {
                 // This shouldn't happen, just to be safe
-                DMCompiler.Error(new CompilerError(initializer.Location,
-                    "Attempted to create a type enumerator with a null type"));
+                DMCompiler.ForcedError(initializer.Location,
+                    "Attempted to create a type enumerator with a null type");
                 return;
             }
 
@@ -563,7 +563,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
@@ -602,7 +602,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
@@ -687,9 +687,9 @@ namespace DMCompiler.DM.Visitors {
 
                             try {
                                 if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
-                                    DMCompiler.Error(expression.Location, "Expected a constant");
+                                    DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
                             } catch (CompileErrorException e) {
-                                DMCompiler.Error(e.Error);
+                                DMCompiler.Emit(e.Error);
                             }
 
                             // Return 0 if unsuccessful so that we can continue compiling
@@ -702,16 +702,17 @@ namespace DMCompiler.DM.Visitors {
 
                             Constant CoerceBound(Constant bound) {
                                 if (bound is Null) { // We do a little null coercion, as a treat
-                                    DMCompiler.Warning(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
                                         "Malformed range, lower bound is coerced from null to 0");
                                     return new Number(lower.Location, 0.0f);
                                 }
 
                                 //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
-                                //We are deviating from parity here and just calling that a CompilerError.
+                                //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                                 if (bound is not Number) {
-                                    DMCompiler.Error(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
                                         "Invalid range, lower bound is not a number");
+                                    bound = new Number(bound.Location, 0.0f);
                                 }
 
                                 return bound;
@@ -807,13 +808,13 @@ namespace DMCompiler.DM.Visitors {
             // The left-side value of an input operation must be an LValue
             // (I think? I haven't found an exception but there could be one)
             if (left is not LValue) {
-                DMCompiler.Error(left.Location, "Left side must be an l-value");
+                DMCompiler.Emit(WarningCode.BadExpression, left.Location, "Left side must be an l-value");
                 return;
             }
 
             // The right side must also be an LValue. Because where else would the value go?
             if (right is not LValue) {
-                DMCompiler.Error(left.Location, "Right side must be an l-value");
+                DMCompiler.Emit(WarningCode.BadExpression, right.Location, "Right side must be an l-value");
                 return;
             }
 
@@ -837,7 +838,7 @@ namespace DMCompiler.DM.Visitors {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
-                    DMCompiler.Error(new CompilerError(param.Location, $"Duplicate var {param.Name}"));
+                    DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
             }
 

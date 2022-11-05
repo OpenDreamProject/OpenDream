@@ -12,6 +12,7 @@ namespace OpenDreamShared.Compiler {
         Unknown = 0,
         BadToken = 1,
         BadDirective = 10,
+        BadExpression = 11,
         BadLabel = 19,
         InvalidReference = 50,
         BadArgument = 100,
@@ -19,7 +20,10 @@ namespace OpenDreamShared.Compiler {
         ArglistOnlyArgument = 102,
         HardReservedKeyword = 200, // For keywords that CANNOT be un-reserved.
         ItemDoesntExist = 404,
+        DanglingOverride = 405,
+        StaticOverride = 406,
         IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
+        HardConstContext = 500,
         WriteToConstant = 501,
         InvalidInclusion = 900,
         // 1000 - 1999 are reserved for preprocessor configuration.
@@ -36,7 +40,10 @@ namespace OpenDreamShared.Compiler {
         SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
         DuplicateVariable = 2100,
         TooManyArguments = 2200,
-
+        PointlessParentCall = 2205,
+        PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
+        MalformedRange = 2300,
+        InvalidRange = 2301,
         // 3000 - 3999 are reserved for stylistic configuration.
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)

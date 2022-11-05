@@ -190,7 +190,7 @@ namespace DMCompiler.DM {
                     try {
                         expression.EmitPushValue(this, init);
                     } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                 }
             }

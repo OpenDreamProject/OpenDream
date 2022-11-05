@@ -61,10 +61,7 @@ namespace OpenDreamRuntime {
             InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
 
             // Call global <init> with waitfor=FALSE
-            if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                var globalInitProc = new DMProc(DreamPath.Root, initProcDef, name: "<global init>");
-                globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
-            }
+            ObjectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]

@@ -314,7 +314,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
-        foreach (var proc in _dreamManager.ObjectTree.Procs.OfType<DMProc>()) {
+        foreach (var proc in _dreamManager.ObjectTree.Procs.Concat(new[] { _dreamManager.ObjectTree.GlobalInitProc }).OfType<DMProc>()) {
             string? source = proc.Source;
             if (source != null) {
                 yield return (source, proc.Line);

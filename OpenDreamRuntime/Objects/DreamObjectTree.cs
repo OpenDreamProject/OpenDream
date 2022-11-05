@@ -25,6 +25,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        public DreamProc? GlobalInitProc;
         public TreeEntry[] Types;
         public List<DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
@@ -34,6 +35,12 @@ namespace OpenDreamRuntime.Objects {
 
         public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
+
+            if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
+                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, name: "<global init>");
+            } else {
+                GlobalInitProc = null;
+            }
 
             // Load procs first so types can set their init proc's super proc
             LoadProcsFromJson(json.Types, json.Procs, json.GlobalProcs);

@@ -169,6 +169,10 @@ namespace DMCompiler.DM {
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
+                        if (assign.Value.Location.Line is int line) {
+                            GlobalInitProc.DebugSource(assign.Value.Location.SourceFile);
+                            GlobalInitProc.DebugLine(line);
+                        }
                         assign.Value.EmitPushValue(root, GlobalInitProc);
                         GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {

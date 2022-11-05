@@ -680,13 +680,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
+            /// Convert the index to a 0-1 range
+            float normalized = (index - minvalue) / (maxvalue - minvalue);
+
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
-            if (!leftexists) {
+            if (!leftexists || (rightexists && normalized == 1)) {
                 if (right.A == 1) {
                     return new DreamValue(right.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(right.ToHex().ToLower());
-            } else if (!rightexists) {
+            } else if (!rightexists || (leftexists && normalized == 0)) {
 
                 if (left.A == 1) {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());
@@ -695,9 +698,6 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (!leftexists && !rightexists) {
                 throw new InvalidOperationException("Failed to find any colors");
             }
-
-            /// Convert the index to a 0-1 range
-            float normalized = (index - minvalue) / (maxvalue - minvalue);
 
             Color returnval;
             switch (colorspace) {

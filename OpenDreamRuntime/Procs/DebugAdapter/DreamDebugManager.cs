@@ -29,7 +29,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         StepIn,
         StepOut,
     }
-    private readonly Dictionary<int, StepMode> threadStepModes = new();
+    private readonly Dictionary<int, (StepMode Mode, int FrameId)> threadStepModes = new();
 
     // Breakpoint storage
     private struct FileBreakpointSlot {
@@ -111,7 +111,20 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        if (threadStepModes.GetValueOrDefault(state.Thread.Id) == StepMode.StepIn) {
+        bool stoppedOnStep = false;
+        switch (threadStepModes.GetValueOrDefault(state.Thread.Id)) {
+            case (StepMode.StepIn, _):
+                stoppedOnStep = true;
+                break;
+            case (StepMode.StepOut, int whenNotInStack):
+                stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                break;
+            case (StepMode.StepOver, int whenTop):
+                stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                break;
+        }
+
+        if (stoppedOnStep) {
             threadStepModes.Remove(state.Thread.Id);
             stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
@@ -247,6 +260,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestStepIn requestStepIn:
                 HandleRequestStepIn(client, requestStepIn);
+                break;
+            case RequestNext requestNext:
+                HandleRequestNext(client, requestNext);
+                break;
+            case RequestStepOut requestStepOut:
+                HandleRequestStepOut(client, requestStepOut);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -425,11 +444,23 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
-        if (stoppedThread != null) {
-            threadStepModes[stoppedThread.Id] = StepMode.StepIn;
-        }
+        threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0);
         Resume();
         requestStepIn.Respond(client);
+    }
+
+    private void HandleRequestNext(DebugAdapterClient client, RequestNext requestNext) {
+        var thread = InspectThreads().First(t => t.Id == requestNext.Arguments.ThreadId);
+        threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().First().Id);
+        Resume();
+        requestNext.Respond(client);
+    }
+
+    private void HandleRequestStepOut(DebugAdapterClient client, RequestStepOut requestStepOut) {
+        var thread = InspectThreads().First(t => t.Id == requestStepOut.Arguments.ThreadId);
+        threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().First().Id);
+        Resume();
+        requestStepOut.Respond(client);
     }
 
     private void HandleRequestExceptionInfo(DebugAdapterClient client, RequestExceptionInfo requestExceptionInfo) {

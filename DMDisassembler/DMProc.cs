@@ -29,141 +29,71 @@ namespace DMDisassembler {
             List<DecompiledOpcode> decompiled = new();
             HashSet<int> labeledPositions = new();
 
-            var decoder = new ProcDecoder(Program.CompiledJson.Strings, Bytecode);
-            while (decoder.Remaining) {
-                int position = decoder.Offset;
-                var opcode = decoder.ReadOpcode();
+            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
                 StringBuilder text = new StringBuilder();
-                text.Append(opcode);
+                text.Append(instruction[0]);
                 text.Append(" ");
 
-                switch (opcode) {
-                    case DreamProcOpcode.FormatString: {
+                switch (instruction) {
+                    case (DreamProcOpcode.FormatString, string str, int numReplacements):
+                        text.Append(numReplacements);
+                        text.Append(' ');
                         text.Append('"');
-                        text.Append(decoder.ReadString());
+                        text.Append(str);
                         text.Append('"');
-                        decoder.ReadInt(); // This is some metadata FormatString has that we can't really render
-
                         break;
-                    }
-                    case DreamProcOpcode.PushString: {
-                        text.Append('"');
-                        text.Append(decoder.ReadString());
-                        text.Append('"');
 
+                    case (DreamProcOpcode.PushString, string str):
+                        text.Append('"');
+                        text.Append(str);
+                        text.Append('"');
                         break;
-                    }
 
-                    case DreamProcOpcode.PushResource: {
+                    case (DreamProcOpcode.PushResource, string str):
                         text.Append('\'');
-                        text.Append(decoder.ReadString());
+                        text.Append(str);
                         text.Append('\'');
-
-                        break;
-                    }
-
-                    case DreamProcOpcode.Prompt:
-                        text.Append(decoder.ReadValueType());
                         break;
 
-                    case DreamProcOpcode.PushFloat:
-                        text.Append(decoder.ReadFloat());
-                        break;
-
-                    case DreamProcOpcode.Call:
-                    case DreamProcOpcode.Assign:
-                    case DreamProcOpcode.Append:
-                    case DreamProcOpcode.Remove:
-                    case DreamProcOpcode.Combine:
-                    case DreamProcOpcode.Increment:
-                    case DreamProcOpcode.Decrement:
-                    case DreamProcOpcode.Mask:
-                    case DreamProcOpcode.MultiplyReference:
-                    case DreamProcOpcode.DivideReference:
-                    case DreamProcOpcode.BitXorReference:
-                    case DreamProcOpcode.Enumerate:
-                    case DreamProcOpcode.OutputReference:
-                    case DreamProcOpcode.PushReferenceValue:
-                        text.Append(decoder.ReadReference());
-                        break;
-
-                    case DreamProcOpcode.Input:
-                        text.Append(decoder.ReadReference());
-                        text.Append(decoder.ReadReference());
-                        break;
-
-                    case DreamProcOpcode.CreateList:
-                    case DreamProcOpcode.CreateAssociativeList:
-                    case DreamProcOpcode.PickWeighted:
-                    case DreamProcOpcode.PickUnweighted:
-                        text.Append(decoder.ReadInt());
-                        break;
-
-                    case DreamProcOpcode.JumpIfNullDereference: {
-                        DMReference reference = decoder.ReadReference();
-                        int jumpPosition = decoder.ReadInt();
-
+                    case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
                         labeledPositions.Add(jumpPosition);
-                        text.Append(reference.ToString());
+                        text.Append(reference);
                         text.Append(" ");
                         text.Append(jumpPosition);
                         break;
-                    }
 
-                    case DreamProcOpcode.Initial:
-                    case DreamProcOpcode.IsSaved:
-                    case DreamProcOpcode.PushPath:
-                        text.Append(decoder.ReadString());
-                        break;
-
-                    case DreamProcOpcode.Spawn:
-                    case DreamProcOpcode.BooleanOr:
-                    case DreamProcOpcode.BooleanAnd:
-                    case DreamProcOpcode.SwitchCase:
-                    case DreamProcOpcode.SwitchCaseRange:
-                    case DreamProcOpcode.Jump:
-                    case DreamProcOpcode.JumpIfFalse:
-                    case DreamProcOpcode.JumpIfTrue: {
-                        int jumpPosition = decoder.ReadInt();
-
+                    case (DreamProcOpcode.Spawn
+                            or DreamProcOpcode.BooleanOr
+                            or DreamProcOpcode.BooleanAnd
+                            or DreamProcOpcode.SwitchCase
+                            or DreamProcOpcode.SwitchCaseRange
+                            or DreamProcOpcode.Jump
+                            or DreamProcOpcode.JumpIfFalse
+                            or DreamProcOpcode.JumpIfTrue, int jumpPosition):
                         labeledPositions.Add(jumpPosition);
                         text.Append(jumpPosition);
                         break;
-                    }
 
-                    case DreamProcOpcode.PushType:
-                        text.Append(Program.CompiledJson.Types[decoder.ReadInt()].Path);
+                    case (DreamProcOpcode.PushType, int type):
+                        text.Append(Program.CompiledJson.Types[type].Path);
                         break;
 
-                    case DreamProcOpcode.PushArguments: {
-                        int argCount = decoder.ReadInt();
-                        int namedCount = decoder.ReadInt();
-
+                    case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
                         text.Append(argCount);
                         for (int i = 0; i < argCount; i++) {
                             text.Append(" ");
-
-                            DreamProcOpcodeParameterType argType = decoder.ReadParameterType();
-                            if (argType == DreamProcOpcodeParameterType.Named) {
-                                string argName = decoder.ReadString();
-
-                                text.Append("Named(" + argName + ")");
-                            } else {
-                                text.Append("Unnamed");
-                            }
+                            text.Append(names[i] ?? "-");
                         }
 
                         break;
-                    }
 
-                    case DreamProcOpcode.DebugSource:
-                        text.Append(decoder.ReadString());
-                        break;
-                    case DreamProcOpcode.DebugLine:
-                        text.Append(decoder.ReadInt());
+                    default:
+                        for (int i = 1; i < instruction.Length; ++i) {
+                            text.Append(instruction[i]);
+                            text.Append(" ");
+                        }
                         break;
                 }
-
                 decompiled.Add(new DecompiledOpcode(position, text.ToString()));
             }
 
@@ -176,9 +106,9 @@ namespace DMDisassembler {
                 result.AppendLine(decompiledOpcode.Text);
             }
 
-            if (labeledPositions.Contains(decoder.Offset)) {
+            if (labeledPositions.Contains(Bytecode.Length)) {
                 // In case of a Jump off the end of the proc.
-                result.Append(decoder.Offset);
+                result.Append(Bytecode.Length);
                 result.AppendLine();
             }
 

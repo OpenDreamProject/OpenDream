@@ -149,9 +149,9 @@ public struct ProcDecoder {
         }
     }
 
-    public IEnumerable<ITuple> Disassemble() {
+    public IEnumerable<(int Offset, ITuple Instruction)> Disassemble() {
         while (Remaining) {
-            yield return DecodeInstruction();
+            yield return (Offset, DecodeInstruction());
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace OpenDreamShared.Dream.Procs;
 
@@ -68,6 +69,89 @@ public struct ProcDecoder {
             case DMReference.Type.SuperProc: return DMReference.SuperProc;
             case DMReference.Type.ListIndex: return DMReference.ListIndex;
             default: throw new Exception($"Invalid reference type {refType}");
+        }
+    }
+
+    public ITuple DecodeInstruction() {
+        var opcode = ReadOpcode();
+        switch (opcode) {
+            case DreamProcOpcode.FormatString:
+                return (opcode, ReadString(), ReadInt());
+
+            case DreamProcOpcode.PushString:
+            case DreamProcOpcode.PushResource:
+            case DreamProcOpcode.Initial:
+            case DreamProcOpcode.IsSaved:
+            case DreamProcOpcode.PushPath:
+            case DreamProcOpcode.DebugSource:
+                return (opcode, ReadString());
+
+            case DreamProcOpcode.Prompt:
+                return (opcode, ReadValueType());
+
+            case DreamProcOpcode.PushFloat:
+                return (opcode, ReadFloat());
+
+            case DreamProcOpcode.Call:
+            case DreamProcOpcode.Assign:
+            case DreamProcOpcode.Append:
+            case DreamProcOpcode.Remove:
+            case DreamProcOpcode.Combine:
+            case DreamProcOpcode.Increment:
+            case DreamProcOpcode.Decrement:
+            case DreamProcOpcode.Mask:
+            case DreamProcOpcode.MultiplyReference:
+            case DreamProcOpcode.DivideReference:
+            case DreamProcOpcode.BitXorReference:
+            case DreamProcOpcode.Enumerate:
+            case DreamProcOpcode.OutputReference:
+            case DreamProcOpcode.PushReferenceValue:
+                return (opcode, ReadReference());
+
+            case DreamProcOpcode.Input:
+                return (opcode, ReadReference(), ReadReference());
+
+            case DreamProcOpcode.CreateList:
+            case DreamProcOpcode.CreateAssociativeList:
+            case DreamProcOpcode.PickWeighted:
+            case DreamProcOpcode.PickUnweighted:
+            case DreamProcOpcode.Spawn:
+            case DreamProcOpcode.BooleanOr:
+            case DreamProcOpcode.BooleanAnd:
+            case DreamProcOpcode.SwitchCase:
+            case DreamProcOpcode.SwitchCaseRange:
+            case DreamProcOpcode.Jump:
+            case DreamProcOpcode.JumpIfFalse:
+            case DreamProcOpcode.JumpIfTrue:
+            case DreamProcOpcode.PushType:
+            case DreamProcOpcode.DebugLine:
+                return (opcode, ReadInt());
+
+            case DreamProcOpcode.JumpIfNullDereference:
+                return (opcode, ReadReference(), ReadInt());
+
+            case DreamProcOpcode.PushArguments: {
+                int argCount = ReadInt();
+                int namedCount = ReadInt();
+                string[] names = new string[argCount];
+
+                for (int i = 0; i < argCount; i++) {
+                    if (ReadParameterType() == DreamProcOpcodeParameterType.Named) {
+                        names[i] = ReadString();
+                    }
+                }
+
+                return (opcode, argCount, namedCount, names);
+            }
+
+            default:
+                return ValueTuple.Create(opcode);
+        }
+    }
+
+    public IEnumerable<ITuple> Disassemble() {
+        while (Remaining) {
+            yield return DecodeInstruction();
         }
     }
 }

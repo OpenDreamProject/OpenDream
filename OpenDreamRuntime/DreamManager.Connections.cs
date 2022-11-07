@@ -5,6 +5,8 @@ using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
+using System.Net;
+using System.Net.Sockets;
 
 namespace OpenDreamRuntime
 {
@@ -134,13 +136,8 @@ namespace OpenDreamRuntime
 
         public DreamConnection? GetConnectionFromClient(DreamObject client)
         {
-            foreach (var connection in _connections.Values)
-            {
-                if (connection.ClientDreamObject == client)
-                    return connection;
-            }
-
-            return null;
+            _clientToConnection.TryGetValue(client, out var connection);
+            return connection;
         }
     }
 }

@@ -9,7 +9,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
 
-        public static float[] MatrixToFloatArray(DreamObject matrix) {
+        /// <summary> Used to create a float array understandable by <see cref="IconAppearance.Transform"/> to be a transform. </summary>
+        /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
+        /// <exception cref="ArgumentException">Thrown when matrix is invalid.</exception>
+        public static float[] MatrixToTransformFloatArray(DreamObject matrix) {
             if (!matrix.IsSubtypeOf(DreamPath.Matrix))
                 throw new ArgumentException($"Invalid matrix {matrix}");
 
@@ -21,6 +24,30 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             matrix.GetVariable("c").TryGetValueAsFloat(out array[4]);
             matrix.GetVariable("f").TryGetValueAsFloat(out array[5]);
             return array;
+        }
+
+        /// <summary>
+        /// Used when printing this matrix to enumerate its values in order.
+        /// </summary>
+        /// <returns>The matrix's values in [a,b,c,d,e,f] order.</returns>
+        /// <exception cref="ArgumentException">Thrown when matrix is invalid.</exception>
+        public static IEnumerable<float> EnumerateMatrix(DreamObject matrix) {
+            if (!matrix.IsSubtypeOf(DreamPath.Matrix))
+                throw new ArgumentException($"Invalid matrix {matrix}");
+
+            float ret = 0f;
+            matrix.GetVariable("a").TryGetValueAsFloat(out ret);
+            yield return ret;
+            matrix.GetVariable("b").TryGetValueAsFloat(out ret);
+            yield return ret;
+            matrix.GetVariable("c").TryGetValueAsFloat(out ret);
+            yield return ret;
+            matrix.GetVariable("d").TryGetValueAsFloat(out ret);
+            yield return ret;
+            matrix.GetVariable("e").TryGetValueAsFloat(out ret);
+            yield return ret;
+            matrix.GetVariable("f").TryGetValueAsFloat(out ret);
+            yield return ret;
         }
 
         public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
@@ -67,6 +94,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
 
             return ParentType.OperatorMultiply(a, b);
+        }
+
+        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+            if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
+                const string elements = "abcdef";
+                for (int i = 0; i < elements.Length; i++) {
+                    left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
+                    right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
+                    if (leftValue != rightValue)
+                        return DreamValue.False;
+                }
+                return DreamValue.True;
+            }
+            return DreamValue.False; // This will never be true, because reaching this line means b is not a matrix, while a will always be.
         }
     }
 }

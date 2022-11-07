@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread();
+            var thread = new DreamThread("init " + this);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
 
@@ -30,14 +30,6 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Cannot init proc on a deleted object");
             }
             return new InitDreamObjectState(thread, this, usr, arguments);
-        }
-
-        public static DreamObject? GetFromReferenceID(IDreamManager manager, string refId) {
-            foreach (KeyValuePair<DreamObject, string> referenceIdPair in manager.ReferenceIDs) {
-                if (referenceIdPair.Value == refId) return referenceIdPair.Key;
-            }
-
-            return null;
         }
 
         public void Delete(IDreamManager manager) {
@@ -77,6 +69,8 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Variable " + name + " doesn't exist");
             }
         }
+
+        public IReadOnlyDictionary<string, DreamValue> GetAllVariables() => _variables;
 
         public List<DreamValue> GetVariableNames() {
             if(Deleted){

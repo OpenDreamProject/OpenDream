@@ -13,6 +13,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using OpenDreamRuntime.Objects.MetaObjects;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -106,9 +107,9 @@ namespace OpenDreamRuntime.Procs.Native {
         /* NOTE ABOUT THE TRIG FUNCTIONS:
          * If you have a sharp eye, you may notice that our trignometry functions make use of the *double*-precision versions of those functions,
          * even though this is a single-precision language.
-         * 
+         *
          * DO NOT replace them with the single-precision ones in MathF!!!
-         * 
+         *
          * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
          * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
          */
@@ -252,6 +253,29 @@ namespace OpenDreamRuntime.Procs.Native {
             else if (start < 0) start += text.Length + 1;
 
             return new DreamValue(text.Substring(start - 1, end - start));
+        }
+
+        [DreamProc("copytext_char")]
+        [DreamProcParameter("T", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_copytext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
+
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string text))
+                return (end == 0) ? DreamValue.Null : new DreamValue("");
+            if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
+                return new DreamValue("");
+
+            StringInfo textElements = new StringInfo(text);
+
+            if (end <= 0) end += textElements.LengthInTextElements + 1;
+            else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
+
+            if (start == 0) return new DreamValue("");
+            else if (start < 0) start += textElements.LengthInTextElements + 1;
+
+            return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
         }
 
         [DreamProc("cos")]
@@ -603,29 +627,28 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("icon_states")]
         [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
-            if (mode != 0)
-            {
+            if (mode != 0) {
                 throw new NotImplementedException("Only mode 0 is implemented");
             }
 
             var arg = arguments.GetArgument(0, "Icon");
 
-            if (arg.Equals(DreamValue.Null))
-            {
+            if (arg.Equals(DreamValue.Null)) {
                 return DreamValue.Null;
             }
 
-            if (!arg.TryGetValueAsDreamResource(out var resource))
-            {
-                throw new Exception("bad icon");
+            DMIParser.ParsedDMIDescription dmiDescription;
+            if (arg.TryGetValueAsDreamResource(out var resource)) {
+                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+            } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+            } else {
+                throw new Exception($"Bad icon {arg}");
             }
 
-            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
-
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
+            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -886,6 +909,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             if (value.Type == DreamValueType.DreamObject) {
                 if (value.Value == null) return null;
+                if(value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix,out var matrix)) { // Special behaviour for /matrix values
+                    StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
+                    builder.Append('[');
+                    builder.AppendJoin(',',DreamMetaObjectMatrix.EnumerateMatrix(matrix));
+                    builder.Append(']');
+                    return builder.ToString();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                }
                 return value.Stringify();
             }
             if(value.Type == DreamValueType.DreamResource) {
@@ -1041,19 +1073,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
 
-            string? text;
-            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+            byte[] bytes;
 
-                if (text == null)
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                byte[]? filebytes = resource.ResourceData;
+
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             MD5 md5 = MD5.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = md5.ComputeHash(input);
+            byte[] output = md5.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
@@ -1332,43 +1369,66 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
+        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments) {
+            DreamValue haystack = arguments.GetArgument(0, "Haystack");
+            DreamValue needle = arguments.GetArgument(1, "Needle");
+            DreamValue replacementArg = arguments.GetArgument(2, "Replacement");
+            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (needle.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out var regexObject)) {
+                // According to the docs, this is the same as /regex.Replace()
+                return DreamProcNativeRegex.RegexReplace(regexObject, haystack, replacementArg, start, end);
+            }
+
+            if (!haystack.TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
 
-            var arg3 = arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            //TODO: Regex support
-            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
             if (end == 0) {
                 end = text.Length + 1;
             }
 
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.OrdinalIgnoreCase));
+            if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
+                if (!arg3) { // No change if no Replacement was given
+                    return new DreamValue(text);
+                }
+
+                // A Start of 2 is the same as 1. This only happens when Needle is null.
+                if (start == 1)
+                    start = 2;
+
+                // End cannot reach the last char
+                end = Math.Min(end, text.Length);
+
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < text.Length; i++) {
+                    result.Append(text[i]);
+                    if (i >= start - 2 && i < end - 1)
+                        result.Append(replacement);
+                }
+
+                return new DreamValue(result.ToString());
+            }
+
+            if (needle.TryGetValueAsString(out var needleStr)) {
+                string before = text.Substring(0, start - 1);
+                string after = text.Substring(end - 1);
+                string textSub = text.Substring(start - 1, end - start);
+                string replaced = textSub.Replace(needleStr, replacement, StringComparison.OrdinalIgnoreCase);
+
+                StringBuilder newTextBuilder = new();
+                newTextBuilder.Append(before);
+                newTextBuilder.Append(replaced);
+                newTextBuilder.Append(after);
+
+                return new DreamValue(newTextBuilder.ToString());
+            }
+
+            throw new Exception($"Invalid needle {needle}");
         }
 
         [DreamProc("rgb")]
@@ -1523,20 +1583,24 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            string? text;
+            byte[] bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+                byte[]? filebytes = resource.ResourceData;
 
-                if (text == null)
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             SHA1 sha1 = SHA1.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = sha1.ComputeHash(input);
+            byte[] output = sha1.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);

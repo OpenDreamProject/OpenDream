@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -42,6 +43,65 @@ namespace OpenDreamShared.Resources {
                         { "", state }
                     }
                 };
+            }
+
+            private static ParsedDMIDescription CloneDescription(ParsedDMIDescription original)
+            {
+                Dictionary<string, ParsedDMIState> stateCopy = new(original.States.Count);
+                foreach (var key in original.States.Keys)
+                {
+                    stateCopy.Add(key, original.States[key]);
+                }
+
+                return new ParsedDMIDescription() {
+                    Source = original.Source,
+                    Version = original.Version,
+                    Width = original.Width,
+                    Height = original.Height,
+                    States = stateCopy
+                };
+            }
+
+            public void InsertIcon(ParsedDMIDescription original_icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
+            {
+                var icon = CloneDescription(original_icon);
+                IEnumerable<ParsedDMIState> states;
+                if (icon_state is null) {
+                    states = icon.States.Values;
+                } else {
+                    states = new ParsedDMIState[] { icon.States[icon_state] };
+                }
+
+                foreach (var state in states)
+                {
+                    if (dir is not null)
+                    {
+                        var goodDir = state.Directions[dir.Value];
+                        state.Directions.Clear();
+                        state.Directions = new Dictionary<AtomDirection, ParsedDMIFrame[]>(1) { { dir.Value, goodDir } };
+                    }
+
+                    if (frame is not null)
+                    {
+                        // TODO Ref says it must start at 1, need to check behavior for when it's less. Manually validate it for now.
+                        var goodFrame = Math.Max(frame.Value, 1);
+                        foreach (var (direction, frames) in state.Directions)
+                        {
+                            state.Directions[direction] = new ParsedDMIFrame[1] { frames[goodFrame] };
+                            if (delay is not null or 0) {
+                                state.Rewind = delay < 0;
+                                frames[goodFrame].Delay = Math.Abs(delay.Value);
+                            }
+                        }
+                    }
+                }
+
+                // All of that above was just to adjust the inserted icon to match the args. Now we can actually insert it.
+
+                foreach (var state in states)
+                {
+                    States[state.Name] = state;
+                }
             }
 
             public bool HasState(string stateName = null) {
@@ -80,6 +140,7 @@ namespace OpenDreamShared.Resources {
             Vector2u? imageSize = null;
 
             while (stream.Position < stream.Length) {
+                long chunkDataPosition = stream.Position;
                 uint chunkLength = ReadBigEndianUint32(reader);
                 string chunkType = new string(reader.ReadChars(4));
 
@@ -89,33 +150,43 @@ namespace OpenDreamShared.Resources {
                         stream.Seek(chunkLength - 4, SeekOrigin.Current); //Skip the rest of the chunk
                         break;
                     case "zTXt": //Compressed text, likely contains our DMI description
+                    case "tEXt": //Uncompressed text. Not typical, but also works.
                         if (imageSize == null) throw new Exception("The PNG did not contain an IHDR chunk");
 
-                        long chunkDataPosition = stream.Position;
-                        string keyword = char.ToString(reader.ReadChar());
-
+                        StringBuilder keyword = new StringBuilder();
                         while (reader.PeekChar() != 0 && keyword.Length < 79) {
-                            keyword += reader.ReadChar();
+                            keyword.Append(reader.ReadChar());
                         }
-                        stream.Seek(2, SeekOrigin.Current); //Skip over null-terminator and compression method
 
-                        if (keyword == "Description") {
-                            stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
+                        stream.Seek(1, SeekOrigin.Current); //Skip over null-terminator
+                        if (chunkType == "zTXt")
+                            stream.Seek(1, SeekOrigin.Current); //Skip over compression type
 
-                            DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
-                            MemoryStream uncompressedDataStream = new MemoryStream();
+                        if (keyword.ToString() == "Description") {
+                            byte[] uncompressedData;
 
-                            deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+                            if (chunkType == "zTXt") {
+                                stream.Seek(2, SeekOrigin.Current); //Skip the first 2 bytes in the zlib format
 
-                            byte[] uncompressedData = new byte[uncompressedDataStream.Length];
-                            uncompressedDataStream.Seek(0, SeekOrigin.Begin);
-                            uncompressedDataStream.Read(uncompressedData);
+                                DeflateStream deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                                MemoryStream uncompressedDataStream = new MemoryStream();
+
+                                deflateStream.CopyTo(uncompressedDataStream, (int)chunkLength - keyword.Length - 2);
+
+                                uncompressedData = new byte[uncompressedDataStream.Length];
+                                uncompressedDataStream.Seek(0, SeekOrigin.Begin);
+                                uncompressedDataStream.Read(uncompressedData);
+                            } else {
+                                //The text is not compressed so nothing fancy is required
+                                uncompressedData = reader.ReadBytes((int) chunkLength - keyword.Length - 1);
+                            }
 
                             string dmiDescription = Encoding.UTF8.GetString(uncompressedData, 0, uncompressedData.Length);
                             return ParseDMIDescription(dmiDescription, imageSize.Value.X);
-                        } else {
-                            stream.Position = chunkDataPosition + chunkLength + 4;
                         }
+
+                        // Wasn't the description chunk we were looking for
+                        stream.Position = chunkDataPosition + chunkLength + 4;
                         break;
                     default: //Nothing we care about, skip it
                         stream.Seek(chunkLength + 4, SeekOrigin.Current);
@@ -126,7 +197,7 @@ namespace OpenDreamShared.Resources {
             throw new Exception("Could not find a DMI description");
         }
 
-        public static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
+        private static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
             ParsedDMIDescription description = new ParsedDMIDescription();
             ParsedDMIState currentState = null;
             int currentFrameX = 0;

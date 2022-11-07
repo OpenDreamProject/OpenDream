@@ -16,12 +16,14 @@
 	var/cpu = 0 as opendream_unimplemented
 	var/fps = null
 	var/tick_usage
+	var/loop_checks = 0 as opendream_unimplemented
 
 	var/maxx = 0
 	var/maxy = 0
 	var/maxz = 0
 	var/icon_size = 32
 	var/view = 5
+	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
@@ -29,9 +31,10 @@
 	var/version = 0 as opendream_unimplemented
 
 	var/address
-	var/port
+	var/port = 0 as opendream_compiletimereadonly
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
-	var/url
+	var/url as opendream_unimplemented
+	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/list/params = list() as opendream_unimplemented
 
@@ -59,6 +62,9 @@
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)
 		set opendream_unimplemented = TRUE
+	proc/IsBanned(key,address,computer_id,type)
+		set opendream_unimplemented = TRUE
+		return FALSE;
 
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
@@ -67,6 +73,8 @@
 		set opendream_unimplemented = TRUE
 
 	proc/Export(Addr, File, Persist, Clients)
+	proc/Import()
+		set opendream_unimplemented = TRUE
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

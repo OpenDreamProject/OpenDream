@@ -97,7 +97,7 @@ namespace Content.Tests
         private (bool Success, DreamValue Returned, Exception? except) RunTest() {
             var prev = _dreamMan.LastDMException;
 
-            var result = DreamThread.Run(async (state) => {
+            var result = DreamThread.Run("RunTest", async (state) => {
                 if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
                     return await state.Call(proc, null, null, new DreamProcArguments(null));
                 } else {

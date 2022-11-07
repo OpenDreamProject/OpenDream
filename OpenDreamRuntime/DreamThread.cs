@@ -89,7 +89,7 @@ namespace OpenDreamRuntime {
         public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
 
-        public bool WaitFor => Proc != null ? (Proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
+        public bool WaitFor { get; set; } = true;
 
         public ProcState(DreamThread thread) {
             Thread = thread;

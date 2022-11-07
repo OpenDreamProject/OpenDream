@@ -55,6 +55,17 @@ namespace OpenDreamRuntime.Procs {
                 return callTcs.Task;
             }
 
+            public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+                _callTcs = new();
+                _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
+                _callProcNotify.WaitFor = false;
+
+                // The field may be mutated by SafeResume, so cache the task
+                var callTcs = _callTcs;
+                SafeResume();
+                return callTcs.Task;
+            }
+
             public override void ReturnedInto(DreamValue value) {
                 // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
                 _callResult = value;

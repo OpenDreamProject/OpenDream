@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Dream;
@@ -51,7 +52,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        public static DreamValue RegexReplace(DreamObject regexInstance, DreamValue haystack, DreamValue replace,
+        public static async Task<DreamValue> RegexReplace(AsyncNativeProc.State state, DreamObject regexInstance, DreamValue haystack, DreamValue replace,
             int start, int end) {
             DreamRegex regex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
 
@@ -68,7 +69,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
             if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
-                return DoProcReplace(replaceProc);
+                return await DoProcReplace(state, replaceProc);
             }
 
             if (replace.TryGetValueAsString(out var replaceString)) {
@@ -78,13 +79,13 @@ namespace OpenDreamRuntime.Procs.Native {
             if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null) {
                 var dreamMan = IoCManager.Resolve<IDreamManager>();
                 if (dreamMan.ObjectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc)) {
-                    return DoProcReplace(proc);
+                    return await DoProcReplace(state, proc);
                 }
             }
 
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
-            DreamValue DoProcReplace(DreamProc proc) {
+            async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
                 if (regex.IsGlobal) {
                     throw new NotImplementedException("Proc global regex replacements are not implemented");
                 }
@@ -96,8 +97,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     args.Add(new DreamValue(group.Value));
                 }
 
-                var result = DreamThread.Run("regex.Replace", async state =>
-                    await state.Call(proc, regexInstance, null, new DreamProcArguments(args)));
+                var result = await state.CallNoWait(proc, regexInstance, null, new DreamProcArguments(args));
 
                 if (result.TryGetValueAsString(out var replacement)) {
                     return DoTextReplace(replacement);
@@ -127,13 +127,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
         [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Replace(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue haystack = arguments.GetArgument(0, "haystack");
-            DreamValue replacement = arguments.GetArgument(1, "replacement");
-            int start = arguments.GetArgument(2, "Start").GetValueAsInteger();
-            int end = arguments.GetArgument(3, "End").GetValueAsInteger();
+        public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
+            DreamValue haystack = state.Arguments.GetArgument(0, "heystack");
+            DreamValue replacement = state.Arguments.GetArgument(1, "replacement");
+            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger();
+            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger();
 
-            return RegexReplace(instance, haystack, replacement, start, end);
+            return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal) {

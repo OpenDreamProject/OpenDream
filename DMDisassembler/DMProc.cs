@@ -27,73 +27,78 @@ namespace DMDisassembler {
         public string Decompile() {
             List<DecompiledOpcode> decompiled = new();
             HashSet<int> labeledPositions = new();
+            Exception ex = null;
 
-            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
-                StringBuilder text = new StringBuilder();
-                text.Append(instruction[0]);
-                text.Append(" ");
+            try {
+                foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
+                    StringBuilder text = new StringBuilder();
+                    text.Append(instruction[0]);
+                    text.Append(" ");
 
-                switch (instruction) {
-                    case (DreamProcOpcode.FormatString, string str, int numReplacements):
-                        text.Append(numReplacements);
-                        text.Append(' ');
-                        text.Append('"');
-                        text.Append(str);
-                        text.Append('"');
-                        break;
+                    switch (instruction) {
+                        case (DreamProcOpcode.FormatString, string str, int numReplacements):
+                            text.Append(numReplacements);
+                            text.Append(' ');
+                            text.Append('"');
+                            text.Append(str);
+                            text.Append('"');
+                            break;
 
-                    case (DreamProcOpcode.PushString, string str):
-                        text.Append('"');
-                        text.Append(str);
-                        text.Append('"');
-                        break;
+                        case (DreamProcOpcode.PushString, string str):
+                            text.Append('"');
+                            text.Append(str);
+                            text.Append('"');
+                            break;
 
-                    case (DreamProcOpcode.PushResource, string str):
-                        text.Append('\'');
-                        text.Append(str);
-                        text.Append('\'');
-                        break;
+                        case (DreamProcOpcode.PushResource, string str):
+                            text.Append('\'');
+                            text.Append(str);
+                            text.Append('\'');
+                            break;
 
-                    case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
-                        labeledPositions.Add(jumpPosition);
-                        text.Append(reference);
-                        text.Append(" ");
-                        text.Append(jumpPosition);
-                        break;
-
-                    case (DreamProcOpcode.Spawn
-                            or DreamProcOpcode.BooleanOr
-                            or DreamProcOpcode.BooleanAnd
-                            or DreamProcOpcode.SwitchCase
-                            or DreamProcOpcode.SwitchCaseRange
-                            or DreamProcOpcode.Jump
-                            or DreamProcOpcode.JumpIfFalse
-                            or DreamProcOpcode.JumpIfTrue, int jumpPosition):
-                        labeledPositions.Add(jumpPosition);
-                        text.Append(jumpPosition);
-                        break;
-
-                    case (DreamProcOpcode.PushType, int type):
-                        text.Append(Program.CompiledJson.Types[type].Path);
-                        break;
-
-                    case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
-                        text.Append(argCount);
-                        for (int i = 0; i < argCount; i++) {
+                        case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
+                            labeledPositions.Add(jumpPosition);
+                            text.Append(reference);
                             text.Append(" ");
-                            text.Append(names[i] ?? "-");
-                        }
+                            text.Append(jumpPosition);
+                            break;
 
-                        break;
+                        case (DreamProcOpcode.Spawn
+                                or DreamProcOpcode.BooleanOr
+                                or DreamProcOpcode.BooleanAnd
+                                or DreamProcOpcode.SwitchCase
+                                or DreamProcOpcode.SwitchCaseRange
+                                or DreamProcOpcode.Jump
+                                or DreamProcOpcode.JumpIfFalse
+                                or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                            labeledPositions.Add(jumpPosition);
+                            text.Append(jumpPosition);
+                            break;
 
-                    default:
-                        for (int i = 1; i < instruction.Length; ++i) {
-                            text.Append(instruction[i]);
-                            text.Append(" ");
-                        }
-                        break;
+                        case (DreamProcOpcode.PushType, int type):
+                            text.Append(Program.CompiledJson.Types[type].Path);
+                            break;
+
+                        case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
+                            text.Append(argCount);
+                            for (int i = 0; i < argCount; i++) {
+                                text.Append(" ");
+                                text.Append(names[i] ?? "-");
+                            }
+
+                            break;
+
+                        default:
+                            for (int i = 1; i < instruction.Length; ++i) {
+                                text.Append(instruction[i]);
+                                text.Append(" ");
+                            }
+                            break;
+                    }
+                    decompiled.Add(new DecompiledOpcode(position, text.ToString()));
                 }
-                decompiled.Add(new DecompiledOpcode(position, text.ToString()));
+            } catch (Exception ex2) {
+                ex = ex2;
             }
 
             StringBuilder result = new StringBuilder();
@@ -109,6 +114,10 @@ namespace DMDisassembler {
                 // In case of a Jump off the end of the proc.
                 result.Append(Bytecode.Length);
                 result.AppendLine();
+            }
+
+            if (ex != null) {
+                result.Append(ex);
             }
 
             return result.ToString();

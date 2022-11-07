@@ -10,7 +10,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamObjectDefinition? ObjectDefinition { get; private set; }
         public bool Deleted { get; private set; } = false;
 
-        private Dictionary<string, DreamValue> _variables = new();
+        private Dictionary<string, DreamValue>? _variables;
 
         public DreamObject(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
-            _variables.Clear();
+            _variables?.Clear();
         }
 
         public bool IsSubtypeOf(DreamPath path) {
@@ -69,7 +69,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public IEnumerable<KeyValuePair<string, DreamValue>> GetAllVariables() {
-            return _variables
+            return (_variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
                 .Concat(ObjectDefinition?.Variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
                 .DistinctBy(kvp => kvp.Key);
         }
@@ -85,7 +85,7 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot try to get variable on a deleted object");
             }
-            if (_variables.TryGetValue(name, out variableValue) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
+            if ((_variables?.TryGetValue(name, out variableValue) is true) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
 
                 return true;
@@ -113,7 +113,9 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot set variable on a deleted object");
             }
-            DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
+            if (_variables?.TryGetValue(name, out DreamValue oldValue) is not true)
+                oldValue = ObjectDefinition.Variables[name];
+            _variables ??= new();
             _variables[name] = value;
             return oldValue;
         }

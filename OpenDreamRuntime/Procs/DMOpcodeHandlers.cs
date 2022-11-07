@@ -455,25 +455,27 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new(), new());
             DreamList argList = state.Pop().GetValueAsDreamList();
 
-            if (argList != null)
-            {
+            if (argList != null) {
+                List<DreamValue> ordered = new();
+                Dictionary<string, DreamValue> named = new();
                 foreach (DreamValue value in argList.GetValues()) {
                     if (argList.ContainsKey(value)) { //Named argument
                         if (value.TryGetValueAsString(out string name)) {
-                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                            named.Add(name, argList.GetValue(value));
                         } else {
                             throw new Exception("List contains a non-string key, and cannot be used as an arglist");
                         }
                     } else { //Ordered argument
-                        arguments.OrderedArguments.Add(value);
+                        ordered.Add(value);
                     }
                 }
+                state.Push(new DreamProcArguments(ordered, named));
+            } else {
+                state.Push(new DreamProcArguments());
             }
 
-            state.Push(arguments);
             return null;
         }
 
@@ -491,11 +493,11 @@ namespace OpenDreamRuntime.Procs {
                     case DreamProcOpcodeParameterType.Named: {
                         string argumentName = state.ReadString();
 
-                        arguments.NamedArguments[argumentName] = argumentValues[i];
+                        arguments.NamedArguments![argumentName] = argumentValues[i];
                         break;
                     }
                     case DreamProcOpcodeParameterType.Unnamed:
-                        arguments.OrderedArguments.Add(argumentValues[i]);
+                        arguments.OrderedArguments!.Add(argumentValues[i]);
                         break;
                     default:
                         throw new Exception("Invalid argument type (" + argumentType + ")");

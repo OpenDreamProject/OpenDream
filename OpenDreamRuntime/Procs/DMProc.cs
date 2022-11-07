@@ -207,17 +207,19 @@ namespace OpenDreamRuntime.Procs {
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
-                _localVariables[i] = (i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+                _localVariables[i] = (arguments.OrderedArguments != null && i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
             }
 
             //Named arguments
-            foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
-                if (argumentIndex == -1) {
-                    throw new Exception($"Invalid argument name \"{argumentName}\"");
-                }
+            if (arguments.NamedArguments != null) {
+                foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
+                    int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
+                    if (argumentIndex == -1) {
+                        throw new Exception($"Invalid argument name \"{argumentName}\"");
+                    }
 
-                _localVariables[argumentIndex] = argumentValue;
+                    _localVariables[argumentIndex] = argumentValue;
+                }
             }
         }
 

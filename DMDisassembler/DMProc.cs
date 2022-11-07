@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;

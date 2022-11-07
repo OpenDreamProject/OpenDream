@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using OpenDreamShared.Dream.Procs;
 
-namespace OpenDreamShared.Dream.Procs;
+namespace OpenDreamRuntime.Procs;
 
 public struct ProcDecoder {
     public readonly IReadOnlyList<string> Strings;

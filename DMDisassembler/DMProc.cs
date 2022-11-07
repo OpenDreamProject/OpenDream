@@ -18,6 +18,7 @@ namespace DMDisassembler {
 
         public string Name;
         public byte[] Bytecode;
+        public Exception exception;
 
         public DMProc(ProcDefinitionJson json) {
             Name = json.Name;
@@ -27,7 +28,6 @@ namespace DMDisassembler {
         public string Decompile() {
             List<DecompiledOpcode> decompiled = new();
             HashSet<int> labeledPositions = new();
-            Exception ex = null;
 
             try {
                 foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
@@ -97,8 +97,8 @@ namespace DMDisassembler {
                     }
                     decompiled.Add(new DecompiledOpcode(position, text.ToString()));
                 }
-            } catch (Exception ex2) {
-                ex = ex2;
+            } catch (Exception ex) {
+                exception = ex;
             }
 
             StringBuilder result = new StringBuilder();
@@ -116,8 +116,8 @@ namespace DMDisassembler {
                 result.AppendLine();
             }
 
-            if (ex != null) {
-                result.Append(ex);
+            if (exception != null) {
+                result.Append(exception);
             }
 
             return result.ToString();

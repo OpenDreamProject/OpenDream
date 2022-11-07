@@ -49,6 +49,7 @@ namespace DMDisassembler {
                     case "list": List(split); break;
                     case "d":
                     case "decompile": Decompile(split); break;
+                    case "test-all": TestAll(); break;
                     default: Console.WriteLine("Invalid command \"" + command + "\""); break;
                 }
             }
@@ -178,6 +179,20 @@ namespace DMDisassembler {
 
                 globalType.Procs.Add(proc.Name, proc);
             }
+        }
+
+        private static void TestAll() {
+            int errored = 0, all = 0;
+            foreach (DMProc proc in Procs) {
+                string value = proc.Decompile();
+                if (proc.exception != null) {
+                    Console.WriteLine("Error disassembling " + proc.Name);
+                    Console.WriteLine(value);
+                    ++errored;
+                }
+                ++all;
+            }
+            Console.WriteLine($"Errors in {errored}/{all} procs");
         }
     }
 }

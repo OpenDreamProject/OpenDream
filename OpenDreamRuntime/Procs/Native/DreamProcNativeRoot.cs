@@ -709,8 +709,14 @@ namespace OpenDreamRuntime.Procs.Native {
                     Vector4 vect2 = new(Color.ToHsv(right));
 
                     /// Some precision is lost when coverting back to HSV at very small values this fixes that issue
-                    if(normalized < 0.05) {
-                        normalized += 0.0000001f;
+                    if (normalized < 0.05f) {
+                        normalized += 0.001f;
+                    }
+
+                    /// This time it's overshooting
+                    /// dw these numbers are insanely arbitrary
+                    if(normalized > 0.9f) {
+                        normalized -= 0.00445f;
                     }
 
                     float newhue;
@@ -720,9 +726,9 @@ namespace OpenDreamRuntime.Procs.Native {
                         delta = -delta;
                         normalized = 1 - normalized;
                     }
-                    if (delta > 0.5) // 180deg
+                    if (delta > 0.5f) // 180deg
                     {
-                        vect1.X += 1; // 360deg
+                        vect1.X += 1f; // 360deg
                         newhue = (vect1.X + normalized * (vect2.X - vect1.X)) % 1; // 360deg
                     } else {
                         newhue = vect1.X + normalized * delta;

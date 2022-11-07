@@ -124,6 +124,12 @@ namespace OpenDreamRuntime {
         public virtual void ReturnedInto(DreamValue value) {}
 
         public virtual void Cancel() {}
+
+        public override string ToString() {
+            var sb = new StringBuilder();
+            AppendStackFrame(sb);
+            return sb.ToString();
+        }
     }
 
     public sealed class DreamThread {
@@ -250,17 +256,17 @@ namespace OpenDreamRuntime {
 
             // `WaitFor = true` frames
             while (_current is not null && _current.WaitFor) {
-                var frame = _current;
+                newStackReversed.Push(_current);
                 PopProcState();
-                newStackReversed.Push(frame);
             }
 
             // `WaitFor = false` frame
             if(_current == null) throw new InvalidOperationException();
+            var threadName = _current.ToString();
             newStackReversed.Push(_current);
             PopProcState();
 
-            DreamThread newThread = new DreamThread("defer " + Name);
+            DreamThread newThread = new DreamThread(threadName);
             foreach (var frame in newStackReversed) {
                 frame.Thread = newThread;
                 newThread.PushProcState(frame);

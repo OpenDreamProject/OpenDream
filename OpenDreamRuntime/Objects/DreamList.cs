@@ -167,7 +167,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public int GetLength() {
+        public virtual int GetLength() {
             return _values.Count;
         }
 
@@ -202,6 +202,10 @@ namespace OpenDreamRuntime.Objects {
             var list = new DreamListVars(dreamObject);
             list.InitSpawn(new DreamProcArguments(null));
             return list;
+        }
+
+        public override int GetLength() {
+            return _dreamObject.GetVariableNames().Count();
         }
 
         public override List<DreamValue> GetValues() {

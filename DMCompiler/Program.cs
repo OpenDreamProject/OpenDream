@@ -7,7 +7,10 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler {
     class Program {
         static void Main(string[] args) {
-            if (!TryParseArguments(args, out DMCompilerSettings settings)) return;
+            if (!TryParseArguments(args, out DMCompilerSettings settings)) {
+                Environment.Exit(1);
+                return;
+            }
 
             if (!DMCompiler.Compile(settings)) {
                 //Compile errors, exit with an error code

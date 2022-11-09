@@ -180,12 +180,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             _defines.Add(key, new DMMacro(null, list));
         }
 
-        // Prepare to include the given files, in order.
-        public void IncludeFiles(IEnumerable<string> files) {
-            // NB: IncludeFile pushes newly seen files to a stack, so push them
-            // in reverse order we want them processed.
-        }
-
+        // NB: Pushes files to a stack, so call in reverse order if you are
+        // including multiple files.
         public void IncludeFile(string includeDir, string file, Location? includedFrom = null) {
             string filePath = Path.Combine(includeDir, file);
             filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);

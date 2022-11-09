@@ -180,8 +180,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             _defines.Add(key, new DMMacro(null, list));
         }
 
+        // Prepare to include the given files, in order.
         public void IncludeFiles(IEnumerable<string> files) {
-            foreach (string file in files) {
+            // NB: IncludeFile pushes newly seen files to a stack, so push them
+            // in reverse order we want them processed.
+            foreach (string file in files.Reverse()) {
                 string includeDir = Path.GetDirectoryName(file);
                 string fileName = Path.GetFileName(file);
 
@@ -627,7 +630,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             int parenthesisNesting = 1;
             while(true) {
-                switch (parameterToken.Type) { 
+                switch (parameterToken.Type) {
                     case TokenType.DM_Preproc_Punctuator_Comma when parenthesisNesting == 1:
                         parameters.Add(currentParameter);
                         currentParameter = new List<Token>();
@@ -655,7 +658,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         continue;
                 }
                 break; // If it manages to escape the switch, the loop breaks
-            } 
+            }
 
             parameters.Add(currentParameter);
             if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {

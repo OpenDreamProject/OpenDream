@@ -84,27 +84,29 @@ namespace DMCompiler {
 
         [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
+            string realFirstFile = files[0];
+
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
 
-                if (!File.Exists(dmStandard))
-                {
+                if (!File.Exists(dmStandard)) {
                     Error(new CompilerError(Location.Internal, "DMStandard not found."));
                     return null;
                 }
 
-                files.Add(dmStandard);
+                // Insert DMStandard before the user's files.
+                files.Insert(0, dmStandard);
             }
 
             DMPreprocessor build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
-                preproc.IncludeFiles(files);
                 if (macroDefines != null) {
                     foreach (var (key, value) in macroDefines) {
                         preproc.DefineMacro(key, value);
                     }
                 }
+                preproc.IncludeFiles(files);
                 return preproc;
             }
 
@@ -117,7 +119,7 @@ namespace DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputDir = Path.GetDirectoryName(realFirstFile);
                 string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
 
                 File.WriteAllText(outputPath, result.ToString());

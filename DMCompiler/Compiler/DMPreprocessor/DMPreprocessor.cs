@@ -171,6 +171,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return GetEnumerator();
         }
 
+        public void DefineMacro(string key, string value) {
+            var lexer = new DMPreprocessorLexer(null, "<command line>", value);
+            var list = new List<Token>();
+            while (lexer.GetNextToken() is Token token && token.Type != TokenType.EndOfFile) {
+                list.Add(token);
+            }
+            _defines.Add(key, new DMMacro(null, list));
+        }
+
         public void IncludeFiles(IEnumerable<string> files) {
             foreach (string file in files) {
                 string includeDir = Path.GetDirectoryName(file);

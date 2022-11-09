@@ -21,16 +21,22 @@ namespace DMCompiler {
         private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
             settings = new();
             settings.Files = new List<string>();
-            
+
             bool skipBad = args.Contains("--skip-bad-args");
 
-            foreach (string arg in args) {
+            for (int i = 0; i < args.Length;) {
+                string arg = args[i++];
                 switch (arg) {
                     case "--suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
                     case "--dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "--no-standard": settings.NoStandard = true; break;
                     case "--verbose": settings.Verbose = true; break;
                     case "--skip-bad-args": break;
+                    case "--define": {
+                        string[] parts = args[i++].Split("=", 2);
+                        (settings.MacroDefines ??= new())[parts[0]] = parts.Length > 1 ? parts[1] : "";
+                        break;
+                    }
                     default: {
                         string extension = Path.GetExtension(arg);
 

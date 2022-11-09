@@ -44,7 +44,7 @@ namespace DMCompiler {
                 Error(new CompilerError(Location.Internal, "Some opcodes have the same byte value! Output assembly may be corrupted."));
             }
 
-            DMPreprocessor preprocessor = Preprocess(settings.Files);
+            DMPreprocessor preprocessor = Preprocess(settings.Files, settings.MacroDefines);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
             if (successfulCompile)
@@ -83,7 +83,7 @@ namespace DMCompiler {
         }
 
         [CanBeNull]
-        private static DMPreprocessor Preprocess(List<string> files) {
+        private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
             if (!Settings.NoStandard) {
                 string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
@@ -97,10 +97,20 @@ namespace DMCompiler {
                 files.Add(dmStandard);
             }
 
+            DMPreprocessor build() {
+                DMPreprocessor preproc = new DMPreprocessor(true);
+                preproc.IncludeFiles(files);
+                if (macroDefines != null) {
+                    foreach (var (key, value) in macroDefines) {
+                        preproc.DefineMacro(key, value);
+                    }
+                }
+                return preproc;
+            }
+
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
-                DMPreprocessor dumpPreproc = new DMPreprocessor(true);
-                dumpPreproc.IncludeFiles(files);
+                DMPreprocessor dumpPreproc = build();
 
                 StringBuilder result = new();
                 foreach (Token t in dumpPreproc) {
@@ -114,9 +124,7 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
 
-            DMPreprocessor preproc = new DMPreprocessor(true);
-            preproc.IncludeFiles(files);
-            return preproc;
+            return build();
         }
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
@@ -273,5 +281,6 @@ namespace DMCompiler {
         public bool DumpPreprocessor;
         public bool NoStandard;
         public bool Verbose;
+        public Dictionary<string, string> MacroDefines;
     }
 }

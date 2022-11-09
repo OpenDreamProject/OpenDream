@@ -84,21 +84,6 @@ namespace DMCompiler {
 
         [CanBeNull]
         private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
-            string realFirstFile = files[0];
-
-            if (!Settings.NoStandard) {
-                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
-
-                if (!File.Exists(dmStandard)) {
-                    Error(new CompilerError(Location.Internal, "DMStandard not found."));
-                    return null;
-                }
-
-                // Insert DMStandard before the user's files.
-                files.Insert(0, dmStandard);
-            }
-
             DMPreprocessor build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
                 if (macroDefines != null) {
@@ -106,7 +91,22 @@ namespace DMCompiler {
                         preproc.DefineMacro(key, value);
                     }
                 }
-                preproc.IncludeFiles(files);
+
+                // NB: IncludeFile pushes newly seen files to a stack, so push
+                // them in reverse order to process them in forward order.
+                foreach (string file in Enumerable.Reverse(files)) {
+                    string includeDir = Path.GetDirectoryName(file);
+                    string fileName = Path.GetFileName(file);
+
+                    preproc.IncludeFile(includeDir, fileName);
+                }
+
+                // Push DMStandard to the top of the stack, prioritizing it.
+                if (!Settings.NoStandard) {
+                    string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    string dmStandardDirectory = Path.Join(compilerDirectory ?? string.Empty, "DMStandard");
+                    preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
+                }
                 return preproc;
             }
 
@@ -119,7 +119,7 @@ namespace DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string outputDir = Path.GetDirectoryName(realFirstFile);
+                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
                 string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
 
                 File.WriteAllText(outputPath, result.ToString());

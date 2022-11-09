@@ -184,12 +184,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public void IncludeFiles(IEnumerable<string> files) {
             // NB: IncludeFile pushes newly seen files to a stack, so push them
             // in reverse order we want them processed.
-            foreach (string file in files.Reverse()) {
-                string includeDir = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
-
-                IncludeFile(includeDir, fileName);
-            }
         }
 
         public void IncludeFile(string includeDir, string file, Location? includedFrom = null) {

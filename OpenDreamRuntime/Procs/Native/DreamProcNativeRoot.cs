@@ -639,6 +639,8 @@ namespace OpenDreamRuntime.Procs.Native {
             float workingfloat = 0;
             float maxvalue = 1;
             float minvalue = 0;
+            float leftboundy = 0;
+            float rightboundry = 1;
 
             /// None of these should be null however C# is "special"
             Color left = new();
@@ -664,12 +666,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     if (workingfloat >= index) {
                         right = color;
+                        rightboundry = workingfloat;
                         rightexists = true;
                         break;
                     }
                     else {
                         left = color;
                         leftexists = true;
+                        leftboundy = workingfloat;
                     }
 
                     if (color_or_int) {
@@ -681,7 +685,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             /// Convert the index to a 0-1 range
-            float normalized = (index - minvalue) / (maxvalue - minvalue);
+            float normalized = (index - leftboundy) / (rightboundry - leftboundy);
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists || (rightexists && normalized == 1) || (rightexists && normalized == 0)) {

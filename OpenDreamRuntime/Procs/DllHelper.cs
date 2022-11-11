@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Procs
             var dll = GetDll(resource, dllName);
 
             if (!NativeLibrary.TryGetExport(dll, funcName, out var export))
-                throw new MissingMethodException($"FFI: Unable to find symbol {export} in library {dllName}");
+                throw new MissingMethodException($"FFI: Unable to find symbol {funcName} in library {dllName}");
 
             return (delegate* unmanaged<int, byte**, byte*>)export;
         }
@@ -27,7 +27,7 @@ namespace OpenDreamRuntime.Procs
                 return dll;
 
             if (!TryResolveDll(resource, dllName, out dll))
-                throw new DllNotFoundException($"FFI: Unable to load {dllName}");
+                throw new DllNotFoundException($"FFI: Unable to load {dllName}, unknown error."); //unknown because NativeLibrary doesn't give any error information.
 
             LoadedDlls.Add(dllName, dll);
             return dll;
@@ -41,7 +41,8 @@ namespace OpenDreamRuntime.Procs
             // Simple load didn't pass, try next to dmb.
             var root = resource.RootPath;
             var fullPath = Path.Combine(root, dllName);
-
+            if(!File.Exists(fullPath))
+                throw new DllNotFoundException($"FFI: Unable to load {dllName}. File not found at {fullPath}");
             return NativeLibrary.TryLoad(fullPath, out dll);
         }
     }

@@ -70,6 +70,9 @@ namespace OpenDreamRuntime.Procs {
                 // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
                 _callResult = value;
             }
+            public override void Cancel() {
+                _callTcs.SetCanceled();
+            }
 
             private async Task InternalResumeAsync() {
                 Result = await _taskFunc(this);

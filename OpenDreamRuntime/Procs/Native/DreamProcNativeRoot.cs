@@ -957,24 +957,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative) {
                     Dictionary<Object, Object?> jsonObject = new(list.GetLength());
-
                     foreach (DreamValue listValue in list.GetValues()) {
                         if (list.ContainsKey(listValue)) {
-                            jsonObject.Add(HttpUtility.JavaScriptStringEncode(listValue.Stringify()), // key
-                                           CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1)); // value
+                            var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
+                            var val = CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1);
+                            jsonObject[key] = val;
                         } else {
-                            jsonObject.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1), null); // list[x] = null
+                            var key = CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1);
+                            jsonObject[key] = null; // list[x] = null
                         }
                     }
-
                     return jsonObject;
+                } else {
+                    List<Object?> jsonArray = new();
+                    foreach (DreamValue listValue in list.GetValues()) {
+                        jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
+                    }
+                    return jsonArray;
                 }
-                List<Object?> jsonArray = new();
-                foreach (DreamValue listValue in list.GetValues()) {
-                    jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
-                }
-
-                return jsonArray;
             }
             if (value.Type == DreamValueType.DreamObject) {
                 if (value.Value == null) return null;

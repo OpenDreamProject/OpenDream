@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
                 _callResult = value;
             }
             public override void Cancel() {
-                _callTcs.SetCanceled();
+                _callTcs?.SetCanceled();
             }
 
             private async Task InternalResumeAsync() {

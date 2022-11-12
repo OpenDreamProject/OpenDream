@@ -114,12 +114,6 @@ namespace OpenDreamRuntime.Objects {
             ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
         }
 
-        public void UnionValue(DreamValue value) {
-            if (!_values.Contains(value)) {
-                AddValue(value);
-            }
-        }
-
         //Does not include associations
         public virtual bool ContainsValue(DreamValue value) {
             return _values.Contains(value);

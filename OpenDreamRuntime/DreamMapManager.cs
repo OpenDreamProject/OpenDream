@@ -180,7 +180,9 @@ namespace OpenDreamRuntime {
             } else {
                 cell.Turf = new DreamObject(type);
                 _turfToTilePos.Add(cell.Turf, (pos, level));
+                // Only add the /turf to .contents when it's created.
                 cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
+                _dreamManager.WorldContentsList.AddValue(new(cell.Turf));
             }
 
             cell.Turf.InitSpawn(creationArguments);
@@ -302,7 +304,9 @@ namespace OpenDreamRuntime {
 
                 var turf = SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new());
                 // The following calls level.SetArea via an event on the area's `contents` var.
-                area.GetVariable("contents").MustGetValueAsDreamList().UnionValue(new(turf));
+                if (level.Cells[pos.X - 1, pos.Y - 1].Area != area) {
+                    area.GetVariable("contents").MustGetValueAsDreamList().AddValue(new(turf));
+                }
 
                 blockX++;
                 if (blockX > block.Width) {

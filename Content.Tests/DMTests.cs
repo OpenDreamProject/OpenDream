@@ -116,7 +116,6 @@ namespace Content.Tests
                     result = await callTask;
                     return DreamValue.Null;
                 } else {
-                    result = null;
                     Assert.Fail($"No global proc named RunTest");
                     return DreamValue.Null;
                 }

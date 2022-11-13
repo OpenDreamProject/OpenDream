@@ -74,6 +74,8 @@ namespace OpenDreamRuntime {
                     return new DreamValue(Invisibility);
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+            }
+        }
 
         public override string ToString() {
             if (OwningType == DreamPath.Root) {

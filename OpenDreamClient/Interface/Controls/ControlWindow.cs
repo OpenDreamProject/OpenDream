@@ -63,10 +63,16 @@ namespace OpenDreamClient.Interface.Controls
             window.Children.Add(UIElement);
             window.SetWidth = _controlDescriptor.Size?.X ?? 640;
             window.SetHeight = _controlDescriptor.Size?.Y ?? 440;
-            if(_controlDescriptor.Size?.X == 0) 
+            if(_controlDescriptor.Size?.X == 0)
+            {
                 window.SetWidth = window.MaxWidth;
-            if(_controlDescriptor.Size?.Y == 0) 
+                Logger.Info($"{window.Name} has 0 X, set to {window.MaxWidth}");
+            }
+            if(_controlDescriptor.Size?.Y == 0)
+            {
                 window.SetHeight = window.MaxHeight;
+                Logger.Info($"{window.Name} has 0 Y, set to {window.MaxHeight}");
+            }
             window.Closing += _ => { _openWindows.Remove((window, null)); };
 
             _openWindows.Add((window, null));
@@ -83,54 +89,88 @@ namespace OpenDreamClient.Interface.Controls
 
         public void UpdateAnchors()
         {
+
+            var windowSize = Size.GetValueOrDefault();
+            Logger.Info($"UpdateAnchor() {Name} canvas: {_canvas.Size} window: {windowSize}");
+            if(windowSize.X == 0)
+                windowSize.X = 640;
+            if(windowSize.Y == 0)
+                windowSize.Y = 440;
+
             for(int i = 0; i < ChildControls.Count; i++)
             {
                 InterfaceControl control = ChildControls[i];
                 var element = control.UIElement;
                 var elementPos = control.Pos.GetValueOrDefault();
-                var windowSize = Size.GetValueOrDefault();
                 var elementSize = control.Size.GetValueOrDefault();
 
-                if(control.Size?.X == 0) 
+                Logger.Info($"{control.Name} has size: {elementSize} pos: {elementPos}");
+                if(control.Size?.X == 0)
                 {
                     elementSize.X = (int) (windowSize.X - elementPos.X);
                     if(ChildControls.Count - 1 > i)
                     {
-                        var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
-                        elementSize.X = nextElementPos.X - elementPos.X;
+                        if(ChildControls[i+1].Pos == null)
+                            Logger.Info($"Next element {ChildControls[i+1].Name} pos is null");
+                        else
+                        {
+                            var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
+                            elementSize.X = nextElementPos.X - elementPos.X;
+                            Logger.Info($"Next element {ChildControls[i+1].Name} is at {nextElementPos.X}, this one is at {elementPos.X}");
+                        }
                     }
-                    element.SetWidth = elementSize.X;
+                    element.SetWidth = (elementSize.X/windowSize.X) * _canvas.Width;
+                    Logger.Info($"{control.Name} new X size is {elementSize.X} = {element.SetWidth}");
                 }
-                if(control.Size?.Y == 0) 
+                if(control.Size?.Y == 0)
                 {
                     elementSize.Y = (int) (windowSize.Y - elementPos.Y);
                     if(ChildControls.Count - 1 > i)
                     {
-                        var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
-                        elementSize.Y = nextElementPos.Y - elementPos.Y;
+                        if(ChildControls[i+1].Pos == null)
+                            Logger.Info($"Next element {ChildControls[i+1].Name} pos is null");
+                        else
+                        {
+                            var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
+                            elementSize.Y = nextElementPos.Y - elementPos.Y;
+                            Logger.Info($"Next element {ChildControls[i+1].Name} is at {nextElementPos.Y}, this one is at {elementPos.Y}");
+                        }
                     }
-                    element.SetHeight = elementSize.Y;                    
+                    element.SetHeight = (elementSize.Y/windowSize.Y) * _canvas.Height;
+                    Logger.Info($"{control.Name} new Y size is {elementSize.Y} = {element.SetHeight}");
                 }
 
                 if (control.Anchor1.HasValue)
                 {
+                    Logger.Info($"{control.Name} has anchor1 {control.Anchor1}");
                     var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
                     var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
+                    Logger.Info($"{control.Name} offsets1: {offset1X} {offset1Y}");
                     var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
                     var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
+                    Logger.Info($"{control.Name} left-top: {left} {top}");
                     LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
                     LayoutContainer.SetMarginTop(element, Math.Max(top, 0));
 
                     if (control.Anchor2.HasValue)
                     {
-                        var offset2X = (elementPos.X + elementSize.X) -
-                                       (windowSize.X * control.Anchor2.Value.X / 100);
-                        var offset2Y = (elementPos.Y + elementSize.Y) -
-                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
-                        var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
-                        var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
-                        element.SetWidth = Math.Max(width, 0);
-                        element.SetHeight = Math.Max(height, 0);
+                        if(control.Anchor2.Value.X < control.Anchor1.Value.X || control.Anchor2.Value.Y < control.Anchor1.Value.Y)
+                            Logger.Warning($"Invalid anchor2 value in DMF for element {control.Name}. Ignoring.");
+                        else
+                        {
+                            Logger.Info($"{control.Name} has anchor2 {control.Anchor2}");
+                            var offset2X = (elementPos.X + elementSize.X) -
+                                        (windowSize.X * control.Anchor2.Value.X / 100);
+                            var offset2Y = (elementPos.Y + elementSize.Y) -
+                                        (windowSize.Y * control.Anchor2.Value.Y / 100);
+                            Logger.Info($"{control.Name} offsets2: {offset2X} {offset2Y}");
+                            var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
+                            var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
+                            Logger.Info($"{control.Name} width-height: {width} {height}");
+                            element.SetWidth = Math.Max(width, 0);
+                            element.SetHeight = Math.Max(height, 0);
+                        }
+
                     }
                 }
             }
@@ -179,8 +219,31 @@ namespace OpenDreamClient.Interface.Controls
                     ControlDescriptorTab => new ControlTab(controlDescriptor, this),
                     _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
                 };
+                // Can't have out-of-order components, so make sure they're ordered properly
+                if(ChildControls.Count > 0)
+                {
+                    var prevPos = ChildControls[ChildControls.Count-1].Pos.GetValueOrDefault();
+                    var curPos = control.Pos.GetValueOrDefault();
+                    if(prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
+                        ChildControls.Add(control);
+                    else
+                    {
+                        Logger.Info($"Out of order component {control.Name}, re-ordered");
+                        int i = 0;
+                        while(i < ChildControls.Count)
+                        {
+                            prevPos = ChildControls[i].Pos.GetValueOrDefault();
+                            if(prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
+                                i++;
+                            else
+                                break;
+                        }
+                        ChildControls.Insert(i, control);
+                    }
+                }
+                else
+                    ChildControls.Add(control);
 
-                ChildControls.Add(control);
                 _canvas.Children.Add(control.UIElement);
             }
         }

@@ -234,6 +234,22 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(1);
         }
 
+        [DreamProc("cmptextEx")]
+        [DreamProcParameter("T1", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_cmptext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            List<DreamValue> values = arguments.GetAllArguments();
+            if (!values[0].TryGetValueAsString(out var t1))
+            {
+                return new DreamValue(0);
+            }
+
+            for (int i = 1; i < values.Count; i++) {
+                if (!values[i].TryGetValueAsString(out var t2) || t2 != t1) return new DreamValue(0);
+            }
+
+            return new DreamValue(1);
+        }
+
         [DreamProc("copytext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]

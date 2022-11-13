@@ -2,8 +2,6 @@
 	set opendream_unimplemented = TRUE
 /proc/bounds_dist(Ref, Target)
 	set opendream_unimplemented = TRUE
-/proc/cmptextEx(T1)
-	set opendream_unimplemented = TRUE
 /proc/filter(type, parameter, ...)
 	set opendream_unimplemented = TRUE
 /proc/findlasttext_char(Haystack,Needle,Start=0,End=1)

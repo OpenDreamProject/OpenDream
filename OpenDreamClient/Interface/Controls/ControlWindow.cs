@@ -95,20 +95,6 @@ namespace OpenDreamClient.Interface.Controls
                 var element = control.UIElement;
                 var elementPos = control.Pos.GetValueOrDefault();
                 var elementSize = control.Size.GetValueOrDefault();
-
-                if(control.Size?.X == 0)
-                {
-                    elementSize.X = (int) (windowSize.X - elementPos.X);
-                    if(ChildControls.Count - 1 > i)
-                    {
-                        if(ChildControls[i+1].Pos != null)
-                        {
-                            var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
-                            elementSize.X = nextElementPos.X - elementPos.X;
-                        }
-                    }
-                    element.SetWidth = (elementSize.X/windowSize.X) * _canvas.Width;
-                }
                 if(control.Size?.Y == 0)
                 {
                     elementSize.Y = (int) (windowSize.Y - elementPos.Y);
@@ -121,6 +107,20 @@ namespace OpenDreamClient.Interface.Controls
                         }
                     }
                     element.SetHeight = (elementSize.Y/windowSize.Y) * _canvas.Height;
+                }
+                if(control.Size?.X == 0)
+                {
+                    elementSize.X = (int) (windowSize.X - elementPos.X);
+                    if(ChildControls.Count - 1 > i)
+                    {
+                        if(ChildControls[i+1].Pos != null)
+                        {
+                            var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
+                            if(nextElementPos.X < (elementSize.X + elementPos.X) && nextElementPos.Y < (elementSize.Y + elementPos.Y))
+                                elementSize.X = nextElementPos.X - elementPos.X;
+                        }
+                    }
+                    element.SetWidth = (elementSize.X/windowSize.X) * _canvas.Width;
                 }
 
                 if (control.Anchor1.HasValue)

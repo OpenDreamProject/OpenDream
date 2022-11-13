@@ -34,5 +34,6 @@
 
 //misc notes
 // particle image height/width is not considered for TILE_BOUND-less atoms
+// later spawned particles layer over sooner spawned particles
 // no idea how z works, except that by default going under -1 and over 200 makes the particle vanish
 // in byond, particles only get updated when a new var is set, so doing things like replacing something in a list doesnt update it

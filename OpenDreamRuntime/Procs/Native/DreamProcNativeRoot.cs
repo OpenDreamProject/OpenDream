@@ -236,7 +236,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("cmptextEx")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_cmptext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_cmptextEx(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             List<DreamValue> values = arguments.GetAllArguments();
             if (!values[0].TryGetValueAsString(out var t1))
             {

@@ -10,3 +10,6 @@
 
 	ASSERT(cmptext("string", "string", "string"))
 	ASSERT(!cmptext("string", "string", "spagetti"))
+
+	ASSERT(cmptext("thing", "\proper thing"))
+	ASSERT(cmptext("ITEM", "\improper ITEm"))

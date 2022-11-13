@@ -155,13 +155,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue arg = arguments.GetArgument(0, "A");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
-                if (float.IsInfinity(floatnum)) {
-                    return new DreamValue(0);
-                }
-                if (float.IsNaN(floatnum)) {
-                    return arg;
-                }
-                return new DreamValue((int)Math.Ceiling(floatnum));
+                return new DreamValue(MathF.Ceiling(floatnum));
             }
             return new DreamValue(0);
         }
@@ -616,13 +610,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_floor(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue arg = arguments.GetArgument(0, "A");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
-                if (float.IsInfinity(floatnum)) {
-                    return new DreamValue(0);
-                }
-                if (float.IsNaN(floatnum)) {
-                    return arg;
-                }
-                return new DreamValue((int)Math.Floor(floatnum));
+                return new DreamValue(MathF.Floor(floatnum));
             }
             return new DreamValue(0);
         }
@@ -632,13 +620,10 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fract(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue arg = arguments.GetArgument(0, "n");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
-                if (float.IsInfinity(floatnum)) {
+                if(float.IsInfinity(floatnum)) {
                     return new DreamValue(0);
                 }
-                if(float.IsNaN(floatnum)) {
-                    return arg;
-                }
-                return new DreamValue(floatnum - (int)floatnum);
+                return new DreamValue(floatnum - MathF.Truncate(floatnum));
             }
             return new DreamValue(0);
         }
@@ -1950,10 +1935,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (float.IsInfinity(floatnum)) {
                     return new DreamValue(0);
                 }
-                if (float.IsNaN(floatnum)) {
-                    return arg;
-                }
-                return new DreamValue((int)floatnum);
+                return new DreamValue(MathF.Truncate(floatnum));
             }
             return new DreamValue(0);
         }

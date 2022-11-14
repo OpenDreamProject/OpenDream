@@ -1,6 +1,6 @@
 ﻿using Lidgren.Network;
 using Robust.Shared.Network;
-
+using Robust.Shared.Serialization;
 namespace OpenDreamShared.Network.Messages
 {
     public sealed class MsgBrowseResource : NetMessage
@@ -11,14 +11,14 @@ namespace OpenDreamShared.Network.Messages
         public string Filename;
         public byte[] Data;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             Filename = buffer.ReadString();
             var bytes = buffer.ReadVariableInt32();
             Data = buffer.ReadBytes(bytes);
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.Write(Filename);
             buffer.WriteVariableInt32(Data.Length);

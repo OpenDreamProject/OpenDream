@@ -1,6 +1,6 @@
 ﻿using Lidgren.Network;
 using Robust.Shared.Network;
-
+using Robust.Shared.Serialization;
 namespace OpenDreamShared.Network.Messages
 {
     public sealed class MsgAlert : NetMessage
@@ -12,7 +12,7 @@ namespace OpenDreamShared.Network.Messages
         public string Message;
         public string Button1, Button2, Button3;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             PromptId = buffer.ReadVariableInt32();
             Title = buffer.ReadString();
@@ -22,7 +22,7 @@ namespace OpenDreamShared.Network.Messages
             Button3 = buffer.ReadString();
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.WriteVariableInt32(PromptId);
             buffer.Write(Title);

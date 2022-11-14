@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using Lidgren.Network;
 using Robust.Shared.Network;
-
+using Robust.Shared.Serialization;
+using Robust.Shared.Serialization;
 namespace OpenDreamShared.Network.Messages
 {
     public sealed class MsgUpdateStatPanels : NetMessage
@@ -10,7 +11,7 @@ namespace OpenDreamShared.Network.Messages
 
         public Dictionary<string, List<string>> StatPanels;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             var countTabs = buffer.ReadVariableInt32();
             StatPanels = new Dictionary<string, List<string>>(countTabs);
@@ -30,7 +31,7 @@ namespace OpenDreamShared.Network.Messages
             }
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.WriteVariableInt32(StatPanels.Count);
             foreach (var (title, lines) in StatPanels)

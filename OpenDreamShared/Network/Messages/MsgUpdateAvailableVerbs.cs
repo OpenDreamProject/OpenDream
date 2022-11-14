@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Lidgren.Network;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages
 {
@@ -11,7 +12,7 @@ namespace OpenDreamShared.Network.Messages
 
         public (string, string, string)[] AvailableVerbs;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             var count = buffer.ReadVariableInt32();
             (string, string, string)[] verbs = new (string, string, string)[count];
@@ -24,7 +25,7 @@ namespace OpenDreamShared.Network.Messages
             AvailableVerbs = verbs;
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.WriteVariableInt32(AvailableVerbs.Length);
 

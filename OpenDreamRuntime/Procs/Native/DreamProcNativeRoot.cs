@@ -1543,7 +1543,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     break;
                 case 3: //hcy
                     /// TODO Figure out why the chroma for #ca60db is 48 instead of 68
-                    throw new NotImplementedException("HCY Colorspace is not impelemented");
+                    throw new NotImplementedException("HCY Colorspace is not implemented");
                     /*
                     Vector4 hcycolor = Color.ToHcy(c);
                     list.AddValue(new DreamValue(hcycolor.X * 360));
@@ -1551,7 +1551,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     list.AddValue(new DreamValue(hcycolor.Z * 100));
                     */
                 default:
-                    throw new NotImplementedException($"Colorspace {space} is not impelemented");
+                    throw new NotImplementedException($"Colorspace {space} is not implemented");
             }
 
             if (color.Length == 9 || color.Length == 5) {

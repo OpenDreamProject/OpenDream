@@ -328,11 +328,11 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 				return pick(NORTH, SOUTH, EAST, WEST)
 
 	dirAngle += round(Angle, 45)
-	if (dirAngle > 360) dirAngle -= 360
-	else if (dirAngle < 0) dirAngle += 360
+	dirAngle = dirAngle % 360
+	if(dirAngle < 0)
+		dirAngle = 360 + dirAngle
 
 	switch (dirAngle)
-		if (0, 360) return EAST
 		if (45) return NORTHEAST
 		if (90) return NORTH
 		if (135) return NORTHWEST
@@ -340,6 +340,7 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (225) return SOUTHWEST
 		if (270) return SOUTH
 		if (315) return SOUTHEAST
+		else return EAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
 	if (!istype(Loc1) || !istype(Loc2)) return 127

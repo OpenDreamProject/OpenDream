@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime {
@@ -8,6 +9,7 @@ namespace OpenDreamRuntime {
             IoCManager.Register<IAtomManager, AtomManager>();
             IoCManager.Register<IProcScheduler, ProcScheduler>();
             IoCManager.Register<DreamResourceManager, DreamResourceManager>();
+            IoCManager.Register<IDreamDebugManager, DreamDebugManager>();
 
             #if DEBUG
             IoCManager.Register<LocalHostConGroup>();

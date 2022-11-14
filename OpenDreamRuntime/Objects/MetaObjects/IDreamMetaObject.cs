@@ -17,11 +17,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) =>
             ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
 
-        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamValue a, DreamValue b) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot output {b} to {a}");
 
-            return ParentType.OperatorOutput(a, b);
+            ParentType.OperatorOutput(a, b);
         }
 
         public DreamValue OperatorAdd(DreamValue a, DreamValue b) {

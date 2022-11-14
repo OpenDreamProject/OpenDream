@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.MetaObjects;
@@ -63,7 +64,7 @@ namespace OpenDreamRuntime.Objects {
             return GetTreeEntry(typeId).ObjectDefinition;
         }
 
-        public bool TryGetGlobalProc(string name, out DreamProc? globalProc) {
+        public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc) {
             globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
 
             return (globalProc != null);
@@ -271,7 +272,10 @@ namespace OpenDreamRuntime.Objects {
             }
 
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            return new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
+            proc.Source = procDefinition.Source;
+            proc.Line = procDefinition.Line;
+            return proc;
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)

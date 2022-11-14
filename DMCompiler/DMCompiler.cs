@@ -44,7 +44,7 @@ namespace DMCompiler {
                 Error(new CompilerError(Location.Internal, "Some opcodes have the same byte value! Output assembly may be corrupted."));
             }
 
-            DMPreprocessor preprocessor = Preprocess(settings.Files);
+            DMPreprocessor preprocessor = Preprocess(settings.Files, settings.MacroDefines);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
             if (successfulCompile)
@@ -83,24 +83,36 @@ namespace DMCompiler {
         }
 
         [CanBeNull]
-        private static DMPreprocessor Preprocess(List<string> files) {
-            if (!Settings.NoStandard) {
-                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string dmStandard = Path.Join(compilerDirectory ?? string.Empty, "DMStandard", "_Standard.dm");
-
-                if (!File.Exists(dmStandard))
-                {
-                    Error(new CompilerError(Location.Internal, "DMStandard not found."));
-                    return null;
+        private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
+            DMPreprocessor build() {
+                DMPreprocessor preproc = new DMPreprocessor(true);
+                if (macroDefines != null) {
+                    foreach (var (key, value) in macroDefines) {
+                        preproc.DefineMacro(key, value);
+                    }
                 }
 
-                files.Add(dmStandard);
+                // NB: IncludeFile pushes newly seen files to a stack, so push
+                // them in reverse order to process them in forward order.
+                foreach (string file in Enumerable.Reverse(files)) {
+                    string includeDir = Path.GetDirectoryName(file);
+                    string fileName = Path.GetFileName(file);
+
+                    preproc.IncludeFile(includeDir, fileName);
+                }
+
+                // Push DMStandard to the top of the stack, prioritizing it.
+                if (!Settings.NoStandard) {
+                    string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    string dmStandardDirectory = Path.Join(compilerDirectory ?? string.Empty, "DMStandard");
+                    preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
+                }
+                return preproc;
             }
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
-                DMPreprocessor dumpPreproc = new DMPreprocessor(true);
-                dumpPreproc.IncludeFiles(files);
+                DMPreprocessor dumpPreproc = build();
 
                 StringBuilder result = new();
                 foreach (Token t in dumpPreproc) {
@@ -114,9 +126,7 @@ namespace DMCompiler {
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
 
-            DMPreprocessor preproc = new DMPreprocessor(true);
-            preproc.IncludeFiles(files);
-            return preproc;
+            return build();
         }
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
@@ -223,7 +233,7 @@ namespace DMCompiler {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
-            compiledDream.Interface = interfaceFile;
+            compiledDream.Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile);
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
             compiledDream.Types = jsonRep.Item1;
             compiledDream.Procs = jsonRep.Item2;
@@ -273,5 +283,6 @@ namespace DMCompiler {
         public bool DumpPreprocessor;
         public bool NoStandard;
         public bool Verbose;
+        public Dictionary<string, string> MacroDefines;
     }
 }

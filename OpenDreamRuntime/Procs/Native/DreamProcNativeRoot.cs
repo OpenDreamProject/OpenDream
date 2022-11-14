@@ -152,6 +152,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
+        [DreamProc("ceil")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Ceiling(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]
         public static DreamValue NativeProc_ckey(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -597,6 +607,29 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
+        [DreamProc("floor")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_floor(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Floor(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
+        [DreamProc("fract")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_fract(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if(float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                return new DreamValue(floatnum - MathF.Truncate(floatnum));
+            }
+            return new DreamValue(0);
+        }
+        
         [DreamProc("gradient")]
         [DreamProcParameter("A", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("index", Type = DreamValueType.Float)]
@@ -799,13 +832,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            if (!arg.TryGetValueAsDreamResource(out var resource)) {
-                throw new Exception("bad icon");
+            DMIParser.ParsedDMIDescription dmiDescription;
+            if (arg.TryGetValueAsDreamResource(out var resource)) {
+                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+            } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+            } else {
+                throw new Exception($"Bad icon {arg}");
             }
 
-            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
-
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
+            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -862,6 +898,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
+        [DreamProc("isinf")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isinf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if(arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsInfinity(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("islist")]
         [DreamProcParameter("Object")]
         public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -914,6 +959,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(1);
+        }
+
+        [DreamProc("isnan")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isnan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsNaN(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("isnull")]
@@ -1526,43 +1580,66 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
+        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments) {
+            DreamValue haystack = arguments.GetArgument(0, "Haystack");
+            DreamValue needle = arguments.GetArgument(1, "Needle");
+            DreamValue replacementArg = arguments.GetArgument(2, "Replacement");
+            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (needle.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out var regexObject)) {
+                // According to the docs, this is the same as /regex.Replace()
+                return DreamProcNativeRegex.RegexReplace(regexObject, haystack, replacementArg, start, end);
+            }
+
+            if (!haystack.TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
 
-            var arg3 = arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            //TODO: Regex support
-            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
             if (end == 0) {
                 end = text.Length + 1;
             }
 
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.OrdinalIgnoreCase));
+            if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
+                if (!arg3) { // No change if no Replacement was given
+                    return new DreamValue(text);
+                }
+
+                // A Start of 2 is the same as 1. This only happens when Needle is null.
+                if (start == 1)
+                    start = 2;
+
+                // End cannot reach the last char
+                end = Math.Min(end, text.Length);
+
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < text.Length; i++) {
+                    result.Append(text[i]);
+                    if (i >= start - 2 && i < end - 1)
+                        result.Append(replacement);
+                }
+
+                return new DreamValue(result.ToString());
+            }
+
+            if (needle.TryGetValueAsString(out var needleStr)) {
+                string before = text.Substring(0, start - 1);
+                string after = text.Substring(end - 1);
+                string textSub = text.Substring(start - 1, end - start);
+                string replaced = textSub.Replace(needleStr, replacement, StringComparison.OrdinalIgnoreCase);
+
+                StringBuilder newTextBuilder = new();
+                newTextBuilder.Append(before);
+                newTextBuilder.Append(replaced);
+                newTextBuilder.Append(after);
+
+                return new DreamValue(newTextBuilder.ToString());
+            }
+
+            throw new Exception($"Invalid needle {needle}");
         }
 
         [DreamProc("rgb")]
@@ -2055,13 +2132,44 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(format);
         }
 
+        [DreamProc("trunc")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_trunc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Truncate(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = DreamList.Create();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
-                DreamPath typePath = type.GetValueAsPath();
+                if (!type.TryGetValueAsPath(out var typePath)) {
+                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null || typeObj is DreamList) {
+                        if (type.TryGetValueAsString(out var typeString)) {
+                            var stringToPath = new DreamPath(typeString);
+                            if (stringToPath.LastElement == "proc") {
+                                DreamPath objectPath = stringToPath.AddToPath("..");
+                                if (!DreamManager.ObjectTree.HasTreeEntry(objectPath))
+                                {
+                                    continue;
+                                }
+                            }
+                            else if (!DreamManager.ObjectTree.HasTreeEntry(stringToPath)) {
+                                continue;
+                            }
+                            typePath = stringToPath;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        typePath = typeObj.ObjectDefinition.Type;
+                    }
+                }
 
                 if (typePath.LastElement == "proc") {
                     DreamPath objectTypePath = typePath.AddToPath("..");

@@ -171,15 +171,17 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return GetEnumerator();
         }
 
-        public void IncludeFiles(IEnumerable<string> files) {
-            foreach (string file in files) {
-                string includeDir = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
-
-                IncludeFile(includeDir, fileName);
+        public void DefineMacro(string key, string value) {
+            var lexer = new DMPreprocessorLexer(null, "<command line>", value);
+            var list = new List<Token>();
+            while (lexer.GetNextToken() is Token token && token.Type != TokenType.EndOfFile) {
+                list.Add(token);
             }
+            _defines.Add(key, new DMMacro(null, list));
         }
 
+        // NB: Pushes files to a stack, so call in reverse order if you are
+        // including multiple files.
         public void IncludeFile(string includeDir, string file, Location? includedFrom = null) {
             string filePath = Path.Combine(includeDir, file);
             filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
@@ -522,6 +524,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             _unprocessedTokens.Push(token);
         }
 
+        /// <remarks>
+        /// WARNING: Do not call this with the <see langword="true"/> argument <br/>
+        /// unless you are completely sure that the clobbered whitespace will NEVER have any grammatical significance <br/>
+        /// neither here in the preprocessor, nor in any other parsing pass! <br/><br/>
+        /// If whitespace may be important later, use <see cref="CheckForTokenIgnoringWhitespace(TokenType, out Token)"/>.
+        /// </remarks>
         private Token GetNextToken(bool ignoreWhitespace = false) {
             if (_unprocessedTokens.TryPop(out Token nextToken)) {
                 if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
@@ -530,6 +538,33 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return nextToken;
             } else {
                 return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
+            }
+        }
+
+        /// <summary>
+        /// The alternative to <see cref="GetNextToken(bool)"/> if you don't know whether you'll consume the whitespace or not.
+        /// </summary>
+        private bool CheckForTokenIgnoringWhitespace(TokenType type, out Token result) {
+            Token firstToken = GetNextToken();
+            if (firstToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
+                Token secondToken = GetNextToken();
+                if (secondToken.Type != type) { //Rollback!
+                    PushToken(secondToken);
+                    PushToken(firstToken);
+                    result = null;
+                    return false;
+                }
+                result = secondToken;
+                return true;
+            }
+            else if (firstToken.Type == type) {
+                result = firstToken;
+                return true;
+            }
+            else {
+                PushToken(firstToken);
+                result = null;
+                return false;
             }
         }
 
@@ -571,48 +606,58 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         private bool TryGetMacroParameters(out List<List<Token>> parameters) {
-            Token leftParenToken = GetNextToken(true);
+            if (!CheckForTokenIgnoringWhitespace(TokenType.DM_Preproc_Punctuator_LeftParenthesis, out var leftParenToken)) {
+                parameters = null;
+                return false;
+            }
+            parameters = new();
+            List<Token> currentParameter = new();
 
-            if (leftParenToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) {
-                parameters = new();
-                List<Token> currentParameter = new();
-
-                Token parameterToken = GetNextToken(true);
-                while (parameterToken.Type == TokenType.Newline) { // Skip newlines after the left parenthesis
-                    parameterToken = GetNextToken(true);
-                }
-
-                int parenthesisNesting = 0;
-                while (!(parenthesisNesting == 0 && parameterToken.Type == TokenType.DM_Preproc_Punctuator_RightParenthesis) &&
-                        parameterToken.Type != TokenType.EndOfFile) {
-                    if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Comma && parenthesisNesting == 0) {
-                        parameters.Add(currentParameter);
-                        currentParameter = new List<Token>();
-
-                        parameterToken = GetNextToken(true);
-                    } else {
-                        currentParameter.Add(parameterToken);
-
-                        if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) parenthesisNesting++;
-                        else if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_RightParenthesis) parenthesisNesting--;
-
-                        parameterToken = GetNextToken();
-                    }
-                }
-
-                parameters.Add(currentParameter);
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {
-                    DMCompiler.Error(new CompilerError(leftParenToken.Location, "Missing ')' in macro call"));
-
-                    return false;
-                }
-
-                return true;
+            Token parameterToken = GetNextToken(true);
+            while (parameterToken.Type == TokenType.Newline) { // Skip newlines after the left parenthesis
+                parameterToken = GetNextToken(true);
             }
 
-            PushToken(leftParenToken);
-            parameters = null;
-            return false;
+            int parenthesisNesting = 1;
+            while(true) {
+                switch (parameterToken.Type) {
+                    case TokenType.DM_Preproc_Punctuator_Comma when parenthesisNesting == 1:
+                        parameters.Add(currentParameter);
+                        currentParameter = new List<Token>();
+                        parameterToken = GetNextToken(true);
+                        continue;
+                    case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
+                        parenthesisNesting++;
+                        currentParameter.Add(parameterToken);
+                        parameterToken = GetNextToken();
+                        continue;
+                    case TokenType.DM_Preproc_Punctuator_RightParenthesis:
+                        parenthesisNesting--;
+                        if (parenthesisNesting == 0) // if that's our paren
+                            break; // break out
+                        //otherwise, add it as another token for this parameter
+                        currentParameter.Add(parameterToken);
+                        parameterToken = GetNextToken();
+                        continue;
+                    case TokenType.EndOfFile:
+                        PushToken(parameterToken);
+                        break;
+                    default:
+                        currentParameter.Add(parameterToken);
+                        parameterToken = GetNextToken();
+                        continue;
+                }
+                break; // If it manages to escape the switch, the loop breaks
+            }
+
+            parameters.Add(currentParameter);
+            if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {
+                DMCompiler.Error(new CompilerError(leftParenToken.Location, "Missing ')' in macro call"));
+
+                return false;
+            }
+
+            return true;
         }
     }
 }

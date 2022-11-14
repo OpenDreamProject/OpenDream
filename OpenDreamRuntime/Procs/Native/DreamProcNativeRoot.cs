@@ -1514,7 +1514,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
-                throw new NotImplementedException("Failed to parse colorspace");
+                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
@@ -1551,7 +1551,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     list.AddValue(new DreamValue(hcycolor.Z * 100));
                     */
                 default:
-                    throw new NotImplementedException("Colorspace is not impelemented");
+                    throw new NotImplementedException($"Colorspace {space} is not impelemented");
             }
 
             if (color.Length == 9 || color.Length == 5) {

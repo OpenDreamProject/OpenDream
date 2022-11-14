@@ -292,6 +292,14 @@ namespace OpenDreamClient.Interface.Controls
 
             DebugTools.AssertNotNull(_viewport);
         }
+
+        Matrix3 IViewportControl.GetWorldToScreenMatrix() {
+            throw new NotImplementedException();
+        }
+
+        Matrix3 IViewportControl.GetLocalToScreenMatrix() {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

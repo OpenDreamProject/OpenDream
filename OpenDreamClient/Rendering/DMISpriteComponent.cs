@@ -87,7 +87,7 @@ namespace OpenDreamClient.Rendering {
 
         private void OnIconSizeChanged() {
             _lookupSystem ??= _entitySystemMan.GetEntitySystem<EntityLookupSystem>();
-            _lookupSystem?.UpdateBounds(Owner);
+            //_lookupSystem?.UpdateBounds(Owner); ..TODO
         }
     }
 }

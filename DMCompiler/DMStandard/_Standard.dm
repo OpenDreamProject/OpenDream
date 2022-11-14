@@ -327,10 +327,7 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 			if (Angle != 0)
 				return pick(NORTH, SOUTH, EAST, WEST)
 
-	if(Angle > 0)
-		dirAngle += floor(Angle/45) * 45
-	else
-		dirAngle += ceil(Angle/45) * 45
+	dirAngle += trunc(Angle/45) * 45
 
 	dirAngle = dirAngle % 360
 	if(dirAngle < 0)

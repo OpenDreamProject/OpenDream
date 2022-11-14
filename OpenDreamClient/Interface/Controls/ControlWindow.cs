@@ -63,9 +63,9 @@ namespace OpenDreamClient.Interface.Controls
             window.Children.Add(UIElement);
             window.SetWidth = _controlDescriptor.Size?.X ?? 640;
             window.SetHeight = _controlDescriptor.Size?.Y ?? 440;
-            if(_controlDescriptor.Size?.X == 0) 
+            if(_controlDescriptor.Size?.X == 0)
                 window.SetWidth = window.MaxWidth;
-            if(_controlDescriptor.Size?.Y == 0) 
+            if(_controlDescriptor.Size?.Y == 0)
                 window.SetHeight = window.MaxHeight;
             window.Closing += _ => { _openWindows.Remove((window, null)); };
 
@@ -91,7 +91,7 @@ namespace OpenDreamClient.Interface.Controls
                 var windowSize = Size.GetValueOrDefault();
                 var elementSize = control.Size.GetValueOrDefault();
 
-                if(control.Size?.X == 0) 
+                if(control.Size?.X == 0)
                 {
                     elementSize.X = (int) (windowSize.X - elementPos.X);
                     if(ChildControls.Count - 1 > i)
@@ -101,7 +101,7 @@ namespace OpenDreamClient.Interface.Controls
                     }
                     element.SetWidth = elementSize.X;
                 }
-                if(control.Size?.Y == 0) 
+                if(control.Size?.Y == 0)
                 {
                     elementSize.Y = (int) (windowSize.Y - elementPos.Y);
                     if(ChildControls.Count - 1 > i)
@@ -109,7 +109,7 @@ namespace OpenDreamClient.Interface.Controls
                         var nextElementPos = ChildControls[i+1].Pos.GetValueOrDefault();
                         elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
-                    element.SetHeight = elementSize.Y;                    
+                    element.SetHeight = elementSize.Y;
                 }
 
                 if (control.Anchor1.HasValue)
@@ -214,70 +214,92 @@ namespace OpenDreamClient.Interface.Controls
             UpdateAnchors();
         }
 
+        private class MenuNode //why doesn't C# have a basic tree?
+        {
+            public MenuElementDescriptor data;
+            public List<MenuNode> children = new();
+
+            public MenuNode(MenuElementDescriptor myData)
+            {
+                this.data = myData;
+            }
+
+            public MenuBar.MenuEntry GetMenuEntry()
+            {
+                string name = data.Name;
+                if (name.StartsWith("&"))
+                    name = name[1..]; //TODO: First character in name becomes a selection shortcut
+
+                if(children.Count > 0)
+                {
+                    MenuBar.SubMenu result = new MenuBar.SubMenu();
+                    result.Text = name;
+                    foreach(MenuNode child in children)
+                    {
+                        result.Entries.Add(child.GetMenuEntry());
+                    }
+                    return result;
+                }
+                else if(!String.IsNullOrEmpty(name))
+                {
+                    MenuBar.MenuButton result = new MenuBar.MenuButton();
+                    result.Text = name;
+                    //result.IsCheckable = data.CanCheck;
+                    if (!String.IsNullOrEmpty(data.Command))
+                        result.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(data.Command); };
+                    return result;
+                }
+                else
+                {
+                    return new MenuBar.MenuSeparator();
+                }
+            }
+        }
         private void CreateMenu(MenuDescriptor menuDescriptor)
         {
             _menu.Menus.Clear();
             if (menuDescriptor == null) return;
-
-            Dictionary<string, List<MenuElementDescriptor>> categories = new();
+            List<MenuNode> menuTree = new();
+            Dictionary<string, MenuNode> treeQuickLookup = new();
 
             foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements)
             {
                 if (elementDescriptor.Category == null)
                 {
-                    categories.Add(elementDescriptor.Name, new());
+                    MenuNode topLevelMenuItem = new(elementDescriptor);
+                    treeQuickLookup.Add(elementDescriptor.Name, topLevelMenuItem);
+                    menuTree.Add(topLevelMenuItem);
                 }
                 else
                 {
-                    if (!categories.ContainsKey(elementDescriptor.Category))
-                        categories.Add(elementDescriptor.Category, new());
-
-                    categories[elementDescriptor.Category].Add(elementDescriptor);
+                    if (!treeQuickLookup.ContainsKey(elementDescriptor.Category))
+                    {
+                        //if category is set but the parent element doesn't exist, create it
+                        MenuElementDescriptor parentMenuItem = new MenuElementDescriptor();
+                        parentMenuItem.Name = elementDescriptor.Category;
+                        MenuNode topLevelMenuItem = new(parentMenuItem);
+                        treeQuickLookup.Add(parentMenuItem.Name, topLevelMenuItem);
+                        menuTree.Add(topLevelMenuItem);
+                    }
+                    //now add this as a child
+                    MenuNode childMenuItem = new MenuNode(elementDescriptor);
+                    treeQuickLookup[elementDescriptor.Category].children.Add(childMenuItem);
+                    treeQuickLookup.Add(elementDescriptor.Name, childMenuItem);
                 }
             }
 
-            foreach (KeyValuePair<string, List<MenuElementDescriptor>> categoryPair in categories)
+            foreach (MenuNode topLevelMenuItem in menuTree)
             {
-                var menu = new MenuBar.Menu();
-                menu.Title = categoryPair.Key;
+                MenuBar.Menu menu = new MenuBar.Menu();
+                menu.Title = topLevelMenuItem.data.Name;
                 if (menu.Title?.StartsWith("&") ?? false)
                     menu.Title = menu.Title[1..]; //TODO: First character in name becomes a selection shortcut
 
                 _menu.Menus.Add(menu);
-                foreach (MenuElementDescriptor elementDescriptor in categoryPair.Value)
-                {
-                    if (String.IsNullOrEmpty(elementDescriptor.Name))
-                    {
-                        menu.Entries.Add(new MenuBar.MenuSeparator());
-                    }
-                    else
-                    {
-                        var item = CreateMenuItem(elementDescriptor.Name, elementDescriptor.Command,
-                            elementDescriptor.CanCheck);
-
-                        menu.Entries.Add(item);
-                    }
-                }
+                //visit each node in the tree, populating the menu from that
+                foreach (MenuNode child in topLevelMenuItem.children)
+                    menu.Entries.Add(child.GetMenuEntry());
             }
-        }
-
-        private MenuBar.MenuEntry CreateMenuItem(string name, string command, bool isCheckable)
-        {
-            if (name.StartsWith("&"))
-                name = name[1..]; //TODO: First character in name becomes a selection shortcut
-
-            MenuBar.MenuButton item = new MenuBar.MenuButton()
-            {
-                Text = name,
-                //IsCheckable = isCheckable
-            };
-
-            if (!String.IsNullOrEmpty(command))
-            {
-                item.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(command); };
-            }
-
-            return item;
         }
     }
 }

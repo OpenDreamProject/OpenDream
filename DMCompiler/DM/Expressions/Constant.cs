@@ -179,7 +179,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override Constant ModuloModulo(Constant rhs) {
             if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
+                return base.ModuloModulo(rhs);
             }
 
             // BYOND docs say that A %% B is equivalent to B * fract(A/B)

@@ -119,22 +119,13 @@ namespace DMCompiler {
                     pragmaDirectory = dmStandardDirectory;
                     pragmaName = "DefaultPragmaConfig.dm";
                 }
-                if(!File.Exists(pragmaFile)) {
+                if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
                     ForcedError($"Configuration file '{pragmaName}' not found.");
                     return null;
                 }
                 preproc.IncludeFile(pragmaDirectory,pragmaName);
-                CheckAllPragmasWereSet();
                 return preproc;
             }
-            //Do the compiler configuration file first!
-            string pragmaName = Settings.PragmaFileOverride ?? "DefaultPragmaConfig.dm";
-            string pragmaFile = Path.Join(compilerDirectory, "DMStandard", pragmaName);
-            if (!File.Exists(pragmaFile)) {
-                ForcedError($"Configuration file '{pragmaName}' not found.");
-                return null;
-            }
-            files.Add(pragmaFile);
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it

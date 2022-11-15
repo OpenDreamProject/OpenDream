@@ -134,7 +134,9 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.MassConcatenation,
             DMOpcodeHandlers.CreateTypeEnumerator,
             null, //0x5E
-            DMOpcodeHandlers.PushGlobalVars
+            DMOpcodeHandlers.PushGlobalVars,
+            DMOpcodeHandlers.ModulusModulus,
+            DMOpcodeHandlers.ModulusModulusReference
         };
         #endregion
 

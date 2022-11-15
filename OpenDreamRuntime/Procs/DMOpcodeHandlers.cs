@@ -955,11 +955,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(ModulusModulusValues(first, second));
-            } else {
-                throw new Exception("Invalid modulusmodulus operation on " + first + " and " + second);
-            }
+            state.Push(ModulusModulusValues(first, second));
 
             return null;
         }

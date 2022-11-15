@@ -3,6 +3,7 @@ using Lidgren.Network;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization;
+
 namespace OpenDreamShared.Network.Messages
 {
     public sealed class MsgUpdateStatPanels : NetMessage

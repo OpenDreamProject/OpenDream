@@ -293,12 +293,24 @@ namespace OpenDreamClient.Interface.Controls
             DebugTools.AssertNotNull(_viewport);
         }
 
-        Matrix3 IViewportControl.GetWorldToScreenMatrix() {
-            throw new NotImplementedException();
+        public Matrix3 GetWorldToScreenMatrix()
+        {
+            EnsureViewportCreated();
+            return _viewport!.GetWorldToLocalMatrix() * GetLocalToScreenMatrix();
         }
 
-        Matrix3 IViewportControl.GetLocalToScreenMatrix() {
-            throw new NotImplementedException();
+        public Matrix3 GetLocalToScreenMatrix()
+        {
+            EnsureViewportCreated();
+
+            var drawBox = GetDrawBox();
+            var scaleFactor = drawBox.Size / (Vector2) _viewport!.Size;
+
+            if (scaleFactor.X == 0 || scaleFactor.Y == 0)
+                // Basically a nonsense scenario, at least make sure to return something that can be inverted.
+                return Matrix3.Identity;
+
+            return Matrix3.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
         }
     }
 

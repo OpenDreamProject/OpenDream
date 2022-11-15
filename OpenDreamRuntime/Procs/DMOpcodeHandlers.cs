@@ -2026,6 +2026,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {
             if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                 // BYOND docs say that A %% B is equivalent to B * fract(A/B)
+                // BREAKING CHANGE: The floating point precision is slightly different between OD and BYOND, giving slightly different values
                 var fraction = firstFloat / secondFloat;
                 fraction -= MathF.Truncate(fraction);
                 return new DreamValue(fraction * secondFloat);

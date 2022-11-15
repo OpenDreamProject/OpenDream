@@ -89,7 +89,7 @@ namespace OpenDreamRuntime {
         public DreamThread Thread { get; set; }
         public DreamValue Result { set; get; } = DreamValue.Null;
 
-        public bool WaitFor => Proc != null ? !Proc.Attributes.HasFlag(ProcAttributes.DisableWaitfor) : true;
+        public bool WaitFor { get; set; } = true;
 
         public ProcState(DreamThread thread) {
             Thread = thread;
@@ -99,6 +99,7 @@ namespace OpenDreamRuntime {
             try {
                 return InternalResume();
             } catch (CancellingRuntime exception) {
+                Thread.CancelAll();
                 Thread.HandleException(exception);
                 return ProcStatus.Cancelled;
             } catch (PropagatingRuntime exception) {
@@ -121,6 +122,8 @@ namespace OpenDreamRuntime {
 
         // Most implementations won't require this, so give it a default
         public virtual void ReturnedInto(DreamValue value) {}
+
+        public virtual void Cancel() {}
     }
 
     public sealed class DreamThread {
@@ -294,8 +297,18 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public void CancelAll() {
+            _current?.Cancel();
+
+            foreach (var state in _stack) {
+                state.Cancel();
+            }
+        }
+
         public void HandleException(Exception exception)
         {
+            _current?.Cancel();
+
             if (_current is DMProcState state) {
                 state.ReturnPools();
             }

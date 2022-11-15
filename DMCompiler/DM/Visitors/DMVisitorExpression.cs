@@ -328,8 +328,8 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitModulusModulusAssign(DMASTModulusModulusAssign modulusModulusAssign) {
-            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.A);
-            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B);
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B, lhs.Path);
             Result = new Expressions.ModulusModulusAssign(modulusModulusAssign.Location, lhs, rhs);
         }
 

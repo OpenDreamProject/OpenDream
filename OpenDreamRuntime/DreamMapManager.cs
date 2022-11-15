@@ -63,7 +63,6 @@ namespace OpenDreamRuntime {
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-            //_mapManager.CreateNewMapEntity(MapId.Nullspace);
 
             DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinition(DreamPath.World);
 

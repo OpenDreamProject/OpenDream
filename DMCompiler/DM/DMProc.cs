@@ -656,8 +656,18 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
+        public void ModulusModulus() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.ModulusModulus);
+        }
+
         public void ModulusReference(DMReference reference) {
             WriteOpcode(DreamProcOpcode.ModulusReference);
+            WriteReference(reference);
+        }
+
+        public void ModulusModulusReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.ModulusModulusReference);
             WriteReference(reference);
         }
 

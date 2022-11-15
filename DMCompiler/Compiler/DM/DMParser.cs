@@ -37,7 +37,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_LeftShiftEquals,
             TokenType.DM_RightShiftEquals,
             TokenType.DM_XorEquals,
-            TokenType.DM_ModulusEquals
+            TokenType.DM_ModulusEquals,
+            TokenType.DM_ModulusModulusEquals
         };
 
         /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
@@ -68,7 +69,9 @@ namespace DMCompiler.Compiler.DM {
         public static readonly TokenType[] MulDivModTypes = {
             TokenType.DM_Star,
             TokenType.DM_Slash,
-            TokenType.DM_Modulus
+            TokenType.DM_Modulus,
+            TokenType.DM_ModulusModulus
+
         };
 
         private static readonly TokenType[] DereferenceTypes = {
@@ -1552,6 +1555,7 @@ namespace DMCompiler.Compiler.DM {
                             case TokenType.DM_RightShiftEquals: return new DMASTRightShiftAssign(token.Location, expression, value);
                             case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
+                            case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
                         }
                     } else {
                         Error("Expected a value");
@@ -1800,6 +1804,7 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Star: a = new DMASTMultiply(token.Location, a, b); break;
                         case TokenType.DM_Slash: a = new DMASTDivide(token.Location, a, b); break;
                         case TokenType.DM_Modulus: a = new DMASTModulus(token.Location, a, b); break;
+                        case TokenType.DM_ModulusModulus: a = new DMASTModulusModulus(token.Location, a, b); break;
                     }
 
                     token = Current();

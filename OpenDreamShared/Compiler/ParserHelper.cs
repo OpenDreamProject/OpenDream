@@ -7,10 +7,10 @@ namespace OpenDreamShared.Compiler {
 
         protected void SavePosition() {
             _lookahead.Push(new Stack<Token>());
-            _lookahead.Peek().Push(_currentToken);
         }
         protected void RestorePosition() {
             var stack = _lookahead.Pop();
+            _tokenStack.Push(_currentToken);
             while (stack.Count > 1) {
                 _tokenStack.Push(stack.Pop());
             }

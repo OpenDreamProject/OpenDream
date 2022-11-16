@@ -2,6 +2,7 @@
 using Lidgren.Network;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages
 {
@@ -13,7 +14,7 @@ namespace OpenDreamShared.Network.Messages
         public DMValueType Type;
         public object Value;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             PromptId = buffer.ReadVariableInt32();
             Type = (DMValueType)buffer.ReadUInt16();
@@ -27,7 +28,7 @@ namespace OpenDreamShared.Network.Messages
             };
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.WriteVariableInt32(PromptId);
 

@@ -13,13 +13,13 @@ namespace OpenDreamClient.States.Connecting
 
         private ConnectingControl _connectingControl = default!;
 
-        public override void Startup()
+        protected override void Startup()
         {
             _connectingControl = new ConnectingControl(_resourceCache, _configurationManager);
             _userInterfaceManager.StateRoot.AddChild(_connectingControl);
         }
 
-        public override void Shutdown()
+        protected override void Shutdown()
         {
             _connectingControl.Dispose();
         }

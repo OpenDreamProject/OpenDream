@@ -294,19 +294,40 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 //Read in the parameters
                 Token parameterToken;
                 bool canConsumeComma = false;
+                bool foundVariadic = false;
                 while(true) {
                     parameterToken = GetNextToken(true);
                     switch(parameterToken.Type) {
                         case TokenType.DM_Preproc_Identifier:
-                            parameters.Add(parameterToken.Text);
                             canConsumeComma = true;
+                            if (foundVariadic) {
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Variadic argument '{parameters.Last()}' must be the last argument");
+                                foundVariadic = false; // Reduces error spam if there's several arguments after it
+                                continue;
+                            }
+                            if(Check(TokenType.DM_Preproc_Punctuator_Period)) { // Check for a variadic
+                                if (!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {
+                                    DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Invalid macro parameter, '{parameterToken.Text}...' expected");
+                                }
+                                parameters.Add($"{parameterToken.Text}...");
+                                foundVariadic = true;
+                                // Consciously not setting canConsumeComma to false here. Users can have a little dangling comma, as a treat :o)
+                                continue;
+                            }
+                            parameters.Add(parameterToken.Text);
+                            
                             continue;
                         case TokenType.DM_Preproc_Punctuator_Period: // One of those "..." things, maybe?
-                            if(!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {
+                            if (!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {
                                 DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, "Invalid macro parameter, '...' expected");
                             }
-                            parameters.Add("...");
                             canConsumeComma = true;
+                            if (foundVariadic) { // Placed here so we properly consume this bogus '...' parameter if need be
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Variadic argument '{parameters.Last()}' must be the last argument");
+                                foundVariadic = false; // Reduces error spam if there's several arguments after it
+                                continue;
+                            }
+                            parameters.Add($"...");
                             continue;
                         case TokenType.DM_Preproc_Punctuator_Comma:
                             if(!canConsumeComma)

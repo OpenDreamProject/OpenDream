@@ -325,7 +325,11 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (SOUTHEAST) dirAngle = 315
 		else
 			if (Angle != 0)
-				return pick(NORTH, SOUTH, EAST, WEST)
+				return pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
+			else if (!isnum(Dir))
+				CRASH("Invalid Dir \"[json_encode(Dir)]\"")
+			else
+				return Dir
 
 	dirAngle += trunc(Angle/45) * 45
 

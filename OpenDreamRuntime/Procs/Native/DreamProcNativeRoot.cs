@@ -1006,19 +1006,27 @@ namespace OpenDreamRuntime.Procs.Native {
                 values = arguments.GetAllArguments();
             }
 
+            if (values.Count == 0)
+                return DreamValue.Null;
+
             DreamValue max = values[0];
 
             for (int i = 1; i < values.Count; i++) {
                 DreamValue value = values[i];
 
-                if (max == DreamValue.Null) {
-                    max = value;
+                if (value.TryGetValueAsFloat(out var lFloat)) {
+                    if (max == DreamValue.Null && lFloat >= 0)
+                        max = value;
+                    else if (max.TryGetValueAsFloat(out var rFloat) && lFloat > rFloat)
+                        max = value;
                 } else if (value == DreamValue.Null) {
-                    continue;
-                } else if (value.TryGetValueAsFloat(out var lFloat) && max.TryGetValueAsFloat(out float rFloat)) {
-                    if (lFloat > rFloat) max = value;
-                } else if (value.TryGetValueAsString(out var lString) && max.TryGetValueAsString(out var rString)) {
-                    if (string.Compare(lString, rString, StringComparison.Ordinal) > 0) max = value;
+                    if (max.TryGetValueAsFloat(out var maxFloat) && maxFloat <= 0)
+                        max = value;
+                } else if (value.TryGetValueAsString(out var lString)) {
+                    if (max == DreamValue.Null)
+                        max = value;
+                    else if (max.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) > 0)
+                        max = value;
                 } else {
                     throw new Exception($"Cannot compare {max} and {value}");
                 }

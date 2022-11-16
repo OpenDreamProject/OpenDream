@@ -1512,9 +1512,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("bad color");
             }
 
-            if (arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space) && space != 0) {
-                //TODO implement other colorspace support
-                throw new NotImplementedException("rgb2num() currently only supports COLORSPACE_RGB");
+            if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
+                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
@@ -1523,9 +1522,36 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamList list = DreamList.Create();
 
-            list.AddValue(new DreamValue(c.RByte));
-            list.AddValue(new DreamValue(c.GByte));
-            list.AddValue(new DreamValue(c.BByte));
+            switch(space) {
+                case 0: //rgb
+                    list.AddValue(new DreamValue(c.RByte));
+                    list.AddValue(new DreamValue(c.GByte));
+                    list.AddValue(new DreamValue(c.BByte));
+                    break;
+                case 1: //hsv
+                    Vector4 hsvcolor = Color.ToHsv(c);
+                    list.AddValue(new DreamValue(hsvcolor.X * 360));
+                    list.AddValue(new DreamValue(hsvcolor.Y * 100));
+                    list.AddValue(new DreamValue(hsvcolor.Z * 100));
+                    break;
+                case 2: //hsl
+                    Vector4 hslcolor = Color.ToHsl(c);
+                    list.AddValue(new DreamValue(hslcolor.X * 360));
+                    list.AddValue(new DreamValue(hslcolor.Y * 100));
+                    list.AddValue(new DreamValue(hslcolor.Z * 100));
+                    break;
+                case 3: //hcy
+                    /// TODO Figure out why the chroma for #ca60db is 48 instead of 68
+                    throw new NotImplementedException("HCY Colorspace is not implemented");
+                    /*
+                    Vector4 hcycolor = Color.ToHcy(c);
+                    list.AddValue(new DreamValue(hcycolor.X * 360));
+                    list.AddValue(new DreamValue(hcycolor.Y * 100));
+                    list.AddValue(new DreamValue(hcycolor.Z * 100));
+                    */
+                default:
+                    throw new NotImplementedException($"Colorspace {space} is not implemented");
+            }
 
             if (color.Length == 9 || color.Length == 5) {
                 list.AddValue(new DreamValue(c.AByte));

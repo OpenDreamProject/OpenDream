@@ -10,6 +10,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
+proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)
 proc/clamp(Value, Low, High)
@@ -31,6 +32,8 @@ proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0)
 proc/flick(Icon, Object)
 proc/flist(Path)
+proc/floor(A)
+proc/fract(n)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
@@ -39,10 +42,12 @@ proc/image(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
 proc/isarea(Loc1)
 proc/isfile(File)
 proc/isicon(Icon)
+proc/isinf(n)
 proc/islist(Object)
 proc/isloc(Loc1)
 proc/ismob(Loc1)
 proc/ismovable(Loc1)
+proc/isnan(n)
 proc/isnull(Val)
 proc/isnum(Val)
 proc/ispath(Val, Type)
@@ -89,6 +94,7 @@ proc/text2file(Text, File)
 proc/text2num(T, radix = 10)
 proc/text2path(T)
 proc/time2text(timestamp, format)
+proc/trunc(n)
 proc/typesof(Item1)
 proc/uppertext(T)
 proc/url_decode(UrlText)
@@ -321,14 +327,19 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (SOUTHEAST) dirAngle = 315
 		else
 			if (Angle != 0)
-				return pick(NORTH, SOUTH, EAST, WEST)
+				return pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
+			else if (!isnum(Dir))
+				CRASH("Invalid Dir \"[json_encode(Dir)]\"")
+			else
+				return Dir
 
-	dirAngle += round(Angle, 45)
-	if (dirAngle > 360) dirAngle -= 360
-	else if (dirAngle < 0) dirAngle += 360
+	dirAngle += trunc(Angle/45) * 45
+
+	dirAngle = dirAngle % 360
+	if(dirAngle < 0)
+		dirAngle = 360 + dirAngle
 
 	switch (dirAngle)
-		if (0, 360) return EAST
 		if (45) return NORTHEAST
 		if (90) return NORTH
 		if (135) return NORTHWEST
@@ -336,6 +347,7 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 		if (225) return SOUTHWEST
 		if (270) return SOUTH
 		if (315) return SOUTHEAST
+		else return EAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
 	if (!istype(Loc1) || !istype(Loc2)) return 127

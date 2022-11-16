@@ -57,7 +57,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             //The next character turns into an identifier.
                             token = CreateToken(TokenType.DM_Preproc_Identifier, GetCurrent());
                         }
-                        
+
                         Advance();
                         break;
                     }
@@ -160,6 +160,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '%': {
                         switch (Advance()) {
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "%="); break;
+                            case '%': {
+                                if (Advance() == '=') {
+                                    Advance();
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, "%%=");
+                                    break;
+                                }
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "%%");
+                                break;
+                            }
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '%'); break;
                         }
 
@@ -241,7 +250,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                         Advance();
                                     }
                                 }
-                                
+
                                 while (GetCurrent() == ' ' || GetCurrent() == '\t') {
                                     Advance();
                                 }

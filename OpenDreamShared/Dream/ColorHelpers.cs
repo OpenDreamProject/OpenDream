@@ -34,7 +34,7 @@ namespace OpenDreamShared.Dream
                 if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
                     string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : defaultAlpha;
 
-                    color = new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
+                    color = new string('#', 1) + new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
                 } else if (color.Length == 7) { //Missing alpha
                     color += "ff";
                 }

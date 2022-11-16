@@ -1,4 +1,4 @@
-// RUNTIME ERROR
+// RUNTIME ERROR, NO RETURN
 
 var/ConstZero1_a
 

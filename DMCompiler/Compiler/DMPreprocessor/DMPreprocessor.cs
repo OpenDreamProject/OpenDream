@@ -621,6 +621,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     break;
                 case "notice":
                 case "pedantic":
+                case "info":
                     DMCompiler.SetPragma(warningCode, ErrorLevel.Notice);
                     break;
                 case "warning":

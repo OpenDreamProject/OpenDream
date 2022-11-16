@@ -94,6 +94,7 @@ namespace DMCompiler {
                         preproc.DefineMacro(key, value);
                     }
                 }
+                DefineFatalErrors();
 
                 // NB: IncludeFile pushes newly seen files to a stack, so push
                 // them in reverse order to process them in forward order.
@@ -315,16 +316,20 @@ namespace DMCompiler {
             return string.Empty;
         }
 
+        public static void DefineFatalErrors() {
+            foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
+                if((int)code < 1_000) {
+                    Config.errorConfig[code] = ErrorLevel.Error;
+                }
+            }
+        }
+
         /// <summary>
         /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
         /// </summary>
         public static void CheckAllPragmasWereSet() {
             foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
-                if ((int)code < 1000) {
-                    Config.errorConfig[code] = ErrorLevel.Error; // Overwriting assignment
-                }
-                else if (!Config.errorConfig.ContainsKey(code)) {
-
+                if (!Config.errorConfig.ContainsKey(code)) {
                     ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                     Config.errorConfig.Add(code, ErrorLevel.Disabled);
                 }

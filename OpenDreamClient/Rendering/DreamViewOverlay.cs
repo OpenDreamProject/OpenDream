@@ -33,7 +33,7 @@ sealed class DreamViewOverlay : Overlay {
 
         DrawMap(args, eye.Value);
         _appearanceSystem.CleanUpUnusedFilters();
-        _appearanceSystem.ResetFilterUsageCounts();   
+        _appearanceSystem.ResetFilterUsageCounts();
     }
 
     private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -134,7 +134,7 @@ sealed class DreamViewOverlay : Overlay {
 
             handle.RenderInRenderTarget(pong, () => {
                 handle.DrawTextureRect(frame, new Box2(Vector2.Zero+(frame.Size/2), frame.Size+(frame.Size/2)), icon.Appearance.Color);
-            });
+            }, Color.Transparent);
             bool rotate = true;
             foreach(DreamFilter filterID in icon.Appearance.Filters)
             {
@@ -144,7 +144,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.UseShader(s);
                     handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size*2));
                     handle.UseShader(null);
-                    });
+                    }, Color.Transparent);
                 tmpHolder = ping;
                 ping = pong;
                 pong = tmpHolder;
@@ -155,7 +155,7 @@ sealed class DreamViewOverlay : Overlay {
                 handle.RenderInRenderTarget(ping, () => {
                     handle.DrawRect(new Box2(Vector2.Zero, frame.Size*2), new Color());
                     handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size*2));
-                    });
+                    }, Color.Transparent);
                 tmpHolder = ping;
                 ping = pong;
                 pong = tmpHolder;

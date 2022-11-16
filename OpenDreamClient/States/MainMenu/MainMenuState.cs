@@ -27,7 +27,7 @@ namespace OpenDreamClient.States.MainMenu
         // ReSharper disable once InconsistentNaming
         private static readonly Regex IPv6Regex = new(@"\[(.*:.*:.*)](?::(\d+))?");
 
-        public override void Startup()
+        protected override void Startup()
         {
 
             _mainMenuControl = new MainMenuControl(_resourceCache, _configurationManager);
@@ -42,7 +42,7 @@ namespace OpenDreamClient.States.MainMenu
 
         }
 
-        public override void Shutdown()
+        protected override void Shutdown()
         {
             _client.RunLevelChanged -= RunLevelChanged;
             _netManager.ConnectFailed -= _onConnectFailed;

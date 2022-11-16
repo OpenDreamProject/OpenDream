@@ -134,7 +134,9 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.MassConcatenation,
             DMOpcodeHandlers.CreateTypeEnumerator,
             null, //0x5E
-            DMOpcodeHandlers.PushGlobalVars
+            DMOpcodeHandlers.PushGlobalVars,
+            DMOpcodeHandlers.ModulusModulus,
+            DMOpcodeHandlers.ModulusModulusReference
         };
         #endregion
 
@@ -173,6 +175,7 @@ namespace OpenDreamRuntime.Procs {
             _localVariables = _dreamValuePool.Rent(256);
             CurrentSource = proc.Source;
             CurrentLine = proc.Line;
+            WaitFor = _proc != null ? (_proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
@@ -202,6 +205,8 @@ namespace OpenDreamRuntime.Procs {
             Instance = other.Instance;
             Usr = other.Usr;
             ArgumentCount = other.ArgumentCount;
+            CurrentSource = other.CurrentSource;
+            CurrentLine = other.CurrentLine;
             _pc = other._pc;
 
             _stack = _stackPool.Rent(other._stack.Length);
@@ -209,6 +214,8 @@ namespace OpenDreamRuntime.Procs {
 
             _localVariables = _dreamValuePool.Rent(256);
             Array.Copy(other._localVariables, _localVariables, 256);
+
+            WaitFor = other.WaitFor;
         }
 
         protected override ProcStatus InternalResume() {

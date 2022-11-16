@@ -22,10 +22,6 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected virtual Token Advance() {
-            if (_lookahead.Count > 0) {
-                _lookahead.Peek().Push(_currentToken);
-            }
-
             if (_tokenStack.Count > 0) {
                 _currentToken = _tokenStack.Pop();
             } else {
@@ -38,6 +34,10 @@ namespace OpenDreamShared.Compiler {
                     Warning((string)_currentToken.Value);
                     Advance();
                 }
+            }
+
+            if (_lookahead.Count > 0) {
+                _lookahead.Peek().Push(_currentToken);
             }
 
             return Current();

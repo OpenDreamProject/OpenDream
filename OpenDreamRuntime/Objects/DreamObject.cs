@@ -19,10 +19,7 @@ namespace OpenDreamRuntime.Objects {
             var thread = new DreamThread("init " + this);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
-
-            if (thread.Resume() == DreamValue.Null) {
-                //thread.HandleException(new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!"));
-            }
+            thread.Resume();
         }
 
         public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {

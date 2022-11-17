@@ -49,7 +49,7 @@ namespace OpenDreamRuntime {
                 _dreamManager.PreInitialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
                 _dreamManager.StartWorld();
             } else {
-                // The debug manager is responsible for running _dreamManager.Initialize()
+                // The debug manager is responsible for running _dreamManager.PreInitialize() and .StartWorld()
                 _debugManager.Initialize(debugAdapterPort);
             }
         }

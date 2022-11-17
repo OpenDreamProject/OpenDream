@@ -13,6 +13,7 @@ using Robust.Server;
 using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     partial class DreamManager : IDreamManager {
@@ -29,7 +30,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
-        public DreamList WorldContentsList { get; set; }
+        public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
@@ -39,10 +40,11 @@ namespace OpenDreamRuntime {
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
         private DreamCompiledJson _compiledJson;
-        private bool _initialized = false;
+        public bool Initialized { get; private set; }
+        public GameTick InitializedTick { get; private set; }
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
-        public void Initialize(string jsonPath) {
+        public void PreInitialize(string jsonPath) {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize(jsonPath);
 
@@ -50,19 +52,33 @@ namespace OpenDreamRuntime {
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
                 return;
             }
+        }
 
-            //TODO: Move to LoadJson()
-            _dreamMapManager.LoadMaps(_compiledJson.Maps);
+        public void StartWorld() {
+            // It is now OK to call user code, like /New procs.
+            Initialized = true;
+            InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
+
+            // Call global <init> with waitfor=FALSE
+            if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
+                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, initProcDef.Bytecode, initProcDef.MaxStackSize, initProcDef.Attributes, initProcDef.VerbName, initProcDef.VerbCategory, initProcDef.VerbDesc, initProcDef.Invisibility);
+                globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
+            }
+
+            // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
+            // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
+            _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
+
+            // Call world.New()
             WorldInstance.SpawnProc("New");
-            _initialized = true;
         }
 
         public void Shutdown() {
-            _initialized = false;
+            Initialized = false;
         }
 
         public void Update() {
-            if (!_initialized)
+            if (!Initialized)
                 return;
 
             _procScheduler.Process();
@@ -72,8 +88,7 @@ namespace OpenDreamRuntime {
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
         }
 
-        public bool LoadJson(string? jsonPath)
-        {
+        public bool LoadJson(string? jsonPath) {
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
                 return false;
 
@@ -94,11 +109,13 @@ namespace OpenDreamRuntime {
             DreamProcNative.SetupNativeProcs(ObjectTree);
 
             _dreamMapManager.Initialize();
+            WorldContentsList = DreamList.Create();
             WorldInstance = ObjectTree.CreateObject(DreamPath.World);
-            WorldInstance.InitSpawn(new DreamProcArguments(null));
 
-            if (_compiledJson.Globals != null) {
-                var jsonGlobals = _compiledJson.Globals;
+            // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
+            WorldInstance.InitSpawn(new DreamProcArguments());
+
+            if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
 
@@ -108,13 +125,11 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            //The first global is always `world`
+            // The first global is always `world`.
             Globals[0] = new DreamValue(WorldInstance);
 
-            if (json.GlobalInitProc != null) {
-                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, json.GlobalInitProc.Bytecode, json.GlobalInitProc.MaxStackSize, json.GlobalInitProc.Attributes, json.GlobalInitProc.VerbName, json.GlobalInitProc.VerbCategory, json.GlobalInitProc.VerbDesc, json.GlobalInitProc.Invisibility);
-                globalInitProc.Spawn(WorldInstance, new DreamProcArguments(new(), new()));
-            }
+            // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
+            _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps);
 
             return true;
         }

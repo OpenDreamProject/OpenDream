@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using OpenDreamShared.Dream;
+﻿using System;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Json {
     public sealed class DreamMapJson {
@@ -30,15 +30,20 @@ namespace OpenDreamShared.Json {
         }
 
         public bool AddVarOverride(string varName, object varValue) {
-            if (VarOverrides == null) VarOverrides = new Dictionary<string, object>();
+            VarOverrides ??= new();
+            bool contained = VarOverrides.ContainsKey(varName);
+            VarOverrides[varName] = varValue;
+            return !contained;
+        }
 
-            if (VarOverrides.ContainsKey(varName))
-            {
-                VarOverrides[varName] = varValue;
-                return false;
-            }
-            VarOverrides.Add(varName, varValue);
-            return true;
+        public override bool Equals(object obj) {
+            return obj is MapObjectJson json &&
+                Type == json.Type &&
+                EqualityComparer<Dictionary<string, object>>.Default.Equals(VarOverrides, json.VarOverrides);
+        }
+
+        public override int GetHashCode() {
+            return HashCode.Combine(Type, VarOverrides);
         }
     }
 

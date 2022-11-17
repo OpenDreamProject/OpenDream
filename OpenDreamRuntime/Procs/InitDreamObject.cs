@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Procs {
             Return,
         }
 
-        public InitDreamObjectState(DreamThread thread, DreamObject dreamObject, DreamObject usr, DreamProcArguments arguments)
+        public InitDreamObjectState(DreamThread thread, DreamObject dreamObject, DreamObject? usr, DreamProcArguments arguments)
             : base(thread)
         {
             IoCManager.InjectDependencies(this);
@@ -26,11 +26,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private DreamObject _dreamObject;
-        private DreamObject _usr;
+        private DreamObject? _usr;
         private DreamProcArguments _arguments;
         private Stage _stage = Stage.Init;
 
-        public override DreamProc Proc => null;
+        public override DreamProc? Proc => null;
 
         public override void AppendStackFrame(StringBuilder builder)
         {
@@ -64,6 +64,11 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, _arguments);
+
+                    if (!_dreamMan.Initialized) {
+                        // Suppress all New() calls during /world/<init>() and map loading.
+                        goto switch_start;
+                    }
 
                     if (src.ObjectDefinition.MetaObject.ShouldCallNew) {
                         var newProc = src.GetProc("New");

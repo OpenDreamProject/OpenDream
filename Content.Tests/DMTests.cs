@@ -42,7 +42,7 @@ namespace Content.Tests
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             Compile(InitializeEnvironment);
-            _dreamMan.Initialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
         }
 
         public string Compile(string sourceFile) {
@@ -74,6 +74,7 @@ namespace Content.Tests
 
                 Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+                _dreamMan.StartWorld();
 
                 (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
 

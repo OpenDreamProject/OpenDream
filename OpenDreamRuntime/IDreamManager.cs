@@ -1,8 +1,11 @@
 using OpenDreamRuntime.Objects;
 using Robust.Server.Player;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     public interface IDreamManager {
+        public bool Initialized { get; }
+        public GameTick InitializedTick { get; }
         public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
 
@@ -12,7 +15,7 @@ namespace OpenDreamRuntime {
         public Exception? LastDMException { get; set; }
 
         public List<DreamValue> Globals { get; set; }
-        public DreamList WorldContentsList { get; set; }
+        public DreamList WorldContentsList { get; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public List<DreamObject> Mobs { get; set; }
@@ -21,7 +24,8 @@ namespace OpenDreamRuntime {
         public Random Random { get; set; }
         public Dictionary<string, List<DreamObject>> Tags { get; set; }
 
-        public void Initialize(string? testingJson);
+        public void PreInitialize(string? testingJson);
+        public void StartWorld();
         public void Shutdown();
         public bool LoadJson(string? jsonPath);
         public IPlayerSession GetSessionFromClient(DreamObject client);

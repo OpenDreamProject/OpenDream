@@ -71,7 +71,10 @@ namespace DMDisassembler {
                                 or DreamProcOpcode.SwitchCaseRange
                                 or DreamProcOpcode.Jump
                                 or DreamProcOpcode.JumpIfFalse
-                                or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                                or DreamProcOpcode.JumpIfTrue
+                                or DreamProcOpcode.JumpIfNullNoPop
+                                or DreamProcOpcode.JumpIfTrueReferenceNoPop
+                                or DreamProcOpcode.JumpIfFalseReferenceNoPop, int jumpPosition):
                             labeledPositions.Add(jumpPosition);
                             text.Append(jumpPosition);
                             break;

@@ -260,19 +260,14 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             switch (_expr)
             {
+                case Deref deref:
+                    deref.EmitPushIsSaved(dmObject, proc);
+                    return;
                 case Field field:
                     field.EmitPushIsSaved(proc);
                     return;
-                case Dereference dereference:
-                    dereference.EmitPushIsSaved(dmObject, proc);
-                    return;
                 case Local:
                     proc.PushFloat(0);
-                    return;
-                case ListIndex idx:
-                    proc.PushFloat(0);
-                    //TODO Support "vars" properly
-                    idx.IsSaved();
                     return;
                 default:
                     throw new CompileErrorException(Location, $"can't get saved value of {_expr}");

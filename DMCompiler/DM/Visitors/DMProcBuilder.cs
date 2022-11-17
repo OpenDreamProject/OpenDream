@@ -500,7 +500,9 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopStart(loopLabel);
                 {
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        string endLabel = _proc.NewLabelName();
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
 
@@ -559,7 +561,9 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopStart(loopLabel);
                 {
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        string endLabel = _proc.NewLabelName();
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
                     } else {
@@ -598,7 +602,9 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopStart(loopLabel);
                 {
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        string endLabel = _proc.NewLabelName();
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
                     } else {
@@ -789,10 +795,11 @@ namespace DMCompiler.DM.Visitors {
                 // An LValue on the left needs a special opcode so that its reference can be used
                 // This allows for special operations like "savefile[...] << ..."
 
-                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                string endLabel = _proc.NewLabelName();
+                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel);
                 right.EmitPushValue(_dmObject, _proc);
-
                 _proc.OutputReference(leftRef);
+                _proc.AddLabel(endLabel);
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -817,10 +824,15 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
-            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+            // WRONG
+            string endLabel = _proc.NewLabelName();
+
+            DMReference rightRef = right.EmitReference(_dmObject, _proc, endLabel);
+            DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel);
 
             _proc.Input(leftRef, rightRef);
+
+            _proc.AddLabel(endLabel);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

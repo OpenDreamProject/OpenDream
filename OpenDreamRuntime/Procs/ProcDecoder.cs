@@ -59,7 +59,6 @@ public struct ProcDecoder {
             case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
             case DMReference.Type.Field: return DMReference.CreateField(ReadString());
             case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
-            case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
             case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
             case DMReference.Type.Src: return DMReference.Src;
             case DMReference.Type.Self: return DMReference.Self;
@@ -83,6 +82,8 @@ public struct ProcDecoder {
             case DreamProcOpcode.IsSaved:
             case DreamProcOpcode.PushPath:
             case DreamProcOpcode.DebugSource:
+            case DreamProcOpcode.DereferenceField:
+            case DreamProcOpcode.DereferenceCall:
                 return (opcode, ReadString());
 
             case DreamProcOpcode.Prompt:
@@ -126,6 +127,9 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushType:
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
+            case DreamProcOpcode.JumpIfNullNoPop:
+            case DreamProcOpcode.JumpIfTrueReferenceNoPop:
+            case DreamProcOpcode.JumpIfFalseReferenceNoPop:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfNullDereference:

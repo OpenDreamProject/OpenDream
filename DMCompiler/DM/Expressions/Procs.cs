@@ -14,16 +14,16 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
             if (dmObject.HasProc(_identifier)) {
-                return (DMReference.CreateSrcProc(_identifier), false);
+                return DMReference.CreateSrcProc(_identifier);
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
-                return (DMReference.CreateGlobalProc(globalProc.Id), false);
+                return DMReference.CreateGlobalProc(globalProc.Id);
             }
-            
+
             DMCompiler.Error(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
-            return (DMReference.CreateSrcProc(_identifier), false);
+            return DMReference.CreateSrcProc(_identifier);
         }
 
         public DMProc GetProc(DMObject dmObject)
@@ -48,10 +48,9 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Error(Location, $"Attempt to use proc \"{_name}\" as value");
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
             DMProc globalProc = GetProc();
-
-            return (DMReference.CreateGlobalProc(globalProc.Id), false);
+            return DMReference.CreateGlobalProc(globalProc.Id);
         }
 
         public DMProc GetProc() {
@@ -73,8 +72,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, null)
         {}
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.Self, false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+            return DMReference.Self;
         }
     }
 
@@ -86,12 +85,12 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
             if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
             {
                 DMCompiler.Warning(new CompilerWarning(Location, "Calling parents via ..() in a proc definition does nothing"));
             }
-            return (DMReference.SuperProc, false);
+            return DMReference.SuperProc;
         }
     }
 
@@ -109,7 +108,6 @@ namespace DMCompiler.DM.Expressions {
             return _target switch {
                 Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
                 GlobalProc procTarget => (null, procTarget.GetProc()),
-                DereferenceProc derefTarget => derefTarget.GetProc(),
                 _ => (null, null)
             };
         }
@@ -120,26 +118,18 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
-            (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
+            string endLabel = proc.NewLabelName();
 
-            if (conditional) {
-                var skipLabel = proc.NewLabelName();
-                proc.JumpIfNullDereference(procRef, skipLabel);
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
-                proc.AddLabel(skipLabel);
+            DMReference procRef = _target.EmitReference(dmObject, proc, endLabel);
+
+            if (_arguments.Length == 0 && _target is ProcSuper) {
+                proc.PushProcArguments();
             } else {
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
+                _arguments.EmitPushArguments(dmObject, proc);
             }
+            proc.Call(procRef);
+
+            proc.AddLabel(endLabel);
         }
 
         public override bool TryAsJsonRepresentation(out object json) {

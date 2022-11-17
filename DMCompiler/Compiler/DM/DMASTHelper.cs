@@ -208,7 +208,7 @@ namespace DMCompiler.Compiler.DM {
         public class DMASTNodePrinter : ObjectPrinter {
             public DMASTNodePrinter() {
                 tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath), typeof(DreamPath.PathType) } );
-                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode), typeof(DMASTCallable), typeof(VarDeclInfo) } );
+                recurse_types.AddRange( new Type[] { typeof(DMASTNode), typeof(DMASTCallable), typeof(VarDeclInfo) } );
                 ignore_types.Add(typeof(Location));
             }
         }

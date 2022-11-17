@@ -65,7 +65,7 @@ namespace DMCompiler.DM {
 
         // Emits a reference that is to be used in an opcode that assigns/gets a value
         // May throw if this expression is unable to be referenced
-        public virtual (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+        public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 

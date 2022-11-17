@@ -1245,15 +1245,6 @@ namespace OpenDreamRuntime.Procs {
 
                     break;
                 }
-                case DMReference.Type.Proc: {
-                    DreamValue owner = state.Pop();
-                    if (!owner.TryGetValueAsDreamObject(out instance) || instance == null)
-                        throw new Exception($"Cannot dereference proc \"{procRef.Name}\" from {owner}");
-                    if (!instance.TryGetProc(procRef.Name, out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.Name}\"");
-
-                    break;
-                }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
                     proc = state.DreamManager.ObjectTree.Procs[procRef.Index];
@@ -1412,6 +1403,101 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return null;
+        }
+
+        public static ProcStatus? JumpIfNullNoPop(DMProcState state) {
+            int position = state.ReadInt();
+
+            if (state.Peek() == DreamValue.Null) {
+                state.Jump(position);
+            }
+
+            return null;
+        }
+        public static ProcStatus? JumpIfTrueReferenceNoPop(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            int position = state.ReadInt();
+
+            var value = state.GetReferenceValue(reference, true);
+
+            if (value.IsTruthy()) {
+                state.PopReference(reference);
+                state.Push(value);
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? JumpIfFalseReferenceNoPop(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            int position = state.ReadInt();
+
+            var value = state.GetReferenceValue(reference, true);
+
+            if (!value.IsTruthy()) {
+                state.PopReference(reference);
+                state.Push(value);
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? DereferenceField(DMProcState state) {
+            string name = state.ReadString();
+            DreamValue obj = state.Pop();
+
+            if (!obj.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                throw new Exception($"Cannot get field \"{name}\" from {obj}");
+            if (!ownerObj.TryGetVariable(name, out var fieldValue))
+                throw new Exception($"Type {obj.Type} has no field called \"{name}\"");
+
+            state.Push(fieldValue);
+            return null;
+        }
+
+        public static ProcStatus? DereferenceIndex(DMProcState state) {
+            DreamValue index = state.Pop();
+            DreamValue obj = state.Pop();
+
+            if (obj.TryGetValueAsDreamList(out var listObj)) {
+                state.Push(listObj.GetValue(index));
+                return null;
+            }
+
+            if (obj.TryGetValueAsString(out string? strValue)) {
+                if (!index.TryGetValueAsInteger(out int strIndex))
+                    throw new Exception($"Attempted to index string with {index}");
+
+                char c = strValue[strIndex - 1];
+                state.Push(new DreamValue(Convert.ToString(c)));
+                return null;
+            }
+
+            if (obj.TryGetValueAsDreamObject(out var dreamObject)) {
+                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
+                if (metaObject != null) {
+                    state.Push(metaObject.OperatorIndex(dreamObject!, index));
+                    return null;
+                }
+            }
+
+            throw new Exception($"Cannot get index {index} of {obj}");
+        }
+
+        public static ProcStatus? DereferenceCall(DMProcState state) {
+            string name = state.ReadString();
+            DreamProcArguments arguments = state.PopArguments();
+            DreamValue obj = state.Pop();
+
+            if (!obj.TryGetValueAsDreamObject(out var instance) || instance == null)
+                throw new Exception($"Cannot dereference proc \"{name}\" from {obj}");
+            if (!instance.TryGetProc(name, out var proc))
+                throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{name}\"");
+
+            state.Call(proc, instance, arguments);
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? Return(DMProcState state) {

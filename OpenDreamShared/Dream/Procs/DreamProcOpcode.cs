@@ -101,7 +101,13 @@ namespace OpenDreamShared.Dream.Procs {
         //0x5E
         PushGlobalVars = 0x5F,
         ModulusModulus = 0x60,
-        ModulusModulusReference = 0x61
+        ModulusModulusReference = 0x61,
+        JumpIfNullNoPop = 0x62,
+        JumpIfTrueReferenceNoPop = 0x63,
+        JumpIfFalseReferenceNoPop = 0x64,
+        DereferenceField = 0x65,
+        DereferenceIndex = 0x66,
+        DereferenceCall = 0x67,
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -266,7 +272,6 @@ namespace OpenDreamShared.Dream.Procs {
             Global,
             Field,
             SrcField,
-            Proc,
             GlobalProc,
             SrcProc,
             SuperProc
@@ -304,10 +309,6 @@ namespace OpenDreamShared.Dream.Procs {
             return new DMReference() { RefType = Type.SrcField, Name = fieldName };
         }
 
-        public static DMReference CreateProc(string procName) {
-            return new DMReference() { RefType = Type.Proc, Name = procName };
-        }
-
         public static DMReference CreateGlobalProc(int procId) {
             return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
@@ -327,7 +328,6 @@ namespace OpenDreamShared.Dream.Procs {
                 case Type.SrcField:
                 case Type.Field:
                 case Type.SrcProc:
-                case Type.Proc:
                     return $"{RefType} \"{Name}\"";
 
                 default: return RefType.ToString();

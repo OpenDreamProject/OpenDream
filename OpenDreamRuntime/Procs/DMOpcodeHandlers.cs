@@ -781,6 +781,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    state.Push(new DreamValue(0));
+                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;

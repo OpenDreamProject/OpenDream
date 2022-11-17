@@ -112,8 +112,6 @@ namespace DMCompiler {
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
-                DMPreprocessor dumpPreproc = build();
-
                 StringBuilder result = new();
                 foreach (Token t in build()) {
                     result.Append(t.Text);

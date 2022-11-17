@@ -99,7 +99,9 @@ namespace OpenDreamShared.Dream.Procs {
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
         //0x5E
-        PushGlobalVars = 0x5F
+        PushGlobalVars = 0x5F,
+        ModulusModulus = 0x60,
+        ModulusModulusReference = 0x61
     }
 
     public enum DreamProcOpcodeParameterType {

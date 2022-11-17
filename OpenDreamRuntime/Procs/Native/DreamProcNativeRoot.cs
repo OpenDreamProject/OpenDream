@@ -1099,17 +1099,27 @@ namespace OpenDreamRuntime.Procs.Native {
                 values = arguments.GetAllArguments();
             }
 
+            if (values.Count == 0)
+                return DreamValue.Null;
+
             DreamValue max = values[0];
 
             for (int i = 1; i < values.Count; i++) {
                 DreamValue value = values[i];
 
-                if (value == DreamValue.Null) {
-                    max = value;
-                } else if (value.TryGetValueAsFloat(out var lFloat) && max.TryGetValueAsFloat(out float rFloat)) {
-                    if (lFloat > rFloat) max = value;
-                } else if (value.TryGetValueAsString(out var lString) && max.TryGetValueAsString(out var rString)) {
-                    if (string.Compare(lString, rString, StringComparison.Ordinal) > 0) max = value;
+                if (value.TryGetValueAsFloat(out var lFloat)) {
+                    if (max == DreamValue.Null && lFloat >= 0)
+                        max = value;
+                    else if (max.TryGetValueAsFloat(out var rFloat) && lFloat > rFloat)
+                        max = value;
+                } else if (value == DreamValue.Null) {
+                    if (max.TryGetValueAsFloat(out var maxFloat) && maxFloat <= 0)
+                        max = value;
+                } else if (value.TryGetValueAsString(out var lString)) {
+                    if (max == DreamValue.Null)
+                        max = value;
+                    else if (max.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) > 0)
+                        max = value;
                 } else {
                     throw new Exception($"Cannot compare {max} and {value}");
                 }
@@ -1420,17 +1430,16 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr,
-            DreamProcArguments arguments) {
-            DreamValue haystack = arguments.GetArgument(0, "Haystack");
-            DreamValue needle = arguments.GetArgument(1, "Needle");
-            DreamValue replacementArg = arguments.GetArgument(2, "Replacement");
-            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+        public static async Task<DreamValue> NativeProc_replacetext(AsyncNativeProc.State state) {
+            DreamValue haystack = state.Arguments.GetArgument(0, "Haystack");
+            DreamValue needle = state.Arguments.GetArgument(1, "Needle");
+            DreamValue replacementArg = state.Arguments.GetArgument(2, "Replacement");
+            int start = state.Arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.Arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (needle.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out var regexObject)) {
                 // According to the docs, this is the same as /regex.Replace()
-                return DreamProcNativeRegex.RegexReplace(regexObject, haystack, replacementArg, start, end);
+                return await DreamProcNativeRegex.RegexReplace(state, regexObject, haystack, replacementArg, start, end);
             }
 
             if (!haystack.TryGetValueAsString(out var text)) {
@@ -1513,9 +1522,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("bad color");
             }
 
-            if (arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space) && space != 0) {
-                //TODO implement other colorspace support
-                throw new NotImplementedException("rgb2num() currently only supports COLORSPACE_RGB");
+            if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
+                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
@@ -1524,9 +1532,36 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamList list = DreamList.Create();
 
-            list.AddValue(new DreamValue(c.RByte));
-            list.AddValue(new DreamValue(c.GByte));
-            list.AddValue(new DreamValue(c.BByte));
+            switch(space) {
+                case 0: //rgb
+                    list.AddValue(new DreamValue(c.RByte));
+                    list.AddValue(new DreamValue(c.GByte));
+                    list.AddValue(new DreamValue(c.BByte));
+                    break;
+                case 1: //hsv
+                    Vector4 hsvcolor = Color.ToHsv(c);
+                    list.AddValue(new DreamValue(hsvcolor.X * 360));
+                    list.AddValue(new DreamValue(hsvcolor.Y * 100));
+                    list.AddValue(new DreamValue(hsvcolor.Z * 100));
+                    break;
+                case 2: //hsl
+                    Vector4 hslcolor = Color.ToHsl(c);
+                    list.AddValue(new DreamValue(hslcolor.X * 360));
+                    list.AddValue(new DreamValue(hslcolor.Y * 100));
+                    list.AddValue(new DreamValue(hslcolor.Z * 100));
+                    break;
+                case 3: //hcy
+                    /// TODO Figure out why the chroma for #ca60db is 48 instead of 68
+                    throw new NotImplementedException("HCY Colorspace is not implemented");
+                    /*
+                    Vector4 hcycolor = Color.ToHcy(c);
+                    list.AddValue(new DreamValue(hcycolor.X * 360));
+                    list.AddValue(new DreamValue(hcycolor.Y * 100));
+                    list.AddValue(new DreamValue(hcycolor.Z * 100));
+                    */
+                default:
+                    throw new NotImplementedException($"Colorspace {space} is not implemented");
+            }
 
             if (color.Length == 9 || color.Length == 5) {
                 list.AddValue(new DreamValue(c.AByte));

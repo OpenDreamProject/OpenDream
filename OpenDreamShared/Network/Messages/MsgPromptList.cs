@@ -1,6 +1,7 @@
 ﻿using Lidgren.Network;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
@@ -14,7 +15,7 @@ public sealed class MsgPromptList : NetMessage {
     public bool CanCancel;
     public string[] Values;
 
-    public override void ReadFromBuffer(NetIncomingMessage buffer) {
+    public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         PromptId = buffer.ReadVariableInt32();
         Title = buffer.ReadString();
         Message = buffer.ReadString();
@@ -27,7 +28,7 @@ public sealed class MsgPromptList : NetMessage {
         }
     }
 
-    public override void WriteToBuffer(NetOutgoingMessage buffer) {
+    public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.WriteVariableInt32(PromptId);
         buffer.Write(Title);
         buffer.Write(Message);

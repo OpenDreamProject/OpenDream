@@ -45,7 +45,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "contents": {
                     (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(dreamObject);
 
-                    HashSet<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(level.Grid.GridEntityId, pos, LookupFlags.None);
+                    HashSet<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(level.Grid.GridEntityId, pos, LookupFlags.Uncontained);
                     DreamList contents = DreamList.Create(entities.Count);
                     foreach (EntityUid movableEntity in entities) {
                         if (!_transformQuery.TryGetComponent(movableEntity, out var transform))

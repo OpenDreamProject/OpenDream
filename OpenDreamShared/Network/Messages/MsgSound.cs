@@ -1,5 +1,6 @@
 using Lidgren.Network;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages
 {
@@ -11,13 +12,13 @@ namespace OpenDreamShared.Network.Messages
         public string File;
         //TODO: Frequency and friends
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer) {
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
             Channel = buffer.ReadUInt16();
             Volume = buffer.ReadUInt16();
             File = buffer.ReadString();
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer) {
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
             buffer.Write(Channel);
             buffer.Write(Volume);
             buffer.Write(File);

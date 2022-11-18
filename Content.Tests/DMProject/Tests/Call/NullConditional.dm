@@ -18,9 +18,3 @@
 
 	L2?[1] = CRASH("rhs should not evaluate")
 	L2?[1] += CRASH("rhs should not evaluate")
-
-	ASSERT((L2 &&= L) == L2)
-	ASSERT(L2 == null)
-
-	ASSERT((L2 ||= L) == L)
-	ASSERT(L2 == L)

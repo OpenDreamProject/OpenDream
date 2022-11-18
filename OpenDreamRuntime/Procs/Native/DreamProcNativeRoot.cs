@@ -311,20 +311,21 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fcopy")]
         [DreamProcParameter("Src", Type = DreamValueType.String | DreamValueType.DreamResource)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var arg1 = arguments.GetArgument(0, "Src");
 
-            string src;
+            string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
+            } else if (arg1.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
             } else if (!arg1.TryGetValueAsString(out src)) {
-                throw new Exception("bad src file");
+                throw new Exception($"Bad src file {arg1}");
             }
 
-            if (!arguments.GetArgument(1, "Dst").TryGetValueAsString(out var dst))
-            {
-                throw new Exception("bad dst file");
+            var arg2 = arguments.GetArgument(1, "Dst");
+            if (!arg2.TryGetValueAsString(out var dst)) {
+                throw new Exception($"Bad dst file {arg2}");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();

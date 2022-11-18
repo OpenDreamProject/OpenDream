@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
-using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -208,19 +207,18 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            dmiDescription = dmiDescription.Replace("# BEGIN DMI", "");
-            dmiDescription = dmiDescription.Replace("# END DMI", "");
-            dmiDescription = dmiDescription.Replace("\t", "");
-            dmiDescription = dmiDescription.Trim();
             description.Source = dmiDescription;
 
             string[] lines = dmiDescription.Split("\n");
             foreach (string line in lines) {
-                int equalsIndex = line.IndexOf('=');
+                if (line.StartsWith('#') || string.IsNullOrWhiteSpace(line))
+                    continue;
 
-                if (equalsIndex != -1) {
-                    string key = line.Substring(0, equalsIndex).Trim();
-                    string value = line.Substring(equalsIndex + 1).Trim();
+                string[] split = line.Split('=');
+
+                if (split.Length == 2) {
+                    string key = split[0].Trim();
+                    string value = split[1].Trim();
 
                     switch (key) {
                         case "version":
@@ -300,10 +298,10 @@ namespace OpenDreamShared.Resources {
                             //TODO
                             break;
                         default:
-                            throw new Exception("Invalid key \"" + key + "\" in DMI description");
+                            throw new Exception($"Invalid key \"{key}\" in DMI description");
                     }
                 } else {
-                    throw new Exception("Invalid line in DMI description: \"" + line + "\"");
+                    throw new Exception($"Invalid line in DMI description: \"{line}\"");
                 }
             }
 
@@ -341,7 +339,7 @@ namespace OpenDreamShared.Resources {
             if (value.StartsWith("\"") && value.EndsWith("\"")) {
                 return value.Substring(1, value.Length - 2);
             } else {
-                throw new Exception("Invalid string in DMI description: " + value);
+                throw new Exception($"Invalid string in DMI description: {value}");
             }
         }
 

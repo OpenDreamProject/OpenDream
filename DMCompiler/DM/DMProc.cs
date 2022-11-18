@@ -394,6 +394,7 @@ namespace DMCompiler.DM {
         }
 
         public void Input(DMReference leftRef, DMReference rightRef) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Input);
             WriteReference(leftRef);
             WriteReference(rightRef);

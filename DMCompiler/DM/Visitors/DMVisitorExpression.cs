@@ -455,7 +455,7 @@ namespace DMCompiler.DM.Visitors {
 
             // Path of the previous operation that was iterated over (starting as the base expression)
             DreamPath? prevPath = expr.Path;
-            bool pathIsFuzzy = IsFuzzy(expr); // TODO: REVISIT!
+            bool pathIsFuzzy = IsFuzzy(expr);
 
             // Special behaviour for `global.x`, `global.vars`, and `global.f()`
             if (expr is Expressions.Global) {

@@ -27,5 +27,7 @@
 			src.layer = image.layer
 			src.pixel_x = image.pixel_x
 			src.pixel_y = image.pixel_y
+		else if (isfile(copy_from))
+			src.icon = copy_from
 		else if (!isnull(copy_from))
 			CRASH("Invalid arguments for /mutable_appearance/New()")

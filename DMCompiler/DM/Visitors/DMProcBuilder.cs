@@ -800,6 +800,9 @@ namespace DMCompiler.DM.Visitors {
                 right.EmitPushValue(_dmObject, _proc);
                 _proc.OutputReference(leftRef);
                 _proc.AddLabel(endLabel);
+
+                // OutputReference pushes null to the stack since it acts like an expression for null-conditional support
+                _proc.Pop();
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -824,15 +827,16 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            // WRONG
             string endLabel = _proc.NewLabelName();
 
             DMReference rightRef = right.EmitReference(_dmObject, _proc, endLabel);
             DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel);
 
             _proc.Input(leftRef, rightRef);
-
             _proc.AddLabel(endLabel);
+
+            // ProcessStatementInput pushes null to the stack since it acts like an expression for null-conditional support
+            _proc.Pop();
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

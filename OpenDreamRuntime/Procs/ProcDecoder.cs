@@ -128,8 +128,8 @@ public struct ProcDecoder {
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
             case DreamProcOpcode.JumpIfNullNoPop:
-            case DreamProcOpcode.JumpIfTrueReferenceNoPop:
-            case DreamProcOpcode.JumpIfFalseReferenceNoPop:
+            case DreamProcOpcode.JumpIfTrueReference:
+            case DreamProcOpcode.JumpIfFalseReference:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfNullDereference:

@@ -551,7 +551,7 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            DMASTDeref deref = expression as DMASTDeref;
+            DMASTDereference deref = expression as DMASTDereference;
             if (deref != null) {
                 SimplifyExpression(ref deref.Expression);
 

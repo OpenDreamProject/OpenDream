@@ -73,8 +73,8 @@ namespace DMDisassembler {
                                 or DreamProcOpcode.JumpIfFalse
                                 or DreamProcOpcode.JumpIfTrue
                                 or DreamProcOpcode.JumpIfNullNoPop
-                                or DreamProcOpcode.JumpIfTrueReferenceNoPop
-                                or DreamProcOpcode.JumpIfFalseReferenceNoPop, int jumpPosition):
+                                or DreamProcOpcode.JumpIfTrueReference
+                                or DreamProcOpcode.JumpIfFalseReference, int jumpPosition):
                             labeledPositions.Add(jumpPosition);
                             text.Append(jumpPosition);
                             break;

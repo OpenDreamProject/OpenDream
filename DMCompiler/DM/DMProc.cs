@@ -384,7 +384,6 @@ namespace DMCompiler.DM {
         }
 
         public void OutputReference(DMReference leftRef) {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.OutputReference);
             WriteReference(leftRef);
         }
@@ -572,14 +571,14 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.JumpIfNullNoPop);
             WriteLabel(label);
         }
-        public void JumpIfTrueReferenceNoPop(DMReference reference, string label) {
-            WriteOpcode(DreamProcOpcode.JumpIfTrueReferenceNoPop);
+        public void JumpIfTrueReference(DMReference reference, string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfTrueReference);
             WriteReference(reference, affectStack: false);
             WriteLabel(label);
         }
 
-        public void JumpIfFalseReferenceNoPop(DMReference reference, string label) {
-            WriteOpcode(DreamProcOpcode.JumpIfFalseReferenceNoPop);
+        public void JumpIfFalseReference(DMReference reference, string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfFalseReference);
             WriteReference(reference, affectStack: false);
             WriteLabel(label);
         }

@@ -433,13 +433,13 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Ternary(ternary.Location, a, b, c);
         }
 
-        public void VisitDeref(DMASTDeref deref) {
+        public void VisitDereference(DMASTDereference deref) {
             var astOperations = deref.Operations;
 
             // The base expression and list of operations to perform on it
             // These may be redefined if we encounter a global access mid-operation
             var expr = DMExpression.Create(_dmObject, _proc, deref.Expression, _inferredPath);
-            var operations = new Deref.Operation[deref.Operations.Length];
+            var operations = new Dereference.Operation[deref.Operations.Length];
             int astOperationOffset = 0;
 
             static bool IsFuzzy(DMExpression expr) {
@@ -459,9 +459,9 @@ namespace DMCompiler.DM.Visitors {
 
             // Special behaviour for `global.x`, `global.vars`, and `global.f()`
             if (expr is Expressions.Global) {
-                ref DMASTDeref.Operation firstOperation = ref astOperations[0];
+                ref DMASTDereference.Operation firstOperation = ref astOperations[0];
 
-                if (firstOperation.Kind == DMASTDeref.OperationKind.Field && firstOperation.Identifier.Identifier == "vars") {
+                if (firstOperation.Kind == DMASTDereference.OperationKind.Field && firstOperation.Identifier.Identifier == "vars") {
                     // `global.vars`
                     expr = new GlobalVars(expr.Location);
 
@@ -471,12 +471,12 @@ namespace DMCompiler.DM.Visitors {
                         return;
                     }
 
-                    operations = new Deref.Operation[newOperationCount];
+                    operations = new Dereference.Operation[newOperationCount];
                     astOperationOffset = 1;
 
                     prevPath = null;
                     pathIsFuzzy = true;
-                } else if (firstOperation.Kind == DMASTDeref.OperationKind.Field) {
+                } else if (firstOperation.Kind == DMASTDereference.OperationKind.Field) {
                     // `global.x`
 
                     var globalId = _dmObject.GetGlobalVariableId(firstOperation.Identifier.Identifier);
@@ -493,12 +493,12 @@ namespace DMCompiler.DM.Visitors {
                         return;
                     }
 
-                    operations = new Deref.Operation[newOperationCount];
+                    operations = new Dereference.Operation[newOperationCount];
                     astOperationOffset = 1;
 
                     prevPath = property.Type;
                     pathIsFuzzy = false;
-                } else if (firstOperation.Kind == DMASTDeref.OperationKind.Call) {
+                } else if (firstOperation.Kind == DMASTDereference.OperationKind.Call) {
                     // `global.f()`
                     ArgumentList argumentList = new(deref.Expression.Location, _dmObject, _proc, firstOperation.Parameters, null);
 
@@ -511,7 +511,7 @@ namespace DMCompiler.DM.Visitors {
                         return;
                     }
 
-                    operations = new Deref.Operation[newOperationCount];
+                    operations = new Dereference.Operation[newOperationCount];
                     astOperationOffset = 1;
 
                     prevPath = null;
@@ -522,36 +522,36 @@ namespace DMCompiler.DM.Visitors {
             }
 
             for (int i = 0; i < operations.Length; i++) {
-                ref DMASTDeref.Operation astOperation = ref astOperations[i + astOperationOffset];
-                ref Deref.Operation operation = ref operations[i];
+                ref DMASTDereference.Operation astOperation = ref astOperations[i + astOperationOffset];
+                ref Dereference.Operation operation = ref operations[i];
 
                 operation.Kind = astOperation.Kind;
 
                 // If the last operation evaluated as an ambiguous type, we force the next operation to be a search
                 if (pathIsFuzzy) {
                     operation.Kind = operation.Kind switch {
-                        DMASTDeref.OperationKind.Invalid => throw new InvalidOperationException(),
+                        DMASTDereference.OperationKind.Invalid => throw new InvalidOperationException(),
 
-                        DMASTDeref.OperationKind.Field => DMASTDeref.OperationKind.FieldSearch,
-                        DMASTDeref.OperationKind.FieldSafe => DMASTDeref.OperationKind.FieldSafeSearch,
-                        DMASTDeref.OperationKind.FieldSearch => DMASTDeref.OperationKind.FieldSearch,
-                        DMASTDeref.OperationKind.FieldSafeSearch => DMASTDeref.OperationKind.FieldSafeSearch,
-                        DMASTDeref.OperationKind.Call => DMASTDeref.OperationKind.CallSearch,
-                        DMASTDeref.OperationKind.CallSafe => DMASTDeref.OperationKind.CallSafeSearch,
-                        DMASTDeref.OperationKind.CallSearch => DMASTDeref.OperationKind.CallSearch,
-                        DMASTDeref.OperationKind.CallSafeSearch => DMASTDeref.OperationKind.CallSafeSearch,
+                        DMASTDereference.OperationKind.Field => DMASTDereference.OperationKind.FieldSearch,
+                        DMASTDereference.OperationKind.FieldSafe => DMASTDereference.OperationKind.FieldSafeSearch,
+                        DMASTDereference.OperationKind.FieldSearch => DMASTDereference.OperationKind.FieldSearch,
+                        DMASTDereference.OperationKind.FieldSafeSearch => DMASTDereference.OperationKind.FieldSafeSearch,
+                        DMASTDereference.OperationKind.Call => DMASTDereference.OperationKind.CallSearch,
+                        DMASTDereference.OperationKind.CallSafe => DMASTDereference.OperationKind.CallSafeSearch,
+                        DMASTDereference.OperationKind.CallSearch => DMASTDereference.OperationKind.CallSearch,
+                        DMASTDereference.OperationKind.CallSafeSearch => DMASTDereference.OperationKind.CallSafeSearch,
 
                         // Indexes are always fuzzy anyway!
-                        DMASTDeref.OperationKind.Index => DMASTDeref.OperationKind.Index,
-                        DMASTDeref.OperationKind.IndexSafe => DMASTDeref.OperationKind.IndexSafe,
+                        DMASTDereference.OperationKind.Index => DMASTDereference.OperationKind.Index,
+                        DMASTDereference.OperationKind.IndexSafe => DMASTDereference.OperationKind.IndexSafe,
 
                         _ => throw new InvalidOperationException(),
                     };
                 }
 
                 switch (operation.Kind) {
-                    case DMASTDeref.OperationKind.Field:
-                    case DMASTDeref.OperationKind.FieldSafe: {
+                    case DMASTDereference.OperationKind.Field:
+                    case DMASTDereference.OperationKind.FieldSafe: {
                             string field = astOperation.Identifier.Identifier;
 
                             if (prevPath == null) {
@@ -581,7 +581,7 @@ namespace DMCompiler.DM.Visitors {
                                         return;
                                     }
 
-                                    operations = new Deref.Operation[newOperationCount];
+                                    operations = new Dereference.Operation[newOperationCount];
                                     astOperationOffset = i + 1;
                                     i = -1;
                                 }
@@ -600,8 +600,8 @@ namespace DMCompiler.DM.Visitors {
                         }
                         break;
 
-                    case DMASTDeref.OperationKind.FieldSearch:
-                    case DMASTDeref.OperationKind.FieldSafeSearch:
+                    case DMASTDereference.OperationKind.FieldSearch:
+                    case DMASTDereference.OperationKind.FieldSafeSearch:
                         // TODO: im pretty sure types should be inferred if a field with their name only exists in a single place, sounds cursed though
                         operation.Identifier = astOperation.Identifier.Identifier;
                         operation.GlobalId = null;
@@ -610,8 +610,8 @@ namespace DMCompiler.DM.Visitors {
                         pathIsFuzzy = true;
                         break;
 
-                    case DMASTDeref.OperationKind.Index:
-                    case DMASTDeref.OperationKind.IndexSafe:
+                    case DMASTDereference.OperationKind.Index:
+                    case DMASTDereference.OperationKind.IndexSafe:
                         // Passing the path here is cursed, but one of the tests seems to suggest we want that?
                         operation.Index = DMExpression.Create(_dmObject, _proc, astOperation.Index, prevPath);
                         operation.Path = null;
@@ -621,8 +621,8 @@ namespace DMCompiler.DM.Visitors {
                         pathIsFuzzy = true;
                         break;
 
-                    case DMASTDeref.OperationKind.Call:
-                    case DMASTDeref.OperationKind.CallSafe: {
+                    case DMASTDereference.OperationKind.Call:
+                    case DMASTDereference.OperationKind.CallSafe: {
                             string field = astOperation.Identifier.Identifier;
                             ArgumentList argumentList = new(deref.Expression.Location, _dmObject, _proc, astOperation.Parameters, null);
 
@@ -647,8 +647,8 @@ namespace DMCompiler.DM.Visitors {
                         }
                         break;
 
-                    case DMASTDeref.OperationKind.CallSearch:
-                    case DMASTDeref.OperationKind.CallSafeSearch:
+                    case DMASTDereference.OperationKind.CallSearch:
+                    case DMASTDereference.OperationKind.CallSafeSearch:
                         operation.Identifier = astOperation.Identifier.Identifier;
                         operation.Parameters = new ArgumentList(deref.Expression.Location, _dmObject, _proc, astOperation.Parameters, null);
                         operation.Path = null;
@@ -663,7 +663,7 @@ namespace DMCompiler.DM.Visitors {
 
             // The final value in prevPath is our expression's path!
 
-            Result = new Expressions.Deref(deref.Location, prevPath, expr, operations);
+            Result = new Expressions.Dereference(deref.Location, prevPath, expr, operations);
         }
 
         public void VisitNewPath(DMASTNewPath newPath) {

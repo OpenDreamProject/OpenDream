@@ -116,7 +116,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcCall(DMASTProcCall procCall) { throw new NotImplementedException(); }
         public void VisitCallParameter(DMASTCallParameter callParameter) { throw new NotImplementedException(); }
         public void VisitDefinitionParameter(DMASTDefinitionParameter definitionParameter) { throw new NotImplementedException(); }
-        public void VisitDeref(DMASTDeref deref) { throw new NotImplementedException(); }
+        public void VisitDereference(DMASTDereference deref) { throw new NotImplementedException(); }
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) { throw new NotImplementedException(); }
         public void VisitCallableSuper(DMASTCallableSuper super) { throw new NotImplementedException(); }
         public void VisitCallableSelf(DMASTCallableSelf self) { throw new NotImplementedException(); }
@@ -1771,7 +1771,7 @@ namespace DMCompiler.Compiler.DM {
 
 
 
-    public class DMASTDeref : DMASTExpression {
+    public class DMASTDereference : DMASTExpression {
         public enum OperationKind {
             Invalid,
 
@@ -1807,12 +1807,12 @@ namespace DMCompiler.Compiler.DM {
         // Always contains at least one operation
         public Operation[] Operations;
 
-        public DMASTDeref(Location location, DMASTExpression expression, Operation[] operations) : base(location) {
+        public DMASTDereference(Location location, DMASTExpression expression, Operation[] operations) : base(location) {
             Expression = expression;
             Operations = operations;
         }
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitDeref(this);
+            visitor.VisitDereference(this);
         }
     }
 

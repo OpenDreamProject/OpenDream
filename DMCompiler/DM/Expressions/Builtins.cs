@@ -260,7 +260,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             switch (_expr)
             {
-                case Deref deref:
+                case Dereference deref:
                     deref.EmitPushIsSaved(dmObject, proc);
                     return;
                 case Field field:

@@ -517,7 +517,7 @@ namespace DMCompiler.DM.Expressions {
         public LogicalAndAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
-            proc.JumpIfFalseReferenceNoPop(reference, endLabel);
+            proc.JumpIfFalseReference(reference, endLabel);
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
         }
@@ -528,7 +528,7 @@ namespace DMCompiler.DM.Expressions {
         public LogicalOrAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
-            proc.JumpIfTrueReferenceNoPop(reference, endLabel);
+            proc.JumpIfTrueReference(reference, endLabel);
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
         }

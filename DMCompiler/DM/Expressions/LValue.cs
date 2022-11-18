@@ -31,7 +31,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, null) { }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
-            throw new CompileErrorException(Location, $"attempt to use `global` for something weird");
+            throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
         }
     }
 

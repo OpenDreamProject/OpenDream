@@ -1414,7 +1414,7 @@ namespace OpenDreamRuntime.Procs {
 
             return null;
         }
-        public static ProcStatus? JumpIfTrueReferenceNoPop(DMProcState state) {
+        public static ProcStatus? JumpIfTrueReference(DMProcState state) {
             DMReference reference = state.ReadReference();
             int position = state.ReadInt();
 
@@ -1429,7 +1429,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? JumpIfFalseReferenceNoPop(DMProcState state) {
+        public static ProcStatus? JumpIfFalseReference(DMProcState state) {
             DMReference reference = state.ReadReference();
             int position = state.ReadInt();
 
@@ -1622,11 +1622,13 @@ namespace OpenDreamRuntime.Procs {
                     // "savefile[A] << B" is the same as "savefile[A] = B"
 
                     state.AssignReference(leftRef, right);
+                    state.Push(DreamValue.Null);
                     return null;
                 }
             }
 
             PerformOutput(state.GetReferenceValue(leftRef), right);
+            state.Push(DreamValue.Null);
             return null;
         }
 
@@ -1650,11 +1652,13 @@ namespace OpenDreamRuntime.Procs {
                     // "savefile[A] >> B" is the same as "B = savefile[A]"
 
                     state.AssignReference(rightRef, state.GetReferenceValue(leftRef));
+                    state.Push(DreamValue.Null);
                     return null;
                 } else {
                     // Pop the reference's stack values
                     state.GetReferenceValue(leftRef);
                     state.GetReferenceValue(rightRef);
+                    state.Push(DreamValue.Null);
                 }
             }
 

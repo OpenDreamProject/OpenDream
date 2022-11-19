@@ -31,7 +31,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         StepIn,
         StepOut,
     }
-    private readonly Dictionary<int, (StepMode Mode, int FrameId)> _threadStepModes = new();
+    private readonly Dictionary<int, (StepMode Mode, int FrameId, string? Granularity)> _threadStepModes = new();
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
@@ -106,6 +106,30 @@ sealed class DreamDebugManager : IDreamDebugManager {
         Output(message, category);
     }
 
+    public void HandleInstruction(DMProcState state) {
+        bool stoppedOnStep = false;
+        switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
+            case (StepMode.StepIn, _, SteppingGranularity.Instruction):
+                stoppedOnStep = true;
+                break;
+            case (StepMode.StepOut, int whenNotInStack, SteppingGranularity.Instruction):
+                stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                break;
+            case (StepMode.StepOver, int whenTop, SteppingGranularity.Instruction):
+                stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                break;
+        }
+
+        if (stoppedOnStep) {
+            _threadStepModes.Remove(state.Thread.Id);
+            _stoppedThread = state.Thread;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonStep,
+            });
+            return;
+        }
+    }
+
     public void HandleLineChange(DMProcState state, int line) {
         if (_stopOnEntry) {
             _stopOnEntry = false;
@@ -118,13 +142,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         bool stoppedOnStep = false;
         switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
-            case (StepMode.StepIn, _):
+            case (StepMode.StepIn, _, null or SteppingGranularity.Line or SteppingGranularity.Statement):
                 stoppedOnStep = true;
                 break;
-            case (StepMode.StepOut, int whenNotInStack):
+            case (StepMode.StepOut, int whenNotInStack, null or SteppingGranularity.Line or SteppingGranularity.Statement):
                 stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
                 break;
-            case (StepMode.StepOver, int whenTop):
+            case (StepMode.StepOver, int whenTop, null or SteppingGranularity.Line or SteppingGranularity.Statement):
                 stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
@@ -304,6 +328,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 new ExceptionBreakpointsFilter(ExceptionFilterRuntimes, "Runtime errors") { Default = true },
             },
             SupportsDisassembleRequest = true,
+            SupportsSteppingGranularity = true,
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -488,21 +513,21 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
-        _threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0);
+        _threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0, requestStepIn.Arguments.Granularity);
         Resume();
         requestStepIn.Respond(client);
     }
 
     private void HandleRequestNext(DebugAdapterClient client, RequestNext requestNext) {
         var thread = InspectThreads().First(t => t.Id == requestNext.Arguments.ThreadId);
-        _threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
+        _threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().FirstOrDefault()?.Id ?? -1, requestNext.Arguments.Granularity);
         Resume();
         requestNext.Respond(client);
     }
 
     private void HandleRequestStepOut(DebugAdapterClient client, RequestStepOut requestStepOut) {
         var thread = InspectThreads().First(t => t.Id == requestStepOut.Arguments.ThreadId);
-        _threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
+        _threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().FirstOrDefault()?.Id ?? -1, requestStepOut.Arguments.Granularity);
         Resume();
         requestStepOut.Respond(client);
     }
@@ -575,22 +600,33 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        requestScopes.Respond(client, new[] {
-            new Scope {
-                Name = "Arguments",
-                PresentationHint = Scope.PresentationHintArguments,
-                VariablesReference = AllocVariableRef(req => ExpandArguments(req, dmFrame)),
-            },
-            new Scope {
-                Name = "Locals",
-                PresentationHint = Scope.PresentationHintLocals,
-                VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
-            },
-            new Scope {
-                Name = "Globals",
-                VariablesReference = AllocVariableRef(req => ExpandGlobals(req)),
-            },
+        var scopes = new List<Scope>(4);
+        var stack = dmFrame.DebugStack();
+        if (stack.Length > 0) {
+            // Only show the Stack as a scope if there is anything worth showing,
+            // which will usually only be when stepping by instruction.
+            scopes.Add(new Scope {
+                Name = "Stack",
+                VariablesReference = AllocVariableRef(req => ExpandStack(req, stack)),
+                PresentationHint = Scope.PresentationHintRegisters,
+            });
+        }
+        scopes.Add(new Scope {
+            Name = "Arguments",
+            PresentationHint = Scope.PresentationHintArguments,
+            VariablesReference = AllocVariableRef(req => ExpandArguments(req, dmFrame)),
         });
+        scopes.Add(new Scope {
+            Name = "Locals",
+            PresentationHint = Scope.PresentationHintLocals,
+            VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
+        });
+        scopes.Add(new Scope {
+            Name = "Globals",
+            VariablesReference = AllocVariableRef(req => ExpandGlobals(req)),
+        });
+
+        requestScopes.Respond(client, scopes);
     }
 
     private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
@@ -612,6 +648,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
         foreach (var (name, value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals)) {
             yield return DescribeValue(name, value);
+        }
+    }
+
+    private IEnumerable<Variable> ExpandStack(RequestVariables req, DreamValue[] stack) {
+        for (int i = stack.Length - 1; i >= 0; --i) {
+            yield return DescribeValue($"{i}", stack[i]);
         }
     }
 
@@ -706,4 +748,5 @@ internal interface IDreamDebugManager {
     public void HandleProcStart(DMProcState state);
     public void HandleLineChange(DMProcState state, int line);
     public void HandleException(DreamThread dreamThread, Exception exception);
+    public void HandleInstruction(DMProcState dMProcState);
 }

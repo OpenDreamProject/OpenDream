@@ -270,6 +270,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             while (_pc < _proc.Bytecode.Length) {
+                DebugManager.HandleInstruction(this);
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
@@ -340,6 +341,7 @@ namespace OpenDreamRuntime.Procs {
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
+        public DreamValue[] DebugStack() => _stack[.._stackIndex];
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;

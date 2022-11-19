@@ -26,6 +26,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private Stack<Token> _unprocessedTokens = new();
         private Stack<Token> _bufferedWhitespace = new();
         private bool _currentLineContainsNonWhitespace = false;
+        private bool _canUseDirective = true;
 
         private bool _enableDirectives;
         private Dictionary<string, DMMacro> _defines = new() {
@@ -76,6 +77,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         _lexerStack.Pop();
                         break;
                     case TokenType.Newline:
+                        _canUseDirective = true;
+
                         if (!_currentLineContainsNonWhitespace) {
                             _bufferedWhitespace.Clear();
                             break;
@@ -94,6 +97,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             token = GetNextToken(true);
                         } while (token.Type == TokenType.Newline);
 
+                        // Preprocessor directives can be used once we reach a line-splice
+                        _canUseDirective = true;
                         PushToken(token);
                         break;
 
@@ -134,18 +139,20 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         if (!_lastIfEvaluations.TryPop(out var _))
                             DMCompiler.Error(new CompilerError(token.Location, "Unexpected #endif"));
                         break;
-                    case TokenType.DM_Preproc_Identifier:
+                    case TokenType.DM_Preproc_Identifier: {
                         if (TryMacro(token)) {
                             break;
                         }
 
-                        if (_bufferedWhitespace.TryPop(out var whitespace)) {
+                        while (_bufferedWhitespace.TryPop(out var whitespace)) {
                             yield return whitespace;
                         }
                         _currentLineContainsNonWhitespace = true;
+                        _canUseDirective = false;
 
                         yield return token;
                         break;
+                    }
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
                     case TokenType.DM_Preproc_ConstantString:
@@ -157,13 +164,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:
-                    case TokenType.DM_Preproc_Punctuator_RightParenthesis:
-                        if (_bufferedWhitespace.TryPop(out var whitespace2)) {
-                            yield return whitespace2;
+                    case TokenType.DM_Preproc_Punctuator_RightParenthesis: {
+                        while (_bufferedWhitespace.TryPop(out var whitespace)) {
+                            yield return whitespace;
                         }
                         _currentLineContainsNonWhitespace = true;
+                        _canUseDirective = false;
+
                         yield return token;
                         break;
+                    }
 
                     case TokenType.Error:
                         DMCompiler.Error(new CompilerError(token.Location, (string)token.Value));
@@ -248,7 +258,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return false;
             }
 
-            if (_currentLineContainsNonWhitespace) {
+            if (!_canUseDirective) {
                 DMCompiler.Error(new CompilerError(token.Location, "There can only be whitespace before a preprocessor directive"));
                 return false;
             }
@@ -329,11 +339,17 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
 
             while (macroToken.Type != TokenType.Newline && macroToken.Type != TokenType.EndOfFile) {
-                //Note that line splices behave differently inside macros than outside
-                //Outside, a line splice will remove all empty lines that come after it
-                //Inside, only one line is spliced
+                // A line splice followed by another new line will end the macro without inserting the line splice
                 if (macroToken.Type == TokenType.DM_Preproc_LineSplice) {
-                    macroToken = GetNextToken(true);
+                    var nextToken = GetNextToken(true);
+
+                    // If the next token is another newline, immediately stop adding new tokens
+                    if (nextToken.Type == TokenType.Newline) {
+                        break;
+                    }
+
+                    macroTokens.Add(macroToken);
+                    macroToken = nextToken;
                 } else {
                     macroTokens.Add(macroToken);
                     macroToken = GetNextToken();

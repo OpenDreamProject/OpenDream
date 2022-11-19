@@ -265,10 +265,6 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
-            if (_pc == 0) {
-                DebugManager.HandleProcStart(this);
-            }
-
             while (_pc < _proc.Bytecode.Length) {
                 DebugManager.HandleInstruction(this);
                 int opcode = _proc.Bytecode[_pc++];

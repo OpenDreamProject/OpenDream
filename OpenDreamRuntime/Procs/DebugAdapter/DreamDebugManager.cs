@@ -107,6 +107,31 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleInstruction(DMProcState state) {
+        // Handle proc starts and instruction stepping as one, so instruction
+        // stepping after a function breakpoint doesn't stop at the
+        // instruction again.
+
+        // If the PC is 0, check for a function breakpoint.
+        if (state.ProgramCounter == 0) {
+            var hit = new List<int>();
+            if (_possibleFunctionBreakpoints?.GetValueOrDefault((state.Proc.OwningType.PathString, state.Proc.Name)) is FunctionBreakpointSlot slot) {
+                foreach (var bp in slot.Breakpoints) {
+                    if (TestBreakpoint(bp)) {
+                        hit.Add(bp.Id);
+                    }
+                }
+            }
+            if (hit.Any()) {
+                Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+                Stop(state.Thread, new StoppedEvent {
+                    Reason = StoppedEvent.ReasonFunctionBreakpoint,
+                    HitBreakpointIds = hit,
+                });
+                return;
+            }
+        }
+
+        // Stop if we're instruction stepping.
         bool stoppedOnStep = false;
         switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
             case (StepMode.StepIn, _, SteppingGranularity.Instruction):
@@ -119,10 +144,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
-
         if (stoppedOnStep) {
             _threadStepModes.Remove(state.Thread.Id);
-            _stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
@@ -133,7 +156,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
     public void HandleLineChange(DMProcState state, int line) {
         if (_stopOnEntry) {
             _stopOnEntry = false;
-            _stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonEntry,
             });
@@ -155,7 +177,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         if (stoppedOnStep) {
             _threadStepModes.Remove(state.Thread.Id);
-            _stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
@@ -175,24 +196,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
             Output($"Breakpoint hit at {state.CurrentSource}:{line}");
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
-                HitBreakpointIds = hit,
-            });
-        }
-    }
-
-    public void HandleProcStart(DMProcState state) {
-        var hit = new List<int>();
-        if (_possibleFunctionBreakpoints?.GetValueOrDefault((state.Proc.OwningType.PathString, state.Proc.Name)) is FunctionBreakpointSlot slot) {
-            foreach (var bp in slot.Breakpoints) {
-                if (TestBreakpoint(bp)) {
-                    hit.Add(bp.Id);
-                }
-            }
-        }
-        if (hit.Any()) {
-            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-            Stop(state.Thread, new StoppedEvent {
-                Reason = StoppedEvent.ReasonFunctionBreakpoint,
                 HitBreakpointIds = hit,
             });
         }
@@ -745,8 +748,7 @@ internal interface IDreamDebugManager {
     public void Shutdown();
 
     public void HandleOutput(LogLevel logLevel, string message);
-    public void HandleProcStart(DMProcState state);
+    public void HandleInstruction(DMProcState dMProcState);
     public void HandleLineChange(DMProcState state, int line);
     public void HandleException(DreamThread dreamThread, Exception exception);
-    public void HandleInstruction(DMProcState dMProcState);
 }

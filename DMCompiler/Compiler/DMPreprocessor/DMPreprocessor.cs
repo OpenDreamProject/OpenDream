@@ -24,7 +24,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         private HashSet<string> _includedFiles = new();
         private Stack<Token> _unprocessedTokens = new();
-        private bool _currentLineWhitespaceOnly = true;
+        private Stack<Token> _bufferedWhitespace = new();
+        private bool _currentLineContainsNonWhitespace = false;
+
         private bool _enableDirectives;
         private Dictionary<string, DMMacro> _defines = new() {
             { "__LINE__", new DMMacroLine() },
@@ -63,28 +65,28 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                 switch (token.Type) {
                     case TokenType.DM_Preproc_Whitespace:
-                        Token afterWhitespace = GetNextToken();
-                        if (_currentLineWhitespaceOnly) {
-                            if (afterWhitespace.Type == TokenType.Newline)
-                                break; //Ignore lines containing only whitespace
-
-                            if (DirectiveTypes.Contains(afterWhitespace.Type)) {
-                                PushToken(afterWhitespace);
-                                break;
-                            }
+                        if (_currentLineContainsNonWhitespace) {
+                            yield return token;
+                            break;
                         }
 
-                        yield return token;
-                        PushToken(afterWhitespace);
+                        _bufferedWhitespace.Push(token);
                         break;
                     case TokenType.EndOfFile:
                         _lexerStack.Pop();
                         break;
                     case TokenType.Newline:
-                        if (_currentLineWhitespaceOnly)
+                        if (!_currentLineContainsNonWhitespace) {
+                            _bufferedWhitespace.Clear();
                             break;
+                        }
 
-                        _currentLineWhitespaceOnly = true;
+                        // All buffered whitespace should have been written out by this point
+                        if (_bufferedWhitespace.Count > 0) {
+                            throw new InvalidOperationException();
+                        }
+
+                        _currentLineContainsNonWhitespace = false;
                         yield return token;
                         break;
                     case TokenType.DM_Preproc_LineSplice:
@@ -133,10 +135,16 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             DMCompiler.Error(new CompilerError(token.Location, "Unexpected #endif"));
                         break;
                     case TokenType.DM_Preproc_Identifier:
-                        _currentLineWhitespaceOnly = false;
-                        if(!TryMacro(token)) {
-                            yield return token;
+                        if (TryMacro(token)) {
+                            break;
                         }
+
+                        if (_bufferedWhitespace.TryPop(out var whitespace)) {
+                            yield return whitespace;
+                        }
+                        _currentLineContainsNonWhitespace = true;
+
+                        yield return token;
                         break;
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
@@ -150,7 +158,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:
                     case TokenType.DM_Preproc_Punctuator_RightParenthesis:
-                        _currentLineWhitespaceOnly = false;
+                        if (_bufferedWhitespace.TryPop(out var whitespace2)) {
+                            yield return whitespace2;
+                        }
+                        _currentLineContainsNonWhitespace = true;
                         yield return token;
                         break;
 
@@ -237,7 +248,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 return false;
             }
 
-            if (!_currentLineWhitespaceOnly) {
+            if (_currentLineContainsNonWhitespace) {
                 DMCompiler.Error(new CompilerError(token.Location, "There can only be whitespace before a preprocessor directive"));
                 return false;
             }
@@ -411,6 +422,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 // These tokens are pushed so that nested macros get processed
                 PushToken(expandedToken);
             }
+
             return true;
         }
 

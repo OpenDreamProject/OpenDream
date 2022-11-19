@@ -1,5 +1,6 @@
 ﻿using Robust.Shared.Analyzers;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace OpenDreamShared.Compiler {
     [Virtual]
@@ -44,6 +45,10 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected void ReuseToken(Token token) {
+            if (_lookahead.Count > 0) {
+                Debug.Assert(_lookahead.Peek().Count >= 2);
+                _lookahead.Peek().Pop();
+            }
             _tokenStack.Push(_currentToken);
             _currentToken = token;
         }

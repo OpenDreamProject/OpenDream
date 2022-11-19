@@ -31,13 +31,13 @@ public sealed class RequestDisassemble : Request {
          * unavailable instructions should be replaced with an implementation-defined
          * 'invalid instruction' value.
          */
-        [JsonPropertyName("instructionCount")] public int instructionCount { get; set; }
+        [JsonPropertyName("instructionCount")] public int InstructionCount { get; set; }
 
         /**
          * If true, the adapter should attempt to resolve memory addresses and other
          * values to symbolic names.
          */
-        [JsonPropertyName("resolveSymbols")] public bool? resolveSymbols { get; set; }
+        [JsonPropertyName("resolveSymbols")] public bool? ResolveSymbols { get; set; }
     }
 
     public void Respond(DebugAdapterClient client, IEnumerable<DisassembledInstruction> instructions) {

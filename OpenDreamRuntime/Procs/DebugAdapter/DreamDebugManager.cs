@@ -61,7 +61,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
     private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
-    private List<DMProc> _disassemblyProcs = new();
+    private Dictionary<int, DMProc> _disassemblyProcs = new();
 
     // Temporary data for a given Stop
     private Exception? _exception;
@@ -569,9 +569,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 Name = nameBuilder.ToString(),
             };
             if (frame is DMProcState dm) {
-                int id = _disassemblyProcs.Count;
-                _disassemblyProcs.Add(dm.Proc);
-                outputFrame.InstructionPointerReference = $"{id},{dm.ProgramCounter}";
+                outputFrame.InstructionPointerReference = EncodeInstructionPointer(dm.Proc, dm.ProgramCounter);
             }
 
             output.Add(outputFrame);
@@ -716,10 +714,18 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestDisassemble(DebugAdapterClient client, RequestDisassemble requestDisassemble) {
-        string[] parts = requestDisassemble.Arguments.MemoryReference.Split(",");
-        DMProc proc = _disassemblyProcs[int.Parse(parts[0])];
-        int pc = int.Parse(parts[1]);
+        var (proc, pc) = DecodeInstructionPointer(requestDisassemble.Arguments.MemoryReference);
+        // If the user scrolled really far up/down, serve nothing forever.
+        if (proc == null) {
+            if (pc == 0xffffffff) {
+                requestDisassemble.Respond(client, Enumerable.Repeat(HighInstruction, requestDisassemble.Arguments.InstructionCount));
+            } else {
+                requestDisassemble.Respond(client, Enumerable.Repeat(LowInstruction, requestDisassemble.Arguments.InstructionCount));
+            }
+            return;
+        }
 
+        // Just disassemble the whole function...
         List<DisassembledInstruction> output = new();
         DisassembledInstruction? previousInstruction = null;
         int previousOffset = 0;
@@ -729,16 +735,66 @@ sealed class DreamDebugManager : IDreamDebugManager {
             }
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
-                Address = offset.ToString(),
+                Address = EncodeInstructionPointer(proc, offset),
                 Instruction = instruction.ToString()!,
             };
+            switch (instruction) {
+                case (DreamProcOpcode.DebugSource, string source):
+                    previousInstruction.Location = TranslateSource(source);
+                    break;
+                case (DreamProcOpcode.DebugLine, int line):
+                    previousInstruction.Line = line;
+                    break;
+            }
             output.Add(previousInstruction);
         }
         if (previousInstruction != null) {
             previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ");
         }
+        if (output.Count > 0) {
+            output[0].Symbol = proc.ToString();
+            if (output[0].Location is null) {
+                output[0].Location = TranslateSource(proc.Source);
+            }
+            if (output[0].Line is null) {
+                output[0].Line = proc.Line;
+            }
+        }
 
-        requestDisassemble.Respond(client, output);
+        // ... and THEN strip everything outside the requested range.
+        int requestedPoint = output.FindIndex(di => di.Address == requestDisassemble.Arguments.MemoryReference);
+        requestDisassemble.Respond(client, DisassemblySkipTake(output, requestedPoint, requestDisassemble.Arguments.InstructionOffset ?? 0, requestDisassemble.Arguments.InstructionCount));
+    }
+
+    private IEnumerable<DisassembledInstruction> DisassemblySkipTake(List<DisassembledInstruction> list, int midpoint, int offset, int count) {
+        for (int i = midpoint + offset; i < midpoint + offset + count; ++i) {
+            if (i < 0) {
+                yield return LowInstruction;
+            } else if (i < list.Count) {
+                yield return list[i];
+            } else {
+                yield return HighInstruction;
+            }
+        }
+    }
+
+    private static readonly DisassembledInstruction LowInstruction = new DisassembledInstruction { Address = "0x1", Instruction = "" };
+    private static readonly DisassembledInstruction HighInstruction = new DisassembledInstruction { Address = "0xffffffffffffffff", Instruction = "" };
+
+    private string EncodeInstructionPointer(DMProc proc, int pc) {
+        // VSCode requires that the instruction pointer is parseable as a BigInt
+        // so that it can use lt/gt/eq comparisons to avoid refetching memory.
+        // Otherwise it will think they're all the same and never refetch.
+        int procId = proc.GetHashCode();
+        _disassemblyProcs[procId] = proc;
+        ulong ip = ((ulong)(uint)procId << 32) | (ulong)(uint)pc;
+        return "0x" + ip.ToString("x");
+    }
+
+    private (DMProc? proc, uint pc) DecodeInstructionPointer(string ip) {
+        ulong ip2 = ulong.Parse(ip[2..], System.Globalization.NumberStyles.HexNumber);
+        _disassemblyProcs.TryGetValue((int)((ip2 & 0xffffffff00000000) >> 32), out var proc);
+        return (proc, (uint)(ip2 & 0xffffffff));
     }
 }
 

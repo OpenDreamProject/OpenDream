@@ -191,6 +191,7 @@ namespace OpenDreamRuntime.Procs {
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
+        public int ProgramCounter => _pc;
 
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private readonly DreamValue[] _localVariables;

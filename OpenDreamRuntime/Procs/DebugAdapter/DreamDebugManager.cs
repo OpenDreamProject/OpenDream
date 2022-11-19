@@ -61,6 +61,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
     private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
+    private List<DMProc> _disassemblyProcs = new();
 
     // Temporary data for a given Stop
     private Exception? _exception;
@@ -276,6 +277,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestStepOut requestStepOut:
                 HandleRequestStepOut(client, requestStepOut);
                 break;
+            case RequestDisassemble requestDisassemble:
+                HandleRequestDisassemble(client, requestDisassemble);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -299,6 +303,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             ExceptionBreakpointFilters = new[] {
                 new ExceptionBreakpointsFilter(ExceptionFilterRuntimes, "Runtime errors") { Default = true },
             },
+            SupportsDisassembleRequest = true,
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -528,12 +533,20 @@ sealed class DreamDebugManager : IDreamDebugManager {
             var (source, line) = frame.SourceLine;
             nameBuilder.Clear();
             frame.AppendStackFrame(nameBuilder);
-            output.Add(new StackFrame {
+
+            var outputFrame = new StackFrame {
                 Id = frame.Id,
                 Source = TranslateSource(source),
                 Line = line ?? 0,
                 Name = nameBuilder.ToString(),
-            });
+            };
+            if (frame is DMProcState dm) {
+                int id = _disassemblyProcs.Count;
+                _disassemblyProcs.Add(dm.Proc);
+                outputFrame.InstructionPointerReference = $"{id},{dm.ProgramCounter}";
+            }
+
+            output.Add(outputFrame);
             stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
         reqStackTrace.Respond(client, output, output.Count);
@@ -655,6 +668,32 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         requestVariables.Respond(client, varFunc(requestVariables));
+    }
+
+    private void HandleRequestDisassemble(DebugAdapterClient client, RequestDisassemble requestDisassemble) {
+        string[] parts = requestDisassemble.Arguments.MemoryReference.Split(",");
+        DMProc proc = _disassemblyProcs[int.Parse(parts[0])];
+        int pc = int.Parse(parts[1]);
+
+        List<DisassembledInstruction> output = new();
+        DisassembledInstruction? previousInstruction = null;
+        int previousOffset = 0;
+        foreach (var (offset, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+            if (previousInstruction != null) {
+                previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ");
+            }
+            previousOffset = offset;
+            previousInstruction = new DisassembledInstruction {
+                Address = offset.ToString(),
+                Instruction = instruction.ToString()!,
+            };
+            output.Add(previousInstruction);
+        }
+        if (previousInstruction != null) {
+            previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ");
+        }
+
+        requestDisassemble.Respond(client, output);
     }
 }
 

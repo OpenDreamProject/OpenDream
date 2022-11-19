@@ -34,5 +34,9 @@ namespace OpenDreamRuntime.Procs {
             }
             return DreamValue.Null;
         }
+
+        public override string ToString() {
+            return $"<Arguments {OrderedArgumentCount} {NamedArgumentCount}>";
+        }
     }
 }

@@ -669,9 +669,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
         } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
+        } else if (value.Value is DreamProcArguments procArgs) {
+            varDesc.VariablesReference = AllocVariableRef(req => ExpandProcArguments(req, procArgs));
         }
         return varDesc;
     }
+
 
     private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
@@ -701,6 +704,19 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 };
             }
             yield return described;
+        }
+    }
+
+    private IEnumerable<Variable> ExpandProcArguments(RequestVariables req, DreamProcArguments procArgs) {
+        if (procArgs.OrderedArguments != null) {
+            foreach (var (i, arg) in procArgs.OrderedArguments.Select((x, i) => (i, x))) {
+                yield return DescribeValue(i.ToString(), arg);
+            }
+        }
+        if (procArgs.NamedArguments != null) {
+            foreach (var (name, arg) in procArgs.NamedArguments) {
+                yield return DescribeValue(name, arg);
+            }
         }
     }
 

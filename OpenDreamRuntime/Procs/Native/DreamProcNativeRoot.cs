@@ -630,6 +630,23 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        [DreamProc("ftime")]
+        [DreamProcParameter("File", Type = DreamValueType.String)]
+        [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ftime(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
+            DreamValue isCreationTime = arguments.GetArgument(1, "IsCreationTime");
+
+            if (file.TryGetValueAsString(out var rscPath)) {
+                var fi = new FileInfo(rscPath);
+                if (isCreationTime.IsTruthy()) {
+                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+                }
+                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+            }
+            throw new Exception("Invalid path argument");
+        }
+
         [DreamProc("hascall")]
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueType.String)]

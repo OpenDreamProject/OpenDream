@@ -407,7 +407,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("ftime")]
-        [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
+        [DreamProcParameter("File", Type = DreamValueType.String)]
         [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ftime(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue file = arguments.GetArgument(0, "File");

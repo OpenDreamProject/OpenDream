@@ -7,7 +7,9 @@ namespace OpenDreamRuntime.Procs {
 
         public int ArgumentCount => OrderedArguments.Count + NamedArguments.Count;
 
-        public DreamProcArguments(List<DreamValue>? orderedArguments, Dictionary<string, DreamValue>? namedArguments = null) {
+        public DreamProcArguments() : this(null, null) {}
+
+        public DreamProcArguments(List<DreamValue>? orderedArguments = null, Dictionary<string, DreamValue>? namedArguments = null) {
             OrderedArguments = orderedArguments ?? new List<DreamValue>();
             NamedArguments = namedArguments ?? new Dictionary<string, DreamValue>();
         }

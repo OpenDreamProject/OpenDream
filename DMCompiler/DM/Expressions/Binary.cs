@@ -124,6 +124,28 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // x %% y
+    class ModuloModulo : BinaryOp {
+        public ModuloModulo(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs) { }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.ModuloModulo(rhs);
+            return true;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            LHS.EmitPushValue(dmObject, proc);
+            RHS.EmitPushValue(dmObject, proc);
+            proc.ModulusModulus();
+        }
+    }
+
     // x ** y
     class Power : BinaryOp {
         public Power(Location location, DMExpression lhs, DMExpression rhs)
@@ -608,6 +630,17 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             RHS.EmitPushValue(dmObject, proc);
             proc.ModulusReference(reference);
+        }
+    }
+
+    // x %%= y
+    class ModulusModulusAssign : AssignmentBinaryOp {
+        public ModulusModulusAssign(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs) { }
+
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+            RHS.EmitPushValue(dmObject, proc);
+            proc.ModulusModulusReference(reference);
         }
     }
     #endregion

@@ -181,6 +181,8 @@ namespace DMCompiler.Compiler.DM {
                                 case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;
                                 case "%": token = CreateToken(TokenType.DM_Modulus, c); break;
                                 case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
+                                case "%%": token = CreateToken(TokenType.DM_ModulusModulus, c); break;
+                                case "%%=": token = CreateToken(TokenType.DM_ModulusModulusEquals, c); break;
                                 case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
                                 case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;

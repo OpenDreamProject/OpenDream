@@ -40,6 +40,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
+        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) { throw new NotImplementedException(); }
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) { throw new NotImplementedException(); }
         public void VisitConstantInteger(DMASTConstantInteger constant) { throw new NotImplementedException(); }
         public void VisitConstantFloat(DMASTConstantFloat constant) { throw new NotImplementedException(); }
@@ -83,6 +84,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitMultiply(DMASTMultiply multiply) { throw new NotImplementedException(); }
         public void VisitDivide(DMASTDivide divide) { throw new NotImplementedException(); }
         public void VisitModulus(DMASTModulus modulus) { throw new NotImplementedException(); }
+        public void VisitModulusModulus(DMASTModulusModulus modulusModulus) { throw new NotImplementedException(); }
         public void VisitPower(DMASTPower power) { throw new NotImplementedException(); }
         public void VisitAdd(DMASTAdd add) { throw new NotImplementedException(); }
         public void VisitSubtract(DMASTSubtract subtract) { throw new NotImplementedException(); }
@@ -103,6 +105,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitRightShiftAssign(DMASTRightShiftAssign rightShiftAssign) { throw new NotImplementedException(); }
         public void VisitXorAssign(DMASTXorAssign xorAssign) { throw new NotImplementedException(); }
         public void VisitModulusAssign(DMASTModulusAssign modulusAssign) { throw new NotImplementedException(); }
+        public void VisitModulusModulusAssign(DMASTModulusModulusAssign modulusModulusAssign) { throw new NotImplementedException(); }
         public void VisitOr(DMASTOr or) { throw new NotImplementedException(); }
         public void VisitAnd(DMASTAnd and) { throw new NotImplementedException(); }
         public void VisitBinaryAnd(DMASTBinaryAnd binaryAnd) { throw new NotImplementedException(); }
@@ -700,6 +703,18 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTIdentifierWrapped : DMASTExpression {
+        public DMASTIdentifier Identifier;
+
+        public DMASTIdentifierWrapped(Location location, DMASTIdentifier identifier) : base(location) {
+            Identifier = identifier;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitIdentifierWrapped(this);
+        }
+    }
+
     public class DMASTGlobalIdentifier : DMASTExpression {
         public string Identifier;
 
@@ -1289,6 +1304,21 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTModulusModulus : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTModulusModulus(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
+            A = a;
+            B = b;
+        }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitModulusModulus(this);
+        }
+    }
+
     public class DMASTPower : DMASTExpression {
         public DMASTExpression A, B;
 
@@ -1574,6 +1604,20 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitModulusAssign(this);
+        }
+    }
+
+    public class DMASTModulusModulusAssign : DMASTExpression {
+        public DMASTExpression A, B;
+
+        public DMASTModulusModulusAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
+            A = a;
+            B = b;
+        }
+        public override IEnumerable<DMASTExpression> Leaves() { yield return A; yield return B; }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitModulusModulusAssign(this);
         }
     }
 

@@ -19,6 +19,8 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             if (procDefinition.Body == null) return;
 
+            _proc.DebugSource(procDefinition.Location.SourceFile);
+
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
@@ -65,8 +67,6 @@ namespace DMCompiler.DM.Visitors {
                     }
                 }
             }
-
-            _proc.DebugSource(block.Location.SourceFile);
 
             foreach (DMASTProcStatement statement in block.Statements) {
                 // see above

@@ -171,15 +171,17 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return GetEnumerator();
         }
 
-        public void IncludeFiles(IEnumerable<string> files) {
-            foreach (string file in files) {
-                string includeDir = Path.GetDirectoryName(file);
-                string fileName = Path.GetFileName(file);
-
-                IncludeFile(includeDir, fileName);
+        public void DefineMacro(string key, string value) {
+            var lexer = new DMPreprocessorLexer(null, "<command line>", value);
+            var list = new List<Token>();
+            while (lexer.GetNextToken() is Token token && token.Type != TokenType.EndOfFile) {
+                list.Add(token);
             }
+            _defines.Add(key, new DMMacro(null, list));
         }
 
+        // NB: Pushes files to a stack, so call in reverse order if you are
+        // including multiple files.
         public void IncludeFile(string includeDir, string file, Location? includedFrom = null) {
             string filePath = Path.Combine(includeDir, file);
             filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
@@ -618,7 +620,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             int parenthesisNesting = 1;
             while(true) {
-                switch (parameterToken.Type) { 
+                switch (parameterToken.Type) {
                     case TokenType.DM_Preproc_Punctuator_Comma when parenthesisNesting == 1:
                         parameters.Add(currentParameter);
                         currentParameter = new List<Token>();
@@ -646,7 +648,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         continue;
                 }
                 break; // If it manages to escape the switch, the loop breaks
-            } 
+            }
 
             parameters.Add(currentParameter);
             if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {

@@ -1,0 +1,6 @@
+﻿/proc/RunTest()
+	ASSERT(trunc(5.5) == 5)
+	ASSERT(trunc(null) == 0)
+	ASSERT(trunc(99.762) == 99)
+	ASSERT(isinf(trunc(1.#INF)))
+	ASSERT(isnan(trunc(1.#IND)))

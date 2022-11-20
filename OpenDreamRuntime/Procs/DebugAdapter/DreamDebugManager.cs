@@ -731,12 +731,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
         int previousOffset = 0;
         foreach (var (offset, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
             if (previousInstruction != null) {
-                previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ");
+                previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
             }
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
                 Address = EncodeInstructionPointer(proc, offset),
-                Instruction = instruction.ToString()!,
+                Instruction = ProcDecoder.Format(instruction, type => _dreamManager.ObjectTree.Types[type].Path.ToString()),
             };
             switch (instruction) {
                 case (DreamProcOpcode.DebugSource, string source):
@@ -749,7 +749,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             output.Add(previousInstruction);
         }
         if (previousInstruction != null) {
-            previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ");
+            previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ").ToLowerInvariant();
         }
         if (output.Count > 0) {
             output[0].Symbol = proc.ToString();

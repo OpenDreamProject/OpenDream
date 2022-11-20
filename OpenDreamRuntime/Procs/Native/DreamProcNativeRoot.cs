@@ -640,9 +640,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (file.TryGetValueAsString(out var rscPath)) {
                 var fi = new FileInfo(rscPath);
                 if (isCreationTime.IsTruthy()) {
-                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).Milliseconds / 100);
+                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
                 }
-                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).Milliseconds / 100);
+                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
             }
             throw new Exception("Invalid path argument");
         }

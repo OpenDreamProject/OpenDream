@@ -1968,16 +1968,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             bool hasTimezoneOffset = arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
 
-            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp)) {
+            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
-                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
             }
 
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
 
-            long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
+            long ticks = (long)(timestamp * TimeSpan.TicksPerSecond / 10);
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {

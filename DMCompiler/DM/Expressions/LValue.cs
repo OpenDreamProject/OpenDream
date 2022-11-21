@@ -99,7 +99,7 @@ namespace DMCompiler.DM.Expressions {
 
     // Identifier of field
     class Field : LValue {
-        DMVariable Variable;
+        public readonly DMVariable Variable;
 
         public Field(Location location, DMVariable variable)
             : base(location, variable.Type) {
@@ -108,12 +108,14 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.Initial(Variable.Name);
+            proc.PushString(Variable.Name);
+            proc.Initial();
         }
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.IsSaved(Variable.Name);
+            proc.PushString(Variable.Name);
+            proc.IsSaved();
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -146,7 +148,7 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             return (DMReference.CreateGlobal(Id), false);
         }
-        
+
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
             DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a global returns the current value"));

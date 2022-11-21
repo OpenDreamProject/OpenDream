@@ -270,9 +270,7 @@ namespace DMCompiler.DM.Expressions {
                     proc.PushFloat(0);
                     return;
                 case ListIndex idx:
-                    proc.PushFloat(0);
-                    //TODO Support "vars" properly
-                    idx.IsSaved();
+                    idx.EmitPushIsSaved(dmObject, proc);
                     return;
                 default:
                     throw new CompileErrorException(Location, $"can't get saved value of {_expr}");

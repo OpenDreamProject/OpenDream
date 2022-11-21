@@ -311,20 +311,21 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fcopy")]
         [DreamProcParameter("Src", Type = DreamValueType.String | DreamValueType.DreamResource)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var arg1 = arguments.GetArgument(0, "Src");
 
-            string src;
+            string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
+            } else if (arg1.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
             } else if (!arg1.TryGetValueAsString(out src)) {
-                throw new Exception("bad src file");
+                throw new Exception($"Bad src file {arg1}");
             }
 
-            if (!arguments.GetArgument(1, "Dst").TryGetValueAsString(out var dst))
-            {
-                throw new Exception("bad dst file");
+            var arg2 = arguments.GetArgument(1, "Dst");
+            if (!arg2.TryGetValueAsString(out var dst)) {
+                throw new Exception($"Bad dst file {arg2}");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
@@ -627,6 +628,23 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(floatnum - MathF.Truncate(floatnum));
             }
             return new DreamValue(0);
+        }
+
+        [DreamProc("ftime")]
+        [DreamProcParameter("File", Type = DreamValueType.String)]
+        [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ftime(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
+            DreamValue isCreationTime = arguments.GetArgument(1, "IsCreationTime");
+
+            if (file.TryGetValueAsString(out var rscPath)) {
+                var fi = new FileInfo(rscPath);
+                if (isCreationTime.IsTruthy()) {
+                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+                }
+                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+            }
+            throw new Exception("Invalid path argument");
         }
 
         [DreamProc("hascall")]
@@ -1967,16 +1985,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             bool hasTimezoneOffset = arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
 
-            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp)) {
+            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
-                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
             }
 
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
 
-            long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
+            long ticks = (long)(timestamp * TimeSpan.TicksPerSecond / 10);
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {

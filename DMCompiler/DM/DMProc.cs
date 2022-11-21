@@ -616,9 +616,9 @@ namespace DMCompiler.DM {
             WriteInt((int)types);
         }
 
-        public void Initial(string propertyName) {
+        public void Initial() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Initial);
-            WriteString(propertyName);
         }
 
         public void Return() {
@@ -886,9 +886,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsNull);
         }
 
-        public void IsSaved(string propertyName) {
+        public void IsSaved() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
-            WriteString(propertyName);
         }
 
         public void IsType() {

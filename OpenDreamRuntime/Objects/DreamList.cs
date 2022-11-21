@@ -181,6 +181,14 @@ namespace OpenDreamRuntime.Objects {
 
             return newList;
         }
+
+        public override DreamValue Initial(string name) {
+            return GetValue(new DreamValue(name));
+        }
+
+        public override bool IsSaved(string name) {
+            return false;
+        }
     }
 
     // /datum.vars list
@@ -240,6 +248,14 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 throw new Exception($"Invalid var index {key}");
             }
+        }
+
+        public override DreamValue Initial(string name) {
+            return _dreamObject.Initial(name);
+        }
+
+        public override bool IsSaved(string name) {
+            return _dreamObject.IsSaved(name);
         }
     }
 
@@ -306,6 +322,14 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 throw new Exception($"Invalid var index {key}");
             }
+        }
+        public override DreamValue Initial(string name) {
+            return _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root).Variables[name];
+        }
+
+        public override bool IsSaved(string name) {
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            return _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root).Variables.ContainsKey(name);
         }
     }
 }

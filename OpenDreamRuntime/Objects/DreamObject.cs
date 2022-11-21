@@ -67,6 +67,15 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        public virtual DreamValue Initial(string name) {
+            return ObjectDefinition.Variables[name];
+        }
+
+        public virtual bool IsSaved(string name) {
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name);
+        }
+
         public IReadOnlyDictionary<string, DreamValue> GetAllVariables() => _variables;
 
         public List<DreamValue> GetVariableNames() {

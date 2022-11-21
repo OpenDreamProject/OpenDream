@@ -12,6 +12,34 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
+        #region Helpers
+        private static ProcStatus? PushListGet(DMProcState state, DreamValue obj, DreamValue index) {
+            if (obj.TryGetValueAsDreamList(out var listObj)) {
+                state.Push(listObj.GetValue(index));
+                return null;
+            }
+
+            if (obj.TryGetValueAsString(out string? strValue)) {
+                if (!index.TryGetValueAsInteger(out int strIndex))
+                    throw new Exception($"Attempted to index string with {index}");
+
+                char c = strValue[strIndex - 1];
+                state.Push(new DreamValue(Convert.ToString(c)));
+                return null;
+            }
+
+            if (obj.TryGetValueAsDreamObject(out var dreamObject)) {
+                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
+                if (metaObject != null) {
+                    state.Push(metaObject.OperatorIndex(dreamObject!, index));
+                    return null;
+                }
+            }
+
+            throw new Exception($"Cannot get index {index} of {obj}");
+        }
+        #endregion
+
         #region Values
         public static ProcStatus? PushReferenceValue(DMProcState state) {
             DMReference reference = state.ReadReference();
@@ -378,13 +406,25 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Initial(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+
+            // number indices always perform a normal list access here
+            if (key.TryGetValueAsInteger(out _)) {
+                return PushListGet(state, owner, key);
+            }
+
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for initial() call: " + key);
+            }
+
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                state.Push(dreamObject.Initial(property));
+                return null;
+            }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                objectDefinition = dreamObject.ObjectDefinition;
-            } else if (owner.TryGetValueAsPath(out DreamPath path)) {
+            if (owner.TryGetValueAsPath(out DreamPath path)) {
                 objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinition(path);
             } else {
                 throw new Exception("Invalid owner for initial() call " + owner);
@@ -1955,13 +1995,26 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsSaved(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+
+            // number indices always evalute to false here
+            if (key.TryGetValueAsFloat(out _)) {
+                state.Push(DreamValue.False);
+                return null;
+            }
+
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for issaved() call: " + key);
+            }
+
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                state.Push(dreamObject.IsSaved(property) ? DreamValue.True : DreamValue.False);
+                return null;
+            }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                objectDefinition = dreamObject.ObjectDefinition;
-            } else if (owner.TryGetValueAsPath(out DreamPath path)) {
+            if (owner.TryGetValueAsPath(out DreamPath path)) {
                 objectDefinition = state.DreamManager.ObjectTree.GetObjectDefinition(path);
             } else {
                 throw new Exception("Invalid owner for issaved() call " + owner);
@@ -1979,33 +2032,12 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+
+
         public static ProcStatus? DereferenceIndex(DMProcState state) {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
-
-            if (obj.TryGetValueAsDreamList(out var listObj)) {
-                state.Push(listObj.GetValue(index));
-                return null;
-            }
-
-            if (obj.TryGetValueAsString(out string? strValue)) {
-                if (!index.TryGetValueAsInteger(out int strIndex))
-                    throw new Exception($"Attempted to index string with {index}");
-
-                char c = strValue[strIndex - 1];
-                state.Push(new DreamValue(Convert.ToString(c)));
-                return null;
-            }
-
-            if (obj.TryGetValueAsDreamObject(out var dreamObject)) {
-                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                if (metaObject != null) {
-                    state.Push(metaObject.OperatorIndex(dreamObject!, index));
-                    return null;
-                }
-            }
-
-            throw new Exception($"Cannot get index {index} of {obj}");
+            return PushListGet(state, obj, index);
         }
 
         public static ProcStatus? DereferenceCall(DMProcState state) {

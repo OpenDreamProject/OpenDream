@@ -156,29 +156,33 @@ namespace DMCompiler.DM.Expressions {
             switch (operation.Kind) {
                 case DMASTDereference.OperationKind.Field:
                 case DMASTDereference.OperationKind.FieldSearch:
-                    proc.Initial(operation.Identifier);
+                    proc.PushString(operation.Identifier);
+                    proc.Initial();
                     break;
 
                 case DMASTDereference.OperationKind.FieldSafe:
                 case DMASTDereference.OperationKind.FieldSafeSearch:
                     proc.JumpIfNullNoPop(endLabel);
-                    proc.Initial(operation.Identifier);
+                    proc.PushString(operation.Identifier);
+                    proc.Initial();
                     break;
 
                 case DMASTDereference.OperationKind.Index:
-                    EmitOperation(dmObject, proc, ref operation, endLabel);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.Initial();
                     break;
 
                 case DMASTDereference.OperationKind.IndexSafe:
                     proc.JumpIfNullNoPop(endLabel);
-                    EmitOperation(dmObject, proc, ref operation, endLabel);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.Initial();
                     break;
 
                 case DMASTDereference.OperationKind.Call:
                 case DMASTDereference.OperationKind.CallSearch:
                 case DMASTDereference.OperationKind.CallSafe:
                 case DMASTDereference.OperationKind.CallSafeSearch:
-                    throw new CompileErrorException(Location, $"attempt to get the initial value of a proc call");
+                    throw new CompileErrorException(Location, $"attempt to get `initial` of a proc call");
 
                 case DMASTDereference.OperationKind.Invalid:
                 default:
@@ -203,32 +207,33 @@ namespace DMCompiler.DM.Expressions {
             switch (operation.Kind) {
                 case DMASTDereference.OperationKind.Field:
                 case DMASTDereference.OperationKind.FieldSearch:
-                    proc.IsSaved(operation.Identifier);
+                    proc.PushString(operation.Identifier);
+                    proc.IsSaved();
                     break;
 
                 case DMASTDereference.OperationKind.FieldSafe:
                 case DMASTDereference.OperationKind.FieldSafeSearch:
                     proc.JumpIfNullNoPop(endLabel);
-                    proc.IsSaved(operation.Identifier);
+                    proc.PushString(operation.Identifier);
+                    proc.IsSaved();
                     break;
 
                 case DMASTDereference.OperationKind.Index:
-                    // TODO: Support "vars" properly (i don't know what that means)
-                    proc.Pop();
-                    proc.PushFloat(0f);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.IsSaved();
                     break;
 
                 case DMASTDereference.OperationKind.IndexSafe:
                     proc.JumpIfNullNoPop(endLabel);
-                    proc.Pop();
-                    proc.PushFloat(0f);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.IsSaved();
                     break;
 
                 case DMASTDereference.OperationKind.Call:
                 case DMASTDereference.OperationKind.CallSearch:
                 case DMASTDereference.OperationKind.CallSafe:
                 case DMASTDereference.OperationKind.CallSafeSearch:
-                    throw new CompileErrorException(Location, $"attempt to get the initial value of a proc call");
+                    throw new CompileErrorException(Location, $"attempt to get `issaved` of a proc call");
 
                 case DMASTDereference.OperationKind.Invalid:
                 default:

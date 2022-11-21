@@ -11,5 +11,5 @@
 	ASSERT(cmptextEx("string", "string", "string"))
 	ASSERT(!cmptextEx("string", "string", "spagetti"))
 
-	ASSERT(!cmptextEx("thing", "\proper thing")) // this is not a typo. cmptextEx does not clear \proper unlike cmptext in byond
+	ASSERT(!cmptextEx("thing", "\proper thing"))
 	ASSERT(!cmptextEx("ITEM", "\improper ITEm"))

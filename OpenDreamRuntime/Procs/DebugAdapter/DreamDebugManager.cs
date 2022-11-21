@@ -376,7 +376,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var setBreakpoints = reqSetBreakpoints.Arguments.Breakpoints;
         var responseBreakpoints = new Protocol.Breakpoint[setBreakpoints?.Length ?? 0];
 
-        sourcePath = Path.GetRelativePath(RootPath, sourcePath);
+        sourcePath = Path.GetRelativePath(RootPath, sourcePath).Replace("\\", "/");
         if (_possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(sourcePath, out var fileSlots)) {
             // File isn't known - every breakpoint is invalid.
             for (int i = 0; i < responseBreakpoints.Length; ++i) {

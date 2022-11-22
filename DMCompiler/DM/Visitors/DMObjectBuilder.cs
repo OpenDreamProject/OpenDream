@@ -15,14 +15,20 @@ namespace DMCompiler.DM.Visitors {
         /// Further, it just so happens to also act as a container that can enumerate all objects which were expecting a definition but never got one.
         /// </remarks>
         public static event EventHandler<DMVariable> VarDefined; // Fires if we define a new variable.
+        /// <summary>
+        /// A running collection of types that we need to find a definition for. <br/>
+        /// Comes up most especially when a var/some/type/x is defined before we know what /some/type even is. <br/>
+        /// The Location value can just be the first instance of this definition being promised, for errors' sake.
+        /// </summary>
+        public static Dictionary<DreamPath, Location> AwaitedObjectDefinitions = new();
 
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
             VarDefined = null;
+            AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
         }
         public static void BuildObjectTree(DMASTFile astFile) {
             Reset();
-
             ProcessFile(astFile); // generate it
 
             if (VarDefined != null) // This means some listeners are remaining, which means that variables were overridden but not defined! Bad!
@@ -42,8 +48,19 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            //Lets check in on all the types we found promised before and see if we actually got them. :^)
+            //Note: Dynamically removing types as we find them would've made the compiler 4x slower, per some tests I did.
+            //      It's much more performant to do it this way.
+            if(AwaitedObjectDefinitions.Count != 0) {
+                foreach(var pair in AwaitedObjectDefinitions) {
+                    if(!DMObjectTree.TryGetTypeId(pair.Key,out var _)) // TODO: Pragma this since it's slightly off-parity to error about missing types, sometimes!
+                        DMCompiler.Error(new CompilerError(pair.Value, $"Definition for path {pair.Key} not found"));
+                }
+            }
+
             // TODO Nuke this pass
             // (Note that VarDefined's lazy evaluation behaviour is dependent on happening BEFORE the the initialization proc statements are emitted)
+            // (Also AwaitedObjectDefinitions, too, maybe?)
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CreateInitializationProc();
             }
@@ -126,6 +143,11 @@ namespace DMCompiler.DM.Visitors {
             } else { // not static
                 variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
                 varObject.Variables[variable.Name] = variable;
+            }
+
+            //Check if this var definition implies a type we don't know about yet
+            if(variable.Type != null && !DMObjectTree.TryGetTypeId(variable.Type.Value,out var _)) {
+                AwaitedObjectDefinitions.TryAdd(variable.Type.Value, varDefinition.Location);
             }
 
             try {

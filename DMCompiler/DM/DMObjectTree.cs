@@ -95,6 +95,7 @@ namespace DMCompiler.DM {
             return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
 
+        /// <returns>True if the path exists, false if not. Keep in mind though that we may just have not found this object path yet while walking in ObjectBuilder.</returns>
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
             return _pathToTypeId.TryGetValue(path, out typeId);
         }

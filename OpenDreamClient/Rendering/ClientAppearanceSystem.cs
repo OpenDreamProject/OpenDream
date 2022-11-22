@@ -1,6 +1,7 @@
 ﻿using OpenDreamShared.Dream;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamClient.Rendering {
@@ -12,7 +13,7 @@ namespace OpenDreamClient.Rendering {
         /// <summary>
         /// Holds the entities used by opaque turfs to block vision
         /// </summary>
-        private readonly Dictionary<(IMapGrid, Vector2i), EntityUid> _opaqueTurfEntities = new();
+        private readonly Dictionary<(MapGridComponent, Vector2i), EntityUid> _opaqueTurfEntities = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
@@ -85,7 +86,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        private void UpdateTurfOpacity(IMapGrid grid, Vector2i position, Tile newTile) {
+        private void UpdateTurfOpacity(MapGridComponent grid, Vector2i position, Tile newTile) {
             LoadAppearance((uint)newTile.TypeId - 1, appearance => {
                 bool hasOpaqueEntity = _opaqueTurfEntities.TryGetValue((grid, position), out var opaqueEntity);
 

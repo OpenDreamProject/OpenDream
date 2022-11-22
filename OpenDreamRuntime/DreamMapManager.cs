@@ -6,17 +6,18 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     public sealed class DreamMapManager : IDreamMapManager {
         public sealed class Level {
             public readonly int Z;
-            public readonly IMapGrid Grid;
+            public readonly MapGridComponent Grid;
             public readonly Cell[,] Cells;
             public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
-            public Level(int z, IMapGrid grid, DreamObject area, Vector2i size) {
+            public Level(int z, MapGridComponent grid, DreamObject area, Vector2i size) {
                 Z = z;
                 Grid = grid;
 
@@ -265,7 +266,7 @@ namespace OpenDreamRuntime {
                     MapId mapId = new(z);
                     _mapManager.CreateMap(mapId);
 
-                    IMapGrid grid = _mapManager.CreateGrid(mapId);
+                    MapGridComponent grid = _mapManager.CreateGrid(mapId);
                     Level level = new Level(z, grid, defaultArea, Size);
                     _levels.Add(level);
 

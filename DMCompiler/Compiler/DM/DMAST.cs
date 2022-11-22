@@ -262,6 +262,7 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    /// <remarks> Also includes proc overrides; see the <see cref="IsOverride"/> member. Verbs too.</remarks>
     public class DMASTProcDefinition : DMASTStatement {
         public DreamPath ObjectPath;
         public string Name;

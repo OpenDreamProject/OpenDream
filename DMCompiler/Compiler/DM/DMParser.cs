@@ -168,7 +168,6 @@ namespace DMCompiler.Compiler.DM {
             DreamPath oldPath = _currentPath;
             Whitespace();
             _currentPath = _currentPath.Combine(path.Path);
-            if (_currentPath.LastElement == "proc") _currentPath = _currentPath.RemoveElement(-1);
 
             try {
                 DMASTStatement statement = null;
@@ -190,7 +189,7 @@ namespace DMCompiler.Compiler.DM {
                     }
                     if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // BYOND doesn't specify the arg
-                        Error($"error: bag argument definition '{Current().PrintableText}'", false);
+                        Error($"error: bad argument definition '{Current().PrintableText}'", false);
                         Advance();
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);

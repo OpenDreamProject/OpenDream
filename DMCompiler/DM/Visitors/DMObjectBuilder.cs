@@ -22,6 +22,11 @@ namespace DMCompiler.DM.Visitors {
         /// </summary>
         public static Dictionary<DreamPath, Location> AwaitedObjectDefinitions = new();
 
+        /// <summary>
+        /// Similiar to <see cref="AwaitedObjectDefinitions"/> except for procs that are overridden before they are defined.
+        /// </summary>
+        public static Dictionary<string, DMObject> AwaitedProcDefinitions = new();
+
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
             VarDefined = null;
@@ -58,9 +63,29 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            //And now all the proc definitions we were promised
+            if(AwaitedProcDefinitions.Count != 0) {
+                foreach (var pair in AwaitedProcDefinitions) {
+                    if (pair.Value.IAmRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
+                        if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
+                            int ID = DMObjectTree.GlobalProcs[pair.Key];
+                            DMProc proc = DMObjectTree.AllProcs[ID];
+                            DMCompiler.Error(new CompilerError(proc.Location, $"Definition for global proc {pair.Key} not found"));
+                        }
+                        continue;
+                    }
+                    if (!pair.Value.HasProcDefined(pair.Key)) {// TODO: Pragma this since it's slightly off-parity to error about missing types, sometimes!
+                        DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
+                        DMCompiler.Error(new CompilerError(proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found"));
+                    }
+                }
+            }
+
+            AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
+            AwaitedProcDefinitions.Clear();
+
             // TODO Nuke this pass
             // (Note that VarDefined's lazy evaluation behaviour is dependent on happening BEFORE the the initialization proc statements are emitted)
-            // (Also AwaitedObjectDefinitions, too, maybe?)
             foreach (DMObject dmObject in DMObjectTree.AllObjects) {
                 dmObject.CreateInitializationProc();
             }
@@ -215,22 +240,35 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             try {
                 DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
-
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
+                bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
+                if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
+                    if(!dmObject.HasProcNoInheritence(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
+                        DMCompiler.Error(new CompilerError(procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it"));
+                        return; // TODO: Maybe fallthrough since this error is a little pedantic?
+                    }
+                    //Otherwise, it's ok
                 }
+                /*
+                    So the way that BYOND handles the distinction between definitions and overrides on the same type is kinda strange.
+                    There is NO visible dominance that one has over the other, except that the last one found is the first definition invoked when called.
 
-                DMProc proc;
+                    The only grammatical purpose the /proc/ phrase in one of the procs does,
+                    is to mark that this type should be the first one in its inheritence to have that proc defined.
+                    Nothing else.
+                */
+                if (procDefinition.IsOverride && !hasProc) // If an override for this proc was found before its definition
+                    AwaitedProcDefinitions.TryAdd(procName, dmObject); // Remember to check that we eventually found a definition, later :)
+
+                DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
-                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
-                    }
-
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
+                    if(!procDefinition.IsOverride) { // If this is a define, then we found a define for this global! Yay!
+                        if(!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                            throw new CompileErrorException(new CompilerError(procDefinition.Location, $"Global proc {procDefinition.Name} is already defined"));
+                        }
+                    }
                 } else {
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);
                 }
 

@@ -315,10 +315,6 @@ namespace OpenDreamRuntime {
         {
             _current?.Cancel();
 
-            if (_current is DMProcState state) {
-                state.ReturnPools();
-            }
-
             var dreamMan = IoCManager.Resolve<IDreamManager>();
             dreamMan.LastDMException = exception;
 
@@ -336,6 +332,11 @@ namespace OpenDreamRuntime {
             dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
 
             IoCManager.Resolve<Procs.DebugAdapter.IDreamDebugManager>()?.HandleException(this, exception);
+
+            // Only return pools after giving the debugger a chance to inspect them.
+            if (_current is DMProcState state) {
+                state.ReturnPools();
+            }
         }
 
         public IEnumerable<ProcState> InspectStack() {

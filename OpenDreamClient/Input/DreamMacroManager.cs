@@ -15,7 +15,11 @@ namespace OpenDreamClient.Input {
             IInputContextContainer contexts = _inputManager.Contexts;
 
             foreach (MacroSetDescriptor macroSet in macroSets) {
-                IInputCmdContext context = contexts.New(InputContextPrefix + macroSet.Name, "common");
+                string name = InputContextPrefix + macroSet.Name;
+                if (contexts.Exists(name)) {
+                    contexts.Remove(name);
+                }
+                IInputCmdContext context = contexts.New(name, "common");
 
                 foreach (MacroDescriptor macro in macroSet.Macros) {
                     BoundKeyFunction function = new BoundKeyFunction(macro.Id);

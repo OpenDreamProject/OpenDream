@@ -21,7 +21,9 @@ namespace OpenDreamRuntime {
             Reference = 64
         }
 
-        public static readonly DreamValue Null = new DreamValue((DreamObject)null);
+        public static readonly DreamValue Null = new DreamValue((DreamObject?)null);
+        public static DreamValue True { get => new DreamValue(1f); }
+        public static DreamValue False { get => new DreamValue(0f); }
 
         public DreamValueType Type { get; private set; }
         public object Value { get; private set; }
@@ -47,7 +49,8 @@ namespace OpenDreamRuntime {
             Value = value;
         }
 
-        public DreamValue(DreamObject value) {
+        /// <remarks> This constructor is also how one creates nulls. </remarks>
+        public DreamValue(DreamObject? value) {
             Type = DreamValueType.DreamObject;
             Value = value;
         }
@@ -83,17 +86,16 @@ namespace OpenDreamRuntime {
         }
 
         public override string ToString() {
-            string value;
+            string strValue;
             if (Value == null) {
-                value = "null";
-            } else
-                value = Type switch {
-                    DreamValueType.String => "\"" + Value + "\"",
-                    DreamValueType.DreamResource => "'" + ((DreamResource)Value).ResourcePath + "'",
-                    _ => Value.ToString()
-                };
+                strValue = "null";
+            } else if (Type == DreamValueType.String) {
+                strValue = $"\"{Value}\"";
+            } else {
+                strValue = Value.ToString() ?? "<ToString() = null>";
+            }
 
-            return "DreamValue(" + Type + ", " + value + ")";
+            return "DreamValue(" + Type + ", " + strValue + ")";
         }
 
         [Obsolete("Deprecated. Use the relevant TryGetValueAs[Type]() instead.")]
@@ -110,7 +112,7 @@ namespace OpenDreamRuntime {
             return (string)GetValueExpectingType(DreamValueType.String);
         }
 
-        public bool TryGetValueAsString(out string value) {
+        public bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
             if (Type == DreamValueType.String) {
                 value = (string)Value;
                 return true;
@@ -193,12 +195,16 @@ namespace OpenDreamRuntime {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamList() instead.")]
-        public DreamList GetValueAsDreamList() {
-            return (DreamList)GetValueAsDreamObject();
+        [Obsolete("Deprecated. Prefer TryGetValueAsDreamList(), or use MustGetValueAsDreamList() if you are sure.")]
+        public DreamList GetValueAsDreamList() => MustGetValueAsDreamList();
+
+        public DreamList MustGetValueAsDreamList() {
+            if (TryGetValueAsDreamList(out var list))
+                return list;
+            throw new InvalidOperationException($"Expected a /list, but got {this}");
         }
 
-        public bool TryGetValueAsDreamList(out DreamList list) {
+        public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList list) {
             if (TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
                 list = (DreamList)listObject;
 

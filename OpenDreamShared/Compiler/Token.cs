@@ -21,6 +21,7 @@
         DM_Preproc_If,
         DM_Preproc_Ifdef,
         DM_Preproc_Ifndef,
+        DM_Preproc_Elif,
         DM_Preproc_Include,
         DM_Preproc_LineSplice,
         DM_Preproc_Number,
@@ -89,6 +90,8 @@
         DM_MinusMinus,
         DM_Modulus,
         DM_ModulusEquals,
+        DM_ModulusModulus,
+        DM_ModulusModulusEquals,
         DM_New,
         DM_Null,
         DM_Period,
@@ -181,6 +184,7 @@
     public sealed partial class Token {
         public TokenType Type;
         public Location Location;
+        /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
         public string Text;
         public object Value;
 

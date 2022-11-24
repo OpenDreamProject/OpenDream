@@ -7,8 +7,7 @@ namespace OpenDreamRuntime.Objects {
     delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
 
     [Virtual]
-    public class DreamList : DreamObject
-    {
+    public class DreamList : DreamObject {
         private static DreamObjectDefinition? _listDef;
 
         internal event DreamListValueAssignedEventHandler? ValueAssigned;
@@ -17,8 +16,9 @@ namespace OpenDreamRuntime.Objects {
         private List<DreamValue> _values;
         private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
-        protected DreamList(int size = 0) : base(null)
-        {
+        public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
+
+        protected DreamList(int size = 0) : base(null) {
             _values = new List<DreamValue>(size);
             ObjectDefinition = _listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List);
         }
@@ -41,22 +41,7 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
-        public static DreamList Create(List<DreamObject> collection) {
-            var list = new DreamList(collection.Count);
-
-            foreach (DreamObject value in collection) {
-                list._values.Add(new DreamValue(value));
-            }
-
-            return list;
-        }
-
-        public bool IsAssociative() {
-            return _associativeValues != null && _associativeValues.Count > 0;
-        }
-
         public DreamList CreateCopy(int start = 1, int end = 0) {
-
             if (start == 0) ++start; //start being 0 and start being 1 are equivalent
             if (end > _values.Count + 1) throw new Exception("list index out of bounds");
             if (end == 0) end = _values.Count + 1;
@@ -75,6 +60,9 @@ namespace OpenDreamRuntime.Objects {
             return copy;
         }
 
+        /// <summary>
+        /// Returns the list of array values. Doesn't include the associative values indexable by some of these.
+        /// </summary>
         public virtual List<DreamValue> GetValues() {
             return _values;
         }
@@ -87,8 +75,10 @@ namespace OpenDreamRuntime.Objects {
             if (key.TryGetValueAsInteger(out int keyInteger)) {
                 return _values[keyInteger - 1]; //1-indexed
             }
+            if (_associativeValues == null)
+                return DreamValue.Null;
 
-            return _associativeValues == null ? DreamValue.Null : (_associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null);
+            return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -125,12 +115,11 @@ namespace OpenDreamRuntime.Objects {
         }
 
         //Does not include associations
-        public bool ContainsValue(DreamValue value) {
+        public virtual bool ContainsValue(DreamValue value) {
             return _values.Contains(value);
         }
 
-        public bool ContainsKey(DreamValue value)
-        {
+        public virtual bool ContainsKey(DreamValue value) {
             return _associativeValues != null && _associativeValues.ContainsKey(value);
         }
 
@@ -198,6 +187,9 @@ namespace OpenDreamRuntime.Objects {
     sealed class DreamListVars : DreamList {
         private DreamObject _dreamObject;
 
+        public override bool IsAssociative =>
+            true; // We don't use the associative array but, yes, we behave like an associative list
+
         private DreamListVars(DreamObject dreamObject) : base() {
             _dreamObject = dreamObject;
         }
@@ -212,14 +204,26 @@ namespace OpenDreamRuntime.Objects {
             return _dreamObject.GetVariableNames();
         }
 
-        public override DreamValue GetValue(DreamValue key)
-        {
+        public override bool ContainsKey(DreamValue value) {
+            if (!value.TryGetValueAsString(out var varName)) {
+                return false;
+            }
+
+            return _dreamObject.HasVariable(varName);
+        }
+
+        public override bool ContainsValue(DreamValue value) {
+            return ContainsKey(value);
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsString(out var varName)) {
                 throw new Exception($"Invalid var index {key}");
             }
 
             if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
-                throw new Exception($"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+                throw new Exception(
+                    $"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
             }
 
             return objectVar;
@@ -228,7 +232,8 @@ namespace OpenDreamRuntime.Objects {
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             if (key.TryGetValueAsString(out var varName)) {
                 if (!_dreamObject.HasVariable(varName)) {
-                    throw new Exception($"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                    throw new Exception(
+                        $"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
                 }
 
                 _dreamObject.SetVariable(varName, value);
@@ -239,12 +244,13 @@ namespace OpenDreamRuntime.Objects {
     }
 
     // global.vars list
-    sealed class DreamGlobalVars : DreamList
-    {
+    sealed class DreamGlobalVars : DreamList {
         [Dependency] private readonly IDreamManager _dreamMan = default!;
 
-        private DreamGlobalVars()
-        {
+        public override bool IsAssociative =>
+            true; // We don't use the associative array but, yes, we behave like an associative list
+
+        private DreamGlobalVars() {
             IoCManager.InjectDependencies(this);
         }
 
@@ -257,18 +263,30 @@ namespace OpenDreamRuntime.Objects {
             var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
             List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
             // Skip world
-            foreach (var key in root.GlobalVariables.Keys.Skip(1))
-            {
+            foreach (var key in root.GlobalVariables.Keys.Skip(1)) {
                 values.Add(new DreamValue(key));
             }
+
             return values;
         }
 
-        public override DreamValue GetValue(DreamValue key)
-        {
+        public override bool ContainsKey(DreamValue value) {
+            if (!value.TryGetValueAsString(out var varName)) {
+                return false;
+            }
+
+            return _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root).GlobalVariables.ContainsKey(varName);
+        }
+
+        public override bool ContainsValue(DreamValue value) {
+            return ContainsKey(value);
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsString(out var varName)) {
                 throw new Exception($"Invalid var index {key}");
             }
+
             var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
             if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                 throw new Exception($"Invalid global {varName}");

@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Procs {
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task _task;
 
-            private ProcState _callProcNotify;
+            private ProcState? _callProcNotify;
             private TaskCompletionSource<DreamValue> _callTcs;
             private DreamValue? _callResult;
 
@@ -55,9 +55,23 @@ namespace OpenDreamRuntime.Procs {
                 return callTcs.Task;
             }
 
+            public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+                _callTcs = new();
+                _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
+                _callProcNotify.WaitFor = false;
+
+                // The field may be mutated by SafeResume, so cache the task
+                var callTcs = _callTcs;
+                SafeResume();
+                return callTcs.Task;
+            }
+
             public override void ReturnedInto(DreamValue value) {
                 // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
                 _callResult = value;
+            }
+            public override void Cancel() {
+                _callTcs?.SetCanceled();
             }
 
             private async Task InternalResumeAsync() {
@@ -84,10 +98,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    _task.ContinueWith(
-                        _ => procScheduler.ScheduleAsyncNative(this),
-                        TaskScheduler.FromCurrentSynchronizationContext()
-                    );
+                    procScheduler.ScheduleAsyncNative(this, _task);
                 }
 
                 while (_callProcNotify != null || _callResult != null)
@@ -133,7 +144,7 @@ namespace OpenDreamRuntime.Procs {
                     return;
                 }
 
-                builder.Append($"{_proc.Name}(...)");
+                builder.Append($"{_proc.Name}");
             }
         }
 

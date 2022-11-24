@@ -17,7 +17,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            if (!dreamObject.IsSubtypeOf(DreamPath.Turf)) {
+                // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
+                _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            }
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
@@ -82,6 +85,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     dreamObject.SetVariableValue("invisibility", new DreamValue(vis));
                     break;
+                case "opacity":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsInteger(out var opacity);
+                        appearance.Opacity = (opacity != 0);
+                    });
+                    break;
                 case "mouse_opacity":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         //TODO figure out the weird inconsistencies with this being internally clamped
@@ -110,7 +119,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         float[] matrixArray = value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out var matrix)
-                            ? DreamMetaObjectMatrix.MatrixToFloatArray(matrix)
+                            ? DreamMetaObjectMatrix.MatrixToTransformFloatArray(matrix)
                             : DreamMetaObjectMatrix.IdentityMatrixArray;
 
                         appearance.Transform = matrixArray;

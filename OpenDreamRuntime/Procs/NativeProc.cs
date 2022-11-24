@@ -37,7 +37,7 @@ namespace OpenDreamRuntime.Procs {
             public DreamProcArguments Arguments;
 
             private NativeProc _proc;
-            public override DreamProc Proc => _proc;
+            public override NativeProc Proc => _proc;
 
             public State(NativeProc proc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
                 : base(thread)
@@ -62,7 +62,7 @@ namespace OpenDreamRuntime.Procs {
                     return;
                 }
 
-                builder.Append($"{_proc.Name}(...)");
+                builder.Append($"{_proc.Name}");
             }
         }
 

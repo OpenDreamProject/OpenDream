@@ -61,6 +61,7 @@ namespace DMCompiler.Compiler.DM {
 
         private Stack<int> _indentationStack = new(new int[] { 0 });
 
+        /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
         public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
         protected override Token ParseNextToken() {
@@ -180,6 +181,8 @@ namespace DMCompiler.Compiler.DM {
                                 case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;
                                 case "%": token = CreateToken(TokenType.DM_Modulus, c); break;
                                 case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
+                                case "%%": token = CreateToken(TokenType.DM_ModulusModulus, c); break;
+                                case "%%=": token = CreateToken(TokenType.DM_ModulusModulusEquals, c); break;
                                 case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
                                 case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;

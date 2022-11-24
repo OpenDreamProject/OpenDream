@@ -1,17 +1,17 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace DMDisassembler {
     class DMProc {
         private class DecompiledOpcode {
-            public long Position;
+            public int Position;
             public string Text;
 
-            public DecompiledOpcode(long position, string text) {
+            public DecompiledOpcode(int position, string text) {
                 Position = position;
                 Text = text;
             }
@@ -19,149 +19,109 @@ namespace DMDisassembler {
 
         public string Name;
         public byte[] Bytecode;
+        public Exception exception;
 
         public DMProc(ProcDefinitionJson json) {
             Name = json.Name;
-            Bytecode = (json.Bytecode != null) ? json.Bytecode : Array.Empty<byte>();
+            Bytecode = json.Bytecode ?? Array.Empty<byte>();
         }
 
         public string Decompile() {
             List<DecompiledOpcode> decompiled = new();
             HashSet<int> labeledPositions = new();
 
-            MemoryStream stream = new MemoryStream(Bytecode);
-            BinaryReader binaryReader = new BinaryReader(stream);
-            long position = 0;
-            DreamProcOpcode opcode;
-            while ((opcode = (DreamProcOpcode)stream.ReadByte()) != (DreamProcOpcode)(-1)) {
-                StringBuilder text = new StringBuilder();
-                text.Append(opcode);
-                text.Append(" ");
+            try {
+                foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
+                    StringBuilder text = new StringBuilder();
+                    text.Append(instruction[0]);
+                    text.Append(" ");
 
-                switch (opcode) {
-                    case DreamProcOpcode.FormatString:
-                    case DreamProcOpcode.PushString: {
-                        text.Append('"');
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
-                        text.Append('"');
+                    switch (instruction) {
+                        case (DreamProcOpcode.FormatString, string str, int numReplacements):
+                            text.Append(numReplacements);
+                            text.Append(' ');
+                            text.Append('"');
+                            text.Append(str);
+                            text.Append('"');
+                            break;
 
-                        break;
-                    }
+                        case (DreamProcOpcode.PushString, string str):
+                            text.Append('"');
+                            text.Append(str);
+                            text.Append('"');
+                            break;
 
-                    case DreamProcOpcode.PushResource: {
-                        text.Append('\'');
-                        text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]);
-                        text.Append('\'');
+                        case (DreamProcOpcode.PushResource, string str):
+                            text.Append('\'');
+                            text.Append(str);
+                            text.Append('\'');
+                            break;
 
-                        break;
-                    }
-
-                    case DreamProcOpcode.Prompt: text.Append((DMValueType)binaryReader.ReadInt32()); break;
-
-                    case DreamProcOpcode.PushFloat: text.Append(binaryReader.ReadSingle()); break;
-
-                    case DreamProcOpcode.Call:
-                    case DreamProcOpcode.Assign:
-                    case DreamProcOpcode.Append:
-                    case DreamProcOpcode.Remove:
-                    case DreamProcOpcode.Combine:
-                    case DreamProcOpcode.Increment:
-                    case DreamProcOpcode.Decrement:
-                    case DreamProcOpcode.Mask:
-                    case DreamProcOpcode.MultiplyReference:
-                    case DreamProcOpcode.DivideReference:
-                    case DreamProcOpcode.BitXorReference:
-                    case DreamProcOpcode.Enumerate:
-                    case DreamProcOpcode.PushReferenceValue: text.Append(ReadReference(binaryReader).ToString()); break;
-
-                    case DreamProcOpcode.CreateList:
-                    case DreamProcOpcode.CreateAssociativeList:
-                    case DreamProcOpcode.PickWeighted:
-                    case DreamProcOpcode.PickUnweighted: text.Append(binaryReader.ReadInt32()); break;
-
-                    case DreamProcOpcode.JumpIfNullDereference: {
-                        DMReference reference = ReadReference(binaryReader);
-                        int jumpPosition = binaryReader.ReadInt32();
-
-                        labeledPositions.Add(jumpPosition);
-                        text.Append(reference.ToString());
-                        text.Append(" ");
-                        text.Append(jumpPosition);
-                        break;
-                    }
-
-                    case DreamProcOpcode.Initial:
-                    case DreamProcOpcode.IsSaved:
-                    case DreamProcOpcode.PushPath: text.Append(Program.CompiledJson.Strings[binaryReader.ReadInt32()]); break;
-
-                    case DreamProcOpcode.Spawn:
-                    case DreamProcOpcode.BooleanOr:
-                    case DreamProcOpcode.BooleanAnd:
-                    case DreamProcOpcode.SwitchCase:
-                    case DreamProcOpcode.SwitchCaseRange:
-                    case DreamProcOpcode.Jump:
-                    case DreamProcOpcode.JumpIfFalse:
-                    case DreamProcOpcode.JumpIfTrue: {
-                        int jumpPosition = binaryReader.ReadInt32();
-
-                        labeledPositions.Add(jumpPosition);
-                        text.Append(jumpPosition);
-                        break;
-                    }
-
-                    case DreamProcOpcode.PushType: text.Append(Program.CompiledJson.Types[binaryReader.ReadInt32()].Path); break;
-
-                    case DreamProcOpcode.PushArguments: {
-                        int argCount = binaryReader.ReadInt32();
-                        int namedCount = binaryReader.ReadInt32();
-
-                        text.Append(argCount);
-                        for (int i = 0; i < argCount; i++) {
+                        case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
+                            labeledPositions.Add(jumpPosition);
+                            text.Append(reference);
                             text.Append(" ");
+                            text.Append(jumpPosition);
+                            break;
 
-                            DreamProcOpcodeParameterType argType = (DreamProcOpcodeParameterType)binaryReader.ReadByte();
-                            if (argType == DreamProcOpcodeParameterType.Named) {
-                                string argName = Program.CompiledJson.Strings[binaryReader.ReadInt32()];
+                        case (DreamProcOpcode.Spawn
+                                or DreamProcOpcode.BooleanOr
+                                or DreamProcOpcode.BooleanAnd
+                                or DreamProcOpcode.SwitchCase
+                                or DreamProcOpcode.SwitchCaseRange
+                                or DreamProcOpcode.Jump
+                                or DreamProcOpcode.JumpIfFalse
+                                or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                            labeledPositions.Add(jumpPosition);
+                            text.Append(jumpPosition);
+                            break;
 
-                                text.Append("Named(" + argName + ")");
-                            } else {
-                                text.Append("Unnamed");
+                        case (DreamProcOpcode.PushType, int type):
+                            text.Append(Program.CompiledJson.Types[type].Path);
+                            break;
+
+                        case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
+                            text.Append(argCount);
+                            for (int i = 0; i < argCount; i++) {
+                                text.Append(" ");
+                                text.Append(names[i] ?? "-");
                             }
-                        }
 
-                        break;
+                            break;
+
+                        default:
+                            for (int i = 1; i < instruction.Length; ++i) {
+                                text.Append(instruction[i]);
+                                text.Append(" ");
+                            }
+                            break;
                     }
+                    decompiled.Add(new DecompiledOpcode(position, text.ToString()));
                 }
-
-                decompiled.Add(new DecompiledOpcode(position, text.ToString()));
-                position = stream.Position;
+            } catch (Exception ex) {
+                exception = ex;
             }
 
             StringBuilder result = new StringBuilder();
             foreach (DecompiledOpcode decompiledOpcode in decompiled) {
-                if (labeledPositions.Contains((int)decompiledOpcode.Position)) result.Append(decompiledOpcode.Position);
-
+                if (labeledPositions.Contains(decompiledOpcode.Position)) {
+                    result.Append(decompiledOpcode.Position);
+                }
                 result.Append('\t');
                 result.AppendLine(decompiledOpcode.Text);
             }
 
-            return result.ToString();
-        }
-
-        private DMReference ReadReference(BinaryReader reader) {
-            DMReference.Type refType = (DMReference.Type)reader.ReadByte();
-
-            switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(reader.ReadByte());
-                case DMReference.Type.Local: return DMReference.CreateLocal(reader.ReadByte());
-                case DMReference.Type.Global: return DMReference.CreateGlobal(reader.ReadInt32());
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(reader.ReadInt32());
-                case DMReference.Type.Field: return DMReference.CreateField(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.SrcField: return DMReference.CreateSrcField(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.Proc: return DMReference.CreateProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(Program.CompiledJson.Strings[reader.ReadInt32()]);
-                default: return new DMReference() { RefType = refType };
+            if (labeledPositions.Contains(Bytecode.Length)) {
+                // In case of a Jump off the end of the proc.
+                result.Append(Bytecode.Length);
+                result.AppendLine();
             }
+
+            if (exception != null) {
+                result.Append(exception);
+            }
+
+            return result.ToString();
         }
     }
 }

@@ -13,6 +13,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using OpenDreamRuntime.Objects.MetaObjects;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -103,6 +104,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        /* NOTE ABOUT THE TRIG FUNCTIONS:
+         * If you have a sharp eye, you may notice that our trignometry functions make use of the *double*-precision versions of those functions,
+         * even though this is a single-precision language.
+         *
+         * DO NOT replace them with the single-precision ones in MathF!!!
+         *
+         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
+         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
+         */
+
         [DreamProc("arccos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_arccos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -138,6 +149,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception($"{ascii} is not a number");
 
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
+        }
+
+        [DreamProc("ceil")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Ceiling(floatnum));
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("ckey")]
@@ -244,6 +265,29 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(text.Substring(start - 1, end - start));
         }
 
+        [DreamProc("copytext_char")]
+        [DreamProcParameter("T", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_copytext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
+
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string text))
+                return (end == 0) ? DreamValue.Null : new DreamValue("");
+            if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
+                return new DreamValue("");
+
+            StringInfo textElements = new StringInfo(text);
+
+            if (end <= 0) end += textElements.LengthInTextElements + 1;
+            else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
+
+            if (start == 0) return new DreamValue("");
+            else if (start < 0) start += textElements.LengthInTextElements + 1;
+
+            return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
+        }
+
         [DreamProc("cos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_cos(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -267,20 +311,21 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fcopy")]
         [DreamProcParameter("Src", Type = DreamValueType.String | DreamValueType.DreamResource)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var arg1 = arguments.GetArgument(0, "Src");
 
-            string src;
+            string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
+            } else if (arg1.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
             } else if (!arg1.TryGetValueAsString(out src)) {
-                throw new Exception("bad src file");
+                throw new Exception($"Bad src file {arg1}");
             }
 
-            if (!arguments.GetArgument(1, "Dst").TryGetValueAsString(out var dst))
-            {
-                throw new Exception("bad dst file");
+            var arg2 = arguments.GetArgument(1, "Dst");
+            if (!arg2.TryGetValueAsString(out var dst)) {
+                throw new Exception($"Bad dst file {arg2}");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
@@ -562,6 +607,46 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
+        [DreamProc("floor")]
+        [DreamProcParameter("A", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_floor(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "A");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Floor(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
+        [DreamProc("fract")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_fract(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                if(float.IsInfinity(floatnum)) {
+                    return new DreamValue(0);
+                }
+                return new DreamValue(floatnum - MathF.Truncate(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
+        [DreamProc("ftime")]
+        [DreamProcParameter("File", Type = DreamValueType.String)]
+        [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ftime(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
+            DreamValue isCreationTime = arguments.GetArgument(1, "IsCreationTime");
+
+            if (file.TryGetValueAsString(out var rscPath)) {
+                var fi = new FileInfo(rscPath);
+                if (isCreationTime.IsTruthy()) {
+                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+                }
+                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+            }
+            throw new Exception("Invalid path argument");
+        }
+
         [DreamProc("hascall")]
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueType.String)]
@@ -593,29 +678,28 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("icon_states")]
         [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_icon_states(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var mode = arguments.GetArgument(1, "mode").GetValueAsInteger();
-            if (mode != 0)
-            {
+            if (mode != 0) {
                 throw new NotImplementedException("Only mode 0 is implemented");
             }
 
             var arg = arguments.GetArgument(0, "Icon");
 
-            if (arg.Equals(DreamValue.Null))
-            {
+            if (arg.Equals(DreamValue.Null)) {
                 return DreamValue.Null;
             }
 
-            if (!arg.TryGetValueAsDreamResource(out var resource))
-            {
-                throw new Exception("bad icon");
+            DMIParser.ParsedDMIDescription dmiDescription;
+            if (arg.TryGetValueAsDreamResource(out var resource)) {
+                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+            } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+            } else {
+                throw new Exception($"Bad icon {arg}");
             }
 
-            DMIParser.ParsedDMIDescription parsedDMI = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
-
-            return new DreamValue(DreamList.Create(parsedDMI.States.Keys.ToArray()));
+            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]
@@ -672,6 +756,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
+        [DreamProc("isinf")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isinf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if(arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsInfinity(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("islist")]
         [DreamProcParameter("Object")]
         public static DreamValue NativeProc_islist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -685,7 +778,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> locs = arguments.GetAllArguments();
 
             foreach (DreamValue loc in locs) {
-                if (loc.TryGetValueAsDreamObject(out DreamObject locObject)) {
+                if (loc.TryGetValueAsDreamObject(out DreamObject? locObject) && locObject is not null) {
                     bool isLoc = locObject.IsSubtypeOf(DreamPath.Mob) || locObject.IsSubtypeOf(DreamPath.Obj) || locObject.IsSubtypeOf(DreamPath.Turf) || locObject.IsSubtypeOf(DreamPath.Area);
 
                     if (!isLoc) {
@@ -724,6 +817,15 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(1);
+        }
+
+        [DreamProc("isnan")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_isnan(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(float.IsNaN(floatnum) ? 1 : 0);
+            }
+            return new DreamValue(0);
         }
 
         [DreamProc("isnull")]
@@ -831,42 +933,70 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        public static object CreateJsonElementFromValue(DreamValue value) {
-            if (value.TryGetValueAsFloat(out float floatValue)) {
-                return floatValue;
-            } else if (value.TryGetValueAsString(out string text)) {
-                return HttpUtility.JavaScriptStringEncode(text);
-            } else if (value.TryGetValueAsPath(out var path)) {
-                return path.ToString();
-            } else if (value.TryGetValueAsDreamList(out DreamList list)) {
-                if (list.IsAssociative()) {
-                    Dictionary<Object, Object?> jsonObject = new(list.GetLength());
+        /// <summary>
+        /// A helper function for /proc/json_encode(). Takes in a value and returns its json-able equivalent.
+        /// </summary>
+        /// <returns>Something that <see cref="JsonSerializer.Serialize"/> can parse.</returns>
+        public static object? CreateJsonElementFromValue(DreamValue value) {
+            return CreateJsonElementFromValueRecursive(value, 0);
+        }
 
+        /// <remarks> This exists to allow for some control over the recursion.<br/>
+        /// DM is actually not very smart about deep recursion or lists referencing their parents; it just goes to ~19 depth and gives up.</remarks>
+        private static object? CreateJsonElementFromValueRecursive(DreamValue value, int recursionLevel) {
+            const int maximumRecursions = 20; // In parity with DM, we give up and just print a 'null' at the maximum recursion.
+            if (recursionLevel == maximumRecursions)
+                return null; // This will be turned into the string "null" higher up in the stack.
+
+            if(value.TryGetValueAsFloat(out float floatValue))
+                return floatValue;
+            if (value.TryGetValueAsString(out string text))
+                return HttpUtility.JavaScriptStringEncode(text);
+            if (value.TryGetValueAsPath(out var path))
+                return HttpUtility.JavaScriptStringEncode(path.ToString());
+            if (value.TryGetValueAsDreamList(out DreamList list)) {
+                if (list.IsAssociative) {
+                    Dictionary<Object, Object?> jsonObject = new(list.GetLength());
                     foreach (DreamValue listValue in list.GetValues()) {
                         if (list.ContainsKey(listValue)) {
-                            jsonObject.Add(listValue.Stringify(), CreateJsonElementFromValue(list.GetValue(listValue)));
+                            var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
+                            var val = CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1);
+                            jsonObject[key] = val;
                         } else {
-                            jsonObject.Add(CreateJsonElementFromValue(listValue), null); // list[x] = null
+                            var key = CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1);
+                            jsonObject[key] = null; // list[x] = null
                         }
                     }
-
                     return jsonObject;
                 } else {
-                    List<Object> jsonObject = new();
-
+                    List<Object?> jsonArray = new();
                     foreach (DreamValue listValue in list.GetValues()) {
-                        jsonObject.Add(CreateJsonElementFromValue(listValue));
+                        jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
                     }
-
-                    return jsonObject;
+                    return jsonArray;
                 }
-            } else if (value.Type == DreamValueType.DreamObject) {
-                if (value.Value == null) return null;
-
-                return value.Stringify();
-            } else {
-                throw new Exception("Cannot json_encode " + value);
             }
+            if (value.Type == DreamValueType.DreamObject) {
+                if (value.Value == null) return null;
+                if(value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix,out var matrix)) { // Special behaviour for /matrix values
+                    StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
+                    builder.Append('[');
+                    builder.AppendJoin(',',DreamMetaObjectMatrix.EnumerateMatrix(matrix));
+                    builder.Append(']');
+                    return builder.ToString();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                }
+                return value.Stringify();
+            }
+            if(value.Type == DreamValueType.DreamResource) {
+                DreamResource dreamResource = (DreamResource)value.Value;
+                string? output = dreamResource.ReadAsString();
+                if (output == null)
+                    return "";
+                return output;
+            }
+            throw new Exception("Cannot json_encode " + value);
         }
 
         [DreamProc("json_decode")]
@@ -884,7 +1014,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("json_encode")]
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_json_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            object jsonObject = CreateJsonElementFromValue(arguments.GetArgument(0, "Value"));
+            object? jsonObject = CreateJsonElementFromValue(arguments.GetArgument(0, "Value"));
             string result = JsonSerializer.Serialize(jsonObject);
 
             return new DreamValue(result);
@@ -987,17 +1117,27 @@ namespace OpenDreamRuntime.Procs.Native {
                 values = arguments.GetAllArguments();
             }
 
+            if (values.Count == 0)
+                return DreamValue.Null;
+
             DreamValue max = values[0];
 
             for (int i = 1; i < values.Count; i++) {
                 DreamValue value = values[i];
 
-                if (value == DreamValue.Null) {
-                    max = value;
-                } else if (value.TryGetValueAsFloat(out var lFloat) && max.TryGetValueAsFloat(out float rFloat)) {
-                    if (lFloat > rFloat) max = value;
-                } else if (value.TryGetValueAsString(out var lString) && max.TryGetValueAsString(out var rString)) {
-                    if (string.Compare(lString, rString, StringComparison.Ordinal) > 0) max = value;
+                if (value.TryGetValueAsFloat(out var lFloat)) {
+                    if (max == DreamValue.Null && lFloat >= 0)
+                        max = value;
+                    else if (max.TryGetValueAsFloat(out var rFloat) && lFloat > rFloat)
+                        max = value;
+                } else if (value == DreamValue.Null) {
+                    if (max.TryGetValueAsFloat(out var maxFloat) && maxFloat <= 0)
+                        max = value;
+                } else if (value.TryGetValueAsString(out var lString)) {
+                    if (max == DreamValue.Null)
+                        max = value;
+                    else if (max.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) > 0)
+                        max = value;
                 } else {
                     throw new Exception($"Cannot compare {max} and {value}");
                 }
@@ -1012,19 +1152,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if(arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
 
-            string? text;
-            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+            byte[] bytes;
 
-                if (text == null)
+            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+                byte[]? filebytes = resource.ResourceData;
+
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             MD5 md5 = MD5.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = md5.ComputeHash(input);
+            byte[] output = md5.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
@@ -1272,8 +1417,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ref(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
         {
-            var obj = arguments.GetArgument(0, "Object").GetValueAsDreamObject();
-            return new DreamValue(obj.CreateReferenceID(DreamManager));
+            return new DreamValue(DreamManager.CreateRef(arguments.GetArgument(0, "Object")));
         }
 
         [DreamProc("regex")]
@@ -1304,43 +1448,65 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Replacement", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
+        public static async Task<DreamValue> NativeProc_replacetext(AsyncNativeProc.State state) {
+            DreamValue haystack = state.Arguments.GetArgument(0, "Haystack");
+            DreamValue needle = state.Arguments.GetArgument(1, "Needle");
+            DreamValue replacementArg = state.Arguments.GetArgument(2, "Replacement");
+            int start = state.Arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.Arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (needle.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out var regexObject)) {
+                // According to the docs, this is the same as /regex.Replace()
+                return await DreamProcNativeRegex.RegexReplace(state, regexObject, haystack, replacementArg, start, end);
+            }
+
+            if (!haystack.TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
 
-            var arg3 = arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            //TODO: Regex support
-            if (!arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
             if (end == 0) {
                 end = text.Length + 1;
             }
 
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.OrdinalIgnoreCase));
+            if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
+                if (!arg3) { // No change if no Replacement was given
+                    return new DreamValue(text);
+                }
+
+                // A Start of 2 is the same as 1. This only happens when Needle is null.
+                if (start == 1)
+                    start = 2;
+
+                // End cannot reach the last char
+                end = Math.Min(end, text.Length);
+
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < text.Length; i++) {
+                    result.Append(text[i]);
+                    if (i >= start - 2 && i < end - 1)
+                        result.Append(replacement);
+                }
+
+                return new DreamValue(result.ToString());
+            }
+
+            if (needle.TryGetValueAsString(out var needleStr)) {
+                string before = text.Substring(0, start - 1);
+                string after = text.Substring(end - 1);
+                string textSub = text.Substring(start - 1, end - start);
+                string replaced = textSub.Replace(needleStr, replacement, StringComparison.OrdinalIgnoreCase);
+
+                StringBuilder newTextBuilder = new();
+                newTextBuilder.Append(before);
+                newTextBuilder.Append(replaced);
+                newTextBuilder.Append(after);
+
+                return new DreamValue(newTextBuilder.ToString());
+            }
+
+            throw new Exception($"Invalid needle {needle}");
         }
 
         [DreamProc("rgb")]
@@ -1374,9 +1540,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("bad color");
             }
 
-            if (arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space) && space != 0) {
-                //TODO implement other colorspace support
-                throw new NotImplementedException("rgb2num() currently only supports COLORSPACE_RGB");
+            if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
+                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
@@ -1385,9 +1550,36 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamList list = DreamList.Create();
 
-            list.AddValue(new DreamValue(c.RByte));
-            list.AddValue(new DreamValue(c.GByte));
-            list.AddValue(new DreamValue(c.BByte));
+            switch(space) {
+                case 0: //rgb
+                    list.AddValue(new DreamValue(c.RByte));
+                    list.AddValue(new DreamValue(c.GByte));
+                    list.AddValue(new DreamValue(c.BByte));
+                    break;
+                case 1: //hsv
+                    Vector4 hsvcolor = Color.ToHsv(c);
+                    list.AddValue(new DreamValue(hsvcolor.X * 360));
+                    list.AddValue(new DreamValue(hsvcolor.Y * 100));
+                    list.AddValue(new DreamValue(hsvcolor.Z * 100));
+                    break;
+                case 2: //hsl
+                    Vector4 hslcolor = Color.ToHsl(c);
+                    list.AddValue(new DreamValue(hslcolor.X * 360));
+                    list.AddValue(new DreamValue(hslcolor.Y * 100));
+                    list.AddValue(new DreamValue(hslcolor.Z * 100));
+                    break;
+                case 3: //hcy
+                    /// TODO Figure out why the chroma for #ca60db is 48 instead of 68
+                    throw new NotImplementedException("HCY Colorspace is not implemented");
+                    /*
+                    Vector4 hcycolor = Color.ToHcy(c);
+                    list.AddValue(new DreamValue(hcycolor.X * 360));
+                    list.AddValue(new DreamValue(hcycolor.Y * 100));
+                    list.AddValue(new DreamValue(hcycolor.Z * 100));
+                    */
+                default:
+                    throw new NotImplementedException($"Colorspace {space} is not implemented");
+            }
 
             if (color.Length == 9 || color.Length == 5) {
                 list.AddValue(new DreamValue(c.AByte));
@@ -1495,20 +1687,24 @@ namespace OpenDreamRuntime.Procs.Native {
         {
             if (arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
             DreamValue arg = arguments.GetArgument(0, "T");
-            string? text;
+            byte[] bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
-                text = resource.ReadAsString();
+                byte[]? filebytes = resource.ResourceData;
 
-                if (text == null)
+                if (filebytes == null) {
                     return DreamValue.Null;
-            } else if (!arg.TryGetValueAsString(out text)) {
+                }
+
+                bytes = filebytes;
+            } else if (arg.TryGetValueAsString(out string? textdata)) {
+                bytes = Encoding.UTF8.GetBytes(textdata);
+            } else {
                 return DreamValue.Null;
             }
 
             SHA1 sha1 = SHA1.Create();
-            byte[] input = Encoding.UTF8.GetBytes(text);
-            byte[] output = sha1.ComputeHash(input);
+            byte[] output = sha1.ComputeHash(bytes);
             //Match BYOND formatting
             string hash = BitConverter.ToString(output).Replace("-", "").ToLower();
             return new DreamValue(hash);
@@ -1789,16 +1985,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             bool hasTimezoneOffset = arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
 
-            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp)) {
+            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
-                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
             }
 
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
 
-            long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
+            long ticks = (long)(timestamp * TimeSpan.TicksPerSecond / 10);
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {
@@ -1829,13 +2025,44 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(format);
         }
 
+        [DreamProc("trunc")]
+        [DreamProcParameter("n", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_trunc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue arg = arguments.GetArgument(0, "n");
+            if (arg.TryGetValueAsFloat(out float floatnum)) {
+                return new DreamValue(MathF.Truncate(floatnum));
+            }
+            return new DreamValue(0);
+        }
+
         [DreamProc("typesof")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = DreamList.Create();
 
             foreach (DreamValue type in arguments.GetAllArguments()) {
-                DreamPath typePath = type.GetValueAsPath();
+                if (!type.TryGetValueAsPath(out var typePath)) {
+                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null || typeObj is DreamList) {
+                        if (type.TryGetValueAsString(out var typeString)) {
+                            var stringToPath = new DreamPath(typeString);
+                            if (stringToPath.LastElement == "proc") {
+                                DreamPath objectPath = stringToPath.AddToPath("..");
+                                if (!DreamManager.ObjectTree.HasTreeEntry(objectPath))
+                                {
+                                    continue;
+                                }
+                            }
+                            else if (!DreamManager.ObjectTree.HasTreeEntry(stringToPath)) {
+                                continue;
+                            }
+                            typePath = stringToPath;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        typePath = typeObj.ObjectDefinition.Type;
+                    }
+                }
 
                 if (typePath.LastElement == "proc") {
                     DreamPath objectTypePath = typePath.AddToPath("..");

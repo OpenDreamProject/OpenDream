@@ -43,7 +43,8 @@ namespace OpenDreamClient.Input {
 
                 IMapGrid grid = _mapManager.GetGrid(gridUid.Value);
                 Vector2i position = grid.CoordinatesToTile(args.Coordinates);
-                RaiseNetworkEvent(new TurfClickedEvent(position, (int)grid.ParentMapId, shift, ctrl, alt));
+                MapCoordinates world_position = grid.GridTileToWorld(position);
+                RaiseNetworkEvent(new TurfClickedEvent(position, (int)world_position.MapId, shift, ctrl, alt));
                 return true;
             }
 

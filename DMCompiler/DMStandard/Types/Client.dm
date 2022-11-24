@@ -2,6 +2,7 @@
 	var/list/verbs = list()
 	var/list/screen = list()
 	var/list/images = list() as opendream_unimplemented
+	var/list/vars
 
 	var/atom/statobj
 	var/statpanel
@@ -45,18 +46,13 @@
 	var/glide_size as opendream_unimplemented
 	var/virtual_eye as opendream_unimplemented
 
-	proc/SoundQuery()
-		set opendream_unimplemented = TRUE
-	proc/Export(file)
-		set opendream_unimplemented = TRUE
-	proc/MeasureText(text, style, width=0)
-		set opendream_unimplemented = TRUE
-
 	proc/New(TopicData)
 		view = world.view
 		mob = new world.mob(null)
-
 		return mob
+
+	proc/Del()
+		set opendream_unimplemented = TRUE
 
 	proc/Topic(href, list/href_list, datum/hsrc)
 		if (hsrc != null)
@@ -64,6 +60,22 @@
 
 	proc/Stat()
 		if (statobj != null) statobj.Stat()
+
+	proc/Command(command as command_text)
+		set opendream_unimplemented = TRUE
+
+	proc/Import(Query)
+		set opendream_unimplemented = TRUE
+	proc/Export(file)
+		set opendream_unimplemented = TRUE
+	proc/AllowUpload(filename, filelength)
+		set opendream_unimplemented = TRUE
+		return TRUE
+
+	proc/SoundQuery()
+		set opendream_unimplemented = TRUE
+	proc/MeasureText(text, style, width=0)
+		set opendream_unimplemented = TRUE
 
 	proc/Move(loc, dir)
 		mob.Move(loc, dir)
@@ -95,16 +107,16 @@
 	proc/Center()
 		//TODO: walk(usr, 0)
 
-	proc/IsByondMember()
-		set opendream_unimplemented = TRUE
-		return FALSE
-
 	proc/Click(atom/object, location, control, params)
 		object.Click(location, control, params)
 
 	proc/DblClick(atom/object, location, control, params)
 		set opendream_unimplemented = TRUE
 		object.DblClick(location,control,params)
+
+	proc/MouseDown(atom/object, location, control, params)
+		set opendream_unimplemented = TRUE
+		object.MouseDown(location, control, params)
 
 	proc/MouseDrag(atom/src_object,over_object,src_location,over_location,src_control,over_control,params)
 		set opendream_unimplemented = TRUE
@@ -133,3 +145,15 @@
 	proc/MouseWheel(atom/object,delta_x,delta_y,location,control,params)
 		set opendream_unimplemented = TRUE
 		object.MouseWheel(delta_x,delta_y,location,control,params)
+
+	proc/IsByondMember()
+		set opendream_unimplemented = TRUE
+		return FALSE
+	proc/CheckPassport(passport_identifier)
+		set opendream_unimplemented = TRUE
+	proc/SendPage(msg, recipient, options)
+		set opendream_unimplemented = TRUE
+	proc/GetAPI(Api, Name)
+		set opendream_unimplemented = TRUE
+	proc/SetAPI(Api, Key, Value)
+		set opendream_unimplemented = TRUE

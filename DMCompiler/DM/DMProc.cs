@@ -100,6 +100,8 @@ namespace DMCompiler.DM {
 
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
+            procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
+            procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
             {
@@ -249,6 +251,16 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
+        public void DebugSource(string source) {
+            WriteOpcode(DreamProcOpcode.DebugSource);
+            WriteString(source.Replace("\\", "/"));
+        }
+
+        public void DebugLine(int line) {
+            WriteOpcode(DreamProcOpcode.DebugLine);
+            WriteInt(line);
+        }
+
         public void PushReferenceValue(DMReference reference) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushReferenceValue);
@@ -369,6 +381,23 @@ namespace DMCompiler.DM {
         public void OutputControl() {
             ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.OutputControl);
+        }
+
+        public void OutputReference(DMReference leftRef) {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.OutputReference);
+            WriteReference(leftRef);
+        }
+
+        public void Output() {
+            ShrinkStack(2);
+            WriteOpcode(DreamProcOpcode.Output);
+        }
+
+        public void Input(DMReference leftRef, DMReference rightRef) {
+            WriteOpcode(DreamProcOpcode.Input);
+            WriteReference(leftRef);
+            WriteReference(rightRef);
         }
 
         public void Spawn(string jumpTo) {
@@ -555,9 +584,9 @@ namespace DMCompiler.DM {
             WriteInt((int)types);
         }
 
-        public void Initial(string propertyName) {
+        public void Initial() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Initial);
-            WriteString(propertyName);
         }
 
         public void Return() {
@@ -627,8 +656,18 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
+        public void ModulusModulus() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.ModulusModulus);
+        }
+
         public void ModulusReference(DMReference reference) {
             WriteOpcode(DreamProcOpcode.ModulusReference);
+            WriteReference(reference);
+        }
+
+        public void ModulusModulusReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.ModulusModulusReference);
             WriteReference(reference);
         }
 
@@ -788,21 +827,17 @@ namespace DMCompiler.DM {
         public void FormatString(string value) {
             int formatCount = 0;
             for (int i = 0; i < value.Length; i++) {
-                if (value[i] == 0xFF) {
-                    StringFormatTypes formatType = (StringFormatTypes)value[++i];
-
-                    switch (formatType) {
-                        case StringFormatTypes.Stringify:
-                        case StringFormatTypes.Ref:
-                            formatCount++;
-                            break;
-                    }
+                if (StringFormatEncoder.Decode(value[i], out var formatType))
+                {
+                    if(StringFormatEncoder.IsInterpolation(formatType.Value))
+                        formatCount++;
                 }
             }
 
             ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
+            WriteInt(formatCount);
         }
 
         public void IsInList() {
@@ -819,9 +854,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsNull);
         }
 
-        public void IsSaved(string propertyName) {
+        public void IsSaved() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
-            WriteString(propertyName);
         }
 
         public void IsType() {

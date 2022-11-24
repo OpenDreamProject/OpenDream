@@ -1,5 +1,6 @@
 ﻿/world
 	var/list/contents = list()
+	var/list/vars
 
 	var/log = null
 
@@ -13,14 +14,16 @@
 	var/realtime
 	var/tick_lag = 1
 	var/cpu = 0 as opendream_unimplemented
-	var/fps = null
+	var/fps = 10
 	var/tick_usage
+	var/loop_checks = 0 as opendream_unimplemented
 
 	var/maxx = 0
 	var/maxy = 0
 	var/maxz = 0
 	var/icon_size = 32
 	var/view = 5
+	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
@@ -28,9 +31,10 @@
 	var/version = 0 as opendream_unimplemented
 
 	var/address
-	var/port
+	var/port = 0 as opendream_compiletimereadonly
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
-	var/url
+	var/url as opendream_unimplemented
+	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/list/params = list() as opendream_unimplemented
 
@@ -48,15 +52,21 @@
 	var/game_state as opendream_unimplemented
 	var/host as opendream_unimplemented
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
+	var/cache_lifespan = 30 as opendream_unimplemented
+
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
 	proc/GetConfig(config_set,param)
-		set opendream_unimplemented = TRUE
 	proc/SetConfig(config_set,param,value)
-		set opendream_unimplemented = TRUE
 	proc/OpenPort(port)
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)
+		set opendream_unimplemented = TRUE
+	proc/IsBanned(key,address,computer_id,type)
+		set opendream_unimplemented = TRUE
+		return FALSE;
+
+	proc/Error(exception)
 		set opendream_unimplemented = TRUE
 
 	proc/Reboot()
@@ -66,6 +76,10 @@
 		set opendream_unimplemented = TRUE
 
 	proc/Export(Addr, File, Persist, Clients)
+	proc/Import()
+		set opendream_unimplemented = TRUE
+	proc/Topic(T,Addr,Master,Keys)
+		set opendream_unimplemented = TRUE
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

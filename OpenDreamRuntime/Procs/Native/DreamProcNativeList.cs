@@ -91,10 +91,20 @@ namespace OpenDreamRuntime.Procs.Native {
             bool itemRemoved = false;
 
             foreach (DreamValue argument in argumentValues) {
-                if (list.ContainsValue(argument)) {
-                    list.RemoveValue(argument);
+                if (argument.TryGetValueAsDreamList(out DreamList argumentList)) {
+                    foreach (DreamValue value in argumentList.GetValues()) {
+                        if (list.ContainsValue(value)) {
+                            list.RemoveValue(value);
 
-                    itemRemoved = true;
+                            itemRemoved = true;
+                        }
+                    }
+                } else {
+                    if (list.ContainsValue(argument)) {
+                        list.RemoveValue(argument);
+
+                        itemRemoved = true;
+                    }
                 }
             }
 

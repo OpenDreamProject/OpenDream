@@ -6,6 +6,7 @@ using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 
 namespace OpenDreamClient.Input {
     sealed class MouseInputSystem : SharedMouseInputSystem {
@@ -41,9 +42,10 @@ namespace OpenDreamClient.Input {
                 if (gridUid == null)
                     return false;
 
-                IMapGrid grid = _mapManager.GetGrid(gridUid.Value);
+                MapGridComponent grid = _mapManager.GetGrid(gridUid.Value);
                 Vector2i position = grid.CoordinatesToTile(args.Coordinates);
-                RaiseNetworkEvent(new TurfClickedEvent(position, (int)grid.ParentMapId, shift, ctrl, alt));
+                MapCoordinates world_position = grid.GridTileToWorld(position);
+                RaiseNetworkEvent(new TurfClickedEvent(position, (int)world_position.MapId, shift, ctrl, alt));
                 return true;
             }
 

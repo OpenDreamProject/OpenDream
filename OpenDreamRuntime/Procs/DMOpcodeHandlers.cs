@@ -378,8 +378,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Initial(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for initial() call: " + key);
+            }
 
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
@@ -957,11 +960,31 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? ModulusModulus(DMProcState state) {
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
+
+            state.Push(ModulusModulusValues(first, second));
+
+            return null;
+        }
+
         public static ProcStatus? ModulusReference(DMProcState state) {
             DreamValue second = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = ModulusValues(first, second);
+
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
+        public static ProcStatus? ModulusModulusReference(DMProcState state) {
+            DreamValue second = state.Pop();
+            DMReference reference = state.ReadReference();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = ModulusModulusValues(first, second);
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -1887,8 +1910,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsSaved(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for issaved() call: " + key);
+            }
 
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
@@ -2102,6 +2128,17 @@ namespace OpenDreamRuntime.Procs {
             } else {
                 throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }
+        }
+
+        private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
+                // BYOND docs say that A %% B is equivalent to B * fract(A/B)
+                // BREAKING CHANGE: The floating point precision is slightly different between OD and BYOND, giving slightly different values
+                var fraction = firstFloat / secondFloat;
+                fraction -= MathF.Truncate(fraction);
+                return new DreamValue(fraction * secondFloat);
+            }
+            throw new Exception("Invalid modulusmodulus operation on " + first + " and " + second);
         }
         #endregion Helpers
     }

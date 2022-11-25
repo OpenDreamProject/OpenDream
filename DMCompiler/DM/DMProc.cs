@@ -584,9 +584,9 @@ namespace DMCompiler.DM {
             WriteInt((int)types);
         }
 
-        public void Initial(string propertyName) {
+        public void Initial() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Initial);
-            WriteString(propertyName);
         }
 
         public void Return() {
@@ -656,8 +656,18 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
+        public void ModulusModulus() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.ModulusModulus);
+        }
+
         public void ModulusReference(DMReference reference) {
             WriteOpcode(DreamProcOpcode.ModulusReference);
+            WriteReference(reference);
+        }
+
+        public void ModulusModulusReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.ModulusModulusReference);
             WriteReference(reference);
         }
 
@@ -844,9 +854,9 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsNull);
         }
 
-        public void IsSaved(string propertyName) {
+        public void IsSaved() {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
-            WriteString(propertyName);
         }
 
         public void IsType() {

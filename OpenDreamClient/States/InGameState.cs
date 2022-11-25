@@ -4,11 +4,11 @@ namespace OpenDreamClient.States
 {
     public sealed class InGameState : State
     {
-        public override void Startup()
+        protected override void Startup()
         {
         }
 
-        public override void Shutdown()
+        protected override void Shutdown()
         {
         }
     }

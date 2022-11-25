@@ -1,5 +1,6 @@
 ﻿using Lidgren.Network;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages
 {
@@ -10,13 +11,13 @@ namespace OpenDreamShared.Network.Messages
         public string ControlId;
         public string Params;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
         {
             ControlId = buffer.ReadString();
             Params = buffer.ReadString();
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer)
         {
             buffer.Write(ControlId);
             buffer.Write(Params);

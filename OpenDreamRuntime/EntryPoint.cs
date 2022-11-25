@@ -46,9 +46,10 @@ namespace OpenDreamRuntime {
 
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
             if (debugAdapterPort == 0) {
-                _dreamManager.Initialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
+                _dreamManager.PreInitialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
+                _dreamManager.StartWorld();
             } else {
-                // The debug manager is responsible for running _dreamManager.Initialize()
+                // The debug manager is responsible for running _dreamManager.PreInitialize() and .StartWorld()
                 _debugManager.Initialize(debugAdapterPort);
             }
         }

@@ -195,9 +195,13 @@ namespace OpenDreamRuntime {
             return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsDreamList() instead.")]
-        public DreamList GetValueAsDreamList() {
-            return (DreamList)GetValueAsDreamObject();
+        [Obsolete("Deprecated. Prefer TryGetValueAsDreamList(), or use MustGetValueAsDreamList() if you are sure.")]
+        public DreamList GetValueAsDreamList() => MustGetValueAsDreamList();
+
+        public DreamList MustGetValueAsDreamList() {
+            if (TryGetValueAsDreamList(out var list))
+                return list;
+            throw new InvalidOperationException($"Expected a /list, but got {this}");
         }
 
         public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList list) {

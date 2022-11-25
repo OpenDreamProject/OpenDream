@@ -1,32 +1,29 @@
-/datum/complex     // complex number a+bi
-    var/a as num
-    var/b as num
+/datum/complex	 // complex number a+bi
+	var/a as num
+	var/b as num
 
-    New(_a,_b)
-        a = _a
-        b = _b
+	New(_a,_b)
+		a = _a
+		b = _b
 
-    proc/operator+(datum/complex/C)
-        if(istype(C)) return new /datum/complex(a+C.a, b+C.b)
-        if(isnum(C)) return new /datum/complex(a+C, b)
-        return src
+	proc/operator+(datum/complex/C)
+		if(istype(C)) return new /datum/complex(a+C.a, b+C.b)
+		if(isnum(C)) return new /datum/complex(a+C, b)
+		return src
 
-    proc/operator+=(datum/complex/C)
-        if(istype(C))
-            a += C.a
-            b += C.b
-        else if(isnum(C)) a += C
+	proc/operator+=(datum/complex/C)
+		if(istype(C))
+			a += C.a
+			b += C.b
+		else if(isnum(C)) 
+			a += C
 
 	proc/operator-()
-		 a *= -1
-		 b *= -1
-		 return src
+		 return new /datum/complex(a*-1, b*-1)
 		 
-    proc/operator*(datum/complex/C) 
+	proc/operator*(datum/complex/C) 
 		if(isnum(C))
-			a *= C
-			b *= C
-			return src
+			return new /datum/complex(a*C, b*C)
 		else
 			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
 
@@ -38,6 +35,9 @@
 				return src.b
 			else
 				throw EXCEPTION("Invalid index on complex number")
+
+
+
 
 /proc/RunTest()
 	var/datum/complex/A = new /datum/complex(5,-1)

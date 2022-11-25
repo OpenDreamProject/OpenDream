@@ -105,6 +105,48 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Comma
         };
 
+        private static readonly TokenType[] OperatorOverloadTypes = {
+            TokenType.DM_And,
+            TokenType.DM_AndAnd,
+            TokenType.DM_AndEquals,
+            TokenType.DM_AndAndEquals,
+            TokenType.DM_AssignInto,
+            TokenType.DM_Bar,
+            TokenType.DM_BarBar,
+            TokenType.DM_BarEquals,
+            TokenType.DM_BarBarEquals,
+            TokenType.DM_DoubleSquareBracket,
+            TokenType.DM_DoubleSquareBracketEquals,
+            TokenType.DM_GreaterThan,
+            TokenType.DM_GreaterThanEquals,
+            TokenType.DM_RightShift,
+            TokenType.DM_RightShiftEquals,
+            TokenType.DM_LeftShift,
+            TokenType.DM_LeftShiftEquals,
+            TokenType.DM_LessThan,
+            TokenType.DM_LessThanEquals,
+            TokenType.DM_Minus,
+            TokenType.DM_MinusEquals,
+            TokenType.DM_MinusMinus,
+            TokenType.DM_Modulus,
+            TokenType.DM_ModulusEquals,
+            TokenType.DM_ModulusModulus,
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_Plus,
+            TokenType.DM_PlusEquals,
+            TokenType.DM_PlusPlus,
+            TokenType.DM_Slash,
+            TokenType.DM_SlashEquals,
+            TokenType.DM_Star,
+            TokenType.DM_StarEquals,
+            TokenType.DM_StarStar,
+            TokenType.DM_Tilde,
+            TokenType.DM_TildeEquals,
+            TokenType.DM_TildeExclamation,
+            TokenType.DM_Xor,
+            TokenType.DM_XorEquals,
+        };
+
         public DMASTFile File() {
             var loc = Current().Location;
             List<DMASTStatement> statements = new();
@@ -183,7 +225,7 @@ namespace DMCompiler.Compiler.DM {
                         }
                         if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                             // BYOND doesn't specify the arg
-                            Error($"error: bag argument definition '{Current().PrintableText}'", false);
+                            Error($"error: bad argument definition '{Current().PrintableText}'", false);
                             Advance();
                             BracketWhitespace();
                             Check(TokenType.DM_Comma);
@@ -315,6 +357,14 @@ namespace DMCompiler.Compiler.DM {
                     pathElement = PathElement();
 
                     if (pathElement != null) {
+                        if(pathElement == "operator")
+                        {
+                            Token operatorToken = Current();
+                            if(!Check(OperatorOverloadTypes))
+                                Error($"Invalid operator overload {operatorToken.PrintableText}");
+                            else
+                                pathElement+=operatorToken.PrintableText;
+                        }
                         pathElements.Add(pathElement);
                     }
                 }

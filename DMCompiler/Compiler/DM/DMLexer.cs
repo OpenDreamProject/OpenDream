@@ -211,6 +211,9 @@ namespace DMCompiler.Compiler.DM {
                                 case ">>": token = CreateToken(TokenType.DM_RightShift, c); break;
                                 case ">=": token = CreateToken(TokenType.DM_GreaterThanEquals, c); break;
                                 case ">>=": token = CreateToken(TokenType.DM_RightShiftEquals, c); break;
+                                case ":=": token = CreateToken(TokenType.DM_AssignInto, c); break;
+                                case "[]": token = CreateToken(TokenType.DM_DoubleSquareBracket, c); break;
+                                case "[]=": token = CreateToken(TokenType.DM_DoubleSquareBracketEquals, c); break;
                                 default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                             }
 

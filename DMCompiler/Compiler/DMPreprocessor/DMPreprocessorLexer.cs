@@ -46,7 +46,22 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
-                    case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
+                    case '[': {
+                        if(Advance() == ']')
+                            if(Advance() == '=')
+                            {
+                                Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]=");
+                            }
+                            else
+                            {
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]");
+                            }
+                        else
+                        {
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
+                        }
+                        break;
+                    }
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
                     case '\\': {

@@ -15,18 +15,18 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     /// The master class for handling DM preprocessing.
     /// This is an <see cref="IEnumerable"/>, and is usually accessed via its <see cref="Token"/> output in a for-loop.
     /// </summary>
-    public class DMPreprocessor : IEnumerable<Token> {
-        public List<string> IncludedMaps = new();
+    public sealed class DMPreprocessor : IEnumerable<Token> {
+        public readonly List<string> IncludedMaps = new(8);
         public string IncludedInterface;
 
         //Every include pushes a new lexer that gets popped once the included file is finished
-        private Stack<DMPreprocessorLexer> _lexerStack =  new();
+        private readonly Stack<DMPreprocessorLexer> _lexerStack =  new(8); // Capacity Note: TG peaks at 4 at time of writing
 
-        private HashSet<string> _includedFiles = new();
-        private Stack<Token> _unprocessedTokens = new();
+        private readonly HashSet<string> _includedFiles = new(5120); // Capacity Note: TG peaks at 4860 at time of writing
+        private readonly Stack<Token> _unprocessedTokens = new(8192); // Capacity Note: TG peaks at 6802 at time of writing
         private bool _currentLineWhitespaceOnly = true;
-        private bool _enableDirectives;
-        private Dictionary<string, DMMacro> _defines = new() {
+        private readonly bool _enableDirectives;
+        private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
             { "__LINE__", new DMMacroLine() },
             { "__FILE__", new DMMacroFile() }
         };
@@ -35,7 +35,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// We do this so that we can A.) Detect whether an #else or #endif is valid and B.) Remember what to do when we find that #else.
         /// A null value indicates the last directive found was an #else that's waiting for an #endif.
         /// </summary>
-        private Stack<bool?> _lastIfEvaluations = new();
+        private readonly Stack<bool?> _lastIfEvaluations = new(16);
         private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
 
         private static readonly TokenType[] DirectiveTypes =
@@ -596,8 +596,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         continue; // Don't need to do the ifStack check since it has not changed as a result of this token
                 }
                 if (ifStack == 0) {
-                    if(!calledByElseDirective)
+                    if (!calledByElseDirective) {
                         _unprocessedTokens.Push(token); // Push it back onto the stack so we can interpret the entry in _lastIfEvaluations correctly.
+                    }
+
                     return false;
                 }
             }

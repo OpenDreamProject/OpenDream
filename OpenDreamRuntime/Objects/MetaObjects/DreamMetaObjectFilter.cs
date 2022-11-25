@@ -16,6 +16,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IoCManager.InjectDependencies(this);
         }
 
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            ParentType?.OnObjectDeleted(dreamObject);
+            FilterAttachedTo.Remove(DreamObjectToFilter[dreamObject]);
+            DreamObjectToFilter.Remove(dreamObject);
+        }
+
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
@@ -39,10 +45,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OnObjectDeleted(DreamObject dreamObject) {
-            ParentType?.OnObjectDeleted(dreamObject);
-            FilterAttachedTo.Remove(DreamObjectToFilter[dreamObject]);
-            DreamObjectToFilter.Remove(dreamObject);
-        }
+        // TODO: OnVariableGet
     }
 }

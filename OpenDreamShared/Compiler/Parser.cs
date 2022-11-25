@@ -1,17 +1,18 @@
-﻿using Robust.Shared.Analyzers;
+using Robust.Shared.Analyzers;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     [Virtual]
     public partial class Parser<SourceType> {
-        public List<CompilerError> Errors = new();
-        public List<CompilerWarning> Warnings = new();
+        // Note: These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings.
+        public readonly List<CompilerError> Errors = new(4);
+        public readonly List<CompilerWarning> Warnings = new(4);
 
         protected Lexer<SourceType> _lexer;
         private Token _currentToken;
-        private Stack<Token> _tokenStack = new();
+        private readonly Stack<Token> _tokenStack = new(1);
 
-        public Parser(Lexer<SourceType> lexer) {
+        protected Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;
 
             Advance();

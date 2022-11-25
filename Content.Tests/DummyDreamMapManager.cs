@@ -15,7 +15,9 @@ namespace Content.Tests {
 
         public void UpdateTiles() { }
 
-        public void LoadMaps(List<DreamMapJson> maps) { }
+        public void LoadAreasAndTurfs(List<DreamMapJson> maps) { }
+
+        public void InitializeAtoms(List<DreamMapJson> maps) { }
 
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 

@@ -17,7 +17,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            if (!dreamObject.IsSubtypeOf(DreamPath.Turf)) {
+                // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
+                _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            }
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }

@@ -60,7 +60,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
+            dreamObject.SetVariable("contents", new(_dreamManager.WorldContentsList));
 
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);
@@ -120,7 +120,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.CurTick.Value * TickLag);
+                    return new DreamValue((_gameTiming.CurTick.Value - _dreamManager.InitializedTick.Value) * TickLag);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {

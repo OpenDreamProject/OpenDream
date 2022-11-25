@@ -1,21 +1,23 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     public sealed class DreamMapManager : IDreamMapManager {
         public sealed class Level {
             public readonly int Z;
-            public readonly IMapGrid Grid;
+            public readonly MapGridComponent Grid;
             public readonly Cell[,] Cells;
             public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
-            public Level(int z, IMapGrid grid, DreamObject area, Vector2i size) {
+            public Level(int z, MapGridComponent grid, DreamObject area, Vector2i size) {
                 Z = z;
                 Grid = grid;
 
@@ -51,15 +53,16 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        private ServerAppearanceSystem? _appearanceSystem;
+        private ServerAppearanceSystem _appearanceSystem = default!;  // set in Initialize
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
 
         private readonly List<Level> _levels = new();
         private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();
-        private readonly Dictionary<DreamPath, DreamObject> _areas = new();
-        private DreamPath _defaultArea, _defaultTurf;
+        private readonly Dictionary<MapObjectJson, DreamObject> _areas = new();
+        private MapObjectJson _defaultArea = default!;  // set in Initialize
+        private DreamPath _defaultTurf;
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -69,16 +72,15 @@ namespace OpenDreamRuntime {
             // Default area
             if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area))
             {
-
                 if(!_dreamManager.ObjectTree.GetObjectDefinition(area).IsSubtypeOf(DreamPath.Area)) throw new Exception("bad area");
-                _defaultArea = area;
 
+                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(area).Id);
             }
             else if (worldDefinition.Variables["area"] == DreamValue.Null ||
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0)
             {
                 //TODO: Properly handle disabling default area
-                _defaultArea = DreamPath.Area;
+                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(DreamPath.Area).Id);
             }
             else
             {
@@ -118,10 +120,9 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void LoadMaps(List<DreamMapJson> maps) {
+        public void LoadAreasAndTurfs(List<DreamMapJson> maps) {
             if (maps.Count == 0) throw new ArgumentException("No maps were given");
-            if (maps.Count > 1)
-            {
+            if (maps.Count > 1) {
                 Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
 
@@ -131,11 +132,50 @@ namespace OpenDreamRuntime {
             SetZLevels(map.MaxZ);
 
             foreach (MapBlockJson block in map.Blocks) {
-                LoadMapBlock(block, map.CellDefinitions);
+                LoadMapAreasAndTurfs(block, map.CellDefinitions);
             }
         }
 
-        private void SetTurf(Vector2i pos, Level level, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+        public void InitializeAtoms(List<DreamMapJson> maps) {
+            // Call New() on all /area in this particular order, each with waitfor=FALSE
+            var seenAreas = new HashSet<DreamObject>();
+            for (var z = 1; z <= Levels; ++z) {
+                for (var y = 1; y <= Size.Y; ++y) {
+                    for (var x = 1; x <= Size.X; ++x) {
+                        var area = _levels[z - 1].Cells[x - 1, y - 1].Area;
+                        if (seenAreas.Add(area)) {
+                            area.SpawnProc("New");
+                        }
+                    }
+                }
+            }
+            // Also call New() on all /area not in the grid.
+            // This may call New() a SECOND TIME. This is intentional.
+            foreach (var thing in _dreamManager.WorldContentsList.GetValues()) {
+                if (thing.TryGetValueAsDreamObjectOfType(DreamPath.Area, out var area)) {
+                    if (seenAreas.Add(area)) {
+                        area.SpawnProc("New");
+                    }
+                }
+            }
+
+            // Call New() on all /turf in the grid, each with waitfor=FALSE
+            for (var z = 1; z <= Levels; ++z) {
+                for (var y = Size.Y; y >= 1; --y) {
+                    for (var x = Size.X; x >= 1; --x) {
+                        _levels[z - 1].Cells[x - 1, y - 1].Turf?.SpawnProc("New");
+                    }
+                }
+            }
+
+            // new() up /objs and /mobs from compiled-in maps
+            DreamMapJson map = maps[0];
+            foreach (MapBlockJson block in map.Blocks) {
+                LoadMapObjectsAndMobs(block, map.CellDefinitions);
+            }
+        }
+
+        private DreamObject SetTurf(Vector2i pos, Level level, DreamObjectDefinition type, DreamProcArguments creationArguments) {
             if (IsInvalidCoordinate(pos, level.Z)) throw new ArgumentException("Invalid coordinates");
 
             Cell cell = level.Cells[pos.X - 1, pos.Y - 1];
@@ -144,9 +184,13 @@ namespace OpenDreamRuntime {
             } else {
                 cell.Turf = new DreamObject(type);
                 _turfToTilePos.Add(cell.Turf, (pos, level));
+                // Only add the /turf to .contents when it's created.
+                cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
+                _dreamManager.WorldContentsList.AddValue(new(cell.Turf));
             }
 
             cell.Turf.InitSpawn(creationArguments);
+            return cell.Turf;
         }
 
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments) {
@@ -196,11 +240,12 @@ namespace OpenDreamRuntime {
 
         //Returns an area loaded by a DMM
         //Does not include areas created by DM code
-        private DreamObject GetArea(DreamPath type) {
-            if (!_areas.TryGetValue(type, out DreamObject? area)) {
-                area = _dreamManager.ObjectTree.CreateObject(type);
-                area.InitSpawn(new(null));
-                _areas.Add(type, area);
+        private DreamObject GetOrCreateArea(MapObjectJson prototype) {
+            if (!_areas.TryGetValue(prototype, out DreamObject? area)) {
+                var definition = CreateMapObjectDefinition(prototype);
+                area = new DreamObject(definition);
+                area.InitSpawn(new());
+                _areas.Add(prototype, area);
             }
 
             return area;
@@ -215,13 +260,13 @@ namespace OpenDreamRuntime {
         public void SetZLevels(int levels) {
             if (levels > Levels) {
                 DreamObjectDefinition defaultTurfDef = _dreamManager.ObjectTree.GetObjectDefinition(_defaultTurf);
-                DreamObject defaultArea = GetArea(_defaultArea);
+                DreamObject defaultArea = GetOrCreateArea(_defaultArea);
 
                 for (int z = Levels + 1; z <= levels; z++) {
                     MapId mapId = new(z);
                     _mapManager.CreateMap(mapId);
 
-                    IMapGrid grid = _mapManager.CreateGrid(mapId);
+                    MapGridComponent grid = _mapManager.CreateGrid(mapId);
                     Level level = new Level(z, grid, defaultArea, Size);
                     _levels.Add(level);
 
@@ -249,28 +294,22 @@ namespace OpenDreamRuntime {
                    z < 1 || z > Levels;
         }
 
-        private void LoadMapBlock(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions) {
+        private void LoadMapAreasAndTurfs(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions) {
             int blockX = 1;
             int blockY = 1;
 
+            // Order here doesn't really matter because it's not observable.
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
-                DreamPath areaType = cellDefinition.Area != null ? _dreamManager.ObjectTree.Types[cellDefinition.Area.Type].Path : _defaultArea;
-                DreamObject area = GetArea(areaType);
+                DreamObject area = GetOrCreateArea(cellDefinition.Area ?? _defaultArea);
 
                 Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
                 Level level = _levels[block.Z - 1];
 
-                SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new(null));
-                level.SetArea(pos, area);
-
-                if (TryGetTurfAt(pos, level.Z, out var turf)) {
-                    foreach (MapObjectJson mapObject in cellDefinition.Objects) {
-                        var objDef = CreateMapObjectDefinition(mapObject);
-                        var obj = new DreamObject(objDef);
-
-                        obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
-                    }
+                var turf = SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new());
+                // The following calls level.SetArea via an event on the area's `contents` var.
+                if (level.Cells[pos.X - 1, pos.Y - 1].Area != area) {
+                    area.GetVariable("contents").MustGetValueAsDreamList().AddValue(new(turf));
                 }
 
                 blockX++;
@@ -278,6 +317,29 @@ namespace OpenDreamRuntime {
                     blockX = 1;
                     blockY++;
                 }
+            }
+        }
+
+        private void LoadMapObjectsAndMobs(MapBlockJson block, Dictionary<string, CellDefinitionJson> cellDefinitions) {
+            // The order we call New() here should be (1,1), (2,1), (1,2), (2,2)
+            int blockY = block.Y;
+            foreach (var row in block.Cells.Chunk(block.Width).Reverse()) {
+                int blockX = block.X;
+                foreach (var cell in row) {
+                    CellDefinitionJson cellDefinition = cellDefinitions[cell];
+
+                    if (TryGetTurfAt((blockX, blockY), block.Z, out var turf)) {
+                        foreach (MapObjectJson mapObject in cellDefinition.Objects) {
+                            var objDef = CreateMapObjectDefinition(mapObject);
+                            var obj = new DreamObject(objDef);
+
+                            obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
+                        }
+                    }
+
+                    ++blockX;
+                }
+                ++blockY;
             }
         }
 
@@ -302,8 +364,10 @@ namespace OpenDreamRuntime {
         public int Levels { get; }
 
         public void Initialize();
+        public void LoadAreasAndTurfs(List<DreamMapJson> maps);
+        public void InitializeAtoms(List<DreamMapJson> maps);
         public void UpdateTiles();
-        public void LoadMaps(List<DreamMapJson> maps);
+
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
         public void SetTurfAppearance(DreamObject turf, IconAppearance appearance);
         public IconAppearance GetTurfAppearance(DreamObject turf);

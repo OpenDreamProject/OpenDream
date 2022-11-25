@@ -1,7 +1,7 @@
 
 /dm_filter
 	var/x
-	var/y 
+	var/y
 	var/icon
 	var/render_source
 	var/flags

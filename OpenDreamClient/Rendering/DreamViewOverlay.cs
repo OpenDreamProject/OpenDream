@@ -33,7 +33,7 @@ sealed class DreamViewOverlay : Overlay {
 
         DrawMap(args, eye.Value);
         _appearanceSystem.CleanUpUnusedFilters();
-        _appearanceSystem.ResetFilterUsageCounts();
+        _appearanceSystem.ResetFilterUsageFlags();
     }
 
     private void DrawMap(OverlayDrawArgs args, EntityUid eye) {

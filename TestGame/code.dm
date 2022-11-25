@@ -109,17 +109,6 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
 			usr << "Applied [selected] filter"
 
-	verb/outline_change_test()
-		set category = "Test"
-		if(length(src.filters))
-			var/dm_filter/F = src.filters[1]
-			F.color = rgb(0,255,0)
-			F.size = 4
-			usr << "color & size set"
-		else
-			src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
-			usr << "filter created"
-
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)
@@ -128,4 +117,3 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
- 

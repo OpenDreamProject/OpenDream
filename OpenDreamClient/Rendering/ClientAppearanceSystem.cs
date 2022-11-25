@@ -82,47 +82,64 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
-        public void ResetFilterUsageCounts()
-        {
-            foreach(DreamFilter key in _filterShaders.Keys)
-            {
-                key.used = false;
+        public void ResetFilterUsageFlags() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                key.Used = false;
             }
         }
 
-        public void CleanUpUnusedFilters()
-        {
-            foreach(DreamFilter key in _filterShaders.Keys)
-            {
-                if(!key.used)
+        public void CleanUpUnusedFilters() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                if (!key.Used)
                     _filterShaders.Remove(key);
             }
         }
 
-        public ShaderInstance GetFilterShader(DreamFilter filter)
-        {
-            ShaderInstance instance = null;
-            if(!_filterShaders.TryGetValue(filter, out instance))
-            {
-                var _protoManager = IoCManager.Resolve<IPrototypeManager>();
-                instance = _protoManager.Index<ShaderPrototype>(filter.filter_type).InstanceUnique();
+        public ShaderInstance GetFilterShader(DreamFilter filter) {
+            if (!_filterShaders.TryGetValue(filter, out var instance)) {
+                var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
-                foreach(string key in filter.parameters.Keys)
-                {
-                    Type paramType = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(filter.filter_type)][key].Item1;
-                    if(paramType == typeof(float))
-                        instance.SetParameter(key, (float) filter.parameters[key]);
-                    if(paramType == typeof(Color))
-                        instance.SetParameter(key, (Color) filter.parameters[key]);   
-                    if(paramType == typeof(Matrix3))
-                        instance.SetParameter(key, (Matrix3) filter.parameters[key]); 
-                    if(paramType == typeof(string))
-                        continue; //special render_source processing goes here?
-                    if(paramType == typeof(Object))
-                        continue; //special icon processing goes here?                                                                             
+                instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
+
+                switch (filter) {
+                    case DreamFilterAlpha alpha:
+                        break;
+                    case DreamFilterAngularBlur angularBlur:
+                        break;
+                    case DreamFilterBloom bloom:
+                        break;
+                    case DreamFilterBlur blur:
+                        instance.SetParameter("size", blur.Size);
+                        break;
+                    case DreamFilterColor color:
+                        break;
+                    case DreamFilterDisplace displace:
+                        break;
+                    case DreamFilterDropShadow dropShadow:
+                        break;
+                    case DreamFilterLayer layer:
+                        break;
+                    case DreamFilterMotionBlur motionBlur:
+                        break;
+                    case DreamFilterOutline outline:
+                        instance.SetParameter("size", outline.Size);
+                        instance.SetParameter("color", outline.Color);
+                        instance.SetParameter("flags", outline.Flags);
+                        break;
+                    case DreamFilterRadialBlur radialBlur:
+                        break;
+                    case DreamFilterRays rays:
+                        break;
+                    case DreamFilterRipple ripple:
+                        break;
+                    case DreamFilterWave wave:
+                        break;
+                    case DreamFilterGreyscale greyscale:
+                        break;
                 }
             }
-            filter.used = true;
+
+            filter.Used = true;
             _filterShaders[filter] = instance;
             return instance;
         }

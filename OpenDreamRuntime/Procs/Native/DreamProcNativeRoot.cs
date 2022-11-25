@@ -14,6 +14,9 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using OpenDreamRuntime.Objects.MetaObjects;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -443,75 +446,29 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("radius", Type = DreamValueType.Float)]
         [DreamProcParameter("falloff", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-
-            if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filter_type))
+            if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
                 return DreamValue.Null;
 
-            DreamObject result = DreamManager.ObjectTree.CreateObject(DreamPath.Filter.AddToPath(filter_type));
-            if(DreamFilter.filterParameters.ContainsKey(DreamPath.Filter.AddToPath(filter_type)))
-            {
-                Dictionary<string, ValueTuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(filter_type)];
-                foreach(string varName in variableDict.Keys)
-                {
-                    ValueTuple<Type, bool, Object> varInfo = variableDict[varName];
-                    if(varInfo.Item1 == typeof(float))
-                    {
-                        float varValue;
-                        if(!arguments.GetArgument(1, varName).TryGetValueAsFloat(out varValue))
-                            if(varInfo.Item2)
-                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
-                            else
-                                varValue = (float) varInfo.Item3;
-                        result.SetVariableValue(varName, new DreamValue(varValue));
-                    }
-                    if(varInfo.Item1 == typeof(string))
-                    {
-                        string varValue;
-                        if(!arguments.GetArgument(1, varName).TryGetValueAsString(out varValue))
-                            if(varInfo.Item2)
-                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
-                            else
-                                varValue = (string) varInfo.Item3;
-                        result.SetVariableValue(varName, new DreamValue(varValue));
-                    }
-                    if(varInfo.Item1 == typeof(Color)) //leave Colors as string for the DreamObject, They get converted to Color by the meta object
-                    {
-                        string varValue;
-                        if(!arguments.GetArgument(1, varName).TryGetValueAsString(out varValue))
-                            if(varInfo.Item2)
-                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
-                            else
-                                varValue = ((Color) varInfo.Item3).ToHex();
-                        if(!ColorHelpers.TryParseColor(varValue, out var _)) //do sanity check them though
-                            throw new Exception($"Invalid color: {varValue}");
-                        result.SetVariableValue(varName, new DreamValue(varValue));
-                    }
-                    if(varInfo.Item1 == typeof(Matrix3)) //Matrix3 except not really because DM matrix is actually 3x2
-                    {
-                        DreamObject varValue;
-                        if(!arguments.GetArgument(1, varName).TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out varValue))
-                            if(varInfo.Item2)
-                                throw new Exception($"Variable {varName} is mandatory for filter type {filter_type}");
-                            else
-                            {
-                                varValue = DreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
-                                Matrix3 defaultVal = (Matrix3) varInfo.Item3;
-                                varValue.SetVariable("a", new DreamValue(defaultVal.R0C0));
-                                varValue.SetVariable("d", new DreamValue(defaultVal.R1C0));
-                                varValue.SetVariable("b", new DreamValue(defaultVal.R2C0));
-                                varValue.SetVariable("e", new DreamValue(defaultVal.R0C1));
-                                varValue.SetVariable("c", new DreamValue(defaultVal.R1C1));
-                                varValue.SetVariable("f", new DreamValue(defaultVal.R2C1));
+            Type? filterType = DreamFilter.GetType(filterTypeName);
+            if (filterType == null)
+                return DreamValue.Null;
 
-                            }
-                        result.SetVariableValue(varName, new DreamValue(varValue));
-                    }
-                    //TODO icons
-                }
-                return new DreamValue(result);
+            var serializationManager = IoCManager.Resolve<ISerializationManager>();
+
+            MappingDataNode attributes = new();
+            foreach (KeyValuePair<string, DreamValue> attribute in arguments.NamedArguments) {
+                DreamValue value = attribute.Value;
+
+                attributes.Add(attribute.Key, new DreamValueDataNode(value));
             }
-            else
-                return DreamValue.Null; //no valid type? You get a null
+
+            DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
+            if (filter == null)
+                throw new Exception($"Failed to create filter of type {filterType}");
+
+            DreamObject filterObject = DreamManager.ObjectTree.CreateObject(DreamPath.Filter);
+            DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
+            return new DreamValue(filterObject);
         }
 
         [DreamProc("findtext")]

@@ -12,35 +12,38 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
+        private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
+
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
             if (!dreamObject.IsSubtypeOf(DreamPath.Turf)) {
-                // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
                 _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
             }
+
+            _filterLists[dreamObject] = new DreamFilterList(dreamObject);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            _filterLists.Remove(dreamObject);
+
             _atomManager.DeleteMovableEntity(dreamObject);
             _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
-            _atomManager.FiltersListToAtom.Remove(dreamObject.GetVariable("filters").GetValueAsDreamList());
             ParentType?.OnObjectDeleted(dreamObject);
         }
 
-        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue)
-        {
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            switch (varName)
-            {
+            switch (varName) {
                 case "icon":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         if (value.TryGetValueAsDreamResource(out DreamResource resource)) {
@@ -126,8 +129,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 }
-                case "overlays":
-                {
+                case "overlays": {
                     if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= OverlayValueAssigned;
@@ -146,8 +148,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dreamObject.SetVariableValue(varName, new DreamValue(overlayList));
                     break;
                 }
-                case "underlays":
-                {
+                case "underlays": {
                     if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= UnderlayValueAssigned;
@@ -166,33 +167,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dreamObject.SetVariableValue(varName, new DreamValue(underlayList));
                     break;
                 }
-                case "filters":
-                {
-                    if(value == DreamValue.Null)
-                    {
-                        dreamObject.SetVariableValue(varName, DreamValue.Null);
-                        _atomManager.UpdateAppearance(dreamObject, appearance => {
-                            appearance.Filters.Clear();
-                        });
-                        break;
-                    }
-                    DreamList filterList;
-                    if (!value.TryGetValueAsDreamList(out filterList)) {
-                        filterList = DreamList.Create();
-                        _atomManager.FiltersListToAtom[filterList] = dreamObject;
-                        filterList.ValueAssigned += FiltersValueAssigned;
-                        filterList.BeforeValueRemoved += FiltersValueAssigned;
+                case "filters": {
+                    DreamFilterList filterList = _filterLists[dreamObject];
+
+                    filterList.Cut();
+
+                    if (value.TryGetValueAsDreamList(out var valueList)) {
+                        // TODO: This should maybe postpone UpdateAppearance until after everything is added
+                        foreach (DreamValue filterValue in valueList.GetValues()) {
+                            filterList.AddValue(filterValue);
+                        }
+                    } else if (value != DreamValue.Null) {
                         filterList.AddValue(value);
                     }
-                    else
-                    {
-                        _atomManager.FiltersListToAtom[filterList] = dreamObject;
-                        filterList.ValueAssigned += FiltersValueAssigned;
-                        filterList.BeforeValueRemoved += FiltersValueAssigned;
-                        if(filterList.GetLength() > 0)
-                            FiltersValueAssigned(filterList, value, value); //this is super hacky, but trigger the update behaviour here
-                    }
-                    dreamObject.SetVariableValue(varName, new DreamValue(filterList));
+
                     break;
                 }
             }
@@ -206,6 +194,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     matrix.InitSpawn(new DreamProcArguments(new() { value }));
 
                     return new DreamValue(matrix);
+                case "filters":
+                    return new DreamValue(_filterLists[dreamObject]);
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
@@ -215,7 +205,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
+                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
@@ -224,7 +214,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 } else if (icon.TryGetValueAsString(out string iconString)) {
                     appearance.Icon = iconString;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
+                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");
@@ -323,72 +313,5 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Underlays.Remove(underlayAppearanceId.Value);
             });
         }
-
-        private void FiltersValueAssigned(DreamList filterList, DreamValue key, DreamValue value)
-        {
-            DreamObject dreamObject = _atomManager.FiltersListToAtom[filterList];
-            _atomManager.UpdateAppearance(dreamObject, appearance => {
-                    appearance.Filters.Clear();
-            });
-            foreach(DreamValue listValue in filterList.GetValues())
-            {
-                _atomManager.UpdateAppearance(dreamObject, appearance => {
-                    DreamFilter newFilter = new DreamFilter();
-
-                    DreamObject DMFilterObject;
-                    if(!listValue.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out DMFilterObject))
-                        throw new Exception("Tried to add a non-filter object to a list of filters");
-                    DreamMetaObjectFilter._FilterToDreamObject[DMFilterObject] = dreamObject;
-                    DreamValue filterVarValue;
-
-                    if(DMFilterObject.TryGetVariable("type", out filterVarValue))
-                    {
-                        DreamPath typedVal;
-                        if(filterVarValue.TryGetValueAsPath(out typedVal))
-                            newFilter.filter_type = typedVal.LastElement;
-                    }
-                    Dictionary<string, ValueTuple<Type, bool, Object>> variableDict = DreamFilter.filterParameters[DreamPath.Filter.AddToPath(newFilter.filter_type)];
-                    foreach(string varName in variableDict.Keys)
-                    {
-                        ValueTuple<Type, bool, Object> varInfo = variableDict[varName];
-                        if(varInfo.Item1 == typeof(float))
-                        {
-                            float varValue;
-                            if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsFloat(out varValue))
-                                if(varInfo.Item2)
-                                    throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
-                                else
-                                    varValue = (float) varInfo.Item3;
-                            newFilter.parameters[varName] = varValue;
-                        }
-                        if(varInfo.Item1 == typeof(string))
-                        {
-                            string varValue;
-                            if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsString(out varValue))
-                                if(varInfo.Item2)
-                                    throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
-                                else
-                                    varValue = (string) varInfo.Item3;
-                            newFilter.parameters[varName] = varValue;
-                        }
-                        if(varInfo.Item1 == typeof(Color))
-                        {
-                            string colorString;
-                            Color varValue;
-                            if(!DMFilterObject.TryGetVariable(varName, out filterVarValue) || !filterVarValue.TryGetValueAsString(out colorString))
-                                if(varInfo.Item2)
-                                    throw new Exception($"Variable {varName} is mandatory for filter type {newFilter.filter_type}");
-                                else
-                                    varValue = (Color) varInfo.Item3;
-                            else if(!ColorHelpers.TryParseColor(colorString, out varValue))
-                                throw new Exception($"Invalid color: {colorString}");
-                            newFilter.parameters[varName] = varValue;
-                        }
-                    }
-                    appearance.Filters.Add(newFilter);
-                });
-            }
-        }
-
     }
 }

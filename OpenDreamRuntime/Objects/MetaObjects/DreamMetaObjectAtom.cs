@@ -12,35 +12,38 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
+        private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
+
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
             if (!dreamObject.IsSubtypeOf(DreamPath.Turf)) {
-                // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
                 _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
             }
+
+            _filterLists[dreamObject] = new DreamFilterList(dreamObject);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            _filterLists.Remove(dreamObject);
+
             _atomManager.DeleteMovableEntity(dreamObject);
             _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
-
             ParentType?.OnObjectDeleted(dreamObject);
         }
 
-        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue)
-        {
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            switch (varName)
-            {
+            switch (varName) {
                 case "icon":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         if (value.TryGetValueAsDreamResource(out DreamResource resource)) {
@@ -126,8 +129,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 }
-                case "overlays":
-                {
+                case "overlays": {
                     if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= OverlayValueAssigned;
@@ -146,8 +148,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dreamObject.SetVariableValue(varName, new DreamValue(overlayList));
                     break;
                 }
-                case "underlays":
-                {
+                case "underlays": {
                     if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= UnderlayValueAssigned;
@@ -166,6 +167,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dreamObject.SetVariableValue(varName, new DreamValue(underlayList));
                     break;
                 }
+                case "filters": {
+                    DreamFilterList filterList = _filterLists[dreamObject];
+
+                    filterList.Cut();
+
+                    if (value.TryGetValueAsDreamList(out var valueList)) {
+                        // TODO: This should maybe postpone UpdateAppearance until after everything is added
+                        foreach (DreamValue filterValue in valueList.GetValues()) {
+                            filterList.AddValue(filterValue);
+                        }
+                    } else if (value != DreamValue.Null) {
+                        filterList.AddValue(value);
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -177,6 +194,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     matrix.InitSpawn(new DreamProcArguments(new() { value }));
 
                     return new DreamValue(matrix);
+                case "filters":
+                    return new DreamValue(_filterLists[dreamObject]);
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
@@ -186,7 +205,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
+                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out DreamObject mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
@@ -195,7 +214,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 } else if (icon.TryGetValueAsString(out string iconString)) {
                     appearance.Icon = iconString;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.GetMovableAppearance(atom)?.Icon;
+                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");

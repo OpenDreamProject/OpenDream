@@ -84,6 +84,31 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
+	verb/demo_filters()
+		set category = "Test"
+		if(length(src.filters))
+			src.filters = null
+			usr << "Filters cleared"
+		else
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
+			if(isnull(selected))
+				src.filters = null
+				usr << "No filter selected, filters cleared"
+			switch(selected)
+				if("outline")
+					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
+				if("greyscale")
+					src.filters = filter(type="greyscale")
+				if("blur")
+					src.filters = filter(type="blur", size=2)
+				if("outline/grey")
+					src.filters = list(filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="greyscale"))
+				if("grey/outline")
+					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
+				if("all")
+					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
+			usr << "Applied [selected] filter"
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

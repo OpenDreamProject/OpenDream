@@ -37,11 +37,9 @@
 				throw EXCEPTION("Invalid index on complex number")
 
 	proc/operator&(datum/complex/C)
-		CRASH("OPERATOR RAN &")
 		return 3.14
 
 	proc/operator&=(datum/complex/C)
-		CRASH("OPERATOR RAN &=")
 		src.a = 3.14
 		src.b = 6.28
 
@@ -49,10 +47,9 @@
 /proc/RunTest()
 	var/datum/complex/A = new /datum/complex(5,-1)
 	var/datum/complex/B = new /datum/complex(0,-9.5)
-	CRASH(A & B)
-	ASSERT(A & B == 3.14)
+	ASSERT((A & B) == 3.14)
 	A &= B
-	ASSERT(A.a == 3.14 && A.b == 6.28)
+	ASSERT((A.a == 3.14) && (A.b == 6.28))
 
 
 /proc/main()

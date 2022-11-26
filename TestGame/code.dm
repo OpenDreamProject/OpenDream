@@ -37,6 +37,7 @@
 				throw EXCEPTION("Invalid index on complex number")
 
 	proc/operator&(datum/complex/C)
+		world.log << "OPERATOR RAN &"
 		return 3.14
 
 	proc/operator&=(datum/complex/C)
@@ -141,3 +142,5 @@
 	var/datum/complex/A = new /datum/complex(5,-1)
 	var/datum/complex/B = new /datum/complex(0,-9.5)
 	world.log << json_encode(A & B)
+	A &= B
+	world.log << json_encode(A)

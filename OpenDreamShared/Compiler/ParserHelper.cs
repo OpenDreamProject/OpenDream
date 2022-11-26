@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Robust.Shared.Log;
 
 namespace OpenDreamShared.Compiler {
     public partial class Parser<SourceType> {
-        private Stack<Stack<Token>> _lookahead = new();
+        private readonly Stack<Stack<Token>> _lookahead = new();
 
         protected void SavePosition() {
             _lookahead.Push(new Stack<Token>());

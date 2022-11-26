@@ -714,6 +714,12 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 state.Push(new DreamValue(newList));
+            }
+            else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&", out DreamProc overload))
+            {
+                state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
+
+                return ProcStatus.Called;
             } else if (first.Value != null && second.Value != null) {
                 state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
@@ -752,6 +758,12 @@ namespace OpenDreamRuntime.Procs {
 
                     if (metaObject != null) {
                         state.Push(metaObject.OperatorOr(first, second));
+                    }
+                    else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|", out DreamProc overload))
+                    {
+                        state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
+
+                        return ProcStatus.Called;
                     } else {
                         throw new Exception("Invalid or operation on " + first + " and " + second);
                     }
@@ -869,6 +881,11 @@ namespace OpenDreamRuntime.Procs {
                         state.Push(metaObject.OperatorCombine(first, second));
 
                         return null;
+                    } else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload))
+                    {
+                        state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
+
+                        return ProcStatus.Called;
                     } else {
                         throw new Exception("Invalid combine operation on " + first + " and " + second);
                     }
@@ -928,7 +945,14 @@ namespace OpenDreamRuntime.Procs {
                         state.Push(metaObject.OperatorMask(first, second));
 
                         return null;
-                    } else {
+                    }
+                    else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&=", out DreamProc overload))
+                    {
+                        state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
+                        return ProcStatus.Called;
+                    }
+                    else
+                    {
                         throw new Exception("Invalid mask operation on " + first + " and " + second);
                     }
                 }

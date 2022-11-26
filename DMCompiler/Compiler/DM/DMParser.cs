@@ -106,15 +106,11 @@ namespace DMCompiler.Compiler.DM {
         };
 
         private static readonly TokenType[] OperatorOverloadTypes = {
-            TokenType.DM_And,
-            TokenType.DM_AndAnd,
-            TokenType.DM_AndEquals,
-            TokenType.DM_AndAndEquals,
+            TokenType.DM_And, //done
+            TokenType.DM_AndEquals, //done
             TokenType.DM_AssignInto,
-            TokenType.DM_Bar,
-            TokenType.DM_BarBar,
-            TokenType.DM_BarEquals,
-            TokenType.DM_BarBarEquals,
+            TokenType.DM_Bar, //done
+            TokenType.DM_BarEquals, //done
             TokenType.DM_DoubleSquareBracket,
             TokenType.DM_DoubleSquareBracketEquals,
             TokenType.DM_GreaterThan,

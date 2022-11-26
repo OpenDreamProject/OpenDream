@@ -60,6 +60,7 @@ proc/missile(Type, Start, End)
 	proc/Open(filename)
 
 /database/query
+	var/_binobj as opendream_unimplemented
 	proc/Add(text, ...)
 	proc/Clear()
 	Close()

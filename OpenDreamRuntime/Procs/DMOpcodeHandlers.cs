@@ -459,10 +459,8 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
             DreamProcArguments arguments = new DreamProcArguments(new(), new());
-            DreamList argList = state.Pop().GetValueAsDreamList();
 
-            if (argList != null)
-            {
+            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 foreach (DreamValue value in argList.GetValues()) {
                     if (argList.ContainsKey(value)) { //Named argument
                         if (value.TryGetValueAsString(out string name)) {

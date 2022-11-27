@@ -450,7 +450,7 @@ namespace OpenDreamRuntime.Procs {
                     } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
-                            metaObject.OperatorIndexAssign(dreamObject!, index, value);
+                            metaObject.OperatorIndexAssign(dreamObject!, index, value, this);
                     } else {
                         throw new Exception($"Cannot assign to index {index} of {indexing}");
                     }
@@ -525,7 +525,7 @@ namespace OpenDreamRuntime.Procs {
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
-                            return metaObject.OperatorIndex(dreamObject, index);
+                            return metaObject.OperatorIndex(dreamObject, index, this);
                     }
 
                     throw new Exception($"Cannot get index {index} of {indexing}");

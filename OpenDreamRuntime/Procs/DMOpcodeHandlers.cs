@@ -430,9 +430,19 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? ListAppend(DMProcState state) {
             DreamValue value = state.Pop();
-            DreamList list = state.Pop().GetValueAsDreamList();
+            DreamValue list = state.Pop();
+            switch (list.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    break;
+                }
+                case DreamValue.DreamValueType.String:
+                    break;
+                case DreamValue.DreamValueType.DreamObject: {
+                    IDreamMetaObject metaObject = list.GetValueAsDreamObject().ObjectDefinition.MetaObject;
+                    metaObject?.OperatorAppend(list, value, state);
+                    break;
+                }
 
-            list.AddValue(value);
             state.Push(new DreamValue(list));
             return null;
         }

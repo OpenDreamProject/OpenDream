@@ -17,14 +17,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) =>
             ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot output {b} to {a}");
 
-            ParentType.OperatorOutput(a, b);
+            ParentType.OperatorOutput(a, b, state);
         }
 
-        public DreamValue OperatorAdd(DreamValue a, DreamValue b) {
+        public DreamValue OperatorAdd(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+", out DreamProc overload))
                 {
@@ -34,148 +34,148 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 else
                     throw new InvalidOperationException($"Addition cannot be done between {a} and {b}");
 
-            return ParentType.OperatorAdd(a, b);
+            return ParentType.OperatorAdd(a, b, state);
         }
 
-        public DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
+        public DreamValue OperatorSubtract(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Subtraction cannot be done between {a} and {b}");
 
-            return ParentType.OperatorSubtract(a, b);
+            return ParentType.OperatorSubtract(a, b, state);
         }
 
-        public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
+        public DreamValue OperatorMultiply(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
 
-            return ParentType.OperatorMultiply(a, b);
+            return ParentType.OperatorMultiply(a, b, state);
         }
 
-        public DreamValue OperatorAppend(DreamValue a, DreamValue b) {
+        public DreamValue OperatorAppend(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot append {b} to {a}");
 
-            return ParentType.OperatorAppend(a, b);
+            return ParentType.OperatorAppend(a, b, state);
         }
 
-        public DreamValue OperatorRemove(DreamValue a, DreamValue b) {
+        public DreamValue OperatorRemove(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot remove {b} from {a}");
 
-            return ParentType.OperatorRemove(a, b);
+            return ParentType.OperatorRemove(a, b, state);
         }
 
-        public DreamValue OperatorOr(DreamValue a, DreamValue b) {
+        public DreamValue OperatorOr(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot or {a} and {b}");
 
-            return ParentType.OperatorOr(a, b);
+            return ParentType.OperatorOr(a, b, state);
         }
 
-        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 return a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f);
 
-            return ParentType.OperatorEquivalent(a, b);
+            return ParentType.OperatorEquivalent(a, b, state);
         }
 
-        public DreamValue OperatorCombine(DreamValue a, DreamValue b) {
+        public DreamValue OperatorCombine(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot combine {a} and {b}");
 
-            return ParentType.OperatorCombine(a, b);
+            return ParentType.OperatorCombine(a, b, state);
         }
 
-        public DreamValue OperatorMask(DreamValue a, DreamValue b) {
+        public DreamValue OperatorMask(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot mask {a} and {b}");
 
-            return ParentType.OperatorMask(a, b);
+            return ParentType.OperatorMask(a, b, state);
         }
 
-        public DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
+        public DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot index {dreamObject}");
 
-            return ParentType.OperatorIndex(dreamObject, index);
+            return ParentType.OperatorIndex(dreamObject, index, state);
         }
 
-        public void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
+        public void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot assign {value} to index {index} of {dreamObject}");
 
-            ParentType.OperatorIndexAssign(dreamObject, index, value);
+            ParentType.OperatorIndexAssign(dreamObject, index, value, state);
         }
 
-        public void OperatorBitAnd(DreamValue a, DreamValue b) {
+        public void OperatorBitAnd(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-and {a} and {b}");
 
-            ParentType.OperatorBitAnd(a, b);
+            ParentType.OperatorBitAnd(a, b, state);
         }
 
-        public void OperatorBitNot(DreamValue a) {
+        public void OperatorBitNot(DreamValue a, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-not {a}");
 
-            ParentType.OperatorBitNot(a);
+            ParentType.OperatorBitNot(a, state);
         }
 
-        public void OperatorBitOr(DreamValue a, DreamValue b) {
+        public void OperatorBitOr(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-or {a} and {b}");
 
-            ParentType.OperatorBitOr(a, b);
+            ParentType.OperatorBitOr(a, b, state);
         }
 
-        public void OperatorBitShiftLeft(DreamValue a) {
+        public void OperatorBitShiftLeft(DreamValue a, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-shift-left {a}");
 
-            ParentType.OperatorBitShiftLeft(a);
+            ParentType.OperatorBitShiftLeft(a, state);
         }
-        public void OperatorBitShiftRight(DreamValue a) {
+        public void OperatorBitShiftRight(DreamValue a, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-shift-right {a}");
 
-            ParentType.OperatorBitShiftRight(a);
+            ParentType.OperatorBitShiftRight(a, state);
         }
 
-        public void OperatorBitXor(DreamValue a, DreamValue b) {
+        public void OperatorBitXor(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot bit-xor {a} and {b}");
 
-            ParentType.OperatorBitXor(a, b);
+            ParentType.OperatorBitXor(a, b, state);
         }
-        public void OperatorDivide(DreamValue a, DreamValue b) {
+        public void OperatorDivide(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot divide {a} and {b}");
 
-            ParentType.OperatorDivide(a, b);
+            ParentType.OperatorDivide(a, b, state);
         }
-        public void OperatorModulus(DreamValue a, DreamValue b) {
+        public void OperatorModulus(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot modulo {a} and {b}");
 
-            ParentType.OperatorModulus(a, b);
+            ParentType.OperatorModulus(a, b, state);
         }
-        public void OperatorModulusModulus(DreamValue a, DreamValue b) {
+        public void OperatorModulusModulus(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot modulo-modulo {a} and {b}");
 
-            ParentType.OperatorModulusModulus(a, b);
+            ParentType.OperatorModulusModulus(a, b, state);
         }
-        public void OperatorNegate(DreamValue a) {
+        public void OperatorNegate(DreamValue a, ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot negate {a}");
 
-            ParentType.OperatorNegate(a);
+            ParentType.OperatorNegate(a, state);
         }
-        public void OperatorPower(DreamValue a, DreamValue b) {
+        public void OperatorPower(DreamValue a, DreamValue b,  ProcState state) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot raise {a} to the power of {b}");
 
-            ParentType.OperatorPower(a, b);
+            ParentType.OperatorPower(a, b, state);
         }
 
 

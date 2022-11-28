@@ -7,7 +7,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    sealed class DMProc : DreamProc {
+    public sealed class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
-    sealed class DMProcState : ProcState
+    public sealed class DMProcState : ProcState
     {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
@@ -420,7 +420,7 @@ namespace OpenDreamRuntime.Procs {
             return (indexing, index);
         }
 
-        public void AssignReference(DMReference reference, DreamValue value) {
+        public ProcStatus AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
                 case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
@@ -450,7 +450,7 @@ namespace OpenDreamRuntime.Procs {
                     } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
-                            metaObject.OperatorIndexAssign(dreamObject!, index, value, this);
+                            return metaObject.OperatorIndexAssign(indexing, index, value, this);
                     } else {
                         throw new Exception($"Cannot assign to index {index} of {indexing}");
                     }
@@ -459,6 +459,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
             }
+            return ProcStatus.Returned;
         }
 
         public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
@@ -525,7 +526,7 @@ namespace OpenDreamRuntime.Procs {
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
-                            return metaObject.OperatorIndex(dreamObject, index, this);
+                            return metaObject.OperatorIndex(indexing, index, this);
                     }
 
                     throw new Exception($"Cannot get index {index} of {indexing}");

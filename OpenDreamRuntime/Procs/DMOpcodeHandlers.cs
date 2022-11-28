@@ -432,19 +432,17 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
             DreamValue list = state.Pop();
             switch (list.Type) {
-                case DreamValue.DreamValueType.Float: {
-                    break;
-                }
-                case DreamValue.DreamValueType.String:
-                    break;
                 case DreamValue.DreamValueType.DreamObject: {
-                    IDreamMetaObject metaObject = list.GetValueAsDreamObject().ObjectDefinition.MetaObject;
-                    metaObject?.OperatorAppend(list, value, state);
-                    break;
+                    list.TryGetValueAsDreamObject(out DreamObject? obj);
+                    IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                    if(metaObject != null)
+                        return metaObject?.OperatorAppend(list, value, state);
+                    else
+                        throw new InvalidOperationException($"ListAppend cannot be done between {list} and {value}");
                 }
-
-            state.Push(new DreamValue(list));
-            return null;
+                default:
+                    throw new InvalidOperationException($"ListAppend cannot be done between {list} and {value}");
+            }
         }
 
         public static ProcStatus? ListAppendAssociated(DMProcState state) {

@@ -434,7 +434,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 }
 
-interface IDreamDebugManager {
+public interface IDreamDebugManager {
     bool Stopped { get; }
 
     public void Initialize(int port);

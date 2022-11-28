@@ -66,6 +66,9 @@
 		set opendream_unimplemented = TRUE
 		return FALSE;
 
+	proc/Error(exception)
+		set opendream_unimplemented = TRUE
+
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
 
@@ -74,6 +77,8 @@
 
 	proc/Export(Addr, File, Persist, Clients)
 	proc/Import()
+		set opendream_unimplemented = TRUE
+	proc/Topic(T,Addr,Master,Keys)
 		set opendream_unimplemented = TRUE
 
 	proc/SetScores()

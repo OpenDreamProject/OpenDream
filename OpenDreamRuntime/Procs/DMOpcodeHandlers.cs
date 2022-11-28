@@ -378,8 +378,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Initial(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for initial() call: " + key);
+            }
 
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
@@ -455,9 +458,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamList argList = state.Pop().GetValueAsDreamList();
+            DreamProcArguments arguments = new DreamProcArguments(new(), new());
 
-            if (argList != null) {
+            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 List<DreamValue> ordered = new();
                 Dictionary<string, DreamValue> named = new();
                 foreach (DreamValue value in argList.GetValues()) {
@@ -1909,8 +1912,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? IsSaved(DMProcState state) {
+            DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            string property = state.ReadString();
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception("Invalid var for issaved() call: " + key);
+            }
 
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {

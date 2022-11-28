@@ -1,4 +1,4 @@
-﻿using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
@@ -94,9 +94,9 @@ namespace DMCompiler {
 
                 // NB: IncludeFile pushes newly seen files to a stack, so push
                 // them in reverse order to process them in forward order.
-                foreach (string file in Enumerable.Reverse(files)) {
-                    string includeDir = Path.GetDirectoryName(file);
-                    string fileName = Path.GetFileName(file);
+                for (var i = files.Count - 1; i >= 0; i--) {
+                    string includeDir = Path.GetDirectoryName(files[i]);
+                    string fileName = Path.GetFileName(files[i]);
 
                     preproc.IncludeFile(includeDir, fileName);
                 }
@@ -154,11 +154,7 @@ namespace DMCompiler {
 
             DMObjectBuilder.BuildObjectTree(astFile);
 
-            if (ErrorCount > 0) {
-                return false;
-            }
-
-            return true;
+            return ErrorCount == 0;
         }
 
         public static void Error(CompilerError error) {

@@ -1942,6 +1942,10 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
                 ConsumeRightParenthesis();
 
+                if (inner is DMASTIdentifier identifier) {
+                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                }
+
                 return inner;
             }
 

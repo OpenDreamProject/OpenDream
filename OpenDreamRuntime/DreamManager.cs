@@ -149,6 +149,7 @@ namespace OpenDreamRuntime {
             ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
             ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
             ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
+            ObjectTree.SetMetaObject(DreamPath.Filter, new DreamMetaObjectFilter());
             ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile());
         }
 

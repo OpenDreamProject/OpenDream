@@ -14,6 +14,9 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using OpenDreamRuntime.Objects.MetaObjects;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -311,20 +314,21 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fcopy")]
         [DreamProcParameter("Src", Type = DreamValueType.String | DreamValueType.DreamResource)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_fcopy(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             var arg1 = arguments.GetArgument(0, "Src");
 
-            string src;
+            string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
+            } else if (arg1.TryGetValueAsDreamObjectOfType(DreamPath.Savefile, out var savefile)) {
+                src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
             } else if (!arg1.TryGetValueAsString(out src)) {
-                throw new Exception("bad src file");
+                throw new Exception($"Bad src file {arg1}");
             }
 
-            if (!arguments.GetArgument(1, "Dst").TryGetValueAsString(out var dst))
-            {
-                throw new Exception("bad dst file");
+            var arg2 = arguments.GetArgument(1, "Dst");
+            if (!arg2.TryGetValueAsString(out var dst)) {
+                throw new Exception($"Bad dst file {arg2}");
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
@@ -425,9 +429,46 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("filter")]
-        [DreamProcParameter("type", Type = DreamValueType.String)]
+        [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
+        [DreamProcParameter("size", Type = DreamValueType.Float)]
+        [DreamProcParameter("color", Type = DreamValueType.String)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        [DreamProcParameter("x", Type = DreamValueType.Float)]
+        [DreamProcParameter("y", Type = DreamValueType.Float)]
+        [DreamProcParameter("offset", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)]
+        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
+        [DreamProcParameter("space", Type = DreamValueType.Float)]
+        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("factor", Type = DreamValueType.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueType.Float)]
+        [DreamProcParameter("radius", Type = DreamValueType.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            return DreamValue.Null;
+            if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
+                return DreamValue.Null;
+
+            Type? filterType = DreamFilter.GetType(filterTypeName);
+            if (filterType == null)
+                return DreamValue.Null;
+
+            var serializationManager = IoCManager.Resolve<ISerializationManager>();
+
+            MappingDataNode attributes = new();
+            foreach (KeyValuePair<string, DreamValue> attribute in arguments.NamedArguments) {
+                DreamValue value = attribute.Value;
+
+                attributes.Add(attribute.Key, new DreamValueDataNode(value));
+            }
+
+            DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
+            if (filter == null)
+                throw new Exception($"Failed to create filter of type {filterType}");
+
+            DreamObject filterObject = DreamManager.ObjectTree.CreateObject(DreamPath.Filter);
+            DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
+            return new DreamValue(filterObject);
         }
 
         [DreamProc("findtext")]
@@ -627,6 +668,23 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(floatnum - MathF.Truncate(floatnum));
             }
             return new DreamValue(0);
+        }
+
+        [DreamProc("ftime")]
+        [DreamProcParameter("File", Type = DreamValueType.String)]
+        [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_ftime(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue file = arguments.GetArgument(0, "File");
+            DreamValue isCreationTime = arguments.GetArgument(1, "IsCreationTime");
+
+            if (file.TryGetValueAsString(out var rscPath)) {
+                var fi = new FileInfo(rscPath);
+                if (isCreationTime.IsTruthy()) {
+                    return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+                }
+                return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
+            }
+            throw new Exception("Invalid path argument");
         }
 
         [DreamProc("hascall")]
@@ -939,24 +997,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative) {
                     Dictionary<Object, Object?> jsonObject = new(list.GetLength());
-
                     foreach (DreamValue listValue in list.GetValues()) {
                         if (list.ContainsKey(listValue)) {
-                            jsonObject.Add(HttpUtility.JavaScriptStringEncode(listValue.Stringify()), // key
-                                           CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1)); // value
+                            var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
+                            var val = CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1);
+                            jsonObject[key] = val;
                         } else {
-                            jsonObject.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1), null); // list[x] = null
+                            var key = CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1);
+                            jsonObject[key] = null; // list[x] = null
                         }
                     }
-
                     return jsonObject;
+                } else {
+                    List<Object?> jsonArray = new();
+                    foreach (DreamValue listValue in list.GetValues()) {
+                        jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
+                    }
+                    return jsonArray;
                 }
-                List<Object?> jsonArray = new();
-                foreach (DreamValue listValue in list.GetValues()) {
-                    jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
-                }
-
-                return jsonArray;
             }
             if (value.Type == DreamValueType.DreamObject) {
                 if (value.Value == null) return null;
@@ -1967,16 +2025,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_time2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             bool hasTimezoneOffset = arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
 
-            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsInteger(out var timestamp)) {
+            if (!arguments.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
-                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsInteger(out timestamp);
+                DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
             }
 
             if (!arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
 
-            long ticks = timestamp * (TimeSpan.TicksPerSecond / 10);
+            long ticks = (long)(timestamp * TimeSpan.TicksPerSecond / 10);
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {

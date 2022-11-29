@@ -70,10 +70,17 @@ namespace DMCompiler.DM {
         private int _currentStackSize = 0;
         private bool _negativeStackSizeError = false;
 
-        private List<string> _localVariableNames = new();
+        private List<LocalVariableJson> _localVariableNames = new();
+        private int _localVariableIdCounter = 0;
         private int AllocLocalVariable(string name) {
-            _localVariableNames.Add(name);
-            return _localVariableNames.Count - 1;
+            _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
+            return _localVariableIdCounter++;
+        }
+        private void DeallocLocalVariables(int amount) {
+            if (amount > 0) {
+                _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Remove = amount });
+                _localVariableIdCounter -= amount;
+            }
         }
 
         public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
@@ -546,7 +553,8 @@ namespace DMCompiler.DM {
         }
 
         public void EndScope() {
-            _scopes.Pop();
+            DMProcScope destroyedScope = _scopes.Pop();
+            DeallocLocalVariables(destroyedScope.LocalVariables.Count);
         }
 
         public void Jump(string label) {

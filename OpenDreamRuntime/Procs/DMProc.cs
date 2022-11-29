@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Procs {
 
         public string? Source { get; }
         public int Line { get; }
-        public IReadOnlyList<string> LocalNames { get; }
+        public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
         public DMProc(DreamPath owningType, OpenDreamShared.Json.ProcDefinitionJson json, string? name = null)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
@@ -199,7 +199,7 @@ namespace OpenDreamRuntime.Procs {
             Instance = instance;
             Usr = usr;
             ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
-            _localVariables = _dreamValuePool.Rent(ArgumentCount + (proc.LocalNames?.Count ?? 0));
+            _localVariables = _dreamValuePool.Rent(256);
             CurrentSource = proc.Source;
             CurrentLine = proc.Line;
             WaitFor = _proc != null ? (_proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
@@ -603,13 +603,29 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public IEnumerable<(string, DreamValue)> DebugLocals() {
-            int i = 0, j = ArgumentCount;
-            if (_proc.LocalNames != null) {
-                while (i < _proc.LocalNames.Count) {
-                    yield return (_proc.LocalNames[i], _localVariables[j]);
-                    ++i;
-                    ++j;
+            if (_proc.LocalNames is null) {
+                yield break;
+            }
+
+            string[] names = new string[_localVariables.Length - ArgumentCount];
+            int count = 0;
+            foreach (var info in _proc.LocalNames) {
+                if (info.Offset > _pc) {
+                    break;
                 }
+                if (info.Remove is int remove) {
+                    count -= remove;
+                }
+                if (info.Add is string add) {
+                    names[count++] = add;
+                }
+            }
+
+            int i = 0, j = ArgumentCount;
+            while (i < count && j < _localVariables.Length) {
+                yield return (names[i], _localVariables[j]);
+                ++i;
+                ++j;
             }
             // _localVariables.Length is pool-allocated so its length may go up
             // to some round power of two or similar without anything actually

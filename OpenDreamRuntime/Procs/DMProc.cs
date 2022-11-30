@@ -526,7 +526,12 @@ namespace OpenDreamRuntime.Procs {
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
-                            return metaObject.OperatorIndex(indexing, index, this);
+                        {
+                            DreamThread newContext = this.Spawn(); //this might be a little cursed, please check in code review
+                            DMProcState newProcState = new(this, newContext);
+                            if(metaObject.OperatorIndex(indexing, index, newProcState)==ProcStatus.Called)
+                                return newProcState.Thread.Resume();
+                        }
                     }
 
                     throw new Exception($"Cannot get index {index} of {indexing}");

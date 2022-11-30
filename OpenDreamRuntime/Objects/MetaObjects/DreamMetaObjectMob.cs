@@ -61,7 +61,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
+        public ProcStatus OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
             if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out var mob))
                 throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Mob}");
             if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
@@ -69,6 +69,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
+            state.Push(DreamValue.Null);
+            return ProcStatus.Returned;
         }
     }
 }

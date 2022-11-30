@@ -98,25 +98,29 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public DreamValue OperatorIndex(DreamObject dreamObject, DreamValue index) {
+        public ProcStatus OperatorIndex(DreamObject dreamObject, DreamValue index, DMProcState state) {
             Savefile savefile = ObjectToSavefile[dreamObject];
 
             if (!index.TryGetValueAsString(out string? entryName)) throw new Exception($"Invalid savefile index {index}");
 
             if (savefile.CurrentDir.TryGetValue(entryName, out DreamValue entry)) {
-                return entry;
+                state.Push(entry);
+                return ProcStatus.Returned;
             } else {
-                return DreamValue.Null;
+                state.Push(DreamValue.Null);
+                return ProcStatus.Returned;
             }
         }
 
-        public void OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value) {
+        public ProcStatus OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value, DMProcState state) {
             Savefile savefile = ObjectToSavefile[dreamObject];
 
             if (!index.TryGetValueAsString(out string? entryName)) throw new Exception($"Invalid savefile index {index}");
 
             savefile.CurrentDir[entryName] = value;
             savefile.Flush(); //TODO: Don't flush after every change
+            state.Push(DreamValue.Null);
+            return ProcStatus.Returned;
         }
     }
 }

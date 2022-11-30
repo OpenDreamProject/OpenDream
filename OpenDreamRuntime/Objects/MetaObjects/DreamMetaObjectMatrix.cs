@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Dream;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectMatrix : IDreamMetaObject {
@@ -50,7 +51,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             yield return ret;
         }
 
-        public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
+        public ProcStatus OperatorMultiply(DreamValue a, DreamValue b, DMProcState state) {
             if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject left))
                 throw new ArgumentException($"Invalid matrix {a}");
 
@@ -70,7 +71,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 output.SetVariable("e", new(lE * bFloat));
                 output.SetVariable("f", new(lF * bFloat));
 
-                return new(output);
+                state.Push(new DreamValue(output));
+                return ProcStatus.Returned;
             } else if (b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject right)) {
                 right.GetVariable("a").TryGetValueAsFloat(out float rA);
                 right.GetVariable("b").TryGetValueAsFloat(out float rB);
@@ -87,27 +89,33 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 output.SetVariable("e", new(rB * lD + rE * lE));
                 output.SetVariable("f", new(rC * lD + rF * lE + lF));
 
-                return new(output);
+                state.Push(new DreamValue(output));
+                return ProcStatus.Returned;
             }
 
             if (ParentType == null)
                 throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
 
-            return ParentType.OperatorMultiply(a, b);
+            return ParentType.OperatorMultiply(a, b, state);
         }
 
-        public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
+        public ProcStatus OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
                 const string elements = "abcdef";
                 for (int i = 0; i < elements.Length; i++) {
                     left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
                     right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
                     if (leftValue != rightValue)
-                        return DreamValue.False;
+                    {
+                        state.Push(DreamValue.False);
+                        return ProcStatus.Returned;
+                    }
                 }
-                return DreamValue.True;
+                state.Push(DreamValue.True);
+                return ProcStatus.Returned;
             }
-            return DreamValue.False; // This will never be true, because reaching this line means b is not a matrix, while a will always be.
+            state.Push(DreamValue.False); // This will never be true, because reaching this line means b is not a matrix, while a will always be.
+            return ProcStatus.Returned;
         }
     }
 }

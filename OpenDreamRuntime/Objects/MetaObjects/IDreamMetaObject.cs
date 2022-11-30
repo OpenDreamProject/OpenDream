@@ -24,6 +24,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorOutput(a, b, state);
         }
 
+        //Each of these operator functions *must* either push a value onto the stack, push a proc call, or throw an error.
+        //If it pushes a proc call, it must return ProcStatus.Called, otherwise ProcStatus.Returned.
         public ProcStatus OperatorAdd(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+", out DreamProc overload))

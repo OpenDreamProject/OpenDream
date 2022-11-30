@@ -428,38 +428,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? ListAppend(DMProcState state) {
-            DreamValue value = state.Pop();
-            DreamValue list = state.Pop();
-            switch (list.Type) {
-                case DreamValue.DreamValueType.DreamObject: {
-                    list.TryGetValueAsDreamObject(out DreamObject? obj);
-                    IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                    if(metaObject != null)
-                        return metaObject?.OperatorAppend(list, value, state);
-                    else
-                        throw new InvalidOperationException($"ListAppend cannot be done between {list} and {value}");
-                }
-                default:
-                    throw new InvalidOperationException($"ListAppend cannot be done between {list} and {value}");
-            }
-        }
-
-        public static ProcStatus? ListAppendAssociated(DMProcState state) {
-            DreamValue index = state.Pop();
-            DreamValue value = state.Pop();
-            DreamList list = state.Pop().GetValueAsDreamList();
-
-            if (index.TryGetValueAsInteger(out var idx) && idx == list.GetLength() + 1)
-            {
-                list.Resize(list.GetLength() + 1);
-            }
-
-            list.SetValue(index, value);
-            state.Push(new DreamValue(list));
-            return null;
-        }
-
         public static ProcStatus? Pop(DMProcState state) {
             state.Pop();
             return null;
@@ -582,23 +550,24 @@ namespace OpenDreamRuntime.Procs {
                 output = second;
             } else switch (first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    float firstFloat = first.GetValueAsFloat();
-
-                    output = second.Type switch {
-                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat + second.GetValueAsFloat()),
-                        _ => null
-                    };
+                    if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
+                        output = new DreamValue(firstFloat + secondFloat);
                     break;
                 }
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    output = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                    if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
+                        output = new DreamValue(firstString + secondString);
                     break;
                 case DreamValue.DreamValueType.DreamObject: {
-                    IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
-
-                    output = metaObject?.OperatorAdd(first, second);
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorAdd(first, second, state);
+                    }
                     break;
                 }
+                default:
+                    throw new InvalidOperationException($"Addition cannot be done between {first} and {second}");
             }
 
             if (output != null) {
@@ -614,45 +583,46 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue? output = null;
 
-            DreamValue result;
-            if (first.TryGetValueAsDreamObject(out var firstObj)) {
-                if (firstObj != null) {
-                    IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
-
-                    if (metaObject != null) {
-                        state.PopReference(reference);
-                        state.Push(metaObject.OperatorAppend(first, second));
-
-                        return null;
-                    } else {
-                        throw new Exception("Invalid append operation on " + first + " and " + second);
-                    }
-                } else {
-                    result = second;
+            if (second.Value == null) {
+                output = first;
+            } else if (first.Value == null) {
+                output = second;
+            } else switch (first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
+                        output = new DreamValue(firstFloat + secondFloat);
+                    break;
                 }
-            } else if (second.Value != null) {
-                switch (first.Type) {
-                    case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                        result = new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat());
-                        break;
-                    case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                        result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
-                        break;
-                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
+                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                    if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
+                        output = new DreamValue(firstString + secondString);
+                    break;
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorAppend(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
                         // TODO icon += hexcolor is the same as Blend()
                         state.DreamManager.WriteWorldLog("Appending colors to DMIs is not implemented", LogLevel.Warning, "opendream.unimplemented");
-                        result = first;
+                        output = first;
                         break;
-                    default:
-                        throw new Exception("Invalid append operation on " + first + " and " + second);
-                }
-            } else {
-                result = first;
+                default:
+                    throw new InvalidOperationException($"Addition cannot be done between {first} and {second}");
             }
 
-            state.AssignReference(reference, result);
-            state.Push(result);
+            if (output != null) {
+                state.AssignReference(reference, output.Value);
+                state.Push(output.Value);
+            } else {
+                throw new Exception("Invalid add operation on " + first + " and " + second);
+            }
+
             return null;
         }
 
@@ -765,7 +735,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.Push(metaObject.OperatorOr(first, second));
+                        return metaObject.OperatorOr(first, second, state);
                     }
                     else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|", out DreamProc overload))
                     {
@@ -886,7 +856,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (metaObject != null) {
                         state.PopReference(reference);
-                        state.Push(metaObject.OperatorCombine(first, second));
+                        return metaObject.OperatorCombine(first, second, state);
 
                         return null;
                     } else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload))
@@ -950,7 +920,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (metaObject != null) {
                         state.PopReference(reference);
-                        state.Push(metaObject.OperatorMask(first, second));
+                        return metaObject.OperatorMask(first, second, state);
 
                         return null;
                     }
@@ -1078,7 +1048,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (metaObject != null) {
                         state.PopReference(reference);
-                        state.Push(metaObject.OperatorRemove(first, second));
+                        return metaObject.OperatorRemove(first, second, state);
 
                         return null;
                     } else {
@@ -1123,7 +1093,7 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        output = metaObject.OperatorSubtract(first, second);
+                        return metaObject.OperatorSubtract(first, second, state);
                     }
                     break;
                 }
@@ -1544,7 +1514,7 @@ namespace OpenDreamRuntime.Procs {
 
         #region Others
 
-        private static void PerformOutput(DreamValue a, DreamValue b) {
+        private static void PerformOutput(DreamValue a, DreamValue b, DMProcState state) {
             if (a == DreamValue.Null)
                 return;
 
@@ -1553,7 +1523,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (a.TryGetValueAsDreamObject(out var dreamObject)) {
                 IDreamMetaObject? metaObject = dreamObject!.ObjectDefinition?.MetaObject;
 
-                metaObject?.OperatorOutput(a, b);
+                metaObject?.OperatorOutput(a, b, state);
             } else {
                 throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
             }
@@ -1575,7 +1545,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            PerformOutput(state.GetReferenceValue(leftRef), right);
+            PerformOutput(state.GetReferenceValue(leftRef), right, state);
             return null;
         }
 
@@ -1583,7 +1553,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue right = state.Pop();
             DreamValue left = state.Pop();
 
-            PerformOutput(left, right);
+            PerformOutput(left, right, state);
             return null;
         }
 
@@ -1696,7 +1666,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (receiver == state.DreamManager.WorldInstance) {
                 //Same as "world << ..."
-                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message);
+                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message, state);
                 return null;
             }
 
@@ -2037,7 +2007,7 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
             if(first.TryGetValueAsDreamObject(out var firstObject)) {
                 if(firstObject?.ObjectDefinition?.MetaObject is not null) {
-                    return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second).IsTruthy();
+                    return true; //firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second, state).IsTruthy();
                 }
             }
             // Behaviour is otherwise equivalent (pun intended) to ==
@@ -2089,7 +2059,7 @@ namespace OpenDreamRuntime.Procs {
                 if (firstObject.ObjectDefinition.MetaObject == null)
                     throw new Exception("Invalid multiply operation on " + first + " and " + second);
 
-                return firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second);
+                return DreamValue.Null; //firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second, state);
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return new(first.GetValueAsFloat() * second.GetValueAsFloat());
             } else {

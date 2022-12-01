@@ -200,7 +200,6 @@ namespace DMCompiler {
         /// To be used when the compiler MUST ALWAYS give an error. <br/>
         /// Completely ignores the warning configuration. Use wisely!
         /// </summary>
-
         public static void ForcedError(string message) {
             ForcedError(Location.Internal, message);
         }
@@ -221,8 +220,7 @@ namespace DMCompiler {
         }
 
         /// <inheritdoc cref="ForcedWarning(string)"/>
-        public static void ForcedWarning(Location loc, string message)
-        {
+        public static void ForcedWarning(Location loc, string message) {
             Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message));
             WarningCount++;
         }
@@ -353,8 +351,7 @@ namespace DMCompiler {
         public string? PragmaFileOverride;
     }
 
-    class DMCompilerConfiguration
-    {
+    class DMCompilerConfiguration {
         public Dictionary<WarningCode, ErrorLevel> errorConfig;
         public DMCompilerConfiguration() {
             errorConfig = new(Enum.GetValues<WarningCode>().Length);

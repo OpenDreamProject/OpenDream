@@ -7,8 +7,7 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler {
 
-    struct Argument
-    {
+    struct Argument {
         /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
         public string? Name;
         /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
@@ -67,7 +66,6 @@ namespace DMCompiler {
         private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
             settings = new();
             settings.Files = new List<string>();
-
 
             bool skipBad = args.Contains("--skip-bad-args");
 

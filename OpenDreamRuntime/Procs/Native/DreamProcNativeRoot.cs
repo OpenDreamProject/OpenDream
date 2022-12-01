@@ -730,16 +730,15 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            DMIParser.ParsedDMIDescription dmiDescription;
             if (arg.TryGetValueAsDreamResource(out var resource)) {
-                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+                var dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+
+                return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
             } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
-                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+                return new DreamValue(DreamList.Create(DreamMetaObjectIcon.ObjectToDreamIcon[icon].States.Keys.ToArray()));
             } else {
                 throw new Exception($"Bad icon {arg}");
             }
-
-            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]

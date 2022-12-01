@@ -1,20 +1,20 @@
 ﻿using System.IO;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Network;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
-namespace OpenDreamRuntime.Resources
-{
-    public sealed class DreamResourceManager
-    {
+namespace OpenDreamRuntime.Resources {
+    public sealed class DreamResourceManager {
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         public string RootPath { get; private set; }
 
         private readonly Dictionary<string, DreamResource> _resourceCache = new();
+        private readonly Dictionary<DreamResource, Image<Rgba32>> _imageCache = new();
 
         // Terrible and temporary, see DreamManager
-        public void Initialize(string jsonPath)
-        {
+        public void Initialize() {
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
         }
@@ -42,18 +42,27 @@ namespace OpenDreamRuntime.Resources
             return resource;
         }
 
+        public Image<Rgba32> LoadImage(DreamResource resource) {
+            if (_imageCache.TryGetValue(resource, out var image))
+                return image;
+
+            image = Image.Load<Rgba32>(resource.ResourceData);
+            _imageCache.Add(resource, image);
+            return image;
+        }
+
         public void RxRequestResource(MsgRequestResource pRequestResource) {
             DreamResource resource = LoadResource(pRequestResource.ResourcePath);
 
             if (resource.ResourceData != null) {
                 var msg = new MsgResource() {
-                    ResourcePath = resource.ResourcePath,
-                    ResourceData = resource.ResourceData
+                    ResourcePath = resource.ResourcePath, ResourceData = resource.ResourceData
                 };
 
                 pRequestResource.MsgChannel.SendMessage(msg);
             } else {
-                Logger.WarningS("opendream.res", $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");
+                Logger.WarningS("opendream.res",
+                    $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");
             }
         }
 
@@ -99,8 +108,7 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public string[] EnumerateListing(string path)
-        {
+        public string[] EnumerateListing(string path) {
             string directory = Path.Combine(RootPath, Path.GetDirectoryName(path));
             string searchPattern = Path.GetFileName(path);
 
@@ -110,6 +118,7 @@ namespace OpenDreamRuntime.Resources
                 if (Directory.Exists(entries[i])) relPath += "/";
                 entries[i] = relPath;
             }
+
             return entries;
         }
     }

@@ -115,10 +115,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     pngMetadata.TextData.Add(pngTextData);
 
                     dmiImage.SaveAsPng(dmiImageStream);
-                }
 
-                // TODO: Overhaul the resource system so all the above can actually be used
-                return (null, new ParsedDMIDescription());
+                    DreamResource newResource = _resourceManager.CreateResource(dmiImageStream.GetBuffer());
+                    return (newResource, newDescription);
+                }
             }
 
             public void InsertStates(DreamResource resource, ParsedDMIDescription fromDescription, DreamValue state,
@@ -188,6 +188,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ObjectToDreamIcon.Remove(dreamObject);
 
             ParentType?.OnObjectDeleted(dreamObject);
+        }
+
+        public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+            ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
+
+            switch (varName) {
+                case "icon":
+                    // Setting the icon to anything other than a DreamResource will actually set it to null
+                    if (value.Type != DreamValue.DreamValueType.DreamResource) {
+                        dreamObject.SetVariableValue("icon", DreamValue.Null);
+                    }
+
+                    break;
+            }
         }
 
         public static (DreamResource Resource, ParsedDMIDescription Description) GetIconResourceAndDescription(

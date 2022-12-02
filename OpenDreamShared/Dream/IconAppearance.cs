@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
-        [ViewVariables] public string Icon;
+        [ViewVariables] public int? Icon;
         [ViewVariables] public string IconState;
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;

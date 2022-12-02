@@ -253,8 +253,8 @@ namespace OpenDreamClient.Rendering {
                 return;
             }
 
-            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon, dmi => {
-                if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
+            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
+                if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
                 _animationFrame = 0;
@@ -278,7 +278,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             Overlays.Sort(LayerSort);
-            Underlays.Sort(LayerSort);           
+            Underlays.Sort(LayerSort);
         }
 
         private void CheckSizeChange() {

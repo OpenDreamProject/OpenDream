@@ -93,7 +93,7 @@ namespace OpenDreamRuntime {
             IconAppearance appearance = new IconAppearance();
 
             if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.ResourcePath;
+                appearance.Icon = icon.Id;
             }
 
             if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
@@ -135,14 +135,14 @@ namespace OpenDreamRuntime {
             IconAppearance appearance = new IconAppearance();
 
             if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.ResourcePath;
+                appearance.Icon = icon.Id;
             }
 
-            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out string iconState)) {
+            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out var iconState)) {
                 appearance.IconState = iconState;
             }
 
-            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out string color)) {
+            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
                 appearance.SetColor(color);
             }
 

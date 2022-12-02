@@ -164,7 +164,7 @@ namespace OpenDreamRuntime {
             return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
         }
 
-        public bool TryGetValueAsDreamResource(out DreamResource value) {
+        public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
             if (Type == DreamValueType.DreamResource) {
                 value = (DreamResource)Value;
                 return true;

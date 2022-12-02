@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Network;
 using SixLabors.ImageSharp;
@@ -10,13 +11,23 @@ namespace OpenDreamRuntime.Resources {
 
         public string RootPath { get; private set; }
 
-        private readonly Dictionary<string, DreamResource> _resourceCache = new();
+        private readonly List<DreamResource> _resourceCache = new();
+        private readonly Dictionary<string, int> _resourcePathToId = new();
         private readonly Dictionary<DreamResource, Image<Rgba32>> _imageCache = new();
 
-        // Terrible and temporary, see DreamManager
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.res");
+
         public void Initialize() {
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
+
+            _resourceCache.Clear();
+            _resourcePathToId.Clear();
+            _imageCache.Clear();
+
+            // An empty resource path is the console
+            _resourceCache.Add(new ConsoleOutputResource());
+            _resourcePathToId.Add(String.Empty, 0);
         }
 
         public void SetDirectory(string directory) {
@@ -24,7 +35,7 @@ namespace OpenDreamRuntime.Resources {
             // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
-            Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");
+            _sawmill.Debug($"Resource root path set to {RootPath}");
         }
 
         public bool DoesFileExist(string resourcePath) {
@@ -32,14 +43,28 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public DreamResource LoadResource(string resourcePath) {
-            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
+            DreamResource resource;
 
-            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource? resource)) {
-                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
-                _resourceCache.Add(resourcePath, resource);
+            if (_resourcePathToId.TryGetValue(resourcePath, out int resourceId)) {
+                resource = _resourceCache[resourceId];
+            } else {
+                resourceId = _resourceCache.Count;
+                resource = new DreamResource(resourceId, Path.Combine(RootPath, resourcePath), resourcePath);
+                _resourceCache.Add(resource);
+                _resourcePathToId.Add(resourcePath, resourceId);
             }
 
             return resource;
+        }
+
+        public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
+            if (resourceId >= 0 && resourceId < _resourceCache.Count) {
+                resource = _resourceCache[resourceId];
+                return true;
+            }
+
+            resource = null;
+            return false;
         }
 
         public Image<Rgba32> LoadImage(DreamResource resource) {
@@ -51,18 +76,28 @@ namespace OpenDreamRuntime.Resources {
             return image;
         }
 
-        public void RxRequestResource(MsgRequestResource pRequestResource) {
-            DreamResource resource = LoadResource(pRequestResource.ResourcePath);
+        /// <summary>
+        /// Dynamically create a new resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public DreamResource CreateResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            DreamResource resource = new DreamResource(resourceId, data);
 
-            if (resource.ResourceData != null) {
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        public void RxRequestResource(MsgRequestResource pRequestResource) {
+            if (TryLoadResource(pRequestResource.ResourceId, out var resource)) {
                 var msg = new MsgResource() {
-                    ResourcePath = resource.ResourcePath, ResourceData = resource.ResourceData
+                    ResourceId = resource.Id, ResourceData = resource.ResourceData
                 };
 
                 pRequestResource.MsgChannel.SendMessage(msg);
             } else {
-                Logger.WarningS("opendream.res",
-                    $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");
+                _sawmill.Warning(
+                    $"User {pRequestResource.MsgChannel} requested resource with id '{pRequestResource.ResourceId}', which doesn't exist");
             }
         }
 

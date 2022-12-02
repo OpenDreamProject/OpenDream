@@ -53,7 +53,7 @@ namespace OpenDreamShared.Compiler {
     {
         //When this warning is emitted:
         Disabled, // Nothing happens.
-        Notice, // Nothing happens unless the user provides a '--wall' argument. (TODO)
+        Notice, // Nothing happens unless the user provides a '--wall' argument.
         Warning, // A warning is always emitted.
         Error // An error is always emitted.
     }

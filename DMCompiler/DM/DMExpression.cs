@@ -111,7 +111,7 @@ namespace DMCompiler.DM {
 
                     default:
                         if (key != null) {
-                            DMCompiler.Emit(WarningCode.InvalidArgumentKey, key.Location, $"Invalid argument key");
+                            DMCompiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
                         }
 
                         break;

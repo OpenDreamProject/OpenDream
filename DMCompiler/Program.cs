@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using OpenDreamShared.Compiler;
+using Robust.Shared.Utility;
 
 namespace DMCompiler {
 
@@ -34,7 +35,7 @@ namespace DMCompiler {
             List<Argument> retArgs = new(args.Length);
             for(var i = 0; i < args.Length;i+=1) {
                 string firstString = args[i];
-                if(firstString.Length == 0) // Is this possible? I don't even know
+                if(string.IsNullOrWhiteSpace(firstString)) // Is this possible? I don't even know. (IsNullOrWhiteSpace also checks if the string is empty, btw)
                     continue;
                 if(!firstString.StartsWith("--")) { // If it's a value-only argument
                     retArgs.Add(new Argument { Value = firstString });
@@ -77,12 +78,14 @@ namespace DMCompiler {
                     case "verbose": settings.Verbose = true; break;
                     case "skip-bad-args": break;
                     case "define":
-                        string[] parts = arg.Value.Split('=');
-                        if(parts.Length == 0) {
+                        string[] parts = arg.Value.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
+                        if (parts.Length == 0) {
                             Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                             return false;
                         }
-                        (settings.MacroDefines ??= new())[parts[0]] = parts.Length > 1 ? parts[1] : "";
+                        DebugTools.Assert(parts.Length <= 2);
+                        settings.MacroDefines ??= new();
+                        settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
                         break;
                     case "wall":
                     case "notices-enabled":

@@ -16,6 +16,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using DMCompiler.Compiler;
+using Robust.Shared.Utility;
 
 namespace DMCompiler {
     //TODO: Make this not a static class
@@ -336,6 +337,12 @@ namespace DMCompiler {
 
         public static void SetPragma(WarningCode code, ErrorLevel level) {
             Config.errorConfig[code] = level;
+        }
+
+        public static ErrorLevel CodeToLevel(WarningCode code) {
+            bool didFind = Config.errorConfig.TryGetValue(code, out var ret);
+            DebugTools.Assert(didFind);
+            return ret;
         }
     }
 

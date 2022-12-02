@@ -4,6 +4,7 @@ using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMVisitorExpression : DMASTVisitor {
@@ -630,7 +631,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTCallParameter parameter = input.Parameters[i];
 
                 if (parameter.Key != null) {
-                    DMCompiler.Emit(WarningCode.TooManyArguments, parameter.Location, "input() does not take named arguments");
+                    DMCompiler.Emit(WarningCode.BadArgument, parameter.Location, "input() does not take named arguments");
                 }
 
                 arguments[i] = DMExpression.Create(_dmObject, _proc, parameter.Value);
@@ -695,24 +696,23 @@ namespace DMCompiler.DM.Visitors {
             var procArgs = new ArgumentList(call.Location, _dmObject, _proc, call.ProcParameters, _inferredPath);
 
             switch (call.CallParameters.Length) {
-                case 0:
-                    DMCompiler.Emit(WarningCode.BadArgument, call.Location, "Not enough arguments for call()");
-                    break;
-                case 1:
-                    {
-                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(call.Location, a, procArgs);
-                    }
-                    break;
-                case 2:
-                    {
-                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
-                        var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(call.Location, a, b, procArgs);
-                    }
-                    break;
                 default:
                     DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
+                    DebugTools.Assert(call.CallParameters.Length > 2); // This feels paranoid but, whatever
+                    goto case 2; // Fallthrough!
+                case 2: {
+                    var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
+                    var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value, _inferredPath);
+                    Result = new Expressions.CallStatement(call.Location, a, b, procArgs);
+                    break;
+                }
+                case 1: {
+                    var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
+                    Result = new Expressions.CallStatement(call.Location, a, procArgs);
+                    break;
+                }
+                case 0:
+                    DMCompiler.Emit(WarningCode.BadArgument, call.Location, "Not enough arguments for call()");
                     break;
             }
         }

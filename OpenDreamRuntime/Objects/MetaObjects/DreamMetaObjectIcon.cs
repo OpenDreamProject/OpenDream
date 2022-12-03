@@ -41,19 +41,33 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 /// <summary>
                 /// The total directions present in an exported DMI.<br/>
-                /// An icon state in a DMI can only contain either 1, 4, or 8 directions.
+                /// An icon state in a DMI must contain either 1, 4, or 8 directions.
                 /// </summary>
                 public int ExportedDirectionCount {
                     get {
-                        // TODO: Should also verify the existing directions fit
-                        // For example, having only a NORTH direction should export 4 directions
-                        // Right now it just wouldn't be exported at all because only SOUTH would attempt to be exported
+                        // If we have any of these directions then we export 8 directions
+                        foreach (var direction in Directions.Keys) {
+                            switch (direction) {
+                                case AtomDirection.Northeast:
+                                case AtomDirection.Southeast:
+                                case AtomDirection.Southwest:
+                                case AtomDirection.Northwest:
+                                    return 8;
+                            }
+                        }
 
-                        if (Directions.Count is 0 or 1)
-                            return 1;
-                        if (Directions.Count <= 4)
-                            return 4;
-                        return 8;
+                        // Any of these means 4 directions
+                        foreach (var direction in Directions.Keys) {
+                            switch (direction) {
+                                case AtomDirection.North:
+                                case AtomDirection.East:
+                                case AtomDirection.West:
+                                    return 4;
+                            }
+                        }
+
+                        // Otherwise, 1 direction
+                        return 1;
                     }
                 }
             }

@@ -11,8 +11,7 @@ using ParsedDMIState = OpenDreamShared.Resources.DMIParser.ParsedDMIState;
 using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectIcon : IDreamMetaObject
-    {
+    sealed class DreamMetaObjectIcon : IDreamMetaObject {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
@@ -31,24 +30,33 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             private readonly DreamResourceManager _resourceManager;
 
             private int _frameCount = 0;
+            private (DreamResource, ParsedDMIDescription)? _cachedDMI;
 
             /// <summary>
-            /// Represents one of the icon states this icon is made of.
+            /// Represents one of the icon states an icon is made of.<br/>
+            /// </summary>
+            public class IconState {
+                public int Frames = 0;
+                public Dictionary<AtomDirection, List<IconFrame>> Directions = new();
+            }
+
+            /// <summary>
+            /// Represents one of the icon frames an icon is made of.<br/>
             /// Contains everything needed to create a new DMI in <see cref="DreamIconObject.GenerateDMI()"/>
             /// </summary>
-            public struct IconState {
+            public struct IconFrame {
                 /// <summary>
-                /// The image this icon state originally comes from
+                /// The image this icon frame originally comes from
                 /// </summary>
                 public Image<Rgba32> Image;
 
                 /// <summary>
-                /// The DMI information about this icon state
+                /// The DMI information about this icon frame
                 /// </summary>
-                public ParsedDMIState DMIState;
+                public ParsedDMIFrame DMIFrame;
 
                 /// <summary>
-                /// The size of the original icon state
+                /// The size of the original icon frame
                 /// </summary>
                 public int Width, Height;
             }
@@ -64,46 +72,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             /// <returns>The DreamResource containing the DMI and the ParsedDMIDescription used to construct it</returns>
             /// <exception cref="NotImplementedException">Using icon states of various sizes is unimplemented</exception>
             public (DreamResource, ParsedDMIDescription) GenerateDMI() {
+                if (_cachedDMI != null)
+                    return _cachedDMI.Value;
+
                 Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
                 int frameWidth = Width, frameHeight = Height;
                 int span = frameWidth * _frameCount;
                 Rgba32[] pixels = new Rgba32[span * frameHeight];
 
                 int currentFrame = 0;
-                foreach (var iconState in States.Values) {
-                    ParsedDMIState state = iconState.DMIState;
-                    ParsedDMIState newState = new() { Name = state.Name, Loop = state.Loop, Rewind = state.Rewind };
+                foreach (var iconStatePair in States) {
+                    var iconState = iconStatePair.Value;
+                    ParsedDMIState newState = new() { Name = iconStatePair.Key, Loop = false, Rewind = false };
 
                     dmiStates.Add(newState.Name, newState);
 
-                    if (iconState.Width != frameWidth || iconState.Height != frameHeight)
-                        throw new NotImplementedException("Icon scaling is not implemented");
+                    foreach (var directionPair in iconState.Directions) {
+                        var newFrames = DrawFrames(pixels, currentFrame * frameWidth, directionPair.Value);
 
-                    iconState.Image.ProcessPixelRows(accessor => {
-                        foreach (var stateDir in state.Directions) {
-                            ParsedDMIFrame[] newFrames = new ParsedDMIFrame[stateDir.Value.Length];
-
-                            for (int frameIndex = 0; frameIndex < stateDir.Value.Length; frameIndex++) {
-                                ParsedDMIFrame frame = stateDir.Value[frameIndex];
-                                int x = currentFrame * frameWidth;
-
-                                for (int y = 0; y < frameHeight; y++) {
-                                    var rowSpan = accessor.GetRowSpan(frame.Y + y);
-
-                                    for (int frameX = 0; frameX < frameWidth; frameX++) {
-                                        int pixelLocation = (y * span) + x + frameX;
-
-                                        pixels[pixelLocation] = rowSpan[frame.X + frameX];
-                                    }
-                                }
-
-                                newFrames[frameIndex] = new ParsedDMIFrame { X = x, Y = 0, Delay = frame.Delay};
-                                currentFrame++;
-                            }
-
-                            newState.Directions.Add(stateDir.Key, newFrames);
-                        }
-                    });
+                        currentFrame += newFrames.Length;
+                        newState.Directions.Add(directionPair.Key, newFrames);
+                    }
                 }
 
                 Image<Rgba32> dmiImage = Image.LoadPixelData(pixels, span, frameHeight);
@@ -117,7 +106,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     dmiImage.SaveAsPng(dmiImageStream);
 
                     DreamResource newResource = _resourceManager.CreateResource(dmiImageStream.GetBuffer());
-                    return (newResource, newDescription);
+                    _cachedDMI = (newResource, newDescription);
+                    return _cachedDMI.Value;
                 }
             }
 
@@ -141,29 +131,77 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 if (copyingAllStates) {
                     foreach (var copyStateName in fromDescription.States.Keys) {
-                        InsertState(image, fromDescription, copyStateName,
+                        InsertState(image, fromDescription, copyStateName, copyStateName,
                             copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
                     }
                 } else {
-                    InsertState(image, fromDescription, copyingState!,
+                    InsertState(image, fromDescription, String.Empty, copyingState!,
                         copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
                 }
             }
 
-            private void InsertState(Image<Rgba32> image, ParsedDMIDescription description, string stateName, AtomDirection? dir = null, int? frame = null) {
-                ParsedDMIState state = description.States[stateName];
+            private void InsertState(Image<Rgba32> image, ParsedDMIDescription description, string stateName, string copyingState, AtomDirection? dir = null, int? frame = null) {
+                ParsedDMIState inserting = description.States[copyingState];
+                Dictionary<AtomDirection, ParsedDMIFrame[]> insertingDirections = inserting.GetFrames(dir, frame - 1);
 
-                // Only create a copy if we're using a specific dir or frame
-                if (dir != null || frame != null)
-                    state = state.Copy(dir, frame - 1);
+                if (!States.TryGetValue(stateName, out var iconState)) {
+                    iconState = new IconState();
+                    States.Add(stateName, iconState);
+                }
 
-                _frameCount += state.FrameCount;
-                States.Add(stateName, new IconState {
-                    Image = image,
-                    DMIState = state,
-                    Width = description.Width,
-                    Height = description.Height
-                });
+                _frameCount -= iconState.Frames * iconState.Directions.Count;
+
+                foreach (var insertingPair in insertingDirections) {
+                    List<IconFrame> iconFrames = new(insertingPair.Value.Length);
+
+                    foreach (var dmiFrame in insertingPair.Value) {
+                        iconFrames.Add(new IconFrame {
+                            Image = image,
+                            DMIFrame = dmiFrame,
+                            Width = description.Width, Height = description.Height
+                        });
+                    }
+
+                    iconState.Directions[insertingPair.Key] = iconFrames;
+                    iconState.Frames = Math.Max(iconState.Frames, iconFrames.Count);
+                }
+
+                _frameCount += iconState.Frames * iconState.Directions.Count;
+                _cachedDMI = null;
+            }
+
+            private ParsedDMIFrame[] DrawFrames(Rgba32[] pixels, int x, List<IconFrame> frames) {
+                ParsedDMIFrame[] newFrames = new ParsedDMIFrame[frames.Count];
+
+                for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++) {
+                    var frame = frames[frameIndex];
+
+                    newFrames[frameIndex] = new ParsedDMIFrame {X = x, Y = 0, Delay = frame.DMIFrame.Delay};
+                    if (frameIndex > frames.Count)
+                        continue; // Empty frame
+
+                    if (frame.Width != Width || frame.Height != Height)
+                        throw new NotImplementedException("Icon scaling is not implemented");
+
+                    // Copy the frame from the original image to the new one
+                    frame.Image.ProcessPixelRows(accessor => {
+                        ParsedDMIFrame dmiFrame = frame.DMIFrame;
+
+                        for (int y = 0; y < Height; y++) {
+                            var rowSpan = accessor.GetRowSpan(dmiFrame.Y + y);
+
+                            for (int frameX = 0; frameX < Width; frameX++) {
+                                int pixelLocation = (y * Width * _frameCount) + x + frameX;
+
+                                pixels[pixelLocation] = rowSpan[dmiFrame.X + frameX];
+                            }
+                        }
+                    });
+
+                    x += Width;
+                }
+
+                return newFrames;
             }
         }
 

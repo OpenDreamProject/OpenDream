@@ -69,15 +69,14 @@ namespace OpenDreamShared.Resources {
             public bool Rewind = false;
 
             /// <summary>
-            /// The total amount of frames in this icon state
+            /// The amount of animation frames this state has
             /// </summary>
             public int FrameCount {
                 get {
                     if (Directions.Count == 0)
                         return 0;
 
-                    // Every direction should have the same amount of frames
-                    return Directions.Values.First().Length * Directions.Count;
+                    return Directions.Values.First().Length;
                 }
             }
 
@@ -110,22 +109,22 @@ namespace OpenDreamShared.Resources {
             }
 
             /// <summary>
-            /// Create a copy of this ParsedDMIState
+            /// Get this state's frames
             /// </summary>
-            /// <param name="dir">Which direction to copy. Every direction if null.</param>
-            /// <param name="frame">Which frame to copy. Every frame if null.</param>
-            /// <returns>A copy of this state with the specified directions and frames</returns>
-            public ParsedDMIState Copy(AtomDirection? dir = null, int? frame = null) {
+            /// <param name="dir">Which direction to get. Every direction if null.</param>
+            /// <param name="frame">Which frame to get. Every frame if null.</param>
+            /// <returns>A dictionary containing the specified frames for each specified direction</returns>
+            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null) {
                 Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
-                if (dir == null) { // Copy every direction
+                if (dir == null) { // Get every direction
                     directions = new(Directions);
                 } else {
-                    directions = new();
+                    directions = new(1);
 
-                    // This will intentionally create an empty state if the dir doesn't exist
-                    if (Directions.TryGetValue(dir.Value, out var frames)) {
-                        directions.Add(AtomDirection.South, frames);
-                    }
+                    if (!Directions.TryGetValue(dir.Value, out var frames))
+                        frames = Array.Empty<ParsedDMIFrame>();
+
+                    directions.Add(dir.Value, frames);
                 }
 
                 if (frame != null) { // Only copy a specified frame
@@ -137,9 +136,7 @@ namespace OpenDreamShared.Resources {
                     }
                 }
 
-                return new ParsedDMIState {
-                    Name = String.Empty, Directions = directions, Loop = Loop, Rewind = Rewind
-                };
+                return directions;
             }
         }
 

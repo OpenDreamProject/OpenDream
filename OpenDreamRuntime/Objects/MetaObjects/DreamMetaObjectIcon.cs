@@ -24,20 +24,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public static readonly Dictionary<DreamObject, DreamIconObject> ObjectToDreamIcon = new();
 
         public sealed class DreamIconObject {
-            public int Width = 0, Height = 0;
+            public int Width, Height;
             public readonly Dictionary<string, IconState> States = new();
 
             private readonly DreamResourceManager _resourceManager;
 
-            private int _frameCount = 0;
+            private int _frameCount;
             private (DreamResource, ParsedDMIDescription)? _cachedDMI;
 
             /// <summary>
             /// Represents one of the icon states an icon is made of.
             /// </summary>
-            public class IconState {
-                public int Frames = 0;
-                public Dictionary<AtomDirection, List<IconFrame>> Directions = new();
+            public sealed class IconState {
+                public int Frames;
+                public readonly Dictionary<AtomDirection, List<IconFrame>> Directions = new();
 
                 /// <summary>
                 /// The total directions present in an exported DMI.<br/>
@@ -49,7 +49,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         // For example, having only a NORTH direction should export 4 directions
                         // Right now it just wouldn't be exported at all because only SOUTH would attempt to be exported
 
-                        if (Directions.Count == 1)
+                        if (Directions.Count is 0 or 1)
                             return 1;
                         if (Directions.Count <= 4)
                             return 4;
@@ -93,9 +93,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 if (_cachedDMI != null)
                     return _cachedDMI.Value;
 
-                Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
                 int frameWidth = Width, frameHeight = Height;
-                int span = frameWidth * _frameCount;
+                if (_frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
+                    frameWidth = 32;
+                    frameHeight = 32;
+                }
+
+                Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
+                int span = frameWidth * Math.Max(_frameCount, 1);
                 Rgba32[] pixels = new Rgba32[span * frameHeight];
 
                 int currentFrame = 0;
@@ -120,7 +125,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
 
                 Image<Rgba32> dmiImage = Image.LoadPixelData(pixels, span, frameHeight);
-                ParsedDMIDescription newDescription = new() {Width = Width, Height = Height, States = dmiStates};
+                ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight, States = dmiStates};
 
                 using (MemoryStream dmiImageStream = new MemoryStream()) {
                     var pngTextData = new PngTextData("Description", newDescription.ExportAsText(), null, null);
@@ -239,12 +244,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             DreamValue frame = creationArguments.GetArgument(3, "frame");
             DreamValue moving = creationArguments.GetArgument(4, "moving");
 
-            // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
-            var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
-
             DreamIconObject dreamIconObject = new(_rscMan);
-            dreamIconObject.InsertStates(iconRsc, iconDescription, state, dir, frame);
             ObjectToDreamIcon.Add(dreamObject, dreamIconObject);
+
+            if (icon != DreamValue.Null) {
+                // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
+                var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
+
+                dreamIconObject.InsertStates(iconRsc, iconDescription, state, dir, frame);
+            }
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
@@ -275,7 +283,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return dreamIconObject.GenerateDMI();
             }
 
-            DreamResource iconRsc;
+            DreamResource? iconRsc;
 
             if (value.TryGetValueAsString(out var fileString)) {
                 var ext = Path.GetExtension(fileString);

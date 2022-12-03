@@ -237,11 +237,11 @@ namespace OpenDreamShared.Resources {
                 if (line.StartsWith('#') || string.IsNullOrWhiteSpace(line))
                     continue;
 
-                string[] split = line.Split('=');
+                int equalsIndex = line.IndexOf('=');
 
-                if (split.Length == 2) {
-                    string key = split[0].Trim();
-                    string value = split[1].Trim();
+                if (equalsIndex != -1) {
+                    string key = line.Substring(0, equalsIndex-1).Trim();
+                    string value = line.Substring(equalsIndex + 1).Trim();
 
                     switch (key) {
                         case "version":

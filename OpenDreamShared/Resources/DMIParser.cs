@@ -11,8 +11,7 @@ using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
-        private static readonly AtomDirection[] DMIFrameDirections = {
+        public static readonly AtomDirection[] DMIFrameDirections = {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -22,6 +21,8 @@ namespace OpenDreamShared.Resources {
             AtomDirection.Northeast,
             AtomDirection.Northwest
         };
+
+        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
 
         public sealed class ParsedDMIDescription {
             public int Width, Height;
@@ -134,7 +135,8 @@ namespace OpenDreamShared.Resources {
                     if (!Directions.TryGetValue(dir.Value, out var frames))
                         frames = Array.Empty<ParsedDMIFrame>();
 
-                    directions.Add(dir.Value, frames);
+                    // Getting only one direction will give it to you with AtomDirection.South
+                    directions.Add(AtomDirection.South, frames);
                 }
 
                 if (frame != null) { // Only copy a specified frame

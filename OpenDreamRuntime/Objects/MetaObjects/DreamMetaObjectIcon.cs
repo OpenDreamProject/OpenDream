@@ -38,6 +38,24 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             public class IconState {
                 public int Frames = 0;
                 public Dictionary<AtomDirection, List<IconFrame>> Directions = new();
+
+                /// <summary>
+                /// The total directions present in an exported DMI.<br/>
+                /// An icon state in a DMI can only contain either 1, 4, or 8 directions.
+                /// </summary>
+                public int ExportedDirectionCount {
+                    get {
+                        // TODO: Should also verify the existing directions fit
+                        // For example, having only a NORTH direction should export 4 directions
+                        // Right now it just wouldn't be exported at all because only SOUTH would attempt to be exported
+
+                        if (Directions.Count == 1)
+                            return 1;
+                        if (Directions.Count <= 4)
+                            return 4;
+                        return 8;
+                    }
+                }
             }
 
             /// <summary>
@@ -87,11 +105,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     dmiStates.Add(newState.Name, newState);
 
-                    foreach (var directionPair in iconState.Directions) {
-                        var newFrames = DrawFrames(pixels, currentFrame * frameWidth, directionPair.Value);
+                    int exportedDirectionCount = iconState.ExportedDirectionCount;
+                    for (int directionIndex = 0; directionIndex < exportedDirectionCount; directionIndex++) {
+                        AtomDirection direction = DMIParser.DMIFrameDirections[directionIndex];
+                        int x = currentFrame * frameWidth;
 
-                        currentFrame += newFrames.Length;
-                        newState.Directions.Add(directionPair.Key, newFrames);
+                        currentFrame += iconState.Frames;
+                        if (!iconState.Directions.TryGetValue(direction, out var frames))
+                            continue; // Blank frames
+
+                        var newFrames = DrawFrames(pixels, x, frames);
+                        newState.Directions.Add(direction, newFrames);
                     }
                 }
 
@@ -149,7 +173,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     States.Add(stateName, iconState);
                 }
 
-                _frameCount -= iconState.Frames * iconState.Directions.Count;
+                _frameCount -= iconState.Frames * iconState.ExportedDirectionCount;
 
                 foreach (var insertingPair in insertingDirections) {
                     List<IconFrame> iconFrames = new(insertingPair.Value.Length);
@@ -166,7 +190,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     iconState.Frames = Math.Max(iconState.Frames, iconFrames.Count);
                 }
 
-                _frameCount += iconState.Frames * iconState.Directions.Count;
+                _frameCount += iconState.Frames * iconState.ExportedDirectionCount;
                 _cachedDMI = null;
             }
 
@@ -215,6 +239,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             DreamValue frame = creationArguments.GetArgument(3, "frame");
             DreamValue moving = creationArguments.GetArgument(4, "moving");
 
+            // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
             var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
 
             DreamIconObject dreamIconObject = new(_rscMan);

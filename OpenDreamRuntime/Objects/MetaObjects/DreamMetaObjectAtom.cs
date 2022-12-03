@@ -236,10 +236,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     ? colorString
                     : "#FFFFFF"; // Defaults to white
                 appearance.SetColor(color);
-                appearance.Direction = (AtomDirection)image.GetVariable("dir").GetValueAsInteger();
+                appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
+            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                var iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[icon];
+                var (resource, dmiDescription) = iconObj.GenerateDMI();
+
+                atom.GetVariable("icon_state").TryGetValueAsString(out var iconState);
+
+                appearance.Icon = resource.Id;
+                appearance.IconState = dmiDescription.GetStateOrDefault(iconState)?.Name;
             } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out var overlayAtom)) {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
             } else if (value.TryGetValueAsPath(out DreamPath path)) {

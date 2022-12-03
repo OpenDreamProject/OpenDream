@@ -33,7 +33,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             private (DreamResource, ParsedDMIDescription)? _cachedDMI;
 
             /// <summary>
-            /// Represents one of the icon states an icon is made of.<br/>
+            /// Represents one of the icon states an icon is made of.
             /// </summary>
             public class IconState {
                 public int Frames = 0;
@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             /// <remarks>The resulting DMI will consist of one long flat row of frames</remarks>
             /// <returns>The DreamResource containing the DMI and the ParsedDMIDescription used to construct it</returns>
             /// <exception cref="NotImplementedException">Using icon states of various sizes is unimplemented</exception>
-            public (DreamResource, ParsedDMIDescription) GenerateDMI() {
+            public (DreamResource Resource, ParsedDMIDescription Description) GenerateDMI() {
                 if (_cachedDMI != null)
                     return _cachedDMI.Value;
 

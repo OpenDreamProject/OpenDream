@@ -195,7 +195,7 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void UpdateAnimation() {
-            DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
+            DMIParser.ParsedDMIState dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
             if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;

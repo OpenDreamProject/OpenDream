@@ -235,7 +235,7 @@ namespace OpenDreamRuntime
                     msg.ResourceId = soundResource?.Id;
                     if (soundResource?.ResourcePath is { } resourcePath) {
                         if (resourcePath.EndsWith(".ogg"))
-                            msg.Format = MsgSound.FormatType.Wav;
+                            msg.Format = MsgSound.FormatType.Ogg;
                         else if (resourcePath.EndsWith(".wav"))
                             msg.Format = MsgSound.FormatType.Wav;
                         else

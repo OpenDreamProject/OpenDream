@@ -139,7 +139,7 @@ namespace OpenDreamShared.Resources {
                     directions.Add(AtomDirection.South, frames);
                 }
 
-                if (frame != null) { // Only copy a specified frame
+                if (frame != null) { // Only get a specified frame
                     foreach (var direction in directions) {
                         ParsedDMIFrame[] newFrames = new ParsedDMIFrame[1];
 

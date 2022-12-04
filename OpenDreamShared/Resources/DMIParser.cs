@@ -7,11 +7,11 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
-        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
-        private static readonly AtomDirection[] DMIFrameDirections = new AtomDirection[] {
+        public static readonly AtomDirection[] DMIFrameDirections = {
             AtomDirection.South,
             AtomDirection.North,
             AtomDirection.East,
@@ -22,95 +22,54 @@ namespace OpenDreamShared.Resources {
             AtomDirection.Northwest
         };
 
+        private static readonly byte[] PngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+
         public sealed class ParsedDMIDescription {
-            public string Source;
-            public float Version;
             public int Width, Height;
             public Dictionary<string, ParsedDMIState> States;
 
-            public static ParsedDMIDescription CreateEmpty(int width, int height) {
-                ParsedDMIFrame[] frames = { new() };
-                ParsedDMIState state = new();
-                state.Directions.Add(AtomDirection.South, frames);
-
-                return new ParsedDMIDescription() {
-                    Source = null,
-                    Version = 4f,
-                    Width = width,
-                    Height = height,
-                    States = new() {
-                        { "", state }
-                    }
-                };
-            }
-
-            private static ParsedDMIDescription CloneDescription(ParsedDMIDescription original)
-            {
-                Dictionary<string, ParsedDMIState> stateCopy = new(original.States.Count);
-                foreach (var key in original.States.Keys)
-                {
-                    stateCopy.Add(key, original.States[key]);
+            /// <summary>
+            /// Gets the requested state, or the default if it doesn't exist
+            /// </summary>
+            /// <remarks>The default state could also not exist</remarks>
+            /// <param name="stateName">The requested state's name</param>
+            /// <returns>The requested state, default state, or null</returns>
+            [CanBeNull]
+            public ParsedDMIState GetStateOrDefault(string stateName) {
+                if (!States.TryGetValue(stateName, out var state)) {
+                    States.TryGetValue(String.Empty, out state);
                 }
-
-                return new ParsedDMIDescription() {
-                    Source = original.Source,
-                    Version = original.Version,
-                    Width = original.Width,
-                    Height = original.Height,
-                    States = stateCopy
-                };
-            }
-
-            public void InsertIcon(ParsedDMIDescription original_icon, string icon_state, AtomDirection? dir, int? frame, float? delay)
-            {
-                var icon = CloneDescription(original_icon);
-                IEnumerable<ParsedDMIState> states;
-                if (icon_state is null) {
-                    states = icon.States.Values;
-                } else {
-                    states = new ParsedDMIState[] { icon.States[icon_state] };
-                }
-
-                foreach (var state in states)
-                {
-                    if (dir is not null)
-                    {
-                        var goodDir = state.Directions[dir.Value];
-                        state.Directions.Clear();
-                        state.Directions = new Dictionary<AtomDirection, ParsedDMIFrame[]>(1) { { dir.Value, goodDir } };
-                    }
-
-                    if (frame is not null)
-                    {
-                        // TODO Ref says it must start at 1, need to check behavior for when it's less. Manually validate it for now.
-                        var goodFrame = Math.Max(frame.Value, 1);
-                        foreach (var (direction, frames) in state.Directions)
-                        {
-                            state.Directions[direction] = new ParsedDMIFrame[1] { frames[goodFrame] };
-                            if (delay is not null or 0) {
-                                state.Rewind = delay < 0;
-                                frames[goodFrame].Delay = Math.Abs(delay.Value);
-                            }
-                        }
-                    }
-                }
-
-                // All of that above was just to adjust the inserted icon to match the args. Now we can actually insert it.
-
-                foreach (var state in states)
-                {
-                    States[state.Name] = state;
-                }
-            }
-
-            public bool HasState(string stateName = null) {
-                return States.ContainsKey(stateName ?? "");
-            }
-
-            public ParsedDMIState GetState(string stateName = null) {
-                States.TryGetValue(stateName ?? "", out var state);
 
                 return state;
+            }
+
+            /// <summary>
+            /// Construct a string describing this DMI description<br/>
+            /// In the same format as the text found in .dmi files
+            /// </summary>
+            /// <returns>This ParsedDMIDescription represented as text</returns>
+            public string ExportAsText() {
+                StringBuilder text = new();
+
+                text.AppendLine("# BEGIN DMI");
+
+                // This could either end up compressed or decompressed depending on how large this text ends up being.
+                // So go with version 3.0, BYOND doesn't seem to care either way
+                text.AppendLine("version = 3.0");
+                text.Append("\twidth = ");
+                text.Append(Width);
+                text.AppendLine();
+                text.Append("\theight = ");
+                text.Append(Height);
+                text.AppendLine();
+
+                foreach (var state in States.Values) {
+                    state.ExportAsText(text);
+                }
+
+                text.Append("# END DMI");
+
+                return text.ToString();
             }
         }
 
@@ -120,10 +79,76 @@ namespace OpenDreamShared.Resources {
             public bool Loop = true;
             public bool Rewind = false;
 
+            /// <summary>
+            /// The amount of animation frames this state has
+            /// </summary>
+            public int FrameCount {
+                get {
+                    if (Directions.Count == 0)
+                        return 0;
+
+                    return Directions.Values.First().Length;
+                }
+            }
+
             public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
                 if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();
 
                 return Directions[direction];
+            }
+
+            public void ExportAsText(StringBuilder text) {
+                text.Append("state = \"");
+                text.Append(Name);
+                text.AppendLine("\"");
+
+                text.Append("\tdirs = ");
+                text.Append(Directions.Count);
+                text.AppendLine();
+
+                text.Append("\tframes = ");
+                text.Append(FrameCount);
+                text.AppendLine();
+
+                if (!Loop) {
+                    text.AppendLine("\tloop = 0");
+                }
+
+                if (Rewind) {
+                    text.AppendLine("\trewind = 1");
+                }
+            }
+
+            /// <summary>
+            /// Get this state's frames
+            /// </summary>
+            /// <param name="dir">Which direction to get. Every direction if null.</param>
+            /// <param name="frame">Which frame to get. Every frame if null.</param>
+            /// <returns>A dictionary containing the specified frames for each specified direction</returns>
+            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null) {
+                Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
+                if (dir == null) { // Get every direction
+                    directions = new(Directions);
+                } else {
+                    directions = new(1);
+
+                    if (!Directions.TryGetValue(dir.Value, out var frames))
+                        frames = Array.Empty<ParsedDMIFrame>();
+
+                    // Getting only one direction will give it to you with AtomDirection.South
+                    directions.Add(AtomDirection.South, frames);
+                }
+
+                if (frame != null) { // Only get a specified frame
+                    foreach (var direction in directions) {
+                        ParsedDMIFrame[] newFrames = new ParsedDMIFrame[1];
+
+                        newFrames[0] = direction.Value[frame.Value];
+                        directions[direction.Key] = newFrames;
+                    }
+                }
+
+                return directions;
             }
         }
 
@@ -207,22 +232,20 @@ namespace OpenDreamShared.Resources {
 
             description.States = new Dictionary<string, ParsedDMIState>();
 
-            description.Source = dmiDescription;
-
             string[] lines = dmiDescription.Split("\n");
             foreach (string line in lines) {
                 if (line.StartsWith('#') || string.IsNullOrWhiteSpace(line))
                     continue;
 
-                string[] split = line.Split('=');
+                int equalsIndex = line.IndexOf('=');
 
-                if (split.Length == 2) {
-                    string key = split[0].Trim();
-                    string value = split[1].Trim();
+                if (equalsIndex != -1) {
+                    string key = line.Substring(0, equalsIndex-1).Trim();
+                    string value = line.Substring(equalsIndex + 1).Trim();
 
                     switch (key) {
                         case "version":
-                            description.Version = float.Parse(value, CultureInfo.InvariantCulture);
+                            // No need to care about this at the moment
                             break;
                         case "width":
                             description.Width = int.Parse(value);

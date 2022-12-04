@@ -164,7 +164,7 @@ namespace OpenDreamRuntime {
             return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
         }
 
-        public bool TryGetValueAsDreamResource(out DreamResource value) {
+        public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
             if (Type == DreamValueType.DreamResource) {
                 value = (DreamResource)Value;
                 return true;
@@ -334,10 +334,10 @@ namespace OpenDreamRuntime {
                 {
                     // TODO Check what happens with multiple states
                     var icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-                    var rscMan = IoCManager.Resolve<DreamResourceManager>();
-                    var resource = rscMan.LoadResource(icon.Icon);
+                    var (resource, _) = icon.GenerateDMI();
                     var base64 = Convert.ToBase64String(resource.ResourceData);
-                    writer.WriteString("Value",base64); break;
+                    writer.WriteString("Value", base64);
+                    break;
                 }
                 default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
             }

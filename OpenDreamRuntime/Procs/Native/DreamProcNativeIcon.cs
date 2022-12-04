@@ -1,6 +1,6 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamShared.Dream;
+using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
@@ -8,14 +8,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Width(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
-            return new DreamValue(dreamIconObject.Description.Width);
+            return new DreamValue(dreamIconObject.Width);
         }
 
         [DreamProc("Height")]
         public static DreamValue NativeProc_Height(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
-            return new DreamValue(dreamIconObject.Description.Height);
+            return new DreamValue(dreamIconObject.Height);
         }
 
         [DreamProc("Insert")]
@@ -28,37 +28,20 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Insert(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            if (!arguments.GetArgument(0, "new_icon").TryGetValueAsDreamObject(out var new_icon))
-            {
-                // TODO: Implement this
-                if (arguments.GetArgument(0, "new_icon").TryGetValueAsDreamResource(out _))
-                {
-                    throw new NotImplementedException("icon.Insert() doesn't support DreamResources yet");
-                }
-            }
-            arguments.GetArgument(1, "icon_state").TryGetValueAsString(out var icon_state);
-            AtomDirection? dir = null;
-            if (arguments.GetArgument(2, "dir").TryGetValueAsInteger(out var dirNum))
-            {
-                dir = (AtomDirection)dirNum;
-            }
-            int? frame = null;
-            if (arguments.GetArgument(3, "frame").TryGetValueAsInteger(out var frameNum))
-            {
-                frame = frameNum;
-            }
-            bool moving = !(arguments.GetArgument(4, "moving").TryGetValueAsInteger(out var movingNum) && movingNum == 0);
-            int? delay = null;
-            if (arguments.GetArgument(5, "delay").TryGetValueAsInteger(out var delayNum))
-            {
-                delay = delayNum;
-            }
+            DreamValue newIcon = arguments.GetArgument(0, "new_icon");
+            DreamValue iconState = arguments.GetArgument(1, "icon_state");
+            DreamValue dir = arguments.GetArgument(2, "dir");
+            DreamValue frame = arguments.GetArgument(3, "frame");
+            DreamValue moving = arguments.GetArgument(4, "moving");
+            DreamValue delay = arguments.GetArgument(5, "delay");
 
-            DreamMetaObjectIcon.DreamIconObject instanceIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
-            DreamMetaObjectIcon.DreamIconObject newIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[new_icon];
-            instanceIconObject.Description.InsertIcon(newIconObject.Description, icon_state, dir, frame, delay);
+            // TODO: moving & delay
 
-            instanceIconObject.Moving = moving ? DreamMetaObjectIcon.DreamIconMovingMode.Movement : DreamMetaObjectIcon.DreamIconMovingMode.NonMovement;
+            var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+            var (iconRsc, iconDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(resourceManager, newIcon);
+
+            DreamMetaObjectIcon.DreamIconObject iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            iconObj.InsertStates(iconRsc, iconDescription, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
         }
     }

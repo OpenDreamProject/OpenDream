@@ -1,0 +1,152 @@
+
+- type: shader
+  id: outline
+  kind: source
+  path: "/Shaders/outline.swsl"
+  params:
+    color: "#FF000055"
+    size: 1
+
+- type: shader
+  id: greyscale
+  kind: source
+  path: "/Shaders/greyscale.swsl"
+
+- type: shader
+  id: blur
+  kind: source
+  path: "/Shaders/blur.swsl"
+  params:
+    size: 1
+
+#unimplemented shaders point to empty.swsl and do nothing
+
+- type: shader
+  id: alpha
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+    icon: 0
+    render_source: 0
+    flags: 0
+
+- type: shader
+  id: angular_blur
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+    size: 1   
+
+- type: shader
+  id: bloom
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    threshold: 0
+    size: 1    
+    offset: 0
+    alpha: 0
+
+- type: shader
+  id: color
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    color: 0
+    space: 1    
+
+- type: shader
+  id: displace
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+    size: 0    
+    icon: 0
+    render_source: 0
+
+- type: shader
+  id: drop_shadow
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+    size: 0 
+    offset: 0
+    color: 0
+
+- type: shader
+  id: layer
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0   
+    icon: 0
+    render_source: 0
+    flags: 0
+    color: 0
+    transform: 0
+    blend_mode: 0
+
+- type: shader
+  id: motion_blur
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+
+- type: shader
+  id: radial_blur
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0
+    size: 0
+
+- type: shader
+  id: rays
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0   
+    size: 0
+    color: 0
+    offset: 0
+    density: 0
+    threshold: 0
+    factor: 0
+    flags: 0    
+
+- type: shader
+  id: ripple
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0   
+    size: 0
+    repeat: 0
+    radius: 0
+    falloff: 0
+    flags: 0 
+
+- type: shader
+  id: wave
+  kind: source
+  path: "/Shaders/empty.swsl"
+  params:
+    x: 0
+    y: 0   
+    size: 0
+    offset: 0
+    flags: 0 

@@ -459,10 +459,8 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
             DreamProcArguments arguments = new DreamProcArguments(new(), new());
-            DreamList argList = state.Pop().GetValueAsDreamList();
 
-            if (argList != null)
-            {
+            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 foreach (DreamValue value in argList.GetValues()) {
                     if (argList.ContainsKey(value)) { //Named argument
                         if (value.TryGetValueAsString(out string name)) {
@@ -1614,19 +1612,14 @@ namespace OpenDreamRuntime.Procs {
             DreamValue filename = state.Pop();
             var value = state.Pop();
             DreamResource file;
-            if (!value.TryGetValueAsDreamResource(out file))
-            {
-                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon))
-                {
-                    // TODO Only load the correct state/dir
-                    file = IoCManager.Resolve<DreamResourceManager>()
-                        .LoadResource(DreamMetaObjectIcon.ObjectToDreamIcon[icon].Icon);
-                }
-                else
-                {
+            if (!value.TryGetValueAsDreamResource(out file)) {
+                if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+                    (file, _) = DreamMetaObjectIcon.ObjectToDreamIcon[icon].GenerateDMI();
+                } else {
                     throw new NotImplementedException();
                 }
             }
+
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             DreamObject client;

@@ -5,8 +5,9 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMLexer : TokenLexer {
-        public static List<string> ValidEscapeSequences = new() {
+    public sealed class DMLexer : TokenLexer {
+        // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
+        public static readonly List<string> ValidEscapeSequences = new(41) {
             "icon",
             "Roman", "roman",
             "The", "the",
@@ -29,7 +30,8 @@ namespace DMCompiler.Compiler.DM {
             "..."
         };
 
-        public static Dictionary<string, TokenType> Keywords = new() {
+        // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
+        private static readonly Dictionary<string, TokenType> Keywords = new(25) {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "continue", TokenType.DM_Continue },
@@ -59,7 +61,7 @@ namespace DMCompiler.Compiler.DM {
 
         public int BracketNesting = 0;
 
-        private Stack<int> _indentationStack = new(new int[] { 0 });
+        private readonly Stack<int> _indentationStack = new(new int[] { 0 });
 
         /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
         public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }

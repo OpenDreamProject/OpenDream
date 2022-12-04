@@ -14,6 +14,9 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using OpenDreamRuntime.Objects.MetaObjects;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -426,9 +429,46 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("filter")]
-        [DreamProcParameter("type", Type = DreamValueType.String)]
+        [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
+        [DreamProcParameter("size", Type = DreamValueType.Float)]
+        [DreamProcParameter("color", Type = DreamValueType.String)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        [DreamProcParameter("x", Type = DreamValueType.Float)]
+        [DreamProcParameter("y", Type = DreamValueType.Float)]
+        [DreamProcParameter("offset", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)]
+        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
+        [DreamProcParameter("space", Type = DreamValueType.Float)]
+        [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("factor", Type = DreamValueType.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueType.Float)]
+        [DreamProcParameter("radius", Type = DreamValueType.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            return DreamValue.Null;
+            if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
+                return DreamValue.Null;
+
+            Type? filterType = DreamFilter.GetType(filterTypeName);
+            if (filterType == null)
+                return DreamValue.Null;
+
+            var serializationManager = IoCManager.Resolve<ISerializationManager>();
+
+            MappingDataNode attributes = new();
+            foreach (KeyValuePair<string, DreamValue> attribute in arguments.NamedArguments) {
+                DreamValue value = attribute.Value;
+
+                attributes.Add(attribute.Key, new DreamValueDataNode(value));
+            }
+
+            DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
+            if (filter == null)
+                throw new Exception($"Failed to create filter of type {filterType}");
+
+            DreamObject filterObject = DreamManager.ObjectTree.CreateObject(DreamPath.Filter);
+            DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
+            return new DreamValue(filterObject);
         }
 
         [DreamProc("findtext")]
@@ -690,16 +730,15 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            DMIParser.ParsedDMIDescription dmiDescription;
             if (arg.TryGetValueAsDreamResource(out var resource)) {
-                dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+                var dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
+
+                return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
             } else if (arg.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
-                dmiDescription = DreamMetaObjectIcon.ObjectToDreamIcon[icon].Description;
+                return new DreamValue(DreamList.Create(DreamMetaObjectIcon.ObjectToDreamIcon[icon].States.Keys.ToArray()));
             } else {
                 throw new Exception($"Bad icon {arg}");
             }
-
-            return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
         }
 
         [DreamProc("image")]

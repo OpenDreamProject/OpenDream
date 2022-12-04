@@ -49,18 +49,15 @@ namespace OpenDreamClient.Interface {
                 interfaceDescriptor = dmfParser.Interface();
             } catch (CompileErrorException) { }
 
-            if (dmfParser.Warnings.Count > 0) {
-                foreach (CompilerWarning warning in dmfParser.Warnings) {
+            if (dmfParser.Emissions.Count > 0) {
+                bool wasError = interfaceDescriptor == null;
+                foreach (CompilerEmission warning in dmfParser.Emissions) {
                     Logger.Warning(warning.ToString());
+                    if (warning.Level == ErrorLevel.Error)
+                        wasError = true;
                 }
-            }
-
-            if (dmfParser.Errors.Count > 0 || interfaceDescriptor == null) {
-                foreach (CompilerError error in dmfParser.Errors) {
-                    Logger.Error(error.ToString());
-                }
-
-                throw new Exception("Errors while parsing interface data");
+                if(wasError)
+                    throw new Exception($"{dmfParser.Emissions.Count} Errors while parsing interface data");
             }
 
             LoadInterface(interfaceDescriptor);
@@ -307,17 +304,19 @@ namespace OpenDreamClient.Interface {
             DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
             DMFParser parser = new DMFParser(lexer);
             MappingDataNode node = parser.Attributes();
-
-            if (parser.Errors.Count > 0) {
-                foreach (CompilerError error in parser.Errors) {
-                    Logger.ErrorS("opendream.interface.winset", error.ToString());
+            
+            if (parser.Emissions.Count > 0) {
+                bool hadError = false;
+                foreach (CompilerEmission emission in parser.Emissions) {
+                    if (emission.Level == ErrorLevel.Error) {
+                        Logger.ErrorS("opendream.interface.winset", emission.ToString());
+                        hadError = true;
+                    } else {
+                        Logger.WarningS("opendream.interface.winset", emission.ToString());
+                    }
                 }
-
-                return;
-            }
-
-            foreach (CompilerWarning warning in parser.Warnings) {
-                Logger.WarningS("opendream.interface.winset", warning.ToString());
+                if (hadError)
+                    return;
             }
 
             if (String.IsNullOrEmpty(controlId)) {

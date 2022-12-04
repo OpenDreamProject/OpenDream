@@ -1,11 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamRuntime.Procs;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown;
+using Robust.Shared.Serialization.Markdown.Validation;
+using Robust.Shared.Serialization.Markdown.Value;
+using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -158,7 +164,7 @@ namespace OpenDreamRuntime {
             return (DreamResource)GetValueExpectingType(DreamValueType.DreamResource);
         }
 
-        public bool TryGetValueAsDreamResource(out DreamResource value) {
+        public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
             if (Type == DreamValueType.DreamResource) {
                 value = (DreamResource)Value;
                 return true;
@@ -313,6 +319,7 @@ namespace OpenDreamRuntime {
         }
     }
 
+    #region Serialization
     public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
         public override void Write(Utf8JsonWriter writer, DreamValue value, JsonSerializerOptions options) {
             writer.WriteStartObject();
@@ -327,10 +334,10 @@ namespace OpenDreamRuntime {
                 {
                     // TODO Check what happens with multiple states
                     var icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-                    var rscMan = IoCManager.Resolve<DreamResourceManager>();
-                    var resource = rscMan.LoadResource(icon.Icon);
+                    var (resource, _) = icon.GenerateDMI();
                     var base64 = Convert.ToBase64String(resource.ResourceData);
-                    writer.WriteString("Value",base64); break;
+                    writer.WriteString("Value", base64);
+                    break;
                 }
                 default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
             }
@@ -372,4 +379,128 @@ namespace OpenDreamRuntime {
             return value;
         }
     }
+
+    // The following allows for serializing using DreamValues with ISerializationManager
+    // Currently only implemented to the point that they can be used for DreamFilters
+
+    public sealed class DreamValueDataNode : DataNode<DreamValueDataNode>, IEquatable<DreamValueDataNode> {
+        public DreamValueDataNode(DreamValue value) : base(NodeMark.Invalid, NodeMark.Invalid) {
+            Value = value;
+        }
+
+        public DreamValue Value { get; set; }
+        public override bool IsEmpty => false;
+
+        public override DreamValueDataNode Copy() {
+            return new DreamValueDataNode(Value) {Tag = Tag, Start = Start, End = End};
+        }
+
+        public override DreamValueDataNode? Except(DreamValueDataNode node) {
+            return Value == node.Value ? null : Copy();
+        }
+
+        public override DreamValueDataNode PushInheritance(DreamValueDataNode node) {
+            return Copy();
+        }
+
+        public bool Equals(DreamValueDataNode? other) {
+            return Value == other?.Value;
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueStringSerializer : ITypeReader<string, DreamValueDataNode> {
+        public string Read(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            bool skipHook,
+            ISerializationContext? context = null, string? value = default) {
+            if (!node.Value.TryGetValueAsString(out var strValue))
+                throw new Exception($"Value {node.Value} was not a string");
+
+            return strValue;
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (node.Value.TryGetValueAsString(out _))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not a string");
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueFloatSerializer : ITypeReader<float, DreamValueDataNode> {
+        public float Read(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            bool skipHook,
+            ISerializationContext? context = null, float value = default) {
+            if (!node.Value.TryGetValueAsFloat(out var floatValue))
+                throw new Exception($"Value {node.Value} was not a float");
+
+            return floatValue;
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (node.Value.TryGetValueAsFloat(out _))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not a float");
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueColorSerializer : ITypeReader<Color, DreamValueDataNode> {
+        public Color Read(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            bool skipHook,
+            ISerializationContext? context = null, Color value = default) {
+            if (!node.Value.TryGetValueAsString(out var strValue) || !ColorHelpers.TryParseColor(strValue, out var color))
+                throw new Exception($"Value {node.Value} was not a color");
+
+            return color;
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (node.Value.TryGetValueAsString(out var strValue) && ColorHelpers.TryParseColor(strValue, out _))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not a color");
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3, DreamValueDataNode> {
+        public Matrix3 Read(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            bool skipHook,
+            ISerializationContext? context = null, Matrix3 value = default) {
+            if (!node.Value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out var matrixObject))
+                throw new Exception($"Value {node.Value} was not a matrix");
+
+            // Matrix3 except not really because DM matrix is actually 3x2
+            matrixObject.GetVariable("a").TryGetValueAsFloat(out var a);
+            matrixObject.GetVariable("b").TryGetValueAsFloat(out var b);
+            matrixObject.GetVariable("c").TryGetValueAsFloat(out var c);
+            matrixObject.GetVariable("d").TryGetValueAsFloat(out var d);
+            matrixObject.GetVariable("e").TryGetValueAsFloat(out var e);
+            matrixObject.GetVariable("f").TryGetValueAsFloat(out var f);
+            return new Matrix3(a, d, 0f, b, e, 0f, c, f, 1f);
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (node.Value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out _))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not a matrix");
+        }
+    }
+    #endregion Serialization
 }

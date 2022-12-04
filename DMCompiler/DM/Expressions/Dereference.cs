@@ -158,7 +158,7 @@ namespace DMCompiler.DM.Expressions {
                 proc.Initial();
             } else {
                 // This happens silently in BYOND
-                DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a list index returns the current value"));
+                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a list index returns the current value");
                 EmitPushValue(dmObject, proc);
             }
         }
@@ -175,7 +175,7 @@ namespace DMCompiler.DM.Expressions {
                 proc.IsSaved();
             } else {
                 // Silent in BYOND
-                DMCompiler.Warning(new CompilerWarning(_expr.Location, "calling issaved() on a list index is always false"));
+                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, _expr.Location, "calling issaved() on a list index is always false");
                 proc.PushFloat(0);
             }
         }

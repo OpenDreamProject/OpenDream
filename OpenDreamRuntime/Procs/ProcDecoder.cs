@@ -79,7 +79,6 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
-            case DreamProcOpcode.IsSaved:
             case DreamProcOpcode.PushPath:
             case DreamProcOpcode.DebugSource:
                 return (opcode, ReadString());

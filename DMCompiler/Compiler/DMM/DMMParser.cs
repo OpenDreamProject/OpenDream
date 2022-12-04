@@ -68,13 +68,13 @@ namespace DMCompiler.Compiler.DMM {
                         while (statement != null) {
                             DMASTObjectVarOverride varOverride = statement as DMASTObjectVarOverride;
                             if (varOverride == null) Error("Expected a var override");
-                            if (!varOverride.ObjectPath.Equals(DreamPath.Root)) DMCompiler.Error(new CompilerError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}"));
+                            if (!varOverride.ObjectPath.Equals(DreamPath.Root)) DMCompiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
                             DMExpression value = DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
-                            if (!value.TryAsJsonRepresentation(out var valueJson)) DMCompiler.Error(new CompilerError(statement.Location, $"Failed to serialize value to json ({value})"));
+                            if (!value.TryAsJsonRepresentation(out var valueJson)) DMCompiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
                             if(!mapObject.AddVarOverride(varOverride.VarName, valueJson))
                             {
-                                DMCompiler.Warning(new CompilerWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}"));
+                                DMCompiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
                             }
 
                             if (Check(TokenType.DM_Semicolon)) {

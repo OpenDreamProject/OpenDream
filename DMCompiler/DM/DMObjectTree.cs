@@ -172,7 +172,7 @@ namespace DMCompiler.DM {
                         assign.Value.EmitPushValue(root, GlobalInitProc);
                         GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                 }
             }

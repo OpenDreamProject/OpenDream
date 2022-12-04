@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Visitors {
                         Robust.Shared.Utility.DebugTools.Assert(realObj.danglingOverrides is not null);
                         foreach(DMASTObjectVarOverride varOverride in realObj.danglingOverrides)
                         {
-                            DMCompiler.Error(new CompilerError(varOverride.Location, $"Cannot override undefined var {varOverride.VarName}"));
+                            DMCompiler.Emit(WarningCode.DanglingOverride, varOverride.Location, $"Cannot override undefined var {varOverride.VarName}");
                         }
                     }
                 }
@@ -60,7 +60,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     ProcessStatement(statement, currentObject);
                 } catch (CompileErrorException e) {
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 }
-                default: throw new ArgumentException("Invalid object statement");
+                default: throw new CompileAbortException(statement.Location, "Invalid object statement");
             }
         }
 
@@ -99,13 +99,13 @@ namespace DMCompiler.DM.Visitors {
             //Lets check if we're duplicating a definition, first.
             if (varObject.HasGlobalVariable(varDefinition.Name))
             {
-                DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\""));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\"");
                 variable = varObject.GetGlobalVariable(varDefinition.Name);
             }
             else if (varObject.HasLocalVariable(varDefinition.Name))
             {
                 if(!DoesDefineSnowflakeVars(varDefinition, varObject))
-                    DMCompiler.Error(new CompilerError(varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\""));
+                    DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\"");
                 variable = varObject.GetVariable(varDefinition.Name);
             }
             //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
@@ -114,7 +114,7 @@ namespace DMCompiler.DM.Visitors {
                 //make sure this static doesn't already exist first
                 if(DoesOverrideGlobalVars(varDefinition)) // Some snowflake behaviour for global.vars
                 {
-                    DMCompiler.Error(new CompilerError(varDefinition.Location, "Duplicate definition of global.vars"));
+                    DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, "Duplicate definition of global.vars");
                     //We can't salvage any part of this definition, since global.vars doesn't technically even exist, so lets just return
                     return;
                 }
@@ -129,7 +129,7 @@ namespace DMCompiler.DM.Visitors {
                 SetVariableValue(varObject, ref variable, varDefinition.Value);
                 VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
             } catch (CompileErrorException e) {
-                DMCompiler.Error(e.Error);
+                DMCompiler.Emit(e.Error);
             }
         }
 
@@ -165,7 +165,7 @@ namespace DMCompiler.DM.Visitors {
                 else if (varObject.HasGlobalVariable(varOverride.VarName))
                 {
                     variable = varObject.GetGlobalVariable(varOverride.VarName);
-                    DMCompiler.Error(new CompilerError(varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var"));
+                    DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
                 }
                 else // So this is an awkward point where we have to be a little bit silly.
                 {
@@ -173,7 +173,7 @@ namespace DMCompiler.DM.Visitors {
                     //To do that, we are now going to cache this var override and wait for our parent class to be defined, so we can know wtf it is and resume!
                     if(varObject.Path == DreamPath.Root) // As per DM, we should just error out if a root global var is overwritten before it is defined.
                     {
-                        DMCompiler.Error(new CompilerError(varOverride.Location, $"var \"{varOverride.VarName}\" is not declared"));
+                        DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
                         return; // don't do the fancy event stuff if we're root
                     }
                     varObject.WaitForLateVarDefinition(varOverride);
@@ -182,7 +182,7 @@ namespace DMCompiler.DM.Visitors {
                 OverrideVariableValue(varObject, ref variable, varOverride.Value);
                 varObject.VariableOverrides[variable.Name] = variable;
             } catch (CompileErrorException e) {
-                DMCompiler.Error(e.Error);
+                DMCompiler.Emit(e.Error);
             }
         }
 
@@ -199,7 +199,7 @@ namespace DMCompiler.DM.Visitors {
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
                     if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(new CompilerError(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope"));
+                        throw new CompileErrorException(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
                     }
 
                     proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
@@ -234,7 +234,7 @@ namespace DMCompiler.DM.Visitors {
                     dmObject.InitializationProcExpressions.Add(append);
                 }
             } catch (CompileErrorException e) {
-                DMCompiler.Error(e.Error);
+                DMCompiler.Emit(e.Error);
             }
         }
 
@@ -306,12 +306,12 @@ namespace DMCompiler.DM.Visitors {
         {
             if(variable.IsConst)
             {
-                DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is const and cannot be modified"));
+                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location, $"Var {variable.Name} is const and cannot be modified");
                 return;
             }
             if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
             {
-                DMCompiler.Error(new CompilerError(value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified"));
+                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified");
             }
             SetVariableValue(currentObject, ref variable, value);
         }
@@ -373,7 +373,7 @@ namespace DMCompiler.DM.Visitors {
         private static void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {
             if (variable.IsGlobal) {
                 int? globalId = currentObject.GetGlobalVariableId(variable.Name);
-                if (globalId == null) throw new Exception($"Invalid global {currentObject.Path}.{variable.Name}");
+                if (globalId == null) throw new CompileAbortException(expression?.Location ?? Location.Unknown, $"Invalid global {currentObject.Path}.{variable.Name}");
 
                 DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
             } else {

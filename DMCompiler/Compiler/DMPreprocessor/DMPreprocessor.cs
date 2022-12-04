@@ -50,7 +50,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             TokenType.DM_Preproc_Else,
             TokenType.DM_Preproc_Warning,
             TokenType.DM_Preproc_Error,
-            TokenType.DM_Preproc_EndIf
+            TokenType.DM_Preproc_EndIf,
+            TokenType.DM_Preproc_Pragma
         };
 
         public DMPreprocessor(bool enableDirectives) {
@@ -118,7 +119,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     case TokenType.DM_Preproc_Else:
                         if (!_lastIfEvaluations.TryPop(out bool? wasTruthy) || wasTruthy is null)
-                            DMCompiler.Error(new CompilerError(token.Location, "Unexpected #else"));
+                            DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Unexpected #else");
                         if (wasTruthy.Value)
                             SkipIfBody(true);
                         else
@@ -128,9 +129,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Error:
                         HandleErrorOrWarningDirective(token);
                         break;
+                    case TokenType.DM_Preproc_Pragma:
+                        HandlePragmaDirective(token);
+                        break;
                     case TokenType.DM_Preproc_EndIf:
                         if (!_lastIfEvaluations.TryPop(out var _))
-                            DMCompiler.Error(new CompilerError(token.Location, "Unexpected #endif"));
+                            DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Unexpected #endif");
                         break;
                     case TokenType.DM_Preproc_Identifier:
                         _currentLineWhitespaceOnly = false;
@@ -155,16 +159,17 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
 
                     case TokenType.Error:
-                        DMCompiler.Error(new CompilerError(token.Location, (string)token.Value));
+                        DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, (string)token.Value);
                         break;
 
                     default:
-                        DMCompiler.Error(new CompilerError(token.Location, $"Invalid token encountered while preprocessing: {token}"));
+                        DMCompiler.Emit(WarningCode.BadToken, token.Location, $"Invalid token encountered while preprocessing: {token.PrintableText}");
                         break;
                 }
             }
             if(_lastIfEvaluations.Any())
-                DMCompiler.Error(new CompilerError(_lastSeenIf, $"Missing {_lastIfEvaluations.Count} #endif directive{(_lastIfEvaluations.Count != 1 ? 's' : "")}"));
+                DMCompiler.Emit(WarningCode.BadDirective, _lastSeenIf, $"Missing {_lastIfEvaluations.Count} #endif directive{(_lastIfEvaluations.Count != 1 ? 's' : "")}");
+            DMCompiler.CheckAllPragmasWereSet();
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
@@ -187,12 +192,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
 
             if (_includedFiles.Contains(filePath)) {
-                DMCompiler.Warning(new CompilerWarning(includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included"));
+                DMCompiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included");
                 return;
             }
 
             if (!File.Exists(filePath)) {
-                DMCompiler.Error(new CompilerError(includedFrom ?? Location.Internal, $"Could not find included file \"{filePath}\""));
+                DMCompiler.Emit(WarningCode.MissingIncludedFile, includedFrom ?? Location.Internal, $"Could not find included file \"{filePath}\"");
                 return;
             }
 
@@ -206,7 +211,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     break;
                 case ".dmf":
                     if (IncludedInterface != null) {
-                        DMCompiler.Error(new CompilerError(includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})"));
+                        if(IncludedInterface == filePath) {
+                            DMCompiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"Interface \"{filePath}\" was already included");
+                            break;
+                        }
+                        DMCompiler.Emit(WarningCode.InvalidInclusion, includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})");
                         break;
                     }
 
@@ -214,7 +223,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     break;
                 case ".dms":
                     // Webclient interface file. Probably never gonna be supported.
-                    DMCompiler.Warning(new CompilerWarning(includedFrom ?? Location.Internal, "DMS files are not supported"));
+                    DMCompiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
                     break;
                 default:
                     PreprocessFile(includeDir, file);
@@ -233,12 +242,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         private bool VerifyDirectiveUsage(Token token) {
             if (!_enableDirectives) {
-                DMCompiler.Error(new CompilerError(token.Location, "Cannot use a preprocessor directive here"));
+                DMCompiler.Emit(WarningCode.MisplacedDirective, token.Location, "Cannot use a preprocessor directive here");
                 return false;
             }
 
             if (!_currentLineWhitespaceOnly) {
-                DMCompiler.Error(new CompilerError(token.Location, "There can only be whitespace before a preprocessor directive"));
+                DMCompiler.Emit(WarningCode.MisplacedDirective, token.Location, "There can only be whitespace before a preprocessor directive");
                 return false;
             }
 
@@ -251,7 +260,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             Token includedFileToken = GetNextToken(true);
             if (includedFileToken.Type != TokenType.DM_Preproc_ConstantString) {
-                DMCompiler.Error(new CompilerError(includeToken.Location, $"\"{includedFileToken.Text}\" is not a valid include path"));
+                DMCompiler.Emit(WarningCode.InvalidInclusion, includeToken.Location, $"\"{includedFileToken.Text}\" is not a valid include path");
                 return;
             }
 
@@ -268,52 +277,77 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             Token defineIdentifier = GetNextToken(true);
             if (defineIdentifier.Type != TokenType.DM_Preproc_Identifier) {
-                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Unexpected token, identifier expected for #define directive"));
+                DMCompiler.Emit(WarningCode.BadDirective, defineIdentifier.Location, "Unexpected token, identifier expected for #define directive");
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
             if(defineIdentifier.Text == "defined") {
-                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name"));
+                DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
             }
 
             List<string> parameters = null;
             List<Token> macroTokens = new(1);
 
             Token macroToken = GetNextToken();
-            if (macroToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) {
+            if (macroToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) { // We're a macro function!
                 parameters = new List<string>(1);
-
+                //Read in the parameters
                 Token parameterToken;
-                do {
+                bool canConsumeComma = false;
+                bool foundVariadic = false;
+                while(true) {
                     parameterToken = GetNextToken(true);
-                    bool unnamed = parameterToken.Type == TokenType.DM_Preproc_Punctuator_Period;
-                    if (!unnamed && parameterToken.Type != TokenType.DM_Preproc_Identifier) {
-                        DMCompiler.Error(new CompilerError(parameterToken.Location, "Expected a macro parameter"));
-                        return;
+                    switch(parameterToken.Type) {
+                        case TokenType.DM_Preproc_Identifier:
+                            canConsumeComma = true;
+                            if (foundVariadic) {
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Variadic argument '{parameters.Last()}' must be the last argument");
+                                foundVariadic = false; // Reduces error spam if there's several arguments after it
+                                continue;
+                            }
+                            if(Check(TokenType.DM_Preproc_Punctuator_Period)) { // Check for a variadic
+                                if (!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {
+                                    DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Invalid macro parameter, '{parameterToken.Text}...' expected");
+                                }
+                                parameters.Add($"{parameterToken.Text}...");
+                                foundVariadic = true;
+                                // Consciously not setting canConsumeComma to false here. Users can have a little dangling comma, as a treat :o)
+                                continue;
+                            }
+                            parameters.Add(parameterToken.Text);
+                            
+                            continue;
+                        case TokenType.DM_Preproc_Punctuator_Period: // One of those "..." things, maybe?
+                            if (!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, "Invalid macro parameter, '...' expected");
+                            }
+                            canConsumeComma = true;
+                            if (foundVariadic) { // Placed here so we properly consume this bogus '...' parameter if need be
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, $"Variadic argument '{parameters.Last()}' must be the last argument");
+                                foundVariadic = false; // Reduces error spam if there's several arguments after it
+                                continue;
+                            }
+                            parameters.Add($"...");
+                            continue;
+                        case TokenType.DM_Preproc_Punctuator_Comma:
+                            if(!canConsumeComma)
+                                DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, "Unexpected ',' in macro parameter list");
+                            canConsumeComma = false;
+                            continue;
+                        case TokenType.DM_Preproc_Punctuator_RightParenthesis:
+                            break;
+                        case TokenType.EndOfFile:
+                            DMCompiler.Emit(WarningCode.BadDirective, macroToken.Location, "Missing ')' in macro definition"); // Location points to the left paren!
+                            PushToken(parameterToken);
+                            break;
+                        default:
+                            DMCompiler.Emit(WarningCode.BadDirective, parameterToken.Location, "Expected a macro parameter");
+                            return;
                     }
-
-                    string parameterName = unnamed ? "" : parameterToken.Text;
-
-                    parameterToken = GetNextToken(true);
-                    if (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Period) {
-                        if (!unnamed) parameterToken = GetNextToken();
-                        if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a second period");
-                        parameterToken = GetNextToken();
-                        if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_Period) throw new Exception("Expected a third period");
-
-                        parameters.Add(parameterName + "...");
-
-                        parameterToken = GetNextToken(true);
-                        if (unnamed) break;
-                    } else {
-                        if (unnamed) throw new Exception("Expected a second period");
-                        parameters.Add(parameterName);
-                    }
-                } while (parameterToken.Type == TokenType.DM_Preproc_Punctuator_Comma);
-
-                if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) throw new Exception("Missing ')' in macro definition");
+                    break; // If the switch gets here, the loop ends.
+                }
                 macroToken = GetNextToken(true);
-            } else if (macroToken.Type == TokenType.DM_Preproc_Whitespace) {
+            } else if (macroToken.Type == TokenType.DM_Preproc_Whitespace) { // Whitespace between the identifier and a left-paren turns it into a non-function macro.
                 macroToken = GetNextToken();
             }
 
@@ -331,7 +365,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             if (macroTokens.Count > 0 && macroTokens[^1].Type == TokenType.DM_Preproc_Whitespace) {
                 //Remove trailing whitespace
-                macroTokens.RemoveAt(macroTokens.Count - 1);
+                macroTokens.Pop();
             }
 
             _defines[defineIdentifier.Text] = new DMMacro(parameters, macroTokens);
@@ -344,10 +378,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             Token defineIdentifier = GetNextToken(true);
             if (defineIdentifier.Type != TokenType.DM_Preproc_Identifier) {
-                DMCompiler.Error(new CompilerError(defineIdentifier.Location, "Invalid macro identifier"));
+                DMCompiler.Emit(WarningCode.BadDirective, defineIdentifier.Location, "Invalid macro identifier");
                 return;
             } else if (!_defines.ContainsKey(defineIdentifier.Text)) {
-                DMCompiler.Error(new CompilerError(defineIdentifier.Location, $"No macro named \"{defineIdentifier.PrintableText}\""));
+                DMCompiler.Emit(WarningCode.UndefineMissingDirective, defineIdentifier.Location, $"No macro named \"{defineIdentifier.PrintableText}\"");
                 return;
             }
 
@@ -431,13 +465,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             var tokens = GetLineOfTokens();
             if (!tokens.Any()) { // If empty
-                DMCompiler.Error(new CompilerError(ifToken.Location, "Expression expected for #if"));
+                DMCompiler.Emit(WarningCode.BadDirective, ifToken.Location, "Expression expected for #if");
                 HandleDegenerateIf();
                 return;
             }
             float? expr = DMPreprocessorParser.ExpressionFromTokens(tokens, _defines);
             if(expr is null) {
-                DMCompiler.Error(new CompilerError(ifToken.Location, "Expression is invalid"));
+                DMCompiler.Emit(WarningCode.BadDirective, ifToken.Location, "Expression is invalid");
                 HandleDegenerateIf();
                 return;
             }
@@ -454,7 +488,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             Token define = GetNextToken(true);
             if (define.Type != TokenType.DM_Preproc_Identifier) {
-                DMCompiler.Error(new CompilerError(ifDefToken.Location, "Expected a define identifier"));
+                DMCompiler.Emit(WarningCode.BadDirective, ifDefToken.Location, "Expected a define identifier");
                 HandleDegenerateIf();
                 return;
             }
@@ -472,7 +506,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             Token define = GetNextToken(true);
             if (define.Type != TokenType.DM_Preproc_Identifier) {
-                DMCompiler.Error(new CompilerError(ifNDefToken.Location, "Expected a define identifier"));
+                DMCompiler.Emit(WarningCode.BadDirective, ifNDefToken.Location, "Expected a define identifier");
                 HandleDegenerateIf();
                 return;
             }
@@ -486,9 +520,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         private void HandleElifDirective(Token elifToken) {
             if (!_lastIfEvaluations.TryPeek(out bool? wasTruthy))
-                DMCompiler.Error(new CompilerError(elifToken.Location, "Unexpected #elif"));
+                DMCompiler.Emit(WarningCode.BadDirective, elifToken.Location, "Unexpected #elif");
             if (wasTruthy is null) {
-                DMCompiler.Error(new CompilerError(elifToken.Location, "Directive #elif cannot appear after #else in its flow control"));
+                DMCompiler.Emit(WarningCode.BadDirective, elifToken.Location, "Directive #elif cannot appear after #else in its flow control");
                 SkipIfBody();
             } else if (wasTruthy.Value)
                 SkipIfBody();
@@ -514,9 +548,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             string message = messageBuilder.ToString();
             if (token.Type == TokenType.DM_Preproc_Error) {
-                DMCompiler.Error(new CompilerError(token.Location, message));
+                DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, message);
             } else {
-                DMCompiler.Warning(new CompilerWarning(token.Location, message));
+                DMCompiler.Emit(WarningCode.WarningDirective, token.Location, message);
             }
         }
 
@@ -539,6 +573,77 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             } else {
                 return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
             }
+        }
+
+        private void HandlePragmaDirective(Token pragmaDirective) {
+            Token warningNameToken = GetNextToken(true);
+            WarningCode warningCode;
+            switch(warningNameToken.Type) {
+                case TokenType.DM_Preproc_Identifier: {
+                    if(!Enum.TryParse<WarningCode>(warningNameToken.Text, out warningCode)) {
+                        DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning '{warningNameToken.PrintableText}' does not exist");
+                        GetLineOfTokens(); // consume what's on this line and leave
+                        return;
+                    }
+                    break;
+                }
+                case TokenType.DM_Preproc_Number: {
+                    if(!Int32.TryParse(warningNameToken.Text, out var intValue)) {
+                        DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{warningNameToken.PrintableText} does not exist");
+                        GetLineOfTokens();
+                        return;
+                    }
+                    warningCode = (WarningCode)intValue;
+                    break;
+                }
+                default: {
+                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Invalid warning identifier '{warningNameToken.PrintableText}'");
+                    GetLineOfTokens();
+                    return;
+                }
+            }
+            DebugTools.AssertNotNull(warningCode);
+            if((int)warningCode < 1000) {
+                DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{(int)warningCode:d4} cannot be set - it must always be an error");
+                GetLineOfTokens();
+                return;
+            }
+
+            Token warningTypeToken = GetNextToken(true);
+            if (warningTypeToken.Type != TokenType.DM_Preproc_Identifier) {
+                DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+                return;
+            }
+            switch(warningTypeToken.Text.ToLower()) {
+                case "disabled":
+                case "disable":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Disabled);
+                    break;
+                case "notice":
+                case "pedantic":
+                case "info":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Notice);
+                    break;
+                case "warning":
+                case "warn":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Warning);
+                    break;
+                case "error":
+                case "err":
+                    DMCompiler.SetPragma(warningCode, ErrorLevel.Error);
+                    break;
+                default:
+                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+                    return;
+            }
+        }
+
+        private bool Check(TokenType tokenType) {
+            Token received = GetNextToken();
+            if(received.Type == tokenType)
+                return true;
+            PushToken(received);
+            return false;
         }
 
         /// <summary>
@@ -589,7 +694,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         if (ifStack != 1)
                             break;
                         if (calledByElseDirective)
-                            DMCompiler.Error(new CompilerError(token.Location, $"Unexpected {token.PrintableText} directive"));
+                            DMCompiler.Emit(WarningCode.BadDirective, token.Location, $"Unexpected {token.PrintableText} directive");
                         _unprocessedTokens.Push(token); // Push it back onto the stack so we can interpret this later
                         return true;
                     default:
@@ -603,7 +708,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     return false;
                 }
             }
-            DMCompiler.Error(new CompilerError(Location.Unknown, "Missing #endif directive"));
+            DMCompiler.Emit(WarningCode.BadDirective, Location.Unknown, "Missing #endif directive");
             return false;
         }
 
@@ -654,7 +759,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
             parameters.Add(currentParameter);
             if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {
-                DMCompiler.Error(new CompilerError(leftParenToken.Location, "Missing ')' in macro call"));
+                DMCompiler.Emit(WarningCode.BadDirective, leftParenToken.Location, "Missing ')' in macro call");
 
                 return false;
             }

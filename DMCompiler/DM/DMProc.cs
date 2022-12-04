@@ -181,7 +181,7 @@ namespace DMCompiler.DM {
             ParameterTypes.Add(valueType);
 
             if (_parameters.ContainsKey(name)) {
-                DMCompiler.Error(new CompilerError(_astDefinition.Location, $"Duplicate argument \"{name}\""));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
                 _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
             }
@@ -193,7 +193,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    DMCompiler.Error(new CompilerError(Location, "Invalid label \"" + unresolvedLabel.LabelName + "\""));
+                    DMCompiler.Emit(WarningCode.BadLabel, Location, "Invalid label \"" + unresolvedLabel.LabelName + "\"");
                 }
             }
 
@@ -203,7 +203,7 @@ namespace DMCompiler.DM {
 
         public void AddLabel(string name) {
             if (_labels.ContainsKey(name)) {
-                DMCompiler.Error(new CompilerError(Location, $"A label with the name \"{name}\" already exists"));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, Location, $"A label with the name \"{name}\" already exists");
                 return;
             }
 
@@ -344,15 +344,11 @@ namespace DMCompiler.DM {
         }
 
         public void LoopEnd() {
-            if (_loopStack?.TryPop(out var pop) ?? false)
-            {
+            if (_loopStack?.TryPop(out var pop) ?? false) {
                 AddLabel(pop + "_end");
+            } else {
+                DMCompiler.ForcedError(Location, "Cannot pop empty loop stack");
             }
-            else
-            {
-                DMCompiler.Error(new CompilerError(Location, "Cannot pop empty loop stack"));
-            }
-
             EndScope();
         }
 
@@ -417,7 +413,7 @@ namespace DMCompiler.DM {
             }
             else
             {
-                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
             }
         }
 
@@ -428,7 +424,7 @@ namespace DMCompiler.DM {
             }
             else
             {
-                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
             }
         }
 
@@ -439,7 +435,7 @@ namespace DMCompiler.DM {
                 var codeLabel = label.Identifier + "_codelabel";
                 if (!_labels.ContainsKey(codeLabel))
                 {
-                    DMCompiler.Error(new CompilerError(Location, $"Unknown label {label.Identifier}"));
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Unknown label {label.Identifier}");
                 }
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;
@@ -463,7 +459,7 @@ namespace DMCompiler.DM {
                 }
                 else
                 {
-                    DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+                    DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
                 }
             }
         }
@@ -475,7 +471,7 @@ namespace DMCompiler.DM {
             }
             else
             {
-                DMCompiler.Error(new CompilerError(Location, "Cannot peek empty loop stack"));
+                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
             }
         }
 
@@ -506,7 +502,7 @@ namespace DMCompiler.DM {
 
             if (argumentCount > 0) {
                 if (parameterTypes == null || parameterTypes.Length != argumentCount) {
-                    throw new ArgumentException("Length of parameter types does not match the argument count");
+                    throw new CompileAbortException("Length of parameter types does not match the argument count");
                 }
 
                 int namedParameterIndex = 0;
@@ -515,7 +511,7 @@ namespace DMCompiler.DM {
 
                     if (parameterType == DreamProcOpcodeParameterType.Named) {
                         if (parameterNames == null)
-                            throw new Exception("parameterNames was null while parameterTypes was:" + parameterTypes);
+                            throw new CompileAbortException("parameterNames was null while parameterTypes was:" + parameterTypes);
                         WriteString(parameterNames[namedParameterIndex++]);
                     }
                 }
@@ -968,7 +964,7 @@ namespace DMCompiler.DM {
                     break;
 
                 default:
-                    throw new CompileErrorException(Location, $"Invalid reference type {reference.RefType}");
+                    throw new CompileAbortException(Location, $"Invalid reference type {reference.RefType}");
             }
         }
 
@@ -982,7 +978,7 @@ namespace DMCompiler.DM {
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
             if (_currentStackSize < 0 && !_negativeStackSizeError) {
                 _negativeStackSizeError = true;
-                DMCompiler.Error(new CompilerError(Location, $"Negative stack size"));
+                DMCompiler.ForcedError(Location, $"Negative stack size");
             }
         }
     }

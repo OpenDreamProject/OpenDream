@@ -11,9 +11,19 @@ namespace DMCompiler.DM.Visitors {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
+        /// <summary>
+        /// BYOND currently has a ridiculous behaviour, where, <br/>
+        /// sometimes when a set statement has a right-hand side that is non-constant, <br/>
+        /// no error is emitted and instead its value is just, whatever the last well-evaluated set statement's value was. <br/>
+        /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
+        /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
+        /// </summary>
+        private Constant? previousSetStatementValue;
+
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
+            previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -58,17 +68,17 @@ namespace DMCompiler.DM.Visitors {
                         ProcessStatementSet(set);
                     }
                     else if (stmt is DMASTAggregate<DMASTProcStatementSet> greg) { // hi greg
-                        foreach (DMASTProcStatementSet greg_set in greg.Statements)
+                        foreach (DMASTProcStatementSet gregSet in greg.Statements)
                         {
-                            loc = greg_set.Location;
-                            ProcessStatementSet(greg_set);
+                            loc = gregSet.Location;
+                            ProcessStatementSet(gregSet);
                         }
                     }
                     else // Shouldn't happen >:/
                         throw new CompileAbortException(loc, "Non-set statements where located in the block's SetStatements array!");
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                    e.Error.Location = set.Location;
+                    e.Error.Location = loc;
                     DMCompiler.Emit(e.Error);
                     return; // Don't spam the error that will continue to exist
                 } catch (CompileErrorException e) {
@@ -125,7 +135,6 @@ namespace DMCompiler.DM.Visitors {
                         ProcessStatementVarDeclaration(declare);
                     break;
                 default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
-                }
             }
         }
 
@@ -168,12 +177,20 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
                 return;
             }
-            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) {
-                throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
+                bool didError = DMCompiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
+                if (didError) // if this is an error
+                    return; // don't do the cursed thing
+                // oh no.
+                if (previousSetStatementValue is null)
+                    throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+                constant = previousSetStatementValue;
+            } else {
+                previousSetStatementValue = constant;
             }
             if (statementSet.WasInKeyword)  // check if it was 'set x in y' or whatever
             {                               // (which is illegal for everything except setting src to something)
-                DMCompiler.Error(new CompilerError(statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?"));
+                DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
                 //fallthrough into normal behaviour because this error is kinda pedantic
             }
 

@@ -234,13 +234,10 @@ namespace DMCompiler.Compiler.DM {
         /// <summary> Initializes a block with only one statement (which may be a <see cref="DMASTProcStatementSet"/> :o) </summary>
         public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location)
         {
-            if(statement.IsSetStatement)
-            {
+            if (statement.IsSetStatement) {
                 Statements = Array.Empty<DMASTProcStatement>();
                 SetStatements = new DMASTProcStatement[] { statement };
-            }
-            else
-            {
+            } else {
                 Statements = new DMASTProcStatement[] { statement };
                 SetStatements = Array.Empty<DMASTProcStatement>();
             }

@@ -19,3 +19,4 @@
 #pragma PointlessBuiltinCall warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
+#pragma InvalidSetStatement error

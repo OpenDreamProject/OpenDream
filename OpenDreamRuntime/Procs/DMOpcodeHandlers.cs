@@ -630,14 +630,31 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue + 1));
-            } else {
-                //If it's not a number, it turns into 1
-                state.AssignReference(reference, new(1));
+            DreamValue? output = null;
+            switch(value.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(value.TryGetValueAsFloat(out float valueFloat))
+                        output = new DreamValue(valueFloat++);
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(value.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorIncrement(value, state);
+                    }
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException($"Increment cannot be done on {value}");
             }
 
-            state.Push(value);
+            if (output != null) {
+                state.AssignReference(reference, output.Value);
+                state.Push(value);
+            } else {
+                throw new Exception($"Invalid increment operation on {value}");
+            }
             return null;
         }
 
@@ -645,14 +662,31 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue - 1));
-            } else {
-                //If it's not a number, it turns into -1
-                state.AssignReference(reference, new(-1));
+            DreamValue? output = null;
+            switch(value.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(value.TryGetValueAsFloat(out float valueFloat))
+                        output = new DreamValue(valueFloat--);
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(value.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorDecrement(value, state);
+                    }
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException($"Decrement cannot be done on {value}");
             }
 
-            state.Push(value);
+            if (output != null) {
+                state.AssignReference(reference, output.Value);
+                state.Push(value);
+            } else {
+                throw new Exception($"Invalid Decrement operation on {value}");
+            }
             return null;
         }
 

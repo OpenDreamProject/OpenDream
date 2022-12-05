@@ -39,6 +39,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorAdd(a, b, state);
         }
 
+        public ProcStatus OperatorIncrement(DreamValue a, DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator++", out DreamProc overload))
+                {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot increment {a}");
+
+            return ParentType.OperatorIncrement(a, state);
+        }
+
         public ProcStatus OperatorSubtract(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator-", out DreamProc overload))
@@ -50,6 +63,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     throw new InvalidOperationException($"Subtraction cannot be done between {a} and {b}");
 
             return ParentType.OperatorSubtract(a, b, state);
+        }
+
+        public ProcStatus OperatorDecrement(DreamValue a, DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator--", out DreamProc overload))
+                {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot decrement {a}");
+
+            return ParentType.OperatorDecrement(a, state);
         }
 
         public ProcStatus OperatorMultiply(DreamValue a, DreamValue b,  DMProcState state) {

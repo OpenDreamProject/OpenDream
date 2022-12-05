@@ -14,9 +14,10 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using OpenDreamRuntime.Objects.MetaObjects;
+using Robust.Server;
+using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -1752,15 +1753,17 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("shutdown")]
         [DreamProcParameter("Addr", Type = DreamValueType.String | DreamValueType.DreamObject)]
         [DreamProcParameter("Natural", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_shutdown(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_shutdown(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue addrValue = arguments.GetArgument(0, "Addr");
+
             if (addrValue == DreamValue.Null) {
-                //DreamManager.Shutdown = true;
-            }
-            else {
+                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => {
+                    IoCManager.Resolve<IBaseServer>().Shutdown("shutdown() was called from DM code");
+                });
+            } else {
                 throw new NotImplementedException();
             }
+
             return DreamValue.Null;
         }
 

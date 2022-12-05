@@ -5,7 +5,6 @@
 	New(icon, icon_state, dir, frame, moving)
 
 	proc/Blend(icon, function = ICON_ADD, x = 1, y = 1)
-		set opendream_unimplemented = TRUE
 
 	proc/Crop(x1, y1, x2, y2)
 		set opendream_unimplemented = TRUE

@@ -45,10 +45,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             switch (varName) {
                 case "icon":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        if (value.TryGetValueAsDreamResource(out DreamResource resource)) {
+                        if (value.TryGetValueAsDreamResource(out var resource)) {
                             appearance.Icon = resource.Id;
                         } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var iconObject)) {
-                            DreamMetaObjectIcon.DreamIconObject icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObject];
+                            DreamIcon icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObject];
 
                             (resource, _) = icon.GenerateDMI();
                             appearance.Icon = resource.Id;

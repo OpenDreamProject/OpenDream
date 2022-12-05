@@ -6,14 +6,14 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
         [DreamProc("Width")]
         public static DreamValue NativeProc_Width(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
             return new DreamValue(dreamIconObject.Width);
         }
 
         [DreamProc("Height")]
         public static DreamValue NativeProc_Height(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamMetaObjectIcon.DreamIconObject dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
 
             return new DreamValue(dreamIconObject.Height);
         }
@@ -40,8 +40,32 @@ namespace OpenDreamRuntime.Procs.Native {
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             var (iconRsc, iconDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(resourceManager, newIcon);
 
-            DreamMetaObjectIcon.DreamIconObject iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
             iconObj.InsertStates(iconRsc, iconDescription, iconState, dir, frame); // TODO: moving & delay
+            return DreamValue.Null;
+        }
+
+        [DreamProc("Blend")]
+        [DreamProcParameter("icon", Type = DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float)]
+        public static DreamValue NativeProc_Blend(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            //TODO Figure out what happens when you pass the wrong types as args
+
+            DreamValue icon = arguments.GetArgument(0, "icon");
+            DreamValue function = arguments.GetArgument(1, "function");
+
+            arguments.GetArgument(2, "x").TryGetValueAsInteger(out var x);
+            arguments.GetArgument(3, "y").TryGetValueAsInteger(out var y);
+
+            if (!function.TryGetValueAsInteger(out var functionValue))
+                throw new Exception($"Invalid 'function' argument {function}");
+
+            var blendType = (DreamIconOperationBlend.BlendType) functionValue;
+
+            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            iconObj.ApplyOperation(new DreamIconOperationBlend(blendType, icon, x, y));
             return DreamValue.Null;
         }
     }

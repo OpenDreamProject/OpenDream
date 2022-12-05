@@ -36,7 +36,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
             var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
 
-            dreamIcon.InsertStates(iconRsc, iconDescription, state, dir, frame);
+            dreamIcon.InsertStates(iconRsc, iconDescription, state, dir, frame, useStateName: false);
         }
     }
 

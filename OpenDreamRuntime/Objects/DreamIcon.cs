@@ -296,7 +296,9 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
 
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
         _blending.ProcessPixelRows(accessor => {
-            // The position of the frame being blended onto the image
+            // The first frame of the source image blends with the first frame of the destination image
+            // The second frame blends with the second, and so on
+            // TODO: What happens if each direction has a different number of frames?
             (int X, int Y)? srcFramePos = CalculateFramePosition(frame);
             if (srcFramePos == null)
                 return;

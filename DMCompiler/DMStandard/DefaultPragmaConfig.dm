@@ -14,12 +14,14 @@
 //2000-2999
 #pragma SoftReservedKeyword error
 #pragma DuplicateVariable error
+#pragma DuplicateProcDefinition error
 #pragma TooManyArguments error
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
 #pragma InvalidSetStatement error
+#pragma DanglingVarType error
 
 //3000-3999
 #pragma EmptyBlock warning

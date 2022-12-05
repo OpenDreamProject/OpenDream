@@ -39,12 +39,14 @@ namespace OpenDreamShared.Compiler {
         // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
         SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
         DuplicateVariable = 2100,
+        DuplicateProcDefinition = 2101,
         TooManyArguments = 2200,
         PointlessParentCall = 2205,
         PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
         MalformedRange = 2300,
         InvalidRange = 2301,
         InvalidSetStatement = 2302,
+        DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
 

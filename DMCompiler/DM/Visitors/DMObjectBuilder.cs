@@ -58,8 +58,8 @@ namespace DMCompiler.DM.Visitors {
             //      It's much more performant to do it this way.
             if(AwaitedObjectDefinitions.Count != 0) {
                 foreach(var pair in AwaitedObjectDefinitions) {
-                    if(!DMObjectTree.TryGetTypeId(pair.Key,out var _)) // TODO: Pragma this since it's slightly off-parity to error about missing types, sometimes!
-                        DMCompiler.Error(new CompilerError(pair.Value, $"Definition for path {pair.Key} not found"));
+                    if(!DMObjectTree.TryGetTypeId(pair.Key,out var _))
+                        DMCompiler.Emit(WarningCode.DanglingVarType, pair.Value, $"Definition for path {pair.Key} not found");
                 }
             }
 
@@ -70,13 +70,13 @@ namespace DMCompiler.DM.Visitors {
                         if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
                             int ID = DMObjectTree.GlobalProcs[pair.Key];
                             DMProc proc = DMObjectTree.AllProcs[ID];
-                            DMCompiler.Error(new CompilerError(proc.Location, $"Definition for global proc {pair.Key} not found"));
+                            DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for global proc {pair.Key} not found");
                         }
                         continue;
                     }
-                    if (!pair.Value.HasProcDefined(pair.Key)) {// TODO: Pragma this since it's slightly off-parity to error about missing types, sometimes!
+                    if (!pair.Value.HasProcDefined(pair.Key)) {
                         DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
-                        DMCompiler.Error(new CompilerError(proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found"));
+                        DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found");
                     }
                 }
             }
@@ -243,7 +243,7 @@ namespace DMCompiler.DM.Visitors {
                 bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
                 if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
                     if(!dmObject.HasProcNoInheritence(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
-                        DMCompiler.Error(new CompilerError(procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it"));
+                        DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
                         return; // TODO: Maybe fallthrough since this error is a little pedantic?
                     }
                     //Otherwise, it's ok
@@ -265,7 +265,8 @@ namespace DMCompiler.DM.Visitors {
                     DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                     if(!procDefinition.IsOverride) { // If this is a define, then we found a define for this global! Yay!
                         if(!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
-                            throw new CompileErrorException(new CompilerError(procDefinition.Location, $"Global proc {procDefinition.Name} is already defined"));
+                            DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
+                            return;
                         }
                     }
                 } else {

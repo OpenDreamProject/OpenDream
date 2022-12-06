@@ -693,49 +693,36 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? BitAnd(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
+            DreamValue? output = null;
 
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
-
-                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
-                    int len = list.GetLength();
-
-                    for (int i = 1; i <= len; i++) {
-                        DreamValue value = list.GetValue(new DreamValue(i));
-
-                        if (secondList.ContainsValue(value)) {
-                            DreamValue associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
-                        }
-                    }
-                } else {
-                    int len = list.GetLength();
-
-                    for (int i = 1; i <= len; i++) {
-                        DreamValue value = list.GetValue(new DreamValue(i));
-
-                        if (value == second) {
-                            DreamValue associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
-                        }
-                    }
+            if (second.Value == null) {
+                output = first;
+            } else if (first.Value == null) {
+                output = second;
+            } else switch (first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
+                        output = new DreamValue(firstInt & secondInt);
+                    else
+                        output = new DreamValue(0);
+                    break;
                 }
-
-                state.Push(new DreamValue(newList));
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorBitAnd(first, second, state);
+                    }
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException($"Bit-and cannot be done between {first} and {second}");
             }
-            else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&", out DreamProc overload))
-            {
-                state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
 
-                return ProcStatus.Called;
-            } else if (first.Value != null && second.Value != null) {
-                state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
+            if (output != null) {
+                state.Push(output.Value);
             } else {
-                state.Push(new DreamValue(0));
+                throw new Exception("Invalid bit-and operation on " + first + " and " + second);
             }
 
             return null;

@@ -212,6 +212,46 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ProcStatus.Returned;
         }
 
+        public ProcStatus BitAnd(DreamValue a, DreamValue b, DMProcState state)
+        {
+            if (a.TryGetValueAsDreamList(out DreamList list)) {
+                DreamList newList = DreamList.Create();
+                if (b.TryGetValueAsDreamList(out DreamList secondList)) {
+                    int len = list.GetLength();
+                    for (int i = 1; i <= len; i++) {
+                        DreamValue value = list.GetValue(new DreamValue(i));
+
+                        if (secondList.ContainsValue(value)) {
+                            DreamValue associativeValue = list.GetValue(value);
+
+                            newList.AddValue(value);
+                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
+                        }
+                    }
+                } else {
+                    int len = list.GetLength();
+
+                    for (int i = 1; i <= len; i++) {
+                        DreamValue value = list.GetValue(new DreamValue(i));
+
+                        if (value == b) {
+                            DreamValue associativeValue = list.GetValue(value);
+
+                            newList.AddValue(value);
+                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
+                        }
+                    }
+                }
+
+                state.Push(new DreamValue(newList));
+            }
+            else
+            {
+                state.Push(new DreamValue(0));
+            }
+            return ProcStatus.Returned;
+        }
+
         public ProcStatus OperatorIndex(DreamObject dreamObject, DreamValue index, DMProcState state) {
             state.Push(((DreamList)dreamObject).GetValue(index));
             return ProcStatus.Returned;

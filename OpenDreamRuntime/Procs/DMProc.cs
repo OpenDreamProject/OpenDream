@@ -37,7 +37,7 @@ namespace OpenDreamRuntime.Procs {
         private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
 
         #region Opcode Handlers
-        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler?> _opcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler?>(){
+        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler?> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler?>(){
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
             {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
             {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
@@ -132,7 +132,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
         };
         #endregion
-
+        private static OpcodeHandler?[] _opcodeHandlers = {};
         public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
         public readonly IDreamDebugManager DebugManager = IoCManager.Resolve<IDreamDebugManager>();
 
@@ -154,6 +154,23 @@ namespace OpenDreamRuntime.Procs {
         public override DreamProc Proc => _proc;
 
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
+
+
+        /// Static initialiser for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
+        static DMProcState()
+        {
+            int maxOpcode = 0;
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
+            {
+                if(maxOpcode < (int) dpo)
+                    maxOpcode = (int) dpo;
+            }
+            _opcodeHandlers = new OpcodeHandler?[maxOpcode+1];
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
+            {
+                _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
+            }
+        }
 
         /// <param name="instance">This is our 'src'.</param>
         /// <exception cref="Exception">Thrown, at time of writing, when an invalid named arg is given</exception>
@@ -223,7 +240,8 @@ namespace OpenDreamRuntime.Procs {
 
             while (_pc < _proc.Bytecode.Length) {
                 int opcode = _proc.Bytecode[_pc++];
-                if (!_opcodeHandlers.TryGetValue((DreamProcOpcode) opcode, out var handler) || !Enum.IsDefined(typeof(DreamProcOpcode), opcode))
+                var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
+                if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
                 ProcStatus? status = handler.Invoke(this);
                 if (status != null) {

@@ -117,5 +117,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             state.Push(DreamValue.False); // This will never be true, because reaching this line means b is not a matrix, while a will always be.
             return ProcStatus.Returned;
         }
+
+        public ProcStatus OperatorBitNot(DreamValue a, DMProcState state)
+        {
+            throw new NotImplementedException("/matrix does not support the '~' operator yet");
+        }
     }
 }

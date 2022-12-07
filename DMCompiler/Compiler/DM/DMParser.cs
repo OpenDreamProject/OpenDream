@@ -386,7 +386,7 @@ namespace DMCompiler.Compiler.DM {
 
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
             implied_value = null;
-            if (Current().Type == TokenType.DM_LeftBracket)
+            if (Current().Type == TokenType.DM_LeftBracket || Current().Type == TokenType.DM_DoubleSquareBracket)
             {
                 var loc = Current().Location;
                 // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
@@ -398,18 +398,25 @@ namespace DMCompiler.Compiler.DM {
 
                 List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
-                while (Check(TokenType.DM_LeftBracket))
+                while (true)
                 {
-                    Whitespace();
-
-                    var size = Expression();
-                    if (size is not null)
+                    if(Check(TokenType.DM_DoubleSquareBracket))
+                        continue;
+                    else if(Check(TokenType.DM_LeftBracket))
                     {
-                        sizes.Add(new DMASTCallParameter(size.Location, size));
-                    }
+                        Whitespace();
 
-                    ConsumeRightBracket();
-                    Whitespace();
+                        var size = Expression();
+                        if (size is not null)
+                        {
+                            sizes.Add(new DMASTCallParameter(size.Location, size));
+                        }
+
+                        ConsumeRightBracket();
+                        Whitespace();
+                    }
+                    else
+                        break;
                 }
 
                 if (sizes.Count > 0) {

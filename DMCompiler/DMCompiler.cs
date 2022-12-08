@@ -253,15 +253,18 @@ namespace DMCompiler {
                 DMMParser parser = new DMMParser(lexer);
                 DreamMapJson map = parser.ParseMap();
 
+                bool hadErrors = false;
                 if (parser.Emissions.Count > 0) {
                     foreach (CompilerEmission error in parser.Emissions) {
+                        if (error.Level == ErrorLevel.Error)
+                            hadErrors = true;
+
                         Emit(error);
                     }
-
-                    continue;
                 }
 
-                maps.Add(map);
+                if (!hadErrors)
+                    maps.Add(map);
             }
 
             return maps;

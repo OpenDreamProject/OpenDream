@@ -128,6 +128,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     return new(contents);
                 }
+                case "locs": {
+                    // Unimplemented; just return a list containing src.loc
+                    DreamList locs = DreamList.Create();
+                    locs.AddValue(dreamObject.GetVariable("loc"));
+
+                    return new DreamValue(locs);
+                }
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

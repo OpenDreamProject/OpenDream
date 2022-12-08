@@ -29,7 +29,6 @@
 		set opendream_unimplemented = TRUE
 
 	proc/Scale(width, height)
-		set opendream_unimplemented = TRUE
 
 	proc/SetIntensity(r, g = r, b = r)
 		set opendream_unimplemented = TRUE

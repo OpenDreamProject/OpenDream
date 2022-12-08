@@ -6,6 +6,7 @@ using OpenDreamShared.Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 using ParsedDMIState = OpenDreamShared.Resources.DMIParser.ParsedDMIState;
 using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
@@ -70,7 +71,7 @@ public sealed class DreamIcon {
     /// Represents one of the icon frames an icon is made of.<br/>
     /// Contains everything needed to create a new DMI in <see cref="DreamIcon.GenerateDMI()"/>
     /// </summary>
-    public struct IconFrame {
+    public sealed class IconFrame {
         /// <summary>
         /// The image this icon frame originally comes from
         /// </summary>
@@ -85,6 +86,13 @@ public sealed class DreamIcon {
         /// The size of the original icon frame
         /// </summary>
         public int Width, Height;
+
+        public IconFrame(Image<Rgba32> image, ParsedDMIFrame dmiFrame, int width, int height) {
+            Image = image;
+            DMIFrame = dmiFrame;
+            Width = width;
+            Height = height;
+        }
     }
 
     public DreamIcon(DreamResourceManager resourceManager) {
@@ -202,9 +210,7 @@ public sealed class DreamIcon {
             List<IconFrame> iconFrames = new(insertingPair.Value.Length);
 
             foreach (var dmiFrame in insertingPair.Value) {
-                iconFrames.Add(new IconFrame {
-                    Image = image, DMIFrame = dmiFrame, Width = description.Width, Height = description.Height
-                });
+                iconFrames.Add(new IconFrame(image, dmiFrame, description.Width, description.Height));
             }
 
             iconState.Directions[insertingPair.Key] = iconFrames;
@@ -227,20 +233,30 @@ public sealed class DreamIcon {
             if (frameIndex > frames.Count)
                 continue; // Empty frame
 
-            if (frame.Width != Width || frame.Height != Height)
-                throw new NotImplementedException("Icon scaling is not implemented");
+            ParsedDMIFrame dmiFrame = frame.DMIFrame;
+            Image<Rgba32> image = frame.Image;
+            int srcFrameX = dmiFrame.X, srcFrameY = dmiFrame.Y;
+            if (frame.Width != Width || frame.Height != Height) { // Resize the frame to match our size
+                // There is no way this is performant with a large number of frames...
+                // TODO: Try to reduce the amount of cloned images here somehow
+                image = image.Clone();
+                image.Mutate(mutator => {
+                    mutator.Crop(new Rectangle(srcFrameX, srcFrameY, frame.Width, frame.Height));
+                    mutator.Resize(Width, Height);
+                    srcFrameX = 0;
+                    srcFrameY = 0;
+                });
+            }
 
             // Copy the frame from the original image to the new one
-            frame.Image.ProcessPixelRows(accessor => {
-                ParsedDMIFrame dmiFrame = frame.DMIFrame;
-
+            image.ProcessPixelRows(accessor => {
                 for (int y = 0; y < Height; y++) {
-                    var rowSpan = accessor.GetRowSpan(dmiFrame.Y + y);
+                    var rowSpan = accessor.GetRowSpan(srcFrameY + y);
 
                     for (int frameX = 0; frameX < Width; frameX++) {
                         int pixelLocation = (y * imageSpan) + x + frameX;
 
-                        pixels[pixelLocation] = rowSpan[dmiFrame.X + frameX];
+                        pixels[pixelLocation] = rowSpan[srcFrameX + frameX];
                     }
                 }
 
@@ -298,7 +314,7 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
         _blending.ProcessPixelRows(accessor => {
             // The first frame of the source image blends with the first frame of the destination image
             // The second frame blends with the second, and so on
-            // TODO: What happens if each direction has a different number of frames?
+            // TODO: What happens if each icon state has a different number of frames?
             (int X, int Y)? srcFramePos = CalculateFramePosition(frame);
             if (srcFramePos == null)
                 return;

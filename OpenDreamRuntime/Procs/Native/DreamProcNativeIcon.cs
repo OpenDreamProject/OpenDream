@@ -68,5 +68,20 @@ namespace OpenDreamRuntime.Procs.Native {
             iconObj.ApplyOperation(new DreamIconOperationBlend(blendType, icon, x, y));
             return DreamValue.Null;
         }
+
+        [DreamProc("Scale")]
+        [DreamProcParameter("width", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("height", Type = DreamValue.DreamValueType.Float)]
+        public static DreamValue NativeProc_Scale(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            //TODO Figure out what happens when you pass the wrong types as args
+
+            arguments.GetArgument(0, "width").TryGetValueAsInteger(out var width);
+            arguments.GetArgument(1, "height").TryGetValueAsInteger(out var height);
+
+            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            iconObj.Width = width;
+            iconObj.Height = height;
+            return DreamValue.Null;
+        }
     }
 }

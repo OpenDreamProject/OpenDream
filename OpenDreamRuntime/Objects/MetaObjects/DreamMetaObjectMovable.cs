@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turfLoc)) {
                         (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
-                        transform.AttachParent(level.Grid.GridEntityId);
+                        transform.AttachParent(level.Grid.Owner);
                         transform.WorldPosition = pos;
                     } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);

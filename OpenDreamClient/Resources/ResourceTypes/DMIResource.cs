@@ -41,7 +41,8 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         }
 
         public State? GetState(string stateName) {
-            if (stateName == null || !_states.ContainsKey(stateName)) return null;
+            if (stateName == null || !_states.ContainsKey(stateName))
+                return _states.TryGetValue(String.Empty, out var state) ? state : null; // Default state, if one exists
 
             return _states[stateName];
         }

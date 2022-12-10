@@ -210,9 +210,7 @@ namespace OpenDreamRuntime
 
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject outputObject = value.MustGetValueAsDreamObject();
-
+            if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
                 if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();

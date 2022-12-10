@@ -634,12 +634,12 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.LoopStart(loopLabel);
             {
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementWhile.Conditional);
                 _proc.BreakIfFalse();
 
                 _proc.StartScope();
                 {
-                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementWhile.Body);
                     _proc.LoopJumpToStart(loopLabel);
                 }

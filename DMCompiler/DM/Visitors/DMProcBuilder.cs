@@ -478,7 +478,7 @@ namespace DMCompiler.DM.Visitors {
 
                     ProcessBlockInner(body);
 
-                    _proc.LoopContinue(loopLabel);
+                    _proc.MarkLoopContinue(loopLabel);
                     if (incrementor != null) {
                         incrementor.EmitPushValue(_dmObject, _proc);
                         _proc.Pop();
@@ -520,15 +520,14 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (lValue != null) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -558,17 +557,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -597,17 +595,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -623,8 +620,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementInfLoop.Body);
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -642,9 +639,8 @@ namespace DMCompiler.DM.Visitors {
 
                 _proc.StartScope();
                 {
+                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementWhile.Body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.EndScope();
@@ -660,7 +656,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 ProcessBlockInner(statementDoWhile.Body);
 
-                _proc.LoopContinue(loopLabel);
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
                 _proc.JumpIfFalse(loopEndLabel);
                 _proc.LoopJumpToStart(loopLabel);

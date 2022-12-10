@@ -293,9 +293,13 @@ namespace DMCompiler.DM {
         }
 
         public void Enumerate(DMReference output) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.Enumerate);
-            WriteReference(output);
+            if (_loopStack?.TryPeek(out var peek) ?? false) {
+                WriteOpcode(DreamProcOpcode.Enumerate);
+                WriteReference(output);
+                WriteLabel($"{peek}_end");
+            } else {
+                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
+            }
         }
 
         public void DestroyEnumerator() {
@@ -326,16 +330,14 @@ namespace DMCompiler.DM {
             StartScope();
         }
 
-        public void LoopContinue(string loopLabel) {
-            AddLabel(loopLabel + "_continue");
+        public void MarkLoopContinue(string loopLabel) {
+            AddLabel($"{loopLabel}_continue");
         }
 
-        public void BackgroundSleep()
-        {
+        public void BackgroundSleep() {
             // TODO This seems like a bad way to handle background, doesn't it?
 
-            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background)
-            {
+            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
                 if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
                     throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
                 }
@@ -347,10 +349,9 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void LoopJumpToStart(string loopLabel)
-        {
+        public void LoopJumpToStart(string loopLabel) {
             BackgroundSleep();
-            Jump(loopLabel + "_start");
+            Jump($"{loopLabel}_start");
         }
 
         public void LoopEnd() {
@@ -428,12 +429,9 @@ namespace DMCompiler.DM {
         }
 
         public void BreakIfFalse() {
-            if (_loopStack?.TryPeek(out var peek) ?? false)
-            {
-                JumpIfFalse(peek + "_end");
-            }
-            else
-            {
+            if (_loopStack?.TryPeek(out var peek) ?? false) {
+                JumpIfFalse($"{peek}_end");
+            } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
             }
         }

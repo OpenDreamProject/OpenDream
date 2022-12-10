@@ -176,10 +176,13 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Enumerate(DMProcState state) {
             IEnumerator<DreamValue> enumerator = state.EnumeratorStack.Peek();
             DMReference reference = state.ReadReference();
+            int jumpToIfFailure = state.ReadInt();
             bool successfulEnumeration = enumerator.MoveNext();
 
             state.AssignReference(reference, enumerator.Current);
-            state.Push(new DreamValue(successfulEnumeration ? 1 : 0));
+            if (!successfulEnumeration)
+                state.Jump(jumpToIfFailure);
+
             return null;
         }
 

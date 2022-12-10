@@ -241,8 +241,16 @@ namespace DMCompiler.Compiler.DM {
                                 procBlock = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { procStatement });
                             }
                         }
-
-                        statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                        if(this is An operator)
+                            List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
+                            Location tokenLoc = Current().Location;
+                            ReuseToken(new Token(TokenType.DM_Period, ".", tokenLoc, null));
+                            ReuseToken(new Token(TokenType.DM_Equals, "=", tokenLoc, null));
+                            ReuseToken(new Token(TokenType.DM_Identifier, "src", tokenLoc, "src"));
+                            DMASTProcStatement assignEqSrc = ProcStatement();
+                            procStatements.Insert(0, assignEqSrc);
+                            procBlock.Statements = procStatements.ToArray();
+                            statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                     }
 
                     //Object definition

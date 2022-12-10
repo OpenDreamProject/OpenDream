@@ -146,7 +146,8 @@ namespace OpenDreamRuntime.Procs {
         public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
 
         private int _pc = 0;
-
+        private int? _subOpcode;
+        private DMReference? _subOpcodeRef;
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private readonly DreamValue[] _localVariables;
 
@@ -239,7 +240,14 @@ namespace OpenDreamRuntime.Procs {
             }
 
             while (_pc < _proc.Bytecode.Length) {
-                int opcode = _proc.Bytecode[_pc++];
+                int opcode = -1;
+                if(_subOpcode == null)
+                    opcode = _proc.Bytecode[_pc++];
+                else
+                {
+                    opcode = _subOpcode.Value;
+                    _subOpcode = null;
+                }
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
@@ -257,6 +265,14 @@ namespace OpenDreamRuntime.Procs {
             // TODO: This should be automatic (dispose pattern?)
             ReturnPools();
             return ProcStatus.Returned;
+        }
+
+        public void SetSubOpcode(DreamProcOpcode subOp, DMReference? subReference)
+        {
+            if(_subOpcode != null)
+                throw new Exception("Attempted to set a subOpcode when one already exists. This is extremely likely to corrupt the stack.");
+            _subOpcode = (int)subOp;
+            _subOpcodeRef = subReference;
         }
 
         public override void ReturnedInto(DreamValue value)
@@ -368,6 +384,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DMReference ReadReference() {
+            if(_subOpcodeRef != null)
+            {
+                DMReference result = _subOpcodeRef.Value;
+                _subOpcodeRef = null;
+                return result;
+            }
+
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {

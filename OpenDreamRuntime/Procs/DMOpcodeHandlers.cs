@@ -603,6 +603,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorAppend(first, second, state);
                     }
                     break;
@@ -641,6 +642,7 @@ namespace OpenDreamRuntime.Procs {
                     if(value.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorIncrement(value, state);
                     }
                     break;
@@ -673,6 +675,7 @@ namespace OpenDreamRuntime.Procs {
                     if(value.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorDecrement(value, state);
                     }
                     break;
@@ -987,7 +990,8 @@ namespace OpenDreamRuntime.Procs {
                     IDreamMetaObject metaObject = first.GetValueAsDreamObject().ObjectDefinition.MetaObject;
 
                     if (metaObject != null) {
-                        state.PopReference(reference);
+
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject.OperatorMask(first, second, state);
 
                         return null;
@@ -995,6 +999,7 @@ namespace OpenDreamRuntime.Procs {
                     else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&=", out DreamProc overload))
                     {
                         state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return ProcStatus.Called;
                     }
                     else

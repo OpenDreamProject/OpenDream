@@ -41,7 +41,7 @@
 		return 3.14
 
 	proc/operator&=(datum/complex/C)
-		CRASH("OPERATOR RAN &=")
+		world.log << "OPERATOR RAN &="
 		src.a = 3.14
 		src.b = 6.28
 

@@ -101,7 +101,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.DivideReference:
             case DreamProcOpcode.BitXorReference:
             case DreamProcOpcode.ModulusReference:
-            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
                 return (opcode, ReadReference());
@@ -111,6 +110,7 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
+            case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.PickWeighted:
             case DreamProcOpcode.PickUnweighted:
             case DreamProcOpcode.Spawn:
@@ -126,6 +126,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.MassConcatenation:
                 return (opcode, ReadInt());
 
+            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.JumpIfNullDereference:
                 return (opcode, ReadReference(), ReadInt());
 

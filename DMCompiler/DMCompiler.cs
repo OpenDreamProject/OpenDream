@@ -300,21 +300,20 @@ namespace DMCompiler {
                 compiledDream.Globals = globalListJson;
             }
 
-            if (DMObjectTree.GlobalProcs.Count > 0)
-            {
+            if (DMObjectTree.GlobalProcs.Count > 0) {
                 compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
             }
 
-            string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
-            });
-
             // Successful serialization
-            if (ErrorCount == 0)
-            {
-                File.WriteAllText(outputFile, json);
-                return "Saved to " + outputFile;
+            if (ErrorCount == 0) {
+                var outputFileHandle = File.Create(outputFile);
+
+                JsonSerializer.Serialize(outputFileHandle, compiledDream,
+                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                outputFileHandle.Close();
+                return $"Saved to {outputFile}";
             }
+
             return string.Empty;
         }
 

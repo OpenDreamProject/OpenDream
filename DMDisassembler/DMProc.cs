@@ -34,7 +34,7 @@ namespace DMDisassembler {
                 foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
                     StringBuilder text = new StringBuilder();
                     text.Append(instruction[0]);
-                    text.Append(" ");
+                    text.Append(' ');
 
                     switch (instruction) {
                         case (DreamProcOpcode.FormatString, string str, int numReplacements):
@@ -59,8 +59,8 @@ namespace DMDisassembler {
 
                         case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
                             labeledPositions.Add(jumpPosition);
-                            text.Append(reference);
-                            text.Append(" ");
+                            text.Append(reference.ToString());
+                            text.Append(' ');
                             text.Append(jumpPosition);
                             break;
 
@@ -76,6 +76,13 @@ namespace DMDisassembler {
                             text.Append(jumpPosition);
                             break;
 
+                        case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
+                            labeledPositions.Add(jumpPosition);
+                            text.Append(reference.ToString());
+                            text.Append(' ');
+                            text.Append(jumpPosition);
+                            break;
+
                         case (DreamProcOpcode.PushType, int type):
                             text.Append(Program.CompiledJson.Types[type].Path);
                             break;
@@ -83,7 +90,7 @@ namespace DMDisassembler {
                         case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
                             text.Append(argCount);
                             for (int i = 0; i < argCount; i++) {
-                                text.Append(" ");
+                                text.Append(' ');
                                 text.Append(names[i] ?? "-");
                             }
 
@@ -92,7 +99,7 @@ namespace DMDisassembler {
                         default:
                             for (int i = 1; i < instruction.Length; ++i) {
                                 text.Append(instruction[i]);
-                                text.Append(" ");
+                                text.Append(' ');
                             }
                             break;
                     }

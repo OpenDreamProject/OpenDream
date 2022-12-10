@@ -156,8 +156,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!loc.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turf))
                     throw new Exception($"Invalid turf loc {loc}");
 
-                IDreamMapManager dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
-                dreamMapManager.SetTurf(turf, objectDef, arguments);
+                state.Proc.DreamMapManager.SetTurf(turf, objectDef, arguments);
 
                 state.Push(loc);
                 return null;
@@ -549,7 +548,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            state.Push(new DreamValue(IoCManager.Resolve<DreamResourceManager>().LoadResource(resourcePath)));
+            state.Push(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
             return null;
         }
 
@@ -1331,7 +1330,7 @@ namespace OpenDreamRuntime.Procs {
                         var dllName = source.GetValueAsString();
                         var procName = state.Pop().GetValueAsString();
                         // DLL Invoke
-                        var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
+                        var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
                         Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
                         argV.Fill(0);
@@ -1742,7 +1741,7 @@ namespace OpenDreamRuntime.Procs {
             if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
                 z.TryGetValueAsInteger(out var zInt))
             {
-                IoCManager.Resolve<IDreamMapManager>().TryGetTurfAt((xInt, yInt), zInt, out var turf);
+                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
                 state.Push(new DreamValue(turf));
             }
             else

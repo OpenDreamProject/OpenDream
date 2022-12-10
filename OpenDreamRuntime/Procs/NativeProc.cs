@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -69,9 +71,20 @@ namespace OpenDreamRuntime.Procs {
         private Dictionary<string, DreamValue> _defaultArgumentValues;
         public HandlerFn Handler { get; }
 
+        [Dependency] private readonly IDreamManager _dreamManager;
+        internal override IDreamManager DreamManager => _dreamManager;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager;
+        internal override IDreamMapManager DreamMapManager => _dreamMapManager;
+        [Dependency] private readonly IDreamDebugManager _dreamDebugManager;
+        internal override IDreamDebugManager DreamDebugManager => _dreamDebugManager;
+        [Dependency] private readonly DreamResourceManager _dreamResourceManager;
+        internal override DreamResourceManager DreamResourceManager => _dreamResourceManager;
+
+
         public NativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
+            IoCManager.InjectDependencies(this); // i gave up on passing in the iocs as args here due to access related issues, IDreamDebugManager is internal.
             _defaultArgumentValues = defaultArgumentValues;
             Handler = handler;
         }

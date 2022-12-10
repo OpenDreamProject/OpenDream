@@ -3,6 +3,8 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -30,6 +32,11 @@ namespace OpenDreamRuntime {
         public string? VerbCategory { get; } = string.Empty;
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
+
+        internal abstract IDreamManager DreamManager { get; }
+        internal abstract IDreamMapManager DreamMapManager { get; }
+        internal abstract IDreamDebugManager DreamDebugManager { get; }
+        internal abstract DreamResourceManager DreamResourceManager { get; }
 
         protected DreamProc(DreamPath owningType, string name, DreamProc superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
             OwningType = owningType;

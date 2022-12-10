@@ -3,6 +3,7 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -15,9 +16,22 @@ namespace OpenDreamRuntime.Procs {
         public string? Source { get; set; }
         public int Line { get; set; }
 
-        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
+        private readonly IDreamManager _dreamManager;
+        internal override IDreamManager DreamManager => _dreamManager;
+        private readonly IDreamMapManager _dreamMapManager;
+        internal override IDreamMapManager DreamMapManager => _dreamMapManager;
+        private readonly IDreamDebugManager _dreamDebugManager;
+        internal override IDreamDebugManager DreamDebugManager => _dreamDebugManager;
+        private readonly DreamResourceManager _dreamResourceManager;
+        internal override DreamResourceManager DreamResourceManager => _dreamResourceManager;
+
+        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
             : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
+            _dreamManager = dreamManager;
+            _dreamMapManager = dreamMapManager;
+            _dreamDebugManager = dreamDebugManager;
+            _dreamResourceManager = dreamResourceManager;
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
         }
@@ -140,8 +154,8 @@ namespace OpenDreamRuntime.Procs {
         };
         #endregion
 
-        public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public readonly IDreamDebugManager DebugManager = IoCManager.Resolve<IDreamDebugManager>();
+        public IDreamManager DreamManager => _proc.DreamManager;
+        public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;

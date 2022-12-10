@@ -60,57 +60,59 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? CreateListEnumerator(DMProcState state)
-        {
-            var popped = state.Pop();
-
+        private static IEnumerable<DreamValue> GetEnumerableContents(DreamValue value) {
             DreamList? list = null;
-            if (popped.TryGetValueAsDreamObject(out var listObject))
+            if (value.TryGetValueAsDreamObject(out var listObject))
                 list = listObject as DreamList;
 
             if (list == null) {
                 if (listObject == null) {
                     list = null;
-                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World))
-                {
+                } else if (listObject.IsSubtypeOf(DreamPath.Atom) || listObject.IsSubtypeOf(DreamPath.World)) {
                     list = listObject.GetVariable("contents").GetValueAsDreamList();
                 } else {
-                    throw new Exception("Object " + listObject + " is not a " + DreamPath.List + ", " + DreamPath.Atom + " or " + DreamPath.World);
+                    throw new Exception($"Object {listObject} is not a {DreamPath.List}, {DreamPath.Atom} or {DreamPath.World}");
                 }
             }
 
-            if (list == null)
-            {
-                state.EnumeratorStack.Push(Enumerable.Empty<DreamValue>().GetEnumerator());
-            }
-            else
-            {
-                var values = new List<DreamValue>(list.GetValues());
-                state.EnumeratorStack.Push(values.GetEnumerator());
-            }
+            return list?.GetValues() ?? Enumerable.Empty<DreamValue>();
+        }
 
+        public static ProcStatus? CreateListEnumerator(DMProcState state) {
+            var contents = GetEnumerableContents(state.Pop());
+            var values = new List<DreamValue>(contents);
+
+            state.EnumeratorStack.Push(values.GetEnumerator());
             return null;
         }
 
-        public static ProcStatus? CreateTypeEnumerator(DMProcState state)
-        {
-            if (!state.Pop().TryGetValueAsPath(out var type))
-            {
-                throw new Exception($"Cannot create a type enumerator for a non-path");
+        public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
+            var contents = GetEnumerableContents(state.Pop());
+            var filterTypeId = state.ReadInt();
+            var filterType = state.DreamManager.ObjectTree.GetTreeEntry(filterTypeId).Path;
+            var values = new List<DreamValue>(contents);
+
+            state.EnumeratorStack.Push(new DreamValueAsObjectEnumerator(values, filterType));
+            return null;
+        }
+
+        public static ProcStatus? CreateTypeEnumerator(DMProcState state) {
+            if (!state.Pop().TryGetValueAsPath(out var type)) {
+                throw new Exception("Cannot create a type enumerator for a non-path");
             }
 
-            if (type == DreamPath.Client)
-            {
+            if (type == DreamPath.Client) {
                 state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Clients));
                 return null;
             }
-            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Atom))
-            {
-                state.EnumeratorStack.Push(new DreamValueAsObjectEnumerator(state.DreamManager.WorldContentsList.GetValues(), type));
+
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Atom)) {
+                state.EnumeratorStack.Push(
+                    new DreamValueAsObjectEnumerator(state.DreamManager.WorldContentsList.GetValues(), type));
                 return null;
             }
-            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Datum))
-            {
+
+            if (state.DreamManager.ObjectTree.GetObjectDefinition(type).IsSubtypeOf(DreamPath.Datum)) {
                 state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums));
                 return null;
             }

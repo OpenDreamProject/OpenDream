@@ -104,7 +104,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.BrowseResource,
             DMOpcodeHandlers.OutputControl,
             DMOpcodeHandlers.BitShiftRight,
-            null, //0x41
+            DMOpcodeHandlers.CreateFilteredListEnumerator,
             DMOpcodeHandlers.Power,
             DMOpcodeHandlers.DebugSource,
             DMOpcodeHandlers.DebugLine,

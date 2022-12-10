@@ -111,6 +111,7 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
+            case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.PickWeighted:
             case DreamProcOpcode.PickUnweighted:
             case DreamProcOpcode.Spawn:

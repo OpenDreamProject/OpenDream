@@ -491,39 +491,39 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+            if (outputVar is not LValue lValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
+                lValue = null;
+            }
+
+            // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+            DreamPath? implicitTypeCheck = null;
+            if (dmTypes == null) {
+                // No "as" means the var's type will be used
+                implicitTypeCheck = lValue.Path;
+            } else if (dmTypes != DMValueType.Anything) {
+                // "as anything" performs no check. Other values are unimplemented.
+                DMCompiler.UnimplementedWarning(outputVar.Location,
+                    $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+            }
+
             list.EmitPushValue(_dmObject, _proc);
-            _proc.CreateListEnumerator();
+            if (implicitTypeCheck != null) {
+                // Create an enumerator that will do the implicit istype() for us
+                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+            } else {
+                _proc.CreateListEnumerator();
+            }
 
             _proc.StartScope();
             {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    if (outputVar is Expressions.LValue lValue) {
+                    if (lValue != null) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
                         _proc.BreakIfFalse();
-
-                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
-                        DreamPath? implicitTypeCheck = null;
-                        if (dmTypes == null) {
-                            // No "as" means the var's type will be used
-                            implicitTypeCheck = lValue.Path;
-                        } else if (dmTypes != DMValueType.Anything) {
-                            // "as anything" performs no check. Other values are unimplemented.
-                            DMCompiler.UnimplementedWarning(outputVar.Location,
-                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
-                        }
-
-                        if (implicitTypeCheck != null) {
-                            outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(implicitTypeCheck.Value);
-                            _proc.IsType();
-
-                            _proc.ContinueIfFalse();
-                        }
-                    } else {
-                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);

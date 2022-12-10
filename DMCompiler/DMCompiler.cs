@@ -306,8 +306,11 @@ namespace DMCompiler {
 
             // Successful serialization
             if (ErrorCount == 0) {
-                JsonSerializer.Serialize(File.Create(outputFile), compiledDream,
+                var outputFileHandle = File.Create(outputFile);
+
+                JsonSerializer.Serialize(outputFileHandle, compiledDream,
                     new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                outputFileHandle.Close();
                 return $"Saved to {outputFile}";
             }
 

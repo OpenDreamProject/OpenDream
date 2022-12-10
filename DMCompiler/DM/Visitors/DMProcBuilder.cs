@@ -500,7 +500,7 @@ namespace DMCompiler.DM.Visitors {
             DreamPath? implicitTypeCheck = null;
             if (dmTypes == null) {
                 // No "as" means the var's type will be used
-                implicitTypeCheck = lValue.Path;
+                implicitTypeCheck = lValue?.Path;
             } else if (dmTypes != DMValueType.Anything) {
                 // "as anything" performs no check. Other values are unimplemented.
                 DMCompiler.UnimplementedWarning(outputVar.Location,

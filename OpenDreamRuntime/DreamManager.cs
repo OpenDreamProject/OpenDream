@@ -48,7 +48,7 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string jsonPath) {
-
+            ObjectTree = new(); // cheesy, sorts out a load order conflict.
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
@@ -58,7 +58,6 @@ namespace OpenDreamRuntime {
         }
 
         public void StartWorld() {
-            ObjectTree = new(); // cheesy, sorts out a load order conflict.
             // It is now OK to call user code, like /New procs.
             Initialized = true;
             InitializedTick = _gameTiming.CurTick;

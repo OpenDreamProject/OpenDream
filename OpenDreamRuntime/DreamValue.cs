@@ -114,11 +114,11 @@ namespace OpenDreamRuntime {
         }
 
         public string MustGetValueAsString() {
-            if (Type != DreamValueType.String) {
+            try {
+                return (string)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of string");
             }
-
-            return (string)Value;
         }
 
         //Casts a float value to an integer
@@ -138,11 +138,11 @@ namespace OpenDreamRuntime {
         }
 
         public int MustGetValueAsInteger() {
-            if (Type != DreamValueType.Float) {
+            try {
+                return (int)(float)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of integer");
             }
-
-            return (int)(float)Value;
         }
 
         [Obsolete("Deprecated. Use TryGetValueAsFloat() or MustGetValueAsFloat() instead.")]
@@ -161,11 +161,11 @@ namespace OpenDreamRuntime {
         }
 
         public float MustGetValueAsFloat() {
-            if (Type != DreamValueType.Float) {
+            try {
+                return (float)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of float");
             }
-
-            return (float)Value;
         }
 
         public bool TryGetValueAsDreamResource(out DreamResource value) {
@@ -179,11 +179,11 @@ namespace OpenDreamRuntime {
         }
 
         public DreamResource MustGetValueAsDreamResource() {
-            if (Type != DreamValueType.DreamResource) {
+            try {
+                return (DreamResource)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of DreamResource");
             }
-
-            return (DreamResource)Value;
         }
 
         [Obsolete("Deprecated. Use TryGetValueAsDreamObject() or MustGetValueAsDreamObject() instead.")]
@@ -210,11 +210,11 @@ namespace OpenDreamRuntime {
         }
 
         public DreamObject MustGetValueAsDreamObject() {
-            if (Type != DreamValueType.DreamObject) {
+            try {
+                return (DreamObject)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of DreamObject");
             }
-
-            return (DreamObject)Value;
         }
 
         public bool TryGetValueAsDreamObjectOfType(DreamPath type, [NotNullWhen(true)] out DreamObject? dreamObject) {
@@ -239,11 +239,11 @@ namespace OpenDreamRuntime {
         }
 
         public DreamList MustGetValueAsDreamList() {
-            if (!TryGetValueAsDreamObjectOfType(DreamPath.List, out DreamObject listObject)) {
+            try {
+                return (DreamList)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of DreamList");
             }
-
-            return (DreamList)listObject;
         }
 
         public bool TryGetValueAsPath(out DreamPath path) {
@@ -259,11 +259,11 @@ namespace OpenDreamRuntime {
         }
 
         public DreamPath MustGetValueAsPath() {
-            if (Type != DreamValueType.DreamPath) {
+            try {
+                return (DreamPath)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of DreamPath");
             }
-
-            return (DreamPath)Value;
         }
 
         public bool TryGetValueAsProc(out DreamProc proc) {
@@ -279,11 +279,11 @@ namespace OpenDreamRuntime {
         }
 
         public DreamProc MustGetValueAsProc() {
-            if (Type != DreamValueType.DreamProc) {
+            try {
+                return (DreamProc)Value;
+            } catch (InvalidCastException) {
                 throw new Exception("Value " + this + " was not the expected type of DreamProc");
             }
-
-            return (DreamProc)Value;
         }
 
         public bool IsTruthy() {

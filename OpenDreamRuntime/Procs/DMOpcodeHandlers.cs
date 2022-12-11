@@ -1327,7 +1327,10 @@ namespace OpenDreamRuntime.Procs {
                         if(!source.TryGetValueAsString(out var dllName)) {
                             throw new Exception($"{source} is not a valid DLL");
                         }
-                        var procName = state.Pop().MustGetValueAsString();
+                        var popProc = state.Pop();
+                        if(!popProc.TryGetValueAsString(out var procName)) {
+                            throw new Exception($"{popProc} is not a valid proc name");
+                        }
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
 

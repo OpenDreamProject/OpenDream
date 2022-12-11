@@ -212,7 +212,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ProcStatus.Returned;
         }
 
-        public ProcStatus BitAnd(DreamValue a, DreamValue b, DMProcState state)
+        public ProcStatus OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state)
         {
             if (a.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = DreamList.Create();
@@ -252,6 +252,36 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ProcStatus.Returned;
         }
 
+        public ProcStatus OperatorBitXor(DreamValue a, DreamValue b, DMProcState state)
+        {
+            if(a.TryGetValueAsDreamList(out DreamList list)) {
+                DreamList newList = DreamList.Create();
+                List<DreamValue> values;
+
+                if (b.TryGetValueAsDreamList(out DreamList secondList)) {
+                    values = secondList.GetValues();
+                } else {
+                    values = new List<DreamValue>() { b };
+                }
+
+                foreach (DreamValue value in values) {
+                    bool inFirstList = list.ContainsValue(value);
+                    bool inSecondList = secondList.ContainsValue(value);
+
+                    if (inFirstList ^ inSecondList) {
+                        newList.AddValue(value);
+
+                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
+                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
+                    }
+                }
+
+                state.Push(new DreamValue(newList));
+                return ProcStatus.Returned;
+            }
+            else
+                throw new Exception("List bit-xor on not list???");
+        }
         public ProcStatus OperatorIndex(DreamObject dreamObject, DreamValue index, DMProcState state) {
             state.Push(((DreamList)dreamObject).GetValue(index));
             return ProcStatus.Returned;

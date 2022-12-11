@@ -542,23 +542,44 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Add(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-            DreamValue? output = null;
 
-            if (second.Value == null) {
-                output = first;
-            } else if (first.Value == null) {
-                output = second;
-            } else switch (first.Type) {
+            if(first == DreamValue.Null)
+            {
+                state.Push(second);
+                return null; //early return for null + anything = anything
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
-                        output = new DreamValue(firstFloat + secondFloat);
+                    if(second == DreamValue.Null)
+                    {
+                        state.Push(first);
+                        return null;
+                    }
+                    else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
+                    {
+                        state.Push(new DreamValue(firstFloat + secondFloat));
+                        return null;
+                    }
                     break;
                 }
-                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
-                        output = new DreamValue(firstString + secondString);
+                case DreamValue.DreamValueType.String:
+                {
+                    if(second == null)
+                    {
+                        state.Push(first);
+                        return null;
+                    }
+                    else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
+                    {
+                        state.Push(new DreamValue(firstString + secondString));
+                        return null;
+                    }
                     break;
-                case DreamValue.DreamValueType.DreamObject: {
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
@@ -566,40 +587,67 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"Addition cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid add operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"+ cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Append(DMProcState state) {
             DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue? output = null;
 
-            if (second.Value == null) {
-                output = first;
-            } else if (first.Value == null) {
-                output = second;
-            } else switch (first.Type) {
+            if(first == DreamValue.Null)
+            {
+                state.AssignReference(reference, second);
+                state.Push(second);
+                return null; //early return for null += anything = anything
+            }
+
+            DreamValue output;
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
+                    if(second == DreamValue.Null)
+                    {
+                        state.AssignReference(reference, first);
+                        state.Push(first);
+                        return null;
+                    }
+                    else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
+                    {
                         output = new DreamValue(firstFloat + secondFloat);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
                     break;
                 }
-                case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
+                case DreamValue.DreamValueType.String:
+                {
+                    if(second == DreamValue.Null)
+                    {
+                        state.AssignReference(reference, first);
+                        state.Push(first);
+                        return null;
+                    }
+                    else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
+                    {
                         output = new DreamValue(firstString + secondString);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
                     break;
-                case DreamValue.DreamValueType.DreamObject: {
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
@@ -608,109 +656,150 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
-                        // TODO icon += hexcolor is the same as Blend()
-                        state.DreamManager.WriteWorldLog("Appending colors to DMIs is not implemented", LogLevel.Warning, "opendream.unimplemented");
-                        output = first;
-                        break;
+                {
+                    state.DreamManager.WriteWorldLog("Appending colors to DMIs is not implemented", LogLevel.Warning, "opendream.unimplemented");
+                    state.AssignReference(reference, first);
+                    state.Push(first);
+                    return null;
+                }
                 default:
-                    throw new InvalidOperationException($"Addition cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.AssignReference(reference, output.Value);
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid add operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"+= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Increment(DMProcState state) {
             DMReference reference = state.ReadReference();
-            DreamValue value = state.GetReferenceValue(reference, peek: true);
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue output;
 
-            DreamValue? output = null;
-            switch(value.Type) {
+            if(first == DreamValue.Null)
+            {
+                output = new DreamValue(1.0f);
+                state.AssignReference(reference, output);
+                state.Push(output);
+                return null;
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
-                    if(value.TryGetValueAsFloat(out float valueFloat))
-                        output = new DreamValue(valueFloat+1.0f);
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamObject: {
-                    if(value.TryGetValueAsDreamObject(out DreamObject? obj))
+                    if(first.TryGetValueAsFloat(out float firstFloat))
                     {
-                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorIncrement(value, state);
+                        output = new DreamValue(firstFloat + 1.0f);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorIncrement(first, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"Increment cannot be done on {value}");
+                    break;
             }
-
-            if (output != null) {
-                state.AssignReference(reference, output.Value);
-                state.Push(value);
-            } else {
-                throw new Exception($"Invalid increment operation on {value}");
-            }
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Increment cannot be done on {first}");
         }
 
         public static ProcStatus? Decrement(DMProcState state) {
             DMReference reference = state.ReadReference();
-            DreamValue value = state.GetReferenceValue(reference, peek: true);
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue output;
 
-            DreamValue? output = null;
-            switch(value.Type) {
+            if(first == DreamValue.Null)
+            {
+                output = new DreamValue(-1.0f);
+                state.AssignReference(reference, output);
+                state.Push(output);
+                return null;
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
-                    if(value.TryGetValueAsFloat(out float valueFloat))
-                        output = new DreamValue(valueFloat-1.0f);
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamObject: {
-                    if(value.TryGetValueAsDreamObject(out DreamObject? obj))
+                    if(first.TryGetValueAsFloat(out float firstFloat))
                     {
-                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorDecrement(value, state);
+                        output = new DreamValue(firstFloat + 1.0f);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorIncrement(first, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"Decrement cannot be done on {value}");
+                    break;
             }
-
-            if (output != null) {
-                state.AssignReference(reference, output.Value);
-                state.Push(value);
-            } else {
-                throw new Exception($"Invalid Decrement operation on {value}");
-            }
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Decrement cannot be done on {first}");
         }
 
         public static ProcStatus? BitAnd(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-            DreamValue? output = null;
 
-            if (second.Value == null) {
-                output = first;
-            } else if (first.Value == null) {
-                output = second;
-            } else switch (first.Type) {
+            if(first == DreamValue.Null)
+            {
+                state.Push(new DreamValue(0.0f));
+                return null; //early return for null & anything = 0
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                        output = new DreamValue(firstInt & secondInt);
+                    {
+                        state.Push(new DreamValue(firstInt & secondInt));
+                        return null;
+                    }
                     else
-                        output = new DreamValue(0);
+                    {
+                        state.Push(new DreamValue(0.0f));
+                        return null;
+                    }
+                }
+                case DreamValue.DreamValueType.String:
+                {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject: {
+                case DreamValue.DreamValueType.DreamObject:
+                {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
@@ -718,68 +807,87 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"Bit-and cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid bit-and operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-and cannot be done between {first} and {second}");
         }
 
-        public static ProcStatus? BitNot(DMProcState state)
-        {
-            DreamValue value = state.Pop();
-            DreamValue? output = null;
-            switch(value.Type) {
+        public static ProcStatus? BitNot(DMProcState state){
+            DreamValue first = state.Pop();
+
+            if(first == DreamValue.Null)
+            {
+                state.Push(new DreamValue(1.0f));
+                return null; //null == 0 --> !null = 1
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
-                    if(value.TryGetValueAsInteger(out int valueInt))
-                        output = new DreamValue((~valueInt) & 0xFFFFFF);
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamObject: {
-                    if(value.TryGetValueAsDreamObject(out DreamObject? obj))
+                    if(first.TryGetValueAsInteger(out int valueInt))
                     {
-                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        return metaObject?.OperatorBitNot(value, state);
+                        state.Push(new DreamValue((~valueInt) & 0xFFFFFF));
+                    }
+                    else
+                    {
+                        state.Push(new DreamValue(0));
                     }
                     break;
                 }
-                default:
-                    throw new InvalidOperationException($"BitNot cannot be done on {value}");
-            }
-
-            if (output != null) {
-                state.Push(value);
-            } else {
-                throw new Exception($"Invalid BitNot operation on {value}");
-            }
-            return null;
-        }
-
-        public static ProcStatus? BitOr(DMProcState state) {                        // x | y
-            DreamValue second = state.Pop();
-            DreamValue first = state.Pop();
-            DreamValue? output = null;
-            if (second.Value == null) {
-                output = first;
-            } else if (first.Value == null) {
-                output = second;
-            } else switch (first.Type) {
-                case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                        output = new DreamValue(firstInt | secondInt);
-                    else if (first.TryGetValueAsInteger(out firstInt))
-                        output = new DreamValue(firstInt);
-                    else
-                        throw new Exception("Invalid or operation on " + first + " and " + second);
+                case DreamValue.DreamValueType.String:
+                {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject: {
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorBitNot(first, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-not cannot be done on {first}");
+        }
+
+        public static ProcStatus? BitOr(DMProcState state) {
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
+
+            if(first == DreamValue.Null)
+            {
+                state.Push(new DreamValue(0.0f));
+                return null; //early return for null | anything = 0
+            }
+
+            switch(first.Type)
+            {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
+                    {
+                        state.Push(new DreamValue(firstInt | secondInt));
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
@@ -787,32 +895,42 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"Bit-or cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid bit-or operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-or cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftLeft(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-            DreamValue? output = null;
-            switch (first.Type) {
+
+            if(first == DreamValue.Null)
+            {
+                state.Push(new DreamValue(0.0f));
+                return null; //early return for null << anything = 0
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                        output = new DreamValue(firstInt << secondInt);
-                    else
-                        throw new Exception("Invalid BitShiftLeft operation on " + first + " and " + second);
+                    {
+                        state.Push(new DreamValue(firstInt << secondInt));
+                        return null;
+                    }
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject: {
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
@@ -820,69 +938,150 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"BitShiftLeft cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid BitShiftLeft operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-shift-left cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-            DreamValue? output = null;
-            switch (first.Type) {
+
+            if(first == DreamValue.Null)
+            {
+                state.Push(new DreamValue(0.0f));
+                return null; //early return for null >> anything = 0
+            }
+
+            switch(first.Type)
+            {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                        output = new DreamValue(firstInt >> secondInt);
-                    else
-                        throw new Exception("Invalid BitShiftRight operation on " + first + " and " + second);
-                    break;
-                }
-                case DreamValue.DreamValueType.DreamObject: {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
-                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        return metaObject?.OperatorBitShiftRight(first, second, state);
+                        state.Push(new DreamValue(firstInt >> secondInt));
+                        return null;
                     }
                     break;
                 }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorBitShiftLeft(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
                 default:
-                    throw new InvalidOperationException($"BitShiftRight cannot be done between {first} and {second}");
+                    break;
             }
-
-            if (output != null) {
-                state.Push(output.Value);
-            } else {
-                throw new Exception("Invalid BitShiftRight operation on " + first + " and " + second);
-            }
-
-            return null;
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-shift-right cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitXor(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            state.Push(BitXorValues(first, second));
-            return null;
+            if(first == DreamValue.Null)
+            {
+                state.Push(second);
+                return null; //early return for null ^ anything = anything
+            }
+
+            switch(first.Type)
+            {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
+                    {
+                        state.Push(new DreamValue(firstInt ^ secondInt));
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        return metaObject?.OperatorBitXor(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-xor cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitXorReference(DMProcState state) {
             DreamValue second = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result = BitXorValues(first, second);
 
-            state.AssignReference(reference, result);
-            state.Push(result);
-            return null;
+            if(first == DreamValue.Null)
+            {
+                state.AssignReference(reference, second);
+                state.Push(second);
+                return null; //early return for null ^ anything = anything
+            }
+
+            DreamValue output;
+
+            switch(first.Type)
+            {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
+                    {
+                        output = new DreamValue(firstInt ^ secondInt);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorBitXorRef(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BooleanAnd(DMProcState state) {
@@ -916,48 +1115,53 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Combine(DMProcState state) {
-            DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
+            DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue output;
 
-            DreamValue result;
-            if (first.TryGetValueAsDreamObject(out var firstObj)) {
-                if (firstObj != null) {
-                    IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
-
-                    if (metaObject != null) {
-                        state.PopReference(reference);
-                        return metaObject.OperatorCombine(first, second, state);
-
-                        return null;
-                    } else if(first.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload))
-                    {
-                        state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){second}));
-
-                        return ProcStatus.Called;
-                    } else {
-                        throw new Exception("Invalid combine operation on " + first + " and " + second);
-                    }
-                } else {
-                    result = second;
-                }
-            } else if (second.Value != null) {
-                if (first.TryGetValueAsInteger(out var firstInt) && second.TryGetValueAsInteger(out var secondInt)) {
-                    result = new DreamValue(firstInt | secondInt);
-                } else if (first.Value == null) {
-                    result = second;
-                } else {
-                    throw new Exception("Invalid combine operation on " + first + " and " + second);
-                }
-            } else if (first.Type == DreamValue.DreamValueType.Float) {
-                result = first;
-            } else {
-                throw new Exception("Invalid combine operation on " + first + " and " + second);
+            if(first == DreamValue.Null)
+            {
+                output = new DreamValue(0);
+                state.AssignReference(reference, output);
+                state.Push(output);
+                return null; //early return for null | anything = 0
             }
 
-            state.AssignReference(reference, result);
-            state.Push(result);
-            return null;
+            switch(first.Type)
+            {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
+                    {
+                        output = new DreamValue(firstInt | secondInt);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String:
+                {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject:
+                {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
+                    {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorCombine(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamPath:
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Or-ref cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Divide(DMProcState state) {
@@ -2150,35 +2354,6 @@ namespace OpenDreamRuntime.Procs {
                 return new(firstFloat / secondFloat);
             } else {
                 throw new Exception("Invalid divide operation on " + first + " and " + second);
-            }
-        }
-
-        private static DreamValue BitXorValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
-                List<DreamValue> values;
-
-                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
-                    values = secondList.GetValues();
-                } else {
-                    values = new List<DreamValue>() { second };
-                }
-
-                foreach (DreamValue value in values) {
-                    bool inFirstList = list.ContainsValue(value);
-                    bool inSecondList = secondList.ContainsValue(value);
-
-                    if (inFirstList ^ inSecondList) {
-                        newList.AddValue(value);
-
-                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
-                    }
-                }
-
-                return new DreamValue(newList);
-            } else {
-                return new DreamValue(first.GetValueAsInteger() ^ second.GetValueAsInteger());
             }
         }
 

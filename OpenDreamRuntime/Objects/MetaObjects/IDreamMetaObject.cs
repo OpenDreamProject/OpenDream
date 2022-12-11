@@ -336,6 +336,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorPower(a, b, state);
         }
 
+        public ProcStatus OperatorBitXorRef(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^=", out DreamProc overload))
+                {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot bit-xor {a} and {b}");
+
+            return ParentType.OperatorBitXorRef(a, b, state);
+        }
+
 
     }
 }

@@ -739,7 +739,7 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsFloat(out float firstFloat))
                     {
-                        output = new DreamValue(firstFloat + 1.0f);
+                        output = new DreamValue(firstFloat - 1.0f);
                         state.AssignReference(reference, output);
                         state.Push(output);
                         return null;

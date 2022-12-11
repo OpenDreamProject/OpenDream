@@ -1324,7 +1324,9 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String:
                     unsafe
                     {
-                        var dllName = source.MustGetValueAsString();
+                        if(!source.TryGetValueAsString(out var dllName)) {
+                            throw new Exception($"{source} is not a valid DLL");
+                        }
                         var procName = state.Pop().MustGetValueAsString();
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);

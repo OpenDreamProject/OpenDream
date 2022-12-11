@@ -832,12 +832,13 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsInteger(out int valueInt))
                     {
                         state.Push(new DreamValue((~valueInt) & 0xFFFFFF));
+                        return null;
                     }
                     else
                     {
                         state.Push(new DreamValue(0));
+                        return null;
                     }
-                    break;
                 }
                 case DreamValue.DreamValueType.String:
                 {
@@ -1182,6 +1183,7 @@ namespace OpenDreamRuntime.Procs {
                             throw new Exception("Division by zero");
 
                         state.Push(new DreamValue(firstFloat / secondFloat));
+                        return null;
                     }
                     break;
                 }
@@ -1613,6 +1615,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsFloat(out float firstFloat))
                     {
                         state.Push(new DreamValue(-firstFloat));
+                        return null;
                     }
                     break;
                 }
@@ -1625,7 +1628,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj))
                     {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        return metaObject?.OperatorBitNot(first, state);
+                        return metaObject?.OperatorNegate(first, state);
                     }
                     break;
                 }
@@ -1636,7 +1639,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-not cannot be done on {first}");
+            throw new InvalidOperationException($"Negate cannot be done on {first}");
         }
 
         public static ProcStatus? Power(DMProcState state) {
@@ -1787,8 +1790,13 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CompareEquivalent(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
-            state.Push(new DreamValue(IsEquivalent(first, second) ? 1 : 0));
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second, state);
+                }
+            }
+            // Behaviour is otherwise equivalent (pun intended) to ==
+            state.Push(new DreamValue(IsEqual(first, second) ? 1 : 0));
             return null;
         }
 

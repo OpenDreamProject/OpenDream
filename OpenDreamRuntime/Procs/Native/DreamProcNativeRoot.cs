@@ -1275,7 +1275,9 @@ namespace OpenDreamRuntime.Procs.Native {
                         distance = arguments.GetArgument(1, "Center").GetValueAsInteger();
                     }
                 } else {
-                    distance = firstArgument.MustGetValueAsInteger();
+                    if(!firstArgument.TryGetValueAsInteger(out distance)) {
+                         throw new Exception("distance is not a number");
+                     }
 
                     if (arguments.ArgumentCount > 1) {
                         center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();

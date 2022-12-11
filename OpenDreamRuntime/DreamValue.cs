@@ -223,7 +223,7 @@ namespace OpenDreamRuntime {
 
         [Obsolete("Deprecated. Use TryGetValueAsDreamList() or MustGetValueAsDreamList() instead.")]
         public DreamList GetValueAsDreamList() {
-            return (DreamList)MustGetValueAsDreamObject();
+            return MustGetValueAsDreamList();
         }
 
         public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList list) {

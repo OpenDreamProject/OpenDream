@@ -1207,7 +1207,9 @@ namespace OpenDreamRuntime.Procs {
 
                 type = typeObject.ObjectDefinition.Type;
             } else {
-                type = typeValue.MustGetValueAsPath();
+                if(!typeValue.TryGetValueAsPath(out type)) {
+                    throw new Exception($"istype() attempted to check non-path {typeValue}");
+                }
             }
 
             if (value.TryGetValueAsDreamObject(out DreamObject dreamObject) && dreamObject != null) {

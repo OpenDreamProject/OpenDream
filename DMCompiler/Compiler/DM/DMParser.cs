@@ -241,16 +241,16 @@ namespace DMCompiler.Compiler.DM {
                                 procBlock = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { procStatement });
                             }
                         }
-                        if(this is An operator)
+                        if(_currentPath.LastElement.Contains("operator"))
+                        {
                             List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
-                            Location tokenLoc = Current().Location;
-                            ReuseToken(new Token(TokenType.DM_Period, ".", tokenLoc, null));
-                            ReuseToken(new Token(TokenType.DM_Equals, "=", tokenLoc, null));
-                            ReuseToken(new Token(TokenType.DM_Identifier, "src", tokenLoc, "src"));
-                            DMASTProcStatement assignEqSrc = ProcStatement();
+                            Location tokenLoc = procBlock.Location;
+                            //add ". = src" as the first expression in the operator
+                            DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc, new DMASTAssign(tokenLoc,new DMASTCallableSelf(tokenLoc), new DMASTIdentifier(tokenLoc, "src")));
                             procStatements.Insert(0, assignEqSrc);
                             procBlock.Statements = procStatements.ToArray();
-                            statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                        }
+                        statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                     }
 
                     //Object definition

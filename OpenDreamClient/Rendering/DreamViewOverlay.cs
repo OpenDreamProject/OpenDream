@@ -2,6 +2,7 @@
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamClient.Rendering;
 
@@ -13,7 +14,9 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
 
+    private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
     private readonly RenderOrderComparer _renderOrderComparer = new();
     private EntityLookupSystem _lookupSystem;
     private ClientAppearanceSystem _appearanceSystem;
@@ -30,6 +33,8 @@ sealed class DreamViewOverlay : Overlay {
         if (eye == null) return;
 
         DrawMap(args, eye.Value);
+        _appearanceSystem.CleanUpUnusedFilters();
+        _appearanceSystem.ResetFilterUsageFlags();
     }
 
     private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
@@ -64,7 +69,7 @@ sealed class DreamViewOverlay : Overlay {
             if (!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                 continue;
 
-            sprite.Icon.Draw(args.WorldHandle,
+            DrawIcon(args.WorldHandle, sprite.Icon,
                 _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
         }
     }
@@ -77,7 +82,102 @@ sealed class DreamViewOverlay : Overlay {
             MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
             DreamIcon icon = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId);
 
-            icon.Draw(args.WorldHandle, pos.Position - 1);
+            DrawIcon(args.WorldHandle, icon, pos.Position - 1);
+        }
+    }
+
+    private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
+        IRenderTexture result;
+
+        if (!_renderTargetCache.TryGetValue(size, out var listResult)) {
+            result = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+        } else {
+            if (listResult.Count > 0) {
+                result = listResult[0]; //pop a value
+                listResult.Remove(result);
+            } else {
+                result = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+            }
+
+            _renderTargetCache[size] = listResult; //put the shorter list back
+        }
+
+        return result;
+    }
+
+    private void ReturnPingPongRenderTarget(IRenderTexture rental) {
+        if (!_renderTargetCache.TryGetValue(rental.Size, out var storeList))
+            storeList = new List<IRenderTexture>(4);
+
+        storeList.Add(rental);
+        _renderTargetCache[rental.Size] = storeList;
+    }
+
+    // TODO: Move this to DreamIcon.Draw() so screen objects can have filters
+    private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
+        if (icon.Appearance == null)
+            return;
+
+        position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+
+        foreach (DreamIcon underlay in icon.Underlays) {
+            DrawIcon(handle, underlay, position);
+        }
+
+        AtlasTexture frame = icon.CurrentFrame;
+        if(frame != null && icon.Appearance.Filters.Count == 0) {
+            //faster path for rendering unshaded sprites
+            handle.DrawTexture(frame, position, icon.Appearance.Color);
+        } else if (frame != null) {
+            IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
+            IRenderTexture pong = RentPingPongRenderTarget(frame.Size * 2);
+            IRenderTexture tmpHolder;
+
+            handle.RenderInRenderTarget(pong,
+                () => {
+                    handle.DrawTextureRect(frame,
+                        new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
+                        icon.Appearance.Color);
+                }, Color.Transparent);
+
+            bool rotate = true;
+            foreach (DreamFilter filterId in icon.Appearance.Filters) {
+                ShaderInstance s = _appearanceSystem.GetFilterShader(filterId);
+
+                handle.RenderInRenderTarget(ping, () => {
+                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
+                    handle.UseShader(s);
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
+                    handle.UseShader(null);
+                }, Color.Transparent);
+
+                tmpHolder = ping;
+                ping = pong;
+                pong = tmpHolder;
+                rotate = !rotate;
+            }
+
+            //this is so dumb
+            if (rotate) {
+                handle.RenderInRenderTarget(ping, () => {
+                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
+                }, Color.Transparent);
+
+                tmpHolder = ping;
+                ping = pong;
+                pong = tmpHolder;
+            }
+
+            handle.DrawTexture(pong.Texture, position - ((frame.Size / 2) / (float) EyeManager.PixelsPerMeter),
+                icon.Appearance.Color);
+            ReturnPingPongRenderTarget(ping);
+            ReturnPingPongRenderTarget(pong);
+        }
+
+        foreach (DreamIcon overlay in icon.Overlays) {
+            DrawIcon(handle, overlay, position);
         }
     }
 }
+

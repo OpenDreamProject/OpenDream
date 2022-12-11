@@ -26,6 +26,7 @@
         DM_Preproc_LineSplice,
         DM_Preproc_Number,
         DM_Preproc_ParameterStringify,
+        DM_Preproc_Pragma,
         DM_Preproc_Punctuator,
         DM_Preproc_Punctuator_Colon,
         DM_Preproc_Punctuator_Comma,

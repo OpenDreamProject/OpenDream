@@ -7,22 +7,19 @@ using Robust.Shared.Network;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Resources
-{
-    public interface IDreamResourceManager
-    {
+namespace OpenDreamClient.Resources {
+    public interface IDreamResourceManager {
         void Initialize();
         void Shutdown();
         ResourcePath CreateCacheFile(string filename, string data);
         ResourcePath CreateCacheFile(string filename, byte[] data);
-        void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource;
+        void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
         ResourcePath GetCacheFilePath(string filename);
     }
 
-    internal sealed class DreamResourceManager : IDreamResourceManager
-    {
-        private readonly Dictionary<string, LoadingResourceEntry> _loadingResources = new();
-        private readonly Dictionary<string, DreamResource> _resourceCache = new();
+    internal sealed class DreamResourceManager : IDreamResourceManager {
+        private readonly Dictionary<int, LoadingResourceEntry> _loadingResources = new();
+        private readonly Dictionary<int, DreamResource> _resourceCache = new();
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
@@ -31,10 +28,9 @@ namespace OpenDreamClient.Resources
 
         private ResourcePath _cacheDirectory;
 
-        private ISawmill _sawmill = Logger.GetSawmill("opendream.res");
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.res");
 
-        public void Initialize()
-        {
+        public void Initialize() {
             InitCacheDirectory();
 
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
@@ -42,16 +38,13 @@ namespace OpenDreamClient.Resources
             _netManager.RegisterNetMessage<MsgResource>(RxResource);
         }
 
-        public void Shutdown()
-        {
+        public void Shutdown() {
             _resourceManager.UserData.Delete(_cacheDirectory);
         }
 
-        private void InitCacheDirectory()
-        {
+        private void InitCacheDirectory() {
             var random = new Random();
-            while (true)
-            {
+            while (true) {
                 _cacheDirectory = new ResourcePath($"/OpenDream/Cache/{random.Next()}");
                 if (!_resourceManager.UserData.Exists(_cacheDirectory))
                     break;
@@ -61,52 +54,51 @@ namespace OpenDreamClient.Resources
             _resourceManager.UserData.CreateDir(_cacheDirectory);
         }
 
-        private void RxBrowseResource(MsgBrowseResource message)
-        {
+        private void RxBrowseResource(MsgBrowseResource message) {
             _resourceManager.UserData.WriteAllBytes(_cacheDirectory / message.Filename, message.Data);
         }
 
-        private void RxResource(MsgResource message)
-        {
-            if (_loadingResources.ContainsKey(message.ResourcePath)) {
-                LoadingResourceEntry entry = _loadingResources[message.ResourcePath];
-                DreamResource resource = (DreamResource)_typeFactory.CreateInstance(entry.ResourceType, new object[] { message.ResourcePath, message.ResourceData });
+        private void RxResource(MsgResource message) {
+            if (_loadingResources.ContainsKey(message.ResourceId)) {
+                LoadingResourceEntry entry = _loadingResources[message.ResourceId];
+                DreamResource resource = (DreamResource) _typeFactory.CreateInstance(entry.ResourceType,
+                    new object[] {message.ResourceId, message.ResourceData});
 
-                _resourceCache[message.ResourcePath] = resource;
+                _resourceCache[message.ResourceId] = resource;
                 foreach (Action<DreamResource> callback in entry.LoadCallbacks) {
                     try {
                         callback.Invoke(resource);
                     } catch (Exception e) {
-                        Logger.Fatal("Exception while calling resource load callback: " + e.Message);
+                        Logger.Fatal($"Exception while calling resource load callback: {e.Message}");
                     }
                 }
 
-                _loadingResources.Remove(message.ResourcePath);
+                _loadingResources.Remove(message.ResourceId);
             } else {
-                throw new Exception("Received unexpected resource packet for '" +  message.ResourcePath + "'");
+                throw new Exception($"Received unexpected resource packet for resource id {message.ResourceId}");
             }
         }
 
-        public void LoadResourceAsync<T>(string resourcePath, Action<T> onLoadCallback) where T:DreamResource {
-            DreamResource resource = GetCachedResource(resourcePath);
+        public void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T:DreamResource {
+            DreamResource resource = GetCachedResource(resourceId);
 
             if (resource == null) {
-                if (!_loadingResources.ContainsKey(resourcePath)) {
-                    _loadingResources[resourcePath] = new LoadingResourceEntry(typeof(T));
+                if (!_loadingResources.ContainsKey(resourceId)) {
+                    _loadingResources[resourceId] = new LoadingResourceEntry(typeof(T));
 
-                    var msg = new MsgRequestResource() { ResourcePath = resourcePath };
+                    var msg = new MsgRequestResource() { ResourceId = resourceId };
                     _netManager.ClientSendMessage(msg);
 
                     var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
                     Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
-                        if (_loadingResources.ContainsKey(resourcePath)) {
+                        if (_loadingResources.ContainsKey(resourceId)) {
                             _sawmill.Warning(
-                                $"Resource '{resourcePath}' was requested, but is still not received {timeout} seconds later.");
+                                $"Resource id {resourceId} was requested, but is still not received {timeout} seconds later.");
                         }
                     });
                 }
 
-                _loadingResources[resourcePath].LoadCallbacks.Add((DreamResource resource) => {
+                _loadingResources[resourceId].LoadCallbacks.Add((DreamResource resource) => {
                     onLoadCallback.Invoke((T)resource);
                 });
             } else {
@@ -133,8 +125,8 @@ namespace OpenDreamClient.Resources
             return new ResourcePath(filename);
         }
 
-        private DreamResource GetCachedResource(string resourcePath) {
-            if (_resourceCache.TryGetValue(resourcePath, out var cached)) {
+        private DreamResource GetCachedResource(int resourceId) {
+            if (_resourceCache.TryGetValue(resourceId, out var cached)) {
                 return cached;
             } else {
                 return null;

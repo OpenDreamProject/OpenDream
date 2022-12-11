@@ -69,7 +69,7 @@ namespace OpenDreamShared.Dream.Procs {
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
         BitShiftRight = 0x40,
-        //0x41
+        CreateFilteredListEnumerator = 0x41,
         Power = 0x42,
         DebugSource = 0x43,
         DebugLine = 0x44,

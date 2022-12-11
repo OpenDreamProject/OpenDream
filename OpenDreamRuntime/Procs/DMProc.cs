@@ -130,6 +130,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
+            {DreamProcOpcode.CreateFilteredListEnumerator,DMOpcodeHandlers.CreateFilteredListEnumerator},
+
         };
         #endregion
         private static OpcodeHandler?[] _opcodeHandlers = {};

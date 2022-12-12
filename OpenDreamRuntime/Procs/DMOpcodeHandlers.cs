@@ -678,13 +678,11 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Increment(DMProcState state) {
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue output;
 
             if(first == DreamValue.Null)
             {
-                output = new DreamValue(1.0f);
-                state.AssignReference(reference, output);
-                state.Push(output);
+                state.AssignReference(reference, new DreamValue(1.0f));
+                state.Push(first);
                 return null;
             }
 
@@ -693,9 +691,8 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsFloat(out float firstFloat))
                     {
-                        output = new DreamValue(firstFloat + 1.0f);
-                        state.AssignReference(reference, output);
-                        state.Push(output);
+                        state.AssignReference(reference, new DreamValue(firstFloat + 1.0f));
+                        state.Push(new DreamValue(firstFloat));
                         return null;
                     }
                     break;
@@ -727,13 +724,11 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Decrement(DMProcState state) {
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue output;
 
             if(first == DreamValue.Null)
             {
-                output = new DreamValue(-1.0f);
-                state.AssignReference(reference, output);
-                state.Push(output);
+                state.AssignReference(reference, new DreamValue(-1.0f));
+                state.Push(first);
                 return null;
             }
 
@@ -742,9 +737,8 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsFloat(out float firstFloat))
                     {
-                        output = new DreamValue(firstFloat - 1.0f);
-                        state.AssignReference(reference, output);
-                        state.Push(output);
+                        state.AssignReference(reference, new DreamValue(firstFloat - 1.0f));
+                        state.Push(new DreamValue(firstFloat));
                         return null;
                     }
                     break;

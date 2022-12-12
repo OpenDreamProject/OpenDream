@@ -153,7 +153,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
                 if (firstList.GetLength() != secondList.GetLength())
                 {
-                    state.Push(new DreamValue(DreamValue.False));
+                    state.Push(DreamValue.False);
                     return ProcStatus.Returned;
                 }
                 var firstValues = firstList.GetValues();
@@ -161,14 +161,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 for (var i = 0; i < firstValues.Count; i++) {
                     if (!firstValues[i].Equals(secondValues[i]))
                     {
-                        state.Push(new DreamValue(DreamValue.False));
+                        state.Push(DreamValue.False);
                         return ProcStatus.Returned;
                     }
                 }
-                state.Push(new DreamValue(DreamValue.True));
+                state.Push(DreamValue.True);
                 return ProcStatus.Returned;
             }
-            state.Push(new DreamValue(DreamValue.False));
+            state.Push(DreamValue.False);
             return ProcStatus.Returned;// This will never be true, because reaching this line means b is not a list, while a will always be.
         }
 

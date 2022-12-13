@@ -282,13 +282,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             else
                 throw new Exception("List bit-xor on not list???");
         }
-        public ProcStatus OperatorIndex(DreamObject dreamObject, DreamValue index, DMProcState state) {
-            state.Push(((DreamList)dreamObject).GetValue(index));
+        public ProcStatus OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
+            if(!a.TryGetValueAsDreamList(out DreamList dreamList))
+                throw new Exception("List isn't a list!!");
+            state.Push(dreamList.GetValue(index));
             return ProcStatus.Returned;
         }
 
-        public ProcStatus OperatorIndexAssign(DreamObject dreamObject, DreamValue index, DreamValue value, DMProcState state) {
-            ((DreamList)dreamObject).SetValue(index, value);
+        public ProcStatus OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
+            if(!a.TryGetValueAsDreamList(out DreamList dreamList))
+                throw new Exception("List isn't a list!!");
+            dreamList.SetValue(index, value);
             state.Push(DreamValue.Null);
             return ProcStatus.Returned;
         }

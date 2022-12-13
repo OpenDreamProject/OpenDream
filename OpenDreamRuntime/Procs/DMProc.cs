@@ -479,10 +479,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.ListIndex: {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
-
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        listObj.SetValue(index, value);
-                    } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
+                    if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                             return metaObject.OperatorIndexAssign(indexing, index, value, this);
@@ -562,12 +559,17 @@ namespace OpenDreamRuntime.Procs {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                         {
-                            DreamThread newContext = this.Spawn(); //this might be a little cursed, please check in code review
-                            DMProcState newProcState = new(this, newContext);
-                            if(metaObject.OperatorIndex(indexing, index, newProcState) == ProcStatus.Returned)
-                                return newProcState.Pop();
-                            else
-                                return newProcState.Thread.Resume();
+                            ProcStatus opStatus = metaObject.OperatorIndex(indexing, index, this);
+                            switch(opStatus){
+                                case(ProcStatus.Returned):
+                                    return this.Pop();
+                                case(ProcStatus.Called):
+                                    return this.Thread.Resume();
+                                case(ProcStatus.Deferred):
+                                    throw new Exception("Using sleep() in an operator overload is not supported.");
+                                case(ProcStatus.Cancelled):
+                                    throw new Exception("Runtime occurred in operator");
+                            }
                         }
                     }
 

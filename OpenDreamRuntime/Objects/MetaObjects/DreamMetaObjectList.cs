@@ -293,7 +293,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if(!a.TryGetValueAsDreamList(out DreamList dreamList))
                 throw new Exception("List isn't a list!!");
             dreamList.SetValue(index, value);
-            state.Push(DreamValue.Null);
             return ProcStatus.Returned;
         }
     }

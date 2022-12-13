@@ -481,13 +481,10 @@ namespace OpenDreamRuntime.Procs {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            return metaObject.OperatorIndexAssign(indexing, index, value, this);
+                        return metaObject!.OperatorIndexAssign(indexing, index, value, this);
                     } else {
                         throw new Exception($"Cannot assign to index {index} of {indexing}");
                     }
-
-                    break;
                 }
                 default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
             }
@@ -542,10 +539,6 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.ListIndex: {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference, peek);
-
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        return listObj.GetValue(index);
-                    }
 
                     if (indexing.TryGetValueAsString(out string? strValue)) {
                         if (!index.TryGetValueAsInteger(out int strIndex))

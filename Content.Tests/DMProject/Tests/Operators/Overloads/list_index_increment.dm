@@ -26,6 +26,10 @@
 	A["key"] = 0
 	A["key"]++
 	ASSERT(A["key"] == 1)
-	var/datum/fuck/G = new(5,10)
+	file("/home/amy/list.txt") << "new"
+	var/datum/fuck/G = new(3,10)
+	file("/home/amy/list.txt") << "index 1 assign = 5"
+	G[1] = 5
+	file("/home/amy/list.txt") << "index 1 ++"
 	G[1]++
 	ASSERT(G.x == 6)

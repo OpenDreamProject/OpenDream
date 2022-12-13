@@ -681,102 +681,108 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             // We dont want keyword arguments screwing with this
-            DreamValue indx = arguments.GetArgument(arguments.OrderedArguments.Count - 1, "index");
+            DreamValue indx;
 
-            int colorspace = 0;
-            bool loop = false;
+            int colorSpace = 0;
+
+            List<DreamValue> gradientList;
+
+            if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradList)) {
+                gradientList = gradList.GetValues();
+                indx = arguments.OrderedArguments[1];
+
+                DreamValue dictSpace = gradList.GetValue(new("space"));
+                dictSpace.TryGetValueAsInteger(out colorSpace);
+            } else {
+                if(!arguments.NamedArguments.TryGetValue("index", out DreamValue indxlookup)) {
+                    indx = arguments.OrderedArguments[arguments.OrderedArguments.Count - 1];
+                    arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
+                } else {
+                    indx = indxlookup;
+                }
+                gradientList = arguments.GetAllArguments();
+            }
 
             if (!indx.TryGetValueAsFloat(out float index)) {
                 throw new FormatException("Failed to parse index as float");
             }
 
-            List<DreamValue> GradientList;
-
-            if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
-                GradientList = gradlist.GetValues();
-                loop = gradList.ContainsValue(new DreamValue("loop"));
-
-                DreamValue dictSpace = gradlist.GetValue(new("space"));
-                dictSpace.TryGetValueAsInteger(out colorspace);
-            } else {
-                GradientList = arguments.GetAllArguments();
-            }
-
-            if (arguments.OrderedArguments.Contains(new("loop"))) { loop = true; }
-
-            if (arguments.NamedArguments.TryGetValue("space", out DreamValue namedlookup) && namedlookup.TryGetValueAsInteger(out int space)) { colorspace = space; }
+            bool loop = gradientList.Contains(new("loop"));
+            gradientList.Remove(new("loop"));
+            if (arguments.NamedArguments.TryGetValue("space", out DreamValue namedLookup))
+                namedLookup.TryGetValueAsInteger(out colorSpace);
 
             /// true: look for int: false look for color
-            bool color_or_int = true;
+            bool colorOrInt = true;
 
-            float workingfloat = 0;
-            float maxvalue = 1;
-            float minvalue = 0;
-            float leftboundy = 0;
-            float rightboundry = 1;
+            float workingFloat = 0;
+            float maxValue = 1;
+            float minValue = 0;
+            float leftBound = 0;
+            float rightBound = 1;
 
             /// None of these should be null however C# is "special"
             Color left = new();
             Color right = new();
 
-            bool leftexists = false;
-            bool rightexists = false;
+            bool leftExists = false;
+            bool rightExists = false;
 
-            foreach (DreamValue value in GradientList) {
-                if (color_or_int && value.TryGetValueAsFloat(out float flt)) { // Int
-                    color_or_int = false;
-                    workingfloat = flt;
-                    maxvalue = Math.Max(maxvalue, flt);
-                    minvalue = Math.Min(minvalue, flt);
+            foreach (DreamValue value in gradientList) {
+                if (colorOrInt && value.TryGetValueAsFloat(out float flt)) { // Int
+                    colorOrInt = false;
+                    workingFloat = flt;
+                    maxValue = Math.Max(maxValue, flt);
+                    minValue = Math.Min(minValue, flt);
                     continue; // Successful parse
                 }
 
-                if (value.TryGetValueAsString(out string? strvalue) && ColorHelpers.TryParseColor(strvalue, out Color color)) {
+                if (value.TryGetValueAsString(out string? strValue) && ColorHelpers.TryParseColor(strValue, out Color color)) {
 
-                    if(loop && index >= maxvalue) {
-                        index %= maxvalue;
+                    if (loop && index >= maxValue) {
+                        index %= maxValue;
                     }
 
-                    if (workingfloat >= index) {
+                    if (workingFloat >= index) {
                         right = color;
-                        rightboundry = workingfloat;
-                        rightexists = true;
+                        rightBound = workingFloat;
+                        rightExists = true;
                         break;
                     }
                     else {
                         left = color;
-                        leftexists = true;
-                        leftboundy = workingfloat;
+                        leftExists = true;
+                        leftBound = workingFloat;
                     }
 
-                    if (color_or_int) {
-                        workingfloat = 1;
+                    if (colorOrInt) {
+                        workingFloat = 1;
                     }
 
-                    color_or_int = true;
+                    colorOrInt = true;
                 }
             }
 
             /// Convert the index to a 0-1 range
-            float normalized = (index - leftboundy) / (rightboundry - leftboundy);
+            float normalized = (index - leftBound) / (rightBound - leftBound);
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
-            if (!leftexists || (rightexists && normalized == 1) || (rightexists && normalized == 0)) {
+            if (!leftExists || (rightExists && normalized == 1) || (rightExists && normalized == 0)) {
                 if (right.AByte == 255) {
                     return new DreamValue(right.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(right.ToHex().ToLower());
-            } else if (!rightexists) {
+            } else if (!rightExists) {
                 if (left.AByte == 255) {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(left.ToHex().ToLower());
-            } else if (!leftexists && !rightexists) {
+            } else if (!leftExists && !rightExists) {
                 throw new InvalidOperationException("Failed to find any colors");
             }
 
             Color returnval;
-            switch (colorspace) {
+            switch (colorSpace) {
                 case 0: // RGB
                     returnval = Color.InterpolateBetween(left, right, normalized);
                     break;
@@ -819,7 +825,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     returnval = Color.FromHsv(holder);
                     break;
                 default:
-                    throw new NotSupportedException("Cannot interpolate colorspace");
+                    throw new NotSupportedException("Cannot interpolate colorSpace");
             }
 
             if (returnval.AByte == 255) {
@@ -1740,7 +1746,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
-                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
+                throw new NotImplementedException($"Failed to parse colorSpace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {

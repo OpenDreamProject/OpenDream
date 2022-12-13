@@ -14,17 +14,6 @@
 		..()
 		loc = locate(5, 5, 1)
 
-	verb/increment_gradient()
-		gradient_index += 0.05
-		usr << "Gradient index increased to [gradient_index]"
-
-	verb/decrement_gradient()
-		gradient_index -= 0.05
-		usr << "Gradient index decreased to [gradient_index]"
-
-	verb/update_gradient()
-		usr << gradient(list(-1, "#ff0000", 0.99, "#00ff00", 1, "#cece00"), gradient_index)
-
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)
 		sleep(2)
@@ -129,3 +118,5 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+	var/list/gradlist = list(0, "#ff0000", 1, "#00ff00")
+	world.log << gradient(gradlist, "loop", index=1.5)

@@ -564,7 +564,9 @@ namespace OpenDreamRuntime.Procs {
                         {
                             DreamThread newContext = this.Spawn(); //this might be a little cursed, please check in code review
                             DMProcState newProcState = new(this, newContext);
-                            if(metaObject.OperatorIndex(indexing, index, newProcState)==ProcStatus.Called)
+                            if(metaObject.OperatorIndex(indexing, index, newProcState) == ProcStatus.Returned)
+                                return newProcState.Pop();
+                            else
                                 return newProcState.Thread.Resume();
                         }
                     }

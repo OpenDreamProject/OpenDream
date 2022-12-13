@@ -1,28 +1,21 @@
 using System.IO;
+using OpenDreamShared.Network.Messages;
 using Robust.Client.Audio;
 using Robust.Client.Graphics;
 using Robust.Shared.Audio;
 
-namespace OpenDreamClient.Resources.ResourceTypes
-{
+namespace OpenDreamClient.Resources.ResourceTypes {
     // ReSharper disable once ClassNeverInstantiated.Global
     public sealed class ResourceSound : DreamResource {
-        private readonly AudioStream _stream;
+        private AudioStream _stream;
 
-        public ResourceSound(string resourcePath, byte[] data) : base(resourcePath, data) {
-            if (resourcePath.EndsWith(".ogg"))
-                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(data), resourcePath);
-            else if (resourcePath.EndsWith(".wav"))
-                _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(data), resourcePath);
-            else
-                Logger.Fatal("Only *.ogg and *.wav audio files are supported.");
-        }
+        public ResourceSound(int id, byte[] data) : base(id, data) { }
 
-        public IClydeAudioSource Play(AudioParams audioParams)
-        {
-            var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
+        public IClydeAudioSource Play(MsgSound.FormatType format, AudioParams audioParams) {
+            LoadStream(format);
 
             // TODO: Positional audio.
+            var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
             source.SetGlobal();
             source.SetPitch(audioParams.PitchScale);
             source.SetVolume(audioParams.Volume);
@@ -31,6 +24,23 @@ namespace OpenDreamClient.Resources.ResourceTypes
 
             source.StartPlaying();
             return source;
+        }
+
+        private void LoadStream(MsgSound.FormatType format) {
+            if (_stream != null)
+                return;
+
+            switch (format) {
+                case MsgSound.FormatType.Ogg:
+                    _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(Data));
+                    break;
+                case MsgSound.FormatType.Wav:
+                    _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(Data));
+                    break;
+                default:
+                    Logger.Fatal("Only *.ogg and *.wav audio files are supported.");
+                    break;
+            }
         }
     }
 }

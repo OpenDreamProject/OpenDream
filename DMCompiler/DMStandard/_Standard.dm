@@ -25,6 +25,7 @@ proc/fdel(File)
 proc/fexists(File)
 proc/file(Path)
 proc/file2text(File)
+proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0)
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
 proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
@@ -33,6 +34,7 @@ proc/flick(Icon, Object)
 proc/flist(Path)
 proc/floor(A)
 proc/fract(n)
+proc/ftime(File, IsCreationTime = 0)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
 proc/html_encode(PlainText)
@@ -109,6 +111,7 @@ proc/winset(player, control_id, params)
 #include "Types\Client.dm"
 #include "Types\Datum.dm"
 #include "Types\Exception.dm"
+#include "Types\Filter.dm"
 #include "Types\Generator.dm"
 #include "Types\Icon.dm"
 #include "Types\Image.dm"

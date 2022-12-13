@@ -41,9 +41,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
                         return;
 
-                    int x = (varName == "x") ? value.GetValueAsInteger() : (int)transform.WorldPosition.X;
-                    int y = (varName == "y") ? value.GetValueAsInteger() : (int)transform.WorldPosition.Y;
-                    int z = (varName == "z") ? value.GetValueAsInteger() : (int)transform.MapID;
+                    int x = (varName == "x") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.X;
+                    int y = (varName == "y") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.Y;
+                    int z = (varName == "z") ? value.MustGetValueAsInteger() : (int)transform.MapID;
 
                     _dreamMapManager.TryGetTurfAt((x, y), z, out var newLoc);
                     dreamObject.SetVariable("loc", new DreamValue(newLoc));
@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turfLoc)) {
                         (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
-                        transform.AttachParent(level.Grid.GridEntityId);
+                        transform.AttachParent(level.Grid.Owner);
                         transform.WorldPosition = pos;
                     } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);
@@ -127,6 +127,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
 
                     return new(contents);
+                }
+                case "locs": {
+                    // Unimplemented; just return a list containing src.loc
+                    DreamList locs = DreamList.Create();
+                    locs.AddValue(dreamObject.GetVariable("loc"));
+
+                    return new DreamValue(locs);
                 }
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;

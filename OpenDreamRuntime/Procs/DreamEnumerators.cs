@@ -4,9 +4,9 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Procs {
     sealed class DreamProcRangeEnumerator : IEnumerator<DreamValue> {
         private float _current;
-        private float _start;
-        private float _end;
-        private float _step;
+        private readonly float _start;
+        private readonly float _end;
+        private readonly float _step;
 
         public DreamProcRangeEnumerator(float rangeStart, float rangeEnd, float step) {
             _current = rangeStart - step;
@@ -35,8 +35,8 @@ namespace OpenDreamRuntime.Procs {
     }
 
     sealed class DreamObjectEnumerator : IEnumerator<DreamValue> {
-        private IEnumerator<DreamObject> _dreamObjectEnumerator;
-        private DreamPath? _filterType;
+        private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
+        private readonly DreamPath? _filterType;
 
         public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, DreamPath? filterType = null) {
             _dreamObjectEnumerator = dreamObjects.GetEnumerator();
@@ -68,8 +68,8 @@ namespace OpenDreamRuntime.Procs {
     }
 
     sealed class DreamValueAsObjectEnumerator : IEnumerator<DreamValue> {
-        private IEnumerator<DreamValue> _dreamValueEnumerator;
-        private DreamPath? _filterType;
+        private readonly IEnumerator<DreamValue> _dreamValueEnumerator;
+        private readonly DreamPath? _filterType;
 
         public DreamValueAsObjectEnumerator(IEnumerable<DreamValue> dreamValues, DreamPath? filterType = null) {
             _dreamValueEnumerator = dreamValues.GetEnumerator();
@@ -83,15 +83,11 @@ namespace OpenDreamRuntime.Procs {
         public bool MoveNext() {
             bool hasNext = _dreamValueEnumerator.MoveNext();
             if (_filterType != null) {
-                while (hasNext && !_dreamValueEnumerator.Current.TryGetValueAsDreamObjectOfType(_filterType.Value, out _))
-                {
+                while (hasNext && !_dreamValueEnumerator.Current.TryGetValueAsDreamObjectOfType(_filterType.Value, out _)) {
                     hasNext = _dreamValueEnumerator.MoveNext();
                 }
-            }
-            else
-            {
-                while (hasNext && (_dreamValueEnumerator.Current.Type != DreamValue.DreamValueType.DreamObject || _dreamValueEnumerator.Current == DreamValue.Null))
-                {
+            } else {
+                while (hasNext && (_dreamValueEnumerator.Current.Type != DreamValue.DreamValueType.DreamObject || _dreamValueEnumerator.Current == DreamValue.Null)) {
                     hasNext = _dreamValueEnumerator.MoveNext();
                 }
             }

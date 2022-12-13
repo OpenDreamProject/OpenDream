@@ -1,12 +1,11 @@
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Network.Messages;
 
-namespace OpenDreamClient.Audio
-{
-    public interface IDreamSoundEngine
-    {
-        void Initialize();
-        void PlaySound(int channel, ResourceSound sound, float volume);
-        void StopChannel(int channel);
-        void StopAllChannels();
-    }
+namespace OpenDreamClient.Audio;
+
+public interface IDreamSoundEngine {
+    void Initialize();
+    void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume);
+    void StopChannel(int channel);
+    void StopAllChannels();
 }

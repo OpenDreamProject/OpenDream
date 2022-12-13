@@ -1,17 +1,18 @@
-﻿using Robust.Shared.Analyzers;
+using Robust.Shared.Analyzers;
 using System.Collections.Generic;
 
 namespace OpenDreamShared.Compiler {
     [Virtual]
     public partial class Parser<SourceType> {
-        public List<CompilerError> Errors = new();
-        public List<CompilerWarning> Warnings = new();
+        /// <summary> Includes errors and warnings acccumulated by this parser. </summary>
+        /// <remarks> These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings. </remarks>
+        public List<CompilerEmission> Emissions = new(8);
 
         protected Lexer<SourceType> _lexer;
         private Token _currentToken;
-        private Stack<Token> _tokenStack = new();
+        private readonly Stack<Token> _tokenStack = new(1);
 
-        public Parser(Lexer<SourceType> lexer) {
+        protected Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;
 
             Advance();
@@ -85,16 +86,29 @@ namespace OpenDreamShared.Compiler {
             Error(errorMessage);
         }
 
+        /// <summary>
+        /// Emits an error discovered during parsing, optionally causing a throw.
+        /// </summary>
+        /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
+        /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
+        /// </remarks>
         protected void Error(string message, bool throwException = true) {
-            CompilerError error = new CompilerError(_currentToken, message);
+            CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
 
-            Errors.Add(error);
-            if (throwException) throw new CompileErrorException(error);
+            Emissions.Add(error);
+            if (throwException)
+                throw new CompileErrorException(error);
         }
 
+        /// <summary>
+        /// Emits a warning discovered during parsing, optionally causing a throw.
+        /// </summary>
+        /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
+        /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
+        /// </remarks>
         protected void Warning(string message, Token token = null) {
             token ??= _currentToken;
-            Warnings.Add(new CompilerWarning(token, message));
+            Emissions.Add(new CompilerEmission(ErrorLevel.Warning, token?.Location, message));
         }
     }
 }

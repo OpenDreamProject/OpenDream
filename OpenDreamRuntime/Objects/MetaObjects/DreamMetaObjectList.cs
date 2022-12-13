@@ -73,7 +73,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorAdd(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -88,7 +88,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -103,7 +103,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorAppend(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
@@ -117,7 +117,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorRemove(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 DreamValue[] values = bList.GetValues().ToArray();
@@ -133,7 +133,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorOr(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
                 list = list.Union(bList);
@@ -160,7 +160,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorCombine(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
@@ -176,7 +176,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorMask(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 for (int i = 1; i <= list.GetLength(); i++) {

@@ -16,6 +16,7 @@ namespace OpenDreamRuntime
     {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
         [ViewVariables] private Dictionary<string, DreamProc> _availableVerbs = new();
         [ViewVariables] private Dictionary<string, List<string>> _statPanels = new();
@@ -85,11 +86,11 @@ namespace OpenDreamRuntime
 
             if (MobDreamObject != null)
             {
-                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").MustGetValueAsDreamList().GetValues();
                 verbs = new List<(string, string, string)>(mobVerbPaths.Count);
                 foreach (DreamValue mobVerbPath in mobVerbPaths)
                 {
-                    DreamPath path = mobVerbPath.GetValueAsPath();
+                    DreamPath path = mobVerbPath.MustGetValueAsPath();
                     if (path.LastElement is null) continue;
                     var proc = MobDreamObject.GetProc(path.LastElement);
                     _availableVerbs.Add(path.LastElement, proc);
@@ -210,9 +211,7 @@ namespace OpenDreamRuntime
 
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject outputObject = value.GetValueAsDreamObject();
-
+            if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
                 if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
@@ -223,16 +222,25 @@ namespace OpenDreamRuntime
                         Volume = volume
                     };
 
-                    if (file.Type == DreamValue.DreamValueType.String || file == DreamValue.Null) {
-                        msg.File = (string)file.Value;
-                    } else if (file.TryGetValueAsDreamResource(out DreamResource resource)) {
-                        msg.File = resource.ResourcePath;
-                    } else {
-                        throw new ArgumentException("Cannot output " + value, nameof(value));
+                    if (!file.TryGetValueAsDreamResource(out var soundResource)) {
+                        if (file.TryGetValueAsString(out var soundPath)) {
+                            soundResource = _resourceManager.LoadResource(soundPath);
+                        } else if (file != DreamValue.Null) {
+                            throw new ArgumentException($"Cannot output {value}", nameof(value));
+                        }
+                    }
+
+                    msg.ResourceId = soundResource?.Id;
+                    if (soundResource?.ResourcePath is { } resourcePath) {
+                        if (resourcePath.EndsWith(".ogg"))
+                            msg.Format = MsgSound.FormatType.Ogg;
+                        else if (resourcePath.EndsWith(".wav"))
+                            msg.Format = MsgSound.FormatType.Wav;
+                        else
+                            throw new Exception($"Sound {value} is not a supported file type");
                     }
 
                     Session.ConnectedClient.SendMessage(msg);
-
                     return;
                 }
             }
@@ -387,9 +395,8 @@ namespace OpenDreamRuntime
             return tcs.Task;
         }
 
-        public void BrowseResource(DreamResource resource, string filename)
-        {
-            if (!resource.Exists())
+        public void BrowseResource(DreamResource resource, string filename) {
+            if (resource.ResourceData == null)
                 return;
 
             var msg = new MsgBrowseResource() {

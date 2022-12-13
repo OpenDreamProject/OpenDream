@@ -639,7 +639,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new IndexOutOfRangeException("Not enough arguments");
             }
 
-            /// We dont want keyword arguments screwing with this
+            // We dont want keyword arguments screwing with this
             DreamValue indx = arguments.GetArgument(arguments.OrderedArguments.Count - 1, "index");
 
             int colorspace = 0;
@@ -653,12 +653,10 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradlist)) {
                 GradientList = gradlist.GetValues();
+                loop = gradList.ContainsValue(new DreamValue("loop"));
 
-                if (gradlist.ContainsValue(new DreamValue("loop"))) { loop = true; }
-
-                DreamValue dictspace = gradlist.GetValue(new("space"));
-                if (dictspace != DreamValue.Null && dictspace.TryGetValueAsInteger(out int dictlookup)) { colorspace = dictlookup; }
-
+                DreamValue dictSpace = gradlist.GetValue(new("space"));
+                dictSpace.TryGetValueAsInteger(out colorspace);
             } else {
                 GradientList = arguments.GetAllArguments();
             }
@@ -689,7 +687,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     workingfloat = flt;
                     maxvalue = Math.Max(maxvalue, flt);
                     minvalue = Math.Min(minvalue, flt);
-                    continue; // Succesful parse
+                    continue; // Successful parse
                 }
 
                 if (value.TryGetValueAsString(out string? strvalue) && ColorHelpers.TryParseColor(strvalue, out Color color)) {
@@ -723,13 +721,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!leftexists || (rightexists && normalized == 1) || (rightexists && normalized == 0)) {
-                if (right.A == 1) {
+                if (right.AByte == 255) {
                     return new DreamValue(right.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(right.ToHex().ToLower());
             } else if (!rightexists) {
-
-                if (left.A == 1) {
+                if (left.AByte == 255) {
                     return new DreamValue(left.ToHexNoAlpha().ToLower());
                 }
                 return new DreamValue(left.ToHex().ToLower());
@@ -784,7 +781,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     throw new NotSupportedException("Cannot interpolate colorspace");
             }
 
-            if (returnval.A == 1) {
+            if (returnval.AByte == 255) {
                 return new DreamValue(returnval.ToHexNoAlpha().ToLower());
             }
             return new DreamValue(returnval.ToHex().ToLower());

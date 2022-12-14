@@ -769,14 +769,14 @@ namespace OpenDreamRuntime.Procs.Native {
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!left.HasValue || (right.HasValue && normalized == 1) || (right.HasValue && normalized == 0)) {
                 if (right?.AByte == 255) {
-                    return new DreamValue(right?.ToHexNoAlpha().ToLower());
+                    return new DreamValue(right?.ToHexNoAlpha()?.ToLower());
                 }
-                return new DreamValue(right?.ToHex().ToLower());
+                return new DreamValue(right?.ToHex()?.ToLower());
             } else if (!right.HasValue) {
                 if (left?.AByte == 255) {
-                    return new DreamValue(left?.ToHexNoAlpha().ToLower());
+                    return new DreamValue(left?.ToHexNoAlpha()?.ToLower());
                 }
-                return new DreamValue(left?.ToHex().ToLower());
+                return new DreamValue(left?.ToHex()?.ToLower());
             } else if (!left.HasValue && !right.HasValue) {
                 throw new InvalidOperationException("Failed to find any colors");
             }
@@ -784,11 +784,11 @@ namespace OpenDreamRuntime.Procs.Native {
             Color returnval;
             switch (colorSpace) {
                 case 0: // RGB
-                    returnval = Color.InterpolateBetween(left, right, normalized);
+                    returnval = Color.InterpolateBetween(left.GetValueOrDefault(), right.GetValueOrDefault(), normalized);
                     break;
                 case 1 or 2: // HSV/HSL
-                    Vector4 vect1 = new(Color.ToHsv(left));
-                    Vector4 vect2 = new(Color.ToHsv(right));
+                    Vector4 vect1 = new(Color.ToHsv(left.GetValueOrDefault()));
+                    Vector4 vect2 = new(Color.ToHsv(right.GetValueOrDefault()));
 
                     /// Some precision is lost when coverting back to HSV at very small values this fixes that issue
                     if (normalized < 0.05f) {
